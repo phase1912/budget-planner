@@ -9,9 +9,11 @@ updated in place rather than duplicated.
 Usage:
     scripts/backlog_sync.py render            # regenerate docs/planning/backlog.md
     scripts/backlog_sync.py sync --dry-run    # show what would change
-    scripts/backlog_sync.py sync              # create/update labels, milestones, issues
-    scripts/backlog_sync.py project           # create/populate the Projects v2 board
-                                              # (requires: gh auth refresh -s project)
+    scripts/backlog_sync.py sync              # create/update labels, milestones, issues,
+                                              # and add them to the Projects v2 board
+    scripts/backlog_sync.py project           # (re)configure the board on its own: layout,
+                                              # Status columns, and adding any issue missed
+                                              # by sync — (requires: gh auth refresh -s project)
     scripts/backlog_sync.py pr-review --pr 42 # move #42's closed issues to Review
                                               # (called by .github/workflows/pr-board-sync.yml)
 """
@@ -336,6 +338,9 @@ def sync(data: dict, dry_run: bool) -> None:
                    {"body": feature_body(feature, epic, number, task_numbers)})
     print(f"  linked {len(epic_numbers)} epics and {len(feature_numbers)} features")
 
+    print("Board:")
+    project(data)
+
 
 # ----------------------------------------------------------------------- project
 
@@ -546,7 +551,7 @@ def pr_review(data: dict, pr_number: int) -> None:
     owner_login = repo.split("/")[0]
 
     pr_data = gh("api", "graphql", "-f", f"owner={owner}", "-f", f"name={name}",
-                "-f", f"number={pr_number}", "-f", """query=
+                "-F", f"number={pr_number}", "-f", """query=
         query($owner: String!, $name: String!, $number: Int!) {
           repository(owner: $owner, name: $name) {
             pullRequest(number: $number) {
