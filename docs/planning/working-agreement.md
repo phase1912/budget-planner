@@ -106,6 +106,21 @@ in the board UI (⋯ menu → Workflows):
    just issues) land on the board when opened, which `pr-board-sync.yml` needs in order to
    find and move them if they are ever tracked as cards in their own right.
 
+## Branch cleanup
+
+The repository has **Automatically delete head branches** enabled (repo Settings →
+General), so a merged PR's branch disappears from GitHub on its own — no manual
+deletion step.
+
+That only removes the branch on the remote. The local clone keeps a now-dangling
+reference until it is told otherwise, so after a merge:
+
+```
+git switch main && git pull
+git fetch --prune          # drops local tracking refs for branches deleted on the remote
+git branch -d task/<name>  # removes the local branch itself, if git didn't already
+```
+
 ## Board automation secret
 
 `pr-board-sync.yml` moves a PR's closed issues to Review using `gh`, which needs a token with
