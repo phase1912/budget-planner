@@ -369,6 +369,7 @@ def project(data: dict) -> None:
     else:
         print(f"Using existing project #{board['number']}: {board['title']}")
 
+    ensure_board_layout(board["id"])
     issues = [i for i in gh_paginate(f"repos/{repo}/issues?state=all&per_page=100")
               if "pull_request" not in i and MARKER.search(i.get("body") or "")]
     print(f"Adding {len(issues)} issues to the board...")
@@ -383,6 +384,26 @@ def project(data: dict) -> None:
 
     set_default_status(board["id"])
     print(f"Board ready: https://github.com/users/{owner}/projects/{board['number']}")
+
+
+def ensure_board_layout(project_id: str) -> None:
+    """Projects v2 defaults new views to a table. Switch every table view to a board
+    (kanban) so the columns the user actually wants — grouped by Status — show up."""
+    views = gh("api", "graphql", "-f", f"projectId={project_id}", "-f", """query=
+        query($projectId: ID!) {
+          node(id: $projectId) {
+            ... on ProjectV2 { views(first: 10) { nodes { id layout } } }
+          }
+        }""")
+    for view in views["data"]["node"]["views"]["nodes"]:
+        if view["layout"] != "BOARD_LAYOUT":
+            gh("api", "graphql", "-f", f"viewId={view['id']}", "-f", """query=
+                mutation($viewId: ID!) {
+                  updateProjectV2View(input: {viewId: $viewId, layout: BOARD_LAYOUT}) {
+                    projectV2View { id }
+                  }
+                }""")
+            print(f"  view {view['id']} -> board layout")
 
 
 def set_default_status(project_id: str) -> None:
