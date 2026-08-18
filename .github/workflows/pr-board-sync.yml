@@ -1,0 +1,27 @@
+name: Move linked issues to Review
+
+# Fires when a PR is opened (or a draft becomes ready), moves every issue it
+# closes into the board's Review column. Todo -> In Progress is manual (the
+# person picks up the task); Review -> Done is handled by the project's
+# built-in "Pull request merged" workflow, configured in the board UI.
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+
+jobs:
+  move-to-review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install pyyaml
+
+      - name: Move closed issues to Review
+        env:
+          GH_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
+        run: python scripts/backlog_sync.py pr-review --pr ${{ github.event.pull_request.number }}

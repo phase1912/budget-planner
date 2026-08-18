@@ -39,8 +39,23 @@ regenerated markdown.
 git switch -c task/F1-2-3-refresh-token-rotation
 ```
 
-The pull request body names the issue it closes and the BRD requirement IDs it satisfies, so
-tracing a line of code back to a business requirement is mechanical rather than archaeological.
+The pull request body names the issue it closes (`Closes #42`) and the BRD requirement IDs it
+satisfies, so tracing a line of code back to a business requirement is mechanical rather than
+archaeological. The `Closes #42` line is not just documentation — it is what both GitHub's
+own issue-closing and the board automation below key off.
+
+### Board columns and how a card moves between them
+
+| Column | Entered when | How |
+|---|---|---|
+| Todo | Issue created | Automatic, set by `backlog_sync.py sync` / `project` |
+| In Progress | Someone starts the task | Manual — drag the card, or set it before opening the branch |
+| Review | A non-draft PR closing the issue is opened | Automatic, `.github/workflows/pr-board-sync.yml` |
+| Done | The PR is merged, or the issue is closed directly | Automatic, the board's built-in "Pull request merged" / "Item closed" workflow |
+
+The Review transition needs GitHub's `closingIssuesReferences` to resolve, which only happens
+when the PR body actually contains a closing keyword (`Closes`, `Fixes`, `Resolves`) followed
+by the issue number — a PR that merely mentions the issue number will not move its card.
 
 **3. Close out the epic.** When its features are done, review what the work taught us. If a
 feature in a later epic is now wrong, unnecessary, or shaped differently than planned — edit
@@ -67,3 +82,21 @@ The `project` subcommand needs a token scope beyond the default:
 ```
 gh auth refresh -h github.com -s project,read:project
 ```
+
+## One-time board setup
+
+Two things GitHub does not expose through the API and so cannot be scripted — do these once
+in the board UI (⋯ menu → Workflows):
+
+1. **Pull request merged → Status: Done**, and **Item closed → Status: Done** — the built-in
+   workflows that close the Review → Done gap without a custom Action.
+2. **Auto-add to project**, filtered to this repository — so pull requests themselves (not
+   just issues) land on the board when opened, which `pr-board-sync.yml` needs in order to
+   find and move them if they are ever tracked as cards in their own right.
+
+## Board automation secret
+
+`pr-board-sync.yml` moves a PR's closed issues to Review using `gh`, which needs a token with
+the `project` scope — the default `GITHUB_TOKEN` Actions provides cannot write to Projects v2.
+Create a classic PAT with `repo` and `project` scopes and store it as the repository secret
+`PROJECTS_TOKEN` (Settings → Secrets and variables → Actions).
