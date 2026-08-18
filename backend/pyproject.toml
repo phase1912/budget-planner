@@ -1,0 +1,18 @@
+[project]
+name = "budget-planner-backend"
+version = "0.1.0"
+description = "AI Budget Agent backend — FastAPI service (see docs/adr/0001-technology-stack.md)"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "alembic>=1.19.1",
+    "anthropic>=0.122.0",
+    "fastapi>=0.141.1",
+    "pydantic-settings>=2.15.0",
+    "sqlalchemy>=2.0,<3",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
