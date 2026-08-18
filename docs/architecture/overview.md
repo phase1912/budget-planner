@@ -93,6 +93,26 @@ is a bug, because that number must match what the API computed.
 The API client is generated from the FastAPI OpenAPI schema in CI, so a backend contract
 change breaks the frontend build rather than production.
 
+## Repository layout and the frontend/backend boundary
+
+```
+docker-compose.yml  Local stack (API, client, PostgreSQL, MinIO) — repo root, not infra/,
+                     so `docker compose up` works from a fresh clone with no extra flags
+backend/             FastAPI service — routers, services, repositories, ports (see Layers above)
+frontend/            React + MobX client
+infra/terraform/     Cloud deployment IaC — AWS is the target (ADR-0002); Azure was
+                     evaluated and deferred, not ruled out
+docs/                BRD, architecture, planning, ADRs — this tree
+scripts/             Repository tooling (e.g. backlog_sync.py)
+```
+
+**No import may cross from `frontend/` to `backend/`, or the reverse, except through
+the generated OpenAPI client** (`frontend/`'s API layer, produced from the backend's
+OpenAPI schema — see F9.3). Nothing in `backend/` imports from `frontend/` at all; the
+dependency is one-directional. This is what keeps the two runtimes deployable and
+testable independently, and it is why the client is generated rather than hand-written
+— a hand-written client invites exactly the shortcut this rule forbids.
+
 ## Deliberate non-goals
 
 Out of scope by BRD section 4.2, and worth stating so nobody "helpfully" adds them:
