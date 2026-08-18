@@ -7,7 +7,9 @@ or wires anything itself.
 
 from fastapi import APIRouter, FastAPI
 
-ROUTERS: list[APIRouter] = []
+from app.api.health import router as health_router
+
+ROUTERS: list[APIRouter] = [health_router]
 
 
 def include_routers(app: FastAPI) -> None:

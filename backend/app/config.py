@@ -8,7 +8,7 @@ fails here, at boot, instead of wherever the untyped read happens to be.
 
 from functools import lru_cache
 
-from pydantic import PostgresDsn, SecretStr
+from pydantic import Field, PostgresDsn, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -27,8 +27,14 @@ class Settings(BaseSettings):
     )
 
     environment: str = "development"
-    database_url: PostgresDsn
+    database_url: PostgresDsn = Field(
+        description="Must use an async driver scheme, e.g. postgresql+asyncpg://."
+    )
     anthropic_api_key: SecretStr
+    build_sha: str = Field(
+        default="dev",
+        description="Set by CI/CD at deploy time; 'dev' outside a built image.",
+    )
 
 
 @lru_cache
