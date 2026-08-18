@@ -1,0 +1,43 @@
+name: Backend CI
+
+# Lint, strict type check and the test suite for backend/, run with the exact
+# tool versions pinned in backend/uv.lock (F0.1.3) — the same versions
+# pre-commit uses locally via `uv run`, so a hook that passes locally cannot
+# fail here on a version mismatch.
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+jobs:
+  lint-typecheck-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - run: uv sync --locked
+
+      - name: ruff check
+        run: uv run ruff check .
+
+      - name: ruff format --check
+        run: uv run ruff format --check .
+
+      - name: mypy --strict
+        run: uv run mypy .
+
+      - name: pytest
+        run: uv run pytest
