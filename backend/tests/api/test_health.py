@@ -11,8 +11,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from app.api.health_probe import check_database_reachable
 from app.config import Settings, get_settings
-from app.database import check_database_reachable
 from app.main import create_app
 
 
