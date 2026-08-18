@@ -380,7 +380,75 @@ def project(data: dict) -> None:
                 item { id }
               }
             }""")
+
+    set_default_status(board["id"])
     print(f"Board ready: https://github.com/users/{owner}/projects/{board['number']}")
+
+
+def set_default_status(project_id: str) -> None:
+    """Park every unstatused card in Todo, so the board shows columns rather than a
+    single undifferentiated 'No Status' pile."""
+    schema = gh("api", "graphql", "-f", f"projectId={project_id}", "-f", """query=
+        query($projectId: ID!) {
+          node(id: $projectId) {
+            ... on ProjectV2 {
+              fields(first: 30) {
+                nodes {
+                  ... on ProjectV2SingleSelectField { id name options { id name } }
+                }
+              }
+            }
+          }
+        }""")
+    fields = schema["data"]["node"]["fields"]["nodes"]
+    status = next((f for f in fields if f.get("name") == "Status"), None)
+    if not status:
+        print("  no Status field on this board — skipping")
+        return
+    todo = next((o for o in status["options"] if o["name"] == "Todo"), None)
+    if not todo:
+        print("  no Todo option on the Status field — skipping")
+        return
+
+    # gh's --paginate emits concatenated JSON documents for GraphQL rather than one
+    # array, so the cursor is walked by hand instead.
+    query = """query=
+        query($projectId: ID!, $after: String) {
+          node(id: $projectId) {
+            ... on ProjectV2 {
+              items(first: 100, after: $after) {
+                pageInfo { hasNextPage endCursor }
+                nodes {
+                  id
+                  fieldValueByName(name: "Status") {
+                    ... on ProjectV2ItemFieldSingleSelectValue { name }
+                  }
+                }
+              }
+            }
+          }
+        }"""
+    nodes: list[dict] = []
+    after = ""
+    while True:
+        page = gh("api", "graphql", "-f", f"projectId={project_id}", "-f", f"after={after}", "-f", query)
+        block = page["data"]["node"]["items"]
+        nodes += block["nodes"]
+        if not block["pageInfo"]["hasNextPage"]:
+            break
+        after = block["pageInfo"]["endCursor"]
+
+    pending = [n for n in nodes if not n.get("fieldValueByName")]
+    print(f"  setting Status=Todo on {len(pending)} unstatused cards...")
+    for node in pending:
+        gh("api", "graphql", "-f", f"projectId={project_id}", "-f", f"itemId={node['id']}",
+           "-f", f"fieldId={status['id']}", "-f", f"optionId={todo['id']}", "-f", """query=
+            mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+              updateProjectV2ItemFieldValue(input: {
+                projectId: $projectId, itemId: $itemId, fieldId: $fieldId,
+                value: {singleSelectOptionId: $optionId}
+              }) { projectV2Item { id } }
+            }""")
 
 
 # -------------------------------------------------------------------------- main
