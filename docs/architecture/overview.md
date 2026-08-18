@@ -96,11 +96,14 @@ change breaks the frontend build rather than production.
 ## Repository layout and the frontend/backend boundary
 
 ```
-backend/    FastAPI service — routers, services, repositories, ports (see Layers above)
-frontend/   React + MobX client
-infra/      Docker Compose, deployment config, environment definitions
-docs/       BRD, architecture, planning, ADRs — this tree
-scripts/    Repository tooling (e.g. backlog_sync.py)
+docker-compose.yml  Local stack (API, client, PostgreSQL, MinIO) — repo root, not infra/,
+                     so `docker compose up` works from a fresh clone with no extra flags
+backend/             FastAPI service — routers, services, repositories, ports (see Layers above)
+frontend/            React + MobX client
+infra/terraform/     Cloud deployment IaC — AWS is the target (ADR-0002); Azure was
+                     evaluated and deferred, not ruled out
+docs/                BRD, architecture, planning, ADRs — this tree
+scripts/             Repository tooling (e.g. backlog_sync.py)
 ```
 
 **No import may cross from `frontend/` to `backend/`, or the reverse, except through
