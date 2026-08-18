@@ -48,7 +48,7 @@ own issue-closing and the board automation below key off.
 
 | Column | Entered when | How |
 |---|---|---|
-| Todo | Issue created | Automatic, set by `backlog_sync.py sync` / `project` |
+| Todo | Issue created | Automatic, set by `backlog_sync.py sync` |
 | In Progress | Someone starts the task | Manual — drag the card, or set it before opening the branch |
 | Review | A non-draft PR closing the issue is opened | Automatic, `.github/workflows/pr-board-sync.yml` |
 | Done | The PR is merged, or the issue is closed directly | Automatic, the board's built-in "Pull request merged" / "Item closed" workflow |
@@ -73,9 +73,21 @@ rather than in someone's memory of a conversation.
 ```
 scripts/backlog_sync.py render          # regenerate backlog.md from the YAML
 scripts/backlog_sync.py sync --dry-run  # preview what would change on GitHub
-scripts/backlog_sync.py sync            # apply labels, milestones and issues
-scripts/backlog_sync.py project         # create/populate the Projects v2 board
+scripts/backlog_sync.py sync            # apply labels/milestones/issues AND add
+                                         # any new card to the board — this is the
+                                         # one command that keeps the board current
+scripts/backlog_sync.py project         # board-only: layout, Status columns, and
+                                         # re-adding anything sync's board step was
+                                         # skipped for (e.g. a --dry-run session).
+                                         # Not part of the normal grooming loop.
 ```
+
+`sync` always ends by adding every backlog issue to the board (see [F0.8.1's PR][pr-132]
+for the incident that made this the default — a new issue created by `sync` alone used
+to sit off the board until someone remembered to run `project` separately). Running
+`sync` is enough; there is no second step to remember.
+
+[pr-132]: https://github.com/phase1912/budget-planner/pull/132
 
 The `project` subcommand needs a token scope beyond the default:
 
