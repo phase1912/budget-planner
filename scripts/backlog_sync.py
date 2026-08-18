@@ -370,6 +370,7 @@ def project(data: dict) -> None:
         print(f"Using existing project #{board['number']}: {board['title']}")
 
     ensure_board_layout(board["id"])
+    ensure_status_columns(board["id"])
     issues = [i for i in gh_paginate(f"repos/{repo}/issues?state=all&per_page=100")
               if "pull_request" not in i and MARKER.search(i.get("body") or "")]
     print(f"Adding {len(issues)} issues to the board...")
@@ -404,6 +405,59 @@ def ensure_board_layout(project_id: str) -> None:
                   }
                 }""")
             print(f"  view {view['id']} -> board layout")
+
+
+STATUS_COLUMNS = [
+    ("Todo", "GRAY", "Not started"),
+    ("In Progress", "YELLOW", "Being worked on"),
+    ("Review", "PURPLE", "Pull request open, awaiting review/merge"),
+    ("Done", "GREEN", "Merged to main"),
+]
+
+
+def ensure_status_columns(project_id: str) -> None:
+    """Make sure the Status field has exactly the Todo/In Progress/Review/Done
+    columns the working agreement expects, in that order. Existing options keep
+    their id (and therefore the status of any card already set to them); only
+    missing ones are created."""
+    schema = gh("api", "graphql", "-f", f"projectId={project_id}", "-f", """query=
+        query($projectId: ID!) {
+          node(id: $projectId) {
+            ... on ProjectV2 {
+              fields(first: 30) {
+                nodes {
+                  ... on ProjectV2SingleSelectField { id name options { id name } }
+                }
+              }
+            }
+          }
+        }""")
+    fields = schema["data"]["node"]["fields"]["nodes"]
+    status = next((f for f in fields if f.get("name") == "Status"), None)
+    if not status:
+        print("  no Status field on this board — skipping column setup")
+        return
+
+    existing = {o["name"]: o["id"] for o in status["options"]}
+    if list(existing) == [name for name, _, _ in STATUS_COLUMNS]:
+        return  # already exactly right, in order
+
+    options_arg = ", ".join(
+        (f'{{ id: "{existing[name]}", name: "{name}", color: {color}, description: "{desc}" }}'
+         if name in existing else
+         f'{{ name: "{name}", color: {color}, description: "{desc}" }}')
+        for name, color, desc in STATUS_COLUMNS
+    )
+    gh("api", "graphql", "-f", f"fieldId={status['id']}", "-f", f"""query=
+        mutation {{
+          updateProjectV2Field(input: {{
+            fieldId: "{status['id']}"
+            singleSelectOptions: [{options_arg}]
+          }}) {{
+            projectV2Field {{ ... on ProjectV2SingleSelectField {{ id }} }}
+          }}
+        }}""")
+    print(f"  Status columns set: {', '.join(name for name, _, _ in STATUS_COLUMNS)}")
 
 
 def set_default_status(project_id: str) -> None:
