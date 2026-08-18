@@ -238,6 +238,27 @@ epics:
               Define local, staging and production: what differs, which is authoritative for
               data, and which AI model tier each uses.
 
+      - key: F0.8
+        title: Global architecture and domain model documentation
+        labels: [infra]
+        intent: >
+          A written reference for the system's shape and its business rules, kept current as
+          the codebase grows, so a reader (human or agent) can act on global context instead
+          of re-deriving it from the BRD or from reading the whole codebase.
+        tasks:
+          - title: Write docs/architecture/overview.md and domain-model.md
+            labels: [infra]
+            detail: >
+              overview.md: component boundaries, layering (router/service/repository/port),
+              the ingestion pipeline's three requirement-driven properties (async processing,
+              manual_review as a state, same-receipt-only matching), security posture, and
+              explicit non-goals from BRD section 4.2. domain-model.md: entities, the receipt
+              lifecycle, and a numbered list of invariants traced to BRD requirement IDs,
+              plus a table of the BRD's open questions and which epics they block. Both
+              documents carry an explicit instruction to be updated in the same commit as
+              any change that invalidates them, and CLAUDE.md and the task skill reference
+              them as required reading before structural or business-rule changes.
+
   - key: E1
     title: Identity & Account
     br: [N2]

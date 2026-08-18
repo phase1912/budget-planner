@@ -6,7 +6,7 @@ name: Move linked issues to Review
 # built-in "Pull request merged" workflow, configured in the board UI.
 on:
   pull_request:
-    types: [opened, reopened, ready_for_review]
+    types: [opened, reopened, ready_for_review, synchronize]
 
 jobs:
   move-to-review:
