@@ -1,0 +1,34 @@
+# Backend-only for now (F0.1.3) — a frontend hook set lands with the frontend
+# tooling task. Ruff and mypy run through `uv run` against backend/pyproject.toml
+# and uv.lock so the versions pre-commit uses are exactly the ones CI uses;
+# a pinned `rev` on a separate mirror repo would drift from that lockfile.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check (backend)
+        entry: uv run --directory backend ruff check --fix
+        language: system
+        types: [python]
+        files: ^backend/
+
+      - id: ruff-format
+        name: ruff format (backend)
+        entry: uv run --directory backend ruff format
+        language: system
+        types: [python]
+        files: ^backend/
+
+      - id: mypy
+        name: mypy --strict (backend)
+        entry: uv run --directory backend mypy .
+        language: system
+        types: [python]
+        files: ^backend/
+        pass_filenames: false
