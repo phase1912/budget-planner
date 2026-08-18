@@ -142,6 +142,8 @@ epics:
             detail: >
               Compose file with pinned images, named volumes, health checks, and a bootstrap step
               creating the receipts bucket. MinIO stands in for production object storage.
+              Lives at the repository root, not under infra/, so `docker compose up` works from
+              a fresh clone with no extra flags.
           - title: Task runner targets for the common workflows
             labels: [infra]
             detail: >
@@ -258,6 +260,16 @@ epics:
               documents carry an explicit instruction to be updated in the same commit as
               any change that invalidates them, and CLAUDE.md and the task skill reference
               them as required reading before structural or business-rule changes.
+
+      - key: F0.9
+        title: Cloud deployment infrastructure (AWS)
+        labels: [infra]
+        intent: >
+          The application can be deployed to AWS from infrastructure-as-code rather than
+          by hand. Targets AWS per ADR-0002. Not yet groomed into tasks: compute target
+          (ECS/Fargate/EC2/App Runner), state backend, and which environments exist
+          beyond local are real design decisions, made when this feature is picked up
+          rather than guessed at while establishing repository layout.
 
   - key: E1
     title: Identity & Account

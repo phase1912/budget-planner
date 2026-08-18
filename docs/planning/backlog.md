@@ -3,11 +3,11 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-11 epics · 77 features · 43 tasks written so far.
+11 epics · 78 features · 43 tasks written so far.
 
 | Epic | Title | BRD | Features | Groomed |
 |---|---|---|---|---|
-| E0 | Foundation & Delivery Platform | — | 8 | yes |
+| E0 | Foundation & Delivery Platform | — | 9 | yes |
 | E1 | Identity & Account | N2 | 4 | yes |
 | E2 | Receipt Ingestion & Storage | BR-1 | 6 | no |
 | E3 | Receipt Parsing & Extraction | BR-1 | 7 | no |
@@ -66,7 +66,7 @@ The persistence layer is established with async sessions, migration tooling and 
 
 A developer can bring up the full stack — API, client, PostgreSQL and S3-compatible object storage — locally with one command.
 
-- **F0.4.1** Docker Compose stack with PostgreSQL and MinIO — Compose file with pinned images, named volumes, health checks, and a bootstrap step creating the receipts bucket. MinIO stands in for production object storage.
+- **F0.4.1** Docker Compose stack with PostgreSQL and MinIO — Compose file with pinned images, named volumes, health checks, and a bootstrap step creating the receipts bucket. MinIO stands in for production object storage. Lives at the repository root, not under infra/, so `docker compose up` works from a fresh clone with no extra flags.
 - **F0.4.2** Task runner targets for the common workflows — up, down, migrate, seed, test, lint, typecheck. Both languages behind the same interface so nobody memorises two toolchains.
 - **F0.4.3** Seed script for local sample data — Creates a demo user with a handful of receipts spanning two months, enough to exercise the monthly-budget and statistics epics without uploading photos.
 - **F0.4.4** Quickstart section in the README — Clone-to-running instructions, prerequisites with versions, and how to obtain and configure the Claude API key.
@@ -110,6 +110,12 @@ Configuration and secrets are handled consistently across local, CI and deployed
 A written reference for the system's shape and its business rules, kept current as the codebase grows, so a reader (human or agent) can act on global context instead of re-deriving it from the BRD or from reading the whole codebase.
 
 - **F0.8.1** Write docs/architecture/overview.md and domain-model.md — overview.md: component boundaries, layering (router/service/repository/port), the ingestion pipeline's three requirement-driven properties (async processing, manual_review as a state, same-receipt-only matching), security posture, and explicit non-goals from BRD section 4.2. domain-model.md: entities, the receipt lifecycle, and a numbered list of invariants traced to BRD requirement IDs, plus a table of the BRD's open questions and which epics they block. Both documents carry an explicit instruction to be updated in the same commit as any change that invalidates them, and CLAUDE.md and the task skill reference them as required reading before structural or business-rule changes.
+
+### F0.9 — Cloud deployment infrastructure (AWS)
+
+*Requirements: —*
+
+The application can be deployed to AWS from infrastructure-as-code rather than by hand. Targets AWS per ADR-0002. Not yet groomed into tasks: compute target (ECS/Fargate/EC2/App Runner), state backend, and which environments exist beyond local are real design decisions, made when this feature is picked up rather than guessed at while establishing repository layout.
 
 ---
 
