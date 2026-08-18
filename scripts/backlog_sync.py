@@ -157,6 +157,8 @@ def task_body(task: dict, key: str, feature: dict, feature_number: int | None) -
         "",
         "### Done when",
         "- [ ] Implemented and covered by tests",
+        "- [ ] `docs/architecture/overview.md` and `domain-model.md` updated if this "
+        "changes a component boundary, data flow or business rule (see CLAUDE.md)",
         "- [ ] Lint, type check and the full suite pass in CI",
         "- [ ] Merged via a pull request that closes this issue",
     ])
