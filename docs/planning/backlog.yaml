@@ -1,0 +1,901 @@
+# Source of truth for the AI Budget Agent delivery backlog.
+#
+# This file — not GitHub — is authoritative. `scripts/backlog_sync.py` pushes it
+# idempotently into GitHub milestones, issues, labels and the Projects v2 board.
+# To change the plan: edit this file, commit, re-run the sync.
+#
+# Hierarchy: epic -> feature -> task.
+#   epic    -> a GitHub milestone AND a tracking issue (label: epic)
+#   feature -> an issue (label: feature), listed in its epic's task-list
+#   task    -> an issue (label: task), listed in its feature's task-list
+#
+# `tasks:` is only populated for epics that have been groomed. Ungroomed epics
+# carry features only and are decomposed just before work on them starts, so the
+# decomposition reflects the codebase as it actually is at that moment.
+
+project:
+  name: AI Budget Agent
+  repo: phase1912/budget-planner
+  brd: docs/requirements/ai-budget-agent-brd-v1.1.md
+
+labels:
+  - {name: epic,       color: "5319E7", description: "Tracking issue for an epic"}
+  - {name: feature,    color: "1D76DB", description: "A user-visible capability inside an epic"}
+  - {name: task,       color: "0E8A16", description: "An implementable unit of work"}
+  - {name: backend,    color: "B60205", description: "FastAPI / Python side"}
+  - {name: frontend,   color: "FBCA04", description: "React / MobX side"}
+  - {name: database,   color: "5B4C3B", description: "Schema, migrations, queries"}
+  - {name: ai,         color: "D93F0B", description: "Claude API, extraction, classification, advice"}
+  - {name: infra,      color: "C2E0C6", description: "Tooling, CI, environments, deployment"}
+  - {name: security,   color: "000000", description: "Security, privacy, access control"}
+  - {name: testing,    color: "BFDADC", description: "Test harness and acceptance coverage"}
+  - {name: needs-grooming, color: "E99695", description: "Not yet decomposed into tasks"}
+
+epics:
+
+  - key: E0
+    title: Foundation & Delivery Platform
+    br: []
+    groomed: true
+    summary: >
+      Everything required before a single business requirement can be implemented:
+      repository layout, both runtimes, the database and migration baseline, the local
+      development environment, CI, and a BDD harness that executes the BRD's Gherkin
+      scenarios directly.
+    features:
+
+      - key: F0.1
+        title: Repository layout and language tooling
+        labels: [infra]
+        intent: >
+          A contributor can clone the repository and get a lint-clean, type-checked
+          workspace for both the Python and the TypeScript side with one documented command.
+        tasks:
+          - title: Establish the repository layout (backend, frontend, infra, docs, scripts)
+            labels: [infra]
+            detail: >
+              Create the top-level directories with placeholder READMEs describing what belongs
+              in each. Document the boundary rule: no import may cross from frontend to backend
+              except through the generated OpenAPI client.
+          - title: Set up the Python project with uv and pyproject.toml
+            labels: [backend, infra]
+            detail: >
+              Python 3.12, uv-managed lockfile, dependency groups for runtime vs dev.
+              Pin FastAPI, SQLAlchemy 2.x, Alembic, pydantic-settings, anthropic.
+          - title: Configure ruff, mypy and pre-commit for the backend
+            labels: [backend, infra]
+            detail: >
+              ruff for lint and format, mypy in strict mode for app code. pre-commit runs both
+              plus trailing-whitespace and end-of-file fixers. CI must run the same versions.
+          - title: Add EditorConfig, license and contribution conventions
+            labels: [infra]
+            detail: >
+              .editorconfig covering both languages, LICENSE, and a CONTRIBUTING.md that states
+              the branch naming and commit message conventions used by the ticket workflow.
+
+      - key: F0.2
+        title: FastAPI application skeleton
+        labels: [backend]
+        intent: >
+          A running API process exists with configuration, health reporting, a uniform error
+          envelope and a published OpenAPI schema, so feature work only adds routers.
+        tasks:
+          - title: Application factory and router registration
+            labels: [backend]
+            detail: >
+              create_app() assembling middleware, exception handlers and routers. Routers are
+              registered from a single module so feature epics add one line, not wiring.
+          - title: Configuration module using pydantic-settings
+            labels: [backend, infra]
+            detail: >
+              Typed settings with env-var layering and fail-fast validation on boot. No direct
+              os.environ reads anywhere else in the codebase.
+          - title: Health and version endpoints
+            labels: [backend]
+            detail: >
+              GET /health returning liveness plus database reachability, and GET /version
+              returning build SHA and parser version (the latter is required by BRD A15).
+          - title: Uniform error envelope and global exception handlers
+            labels: [backend]
+            detail: >
+              RFC 7807 problem+json responses. Validation, not-found, permission and internal
+              errors each map to a stable machine-readable code that the client can branch on.
+              BRD A2 and B6 both require reasons to be returned, not just status codes.
+
+      - key: F0.3
+        title: PostgreSQL, SQLAlchemy and Alembic baseline
+        labels: [database]
+        intent: >
+          The persistence layer is established with async sessions, migration tooling and
+          model conventions, so entities from the BRD data model can be added incrementally.
+        tasks:
+          - title: Async SQLAlchemy engine and request-scoped session dependency
+            labels: [backend, database]
+            detail: >
+              Async engine with a pool sized from settings, and a FastAPI dependency yielding a
+              session per request with commit-on-success and rollback-on-exception semantics.
+          - title: Initialise Alembic with the async migration template
+            labels: [database]
+            detail: >
+              Alembic configured against the same settings object, autogenerate enabled, and a
+              documented policy that every schema change ships as a reviewed migration.
+          - title: Declarative base and model conventions
+            labels: [database]
+            detail: >
+              UUID primary keys, created_at/updated_at on every table, and an explicit constraint
+              naming convention so autogenerated migrations are deterministic.
+          - title: Baseline migration enabling required PostgreSQL extensions
+            labels: [database]
+            detail: >
+              Enable pgcrypto (needed for encryption at rest under BRD N1) and any UUID support
+              the chosen generation strategy requires.
+
+      - key: F0.4
+        title: Local development environment
+        labels: [infra]
+        intent: >
+          A developer can bring up the full stack — API, client, PostgreSQL and S3-compatible
+          object storage — locally with one command.
+        tasks:
+          - title: Docker Compose stack with PostgreSQL and MinIO
+            labels: [infra]
+            detail: >
+              Compose file with pinned images, named volumes, health checks, and a bootstrap step
+              creating the receipts bucket. MinIO stands in for production object storage.
+          - title: Task runner targets for the common workflows
+            labels: [infra]
+            detail: >
+              up, down, migrate, seed, test, lint, typecheck. Both languages behind the same
+              interface so nobody memorises two toolchains.
+          - title: Seed script for local sample data
+            labels: [infra, database]
+            detail: >
+              Creates a demo user with a handful of receipts spanning two months, enough to
+              exercise the monthly-budget and statistics epics without uploading photos.
+          - title: Quickstart section in the README
+            labels: [infra]
+            detail: >
+              Clone-to-running instructions, prerequisites with versions, and how to obtain and
+              configure the Claude API key.
+
+      - key: F0.5
+        title: Continuous integration
+        labels: [infra]
+        intent: >
+          Every pull request is automatically linted, type-checked and tested on both sides,
+          and schema drift is caught before merge.
+        tasks:
+          - title: Backend CI workflow
+            labels: [infra, backend]
+            detail: >
+              GitHub Actions job running ruff, mypy and pytest against a service-container
+              PostgreSQL, with dependency caching keyed on the uv lockfile.
+          - title: Frontend CI workflow
+            labels: [infra, frontend]
+            detail: >
+              ESLint, tsc --noEmit, Vitest and a production build, so type or build breakage
+              cannot reach the default branch.
+          - title: Migration drift check
+            labels: [infra, database]
+            detail: >
+              CI job asserting that alembic autogenerate against the models produces an empty
+              diff, catching model changes that shipped without a migration.
+          - title: Pull request template and CODEOWNERS
+            labels: [infra]
+            detail: >
+              PR template linking back to the closing issue and listing the BRD requirement IDs
+              the change satisfies, so traceability from BRD to commit is mechanical.
+
+      - key: F0.6
+        title: BDD acceptance harness
+        labels: [testing]
+        intent: >
+          The Gherkin scenarios already written in the BRD execute as the automated acceptance
+          suite, so acceptance criteria and regression tests are the same artefact.
+        tasks:
+          - title: pytest foundation with async support and isolated test database
+            labels: [testing, backend]
+            detail: >
+              pytest-asyncio, a per-run test database created from migrations, and transactional
+              rollback between tests for isolation.
+          - title: Extract the BRD Gherkin into executable .feature files
+            labels: [testing]
+            detail: >
+              Move the scenarios from BRD sections BR-1 through BR-6 into tests/features/, one
+              file per business requirement, preserving the wording verbatim so the documents
+              stay comparable. Steps are stubbed as skipped until their epic is implemented.
+          - title: Test data factories
+            labels: [testing]
+            detail: >
+              Factories for user, receipt, line item and category so scenarios read as business
+              language rather than ORM setup.
+          - title: Coverage reporting and BRD traceability report
+            labels: [testing]
+            detail: >
+              Coverage gate in CI, plus a generated report mapping each BRD requirement ID
+              (A1-A15, B1-B9, C1-C7, D1-D7, E1-E6, F1-F9, N1-N6) to the tests covering it.
+
+      - key: F0.7
+        title: Configuration, secrets and environments
+        labels: [infra, security]
+        intent: >
+          Configuration and secrets are handled consistently across local, CI and deployed
+          environments, with no credential ever committed.
+        tasks:
+          - title: Document the settings surface and provide .env.example
+            labels: [infra]
+            detail: >
+              Every setting listed with purpose, default and whether it is required, including
+              the thresholds BRD section 10 defers to design time.
+          - title: Secret handling for CI and deployment
+            labels: [infra, security]
+            detail: >
+              GitHub Actions secrets for the Claude API key and database credentials, with a
+              documented rotation procedure and secret scanning enabled on the repository.
+          - title: Environment matrix definition
+            labels: [infra]
+            detail: >
+              Define local, staging and production: what differs, which is authoritative for
+              data, and which AI model tier each uses.
+
+  - key: E1
+    title: Identity & Account
+    br: [N2]
+    groomed: true
+    summary: >
+      Every BRD scenario begins with "Given the user is logged in", and N2 forbids one user's
+      data from reaching another. This epic establishes authentication, session handling, the
+      user profile fields from the BRD data model, and the scoping guarantee that all later
+      epics depend on.
+    features:
+
+      - key: F1.1
+        title: Registration and login
+        labels: [backend, security]
+        intent: >
+          A person can create an account with an email and password and authenticate with it.
+        tasks:
+          - title: User table migration and SQLAlchemy model
+            labels: [database]
+            detail: >
+              Implements the User entity from BRD section 9: user_id, email, password_hash,
+              currency, budget_limit. The goal relationship is added by epic E8; currency and
+              budget_limit land here because they are account-level settings.
+          - title: Password hashing and strength policy
+            labels: [backend, security]
+            detail: >
+              Argon2id with documented parameters, a minimum-length policy, and a check against
+              a common-password list. Hashing cost must be configurable per environment so tests
+              stay fast without weakening production.
+          - title: POST /auth/register endpoint
+            labels: [backend]
+            detail: >
+              Validates the payload, rejects duplicate emails without revealing whether an
+              address is registered, and returns the created account with a session.
+          - title: POST /auth/login endpoint
+            labels: [backend]
+            detail: >
+              Constant-time credential verification, a uniform error for both unknown email and
+              wrong password, and throttling on repeated failures.
+          - title: Acceptance tests for registration and login
+            labels: [testing]
+            detail: >
+              Covers the happy path, duplicate registration, wrong password, and the guarantee
+              that responses do not leak account existence.
+
+      - key: F1.2
+        title: Session and token management
+        labels: [backend, security]
+        intent: >
+          An authenticated session persists across requests, can be refreshed, and can be
+          revoked on logout.
+        tasks:
+          - title: Access token issuance
+            labels: [backend, security]
+            detail: >
+              Short-lived JWT carrying the user id and issued-at, signed with a key from
+              settings. Claims kept minimal — no financial data in the token.
+          - title: Refresh token storage and rotation
+            labels: [backend, security, database]
+            detail: >
+              Server-side refresh tokens with rotation on use and reuse detection that revokes
+              the whole family, so a stolen refresh token cannot be replayed.
+          - title: Refresh and logout endpoints
+            labels: [backend]
+            detail: >
+              POST /auth/refresh exchanging a valid refresh token, POST /auth/logout revoking
+              the current session.
+          - title: Current-user dependency
+            labels: [backend]
+            detail: >
+              A FastAPI dependency resolving the authenticated user, returning 401 with the
+              standard error envelope when absent or expired. This is the single entry point
+              every protected route uses.
+
+      - key: F1.3
+        title: Per-user data scoping guarantee
+        labels: [security, backend]
+        intent: >
+          Satisfies BRD N2 structurally rather than by convention: it must be difficult to
+          write a query that returns another user's data.
+        tasks:
+          - title: Request-scoped user context
+            labels: [backend]
+            detail: >
+              The authenticated user id is available to the persistence layer for the duration
+              of the request without being threaded manually through every function signature.
+          - title: Ownership-enforcing repository base class
+            labels: [backend, database]
+            detail: >
+              A base repository that applies the user_id filter automatically for all
+              user-owned entities. Bypassing it requires an explicit, greppable escape hatch.
+          - title: Cross-user access test suite
+            labels: [testing, security]
+            detail: >
+              For every user-owned resource, assert that user B receives 404 rather than 403
+              for user A's records, so existence is not disclosed. This suite is extended by
+              each later epic that introduces a new owned entity.
+
+      - key: F1.4
+        title: User profile and preferences
+        labels: [backend, frontend]
+        intent: >
+          A user can set the account currency and an optional monthly budget limit, which
+          BRD D7 uses to express spend as a percentage of target.
+        tasks:
+          - title: GET and PATCH /me endpoints
+            labels: [backend]
+            detail: >
+              Read and partially update the profile. Changing budget_limit must not retroactively
+              rewrite finalised monthly snapshots — it affects presentation only.
+          - title: Currency validation and the single-currency assumption
+            labels: [backend]
+            detail: >
+              ISO 4217 validation, and an explicit guard rejecting a currency change once
+              receipts exist, since BRD section 4.2 puts conversion out of scope.
+          - title: Profile screen
+            labels: [frontend]
+            detail: >
+              Displays and edits currency and monthly budget limit, backed by a MobX store
+              following the conventions set in epic E9.
+
+  - key: E2
+    title: Receipt Ingestion & Storage
+    br: [BR-1]
+    groomed: false
+    summary: >
+      Accepting receipt photos: format validation, the two upload modes with their photo-count
+      and size limits, durable encrypted storage of the originals, and asynchronous processing
+      status. Covers BRD A1 through A8 and the storage half of A12.
+    features:
+      - key: F2.1
+        title: Upload endpoint and file format validation
+        labels: [backend]
+        requirements: [A1, A2]
+        intent: >
+          Submitted files are validated as JPEG, PNG, HEIC or PDF-scan by content inspection
+          rather than by extension, and rejections state the accepted formats.
+      - key: F2.2
+        title: Single-receipt upload mode
+        labels: [backend]
+        requirements: [A3, A4, A7, A8]
+        intent: >
+          One receipt captured across up to 10 photos totalling at most 50 MB, with limit
+          violations rejected and explained.
+      - key: F2.3
+        title: Multiple-receipts upload mode
+        labels: [backend]
+        requirements: [A3, A5, A6, A7, A8]
+        intent: >
+          Several distinct receipts in one session, one upload line each, with the 10-photo and
+          50 MB limits applied independently per line so one bad line cannot fail the others.
+      - key: F2.4
+        title: Encrypted object storage for receipt images
+        labels: [backend, security]
+        requirements: [A12, N1]
+        intent: >
+          Original images are stored in object storage encrypted at rest, referenced from the
+          receipt record, and retrievable only by their owner via time-limited URLs.
+      - key: F2.5
+        title: Asynchronous ingestion pipeline and status tracking
+        labels: [backend]
+        requirements: [N4]
+        intent: >
+          Upload returns immediately with a tracking handle while parsing proceeds in the
+          background, so the 10-second target of N4 is a processing budget rather than a
+          request timeout.
+      - key: F2.6
+        title: Upload user interface
+        labels: [frontend]
+        requirements: [A3, A4, A5, A6, A7, A8]
+        intent: >
+          Mode selection, adding upload lines, per-line photo previews, and client-side limit
+          feedback before bytes are sent.
+
+  - key: E3
+    title: Receipt Parsing & Extraction
+    br: [BR-1]
+    groomed: false
+    summary: >
+      Turning a validated photo into a structured receipt: field extraction, confidence
+      handling, manual-review flagging, duplicate detection and persistence with provenance.
+      Covers BRD A9 through A15.
+    features:
+      - key: F3.1
+        title: Vision extraction provider integration
+        labels: [ai, backend]
+        requirements: [A9]
+        intent: >
+          A versioned, testable adapter over the Claude vision API that turns receipt images
+          into structured output, with the prompt and schema under source control.
+      - key: F3.2
+        title: Extraction schema and validation
+        labels: [ai, backend]
+        requirements: [A9]
+        intent: >
+          Merchant, transaction date, transaction time, line items (name, quantity, unit price,
+          total price) and total amount, validated for internal arithmetic consistency.
+      - key: F3.3
+        title: Confidence scoring and low-confidence flagging
+        labels: [ai, backend]
+        requirements: [A10]
+        intent: >
+          Per-field confidence recorded, and fields below threshold marked "low confidence" and
+          surfaced for confirmation instead of being silently accepted.
+      - key: F3.4
+        title: Manual-review status for missing critical fields
+        labels: [backend]
+        requirements: [A11]
+        intent: >
+          A receipt without an extractable total or date is marked "requires manual review" and
+          excluded from all automated budget calculation until a human resolves it.
+      - key: F3.5
+        title: Receipt persistence with provenance
+        labels: [database, backend]
+        requirements: [A12, A13, A15]
+        intent: >
+          Header, line items and image reference stored under a unique receipt id, owned by the
+          submitting account, stamped with processing time and parser version.
+      - key: F3.6
+        title: Duplicate receipt detection
+        labels: [backend]
+        requirements: [A14]
+        intent: >
+          A receipt matching an existing one on merchant, date and total prompts the user to
+          confirm before storing, rather than being silently accepted or silently dropped.
+      - key: F3.7
+        title: Receipt review and correction interface
+        labels: [frontend]
+        requirements: [A10, A11, A14]
+        intent: >
+          Side-by-side original photo and extracted data, with low-confidence fields highlighted
+          for confirmation and the manual-review queue reachable in one click.
+
+  - key: E4
+    title: Multi-Photo Position Matching
+    br: [BR-2]
+    groomed: false
+    summary: >
+      Recognising that a line item appearing on two overlapping photos of one long receipt is
+      the same purchase, so it is counted once — while never collapsing genuinely repeated
+      purchases made on different receipts. Covers BRD B1 through B9.
+    features:
+      - key: F4.1
+        title: Independent per-photo extraction for comparison
+        labels: [ai, backend]
+        requirements: [B1]
+        intent: >
+          Each photo is parsed on its own before any comparison, so a match decision is never
+          an artefact of parsing the two images together.
+      - key: F4.2
+        title: Position comparison rules
+        labels: [backend]
+        requirements: [B2, B3, B4]
+        intent: >
+          Item name, unit price, quantity and total price must all match exactly for a pair to
+          be "same position"; any difference makes it "different position".
+      - key: F4.3
+        title: Same-receipt scoping guard
+        labels: [backend]
+        requirements: [B5, B9]
+        intent: >
+          Comparison runs only between photos of one physical receipt. Identical items on two
+          distinct transactions are two purchases, never a duplicate — this is the requirement
+          most likely to be violated by a naive deduplication implementation.
+      - key: F4.4
+        title: Comparison failure handling
+        labels: [backend]
+        requirements: [B6]
+        intent: >
+          If either photo failed to parse, return "comparison not possible" with the reason
+          instead of guessing.
+      - key: F4.5
+        title: Manual override and correction capture
+        labels: [backend, database]
+        requirements: [B7, B8]
+        intent: >
+          A user can overturn any automatic determination, and the correction is stored as
+          labelled data for future evaluation and tuning.
+      - key: F4.6
+        title: Deduplicated receipt assembly
+        labels: [backend]
+        requirements: [B3]
+        intent: >
+          Merge the per-photo extractions of one receipt into a single item list where matched
+          positions appear exactly once, and reconcile the result against the printed total.
+      - key: F4.7
+        title: Match review interface
+        labels: [frontend]
+        requirements: [B7]
+        intent: >
+          Show detected overlaps between photos with the evidence, and let the user flip any
+          decision.
+
+  - key: E5
+    title: Spend Categorization
+    br: [BR-3]
+    groomed: false
+    summary: >
+      Classifying every line item into a spending category, with a confidence-gated fallback,
+      user correction that the system learns from, and user-defined categories. Covers BRD C1
+      through C7.
+    features:
+      - key: F5.1
+        title: Default category taxonomy
+        labels: [database, backend]
+        requirements: [C1, C2]
+        intent: >
+          Seeded default categories (Groceries, Dining, Transport, Utilities, Health,
+          Entertainment, Other) plus a guaranteed Uncategorized fallback, modelled so custom
+          user categories coexist with defaults.
+      - key: F5.2
+        title: Automatic item categorization
+        labels: [ai, backend]
+        requirements: [C1]
+        intent: >
+          Each parsed line item receives a category and a recorded confidence score.
+      - key: F5.3
+        title: Confidence threshold and Uncategorized fallback
+        labels: [ai, backend]
+        requirements: [C2, C3]
+        intent: >
+          Below-threshold classifications become Uncategorized and are flagged for review
+          rather than guessed at.
+      - key: F5.4
+        title: Manual category reassignment
+        labels: [backend, frontend]
+        requirements: [C4]
+        intent: >
+          Any line item's category can be changed by its owner, and the override is recorded
+          as manual so later automatic passes do not overwrite it.
+      - key: F5.5
+        title: Learning from corrections
+        labels: [ai, backend]
+        requirements: [C5]
+        intent: >
+          A correction creates a rule applying to future items with the same or highly similar
+          name from the same merchant, which requires a defined similarity measure and a
+          precedence order against automatic classification.
+      - key: F5.6
+        title: User-defined custom categories
+        labels: [backend, frontend]
+        requirements: [C6, C7]
+        intent: >
+          Users can create their own categories, immediately available for both manual and
+          automatic assignment, including the behaviour when a category in use is renamed or
+          deleted.
+      - key: F5.7
+        title: Categorization review interface
+        labels: [frontend]
+        requirements: [C3, C4, C6]
+        intent: >
+          A review queue for flagged items and inline category editing wherever line items are
+          displayed.
+
+  - key: E6
+    title: Monthly Budget Calculation
+    br: [BR-4]
+    groomed: false
+    summary: >
+      Aggregating receipts into monthly totals by transaction date, distinguishing a
+      month-to-date figure from a finalised one, excluding flagged receipts transparently, and
+      recalculating when history changes. Covers BRD D1 through D7.
+    features:
+      - key: F6.1
+        title: Monthly aggregation engine
+        labels: [backend, database]
+        requirements: [D1, D2]
+        intent: >
+          Sum line-item totals across all receipts whose transaction date — not upload date —
+          falls in the month, which makes back-dated uploads behave correctly.
+      - key: F6.2
+        title: Transparent exclusion of receipts under review
+        labels: [backend]
+        requirements: [D3]
+        intent: >
+          Receipts marked "requires manual review" are excluded from the total, and the summary
+          states how many were excluded and their value, so the number is never quietly wrong.
+      - key: F6.3
+        title: Month-to-date versus finalised presentation
+        labels: [backend, frontend]
+        requirements: [D4]
+        intent: >
+          An in-progress month is labelled incomplete wherever it appears, so a partial figure
+          is never mistaken for a full one.
+      - key: F6.4
+        title: Monthly snapshot generation
+        labels: [backend, database]
+        requirements: [D5]
+        intent: >
+          When a month completes, persist a finalised snapshot (the MonthlySnapshot entity),
+          including how the transition is triggered across user time zones.
+      - key: F6.5
+        title: Recalculation on receipt change
+        labels: [backend]
+        requirements: [D6, N3]
+        intent: >
+          Adding, editing or deleting a receipt in a closed month recalculates and updates the
+          stored snapshot, with the recalculation reflected in the same session.
+      - key: F6.6
+        title: Budget limit and percentage of target
+        labels: [backend]
+        requirements: [D7]
+        intent: >
+          Where a monthly limit is set, express current spend as a percentage of it, including
+          the over-100% case.
+      - key: F6.7
+        title: Budget dashboard
+        labels: [frontend]
+        requirements: [D1, D4, D7]
+        intent: >
+          The landing view: current month-to-date spend, progress against limit, excluded-receipt
+          notice, and month switching.
+
+  - key: E7
+    title: Statistics, Comparison & Export
+    br: [BR-5]
+    groomed: false
+    summary: >
+      Category-level insight over arbitrary date ranges, period-over-period comparison, honest
+      empty states, chart-ready output, and data export. Covers BRD E1 through E6 and N6.
+    features:
+      - key: F7.1
+        title: Category statistics engine
+        labels: [backend, database]
+        requirements: [E1, E4]
+        intent: >
+          Total spend, share of overall spend and transaction count per category, ranked from
+          highest to lowest by default.
+      - key: F7.2
+        title: Arbitrary date-range support
+        labels: [backend]
+        requirements: [E2]
+        intent: >
+          Statistics for any start and end date, not only calendar months, with inclusive
+          boundary semantics defined once and applied everywhere.
+      - key: F7.3
+        title: Period-over-period comparison
+        labels: [backend]
+        requirements: [E3]
+        intent: >
+          Absolute and percentage change per category between two periods, including categories
+          present in only one of them and the division-by-zero case.
+      - key: F7.4
+        title: Empty-period handling
+        labels: [backend]
+        requirements: [E5]
+        intent: >
+          A range with no receipts returns an explicit "no data" result rather than a
+          zero-filled report that reads like real information.
+      - key: F7.5
+        title: Chart-ready output
+        labels: [backend]
+        requirements: [E6]
+        intent: >
+          A response shape the client can render directly, so presentation logic does not
+          re-derive aggregates.
+      - key: F7.6
+        title: Data export
+        labels: [backend]
+        requirements: [N6]
+        intent: >
+          CSV and JSON export of the user's receipts, line items and statistics, generated
+          asynchronously for large histories.
+      - key: F7.7
+        title: Statistics and charts interface
+        labels: [frontend]
+        requirements: [E1, E3, E6]
+        intent: >
+          Ranked category breakdown, range picker, comparison view and the export action.
+
+  - key: E8
+    title: Goals & AI Optimization Advice
+    br: [BR-6]
+    groomed: false
+    summary: >
+      The product's differentiator: a user states a financial or lifestyle goal and receives
+      specific, evidence-based, quantified recommendations tied to their own purchase history,
+      with proactive warnings and a feedback loop. Covers BRD F1 through F9.
+    features:
+      - key: F8.1
+        title: Goal definition and storage
+        labels: [backend, database]
+        requirements: [F1]
+        intent: >
+          Model both financial goals (savings target, category reduction, overall ceiling) and
+          lifestyle goals (lose weight, save for a car) in one schema without collapsing the
+          distinction that F9 depends on.
+      - key: F8.2
+        title: Lifestyle goal to spending mapping
+        labels: [ai, backend]
+        requirements: [F9]
+        intent: >
+          Translate a non-financial goal into the relevant categories and recurring items
+          before any advice is generated, since the rest of the pipeline reasons over spend.
+      - key: F8.3
+        title: Spend analysis for advice
+        labels: [backend]
+        requirements: [F2]
+        intent: >
+          Identify highest-spend categories, largest recent increases, and recurring positions
+          most relevant to the stated goal — the evidence every recommendation must cite.
+      - key: F8.4
+        title: Recommendation generation
+        labels: [ai, backend]
+        requirements: [F3]
+        intent: >
+          Produce specific, actionable recommendations naming a category or an individual
+          recurring item. Constraint 11.3 rules out generic financial tips, so genericness is
+          a defect to be tested for, not a style preference.
+      - key: F8.5
+        title: Projected impact quantification
+        labels: [backend]
+        requirements: [F4]
+        intent: >
+          Every recommendation states its expected effect on the goal, computed from the
+          user's actual history rather than asserted by the model.
+      - key: F8.6
+        title: Insufficient-data guard
+        labels: [backend]
+        requirements: [F5]
+        intent: >
+          Below a configured minimum of history, say more data is needed instead of emitting a
+          low-confidence recommendation.
+      - key: F8.7
+        title: On-track progress reporting
+        labels: [backend]
+        requirements: [F6]
+        intent: >
+          When pace meets the goal, report positive progress and explicitly suppress
+          unnecessary cuts.
+      - key: F8.8
+        title: Proactive at-risk warnings
+        labels: [backend]
+        requirements: [F7]
+        intent: >
+          Detect mid-month that projected spend will miss the goal and surface a warning with at
+          least one corrective recommendation before the month ends — this requires scheduled
+          evaluation and a delivery channel, not just a request handler.
+      - key: F8.9
+        title: Recommendation feedback loop
+        labels: [backend, ai]
+        requirements: [F8]
+        intent: >
+          Capture "not followed" and "not helpful" feedback and deprioritise similar
+          recommendations in later generations.
+      - key: F8.10
+        title: Goals and advice interface
+        labels: [frontend]
+        requirements: [F1, F3, F6, F7, F8]
+        intent: >
+          Goal setup, progress display, the advice feed with projected impact, and the feedback
+          controls that make F8 possible.
+
+  - key: E9
+    title: Web Client Foundation
+    br: []
+    groomed: false
+    summary: >
+      The React and MobX groundwork every feature screen builds on. Deliberately separated so
+      that state, API access and layout conventions are decided once rather than reinvented in
+      each feature epic.
+    features:
+      - key: F9.1
+        title: React, Vite and TypeScript project setup
+        labels: [frontend, infra]
+        intent: >
+          Strict TypeScript, path aliases, ESLint and Prettier matching the backend's rigour,
+          and Vitest with React Testing Library.
+      - key: F9.2
+        title: MobX store architecture and conventions
+        labels: [frontend]
+        intent: >
+          Root store composition, dependency injection into components, the rule for what is
+          observable versus derived, and async action conventions. Written down as a short
+          guide, because this is the decision later epics will otherwise each make differently.
+      - key: F9.3
+        title: Generated API client from OpenAPI
+        labels: [frontend, infra]
+        intent: >
+          TypeScript types and client generated from the FastAPI schema in CI, so a backend
+          contract change breaks the frontend build rather than production.
+      - key: F9.4
+        title: Routing, layout shell and navigation
+        labels: [frontend]
+        intent: >
+          Route table with authenticated and public segments, application shell, and the
+          redirect behaviour for expired sessions.
+      - key: F9.5
+        title: Authentication flows
+        labels: [frontend]
+        intent: >
+          Login, registration and logout screens, token storage, and transparent refresh on
+          401 without losing the user's in-flight action.
+      - key: F9.6
+        title: Component primitives and design tokens
+        labels: [frontend]
+        intent: >
+          Buttons, forms, tables, modals, currency and date formatting bound to the account
+          currency, and the token set they draw from.
+      - key: F9.7
+        title: Loading, empty and error state conventions
+        labels: [frontend]
+        intent: >
+          One documented treatment for each, so the honest empty states E5 and F5 require are
+          consistent rather than per-screen improvisations.
+
+  - key: E10
+    title: Security, Privacy & Observability
+    br: [N1, N2, N3, N5]
+    groomed: false
+    summary: >
+      The cross-cutting non-functional requirements from BRD section 8 and the constraints in
+      section 11, given their own epic so they are scheduled work rather than assumed work.
+    features:
+      - key: F10.1
+        title: Encryption at rest for images and extracted data
+        labels: [security, database]
+        requirements: [N1]
+        intent: >
+          Receipt images and the extracted financial fields are encrypted at rest, with a
+          documented key management and rotation approach.
+      - key: F10.2
+        title: Access control verification
+        labels: [security, testing]
+        requirements: [N2]
+        intent: >
+          An automated suite covering every user-owned endpoint, extending the base suite from
+          F1.3 as each epic adds resources.
+      - key: F10.3
+        title: Receipt deletion and cascade
+        labels: [backend]
+        requirements: [N3]
+        intent: >
+          Deleting a receipt removes it from budget and statistics results within the same
+          session, including its effect on any finalised snapshot.
+      - key: F10.4
+        title: Classification decision audit log
+        labels: [backend, database]
+        requirements: [N5]
+        intent: >
+          Every automatic category assignment and position-match decision logged with its
+          confidence score, supporting both auditing and the tuning that C5 and B8 imply.
+      - key: F10.5
+        title: Structured logging, metrics and tracing
+        labels: [infra, backend]
+        intent: >
+          Correlated request logging with financial values redacted, plus the latency metrics
+          needed to prove the N4 target is met.
+      - key: F10.6
+        title: Rate limiting and abuse protection
+        labels: [security, backend]
+        intent: >
+          Upload and AI-backed endpoints are the expensive ones; limit them per account and
+          define the behaviour when a limit is hit.
+      - key: F10.7
+        title: Account deletion and full data export
+        labels: [security, backend]
+        requirements: [N6]
+        intent: >
+          A user can export everything held about them and delete their account with all
+          receipts and images, which section 11 makes a compliance expectation.
