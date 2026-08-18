@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-11 epics · 78 features · 43 tasks written so far.
+11 epics · 78 features · 54 tasks written so far.
 
 | Epic | Title | BRD | Features | Groomed |
 |---|---|---|---|---|
@@ -16,7 +16,7 @@
 | E6 | Monthly Budget Calculation | BR-4 | 7 | no |
 | E7 | Statistics, Comparison & Export | BR-5 | 7 | no |
 | E8 | Goals & AI Optimization Advice | BR-6 | 10 | no |
-| E9 | Web Client Foundation | — | 7 | no |
+| E9 | Web Client Foundation | — | 7 | yes |
 | E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 7 | no |
 
 ---
@@ -536,7 +536,7 @@ Goal setup, progress display, the advice feed with projected impact, and the fee
 
 **BRD sections:** —
 
-The React and MobX groundwork every feature screen builds on. Deliberately separated so that state, API access and layout conventions are decided once rather than reinvented in each feature epic.
+The React and MobX groundwork every feature screen builds on. Deliberately separated so that state, API access and layout conventions are decided once rather than reinvented in each feature epic. F9.1, F9.2 and F9.6 are groomed first because nothing else in this epic can start without a scaffolded project, a store convention and a token set to build against; F9.3–F9.5 and F9.7 stay undecomposed until picked up (see each feature's intent).
 
 ### F9.1 — React, Vite and TypeScript project setup
 
@@ -544,29 +544,38 @@ The React and MobX groundwork every feature screen builds on. Deliberately separ
 
 Strict TypeScript, path aliases, ESLint and Prettier matching the backend's rigour, and Vitest with React Testing Library.
 
+- **F9.1.1** Scaffold the Vite + React + TypeScript project — Vite's react-ts template under frontend/, strict TypeScript (mirrors the backend's mypy --strict) with no implicit any, and a `@/` path alias resolved consistently in both tsconfig.json and vite.config.ts.
+- **F9.1.2** ESLint and Prettier matching backend lint rigour — Flat ESLint config with typescript-eslint strict rules, react-hooks, and jsx-a11y (enforces the semantic-HTML convention below). Prettier for formatting. Both wired into the repository's pre-commit alongside ruff and mypy.
+- **F9.1.3** Vitest and React Testing Library harness — Vitest with the jsdom environment, RTL plus jest-dom matchers, and a `test` script. A smoke test rendering App proves the harness runs in CI (F0.5).
+- **F9.1.4** Establish the src/ folder structure — src/pages, src/components (feature-scoped), src/shared/components, src/shared/styles, src/stores, src/api and src/routes, documented in frontend/README.md with the rule for shared/ versus feature-local: a component or style used by more than one feature, with no feature-specific business logic, belongs in shared/.
+
 ### F9.2 — MobX store architecture and conventions
 
 *Requirements: —*
 
 Root store composition, dependency injection into components, the rule for what is observable versus derived, and async action conventions. Written down as a short guide, because this is the decision later epics will otherwise each make differently.
 
+- **F9.2.1** Root store composition and context injection — A single RootStore instantiated once and provided through a React context with a useStores() hook. No component or feature store reaches for another store via a direct import — DIP applies to frontend state the same way it applies to the backend's ports.
+- **F9.2.2** Observable-vs-derived and async-action conventions — Document when a field is `observable` versus a computed `get`, and the idle/loading/success/error status-flag shape every async action follows, so a reader recognises the pattern in any store without re-deriving it.
+- **F9.2.3** ThemeStore for light/dark mode — Persists the theme preference to localStorage, defaults to the OS prefers-color-scheme, and toggles the `.dark` class the color tokens (F9.6) key off — same responsibility as budget-checker's ThemeStore.
+
 ### F9.3 — Generated API client from OpenAPI
 
 *Requirements: —*
 
-TypeScript types and client generated from the FastAPI schema in CI, so a backend contract change breaks the frontend build rather than production.
+TypeScript types and client generated from the FastAPI schema in CI, so a backend contract change breaks the frontend build rather than production. Not yet groomed into tasks: the codegen tool and where the generated client lives are decided once F0.2's OpenAPI schema is stable, not guessed at now.
 
 ### F9.4 — Routing, layout shell and navigation
 
 *Requirements: —*
 
-Route table with authenticated and public segments, application shell, and the redirect behaviour for expired sessions.
+Route table with authenticated and public segments, application shell, and the redirect behaviour for expired sessions. Not yet groomed into tasks: the route table and auth-guard shape depend on F1's session model existing first.
 
 ### F9.5 — Authentication flows
 
 *Requirements: —*
 
-Login, registration and logout screens, token storage, and transparent refresh on 401 without losing the user's in-flight action.
+Login, registration and logout screens, token storage, and transparent refresh on 401 without losing the user's in-flight action. Not yet groomed into tasks: depends on F9.4's route table and F1's auth endpoints existing first.
 
 ### F9.6 — Component primitives and design tokens
 
@@ -574,11 +583,16 @@ Login, registration and logout screens, token storage, and transparent refresh o
 
 Buttons, forms, tables, modals, currency and date formatting bound to the account currency, and the token set they draw from.
 
+- **F9.6.1** Color-token system ported from budget-checker — Tailwind v4 with a `@theme` layer over semantic CSS custom properties (--color-background, --color-primary, etc.) in src/shared/styles/colors.css, light values on :root and dark overrides on .dark. One source of truth per DS-1: components reference tokens (bg-primary, text-foreground), never a raw hex.
+- **F9.6.2** Responsive breakpoint tokens (mobile / tablet / desktop) — Named breakpoint tokens in src/shared/styles/breakpoints.css and a mobile-first convention: base styles target mobile, md:/lg: Tailwind variants layer up tablet and desktop. No shared component ships a fixed pixel width.
+- **F9.6.3** Reusable primitive component library — src/shared/components/ — Button, Input, Select, Modal, Table, Card — each typed, each built only from the tokens above. A feature screen composes these instead of hand-rolling markup for a UI role that already exists.
+- **F9.6.4** Shared layout primitives and style utilities — src/shared/styles/ spacing and typography scale plus layout primitives (Stack, Grid, a responsive Container) reused across breakpoints, so a screen composes layout instead of hand-rolling flexbox per page.
+
 ### F9.7 — Loading, empty and error state conventions
 
 *Requirements: —*
 
-One documented treatment for each, so the honest empty states E5 and F5 require are consistent rather than per-screen improvisations.
+One documented treatment for each, so the honest empty states E5 and F5 require are consistent rather than per-screen improvisations. Not yet groomed into tasks: easiest to standardise once a couple of real feature screens exist to generalise from.
 
 ---
 
