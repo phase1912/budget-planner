@@ -827,11 +827,13 @@ epics:
   - key: E9
     title: Web Client Foundation
     br: []
-    groomed: false
+    groomed: true
     summary: >
       The React and MobX groundwork every feature screen builds on. Deliberately separated so
       that state, API access and layout conventions are decided once rather than reinvented in
-      each feature epic.
+      each feature epic. F9.1, F9.2 and F9.6 are groomed first because nothing else in this
+      epic can start without a scaffolded project, a store convention and a token set to build
+      against; F9.3–F9.5 and F9.7 stay undecomposed until picked up (see each feature's intent).
     features:
       - key: F9.1
         title: React, Vite and TypeScript project setup
@@ -839,6 +841,33 @@ epics:
         intent: >
           Strict TypeScript, path aliases, ESLint and Prettier matching the backend's rigour,
           and Vitest with React Testing Library.
+        tasks:
+          - title: Scaffold the Vite + React + TypeScript project
+            labels: [frontend, infra]
+            detail: >
+              Vite's react-ts template under frontend/, strict TypeScript (mirrors the
+              backend's mypy --strict) with no implicit any, and a `@/` path alias resolved
+              consistently in both tsconfig.json and vite.config.ts.
+          - title: ESLint and Prettier matching backend lint rigour
+            labels: [frontend, infra]
+            detail: >
+              Flat ESLint config with typescript-eslint strict rules, react-hooks, and
+              jsx-a11y (enforces the semantic-HTML convention below). Prettier for formatting.
+              Both wired into the repository's pre-commit alongside ruff and mypy.
+          - title: Vitest and React Testing Library harness
+            labels: [frontend, testing]
+            detail: >
+              Vitest with the jsdom environment, RTL plus jest-dom matchers, and a `test`
+              script. A smoke test rendering App proves the harness runs in CI (F0.5).
+          - title: Establish the src/ folder structure
+            labels: [frontend]
+            detail: >
+              src/pages, src/components (feature-scoped), src/shared/components,
+              src/shared/styles, src/stores, src/api and src/routes, documented in
+              frontend/README.md with the rule for shared/ versus feature-local: a component
+              or style used by more than one feature, with no feature-specific business logic,
+              belongs in shared/.
+
       - key: F9.2
         title: MobX store architecture and conventions
         labels: [frontend]
@@ -846,36 +875,89 @@ epics:
           Root store composition, dependency injection into components, the rule for what is
           observable versus derived, and async action conventions. Written down as a short
           guide, because this is the decision later epics will otherwise each make differently.
+        tasks:
+          - title: Root store composition and context injection
+            labels: [frontend]
+            detail: >
+              A single RootStore instantiated once and provided through a React context with a
+              useStores() hook. No component or feature store reaches for another store via a
+              direct import — DIP applies to frontend state the same way it applies to the
+              backend's ports.
+          - title: Observable-vs-derived and async-action conventions
+            labels: [frontend]
+            detail: >
+              Document when a field is `observable` versus a computed `get`, and the
+              idle/loading/success/error status-flag shape every async action follows, so a
+              reader recognises the pattern in any store without re-deriving it.
+          - title: ThemeStore for light/dark mode
+            labels: [frontend]
+            detail: >
+              Persists the theme preference to localStorage, defaults to the OS
+              prefers-color-scheme, and toggles the `.dark` class the color tokens (F9.6) key
+              off — same responsibility as budget-checker's ThemeStore.
+
       - key: F9.3
         title: Generated API client from OpenAPI
         labels: [frontend, infra]
         intent: >
           TypeScript types and client generated from the FastAPI schema in CI, so a backend
-          contract change breaks the frontend build rather than production.
+          contract change breaks the frontend build rather than production. Not yet groomed
+          into tasks: the codegen tool and where the generated client lives are decided once
+          F0.2's OpenAPI schema is stable, not guessed at now.
       - key: F9.4
         title: Routing, layout shell and navigation
         labels: [frontend]
         intent: >
           Route table with authenticated and public segments, application shell, and the
-          redirect behaviour for expired sessions.
+          redirect behaviour for expired sessions. Not yet groomed into tasks: the route table
+          and auth-guard shape depend on F1's session model existing first.
       - key: F9.5
         title: Authentication flows
         labels: [frontend]
         intent: >
           Login, registration and logout screens, token storage, and transparent refresh on
-          401 without losing the user's in-flight action.
+          401 without losing the user's in-flight action. Not yet groomed into tasks: depends
+          on F9.4's route table and F1's auth endpoints existing first.
       - key: F9.6
         title: Component primitives and design tokens
         labels: [frontend]
         intent: >
           Buttons, forms, tables, modals, currency and date formatting bound to the account
           currency, and the token set they draw from.
+        tasks:
+          - title: Color-token system ported from budget-checker
+            labels: [frontend]
+            detail: >
+              Tailwind v4 with a `@theme` layer over semantic CSS custom properties
+              (--color-background, --color-primary, etc.) in src/shared/styles/colors.css,
+              light values on :root and dark overrides on .dark. One source of truth per DS-1:
+              components reference tokens (bg-primary, text-foreground), never a raw hex.
+          - title: Responsive breakpoint tokens (mobile / tablet / desktop)
+            labels: [frontend]
+            detail: >
+              Named breakpoint tokens in src/shared/styles/breakpoints.css and a mobile-first
+              convention: base styles target mobile, md:/lg: Tailwind variants layer up tablet
+              and desktop. No shared component ships a fixed pixel width.
+          - title: Reusable primitive component library
+            labels: [frontend]
+            detail: >
+              src/shared/components/ — Button, Input, Select, Modal, Table, Card — each typed,
+              each built only from the tokens above. A feature screen composes these instead of
+              hand-rolling markup for a UI role that already exists.
+          - title: Shared layout primitives and style utilities
+            labels: [frontend]
+            detail: >
+              src/shared/styles/ spacing and typography scale plus layout primitives (Stack,
+              Grid, a responsive Container) reused across breakpoints, so a screen composes
+              layout instead of hand-rolling flexbox per page.
+
       - key: F9.7
         title: Loading, empty and error state conventions
         labels: [frontend]
         intent: >
           One documented treatment for each, so the honest empty states E5 and F5 require are
-          consistent rather than per-screen improvisations.
+          consistent rather than per-screen improvisations. Not yet groomed into tasks: easiest
+          to standardise once a couple of real feature screens exist to generalise from.
 
   - key: E10
     title: Security, Privacy & Observability
