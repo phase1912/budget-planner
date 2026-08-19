@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-11 epics · 78 features · 54 tasks written so far.
+11 epics · 78 features · 55 tasks written so far.
 
 | Epic | Title | BRD | Features | Groomed |
 |---|---|---|---|---|
@@ -37,6 +37,7 @@ A contributor can clone the repository and get a lint-clean, type-checked worksp
 - **F0.1.2** Set up the Python project with uv and pyproject.toml — Python 3.12, uv-managed lockfile, dependency groups for runtime vs dev. Pin FastAPI, SQLAlchemy 2.x, Alembic, pydantic-settings, anthropic.
 - **F0.1.3** Configure ruff, mypy and pre-commit for the backend — ruff for lint and format, mypy in strict mode for app code. pre-commit runs both plus trailing-whitespace and end-of-file fixers. CI must run the same versions.
 - **F0.1.4** Add EditorConfig, license and contribution conventions — .editorconfig covering both languages, LICENSE, and a CONTRIBUTING.md that states the branch naming and commit message conventions used by the ticket workflow.
+- **F0.1.5** Support feature-scoped branches and pull requests in the ticket workflow — The ticket-first workflow (working-agreement.md, the task skill, AGENTS.md) only covered one task per branch per pull request. Tasks inside one feature routinely overlap in practice, producing diffs that conflicted across separate branches. Add a feature-scoped mode: when the unit of work is a whole feature rather than one task, use a single feature/<key>-<slug> branch, implement every task under the feature as one consistent pass instead of task-by-task in isolation, and open one pull request whose body closes every task issue under the feature (one `Closes #N` per issue). The single-task workflow is unchanged.
 
 ### F0.2 — FastAPI application skeleton
 

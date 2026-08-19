@@ -33,16 +33,26 @@ write the tasks into `backlog.yaml` under each feature. Set `groomed: true`. Run
 `scripts/backlog_sync.py render && scripts/backlog_sync.py sync`. Commit both the YAML and the
 regenerated markdown.
 
-**2. Work the tasks.** One task, one branch, one pull request:
+**2. Work the tasks.** The unit of work is a task, unless the ask is a whole feature — then
+the unit is the feature, so its tasks land together instead of fighting each other across
+several narrow branches:
 
 ```
-git switch -c task/F1-2-3-refresh-token-rotation
+git switch -c task/F1-2-3-refresh-token-rotation   # one task
+git switch -c feature/F1-2-consent-flow            # a whole feature, all its tasks
 ```
 
-The pull request body names the issue it closes (`Closes #42`) and the BRD requirement IDs it
-satisfies, so tracing a line of code back to a business requirement is mechanical rather than
-archaeological. The `Closes #42` line is not just documentation — it is what both GitHub's
-own issue-closing and the board automation below key off.
+A single-task branch closes one issue through one PR. A feature branch implements every
+task under that feature as one consistent pass — read all their acceptance criteria first,
+reconcile whatever overlaps, and commit as the work naturally divides rather than forcing
+one commit per task — then closes all of their issues through one PR. Never do this for a
+whole epic; an epic is still worked feature by feature.
+
+The pull request body names every issue it closes (`Closes #42`, and one `Closes #N` line
+per additional task issue at feature scope) and the BRD requirement IDs it satisfies, so
+tracing a line of code back to a business requirement is mechanical rather than
+archaeological. The `Closes #N` lines are not just documentation — they are what both
+GitHub's own issue-closing and the board automation below key off, for every issue named.
 
 ### Board columns and how a card moves between them
 
