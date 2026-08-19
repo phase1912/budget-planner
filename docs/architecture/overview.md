@@ -42,6 +42,16 @@ Services depend on ports, not implementations. `ReceiptParser`, `ItemCategoriser
 in by FastAPI `Depends`. This is what allows the BDD acceptance suite to run the real
 business logic against stub implementations with no network access.
 
+### Errors crossing the API boundary
+
+A service or repository that needs to fail the request raises an `app.errors.AppError`
+subclass (`NotFoundError`, `PermissionDeniedError`, ...) rather than returning an HTTP
+status itself — that would violate the service layer's "must not know about HTTP status
+codes" rule above. Global exception handlers, registered once in `create_app()`, turn
+every `AppError`, validation failure, `HTTPException` and unhandled exception into the
+same RFC 7807 problem+json shape, carrying a stable `code` the client can branch on
+(BRD A2, B6). No router builds its own error response.
+
 ## The ingestion pipeline
 
 The most involved flow in the system, and the one where the BRD's constraints bite.
