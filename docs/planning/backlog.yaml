@@ -72,6 +72,17 @@ epics:
             detail: >
               .editorconfig covering both languages, LICENSE, and a CONTRIBUTING.md that states
               the branch naming and commit message conventions used by the ticket workflow.
+          - title: Support feature-scoped branches and pull requests in the ticket workflow
+            labels: [infra]
+            detail: >
+              The ticket-first workflow (working-agreement.md, the task skill, AGENTS.md) only
+              covered one task per branch per pull request. Tasks inside one feature routinely
+              overlap in practice, producing diffs that conflicted across separate branches.
+              Add a feature-scoped mode: when the unit of work is a whole feature rather than
+              one task, use a single feature/<key>-<slug> branch, implement every task under
+              the feature as one consistent pass instead of task-by-task in isolation, and open
+              one pull request whose body closes every task issue under the feature (one
+              `Closes #N` per issue). The single-task workflow is unchanged.
 
       - key: F0.2
         title: FastAPI application skeleton
