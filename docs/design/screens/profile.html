@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Preferences — Budget Agent design</title>
+  <link rel="stylesheet" href="../design.css">
+  <style>
+    .setting { display: flex; align-items: flex-start; justify-content: space-between; gap: 32px; }
+    .setting__copy { display: flex; flex-direction: column; gap: 4px; max-width: 340px; }
+    .setting__name { font-size: 14px; font-weight: 600; }
+    .setting__control { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+    .divider { height: 1px; background: var(--color-border); }
+  </style>
+</head>
+<body>
+
+<div class="screen" style="height: 940px;">
+
+  <header class="app-header">
+    <div class="app-header__inner">
+      <div class="app-header__left">
+        <span class="brand">Budget Agent</span>
+        <nav class="nav">
+          <a class="nav__link" href="dashboard.html">Dashboard</a>
+          <a class="nav__link" href="receipts.html">Receipts</a>
+          <a class="nav__link" href="categorisation.html">Categories</a>
+          <a class="nav__link" href="statistics.html">Statistics</a>
+          <a class="nav__link" href="goals.html">Goals</a>
+        </nav>
+      </div>
+      <div class="app-header__right">
+        <a class="btn btn--primary btn--compact" href="upload-1-photos.html">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload
+        </a>
+        <a class="btn-icon btn-icon--round" href="dashboard-dark.html" aria-label="Switch to dark theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </a>
+        <button class="avatar-button avatar-button--active" aria-label="Account menu"><span class="avatar">A</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main" style="padding: 40px 32px;">
+    <div class="app-container" style="max-width: 720px; gap: 24px;">
+
+      <div class="titles">
+        <h1 class="page-title page-title--lg">Preferences</h1>
+        <p class="page-sub">Account-level settings that every figure in the product is expressed in.</p>
+      </div>
+
+      <section class="card card--flush card--surface">
+        <div class="card__header" style="padding: 20px 24px;">
+          <h2 class="section-title">Money</h2>
+        </div>
+        <div style="padding: 24px; display: flex; flex-direction: column; gap: 22px;">
+
+          <!-- Currency locks once receipts exist: the product records one currency per
+               account and never converts (BRD section 4.2, task F1.4.2). -->
+          <div class="setting">
+            <div class="setting__copy">
+              <span class="setting__name">Currency</span>
+              <span class="prose" style="font-size: 13px; line-height: 1.55;">Locked once a receipt exists &mdash; the product records one currency per account and does not convert between them.</span>
+            </div>
+            <div class="setting__control">
+              <div class="input-group">
+                <input class="input input--locked" type="text" value="PLN &mdash; Polish z&#322;oty" readonly aria-label="Currency">
+                <svg class="select-chevron" style="top: 13px;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+              <span class="field__hint">128 receipts recorded in PLN</span>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="setting">
+            <div class="setting__copy">
+              <span class="setting__name">Monthly budget limit</span>
+              <span class="prose" style="font-size: 13px; line-height: 1.55;">Optional. When set, spend is also shown as a percentage of it. Changing it affects presentation only &mdash; finalised months are never rewritten.</span>
+            </div>
+            <div class="setting__control">
+              <div class="input-group">
+                <input class="input input--with-suffix input--focused num" type="text" value="3 000.00" aria-label="Monthly budget limit">
+                <span class="input-group__suffix">PLN</span>
+              </div>
+              <button class="btn btn--ghost" style="align-self: flex-start; padding: 0; font-size: 12px; text-decoration: underline;">Remove the limit</button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <section class="card card--flush card--surface">
+        <div class="card__header" style="padding: 20px 24px;">
+          <h2 class="section-title">Account</h2>
+        </div>
+        <div style="padding: 24px; display: flex; flex-direction: column; gap: 22px;">
+
+          <div class="setting" style="align-items: center;">
+            <div class="setting__copy">
+              <span class="setting__name">Email</span>
+              <span class="meta" style="font-size: 13px;">anna@example.com</span>
+            </div>
+            <button class="btn btn--secondary">Change</button>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="setting" style="align-items: center;">
+            <div class="setting__copy">
+              <span class="setting__name">Password</span>
+              <span class="meta" style="font-size: 13px;">Last changed 12 June 2026</span>
+            </div>
+            <button class="btn btn--secondary">Change</button>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Signing out everywhere revokes the whole refresh-token family (task F1.2.2). -->
+          <div class="setting" style="align-items: center;">
+            <div class="setting__copy" style="max-width: 400px;">
+              <span class="setting__name">Active sessions</span>
+              <span class="prose" style="font-size: 13px; line-height: 1.55;">Signed in on 2 devices. Signing out everywhere revokes every refresh token, including this one.</span>
+            </div>
+            <button class="btn btn--danger">Sign out everywhere</button>
+          </div>
+
+        </div>
+      </section>
+
+      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px;">
+        <button class="btn btn--ghost">Discard</button>
+        <button class="btn btn--primary" style="padding: 12px 20px;">Save preferences</button>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+</body>
+</html>

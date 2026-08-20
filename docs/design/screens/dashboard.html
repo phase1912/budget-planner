@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Dashboard — Budget Agent design</title>
+  <link rel="stylesheet" href="../design.css">
+  <style>
+    /* One-off layouts for this screen only. */
+    .breakdown-row { display: grid; grid-template-columns: 132px minmax(0, 1fr) 104px 52px; align-items: center; gap: 14px; }
+    .receipt-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; }
+  </style>
+</head>
+<body>
+
+<!--
+  The / route once receipts exist. Same address as home.html, which is what this
+  looks like with nothing recorded (ADR 0004).
+-->
+<div class="screen" style="height: 1020px;">
+
+  <header class="app-header">
+    <div class="app-header__inner">
+      <div class="app-header__left">
+        <span class="brand">Budget Agent</span>
+        <nav class="nav">
+          <a class="nav__link nav__link--active" href="dashboard.html">Dashboard</a>
+          <a class="nav__link" href="receipts.html">Receipts</a>
+          <a class="nav__link" href="categorisation.html">Categories</a>
+          <a class="nav__link" href="statistics.html">Statistics</a>
+          <a class="nav__link" href="goals.html">Goals</a>
+        </nav>
+      </div>
+      <div class="app-header__right">
+        <a class="btn btn--primary btn--compact" href="upload-1-photos.html">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload
+        </a>
+        <a class="btn-icon btn-icon--round" href="dashboard-dark.html" aria-label="Switch to dark theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </a>
+        <button class="avatar-button" aria-label="Account menu"><span class="avatar">A</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main" style="padding: 28px 32px;">
+    <div class="app-container app-container--wide">
+
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--color-border); border-radius: var(--radius-control); padding: 3px;">
+            <button class="btn-icon" aria-label="Previous month">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <span style="padding: 0 10px; font-size: 15px; font-weight: 700;">July 2026</span>
+            <button class="btn-icon" aria-label="Next month" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+          </div>
+          <!-- An in-progress month is labelled incomplete wherever it appears (BRD D4). -->
+          <span class="pill pill--info" style="padding: 6px 12px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            Month-to-date &middot; still running
+          </span>
+        </div>
+        <a href="statistics.html" style="display: inline-flex; align-items: center; gap: 7px; font-size: 14px;">
+          Full statistics
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+      </div>
+
+      <section class="card card--surface" style="padding: 28px 32px;">
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <span style="font-size: 13px; font-weight: 500; color: var(--color-muted-foreground);">Spent so far in July</span>
+          <div style="display: flex; align-items: baseline; gap: 12px;">
+            <span class="num" style="font-size: 46px; font-weight: 700; letter-spacing: -0.025em; line-height: 1;">1 800.00</span>
+            <span style="font-size: 20px; font-weight: 600; color: var(--color-muted-foreground);">PLN</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 7px; margin-top: 6px;">
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <span class="num" style="font-size: 13px; font-weight: 600; color: var(--color-primary);">60% of your 3 000.00 PLN limit</span>
+              <span class="num meta" style="font-size: 13px;">1 200.00 PLN left</span>
+            </div>
+            <span class="meter"><span class="meter__fill" style="width: 60%;"></span></span>
+            <span class="num meta">27 of 31 days recorded &middot; 34 receipts</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Receipts held out of the total are named and counted, never silently dropped (BRD D3). -->
+      <div class="note note--warning">
+        <svg class="note__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tone-warning-text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        <span class="note__text num">2 receipts worth 96.40&nbsp;PLN are not in this total &mdash; their date or total could not be read.</span>
+        <a href="upload-3-resolve.html" style="font-size: 13px; color: inherit; text-decoration: underline; flex-shrink: 0;">Resolve them</a>
+      </div>
+
+      <div style="display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 20px;">
+
+        <section class="card card__body">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px;">
+            <h2 class="section-title">Where it went</h2>
+            <span class="meta">Highest first</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 15px;">
+            <div class="breakdown-row">
+              <span style="display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600;"><span class="dot dot--groceries"></span>Groceries</span>
+              <span class="meter meter--track"><span class="meter__fill" style="width: 100%; background: var(--cat-groceries);"></span></span>
+              <span class="num" style="text-align: right; font-size: 13px; font-weight: 600;">742.60</span>
+              <span class="num meta" style="text-align: right;">41%</span>
+            </div>
+            <div class="breakdown-row">
+              <span style="display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600;"><span class="dot dot--dining"></span>Dining</span>
+              <span class="meter meter--track"><span class="meter__fill" style="width: 52%; background: var(--cat-dining);"></span></span>
+              <span class="num" style="text-align: right; font-size: 13px; font-weight: 600;">386.00</span>
+              <span class="num meta" style="text-align: right;">21%</span>
+            </div>
+            <div class="breakdown-row">
+              <span style="display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600;"><span class="dot dot--transport"></span>Transport</span>
+              <span class="meter meter--track"><span class="meter__fill" style="width: 29%; background: var(--cat-transport);"></span></span>
+              <span class="num" style="text-align: right; font-size: 13px; font-weight: 600;">214.40</span>
+              <span class="num meta" style="text-align: right;">12%</span>
+            </div>
+            <div class="breakdown-row">
+              <span style="display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600;"><span class="dot dot--utilities"></span>Utilities</span>
+              <span class="meter meter--track"><span class="meter__fill" style="width: 28%; background: var(--cat-utilities);"></span></span>
+              <span class="num" style="text-align: right; font-size: 13px; font-weight: 600;">206.00</span>
+              <span class="num meta" style="text-align: right;">11%</span>
+            </div>
+            <div class="breakdown-row">
+              <span style="display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600;"><span class="dot dot--health"></span>Health</span>
+              <span class="meter meter--track"><span class="meter__fill" style="width: 16%; background: var(--cat-health);"></span></span>
+              <span class="num" style="text-align: right; font-size: 13px; font-weight: 600;">118.20</span>
+              <span class="num meta" style="text-align: right;">7%</span>
+            </div>
+            <div class="breakdown-row">
+              <span style="display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600;"><span class="dot dot--entertainment"></span>Entertainment</span>
+              <span class="meter meter--track"><span class="meter__fill" style="width: 11%; background: var(--cat-entertainment);"></span></span>
+              <span class="num" style="text-align: right; font-size: 13px; font-weight: 600;">84.00</span>
+              <span class="num meta" style="text-align: right;">5%</span>
+            </div>
+            <div class="breakdown-row">
+              <span style="display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600;"><span class="dot dot--pet"></span>Pet Supplies</span>
+              <span class="meter meter--track"><span class="meter__fill" style="width: 7%; background: var(--cat-pet);"></span></span>
+              <span class="num" style="text-align: right; font-size: 13px; font-weight: 600;">48.80</span>
+              <span class="num meta" style="text-align: right;">3%</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card card__body" style="display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px;">
+            <h2 class="section-title">Latest receipts</h2>
+            <a href="receipts.html" style="font-size: 13px;">All 34</a>
+          </div>
+          <div style="display: flex; flex-direction: column;">
+            <a class="receipt-row" href="receipt-detail.html" style="color: inherit; font-weight: inherit;">
+              <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex-grow: 1;">
+                <span style="font-size: 13px; font-weight: 600;">Fresh Market</span>
+                <span class="num meta">20 Jul &middot; 7 items</span>
+              </span>
+              <span class="num" style="font-size: 14px; font-weight: 600;">84.50</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+            <a class="receipt-row row" href="receipt-detail.html" style="color: inherit; font-weight: inherit;">
+              <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex-grow: 1;">
+                <span style="font-size: 13px; font-weight: 600;">Zoo Karma</span>
+                <span class="num meta">18 Jul &middot; 2 items</span>
+              </span>
+              <span class="num" style="font-size: 14px; font-weight: 600;">89.99</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+            <a class="receipt-row row" href="receipt-detail.html" style="color: inherit; font-weight: inherit;">
+              <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex-grow: 1;">
+                <span style="font-size: 13px; font-weight: 600;">Uber</span>
+                <span class="num meta">17 Jul &middot; 1 item</span>
+              </span>
+              <span class="num" style="font-size: 14px; font-weight: 600;">32.40</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+            <a class="receipt-row row" href="upload-3-resolve.html" style="color: inherit; font-weight: inherit;">
+              <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex-grow: 1;">
+                <span style="display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600;">
+                  Bistro Zielona
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--tone-warning-text)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                </span>
+                <span style="font-size: 12px; color: var(--tone-warning-text);">Needs your review</span>
+              </span>
+              <span class="num" style="font-size: 14px; font-weight: 600; color: var(--color-muted-foreground);">&mdash;</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+            <a class="receipt-row row" href="receipt-detail.html" style="color: inherit; font-weight: inherit;">
+              <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex-grow: 1;">
+                <span style="font-size: 13px; font-weight: 600;">Kino Atlantic</span>
+                <span class="num meta">15 Jul &middot; 1 item</span>
+              </span>
+              <span class="num" style="font-size: 14px; font-weight: 600;">45.00</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+            <a class="receipt-row row" href="receipt-detail.html" style="color: inherit; font-weight: inherit;">
+              <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex-grow: 1;">
+                <span style="font-size: 13px; font-weight: 600;">Apteka Nova</span>
+                <span class="num meta">14 Jul &middot; 3 items</span>
+              </span>
+              <span class="num" style="font-size: 14px; font-weight: 600;">61.30</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+          </div>
+        </section>
+
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Budget Agent — design reference</title>
+  <link rel="stylesheet" href="design.css">
+  <style>
+    body { background: var(--color-muted); }
+    .sheet { max-width: 1000px; margin: 0 auto; padding: 56px 32px 72px; background: var(--color-background); color: var(--color-foreground); min-height: 100vh; }
+    .flow { display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px; }
+    .flow__head { display: flex; align-items: baseline; gap: 12px; }
+    .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .tile { display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: 16px 18px; color: inherit; font-weight: inherit; }
+    .tile:hover { border-color: var(--color-primary); background: var(--color-surface); color: inherit; }
+    .tile__name { font-size: 14px; font-weight: 600; }
+    .tile__meta { font-size: 12px; color: var(--color-muted-foreground); }
+    .tile__ref { font-family: var(--font-mono); font-size: 11px; color: var(--color-primary); }
+  </style>
+</head>
+<body>
+
+<div class="sheet">
+
+  <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+    <span class="eyebrow">Design reference</span>
+    <h1 class="page-title" style="font-size: 34px;">Budget Agent screens</h1>
+    <p class="prose" style="max-width: 700px; font-size: 15px;">Every phase-1 screen, as it should look. These pages are the reference the implementation is checked against &mdash; when the built UI and a page here disagree, the built UI is wrong unless the change is made here in the same commit. See <code style="font-family: var(--font-mono); font-size: 12px; background: var(--color-muted); padding: 2px 6px; border-radius: 6px;">README.md</code> and ADR 0004.</p>
+  </div>
+
+  <div class="note note--info" style="margin-bottom: 40px;">
+    <svg class="note__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-info)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+    <span class="note__text">The screens link to each other, so you can click through the product as designed &mdash; start at the dashboard, open a receipt, walk the upload wizard.</span>
+  </div>
+
+  <section class="flow">
+    <div class="flow__head">
+      <h2 class="section-title section-title--lg">Foundations</h2>
+      <span class="meta">what everything else is built from</span>
+    </div>
+    <div class="cards">
+      <a class="tile" href="screens/design-language.html">
+        <span class="tile__name">Design language</span>
+        <span class="tile__meta">Tokens, type, geometry, controls, status vocabulary</span>
+        <span class="tile__ref">F9.6</span>
+      </a>
+      <a class="tile" href="screens/states.html">
+        <span class="tile__name">Empty &amp; error states</span>
+        <span class="tile__meta">One treatment each, so no screen improvises</span>
+        <span class="tile__ref">F9.7</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="flow">
+    <div class="flow__head">
+      <h2 class="section-title section-title--lg">Getting in</h2>
+      <span class="meta">public routes and the account</span>
+    </div>
+    <div class="cards">
+      <a class="tile" href="screens/login.html">
+        <span class="tile__name">Login</span>
+        <span class="tile__meta">/login</span>
+        <span class="tile__ref">F1.1</span>
+      </a>
+      <a class="tile" href="screens/register.html">
+        <span class="tile__name">Register</span>
+        <span class="tile__meta">/register</span>
+        <span class="tile__ref">F1.1</span>
+      </a>
+      <a class="tile" href="screens/profile.html">
+        <span class="tile__name">Preferences</span>
+        <span class="tile__meta">/profile &mdash; currency, limit, sessions</span>
+        <span class="tile__ref">F1.4</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="flow">
+    <div class="flow__head">
+      <h2 class="section-title section-title--lg">Looking at your money</h2>
+      <span class="meta">the landing route and stored receipts</span>
+    </div>
+    <div class="cards">
+      <a class="tile" href="screens/home.html">
+        <span class="tile__name">Home &mdash; nothing yet</span>
+        <span class="tile__meta">/ before any receipt exists</span>
+        <span class="tile__ref">F1.1</span>
+      </a>
+      <a class="tile" href="screens/dashboard.html">
+        <span class="tile__name">Dashboard</span>
+        <span class="tile__meta">/ once receipts exist &mdash; same route</span>
+        <span class="tile__ref">F6.7</span>
+      </a>
+      <a class="tile" href="screens/receipts.html">
+        <span class="tile__name">Receipts</span>
+        <span class="tile__meta">/receipts &mdash; newest first, paginated</span>
+        <span class="tile__ref">new</span>
+      </a>
+      <a class="tile" href="screens/receipt-detail.html">
+        <span class="tile__name">Receipt detail</span>
+        <span class="tile__meta">Dialog over the list</span>
+        <span class="tile__ref">new</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="flow">
+    <div class="flow__head">
+      <h2 class="section-title section-title--lg">Putting a receipt in</h2>
+      <span class="meta">one flow, three steps</span>
+    </div>
+    <div class="cards">
+      <a class="tile" href="screens/upload-1-photos.html">
+        <span class="tile__name">1 &mdash; Photos</span>
+        <span class="tile__meta">Modes, upload lines, per-line limits</span>
+        <span class="tile__ref">F2.6</span>
+      </a>
+      <a class="tile" href="screens/upload-2-extracted.html">
+        <span class="tile__name">2 &mdash; What we read</span>
+        <span class="tile__meta">The whole batch, nothing stored yet</span>
+        <span class="tile__ref">F3.7</span>
+      </a>
+      <a class="tile" href="screens/upload-3-resolve.html">
+        <span class="tile__name">3 &mdash; Resolve</span>
+        <span class="tile__meta">One conflict queue, blocking until empty</span>
+        <span class="tile__ref">F4.7</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="flow">
+    <div class="flow__head">
+      <h2 class="section-title section-title--lg">Making sense of it</h2>
+      <span class="meta">categories, statistics, goals</span>
+    </div>
+    <div class="cards">
+      <a class="tile" href="screens/categorisation.html">
+        <span class="tile__name">Categorisation queue</span>
+        <span class="tile__meta">Flagged items, inline editing, learning</span>
+        <span class="tile__ref">F5.7</span>
+      </a>
+      <a class="tile" href="screens/categories.html">
+        <span class="tile__name">Taxonomy</span>
+        <span class="tile__meta">Built-in and custom, deleting one in use</span>
+        <span class="tile__ref">F5.6</span>
+      </a>
+      <a class="tile" href="screens/statistics.html">
+        <span class="tile__name">Statistics</span>
+        <span class="tile__meta">Ranked breakdown, range picker, comparison</span>
+        <span class="tile__ref">F7.7</span>
+      </a>
+      <a class="tile" href="screens/goals.html">
+        <span class="tile__name">Goals &amp; advice</span>
+        <span class="tile__meta">Financial and lifestyle goals, advice feed</span>
+        <span class="tile__ref">F8.10</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="flow">
+    <div class="flow__head">
+      <h2 class="section-title section-title--lg">Dark and mobile</h2>
+      <span class="meta">the tokens and the layout under pressure</span>
+    </div>
+    <div class="cards">
+      <a class="tile" href="screens/dashboard-dark.html">
+        <span class="tile__name">Dashboard &mdash; dark</span>
+        <span class="tile__meta">A finalised month, over the limit</span>
+        <span class="tile__ref">D5 &middot; D7</span>
+      </a>
+      <a class="tile" href="screens/login-dark.html">
+        <span class="tile__name">Login &mdash; dark</span>
+        <span class="tile__meta">Form controls and a failed sign-in</span>
+        <span class="tile__ref">F1.1</span>
+      </a>
+      <a class="tile" href="screens/dashboard-mobile.html">
+        <span class="tile__name">Dashboard &mdash; 390px</span>
+        <span class="tile__meta">Bottom bar, 44px targets</span>
+        <span class="tile__ref">F9.6.2</span>
+      </a>
+      <a class="tile" href="screens/upload-mobile.html">
+        <span class="tile__name">Upload &mdash; 390px</span>
+        <span class="tile__meta">Camera-first, single receipt</span>
+        <span class="tile__ref">F2.6</span>
+      </a>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>

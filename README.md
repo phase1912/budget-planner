@@ -71,6 +71,7 @@ Vite · Claude API for extraction, categorisation and advice. Rationale in
 | [Business Requirements](docs/requirements/ai-budget-agent-brd-v1.1.md) | What the product must do. EARS requirements with Gherkin acceptance scenarios. |
 | [Backlog](docs/planning/backlog.md) | 11 epics broken into features and tasks, traced back to BRD requirement IDs. |
 | [`backlog.yaml`](docs/planning/backlog.yaml) | The machine-readable source of that backlog. |
+| [Design reference](docs/design/README.md) | What every screen should look like. Open `docs/design/index.html` in a browser and click through. |
 | [Working agreement](docs/planning/working-agreement.md) | How the plan turns into commits, and how it is changed when reality disagrees with it. |
 | [Decisions](docs/adr/) | Architectural decision records. |
 

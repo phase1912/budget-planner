@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Design language — Budget Agent design</title>
+  <link rel="stylesheet" href="../design.css">
+  <style>
+    /* Swatches paint straight from the tokens, so this page cannot drift from
+       design.css — there are no hex values written down here to go stale. */
+    .swatches { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .swatch { display: flex; align-items: center; gap: 10px; }
+    .swatch__chip { width: 32px; height: 32px; border-radius: var(--radius-chip); border: 1px solid var(--color-border); flex-shrink: 0; }
+    .swatch__name { font-size: 12px; font-weight: 600; }
+    .swatch__token { font-family: var(--font-mono); font-size: 10px; color: var(--color-muted-foreground); }
+    .ramp-row { display: flex; align-items: baseline; gap: 16px; }
+    .ramp-row__spec { width: 96px; flex-shrink: 0; font-size: 11px; color: var(--color-muted-foreground); font-variant-numeric: tabular-nums; }
+    .radius-demo { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .radius-demo__box { width: 100%; height: 56px; background: var(--color-muted); border: 1px solid var(--color-border); }
+    .space-demo { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .space-demo__box { background: var(--color-primary); border-radius: 2px; }
+    code { font-family: var(--font-mono); font-size: 12px; background: var(--color-muted); padding: 2px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+
+<div class="screen" style="padding: 48px 56px 64px;">
+
+  <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 48px;">
+    <span class="eyebrow">Foundations</span>
+    <h1 class="page-title" style="font-size: 34px;">Budget Agent design language</h1>
+    <p class="prose" style="max-width: 720px; font-size: 15px;">Ported from the sibling project budget-checker: the same semantic colour tokens, the same 12&#8202;/&#8202;16&#8239;px radii and the same control anatomy. Every value below is defined once in <code>docs/design/design.css</code> and read from there &mdash; screens reference the token, never the hex.</p>
+  </div>
+
+  <section style="margin-bottom: 48px;">
+    <h2 class="section-title section-title--lg" style="margin-bottom: 4px;">Colour tokens</h2>
+    <p class="prose" style="margin-bottom: 20px;">Light values live on <code>:root</code>, dark values override on <code>.dark</code>. One source of truth per DS-1.</p>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px;">
+
+      <div class="card card--surface" style="padding: 20px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+          <span style="font-size: 13px; font-weight: 600;">Light</span>
+        </div>
+        <div class="swatches">
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-background);"></span><span><span class="swatch__name">background</span><br><span class="swatch__token">--color-background</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-foreground);"></span><span><span class="swatch__name">foreground</span><br><span class="swatch__token">--color-foreground</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-surface);"></span><span><span class="swatch__name">surface</span><br><span class="swatch__token">--color-surface</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-border);"></span><span><span class="swatch__name">border</span><br><span class="swatch__token">--color-border</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-muted);"></span><span><span class="swatch__name">muted</span><br><span class="swatch__token">--color-muted</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-muted-foreground);"></span><span><span class="swatch__name">muted-foreground</span><br><span class="swatch__token">--color-muted-foreground</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-primary);"></span><span><span class="swatch__name">primary</span><br><span class="swatch__token">--color-primary</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-accent);"></span><span><span class="swatch__name">accent</span><br><span class="swatch__token">--color-accent</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-error);"></span><span><span class="swatch__name">error</span><br><span class="swatch__token">--color-error</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-warning);"></span><span><span class="swatch__name">warning</span><br><span class="swatch__token">--color-warning</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-info);"></span><span><span class="swatch__name">info</span><br><span class="swatch__token">--color-info</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-success);"></span><span><span class="swatch__name">success</span><br><span class="swatch__token">--color-success</span></span></span>
+        </div>
+      </div>
+
+      <div class="card dark" style="background: var(--color-background); color: var(--color-foreground); border-color: var(--color-border); padding: 20px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+          <span style="font-size: 13px; font-weight: 600;">Dark</span>
+        </div>
+        <div class="swatches">
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-background);"></span><span><span class="swatch__name">background</span><br><span class="swatch__token">--color-background</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-foreground);"></span><span><span class="swatch__name">foreground</span><br><span class="swatch__token">--color-foreground</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-surface);"></span><span><span class="swatch__name">surface</span><br><span class="swatch__token">--color-surface</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-border);"></span><span><span class="swatch__name">border</span><br><span class="swatch__token">--color-border</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-muted);"></span><span><span class="swatch__name">muted</span><br><span class="swatch__token">--color-muted</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-muted-foreground);"></span><span><span class="swatch__name">muted-foreground</span><br><span class="swatch__token">--color-muted-foreground</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-primary);"></span><span><span class="swatch__name">primary</span><br><span class="swatch__token">--color-primary</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-accent);"></span><span><span class="swatch__name">accent</span><br><span class="swatch__token">--color-accent</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-error);"></span><span><span class="swatch__name">error</span><br><span class="swatch__token">--color-error</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-warning);"></span><span><span class="swatch__name">warning</span><br><span class="swatch__token">--color-warning</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-info);"></span><span><span class="swatch__name">info</span><br><span class="swatch__token">--color-info</span></span></span>
+          <span class="swatch"><span class="swatch__chip" style="background: var(--color-success);"></span><span><span class="swatch__name">success</span><br><span class="swatch__token">--color-success</span></span></span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section style="margin-bottom: 48px;">
+    <h2 class="section-title section-title--lg" style="margin-bottom: 4px;">Category colours</h2>
+    <p class="prose" style="margin-bottom: 20px;">Data colours, not semantic ones: they identify a series in a breakdown and must stay distinguishable from each other rather than carry meaning.</p>
+    <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+      <span style="display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600;"><span class="dot dot--lg dot--groceries"></span>Groceries</span>
+      <span style="display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600;"><span class="dot dot--lg dot--dining"></span>Dining</span>
+      <span style="display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600;"><span class="dot dot--lg dot--transport"></span>Transport</span>
+      <span style="display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600;"><span class="dot dot--lg dot--utilities"></span>Utilities</span>
+      <span style="display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600;"><span class="dot dot--lg dot--health"></span>Health</span>
+      <span style="display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600;"><span class="dot dot--lg dot--entertainment"></span>Entertainment</span>
+      <span style="display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600;"><span class="dot dot--lg dot--pet"></span>Pet Supplies</span>
+      <span style="display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600;"><span class="dot dot--lg dot--other"></span>Other</span>
+      <span style="display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600;"><span class="dot dot--lg dot--uncategorised"></span>Uncategorized</span>
+    </div>
+  </section>
+
+  <section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-bottom: 48px;">
+
+    <div class="card card__body">
+      <h2 class="section-title section-title--lg" style="margin-bottom: 4px;">Type</h2>
+      <p class="prose" style="margin-bottom: 20px;">System stack, as budget-checker ships it. Money and counts carry <code>tabular-nums</code> so columns align.</p>
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="ramp-row"><span class="ramp-row__spec">34 / 700</span><span style="font-size: 34px; font-weight: 700; letter-spacing: -0.02em;">Page title</span></div>
+        <div class="ramp-row"><span class="ramp-row__spec">20 / 700</span><span style="font-size: 20px; font-weight: 700;">Section heading</span></div>
+        <div class="ramp-row"><span class="ramp-row__spec">15 / 400</span><span style="font-size: 15px;">Body copy sits at fifteen pixels.</span></div>
+        <div class="ramp-row"><span class="ramp-row__spec">14 / 600</span><span style="font-size: 14px; font-weight: 600;">Control label &amp; table cell</span></div>
+        <div class="ramp-row"><span class="ramp-row__spec">12 / 500</span><span class="meta" style="font-weight: 500;">Field label, caption, meta</span></div>
+        <div class="ramp-row"><span class="ramp-row__spec">40 / 700</span><span class="num" style="font-size: 40px; font-weight: 700; letter-spacing: -0.02em;">1 800.00 PLN</span></div>
+      </div>
+    </div>
+
+    <div class="card card__body">
+      <h2 class="section-title section-title--lg" style="margin-bottom: 4px;">Geometry</h2>
+      <p class="prose" style="margin-bottom: 20px;">Two radii carry the whole product; spacing steps from a 4&#8239;px base.</p>
+      <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+        <div class="radius-demo"><span class="radius-demo__box" style="border-radius: var(--radius-chip);"></span><span class="num meta" style="font-size: 11px;">10&#8239;px &middot; chip</span></div>
+        <div class="radius-demo"><span class="radius-demo__box" style="border-radius: var(--radius-control);"></span><span class="num meta" style="font-size: 11px;">12&#8239;px &middot; control</span></div>
+        <div class="radius-demo"><span class="radius-demo__box" style="border-radius: var(--radius-card);"></span><span class="num meta" style="font-size: 11px;">16&#8239;px &middot; card</span></div>
+        <div class="radius-demo"><span class="radius-demo__box" style="border-radius: var(--radius-pill);"></span><span class="num meta" style="font-size: 11px;">full &middot; pill</span></div>
+      </div>
+      <div style="display: flex; align-items: flex-end; gap: 12px;">
+        <div class="space-demo"><span class="space-demo__box" style="width: 4px; height: 4px;"></span><span class="num meta" style="font-size: 11px;">4</span></div>
+        <div class="space-demo"><span class="space-demo__box" style="width: 8px; height: 8px;"></span><span class="num meta" style="font-size: 11px;">8</span></div>
+        <div class="space-demo"><span class="space-demo__box" style="width: 12px; height: 12px;"></span><span class="num meta" style="font-size: 11px;">12</span></div>
+        <div class="space-demo"><span class="space-demo__box" style="width: 16px; height: 16px;"></span><span class="num meta" style="font-size: 11px;">16</span></div>
+        <div class="space-demo"><span class="space-demo__box" style="width: 24px; height: 24px;"></span><span class="num meta" style="font-size: 11px;">24</span></div>
+        <div class="space-demo"><span class="space-demo__box" style="width: 32px; height: 32px;"></span><span class="num meta" style="font-size: 11px;">32</span></div>
+        <div class="space-demo"><span class="space-demo__box" style="width: 48px; height: 48px;"></span><span class="num meta" style="font-size: 11px;">48</span></div>
+      </div>
+    </div>
+
+  </section>
+
+  <section style="margin-bottom: 48px;">
+    <h2 class="section-title section-title--lg" style="margin-bottom: 4px;">Controls</h2>
+    <p class="prose" style="margin-bottom: 20px;">Every control is at least 44&#8239;px tall on touch. These are the primitives F9.6.3 puts in <code>src/shared/components/</code>.</p>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px;">
+
+      <div class="card card__body" style="display: flex; flex-direction: column; gap: 18px;">
+        <span class="eyebrow" style="font-size: 12px; letter-spacing: 0.06em;">Buttons</span>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+          <button class="btn btn--primary">Primary</button>
+          <button class="btn btn--primary" style="background: var(--color-primary-hover);">Hover</button>
+          <button class="btn btn--secondary">Secondary</button>
+          <button class="btn btn--ghost">Ghost</button>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+          <button class="btn btn--danger">Destructive</button>
+          <button class="btn btn--primary" disabled>Disabled</button>
+          <button class="btn btn--primary" style="opacity: 0.7;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            Working
+          </button>
+        </div>
+      </div>
+
+      <div class="card card__body" style="display: flex; flex-direction: column; gap: 14px;">
+        <span class="eyebrow" style="font-size: 12px; letter-spacing: 0.06em;">Fields</span>
+        <div class="field">
+          <label class="field__label" for="demo-email">Email</label>
+          <div class="input-group">
+            <svg class="input-group__icon" style="top: 12px;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            <input class="input input--with-icon" id="demo-email" type="text" value="name@example.com" style="padding-top: 10px; padding-bottom: 10px;">
+          </div>
+        </div>
+        <div class="field">
+          <label class="field__label" for="demo-focus">Focused</label>
+          <input class="input input--focused" id="demo-focus" type="text" value="Fresh Market" style="padding-top: 10px; padding-bottom: 10px;">
+        </div>
+        <div class="field">
+          <label class="field__label" for="demo-invalid" style="color: var(--color-error);">Invalid</label>
+          <input class="input input--invalid" id="demo-invalid" type="text" value="84,5,0" style="padding-top: 10px; padding-bottom: 10px;">
+          <span class="field__error">Enter an amount like 84.50</span>
+        </div>
+        <div class="field">
+          <label class="field__label" for="demo-disabled">Disabled</label>
+          <input class="input input--locked" id="demo-disabled" type="text" value="PLN" readonly style="padding-top: 10px; padding-bottom: 10px;">
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2 class="section-title section-title--lg" style="margin-bottom: 4px;">Status vocabulary</h2>
+    <p class="prose" style="max-width: 760px; margin-bottom: 20px;">These labels are business states from the BRD, not decoration &mdash; a receipt reading <em>Requires review</em> is excluded from the monthly total (D3), and a month-to-date figure must never be mistaken for a finalised one (D4).</p>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+      <span class="pill pill--success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Parsed</span>
+      <span class="pill pill--warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>Low confidence</span>
+      <span class="pill pill--error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Requires review</span>
+      <span class="pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>Uncategorized</span>
+      <span class="pill pill--info"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Month-to-date</span>
+      <span class="pill" style="background: rgba(15, 23, 42, 0.06); color: var(--color-foreground);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>Finalised</span>
+      <span class="pill pill--accent"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>Duplicate across photos</span>
+      <span class="pill pill--success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Manually corrected</span>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>
