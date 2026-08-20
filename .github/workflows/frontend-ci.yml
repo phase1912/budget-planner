@@ -3,16 +3,21 @@ name: Frontend CI
 # Lint, strict type check, test suite and build for frontend/, run with the exact
 # tool versions pinned in frontend/package-lock.json (F9.1) — the same versions
 # pre-commit uses locally via `npm run`, so a hook that passes locally cannot fail
-# here on a version mismatch.
+# here on a version mismatch. Also triggers on backend/app/** (F9.3.3): that's
+# where the OpenAPI schema comes from, and this job's drift check is what catches
+# a backend contract change with no matching frontend regeneration. Keep
+# frontend-ci-skip.yml's `paths-ignore` a mirror of the `paths` below.
 on:
   pull_request:
     paths:
       - "frontend/**"
+      - "backend/app/**"
       - ".github/workflows/frontend-ci.yml"
   push:
     branches: [main]
     paths:
       - "frontend/**"
+      - "backend/app/**"
       - ".github/workflows/frontend-ci.yml"
 
 jobs:
@@ -30,7 +35,19 @@ jobs:
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - run: uv sync --locked
+        working-directory: backend
+
       - run: npm ci
+
+      - name: generated API client is up to date (F9.3.3)
+        run: |
+          npm run generate:api
+          git diff --exit-code -- src/api/schema.ts
 
       - name: eslint
         run: npm run lint
