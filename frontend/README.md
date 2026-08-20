@@ -33,6 +33,11 @@ src/
   routes/                Route definitions
 ```
 
+**Stores**: a single `RootStore`, provided via React context and read with
+`useStores()` — see [`src/stores/README.md`](src/stores/README.md) for the
+composition rule, the observable-vs-derived rule, and the async-action
+convention every store follows (F9.2).
+
 **shared/ vs feature-local**: a component or style belongs in `shared/` only if it is
 used by more than one feature _and_ carries no feature-specific business logic.
 Everything else lives under `components/<feature>/`. When in doubt, start local — moving
