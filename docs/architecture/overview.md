@@ -106,7 +106,14 @@ another store (F9.2). See `frontend/src/stores/README.md` for the observable-vs-
 and async-action conventions every store follows.
 
 The API client is generated from the FastAPI OpenAPI schema in CI, so a backend contract
-change breaks the frontend build rather than production.
+change breaks the frontend build rather than production (F9.3). `backend/scripts/
+export_openapi_schema.py` introspects `create_app()` to produce the schema — no running
+server or database needed. `openapi-typescript` turns that into `frontend/src/api/
+schema.ts` (generated, checked in, never hand-edited), and `openapi-fetch` provides the
+typed runtime client in `frontend/src/api/client.ts`, the only module permitted to reach
+the backend. Frontend CI regenerates the schema and fails the build if it differs from
+what's committed, so a route or model change with no matching regeneration is caught in
+the PR that made it, not after merge.
 
 ## Repository layout and the frontend/backend boundary
 

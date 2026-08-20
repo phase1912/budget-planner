@@ -16,7 +16,12 @@ npm run build         # type check (tsc -b) then production build
 npm run lint          # eslint
 npm run format         # prettier --check
 npm run test          # vitest run
+npm run generate:api   # regenerate src/api/schema.ts from the backend's OpenAPI schema
 ```
+
+Regenerate `src/api/schema.ts` after any backend route or model change and commit the
+result — CI fails the build if the checked-in file is stale (F9.3.3). Requires the
+backend's `uv` environment (`cd backend && uv sync`) to be set up locally.
 
 ## Structure
 
