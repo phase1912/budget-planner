@@ -17,6 +17,7 @@ node_modules/
 .vite/
 frontend/dist/
 *.tsbuildinfo
+frontend/openapi.json
 
 # Environment
 .env

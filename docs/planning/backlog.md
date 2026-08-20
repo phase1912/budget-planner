@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-15 epics · 104 features · 55 tasks written so far.
+15 epics · 104 features · 58 tasks written so far.
 
 11 epics are phase 1 — the BRD scope, delivered before launch. 4 are phase 2: commercial scope that is planned but deliberately not started until phase 1 is complete.
 
@@ -570,7 +570,11 @@ Root store composition, dependency injection into components, the rule for what 
 
 *Requirements: —*
 
-TypeScript types and client generated from the FastAPI schema in CI, so a backend contract change breaks the frontend build rather than production. Not yet groomed into tasks: the codegen tool and where the generated client lives are decided once F0.2's OpenAPI schema is stable, not guessed at now.
+TypeScript types and client generated from the FastAPI schema in CI, so a backend contract change breaks the frontend build rather than production.
+
+- **F9.3.1** Backend OpenAPI schema export script — backend/scripts/export_openapi_schema.py imports create_app() and writes app.openapi() as JSON to stdout. Schema generation is pure route/model introspection — no environment variables and no database connection required — so it runs the same way locally and in CI. The single source both the frontend codegen and the CI drift check read from.
+- **F9.3.2** Generated types and typed client wired into npm scripts — openapi-typescript generates frontend/src/api/schema.ts (checked in, not hand-edited) from the backend's exported schema via `npm run generate:api`. openapi-fetch provides the runtime client in frontend/src/api/client.ts, typed against those generated paths, with its base URL read from the VITE_API_BASE_URL env var. This is the only module a store may import to reach the backend — see the frontend/backend boundary rule in docs/architecture/overview.md.
+- **F9.3.3** CI check that the checked-in client matches the current schema — frontend-ci.yml also triggers on backend/app/** changes and regenerates src/api/schema.ts before the build, failing the job (git diff --exit-code) if the regenerated file differs from what's committed. A backend contract change with no matching frontend regeneration fails CI instead of surfacing as a runtime mismatch in production.
 
 ### F9.4 — Routing, layout shell and navigation
 
