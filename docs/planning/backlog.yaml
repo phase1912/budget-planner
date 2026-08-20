@@ -333,9 +333,40 @@ epics:
           beyond local are real design decisions, made when this feature is picked up
           rather than guessed at while establishing repository layout.
 
+      - key: F0.10
+        title: Identity, access and NFR acceptance criteria in the BRD
+        labels: [testing, security]
+        intent: >
+          Every existing BRD scenario opens with "Given the user is logged in", but the BRD
+          itself never says what that means, and section 8's non-functional requirements
+          (N1-N6) have EARS text with no Gherkin at all — both are real gaps F0.6.2's
+          extraction correctly left untouched, since it could only move what the BRD already
+          had. This closes them the same way BR-1..BR-6 were written: business-approved
+          acceptance criteria first, so E1 (Identity & Account) and E10 (Security, Privacy &
+          Observability) have something to build against instead of inventing it mid-epic.
+        tasks:
+          - key: F0.10.1
+            title: BR-7 Identity & Access, and NFR acceptance scenarios
+            labels: [testing, security]
+            detail: >
+              Adds a new BR-7 section to the BRD (EARS requirements + Gherkin) covering
+              registration, login, logout and session refresh; an admin role limited to
+              service operation (no exception to N2 — an admin never reads another user's
+              receipts or statistics); and sign-in via Google/Facebook OIDC coexisting with
+              password auth, linked to an existing account only on a verified email match,
+              with an explicit scenario rejecting a link attempt on an unverified email
+              (the standard account-takeover vector for social login). Adds a Gherkin block
+              to BRD section 8 for N1-N6, which today are EARS-only. Extends BRD section 9's
+              data model with the User.role field and the identity-provider link entity BR-7
+              needs. Mirrors F0.6.2's own job for this new material: the scenarios land in
+              tests/features/br7_identity_and_access/ and tests/features/nfr_cross_cutting/,
+              wired via pytest-bdd and skipped pending E1/E10, and
+              scripts/generate_brd_traceability.py regenerates brd-traceability.md to include
+              them. Updates E1's `br:` list in backlog.yaml to add BR-7 alongside N2.
+
   - key: E1
     title: Identity & Account
-    br: [N2]
+    br: [BR-7, N2]
     phase: 1
     groomed: true
     summary: >
