@@ -1,0 +1,20 @@
+name: Frontend CI (skip)
+
+# `lint-typecheck-test` in frontend-ci.yml is a required status check on main,
+# but that workflow only triggers on frontend/** changes. A PR that never touches
+# frontend/ would otherwise leave the required check stuck on "Expected" forever,
+# blocking merge with no way for it to report. This workflow reports the same
+# check name as an immediate pass for exactly the PRs frontend-ci.yml skips, so
+# the two together always produce exactly one result. Keep the `paths-ignore`
+# list a mirror of frontend-ci.yml's `paths` (see backend-ci-skip.yml, F9.1).
+on:
+  pull_request:
+    paths-ignore:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+
+jobs:
+  lint-typecheck-test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "No frontend/ changes in this PR — skipping frontend CI."

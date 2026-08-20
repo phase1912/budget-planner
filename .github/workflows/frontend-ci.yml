@@ -1,0 +1,45 @@
+name: Frontend CI
+
+# Lint, strict type check, test suite and build for frontend/, run with the exact
+# tool versions pinned in frontend/package-lock.json (F9.1) — the same versions
+# pre-commit uses locally via `npm run`, so a hook that passes locally cannot fail
+# here on a version mismatch.
+on:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+
+jobs:
+  lint-typecheck-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: eslint
+        run: npm run lint
+
+      - name: prettier --check
+        run: npm run format
+
+      - name: build (tsc -b && vite build)
+        run: npm run build
+
+      - name: vitest
+        run: npm run test
