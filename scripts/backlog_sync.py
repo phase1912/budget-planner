@@ -34,6 +34,7 @@ ROOT = Path(__file__).resolve().parent.parent
 BACKLOG = ROOT / "docs" / "planning" / "backlog.yaml"
 MARKDOWN = ROOT / "docs" / "planning" / "backlog.md"
 MARKER = re.compile(r"<!-- backlog-key: (?P<key>[^ ]+) -->")
+POST_MVP_LABEL = "post-mvp"
 
 
 # --------------------------------------------------------------------------- gh
@@ -85,6 +86,28 @@ def requirement_line(refs: list[str] | None) -> str:
     return ", ".join(refs) if refs else "—"
 
 
+def phase_of(epic: dict) -> int:
+    """Delivery phase an epic belongs to, defaulting to the diploma scope.
+
+    Phase 1 is what the product must do to satisfy the BRD; phase 2 is commercial
+    scope deliberately deferred until phase 1 ships. Everything under a phase-2 epic
+    inherits the phase, because scope is an epic-level decision, not a per-task one.
+    """
+    return int(epic.get("phase", 1))
+
+
+def phase_line(epic: dict) -> str:
+    phase = phase_of(epic)
+    if phase == 1:
+        return "- **Phase:** 1 — BRD scope, delivered before launch"
+    return (f"- **Phase:** {phase} — post-MVP commercial scope, not started until phase 1 "
+            f"is complete")
+
+
+def phase_labels(epic: dict) -> list[str]:
+    return [POST_MVP_LABEL] if phase_of(epic) > 1 else []
+
+
 # ------------------------------------------------------------------ issue bodies
 
 
@@ -94,6 +117,7 @@ def epic_body(epic: dict, feature_numbers: dict[str, int]) -> str:
         "**Epic**",
         "",
         f"- **BRD sections:** {requirement_line(epic.get('br'))}",
+        phase_line(epic),
         f"- **Grooming:** {'decomposed into tasks' if epic.get('groomed') else 'features only — tasks are written when this epic is picked up'}",
         "",
         clean(epic.get("summary")),
@@ -121,6 +145,7 @@ def feature_body(feature: dict, epic: dict, epic_number: int | None,
         "",
         f"- **Epic:** {f'#{epic_number}' if epic_number else ''} {epic['key']} {epic['title']}",
         f"- **BRD requirements:** {requirement_line(feature.get('requirements'))}",
+        phase_line(epic),
         "",
         "### Intent",
         clean(feature.get("intent")),
@@ -144,13 +169,15 @@ def feature_body(feature: dict, epic: dict, epic_number: int | None,
     return "\n".join(lines)
 
 
-def task_body(task: dict, key: str, feature: dict, feature_number: int | None) -> str:
+def task_body(task: dict, key: str, feature: dict, feature_number: int | None,
+              epic: dict) -> str:
     return "\n".join([
         f"<!-- backlog-key: {key} -->",
         "**Task**",
         "",
         f"- **Feature:** {f'#{feature_number}' if feature_number else ''} {feature['key']} {feature['title']}",
         f"- **BRD requirements:** {requirement_line(feature.get('requirements'))}",
+        phase_line(epic),
         "",
         "### What to do",
         clean(task.get("detail")),
@@ -177,16 +204,22 @@ def render_markdown(data: dict) -> str:
     ]
     total_features = sum(len(e["features"]) for e in data["epics"])
     total_tasks = sum(len(f.get("tasks") or []) for e in data["epics"] for f in e["features"])
+    phase_two = [e for e in data["epics"] if phase_of(e) > 1]
     lines += [
         f"{len(data['epics'])} epics · {total_features} features · {total_tasks} tasks written so far.",
         "",
-        "| Epic | Title | BRD | Features | Groomed |",
-        "|---|---|---|---|---|",
+        f"{len(data['epics']) - len(phase_two)} epics are phase 1 — the BRD scope, delivered "
+        f"before launch. {len(phase_two)} are phase 2: commercial scope that is planned but "
+        f"deliberately not started until phase 1 is complete.",
+        "",
+        "| Epic | Title | BRD | Features | Groomed | Phase |",
+        "|---|---|---|---|---|---|",
     ]
     for epic in data["epics"]:
         lines.append(
             f"| {epic['key']} | {epic['title']} | {requirement_line(epic.get('br'))} "
-            f"| {len(epic['features'])} | {'yes' if epic.get('groomed') else 'no'} |"
+            f"| {len(epic['features'])} | {'yes' if epic.get('groomed') else 'no'} "
+            f"| {phase_of(epic)} |"
         )
     lines.append("")
 
@@ -196,7 +229,8 @@ def render_markdown(data: dict) -> str:
             "",
             f"## {epic['key']} — {epic['title']}",
             "",
-            f"**BRD sections:** {requirement_line(epic.get('br'))}",
+            f"**BRD sections:** {requirement_line(epic.get('br'))} · "
+            f"**Phase:** {phase_of(epic)}",
             "",
             clean(epic.get("summary")),
             "",
@@ -303,7 +337,8 @@ def sync(data: dict, dry_run: bool) -> None:
         milestone = milestones.get(epic["key"])
         number = upsert(repo, epic["key"], f"[{epic['key']}] {epic['title']}",
                         epic_body(epic, feature_numbers),
-                        ["epic"] + ([] if epic.get("groomed") else ["needs-grooming"]),
+                        ["epic"] + ([] if epic.get("groomed") else ["needs-grooming"])
+                        + phase_labels(epic),
                         milestone, index, dry_run)
         if number:
             epic_numbers[epic["key"]] = number
@@ -311,7 +346,7 @@ def sync(data: dict, dry_run: bool) -> None:
         for feature in epic["features"]:
             f_number = upsert(repo, feature["key"], f"[{feature['key']}] {feature['title']}",
                               feature_body(feature, epic, epic_numbers.get(epic["key"]), task_numbers),
-                              ["feature"] + list(feature.get("labels") or []),
+                              ["feature"] + list(feature.get("labels") or []) + phase_labels(epic),
                               milestone, index, dry_run)
             if f_number:
                 feature_numbers[feature["key"]] = f_number
@@ -319,8 +354,10 @@ def sync(data: dict, dry_run: bool) -> None:
             for i, task in enumerate(feature.get("tasks") or [], start=1):
                 key = task_key(feature["key"], i)
                 t_number = upsert(repo, key, f"[{key}] {task['title']}",
-                                  task_body(task, key, feature, feature_numbers.get(feature["key"])),
-                                  ["task"] + list(task.get("labels") or feature.get("labels") or []),
+                                  task_body(task, key, feature,
+                                            feature_numbers.get(feature["key"]), epic),
+                                  ["task"] + list(task.get("labels") or feature.get("labels") or [])
+                                  + phase_labels(epic),
                                   milestone, index, dry_run)
                 if t_number:
                     task_numbers[key] = t_number

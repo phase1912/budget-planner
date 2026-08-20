@@ -26,6 +26,19 @@ describe a system that will not exist by then.
 So an epic is groomed — decomposed into tasks — immediately before work on it starts.
 Ungroomed epics carry the `needs-grooming` label and `groomed: false` in the YAML.
 
+## Phases: what ships, and what is only planned
+
+Epics carry `phase: 1` or `phase: 2`. Phase 1 is the BRD scope and is the only work that
+counts as delivery. Phase 2 is commercial scope written down deliberately early — not to be
+worked on, but so that phase-1 decisions are made knowing what is meant to come after, since
+the expensive mistakes here are the ones that need unpicking later (who owns a receipt, how a
+receipt arrives, what a line item records).
+
+Everything under a phase-2 epic is labelled `post-mvp` on sync, so the board filters down to
+phase 1. Nothing from phase 2 is picked up while phase-1 epics remain open; promoting one
+means changing its `phase` in the YAML and re-syncing, which makes the decision a commit
+rather than a mood.
+
 ## The cycle
 
 **1. Groom the epic.** Re-read its BRD section, look at what the code actually does now, and
