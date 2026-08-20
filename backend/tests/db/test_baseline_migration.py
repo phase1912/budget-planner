@@ -32,7 +32,16 @@ def _run[T](coro: Coroutine[object, object, T]) -> T:
 
 
 async def _database_is_reachable() -> bool:
-    engine = create_async_engine(str(get_settings().database_url))
+    """False for anything short of a live, queryable PostgreSQL.
+
+    Includes Settings() itself failing validation — CI has neither DATABASE_URL
+    nor a .env file set until F0.5.1 adds a service-container PostgreSQL, so
+    that has to be "not reachable" here too, not an uncaught error.
+    """
+    try:
+        engine = create_async_engine(str(get_settings().database_url))
+    except Exception:
+        return False
     try:
         async with engine.connect() as connection:
             await connection.execute(text("SELECT 1"))

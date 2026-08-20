@@ -27,7 +27,13 @@ def _clear_caches() -> Iterator[None]:
     get_session_factory.cache_clear()
 
 
-def test_engine_is_built_with_pool_settings_from_config(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.fixture
+def _settings(monkeypatch: pytest.MonkeyPatch) -> Settings:
+    """A fully-populated Settings, wired in so get_engine never reads real
+    environment/.env — CI has neither set, and get_settings() would otherwise
+    fail validation there even though it happens to succeed on a machine with
+    a local .env file.
+    """
     settings = Settings(
         _env_file=None,
         database_url="postgresql+asyncpg://user:pass@localhost:5432/db",
@@ -36,18 +42,21 @@ def test_engine_is_built_with_pool_settings_from_config(monkeypatch: pytest.Monk
         anthropic_api_key="sk-test-key",
     )
     monkeypatch.setattr("app.session.get_settings", lambda: settings)
+    return settings
 
+
+def test_engine_is_built_with_pool_settings_from_config(_settings: Settings) -> None:
     with patch("app.session.create_async_engine") as create_async_engine:
         get_engine()
 
     args, kwargs = create_async_engine.call_args
-    assert args[0] == str(settings.database_url)
+    assert args[0] == str(_settings.database_url)
     assert kwargs["pool_size"] == 7
     assert kwargs["max_overflow"] == 3
     assert kwargs["pool_pre_ping"] is True
 
 
-def test_get_engine_builds_the_engine_only_once() -> None:
+def test_get_engine_builds_the_engine_only_once(_settings: Settings) -> None:
     with patch("app.session.create_async_engine") as create_async_engine:
         first = get_engine()
         second = get_engine()
