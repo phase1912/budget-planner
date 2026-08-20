@@ -11,8 +11,11 @@ user is taking a photo.
 
 ## Status
 
-Planning. No application code has been written yet — the current contents are the business
-requirements, the delivery backlog, and the tooling that keeps the two in sync.
+Early foundation work (epic E0). `backend/` has the FastAPI skeleton, config, error
+handling and the PostgreSQL/SQLAlchemy/Alembic baseline; `frontend/` has the React/Vite
+scaffold and generated API client. `docker-compose.yml` brings up local PostgreSQL and
+MinIO — see [backend/README.md](backend/README.md#database). A full clone-to-running
+quickstart is F0.4.4, not written yet.
 
 ## Stack
 

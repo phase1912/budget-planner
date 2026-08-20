@@ -1,0 +1,62 @@
+# Local development stack: PostgreSQL and an S3-compatible object store (MinIO
+# stands in for the production object store — see ADR-0002). Lives at the repo
+# root, not infra/, so `docker compose up` works from a fresh clone with no
+# extra flags (F0.4.1).
+#
+# The API and client run on the host (uv run / npm run dev), not in this
+# stack — only the stateful services they depend on are containerised here.
+
+services:
+  postgres:
+    image: postgres:16.4-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-budget_planner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-budget_planner}
+      POSTGRES_DB: ${POSTGRES_DB:-budget_planner}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:RELEASE.2024-01-16T16-07-38Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-budget_planner}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-budget_planner_minio}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      # The official image ships neither curl nor wget, so the liveness
+      # endpoint is checked with bash's /dev/tcp instead of an HTTP client.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio-bootstrap:
+    image: minio/mc:RELEASE.2024-01-13T08-44-48Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-budget_planner}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-budget_planner_minio}
+    entrypoint: >
+      sh -c "
+        mc alias set local http://minio:9000 \"$$MINIO_ROOT_USER\" \"$$MINIO_ROOT_PASSWORD\" &&
+        mc mb --ignore-existing local/receipts
+      "
+    restart: "no"
+
+volumes:
+  postgres_data:
+  minio_data:
