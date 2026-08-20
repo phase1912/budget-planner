@@ -60,7 +60,8 @@ The PR body must:
   what was deliberately left out.
 
 Before opening the PR, make sure lint, type checks and the full test suite pass —
-CI runs the same checks and will not merge a red build.
+`make lint`, `make typecheck` and `make test` run both languages' checks with one
+command each. CI runs the same checks and will not merge a red build.
 
 ## Code conventions
 

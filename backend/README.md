@@ -18,6 +18,10 @@ uv run ruff format . # format
 uv run mypy .        # strict type check
 ```
 
+The repo-root `Makefile` runs this alongside the frontend's equivalent commands
+(`make test`, `make lint`, `make typecheck`, F0.4.2) — use those when a change touches
+both sides.
+
 `pyproject.toml` pins Python 3.12 and the runtime dependencies fixed by
 [ADR-0001](../docs/adr/0001-technology-stack.md) (FastAPI, SQLAlchemy 2.x, Alembic,
 pydantic-settings, anthropic) in `[project.dependencies]`; dev-only tooling (`pytest`,
@@ -41,6 +45,7 @@ install:
 
 ```
 docker compose up -d postgres   # from the repository root
+# or: make up                   # full stack — API, client, postgres, MinIO
 ```
 
 The same compose file can also run the API itself (`docker compose up backend`,
@@ -55,6 +60,7 @@ the compose file's default credentials. Then apply migrations:
 
 ```
 uv run alembic upgrade head
+# or, from the repository root: make migrate
 ```
 
 ### Model conventions

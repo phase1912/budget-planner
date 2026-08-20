@@ -15,7 +15,48 @@ Early foundation work (epic E0). `backend/` has the FastAPI skeleton, config, er
 handling and the PostgreSQL/SQLAlchemy/Alembic baseline; `frontend/` has the React/Vite
 scaffold and generated API client. `docker-compose.yml` brings up the full local
 stack — API, client, PostgreSQL and MinIO — see [backend/README.md](backend/README.md#database).
-A full clone-to-running quickstart is F0.4.4, not written yet.
+
+## Quickstart
+
+Prerequisites, with the versions this project is built against:
+
+- [Docker Engine](https://docs.docker.com/engine/install/) 24+ with the Compose v2
+  plugin (the `docker compose` subcommand — not the standalone `docker-compose`)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) — manages the Python
+  3.12 the backend needs itself; no separate Python install required
+- `make` — ships with macOS and most Linux distributions; runs the task-runner targets
+  below (F0.4.2)
+- A Claude API key from the [Anthropic Console](https://console.anthropic.com/settings/keys)
+  — the backend fails to start without one (`app.config.Settings`)
+
+Clone and configure:
+
+```
+git clone https://github.com/phase1912/budget-planner.git
+cd budget-planner
+cp .env.example .env                    # postgres/MinIO credentials, ANTHROPIC_API_KEY
+cp backend/.env.example backend/.env    # DATABASE_URL for host-run alembic/uv commands
+```
+
+Set `ANTHROPIC_API_KEY` in both `.env` files to your key from the Anthropic Console
+above; the defaults for everything else already match between the two files.
+
+Bring up the stack and apply migrations:
+
+```
+make up          # postgres, MinIO, the API (:8000) and the client (:5173)
+make migrate      # in a second terminal, once postgres is healthy
+```
+
+The client is now at [localhost:5173](http://localhost:5173), the API at
+[localhost:8000/docs](http://localhost:8000/docs). `make down` stops everything;
+database and object-store contents persist in named volumes across restarts.
+
+Day-to-day workflow: `make test`, `make lint`, `make typecheck` run both languages'
+checks with one command each. See [backend/README.md](backend/README.md) and
+[frontend/README.md](frontend/README.md) for running either side on the host instead
+of in a container, and [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full ticket-first
+process.
 
 ## Stack
 

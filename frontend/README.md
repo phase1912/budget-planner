@@ -13,6 +13,7 @@ for why.
 npm install
 npm run dev          # start the Vite dev server
 npm run build         # type check (tsc -b) then production build
+npm run typecheck      # type check only (tsc -b, no emit)
 npm run lint          # eslint
 npm run format         # prettier --check
 npm run test          # vitest run
@@ -22,6 +23,10 @@ npm run generate:api   # regenerate src/api/schema.ts from the backend's OpenAPI
 Regenerate `src/api/schema.ts` after any backend route or model change and commit the
 result — CI fails the build if the checked-in file is stale (F9.3.3). Requires the
 backend's `uv` environment (`cd backend && uv sync`) to be set up locally.
+
+The repo-root `Makefile` runs this alongside the backend's equivalent commands
+(`make test`, `make lint`, `make typecheck`, F0.4.2) — use those when a change touches
+both sides.
 
 ## Structure
 
