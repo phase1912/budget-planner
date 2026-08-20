@@ -9,10 +9,12 @@ name: Backend CI
 #
 # Both jobs run a real PostgreSQL service container (credentials match
 # docker-compose.yml's postgres service, F0.4.1) — the test suite needs one
-# reachable at DATABASE_URL for tests/db/test_baseline_migration.py, and the
-# migration-drift job needs one to autogenerate against (F0.5.3). ANTHROPIC_API_KEY
-# is a dummy value: app.config.Settings requires it to construct at all, but
-# nothing on either job path calls the Anthropic API.
+# reachable at DATABASE_URL for the isolated per-run test database tests/conftest.py
+# builds from it (F0.6.1), and the migration-drift job needs one to autogenerate
+# against (F0.5.3). ANTHROPIC_API_KEY is a dummy value: app.config.Settings requires
+# it to construct at all, but nothing on either job path calls the Anthropic API.
+# `pytest --cov` fails the build below the coverage floor in pyproject.toml's
+# [tool.coverage.report] (F0.6.4).
 on:
   pull_request:
     paths:
@@ -66,8 +68,8 @@ jobs:
       - name: mypy --strict
         run: uv run mypy .
 
-      - name: pytest
-        run: uv run pytest
+      - name: pytest (with coverage gate, F0.6.4)
+        run: uv run pytest --cov
 
   migration-drift:
     runs-on: ubuntu-latest

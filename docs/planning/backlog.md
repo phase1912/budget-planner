@@ -3,14 +3,14 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-15 epics · 105 features · 57 tasks written so far.
+15 epics · 106 features · 58 tasks written so far.
 
 11 epics are phase 1 — the BRD scope, delivered before launch. 4 are phase 2: commercial scope that is planned but deliberately not started until phase 1 is complete.
 
 | Epic | Title | BRD | Features | Groomed | Phase |
 |---|---|---|---|---|---|
-| E0 | Foundation & Delivery Platform | — | 9 | yes | 1 |
-| E1 | Identity & Account | N2 | 5 | yes | 1 |
+| E0 | Foundation & Delivery Platform | — | 10 | yes | 1 |
+| E1 | Identity & Account | BR-7, N2 | 5 | yes | 1 |
 | E2 | Receipt Ingestion & Storage | BR-1 | 6 | no | 1 |
 | E3 | Receipt Parsing & Extraction | BR-1 | 7 | no | 1 |
 | E4 | Multi-Photo Position Matching | BR-2 | 7 | no | 1 |
@@ -123,11 +123,19 @@ A written reference for the system's shape and its business rules, kept current 
 
 The application can be deployed to AWS from infrastructure-as-code rather than by hand. Targets AWS per ADR-0002. Not yet groomed into tasks: compute target (ECS/Fargate/EC2/App Runner), state backend, and which environments exist beyond local are real design decisions, made when this feature is picked up rather than guessed at while establishing repository layout.
 
+### F0.10 — Identity, access and NFR acceptance criteria in the BRD
+
+*Requirements: —*
+
+Every existing BRD scenario opens with "Given the user is logged in", but the BRD itself never says what that means, and section 8's non-functional requirements (N1-N6) have EARS text with no Gherkin at all — both are real gaps F0.6.2's extraction correctly left untouched, since it could only move what the BRD already had. This closes them the same way BR-1..BR-6 were written: business-approved acceptance criteria first, so E1 (Identity & Account) and E10 (Security, Privacy & Observability) have something to build against instead of inventing it mid-epic.
+
+- **F0.10.1** BR-7 Identity & Access, and NFR acceptance scenarios — Adds a new BR-7 section to the BRD (EARS requirements + Gherkin) covering registration, login, logout and session refresh; an admin role limited to service operation (no exception to N2 — an admin never reads another user's receipts or statistics); and sign-in via Google/Facebook OIDC coexisting with password auth, linked to an existing account only on a verified email match, with an explicit scenario rejecting a link attempt on an unverified email (the standard account-takeover vector for social login). Adds a Gherkin block to BRD section 8 for N1-N6, which today are EARS-only. Extends BRD section 9's data model with the User.role field and the identity-provider link entity BR-7 needs. Mirrors F0.6.2's own job for this new material: the scenarios land in tests/features/br7_identity_and_access/ and tests/features/nfr_cross_cutting/, wired via pytest-bdd and skipped pending E1/E10, and scripts/generate_brd_traceability.py regenerates brd-traceability.md to include them. Updates E1's `br:` list in backlog.yaml to add BR-7 alongside N2.
+
 ---
 
 ## E1 — Identity & Account
 
-**BRD sections:** N2 · **Phase:** 1
+**BRD sections:** BR-7, N2 · **Phase:** 1
 
 Every BRD scenario begins with "Given the user is logged in", and N2 forbids one user's data from reaching another. This epic establishes authentication, session handling, the user profile fields from the BRD data model, and the scoping guarantee that all later epics depend on. Full stack: the login, registration and logout screens and the authenticated route table live here with the endpoints they call (F1.5), not in E9 — E9 owns only the frontend groundwork that has no domain dependency.
 
