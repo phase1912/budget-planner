@@ -1,0 +1,20 @@
+name: Backend CI (skip)
+
+# `lint-typecheck-test` in backend-ci.yml is a required status check on main,
+# but that workflow only triggers on backend/** changes. A PR that never
+# touches backend/ would otherwise leave the required check stuck on
+# "Expected" forever, blocking merge with no way for it to report. This
+# workflow reports the same check name as an immediate pass for exactly the
+# PRs backend-ci.yml skips, so the two together always produce exactly one
+# result. Keep the `paths-ignore` list a mirror of backend-ci.yml's `paths`.
+on:
+  pull_request:
+    paths-ignore:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+jobs:
+  lint-typecheck-test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "No backend/ changes in this PR — skipping backend CI."
