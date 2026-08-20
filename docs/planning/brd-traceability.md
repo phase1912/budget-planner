@@ -59,9 +59,21 @@ Being listed here means acceptance criteria exist for a requirement, not that th
 | F7 | `br6_goal_based_optimization_advice/goal_based_optimization_advice.feature`: Proactive warning when goal is at risk |
 | F8 | `br6_goal_based_optimization_advice/goal_based_optimization_advice.feature`: Agent incorporates user feedback on past advice |
 | F9 | `br6_goal_based_optimization_advice/goal_based_optimization_advice.feature`: Generate position-based advice tied to a lifestyle goal |
-| N1 | _Not yet traced by a scenario._ |
-| N2 | _Not yet traced by a scenario._ |
-| N3 | _Not yet traced by a scenario._ |
-| N4 | _Not yet traced by a scenario._ |
-| N5 | _Not yet traced by a scenario._ |
-| N6 | _Not yet traced by a scenario._ |
+| G1 | `br7_identity_and_access/identity_and_access.feature`: Register a new account |
+| G2 | `br7_identity_and_access/identity_and_access.feature`: Reject registration with an email already in use |
+| G3 | `br7_identity_and_access/identity_and_access.feature`: Log in with valid credentials |
+| G4 | `br7_identity_and_access/identity_and_access.feature`: Reject login with invalid credentials |
+| G5 | `br7_identity_and_access/identity_and_access.feature`: Refresh an expired access token |
+| G6 | `br7_identity_and_access/identity_and_access.feature`: Detect reuse of an already-exchanged refresh token |
+| G7 | `br7_identity_and_access/identity_and_access.feature`: Log out revokes the session |
+| G8 | `br7_identity_and_access/identity_and_access.feature`: Administrator access does not extend to a user's financial data |
+| G9 | `br7_identity_and_access/identity_and_access.feature`: Sign in via Google for the first time, linking to a matching verified account<br>`br7_identity_and_access/identity_and_access.feature`: Reject linking on an unverified provider email |
+| G10 | `br7_identity_and_access/identity_and_access.feature`: Sign in via Google for the first time, linking to a matching verified account |
+| G11 | `br7_identity_and_access/identity_and_access.feature`: Reject linking on an unverified provider email |
+| G12 | `br7_identity_and_access/identity_and_access.feature`: Sign in with either a linked provider or a password |
+| N1 | `nfr_cross_cutting/cross_cutting.feature`: Receipt images and extracted data are encrypted at rest |
+| N2 | `nfr_cross_cutting/cross_cutting.feature`: A user cannot access another user's data |
+| N3 | `nfr_cross_cutting/cross_cutting.feature`: Deleting a receipt removes it from budget and statistics immediately |
+| N4 | `nfr_cross_cutting/cross_cutting.feature`: Parsing responds within the performance target |
+| N5 | `nfr_cross_cutting/cross_cutting.feature`: Automatic classification decisions are logged with confidence scores |
+| N6 | `nfr_cross_cutting/cross_cutting.feature`: A user exports their stored data |

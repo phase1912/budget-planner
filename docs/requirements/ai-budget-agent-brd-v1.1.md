@@ -3,8 +3,9 @@
 
 | | |
 |---|---|
-| **Document status** | Draft v1.0 |
+| **Document status** | Draft v1.2 |
 | **Prepared for** | Product / Engineering stakeholders |
+| **Change log** | BR-7 (Identity & Access) and Gherkin for the section 8 NFRs added — F0.10 |
 
 ---
 
@@ -38,6 +39,7 @@ Manual expense tracking has a well-known adoption problem: users abandon budgeti
 | BR-4 | Calculate a user's total monthly spend from their digitized receipts |
 | BR-5 | Provide spend breakdowns and comparisons by category |
 | BR-6 | Provide personalized budget optimization advice based on a user-defined goal (financial or lifestyle) |
+| BR-7 | Register and authenticate a user account, including sign-in via a linked identity provider, so every other capability above operates on a specific, verified user |
 
 ### 4.2 Out of Scope (for this phase)
 
@@ -67,6 +69,8 @@ Manual expense tracking has a well-known adoption problem: users abandon budgeti
 | Category | A budget classification assigned to a position (e.g., Groceries, Transport, Utilities) |
 | Budget period | The monthly window (calendar month by default) used for aggregation |
 | Goal | A user-declared objective, either financial (e.g., "save 500 PLN/month") or lifestyle-based (e.g., "lose weight", "save up to buy a car"), which the agent maps to relevant spending categories or items |
+| Identity provider | A third-party service (Google, Facebook) a user can authenticate through instead of a password, linked to their account on a verified email match |
+| Administrator | An account role limited to product operation; never grants access to an individual user's own receipts or statistics (N2) |
 
 ### 6.1 EARS Pattern Reference
 
@@ -455,6 +459,123 @@ Feature: Budget optimization advice
 
 ---
 
+### BR-7 — Identity & Access
+
+**Business intent:** A person can create an account and authenticate with it — with an email
+and password, or by signing in through a linked Google or Facebook identity — so that every
+other capability in this document operates on a specific, verified user rather than an
+anonymous session. An administrator can operate the product without that access ever
+extending to an individual user's own financial data (N2).
+
+**Detailed requirements (EARS):**
+
+- **G1 (Ubiquitous):** The system shall allow a person to register an account with an email
+  address and a password.
+- **G2 (Event-driven):** When a registration is submitted for an email address already
+  associated with an account, the system shall reject it without revealing whether that
+  address is registered.
+- **G3 (Event-driven):** When valid credentials are submitted, the system shall authenticate
+  the person and establish a session.
+- **G4 (Unwanted behavior):** If submitted credentials are invalid, whether the email is
+  unknown or the password is wrong, then the system shall return the same generic error for
+  both cases.
+- **G5 (Event-driven):** When an access token expires, the system shall allow it to be
+  refreshed using a valid, unexpired, unrevoked refresh token, without requiring the person
+  to log in again.
+- **G6 (Unwanted behavior):** If a refresh token is presented a second time after already
+  being exchanged once, then the system shall revoke every token issued from that session and
+  require the person to log in again.
+- **G7 (Event-driven):** When a person logs out, the system shall revoke the current session
+  so its access and refresh tokens can no longer be used.
+- **G8 (Ubiquitous):** The system shall support an administrator role, limited to product
+  operation (e.g. default category taxonomy, system health, audit logs), to which N2's
+  per-user data isolation applies exactly as it does to any other account — an administrator
+  shall never be able to read an individual user's receipts, line items or statistics.
+- **G9 (Optional feature):** Where a person chooses to sign in via Google or Facebook, the
+  system shall authenticate them through that provider's OpenID Connect flow as an
+  alternative to a password.
+- **G10 (Event-driven):** When a person completes an OIDC sign-in for the first time, the
+  system shall link that identity to an existing account only if the provider reports a
+  verified email matching that account's email.
+- **G11 (Unwanted behavior):** If the provider's email is not reported as verified, then the
+  system shall not link the identity to any existing account and shall require the person to
+  complete an explicit verification step before it can be linked.
+- **G12 (Ubiquitous):** The system shall allow a person to authenticate with either their
+  password or any identity provider linked to their account, and to link or unlink a provider
+  from an existing account.
+
+**Acceptance scenarios (BDD):**
+
+```gherkin
+Feature: Registration, authentication and identity linking
+
+  Scenario: Register a new account
+    Given no account exists for "new.user@example.com"
+    When the person registers with that email and a password
+    Then the system should create the account
+    And establish an authenticated session
+
+  Scenario: Reject registration with an email already in use
+    Given an account already exists for "existing.user@example.com"
+    When someone registers using that same email address
+    Then the system should reject the registration
+    And the response should not reveal that the address is already registered
+
+  Scenario: Log in with valid credentials
+    Given a registered account with a known email and password
+    When the person submits the correct email and password
+    Then the system should authenticate them
+    And establish a session
+
+  Scenario: Reject login with invalid credentials
+    Given a registered account
+    When the person submits an unknown email, or the correct email with the wrong password
+    Then the system should return the same generic authentication error in both cases
+
+  Scenario: Refresh an expired access token
+    Given the person has an authenticated session and an unexpired refresh token
+    When their access token expires and they present the refresh token
+    Then the system should issue a new access token
+    And the person should not be required to log in again
+
+  Scenario: Detect reuse of an already-exchanged refresh token
+    Given a refresh token that has already been exchanged once
+    When that same refresh token is presented again
+    Then the system should revoke every token issued from that session
+    And require the person to log in again
+
+  Scenario: Log out revokes the session
+    Given the person has an authenticated session
+    When the person logs out
+    Then the system should revoke that session's access and refresh tokens
+
+  Scenario: Administrator access does not extend to a user's financial data
+    Given an administrator account and a separate user account with stored receipts
+    When the administrator uses the product
+    Then the administrator should not be able to read that user's receipts, line items or statistics
+
+  Scenario: Sign in via Google for the first time, linking to a matching verified account
+    Given a registered account exists for "person@example.com"
+    And Google reports "person@example.com" as a verified email for the signing-in identity
+    When the person signs in with Google for the first time
+    Then the system should link the Google identity to the existing account
+    And establish an authenticated session
+
+  Scenario: Reject linking on an unverified provider email
+    Given a registered account exists for "person@example.com"
+    And Google reports "person@example.com" as an unverified email for the signing-in identity
+    When the person attempts to sign in with Google for the first time
+    Then the system should not link the Google identity to the existing account
+    And should require an explicit verification step before linking
+
+  Scenario: Sign in with either a linked provider or a password
+    Given an account with both a password and a linked Google identity
+    When the person authenticates with the password, or separately with Google
+    Then the system should authenticate them in either case
+```
+
+---
+
 ## 8. Cross-Cutting Non-Functional Requirements
 
 - **N1 (Ubiquitous):** The agent shall store all receipt images and extracted data encrypted at rest.
@@ -464,11 +585,49 @@ Feature: Budget optimization advice
 - **N5 (Ubiquitous):** The agent shall log all automatic classification decisions (category, position match) with confidence scores to support auditing and model improvement.
 - **N6 (Ubiquitous):** The agent shall provide a way to export the user's stored receipt and statistics data (e.g., CSV/JSON export).
 
+**Acceptance scenarios (BDD):**
+
+```gherkin
+Feature: Cross-cutting non-functional requirements
+
+  Scenario: Receipt images and extracted data are encrypted at rest
+    Given a receipt has been parsed and stored
+    When the underlying storage is inspected directly, bypassing the application
+    Then the receipt image and the extracted financial fields should not be readable as plain text
+
+  Scenario: A user cannot access another user's data
+    Given user A has stored receipts and statistics
+    When user B requests user A's receipts or statistics
+    Then the system should deny access
+    And should not reveal whether the requested records exist
+
+  Scenario: Deleting a receipt removes it from budget and statistics immediately
+    Given a receipt contributes to the current month's budget total and category statistics
+    When the user deletes that receipt
+    Then the budget total and category statistics should exclude it within the same session
+
+  Scenario: Parsing responds within the performance target
+    Given a user submits a single receipt photo
+    When the agent processes it
+    Then the agent should return a parsing result — success, flagged, or failure — within the defined maximum response time
+
+  Scenario: Automatic classification decisions are logged with confidence scores
+    Given the agent assigns a category to a line item or matches two positions automatically
+    When that decision is made
+    Then the agent should log the decision with its confidence score
+
+  Scenario: A user exports their stored data
+    Given a user has receipts and statistics stored
+    When the user requests an export
+    Then the agent should provide their receipt and statistics data in a structured format (e.g. CSV or JSON)
+```
+
 ## 9. Suggested Data Model (for development reference)
 
 | Entity | Key Fields |
 |---|---|
-| User | user_id, currency, budget_limit, goal |
+| User | user_id, email, password_hash (nullable — a provider-only account has none), role (user / admin), currency, budget_limit, goal |
+| IdentityLink | link_id, user_id, provider (google / facebook), provider_user_id, provider_email, linked_at |
 | Receipt | receipt_id, user_id, image_ref, merchant, transaction_date, transaction_time, total_amount, status (parsed / flagged / manual_review), parser_version, created_at |
 | LineItem | line_item_id, receipt_id, name, quantity, unit_price, total_price, category_id, category_confidence, is_manual_override |
 | Category | category_id, name, is_custom, user_id (nullable for default categories) |
