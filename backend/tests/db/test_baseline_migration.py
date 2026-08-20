@@ -1,66 +1,27 @@
 """Integration tests for the F0.3 database baseline: Alembic + PostgreSQL (F0.3.2, F0.3.4).
 
-Skipped when PostgreSQL isn't reachable at the configured DATABASE_URL —
-`docker compose up -d postgres` (F0.4.1) provides one for local development,
-and backend-ci.yml's service-container PostgreSQL (F0.5.1) provides one in CI.
-
-Runs synchronously (not `async def`) because `alembic.command.upgrade` drives
-its own event loop internally (see alembic/env.py's async template) — calling
-it from inside a coroutine already running under pytest-asyncio would try to
-nest event loops.
+Runs against the isolated per-session test database `tests/conftest.py` builds
+(F0.6.1) rather than the shared dev/CI database directly — that fixture already
+skips this module when PostgreSQL isn't reachable, and already migrated the
+database to `head` once, which is what the first test below is really checking
+the effect of.
 """
 
 import asyncio
 from collections.abc import Coroutine
-from pathlib import Path
 
-import pytest
-from alembic.config import Config
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from alembic import command
-from app.config import get_settings
-
-BACKEND_ROOT = Path(__file__).resolve().parent.parent.parent
+from tests.conftest import _migrate_to_head
 
 
 def _run[T](coro: Coroutine[object, object, T]) -> T:
     return asyncio.run(coro)
 
 
-async def _database_is_reachable() -> bool:
-    """False for anything short of a live, queryable PostgreSQL.
-
-    Includes Settings() itself failing validation — a developer without the
-    compose stack up has neither DATABASE_URL nor a .env file, so that has to
-    be "not reachable" here too, not an uncaught error.
-    """
-    try:
-        engine = create_async_engine(str(get_settings().database_url))
-    except Exception:
-        return False
-    try:
-        async with engine.connect() as connection:
-            await connection.execute(text("SELECT 1"))
-    except Exception:
-        return False
-    finally:
-        await engine.dispose()
-    return True
-
-
-@pytest.fixture(autouse=True)
-def _require_database() -> None:
-    if not _run(_database_is_reachable()):
-        pytest.skip(
-            "PostgreSQL is not reachable at DATABASE_URL — "
-            "start it with `docker compose up -d postgres`."
-        )
-
-
-async def _pgcrypto_and_uuid_generation_work() -> tuple[bool, object]:
-    engine = create_async_engine(str(get_settings().database_url))
+async def _pgcrypto_and_uuid_generation_work(database_url: str) -> tuple[bool, object]:
+    engine = create_async_engine(database_url)
     try:
         async with engine.connect() as connection:
             extension_exists = await connection.scalar(
@@ -72,17 +33,14 @@ async def _pgcrypto_and_uuid_generation_work() -> tuple[bool, object]:
     return bool(extension_exists), generated_uuid
 
 
-def test_upgrading_to_head_enables_pgcrypto_and_gen_random_uuid_works() -> None:
-    command.upgrade(Config(str(BACKEND_ROOT / "alembic.ini")), "head")
-
-    pgcrypto_enabled, generated_uuid = _run(_pgcrypto_and_uuid_generation_work())
+def test_upgrading_to_head_enables_pgcrypto_and_gen_random_uuid_works(
+    test_database_url: str,
+) -> None:
+    pgcrypto_enabled, generated_uuid = _run(_pgcrypto_and_uuid_generation_work(test_database_url))
 
     assert pgcrypto_enabled
     assert generated_uuid is not None
 
 
-def test_upgrade_is_idempotent_when_already_at_head() -> None:
-    config = Config(str(BACKEND_ROOT / "alembic.ini"))
-    command.upgrade(config, "head")
-
-    command.upgrade(config, "head")  # must not raise on a no-op re-run
+def test_upgrade_is_idempotent_when_already_at_head(test_database_url: str) -> None:
+    _migrate_to_head(test_database_url)  # must not raise on a re-run against an up-to-date database
