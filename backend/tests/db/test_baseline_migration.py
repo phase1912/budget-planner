@@ -1,10 +1,8 @@
 """Integration tests for the F0.3 database baseline: Alembic + PostgreSQL (F0.3.2, F0.3.4).
 
 Skipped when PostgreSQL isn't reachable at the configured DATABASE_URL —
-`docker compose up -d postgres` (F0.4.1) provides one for local development.
-CI does not yet run a service-container PostgreSQL of its own (that is
-F0.5.1), so today this only runs for a developer with the compose stack up;
-once F0.5.1 lands it starts running for real in CI with no change here.
+`docker compose up -d postgres` (F0.4.1) provides one for local development,
+and backend-ci.yml's service-container PostgreSQL (F0.5.1) provides one in CI.
 
 Runs synchronously (not `async def`) because `alembic.command.upgrade` drives
 its own event loop internally (see alembic/env.py's async template) — calling
@@ -34,9 +32,9 @@ def _run[T](coro: Coroutine[object, object, T]) -> T:
 async def _database_is_reachable() -> bool:
     """False for anything short of a live, queryable PostgreSQL.
 
-    Includes Settings() itself failing validation — CI has neither DATABASE_URL
-    nor a .env file set until F0.5.1 adds a service-container PostgreSQL, so
-    that has to be "not reachable" here too, not an uncaught error.
+    Includes Settings() itself failing validation — a developer without the
+    compose stack up has neither DATABASE_URL nor a .env file, so that has to
+    be "not reachable" here too, not an uncaught error.
     """
     try:
         engine = create_async_engine(str(get_settings().database_url))
