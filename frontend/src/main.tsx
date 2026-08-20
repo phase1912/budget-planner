@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 
 import { App } from "@/App";
 import "@/shared/styles/index.css";
+import { StoreProvider } from "@/stores/StoreContext";
 
 const container = document.getElementById("root");
 if (!container) {
@@ -11,6 +12,8 @@ if (!container) {
 
 createRoot(container).render(
   <StrictMode>
-    <App />
+    <StoreProvider>
+      <App />
+    </StoreProvider>
   </StrictMode>,
 );

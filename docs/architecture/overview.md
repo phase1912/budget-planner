@@ -100,6 +100,11 @@ MobX stores own state and the actions that change it; components observe and ren
 Business logic does not live in components — a component that computes a budget total
 is a bug, because that number must match what the API computed.
 
+A single `RootStore` is instantiated once and injected into the component tree through
+React context; components read it with a `useStores()` hook, never a direct import of
+another store (F9.2). See `frontend/src/stores/README.md` for the observable-vs-derived
+and async-action conventions every store follows.
+
 The API client is generated from the FastAPI OpenAPI schema in CI, so a backend contract
 change breaks the frontend build rather than production.
 
