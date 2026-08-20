@@ -3,27 +3,33 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-11 epics · 78 features · 55 tasks written so far.
+15 epics · 104 features · 55 tasks written so far.
 
-| Epic | Title | BRD | Features | Groomed |
-|---|---|---|---|---|
-| E0 | Foundation & Delivery Platform | — | 9 | yes |
-| E1 | Identity & Account | N2 | 4 | yes |
-| E2 | Receipt Ingestion & Storage | BR-1 | 6 | no |
-| E3 | Receipt Parsing & Extraction | BR-1 | 7 | no |
-| E4 | Multi-Photo Position Matching | BR-2 | 7 | no |
-| E5 | Spend Categorization | BR-3 | 7 | no |
-| E6 | Monthly Budget Calculation | BR-4 | 7 | no |
-| E7 | Statistics, Comparison & Export | BR-5 | 7 | no |
-| E8 | Goals & AI Optimization Advice | BR-6 | 10 | no |
-| E9 | Web Client Foundation | — | 7 | yes |
-| E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 7 | no |
+11 epics are phase 1 — the BRD scope, delivered before launch. 4 are phase 2: commercial scope that is planned but deliberately not started until phase 1 is complete.
+
+| Epic | Title | BRD | Features | Groomed | Phase |
+|---|---|---|---|---|---|
+| E0 | Foundation & Delivery Platform | — | 9 | yes | 1 |
+| E1 | Identity & Account | N2 | 4 | yes | 1 |
+| E2 | Receipt Ingestion & Storage | BR-1 | 6 | no | 1 |
+| E3 | Receipt Parsing & Extraction | BR-1 | 7 | no | 1 |
+| E4 | Multi-Photo Position Matching | BR-2 | 7 | no | 1 |
+| E5 | Spend Categorization | BR-3 | 7 | no | 1 |
+| E6 | Monthly Budget Calculation | BR-4 | 7 | no | 1 |
+| E7 | Statistics, Comparison & Export | BR-5 | 7 | no | 1 |
+| E8 | Goals & AI Optimization Advice | BR-6 | 10 | no | 1 |
+| E9 | Web Client Foundation | — | 7 | yes | 1 |
+| E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 7 | no | 1 |
+| E11 | Alternative Receipt Intake | — | 6 | no | 2 |
+| E12 | Household & Shared Budgets | — | 7 | no | 2 |
+| E13 | Aggregated Purchase Analytics | — | 7 | no | 2 |
+| E14 | B2B Export & Accounting Integrations | — | 6 | no | 2 |
 
 ---
 
 ## E0 — Foundation & Delivery Platform
 
-**BRD sections:** —
+**BRD sections:** — · **Phase:** 1
 
 Everything required before a single business requirement can be implemented: repository layout, both runtimes, the database and migration baseline, the local development environment, CI, and a BDD harness that executes the BRD's Gherkin scenarios directly.
 
@@ -122,7 +128,7 @@ The application can be deployed to AWS from infrastructure-as-code rather than b
 
 ## E1 — Identity & Account
 
-**BRD sections:** N2
+**BRD sections:** N2 · **Phase:** 1
 
 Every BRD scenario begins with "Given the user is logged in", and N2 forbids one user's data from reaching another. This epic establishes authentication, session handling, the user profile fields from the BRD data model, and the scoping guarantee that all later epics depend on.
 
@@ -173,7 +179,7 @@ A user can set the account currency and an optional monthly budget limit, which 
 
 ## E2 — Receipt Ingestion & Storage
 
-**BRD sections:** BR-1
+**BRD sections:** BR-1 · **Phase:** 1
 
 Accepting receipt photos: format validation, the two upload modes with their photo-count and size limits, durable encrypted storage of the originals, and asynchronous processing status. Covers BRD A1 through A8 and the storage half of A12.
 
@@ -217,7 +223,7 @@ Mode selection, adding upload lines, per-line photo previews, and client-side li
 
 ## E3 — Receipt Parsing & Extraction
 
-**BRD sections:** BR-1
+**BRD sections:** BR-1 · **Phase:** 1
 
 Turning a validated photo into a structured receipt: field extraction, confidence handling, manual-review flagging, duplicate detection and persistence with provenance. Covers BRD A9 through A15.
 
@@ -267,7 +273,7 @@ Side-by-side original photo and extracted data, with low-confidence fields highl
 
 ## E4 — Multi-Photo Position Matching
 
-**BRD sections:** BR-2
+**BRD sections:** BR-2 · **Phase:** 1
 
 Recognising that a line item appearing on two overlapping photos of one long receipt is the same purchase, so it is counted once — while never collapsing genuinely repeated purchases made on different receipts. Covers BRD B1 through B9.
 
@@ -317,7 +323,7 @@ Show detected overlaps between photos with the evidence, and let the user flip a
 
 ## E5 — Spend Categorization
 
-**BRD sections:** BR-3
+**BRD sections:** BR-3 · **Phase:** 1
 
 Classifying every line item into a spending category, with a confidence-gated fallback, user correction that the system learns from, and user-defined categories. Covers BRD C1 through C7.
 
@@ -367,7 +373,7 @@ A review queue for flagged items and inline category editing wherever line items
 
 ## E6 — Monthly Budget Calculation
 
-**BRD sections:** BR-4
+**BRD sections:** BR-4 · **Phase:** 1
 
 Aggregating receipts into monthly totals by transaction date, distinguishing a month-to-date figure from a finalised one, excluding flagged receipts transparently, and recalculating when history changes. Covers BRD D1 through D7.
 
@@ -417,7 +423,7 @@ The landing view: current month-to-date spend, progress against limit, excluded-
 
 ## E7 — Statistics, Comparison & Export
 
-**BRD sections:** BR-5
+**BRD sections:** BR-5 · **Phase:** 1
 
 Category-level insight over arbitrary date ranges, period-over-period comparison, honest empty states, chart-ready output, and data export. Covers BRD E1 through E6 and N6.
 
@@ -467,7 +473,7 @@ Ranked category breakdown, range picker, comparison view and the export action.
 
 ## E8 — Goals & AI Optimization Advice
 
-**BRD sections:** BR-6
+**BRD sections:** BR-6 · **Phase:** 1
 
 The product's differentiator: a user states a financial or lifestyle goal and receives specific, evidence-based, quantified recommendations tied to their own purchase history, with proactive warnings and a feedback loop. Covers BRD F1 through F9.
 
@@ -535,7 +541,7 @@ Goal setup, progress display, the advice feed with projected impact, and the fee
 
 ## E9 — Web Client Foundation
 
-**BRD sections:** —
+**BRD sections:** — · **Phase:** 1
 
 The React and MobX groundwork every feature screen builds on. Deliberately separated so that state, API access and layout conventions are decided once rather than reinvented in each feature epic. F9.1, F9.2 and F9.6 are groomed first because nothing else in this epic can start without a scaffolded project, a store convention and a token set to build against; F9.3–F9.5 and F9.7 stay undecomposed until picked up (see each feature's intent).
 
@@ -599,7 +605,7 @@ One documented treatment for each, so the honest empty states E5 and F5 require 
 
 ## E10 — Security, Privacy & Observability
 
-**BRD sections:** N1, N2, N3, N5
+**BRD sections:** N1, N2, N3, N5 · **Phase:** 1
 
 The cross-cutting non-functional requirements from BRD section 8 and the constraints in section 11, given their own epic so they are scheduled work rather than assumed work.
 
@@ -644,4 +650,192 @@ Upload and AI-backed endpoints are the expensive ones; limit them per account an
 *Requirements: N6*
 
 A user can export everything held about them and delete their account with all receipts and images, which section 11 makes a compliance expectation.
+
+---
+
+## E11 — Alternative Receipt Intake
+
+**BRD sections:** — · **Phase:** 2
+
+BRD section 10 assumes every receipt arrives as a photograph. That assumption is the product's largest retention risk: photographing receipts is effort the user has to repeat every week, and repeated effort is what stops budgeting apps being opened after the second week. This epic adds intake that costs the user nothing — e-receipts arriving by email, the fiscal QR code printed on the receipt, and national e-receipt services — behind the same ingestion pipeline, so the channel changes only how a receipt arrives and nothing downstream of it.
+
+### F11.1 — Intake channel abstraction
+
+*Requirements: A12, A15*
+
+One ingestion port with an adapter per channel, so adding a channel does not touch parsing, categorisation or budget calculation. Every receipt records the channel it arrived through and the source reference, because a support question about a wrong figure starts with where the data came from.
+
+### F11.2 — Email receipt ingestion
+
+*Requirements: —*
+
+A per-user forwarding address that accepts electronic receipts, extracting items from HTML bodies and PDF attachments. Sender verification matters here: an intake address is a public endpoint that writes to a user's financial record.
+
+### F11.3 — Fiscal QR code intake
+
+*Requirements: —*
+
+Scanning the QR code printed on a fiscal receipt retrieves the itemised record from the fiscal service directly, producing exact item data with no extraction error and no confidence threshold to tune.
+
+### F11.4 — National e-receipt service integration
+
+*Requirements: —*
+
+A feasibility spike followed by integration with the target market's e-receipt system (e-Paragon in Poland). The spike answers a question that affects the whole product: if receipts in this market become structured by law, extraction from photographs becomes the fallback path rather than the primary one. Produces an ADR before any code.
+
+### F11.5 — Cross-channel duplicate detection
+
+*Requirements: A14*
+
+One purchase that arrives twice through two channels is one receipt. BRD A14 compares merchant, date and total, which cannot tell a second channel's copy apart from a second visit to the same shop on the same day.
+
+### F11.6 — Intake settings interface
+
+*Requirements: —*
+
+The user can see their forwarding address, which channels are connected, and what arrived through each of them.
+
+---
+
+## E12 — Household & Shared Budgets
+
+**BRD sections:** — · **Phase:** 2
+
+BRD section 4.2 places shared budgets out of scope and section 14 leaves the question open. Commercially they are what makes the product stick: a household that has agreed a shared budget does not churn the way one person tracking their own spending does. This is not a feature bolted on top — it replaces the single-owner model that N2, every repository and every access-control test are built around, which is why it needs a recorded decision before any schema changes.
+
+### F12.1 — Ownership model decision
+
+*Requirements: N2*
+
+Whether a receipt is owned by a user who may share it, or by a household its members belong to. The choice constrains every repository already written, so it is decided and written up as an ADR before code changes.
+
+### F12.2 — Household entity, membership and roles
+
+*Requirements: —*
+
+Households, the members in them, and what a member may do — who can edit a shared receipt, who can change the household budget, who can remove a member.
+
+### F12.3 — Invitations and joining
+
+*Requirements: —*
+
+Inviting someone to a household and the states an invitation moves through, including an invitation to an address that has no account yet.
+
+### F12.4 — Personal and shared visibility
+
+*Requirements: —*
+
+A member's receipts are not household property by default. Sharing is a decision made per receipt or per intake channel — the weekly grocery run is shared, the pharmacy visit is not — and the household's totals include only what was shared.
+
+### F12.5 — Household budgets, statistics and goals
+
+*Requirements: —*
+
+BR-4, BR-5 and BR-6 computed over a household's combined shared data, including each member's contribution to the total, which is the number households actually argue over.
+
+### F12.6 — Access control under shared ownership
+
+*Requirements: N2*
+
+The cross-user suite from F1.3 and F10.2 becomes a cross-household suite: membership grants access, removal revokes it immediately, and a personal receipt stays invisible to the rest of the household.
+
+### F12.7 — Household interface
+
+*Requirements: —*
+
+Creating a household, managing members, choosing what is shared, and reading the household view of budget and statistics alongside the personal one.
+
+---
+
+## E13 — Aggregated Purchase Analytics
+
+**BRD sections:** — · **Phase:** 2
+
+The item-level data BO-2 produces is something bank and card feeds structurally cannot supply: what was actually bought, not which shop was paid. Aggregated across many users and anonymised, that is a saleable market signal. This epic is written with its constraints first because the failure mode is legal rather than technical: no aggregate is produced without explicit consent, no figure is published for a cohort small enough to identify someone, and no raw personal purchase data leaves the system in any form.
+
+### F13.1 — Explicit opt-in consent and withdrawal
+
+*Requirements: —*
+
+A separate, freely revocable consent — never bundled into terms of service — recording what was agreed to and when. Nothing else in this epic may touch a user's data without it, and withdrawal takes effect without the user having to ask twice.
+
+### F13.2 — Product normalisation catalogue
+
+*Requirements: —*
+
+"MLEKO UHT 3,2% 1L" and "Mleko 3.2% 1l" have to become one canonical product. This is the technical core of the epic: without normalisation the aggregates are noise, and normalisation quality sets the ceiling on what the data is worth.
+
+### F13.3 — Anonymisation and aggregation pipeline
+
+*Requirements: —*
+
+Pseudonymisation, deliberate coarsening of anything that narrows a person down, and aggregation — producing output in which no basket can be traced back to a household.
+
+### F13.4 — Minimum cohort thresholds
+
+*Requirements: —*
+
+No figure is published for a cohort below a defined number of contributing users. A query that would breach the threshold returns nothing rather than a small-sample number, because a small sample is how anonymised data stops being anonymous.
+
+### F13.5 — Separate analytics store
+
+*Requirements: —*
+
+Aggregates live outside the operational database, with no path from a business query back to a user's receipts. A boundary enforced by topology is worth more here than one enforced by review.
+
+### F13.6 — Business insight API
+
+*Requirements: —*
+
+Price and basket trends per product and category for business consumers, versioned and metered, delivering only what the aggregation pipeline has already cleared.
+
+### F13.7 — Transparency and deletion propagation
+
+*Requirements: N3, N6*
+
+A user can see what their data contributes, and withdrawing consent or deleting an account removes their contribution from future aggregates — the extension of N3 and N6 into a second data store.
+
+---
+
+## E14 — B2B Export & Accounting Integrations
+
+**BRD sections:** — · **Phase:** 2
+
+Willingness to pay for structured receipt data is far higher among small businesses and the accountants who serve them than among individuals tracking groceries, and the sale needs no consumer marketing budget. F7.6 already exports CSV and JSON; this epic is about an export a bookkeeper's software ingests without a human reshaping it, the business fields such an export requires, and the extraction pipeline itself sold as an API.
+
+### F14.1 — Business expense fields
+
+*Requirements: —*
+
+VAT rate and amount per line item, the merchant's tax identifier, and a business-or-personal split. BRD section 9's data model carries none of them, and an accounting export is worthless without all three.
+
+### F14.2 — Accounting-format export
+
+*Requirements: N6*
+
+Export in the formats accounting software reads directly, rather than the generic CSV/JSON of F7.6 that leaves the reshaping work to whoever receives it.
+
+### F14.3 — Scheduled and bulk delivery
+
+*Requirements: —*
+
+The monthly export is produced and delivered without anyone remembering to request it, including histories large enough that generating one synchronously is not an option.
+
+### F14.4 — Receipt parsing API for third parties
+
+*Requirements: —*
+
+The extraction pipeline built in E3 offered as a product in its own right: API keys, a versioned response contract that callers can depend on across parser versions, and quotas.
+
+### F14.5 — Usage metering and plan limits
+
+*Requirements: —*
+
+Counting what each account consumes — receipts parsed, API calls made, images stored. Every paid tier depends on this number, and nothing in phase 1 records it.
+
+### F14.6 — Business account interface
+
+*Requirements: —*
+
+Export configuration, API key management and current usage against plan limits.
 

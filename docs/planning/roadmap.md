@@ -2,6 +2,10 @@
 
 Epic sequencing and what forces that order. Sizes are relative, not calendar estimates.
 
+Phases 1-5 are the BRD scope (`phase: 1` in the backlog) and are what ships. Phase 6 is
+commercial scope (`phase: 2`, labelled `post-mvp`) — planned openly, started only once the
+BRD scope is complete.
+
 ## Dependency graph
 
 ```
@@ -16,6 +20,15 @@ E0 Foundation ──┬─► E1 Identity ──┬─► E2 Ingestion ──►
                                   │                                  E7 Statistics ──► E8 Goals & advice
                                   │
                                   └─► E10 Security & observability (runs alongside, from E2 onward)
+```
+
+Phase 2 hangs off the phase-1 epics whose decisions it revisits:
+
+```
+E2 Ingestion ──────────► E11 Alternative intake      (adds channels to one pipeline)
+E1 Identity ───────────► E12 Household budgets       (replaces the ownership model)
+E5 Categorization ─────► E13 Aggregated analytics    (needs normalised item data)
+E3 Parsing + E7 Export ► E14 B2B export & API        (sells both as products)
 ```
 
 ## Phases
@@ -58,6 +71,20 @@ this feature is not testable until real spending data exists to reason over.
 **Done when:** a stated goal produces specific, quantified recommendations citing the user's
 own purchases, and a goal at risk raises a warning before the month ends.
 
+### Phase 6 — Product becomes a business
+**E11, E12, E13, E14.** Deferred commercial scope, sequenced by what each one unblocks rather
+than by how attractive it sounds. E11 first: photographing every receipt is the retention
+ceiling, and no amount of insight fixes a product people stop feeding. E12 second, because
+shared budgets are what stop a household churning — and because it rewrites the ownership
+model, so the longer it waits the more repositories it touches. E14 third: small businesses
+pay for structured receipt data at prices individuals do not, and it needs no consumer
+marketing. E13 last, because it is worth nothing until there are enough users to aggregate
+and it carries the heaviest legal obligations.
+
+**Not done when:** these epics are explicitly not part of the first release. They exist in the
+backlog so that phase-1 decisions — how a receipt arrives, who owns it, what a line item
+records — are made knowing they are coming, not so that they compete for attention now.
+
 ### Continuous — E10
 Security and observability start in Phase 2, when the first financial data is stored, and
 continue throughout. The access-control test suite grows with every epic that introduces a
@@ -82,4 +109,6 @@ before their epic starts:
 - **Budget periods** — strict calendar months or custom cycles. Blocks E6.
 
 The remaining three (success metric targets, launch currencies, household budgets) affect
-scope beyond this phase and can be answered later.
+scope beyond this phase and can be answered later. Household budgets — BRD question 3 — now
+has E12 behind it, which turns an open question into scheduled phase-2 work; the decision it
+still needs is recorded as F12.1's ADR.

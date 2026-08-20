@@ -12,6 +12,12 @@
 # `tasks:` is only populated for epics that have been groomed. Ungroomed epics
 # carry features only and are decomposed just before work on them starts, so the
 # decomposition reflects the codebase as it actually is at that moment.
+#
+# `phase:` separates what the product must do from what the business would like it
+# to do later. Phase 1 is the BRD scope and is what ships. Phase 2 is commercial
+# scope: planned in the open so the phase-1 design does not accidentally rule it
+# out, but not started until phase 1 is complete. Everything under a phase-2 epic
+# is labelled `post-mvp` in GitHub, so the board can be read as phase 1 alone.
 
 project:
   name: AI Budget Agent
@@ -30,12 +36,14 @@ labels:
   - {name: security,   color: "000000", description: "Security, privacy, access control"}
   - {name: testing,    color: "BFDADC", description: "Test harness and acceptance coverage"}
   - {name: needs-grooming, color: "E99695", description: "Not yet decomposed into tasks"}
+  - {name: post-mvp,   color: "D4C5F9", description: "Phase 2 — commercial scope, after the BRD scope ships"}
 
 epics:
 
   - key: E0
     title: Foundation & Delivery Platform
     br: []
+    phase: 1
     groomed: true
     summary: >
       Everything required before a single business requirement can be implemented:
@@ -285,6 +293,7 @@ epics:
   - key: E1
     title: Identity & Account
     br: [N2]
+    phase: 1
     groomed: true
     summary: >
       Every BRD scenario begins with "Given the user is logged in", and N2 forbids one user's
@@ -406,6 +415,7 @@ epics:
   - key: E2
     title: Receipt Ingestion & Storage
     br: [BR-1]
+    phase: 1
     groomed: false
     summary: >
       Accepting receipt photos: format validation, the two upload modes with their photo-count
@@ -459,6 +469,7 @@ epics:
   - key: E3
     title: Receipt Parsing & Extraction
     br: [BR-1]
+    phase: 1
     groomed: false
     summary: >
       Turning a validated photo into a structured receipt: field extraction, confidence
@@ -518,6 +529,7 @@ epics:
   - key: E4
     title: Multi-Photo Position Matching
     br: [BR-2]
+    phase: 1
     groomed: false
     summary: >
       Recognising that a line item appearing on two overlapping photos of one long receipt is
@@ -578,6 +590,7 @@ epics:
   - key: E5
     title: Spend Categorization
     br: [BR-3]
+    phase: 1
     groomed: false
     summary: >
       Classifying every line item into a spending category, with a confidence-gated fallback,
@@ -639,6 +652,7 @@ epics:
   - key: E6
     title: Monthly Budget Calculation
     br: [BR-4]
+    phase: 1
     groomed: false
     summary: >
       Aggregating receipts into monthly totals by transaction date, distinguishing a
@@ -698,6 +712,7 @@ epics:
   - key: E7
     title: Statistics, Comparison & Export
     br: [BR-5]
+    phase: 1
     groomed: false
     summary: >
       Category-level insight over arbitrary date ranges, period-over-period comparison, honest
@@ -755,6 +770,7 @@ epics:
   - key: E8
     title: Goals & AI Optimization Advice
     br: [BR-6]
+    phase: 1
     groomed: false
     summary: >
       The product's differentiator: a user states a financial or lifestyle goal and receives
@@ -838,6 +854,7 @@ epics:
   - key: E9
     title: Web Client Foundation
     br: []
+    phase: 1
     groomed: true
     summary: >
       The React and MobX groundwork every feature screen builds on. Deliberately separated so
@@ -973,6 +990,7 @@ epics:
   - key: E10
     title: Security, Privacy & Observability
     br: [N1, N2, N3, N5]
+    phase: 1
     groomed: false
     summary: >
       The cross-cutting non-functional requirements from BRD section 8 and the constraints in
@@ -1025,3 +1043,244 @@ epics:
         intent: >
           A user can export everything held about them and delete their account with all
           receipts and images, which section 11 makes a compliance expectation.
+
+  # ---------------------------------------------------------------- phase 2
+  # Everything below is commercial scope, deferred until the BRD scope ships.
+  # It is written down now for one reason: three of these epics change decisions
+  # made in phase 1 (who owns a receipt, how a receipt arrives, what is recorded
+  # about a line item), and a phase-1 design that ignores them is expensive to
+  # undo later. Planning them is not a commitment to build them.
+
+  - key: E11
+    title: Alternative Receipt Intake
+    br: []
+    phase: 2
+    groomed: false
+    summary: >
+      BRD section 10 assumes every receipt arrives as a photograph. That assumption is the
+      product's largest retention risk: photographing receipts is effort the user has to repeat
+      every week, and repeated effort is what stops budgeting apps being opened after the second
+      week. This epic adds intake that costs the user nothing — e-receipts arriving by email, the
+      fiscal QR code printed on the receipt, and national e-receipt services — behind the same
+      ingestion pipeline, so the channel changes only how a receipt arrives and nothing
+      downstream of it.
+    features:
+      - key: F11.1
+        title: Intake channel abstraction
+        labels: [backend]
+        requirements: [A12, A15]
+        intent: >
+          One ingestion port with an adapter per channel, so adding a channel does not touch
+          parsing, categorisation or budget calculation. Every receipt records the channel it
+          arrived through and the source reference, because a support question about a wrong
+          figure starts with where the data came from.
+      - key: F11.2
+        title: Email receipt ingestion
+        labels: [backend, infra]
+        intent: >
+          A per-user forwarding address that accepts electronic receipts, extracting items from
+          HTML bodies and PDF attachments. Sender verification matters here: an intake address is
+          a public endpoint that writes to a user's financial record.
+      - key: F11.3
+        title: Fiscal QR code intake
+        labels: [backend]
+        intent: >
+          Scanning the QR code printed on a fiscal receipt retrieves the itemised record from the
+          fiscal service directly, producing exact item data with no extraction error and no
+          confidence threshold to tune.
+      - key: F11.4
+        title: National e-receipt service integration
+        labels: [backend]
+        intent: >
+          A feasibility spike followed by integration with the target market's e-receipt system
+          (e-Paragon in Poland). The spike answers a question that affects the whole product: if
+          receipts in this market become structured by law, extraction from photographs becomes
+          the fallback path rather than the primary one. Produces an ADR before any code.
+      - key: F11.5
+        title: Cross-channel duplicate detection
+        labels: [backend]
+        requirements: [A14]
+        intent: >
+          One purchase that arrives twice through two channels is one receipt. BRD A14 compares
+          merchant, date and total, which cannot tell a second channel's copy apart from a second
+          visit to the same shop on the same day.
+      - key: F11.6
+        title: Intake settings interface
+        labels: [frontend]
+        intent: >
+          The user can see their forwarding address, which channels are connected, and what
+          arrived through each of them.
+
+  - key: E12
+    title: Household & Shared Budgets
+    br: []
+    phase: 2
+    groomed: false
+    summary: >
+      BRD section 4.2 places shared budgets out of scope and section 14 leaves the question open.
+      Commercially they are what makes the product stick: a household that has agreed a shared
+      budget does not churn the way one person tracking their own spending does. This is not a
+      feature bolted on top — it replaces the single-owner model that N2, every repository and
+      every access-control test are built around, which is why it needs a recorded decision
+      before any schema changes.
+    features:
+      - key: F12.1
+        title: Ownership model decision
+        labels: [backend, database]
+        requirements: [N2]
+        intent: >
+          Whether a receipt is owned by a user who may share it, or by a household its members
+          belong to. The choice constrains every repository already written, so it is decided and
+          written up as an ADR before code changes.
+      - key: F12.2
+        title: Household entity, membership and roles
+        labels: [backend, database]
+        intent: >
+          Households, the members in them, and what a member may do — who can edit a shared
+          receipt, who can change the household budget, who can remove a member.
+      - key: F12.3
+        title: Invitations and joining
+        labels: [backend]
+        intent: >
+          Inviting someone to a household and the states an invitation moves through, including
+          an invitation to an address that has no account yet.
+      - key: F12.4
+        title: Personal and shared visibility
+        labels: [backend]
+        intent: >
+          A member's receipts are not household property by default. Sharing is a decision made
+          per receipt or per intake channel — the weekly grocery run is shared, the pharmacy
+          visit is not — and the household's totals include only what was shared.
+      - key: F12.5
+        title: Household budgets, statistics and goals
+        labels: [backend]
+        intent: >
+          BR-4, BR-5 and BR-6 computed over a household's combined shared data, including each
+          member's contribution to the total, which is the number households actually argue over.
+      - key: F12.6
+        title: Access control under shared ownership
+        labels: [security, testing]
+        requirements: [N2]
+        intent: >
+          The cross-user suite from F1.3 and F10.2 becomes a cross-household suite: membership
+          grants access, removal revokes it immediately, and a personal receipt stays invisible
+          to the rest of the household.
+      - key: F12.7
+        title: Household interface
+        labels: [frontend]
+        intent: >
+          Creating a household, managing members, choosing what is shared, and reading the
+          household view of budget and statistics alongside the personal one.
+
+  - key: E13
+    title: Aggregated Purchase Analytics
+    br: []
+    phase: 2
+    groomed: false
+    summary: >
+      The item-level data BO-2 produces is something bank and card feeds structurally cannot
+      supply: what was actually bought, not which shop was paid. Aggregated across many users and
+      anonymised, that is a saleable market signal. This epic is written with its constraints
+      first because the failure mode is legal rather than technical: no aggregate is produced
+      without explicit consent, no figure is published for a cohort small enough to identify
+      someone, and no raw personal purchase data leaves the system in any form.
+    features:
+      - key: F13.1
+        title: Explicit opt-in consent and withdrawal
+        labels: [security, backend]
+        intent: >
+          A separate, freely revocable consent — never bundled into terms of service — recording
+          what was agreed to and when. Nothing else in this epic may touch a user's data without
+          it, and withdrawal takes effect without the user having to ask twice.
+      - key: F13.2
+        title: Product normalisation catalogue
+        labels: [ai, backend]
+        intent: >
+          "MLEKO UHT 3,2% 1L" and "Mleko 3.2% 1l" have to become one canonical product. This is
+          the technical core of the epic: without normalisation the aggregates are noise, and
+          normalisation quality sets the ceiling on what the data is worth.
+      - key: F13.3
+        title: Anonymisation and aggregation pipeline
+        labels: [backend, database]
+        intent: >
+          Pseudonymisation, deliberate coarsening of anything that narrows a person down, and
+          aggregation — producing output in which no basket can be traced back to a household.
+      - key: F13.4
+        title: Minimum cohort thresholds
+        labels: [security, backend]
+        intent: >
+          No figure is published for a cohort below a defined number of contributing users. A
+          query that would breach the threshold returns nothing rather than a small-sample
+          number, because a small sample is how anonymised data stops being anonymous.
+      - key: F13.5
+        title: Separate analytics store
+        labels: [database, infra]
+        intent: >
+          Aggregates live outside the operational database, with no path from a business query
+          back to a user's receipts. A boundary enforced by topology is worth more here than one
+          enforced by review.
+      - key: F13.6
+        title: Business insight API
+        labels: [backend]
+        intent: >
+          Price and basket trends per product and category for business consumers, versioned and
+          metered, delivering only what the aggregation pipeline has already cleared.
+      - key: F13.7
+        title: Transparency and deletion propagation
+        labels: [security, backend]
+        requirements: [N3, N6]
+        intent: >
+          A user can see what their data contributes, and withdrawing consent or deleting an
+          account removes their contribution from future aggregates — the extension of N3 and N6
+          into a second data store.
+
+  - key: E14
+    title: B2B Export & Accounting Integrations
+    br: []
+    phase: 2
+    groomed: false
+    summary: >
+      Willingness to pay for structured receipt data is far higher among small businesses and the
+      accountants who serve them than among individuals tracking groceries, and the sale needs no
+      consumer marketing budget. F7.6 already exports CSV and JSON; this epic is about an export
+      a bookkeeper's software ingests without a human reshaping it, the business fields such an
+      export requires, and the extraction pipeline itself sold as an API.
+    features:
+      - key: F14.1
+        title: Business expense fields
+        labels: [backend, database]
+        intent: >
+          VAT rate and amount per line item, the merchant's tax identifier, and a
+          business-or-personal split. BRD section 9's data model carries none of them, and an
+          accounting export is worthless without all three.
+      - key: F14.2
+        title: Accounting-format export
+        labels: [backend]
+        requirements: [N6]
+        intent: >
+          Export in the formats accounting software reads directly, rather than the generic
+          CSV/JSON of F7.6 that leaves the reshaping work to whoever receives it.
+      - key: F14.3
+        title: Scheduled and bulk delivery
+        labels: [backend, infra]
+        intent: >
+          The monthly export is produced and delivered without anyone remembering to request it,
+          including histories large enough that generating one synchronously is not an option.
+      - key: F14.4
+        title: Receipt parsing API for third parties
+        labels: [backend, security]
+        intent: >
+          The extraction pipeline built in E3 offered as a product in its own right: API keys, a
+          versioned response contract that callers can depend on across parser versions, and
+          quotas.
+      - key: F14.5
+        title: Usage metering and plan limits
+        labels: [backend]
+        intent: >
+          Counting what each account consumes — receipts parsed, API calls made, images stored.
+          Every paid tier depends on this number, and nothing in phase 1 records it.
+      - key: F14.6
+        title: Business account interface
+        labels: [frontend]
+        intent: >
+          Export configuration, API key management and current usage against plan limits.
