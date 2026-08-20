@@ -26,6 +26,41 @@ describe a system that will not exist by then.
 So an epic is groomed — decomposed into tasks — immediately before work on it starts.
 Ungroomed epics carry the `needs-grooming` label and `groomed: false` in the YAML.
 
+## Epics are vertical slices, not layers
+
+An epic delivers a capability from the screen down to the database. The UI that exercises an
+endpoint belongs in the **same epic** as that endpoint, and at grooming time in the **same
+feature** — so one pull request produces something testable by using it, not by reaching for
+curl or Postman.
+
+This is not a style preference. Splitting a capability into "backend epic" and "frontend epic"
+puts the two halves of one feature arbitrarily far apart: authentication was originally planned
+with its endpoints in E1 and its screens in E9, eight epics later, which meant the API could not
+be exercised through the product for the entire gap. When grooming an epic, give each feature
+its own UI tasks. Reserve a trailing "interface" feature for screens that genuinely aggregate
+several capabilities, such as a dashboard — never for "the frontend half".
+
+Two epics are exempt because they have no capability of their own: **E0** (backend and delivery
+foundation) and **E9** (the shared React/MobX floor — scaffold, stores, generated client, design
+tokens, app shell). Only work with no domain dependency belongs in either.
+
+## Order of work comes from dependencies, not epic numbers
+
+`depends_on:` in `backlog.yaml` lists the keys that must land before an item can start, and
+renders into the issue body as `Blocked by: #N`. Read that, not the numbering: E9's frontend
+foundation is deliberately built before E1, because nothing in it waits on an endpoint.
+
+Before writing a task, check that everything it touches will exist by the time it runs. A task
+whose subject is a domain entity — seed data, a per-entity test factory — cannot be planned into
+an epic that precedes the entity. Two such tasks were originally written into E0 against models
+that E1, E3 and E5 introduce; both had to be moved once the contradiction surfaced in
+implementation rather than in planning.
+
+Task keys are permanent. Every task carries an explicit `key:` in the YAML, because `sync`
+matches issues on that key — deriving it from list position means deleting a task silently
+re-points the issues below it and orphans the last one. Never reuse a retired key. When a task
+does leave the plan, `sync` reports its issue as an orphan; close or re-key it by hand.
+
 ## Phases: what ships, and what is only planned
 
 Epics carry `phase: 1` or `phase: 2`. Phase 1 is the BRD scope and is the only work that

@@ -73,8 +73,34 @@ def load() -> dict:
         return yaml.safe_load(handle)
 
 
-def task_key(feature_key: str, index: int) -> str:
+def task_key(feature_key: str, index: int, task: dict | None = None) -> str:
+    """Return a task's backlog key, preferring the explicit `key:` it declares.
+
+    The key is what `sync` matches an existing GitHub issue against, so it has to
+    survive the task moving position inside its feature. Deriving it from the
+    index alone means deleting a task re-points every issue below it at the wrong
+    task and orphans the last one — silently, because the marker still parses.
+
+    The positional fallback stays for tasks written but not yet synced; anything
+    that already owns an issue carries an explicit key.
+    """
+    if task is not None and task.get("key"):
+        return str(task["key"])
     return f"{feature_key}.{index}"
+
+
+def depends_line(refs: list[str] | None, numbers: dict[str, int]) -> str | None:
+    """Render the blocked-by bullet, resolving backlog keys to issue numbers.
+
+    Returns None when nothing is declared, so the bullet is absent rather than
+    present-and-empty. A key with no issue yet — a dependency pointing into an
+    ungroomed epic — renders as the bare key: the constraint is still stated,
+    which is the whole point of recording it before the work is decomposed.
+    """
+    if not refs:
+        return None
+    rendered = [f"#{numbers[r]} ({r})" if r in numbers else r for r in refs]
+    return f"- **Blocked by:** {', '.join(rendered)}"
 
 
 def clean(text: str | None) -> str:
@@ -138,7 +164,7 @@ def epic_body(epic: dict, feature_numbers: dict[str, int]) -> str:
 
 
 def feature_body(feature: dict, epic: dict, epic_number: int | None,
-                 task_numbers: dict[str, int]) -> str:
+                 task_numbers: dict[str, int], numbers: dict[str, int] | None = None) -> str:
     lines = [
         f"<!-- backlog-key: {feature['key']} -->",
         "**Feature**",
@@ -146,6 +172,11 @@ def feature_body(feature: dict, epic: dict, epic_number: int | None,
         f"- **Epic:** {f'#{epic_number}' if epic_number else ''} {epic['key']} {epic['title']}",
         f"- **BRD requirements:** {requirement_line(feature.get('requirements'))}",
         phase_line(epic),
+    ]
+    blocked = depends_line(feature.get("depends_on"), numbers or {})
+    if blocked:
+        lines.append(blocked)
+    lines += [
         "",
         "### Intent",
         clean(feature.get("intent")),
@@ -154,7 +185,7 @@ def feature_body(feature: dict, epic: dict, epic_number: int | None,
     if tasks:
         lines += ["", "### Tasks"]
         for index, task in enumerate(tasks, start=1):
-            key = task_key(feature["key"], index)
+            key = task_key(feature["key"], index, task)
             number = task_numbers.get(key)
             ref = f"#{number}" if number else "(pending)"
             lines.append(f"- [ ] {ref} — {task['title']}")
@@ -170,14 +201,20 @@ def feature_body(feature: dict, epic: dict, epic_number: int | None,
 
 
 def task_body(task: dict, key: str, feature: dict, feature_number: int | None,
-              epic: dict) -> str:
-    return "\n".join([
+              epic: dict, numbers: dict[str, int] | None = None) -> str:
+    header = [
         f"<!-- backlog-key: {key} -->",
         "**Task**",
         "",
         f"- **Feature:** {f'#{feature_number}' if feature_number else ''} {feature['key']} {feature['title']}",
         f"- **BRD requirements:** {requirement_line(feature.get('requirements'))}",
         phase_line(epic),
+    ]
+    blocked = depends_line(task.get("depends_on"), numbers or {})
+    if blocked:
+        header.append(blocked)
+    return "\n".join([
+        *header,
         "",
         "### What to do",
         clean(task.get("detail")),
@@ -236,10 +273,12 @@ def render_markdown(data: dict) -> str:
             "",
         ]
         for feature in epic["features"]:
+            blocked = feature.get("depends_on")
             lines += [
                 f"### {feature['key']} — {feature['title']}",
                 "",
-                f"*Requirements: {requirement_line(feature.get('requirements'))}*",
+                f"*Requirements: {requirement_line(feature.get('requirements'))}*"
+                + (f" · *Blocked by: {', '.join(blocked)}*" if blocked else ""),
                 "",
                 clean(feature.get("intent")),
                 "",
@@ -247,7 +286,12 @@ def render_markdown(data: dict) -> str:
             tasks = feature.get("tasks") or []
             if tasks:
                 for index, task in enumerate(tasks, start=1):
-                    lines.append(f"- **{task_key(feature['key'], index)}** {task['title']} — {clean(task.get('detail'))}")
+                    blocked = task.get("depends_on")
+                    suffix = f" _(blocked by: {', '.join(blocked)})_" if blocked else ""
+                    lines.append(
+                        f"- **{task_key(feature['key'], index, task)}** {task['title']} — "
+                        f"{clean(task.get('detail'))}{suffix}"
+                    )
                 lines.append("")
     return "\n".join(lines) + "\n"
 
@@ -320,6 +364,38 @@ def upsert(repo: str, key: str, title: str, body: str, labels: list[str],
     return created["number"]
 
 
+def backlog_keys(data: dict) -> set[str]:
+    """Every key the YAML currently declares, across all three levels."""
+    keys: set[str] = set()
+    for epic in data["epics"]:
+        keys.add(epic["key"])
+        for feature in epic["features"]:
+            keys.add(feature["key"])
+            for i, task in enumerate(feature.get("tasks") or [], start=1):
+                keys.add(task_key(feature["key"], i, task))
+    return keys
+
+
+def report_orphans(data: dict, index: dict[str, dict]) -> None:
+    """Report open issues whose backlog key no longer exists in the YAML.
+
+    Removing a task from the plan leaves its issue behind: `upsert` only ever
+    touches keys the YAML still declares, so the abandoned issue stays open with
+    stale content and nothing points at it. Deliberately reports rather than
+    closes — deciding that a dropped task is finished, superseded or merely
+    deferred is a judgement call, not something a sync run should make.
+    """
+    declared = backlog_keys(data)
+    orphans = [(key, issue) for key, issue in index.items()
+               if key not in declared and issue.get("state") == "open"]
+    if not orphans:
+        return
+    print("Orphans (open issues whose backlog key is gone from the YAML):")
+    for _, issue in sorted(orphans):
+        print(f"  ! #{issue['number']} {issue['title']}")
+    print("  Close, re-key or restore each by hand — sync will not touch them again.")
+
+
 def sync(data: dict, dry_run: bool) -> None:
     repo = data["project"]["repo"]
     print("Labels:")
@@ -352,7 +428,7 @@ def sync(data: dict, dry_run: bool) -> None:
                 feature_numbers[feature["key"]] = f_number
 
             for i, task in enumerate(feature.get("tasks") or [], start=1):
-                key = task_key(feature["key"], i)
+                key = task_key(feature["key"], i, task)
                 t_number = upsert(repo, key, f"[{key}] {task['title']}",
                                   task_body(task, key, feature,
                                             feature_numbers.get(feature["key"]), epic),
@@ -362,11 +438,17 @@ def sync(data: dict, dry_run: bool) -> None:
                 if t_number:
                     task_numbers[key] = t_number
 
+    report_orphans(data, index)
+
     if dry_run:
         print("\nDry run — nothing was written. Issue cross-links are resolved on the real run.")
         return
 
     print("Issues (pass 2 — cross-link):")
+    # A depends_on may point at anything, including an issue created later in
+    # pass 1, so blocked-by links can only be resolved once every key has a number.
+    numbers = {**epic_numbers, **feature_numbers, **task_numbers}
+    relinked = 0
     for epic in data["epics"]:
         number = epic_numbers[epic["key"]]
         gh_api(f"repos/{repo}/issues/{number}", "PATCH",
@@ -374,8 +456,16 @@ def sync(data: dict, dry_run: bool) -> None:
         for feature in epic["features"]:
             f_number = feature_numbers[feature["key"]]
             gh_api(f"repos/{repo}/issues/{f_number}", "PATCH",
-                   {"body": feature_body(feature, epic, number, task_numbers)})
-    print(f"  linked {len(epic_numbers)} epics and {len(feature_numbers)} features")
+                   {"body": feature_body(feature, epic, number, task_numbers, numbers)})
+            for i, task in enumerate(feature.get("tasks") or [], start=1):
+                if not task.get("depends_on"):
+                    continue
+                key = task_key(feature["key"], i, task)
+                gh_api(f"repos/{repo}/issues/{task_numbers[key]}", "PATCH",
+                       {"body": task_body(task, key, feature, f_number, epic, numbers)})
+                relinked += 1
+    print(f"  linked {len(epic_numbers)} epics and {len(feature_numbers)} features"
+          f"{f', {relinked} blocked-by tasks' if relinked else ''}")
 
     print("Board:")
     project(data)

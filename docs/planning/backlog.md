@@ -3,22 +3,22 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-15 epics · 104 features · 58 tasks written so far.
+15 epics · 105 features · 57 tasks written so far.
 
 11 epics are phase 1 — the BRD scope, delivered before launch. 4 are phase 2: commercial scope that is planned but deliberately not started until phase 1 is complete.
 
 | Epic | Title | BRD | Features | Groomed | Phase |
 |---|---|---|---|---|---|
 | E0 | Foundation & Delivery Platform | — | 9 | yes | 1 |
-| E1 | Identity & Account | N2 | 4 | yes | 1 |
+| E1 | Identity & Account | N2 | 5 | yes | 1 |
 | E2 | Receipt Ingestion & Storage | BR-1 | 6 | no | 1 |
 | E3 | Receipt Parsing & Extraction | BR-1 | 7 | no | 1 |
 | E4 | Multi-Photo Position Matching | BR-2 | 7 | no | 1 |
-| E5 | Spend Categorization | BR-3 | 7 | no | 1 |
+| E5 | Spend Categorization | BR-3 | 8 | no | 1 |
 | E6 | Monthly Budget Calculation | BR-4 | 7 | no | 1 |
 | E7 | Statistics, Comparison & Export | BR-5 | 7 | no | 1 |
 | E8 | Goals & AI Optimization Advice | BR-6 | 10 | no | 1 |
-| E9 | Web Client Foundation | — | 7 | yes | 1 |
+| E9 | Web Client Foundation | — | 6 | yes | 1 |
 | E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 7 | no | 1 |
 | E11 | Alternative Receipt Intake | — | 6 | no | 2 |
 | E12 | Household & Shared Budgets | — | 7 | no | 2 |
@@ -74,8 +74,7 @@ The persistence layer is established with async sessions, migration tooling and 
 A developer can bring up the full stack — API, client, PostgreSQL and S3-compatible object storage — locally with one command.
 
 - **F0.4.1** Docker Compose stack with PostgreSQL and MinIO — Compose file with pinned images, named volumes, health checks, and a bootstrap step creating the receipts bucket. MinIO stands in for production object storage. Lives at the repository root, not under infra/, so `docker compose up` works from a fresh clone with no extra flags.
-- **F0.4.2** Task runner targets for the common workflows — up, down, migrate, seed, test, lint, typecheck. Both languages behind the same interface so nobody memorises two toolchains.
-- **F0.4.3** Seed script for local sample data — Creates a demo user with a handful of receipts spanning two months, enough to exercise the monthly-budget and statistics epics without uploading photos.
+- **F0.4.2** Task runner targets for the common workflows — up, down, migrate, test, lint, typecheck. Both languages behind the same interface so nobody memorises two toolchains. A `seed` target lands with the seed script itself in F5.8, once there are entities to seed.
 - **F0.4.4** Quickstart section in the README — Clone-to-running instructions, prerequisites with versions, and how to obtain and configure the Claude API key.
 
 ### F0.5 — Continuous integration
@@ -97,7 +96,7 @@ The Gherkin scenarios already written in the BRD execute as the automated accept
 
 - **F0.6.1** pytest foundation with async support and isolated test database — pytest-asyncio, a per-run test database created from migrations, and transactional rollback between tests for isolation.
 - **F0.6.2** Extract the BRD Gherkin into executable .feature files — Move the scenarios from BRD sections BR-1 through BR-6 into tests/features/, one file per business requirement, preserving the wording verbatim so the documents stay comparable. Steps are stubbed as skipped until their epic is implemented.
-- **F0.6.3** Test data factories — Factories for user, receipt, line item and category so scenarios read as business language rather than ORM setup.
+- **F0.6.3** Test data factory infrastructure and conventions — The factory library, the base class and the naming convention that lets a scenario read as business language rather than ORM setup. Delivers no per-entity factory: no domain entity exists yet at E0, and each is added by the epic that introduces it — the same rule F1.3's cross-user suite follows.
 - **F0.6.4** Coverage reporting and BRD traceability report — Coverage gate in CI, plus a generated report mapping each BRD requirement ID (A1-A15, B1-B9, C1-C7, D1-D7, E1-E6, F1-F9, N1-N6) to the tests covering it.
 
 ### F0.7 — Configuration, secrets and environments
@@ -130,7 +129,7 @@ The application can be deployed to AWS from infrastructure-as-code rather than b
 
 **BRD sections:** N2 · **Phase:** 1
 
-Every BRD scenario begins with "Given the user is logged in", and N2 forbids one user's data from reaching another. This epic establishes authentication, session handling, the user profile fields from the BRD data model, and the scoping guarantee that all later epics depend on.
+Every BRD scenario begins with "Given the user is logged in", and N2 forbids one user's data from reaching another. This epic establishes authentication, session handling, the user profile fields from the BRD data model, and the scoping guarantee that all later epics depend on. Full stack: the login, registration and logout screens and the authenticated route table live here with the endpoints they call (F1.5), not in E9 — E9 owns only the frontend groundwork that has no domain dependency.
 
 ### F1.1 — Registration and login
 
@@ -167,13 +166,19 @@ Satisfies BRD N2 structurally rather than by convention: it must be difficult to
 
 ### F1.4 — User profile and preferences
 
-*Requirements: —*
+*Requirements: —* · *Blocked by: F1.1, F9.4*
 
 A user can set the account currency and an optional monthly budget limit, which BRD D7 uses to express spend as a percentage of target.
 
 - **F1.4.1** GET and PATCH /me endpoints — Read and partially update the profile. Changing budget_limit must not retroactively rewrite finalised monthly snapshots — it affects presentation only.
 - **F1.4.2** Currency validation and the single-currency assumption — ISO 4217 validation, and an explicit guard rejecting a currency change once receipts exist, since BRD section 4.2 puts conversion out of scope.
 - **F1.4.3** Profile screen — Displays and edits currency and monthly budget limit, backed by a MobX store following the conventions set in epic E9.
+
+### F1.5 — Authentication flows and protected routing
+
+*Requirements: —* · *Blocked by: F1.1, F1.2, F9.3, F9.4*
+
+The screens that make this epic's endpoints usable and testable without curl: login, registration and logout, token storage, transparent refresh on 401 without losing the user's in-flight action, and the authenticated-versus-public route table with its redirect on expiry. Held here rather than in E9 because it is the frontend half of this epic's own capability — separating the two put a working UI eight epics away from the API it exercises. Not yet groomed into tasks: the storage strategy and guard shape follow from F1.2's session model, which does not exist yet.
 
 ---
 
@@ -215,7 +220,7 @@ Upload returns immediately with a tracking handle while parsing proceeds in the 
 
 ### F2.6 — Upload user interface
 
-*Requirements: A3, A4, A5, A6, A7, A8*
+*Requirements: A3, A4, A5, A6, A7, A8* · *Blocked by: F2.2, F2.3, F1.5, F9.4*
 
 Mode selection, adding upload lines, per-line photo previews, and client-side limit feedback before bytes are sent.
 
@@ -265,7 +270,7 @@ A receipt matching an existing one on merchant, date and total prompts the user 
 
 ### F3.7 — Receipt review and correction interface
 
-*Requirements: A10, A11, A14*
+*Requirements: A10, A11, A14* · *Blocked by: F3.3, F3.4, F1.5, F9.4*
 
 Side-by-side original photo and extracted data, with low-confidence fields highlighted for confirmation and the manual-review queue reachable in one click.
 
@@ -315,7 +320,7 @@ Merge the per-photo extractions of one receipt into a single item list where mat
 
 ### F4.7 — Match review interface
 
-*Requirements: B7*
+*Requirements: B7* · *Blocked by: F4.2, F4.5, F1.5, F9.4*
 
 Show detected overlaps between photos with the evidence, and let the user flip any decision.
 
@@ -365,9 +370,15 @@ Users can create their own categories, immediately available for both manual and
 
 ### F5.7 — Categorization review interface
 
-*Requirements: C3, C4, C6*
+*Requirements: C3, C4, C6* · *Blocked by: F5.3, F5.4, F1.5, F9.4*
 
 A review queue for flagged items and inline category editing wherever line items are displayed.
+
+### F5.8 — Seed script for local sample data
+
+*Requirements: —* · *Blocked by: F1.1, F3.5, F5.1*
+
+A demo user with a handful of categorised receipts spanning two months, plus the `seed` task-runner target that invokes it — enough to exercise the monthly-budget and statistics epics without uploading photos. Lands here, at the end of E5, because this is the first point where every entity it writes exists: User (F1.1), receipt and line items (F3.5) and categories (F5.1). It was originally planned in E0's local development environment, where none of those had been built yet.
 
 ---
 
@@ -415,7 +426,7 @@ Where a monthly limit is set, express current spend as a percentage of it, inclu
 
 ### F6.7 — Budget dashboard
 
-*Requirements: D1, D4, D7*
+*Requirements: D1, D4, D7* · *Blocked by: F6.3, F6.6, F1.5, F9.4*
 
 The landing view: current month-to-date spend, progress against limit, excluded-receipt notice, and month switching.
 
@@ -465,7 +476,7 @@ CSV and JSON export of the user's receipts, line items and statistics, generated
 
 ### F7.7 — Statistics and charts interface
 
-*Requirements: E1, E3, E6*
+*Requirements: E1, E3, E6* · *Blocked by: F7.3, F7.5, F1.5, F9.4*
 
 Ranked category breakdown, range picker, comparison view and the export action.
 
@@ -533,7 +544,7 @@ Capture "not followed" and "not helpful" feedback and deprioritise similar recom
 
 ### F8.10 — Goals and advice interface
 
-*Requirements: F1, F3, F6, F7, F8*
+*Requirements: F1, F3, F6, F7, F8* · *Blocked by: F8.4, F8.7, F1.5, F9.4*
 
 Goal setup, progress display, the advice feed with projected impact, and the feedback controls that make F8 possible.
 
@@ -543,7 +554,7 @@ Goal setup, progress display, the advice feed with projected impact, and the fee
 
 **BRD sections:** — · **Phase:** 1
 
-The React and MobX groundwork every feature screen builds on. Deliberately separated so that state, API access and layout conventions are decided once rather than reinvented in each feature epic. F9.1, F9.2 and F9.6 are groomed first because nothing else in this epic can start without a scaffolded project, a store convention and a token set to build against; F9.3–F9.5 and F9.7 stay undecomposed until picked up (see each feature's intent).
+The React and MobX groundwork every feature screen builds on. Deliberately separated so that state, API access and layout conventions are decided once rather than reinvented in each feature epic. Scope rule: only what has no domain dependency belongs here. Screens for a capability ship inside that capability's own epic — this epic is the shared floor they stand on, not "the frontend half" of the product. Built before E1 despite its number, because nothing in it waits on an endpoint; see `depends_on` for the real order.
 
 ### F9.1 — React, Vite and TypeScript project setup
 
@@ -576,17 +587,11 @@ TypeScript types and client generated from the FastAPI schema in CI, so a backen
 - **F9.3.2** Generated types and typed client wired into npm scripts — openapi-typescript generates frontend/src/api/schema.ts (checked in, not hand-edited) from the backend's exported schema via `npm run generate:api`. openapi-fetch provides the runtime client in frontend/src/api/client.ts, typed against those generated paths, with its base URL read from the VITE_API_BASE_URL env var. This is the only module a store may import to reach the backend — see the frontend/backend boundary rule in docs/architecture/overview.md.
 - **F9.3.3** CI check that the checked-in client matches the current schema — frontend-ci.yml also triggers on backend/app/** changes and regenerates src/api/schema.ts before the build, failing the job (git diff --exit-code) if the regenerated file differs from what's committed. A backend contract change with no matching frontend regeneration fails CI instead of surfacing as a runtime mismatch in production.
 
-### F9.4 — Routing, layout shell and navigation
+### F9.4 — Application shell and navigation
 
-*Requirements: —*
+*Requirements: —* · *Blocked by: F9.1, F9.6*
 
-Route table with authenticated and public segments, application shell, and the redirect behaviour for expired sessions. Not yet groomed into tasks: the route table and auth-guard shape depend on F1's session model existing first.
-
-### F9.5 — Authentication flows
-
-*Requirements: —*
-
-Login, registration and logout screens, token storage, and transparent refresh on 401 without losing the user's in-flight action. Not yet groomed into tasks: depends on F9.4's route table and F1's auth endpoints existing first.
+The static frame every screen renders inside: header, navigation, responsive content container, and the router mounted with public routes only. Deliberately excludes the authenticated route table, the auth guard and the expiry redirect — those need F1's session model, and they ship with it in F1.5. What remains here has no domain dependency, so it can be built before any endpoint exists.
 
 ### F9.6 — Component primitives and design tokens
 
