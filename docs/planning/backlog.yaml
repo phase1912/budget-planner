@@ -13,6 +13,23 @@
 # carry features only and are decomposed just before work on them starts, so the
 # decomposition reflects the codebase as it actually is at that moment.
 #
+# `key:` on a task is its permanent identity — the marker `sync` matches an
+# existing GitHub issue against. Without it the key is positional, so deleting a
+# task silently re-points every issue below it at the wrong task and orphans the
+# last one. Every task that owns an issue carries an explicit key; write one for
+# any new task at grooming time and never reuse a retired key.
+#
+# `depends_on:` lists the backlog keys that must land before this item can start,
+# and renders into the issue body as "Blocked by: #N". Order of work comes from
+# these edges, not from epic numbers — E9's frontend foundation is deliberately
+# built before E1, and the numbering does not say so on its own.
+#
+# Epics are vertical slices, not layers: the UI for a capability belongs in the
+# same epic — and, at grooming time, in the same feature — as the endpoint it
+# calls, so one pull request delivers a slice testable from the screen down to
+# the database. A trailing "interface" feature is for genuinely aggregate screens
+# only (a dashboard over several capabilities), never for "the frontend half".
+#
 # `phase:` separates what the product must do from what the business would like it
 # to do later. Phase 1 is the BRD scope and is what ships. Phase 2 is commercial
 # scope: planned in the open so the phase-1 design does not accidentally rule it
@@ -59,28 +76,33 @@ epics:
           A contributor can clone the repository and get a lint-clean, type-checked
           workspace for both the Python and the TypeScript side with one documented command.
         tasks:
-          - title: Establish the repository layout (backend, frontend, infra, docs, scripts)
+          - key: F0.1.1
+            title: Establish the repository layout (backend, frontend, infra, docs, scripts)
             labels: [infra]
             detail: >
               Create the top-level directories with placeholder READMEs describing what belongs
               in each. Document the boundary rule: no import may cross from frontend to backend
               except through the generated OpenAPI client.
-          - title: Set up the Python project with uv and pyproject.toml
+          - key: F0.1.2
+            title: Set up the Python project with uv and pyproject.toml
             labels: [backend, infra]
             detail: >
               Python 3.12, uv-managed lockfile, dependency groups for runtime vs dev.
               Pin FastAPI, SQLAlchemy 2.x, Alembic, pydantic-settings, anthropic.
-          - title: Configure ruff, mypy and pre-commit for the backend
+          - key: F0.1.3
+            title: Configure ruff, mypy and pre-commit for the backend
             labels: [backend, infra]
             detail: >
               ruff for lint and format, mypy in strict mode for app code. pre-commit runs both
               plus trailing-whitespace and end-of-file fixers. CI must run the same versions.
-          - title: Add EditorConfig, license and contribution conventions
+          - key: F0.1.4
+            title: Add EditorConfig, license and contribution conventions
             labels: [infra]
             detail: >
               .editorconfig covering both languages, LICENSE, and a CONTRIBUTING.md that states
               the branch naming and commit message conventions used by the ticket workflow.
-          - title: Support feature-scoped branches and pull requests in the ticket workflow
+          - key: F0.1.5
+            title: Support feature-scoped branches and pull requests in the ticket workflow
             labels: [infra]
             detail: >
               The ticket-first workflow (working-agreement.md, the task skill, AGENTS.md) only
@@ -99,22 +121,26 @@ epics:
           A running API process exists with configuration, health reporting, a uniform error
           envelope and a published OpenAPI schema, so feature work only adds routers.
         tasks:
-          - title: Application factory and router registration
+          - key: F0.2.1
+            title: Application factory and router registration
             labels: [backend]
             detail: >
               create_app() assembling middleware, exception handlers and routers. Routers are
               registered from a single module so feature epics add one line, not wiring.
-          - title: Configuration module using pydantic-settings
+          - key: F0.2.2
+            title: Configuration module using pydantic-settings
             labels: [backend, infra]
             detail: >
               Typed settings with env-var layering and fail-fast validation on boot. No direct
               os.environ reads anywhere else in the codebase.
-          - title: Health and version endpoints
+          - key: F0.2.3
+            title: Health and version endpoints
             labels: [backend]
             detail: >
               GET /health returning liveness plus database reachability, and GET /version
               returning build SHA and parser version (the latter is required by BRD A15).
-          - title: Uniform error envelope and global exception handlers
+          - key: F0.2.4
+            title: Uniform error envelope and global exception handlers
             labels: [backend]
             detail: >
               RFC 7807 problem+json responses. Validation, not-found, permission and internal
@@ -128,22 +154,26 @@ epics:
           The persistence layer is established with async sessions, migration tooling and
           model conventions, so entities from the BRD data model can be added incrementally.
         tasks:
-          - title: Async SQLAlchemy engine and request-scoped session dependency
+          - key: F0.3.1
+            title: Async SQLAlchemy engine and request-scoped session dependency
             labels: [backend, database]
             detail: >
               Async engine with a pool sized from settings, and a FastAPI dependency yielding a
               session per request with commit-on-success and rollback-on-exception semantics.
-          - title: Initialise Alembic with the async migration template
+          - key: F0.3.2
+            title: Initialise Alembic with the async migration template
             labels: [database]
             detail: >
               Alembic configured against the same settings object, autogenerate enabled, and a
               documented policy that every schema change ships as a reviewed migration.
-          - title: Declarative base and model conventions
+          - key: F0.3.3
+            title: Declarative base and model conventions
             labels: [database]
             detail: >
               UUID primary keys, created_at/updated_at on every table, and an explicit constraint
               naming convention so autogenerated migrations are deterministic.
-          - title: Baseline migration enabling required PostgreSQL extensions
+          - key: F0.3.4
+            title: Baseline migration enabling required PostgreSQL extensions
             labels: [database]
             detail: >
               Enable pgcrypto (needed for encryption at rest under BRD N1) and any UUID support
@@ -156,24 +186,23 @@ epics:
           A developer can bring up the full stack — API, client, PostgreSQL and S3-compatible
           object storage — locally with one command.
         tasks:
-          - title: Docker Compose stack with PostgreSQL and MinIO
+          - key: F0.4.1
+            title: Docker Compose stack with PostgreSQL and MinIO
             labels: [infra]
             detail: >
               Compose file with pinned images, named volumes, health checks, and a bootstrap step
               creating the receipts bucket. MinIO stands in for production object storage.
               Lives at the repository root, not under infra/, so `docker compose up` works from
               a fresh clone with no extra flags.
-          - title: Task runner targets for the common workflows
+          - key: F0.4.2
+            title: Task runner targets for the common workflows
             labels: [infra]
             detail: >
-              up, down, migrate, seed, test, lint, typecheck. Both languages behind the same
-              interface so nobody memorises two toolchains.
-          - title: Seed script for local sample data
-            labels: [infra, database]
-            detail: >
-              Creates a demo user with a handful of receipts spanning two months, enough to
-              exercise the monthly-budget and statistics epics without uploading photos.
-          - title: Quickstart section in the README
+              up, down, migrate, test, lint, typecheck. Both languages behind the same
+              interface so nobody memorises two toolchains. A `seed` target lands with the
+              seed script itself in F5.8, once there are entities to seed.
+          - key: F0.4.4
+            title: Quickstart section in the README
             labels: [infra]
             detail: >
               Clone-to-running instructions, prerequisites with versions, and how to obtain and
@@ -186,22 +215,26 @@ epics:
           Every pull request is automatically linted, type-checked and tested on both sides,
           and schema drift is caught before merge.
         tasks:
-          - title: Backend CI workflow
+          - key: F0.5.1
+            title: Backend CI workflow
             labels: [infra, backend]
             detail: >
               GitHub Actions job running ruff, mypy and pytest against a service-container
               PostgreSQL, with dependency caching keyed on the uv lockfile.
-          - title: Frontend CI workflow
+          - key: F0.5.2
+            title: Frontend CI workflow
             labels: [infra, frontend]
             detail: >
               ESLint, tsc --noEmit, Vitest and a production build, so type or build breakage
               cannot reach the default branch.
-          - title: Migration drift check
+          - key: F0.5.3
+            title: Migration drift check
             labels: [infra, database]
             detail: >
               CI job asserting that alembic autogenerate against the models produces an empty
               diff, catching model changes that shipped without a migration.
-          - title: Pull request template and CODEOWNERS
+          - key: F0.5.4
+            title: Pull request template and CODEOWNERS
             labels: [infra]
             detail: >
               PR template linking back to the closing issue and listing the BRD requirement IDs
@@ -214,23 +247,29 @@ epics:
           The Gherkin scenarios already written in the BRD execute as the automated acceptance
           suite, so acceptance criteria and regression tests are the same artefact.
         tasks:
-          - title: pytest foundation with async support and isolated test database
+          - key: F0.6.1
+            title: pytest foundation with async support and isolated test database
             labels: [testing, backend]
             detail: >
               pytest-asyncio, a per-run test database created from migrations, and transactional
               rollback between tests for isolation.
-          - title: Extract the BRD Gherkin into executable .feature files
+          - key: F0.6.2
+            title: Extract the BRD Gherkin into executable .feature files
             labels: [testing]
             detail: >
               Move the scenarios from BRD sections BR-1 through BR-6 into tests/features/, one
               file per business requirement, preserving the wording verbatim so the documents
               stay comparable. Steps are stubbed as skipped until their epic is implemented.
-          - title: Test data factories
+          - key: F0.6.3
+            title: Test data factory infrastructure and conventions
             labels: [testing]
             detail: >
-              Factories for user, receipt, line item and category so scenarios read as business
-              language rather than ORM setup.
-          - title: Coverage reporting and BRD traceability report
+              The factory library, the base class and the naming convention that lets a scenario
+              read as business language rather than ORM setup. Delivers no per-entity factory:
+              no domain entity exists yet at E0, and each is added by the epic that introduces
+              it — the same rule F1.3's cross-user suite follows.
+          - key: F0.6.4
+            title: Coverage reporting and BRD traceability report
             labels: [testing]
             detail: >
               Coverage gate in CI, plus a generated report mapping each BRD requirement ID
@@ -243,17 +282,20 @@ epics:
           Configuration and secrets are handled consistently across local, CI and deployed
           environments, with no credential ever committed.
         tasks:
-          - title: Document the settings surface and provide .env.example
+          - key: F0.7.1
+            title: Document the settings surface and provide .env.example
             labels: [infra]
             detail: >
               Every setting listed with purpose, default and whether it is required, including
               the thresholds BRD section 10 defers to design time.
-          - title: Secret handling for CI and deployment
+          - key: F0.7.2
+            title: Secret handling for CI and deployment
             labels: [infra, security]
             detail: >
               GitHub Actions secrets for the Claude API key and database credentials, with a
               documented rotation procedure and secret scanning enabled on the repository.
-          - title: Environment matrix definition
+          - key: F0.7.3
+            title: Environment matrix definition
             labels: [infra]
             detail: >
               Define local, staging and production: what differs, which is authoritative for
@@ -267,7 +309,8 @@ epics:
           the codebase grows, so a reader (human or agent) can act on global context instead
           of re-deriving it from the BRD or from reading the whole codebase.
         tasks:
-          - title: Write docs/architecture/overview.md and domain-model.md
+          - key: F0.8.1
+            title: Write docs/architecture/overview.md and domain-model.md
             labels: [infra]
             detail: >
               overview.md: component boundaries, layering (router/service/repository/port),
@@ -299,7 +342,9 @@ epics:
       Every BRD scenario begins with "Given the user is logged in", and N2 forbids one user's
       data from reaching another. This epic establishes authentication, session handling, the
       user profile fields from the BRD data model, and the scoping guarantee that all later
-      epics depend on.
+      epics depend on. Full stack: the login, registration and logout screens and the
+      authenticated route table live here with the endpoints they call (F1.5), not in E9 —
+      E9 owns only the frontend groundwork that has no domain dependency.
     features:
 
       - key: F1.1
@@ -308,29 +353,34 @@ epics:
         intent: >
           A person can create an account with an email and password and authenticate with it.
         tasks:
-          - title: User table migration and SQLAlchemy model
+          - key: F1.1.1
+            title: User table migration and SQLAlchemy model
             labels: [database]
             detail: >
               Implements the User entity from BRD section 9: user_id, email, password_hash,
               currency, budget_limit. The goal relationship is added by epic E8; currency and
               budget_limit land here because they are account-level settings.
-          - title: Password hashing and strength policy
+          - key: F1.1.2
+            title: Password hashing and strength policy
             labels: [backend, security]
             detail: >
               Argon2id with documented parameters, a minimum-length policy, and a check against
               a common-password list. Hashing cost must be configurable per environment so tests
               stay fast without weakening production.
-          - title: POST /auth/register endpoint
+          - key: F1.1.3
+            title: POST /auth/register endpoint
             labels: [backend]
             detail: >
               Validates the payload, rejects duplicate emails without revealing whether an
               address is registered, and returns the created account with a session.
-          - title: POST /auth/login endpoint
+          - key: F1.1.4
+            title: POST /auth/login endpoint
             labels: [backend]
             detail: >
               Constant-time credential verification, a uniform error for both unknown email and
               wrong password, and throttling on repeated failures.
-          - title: Acceptance tests for registration and login
+          - key: F1.1.5
+            title: Acceptance tests for registration and login
             labels: [testing]
             detail: >
               Covers the happy path, duplicate registration, wrong password, and the guarantee
@@ -343,22 +393,26 @@ epics:
           An authenticated session persists across requests, can be refreshed, and can be
           revoked on logout.
         tasks:
-          - title: Access token issuance
+          - key: F1.2.1
+            title: Access token issuance
             labels: [backend, security]
             detail: >
               Short-lived JWT carrying the user id and issued-at, signed with a key from
               settings. Claims kept minimal — no financial data in the token.
-          - title: Refresh token storage and rotation
+          - key: F1.2.2
+            title: Refresh token storage and rotation
             labels: [backend, security, database]
             detail: >
               Server-side refresh tokens with rotation on use and reuse detection that revokes
               the whole family, so a stolen refresh token cannot be replayed.
-          - title: Refresh and logout endpoints
+          - key: F1.2.3
+            title: Refresh and logout endpoints
             labels: [backend]
             detail: >
               POST /auth/refresh exchanging a valid refresh token, POST /auth/logout revoking
               the current session.
-          - title: Current-user dependency
+          - key: F1.2.4
+            title: Current-user dependency
             labels: [backend]
             detail: >
               A FastAPI dependency resolving the authenticated user, returning 401 with the
@@ -372,17 +426,20 @@ epics:
           Satisfies BRD N2 structurally rather than by convention: it must be difficult to
           write a query that returns another user's data.
         tasks:
-          - title: Request-scoped user context
+          - key: F1.3.1
+            title: Request-scoped user context
             labels: [backend]
             detail: >
               The authenticated user id is available to the persistence layer for the duration
               of the request without being threaded manually through every function signature.
-          - title: Ownership-enforcing repository base class
+          - key: F1.3.2
+            title: Ownership-enforcing repository base class
             labels: [backend, database]
             detail: >
               A base repository that applies the user_id filter automatically for all
               user-owned entities. Bypassing it requires an explicit, greppable escape hatch.
-          - title: Cross-user access test suite
+          - key: F1.3.3
+            title: Cross-user access test suite
             labels: [testing, security]
             detail: >
               For every user-owned resource, assert that user B receives 404 rather than 403
@@ -392,25 +449,42 @@ epics:
       - key: F1.4
         title: User profile and preferences
         labels: [backend, frontend]
+        depends_on: [F1.1, F9.4]
         intent: >
           A user can set the account currency and an optional monthly budget limit, which
           BRD D7 uses to express spend as a percentage of target.
         tasks:
-          - title: GET and PATCH /me endpoints
+          - key: F1.4.1
+            title: GET and PATCH /me endpoints
             labels: [backend]
             detail: >
               Read and partially update the profile. Changing budget_limit must not retroactively
               rewrite finalised monthly snapshots — it affects presentation only.
-          - title: Currency validation and the single-currency assumption
+          - key: F1.4.2
+            title: Currency validation and the single-currency assumption
             labels: [backend]
             detail: >
               ISO 4217 validation, and an explicit guard rejecting a currency change once
               receipts exist, since BRD section 4.2 puts conversion out of scope.
-          - title: Profile screen
+          - key: F1.4.3
+            title: Profile screen
             labels: [frontend]
             detail: >
               Displays and edits currency and monthly budget limit, backed by a MobX store
               following the conventions set in epic E9.
+
+      - key: F1.5
+        title: Authentication flows and protected routing
+        labels: [frontend]
+        depends_on: [F1.1, F1.2, F9.3, F9.4]
+        intent: >
+          The screens that make this epic's endpoints usable and testable without curl: login,
+          registration and logout, token storage, transparent refresh on 401 without losing the
+          user's in-flight action, and the authenticated-versus-public route table with its
+          redirect on expiry. Held here rather than in E9 because it is the frontend half of
+          this epic's own capability — separating the two put a working UI eight epics away
+          from the API it exercises. Not yet groomed into tasks: the storage strategy and guard
+          shape follow from F1.2's session model, which does not exist yet.
 
   - key: E2
     title: Receipt Ingestion & Storage
@@ -462,6 +536,7 @@ epics:
         title: Upload user interface
         labels: [frontend]
         requirements: [A3, A4, A5, A6, A7, A8]
+        depends_on: [F2.2, F2.3, F1.5, F9.4]
         intent: >
           Mode selection, adding upload lines, per-line photo previews, and client-side limit
           feedback before bytes are sent.
@@ -522,6 +597,7 @@ epics:
         title: Receipt review and correction interface
         labels: [frontend]
         requirements: [A10, A11, A14]
+        depends_on: [F3.3, F3.4, F1.5, F9.4]
         intent: >
           Side-by-side original photo and extracted data, with low-confidence fields highlighted
           for confirmation and the manual-review queue reachable in one click.
@@ -583,6 +659,7 @@ epics:
         title: Match review interface
         labels: [frontend]
         requirements: [B7]
+        depends_on: [F4.2, F4.5, F1.5, F9.4]
         intent: >
           Show detected overlaps between photos with the evidence, and let the user flip any
           decision.
@@ -645,9 +722,22 @@ epics:
         title: Categorization review interface
         labels: [frontend]
         requirements: [C3, C4, C6]
+        depends_on: [F5.3, F5.4, F1.5, F9.4]
         intent: >
           A review queue for flagged items and inline category editing wherever line items are
           displayed.
+
+      - key: F5.8
+        title: Seed script for local sample data
+        labels: [infra, database]
+        depends_on: [F1.1, F3.5, F5.1]
+        intent: >
+          A demo user with a handful of categorised receipts spanning two months, plus the
+          `seed` task-runner target that invokes it — enough to exercise the monthly-budget
+          and statistics epics without uploading photos. Lands here, at the end of E5, because
+          this is the first point where every entity it writes exists: User (F1.1), receipt and
+          line items (F3.5) and categories (F5.1). It was originally planned in E0's local
+          development environment, where none of those had been built yet.
 
   - key: E6
     title: Monthly Budget Calculation
@@ -705,6 +795,7 @@ epics:
         title: Budget dashboard
         labels: [frontend]
         requirements: [D1, D4, D7]
+        depends_on: [F6.3, F6.6, F1.5, F9.4]
         intent: >
           The landing view: current month-to-date spend, progress against limit, excluded-receipt
           notice, and month switching.
@@ -764,6 +855,7 @@ epics:
         title: Statistics and charts interface
         labels: [frontend]
         requirements: [E1, E3, E6]
+        depends_on: [F7.3, F7.5, F1.5, F9.4]
         intent: >
           Ranked category breakdown, range picker, comparison view and the export action.
 
@@ -847,6 +939,7 @@ epics:
         title: Goals and advice interface
         labels: [frontend]
         requirements: [F1, F3, F6, F7, F8]
+        depends_on: [F8.4, F8.7, F1.5, F9.4]
         intent: >
           Goal setup, progress display, the advice feed with projected impact, and the feedback
           controls that make F8 possible.
@@ -859,9 +952,10 @@ epics:
     summary: >
       The React and MobX groundwork every feature screen builds on. Deliberately separated so
       that state, API access and layout conventions are decided once rather than reinvented in
-      each feature epic. F9.1, F9.2 and F9.6 are groomed first because nothing else in this
-      epic can start without a scaffolded project, a store convention and a token set to build
-      against; F9.3–F9.5 and F9.7 stay undecomposed until picked up (see each feature's intent).
+      each feature epic. Scope rule: only what has no domain dependency belongs here. Screens
+      for a capability ship inside that capability's own epic — this epic is the shared floor
+      they stand on, not "the frontend half" of the product. Built before E1 despite its
+      number, because nothing in it waits on an endpoint; see `depends_on` for the real order.
     features:
       - key: F9.1
         title: React, Vite and TypeScript project setup
@@ -870,24 +964,28 @@ epics:
           Strict TypeScript, path aliases, ESLint and Prettier matching the backend's rigour,
           and Vitest with React Testing Library.
         tasks:
-          - title: Scaffold the Vite + React + TypeScript project
+          - key: F9.1.1
+            title: Scaffold the Vite + React + TypeScript project
             labels: [frontend, infra]
             detail: >
               Vite's react-ts template under frontend/, strict TypeScript (mirrors the
               backend's mypy --strict) with no implicit any, and a `@/` path alias resolved
               consistently in both tsconfig.json and vite.config.ts.
-          - title: ESLint and Prettier matching backend lint rigour
+          - key: F9.1.2
+            title: ESLint and Prettier matching backend lint rigour
             labels: [frontend, infra]
             detail: >
               Flat ESLint config with typescript-eslint strict rules, react-hooks, and
               jsx-a11y (enforces the semantic-HTML convention below). Prettier for formatting.
               Both wired into the repository's pre-commit alongside ruff and mypy.
-          - title: Vitest and React Testing Library harness
+          - key: F9.1.3
+            title: Vitest and React Testing Library harness
             labels: [frontend, testing]
             detail: >
               Vitest with the jsdom environment, RTL plus jest-dom matchers, and a `test`
               script. A smoke test rendering App proves the harness runs in CI (F0.5).
-          - title: Establish the src/ folder structure
+          - key: F9.1.4
+            title: Establish the src/ folder structure
             labels: [frontend]
             detail: >
               src/pages, src/components (feature-scoped), src/shared/components,
@@ -904,20 +1002,23 @@ epics:
           observable versus derived, and async action conventions. Written down as a short
           guide, because this is the decision later epics will otherwise each make differently.
         tasks:
-          - title: Root store composition and context injection
+          - key: F9.2.1
+            title: Root store composition and context injection
             labels: [frontend]
             detail: >
               A single RootStore instantiated once and provided through a React context with a
               useStores() hook. No component or feature store reaches for another store via a
               direct import — DIP applies to frontend state the same way it applies to the
               backend's ports.
-          - title: Observable-vs-derived and async-action conventions
+          - key: F9.2.2
+            title: Observable-vs-derived and async-action conventions
             labels: [frontend]
             detail: >
               Document when a field is `observable` versus a computed `get`, and the
               idle/loading/success/error status-flag shape every async action follows, so a
               reader recognises the pattern in any store without re-deriving it.
-          - title: ThemeStore for light/dark mode
+          - key: F9.2.3
+            title: ThemeStore for light/dark mode
             labels: [frontend]
             detail: >
               Persists the theme preference to localStorage, defaults to the OS
@@ -931,7 +1032,8 @@ epics:
           TypeScript types and client generated from the FastAPI schema in CI, so a backend
           contract change breaks the frontend build rather than production.
         tasks:
-          - title: Backend OpenAPI schema export script
+          - key: F9.3.1
+            title: Backend OpenAPI schema export script
             labels: [backend, infra]
             detail: >
               backend/scripts/export_openapi_schema.py imports create_app() and writes
@@ -939,7 +1041,8 @@ epics:
               introspection — no environment variables and no database connection required —
               so it runs the same way locally and in CI. The single source both the frontend
               codegen and the CI drift check read from.
-          - title: Generated types and typed client wired into npm scripts
+          - key: F9.3.2
+            title: Generated types and typed client wired into npm scripts
             labels: [frontend, infra]
             detail: >
               openapi-typescript generates frontend/src/api/schema.ts (checked in, not
@@ -949,7 +1052,8 @@ epics:
               VITE_API_BASE_URL env var. This is the only module a store may import to reach
               the backend — see the frontend/backend boundary rule in
               docs/architecture/overview.md.
-          - title: CI check that the checked-in client matches the current schema
+          - key: F9.3.3
+            title: CI check that the checked-in client matches the current schema
             labels: [frontend, infra]
             detail: >
               frontend-ci.yml also triggers on backend/app/** changes and regenerates
@@ -958,19 +1062,15 @@ epics:
               with no matching frontend regeneration fails CI instead of surfacing as a
               runtime mismatch in production.
       - key: F9.4
-        title: Routing, layout shell and navigation
+        title: Application shell and navigation
         labels: [frontend]
+        depends_on: [F9.1, F9.6]
         intent: >
-          Route table with authenticated and public segments, application shell, and the
-          redirect behaviour for expired sessions. Not yet groomed into tasks: the route table
-          and auth-guard shape depend on F1's session model existing first.
-      - key: F9.5
-        title: Authentication flows
-        labels: [frontend]
-        intent: >
-          Login, registration and logout screens, token storage, and transparent refresh on
-          401 without losing the user's in-flight action. Not yet groomed into tasks: depends
-          on F9.4's route table and F1's auth endpoints existing first.
+          The static frame every screen renders inside: header, navigation, responsive content
+          container, and the router mounted with public routes only. Deliberately excludes the
+          authenticated route table, the auth guard and the expiry redirect — those need F1's
+          session model, and they ship with it in F1.5. What remains here has no domain
+          dependency, so it can be built before any endpoint exists.
       - key: F9.6
         title: Component primitives and design tokens
         labels: [frontend]
@@ -978,26 +1078,30 @@ epics:
           Buttons, forms, tables, modals, currency and date formatting bound to the account
           currency, and the token set they draw from.
         tasks:
-          - title: Color-token system ported from budget-checker
+          - key: F9.6.1
+            title: Color-token system ported from budget-checker
             labels: [frontend]
             detail: >
               Tailwind v4 with a `@theme` layer over semantic CSS custom properties
               (--color-background, --color-primary, etc.) in src/shared/styles/colors.css,
               light values on :root and dark overrides on .dark. One source of truth per DS-1:
               components reference tokens (bg-primary, text-foreground), never a raw hex.
-          - title: Responsive breakpoint tokens (mobile / tablet / desktop)
+          - key: F9.6.2
+            title: Responsive breakpoint tokens (mobile / tablet / desktop)
             labels: [frontend]
             detail: >
               Named breakpoint tokens in src/shared/styles/breakpoints.css and a mobile-first
               convention: base styles target mobile, md:/lg: Tailwind variants layer up tablet
               and desktop. No shared component ships a fixed pixel width.
-          - title: Reusable primitive component library
+          - key: F9.6.3
+            title: Reusable primitive component library
             labels: [frontend]
             detail: >
               src/shared/components/ — Button, Input, Select, Modal, Table, Card — each typed,
               each built only from the tokens above. A feature screen composes these instead of
               hand-rolling markup for a UI role that already exists.
-          - title: Shared layout primitives and style utilities
+          - key: F9.6.4
+            title: Shared layout primitives and style utilities
             labels: [frontend]
             detail: >
               src/shared/styles/ spacing and typography scale plus layout primitives (Stack,
