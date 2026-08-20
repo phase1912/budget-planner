@@ -13,9 +13,9 @@ user is taking a photo.
 
 Early foundation work (epic E0). `backend/` has the FastAPI skeleton, config, error
 handling and the PostgreSQL/SQLAlchemy/Alembic baseline; `frontend/` has the React/Vite
-scaffold and generated API client. `docker-compose.yml` brings up local PostgreSQL and
-MinIO — see [backend/README.md](backend/README.md#database). A full clone-to-running
-quickstart is F0.4.4, not written yet.
+scaffold and generated API client. `docker-compose.yml` brings up the full local
+stack — API, client, PostgreSQL and MinIO — see [backend/README.md](backend/README.md#database).
+A full clone-to-running quickstart is F0.4.4, not written yet.
 
 ## Stack
 
