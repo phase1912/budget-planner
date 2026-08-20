@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Receipts — Budget Agent design</title>
+  <link rel="stylesheet" href="../design.css">
+  <style>
+    .list-row,
+    .list-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 120px 92px 120px 170px 28px;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 18px;
+    }
+    .list-head { padding: 12px 18px; background: var(--color-surface); }
+    .list-row { color: inherit; font-weight: inherit; }
+    .list-row:hover { background: var(--color-surface); color: inherit; }
+    .merchant { display: flex; align-items: center; gap: 11px; font-size: 14px; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div class="screen" style="height: 1000px;">
+
+  <header class="app-header">
+    <div class="app-header__inner">
+      <div class="app-header__left">
+        <span class="brand">Budget Agent</span>
+        <nav class="nav">
+          <a class="nav__link" href="dashboard.html">Dashboard</a>
+          <a class="nav__link nav__link--active" href="receipts.html">Receipts</a>
+          <a class="nav__link" href="categorisation.html">Categories</a>
+          <a class="nav__link" href="statistics.html">Statistics</a>
+          <a class="nav__link" href="goals.html">Goals</a>
+        </nav>
+      </div>
+      <div class="app-header__right">
+        <a class="btn btn--primary btn--compact" href="upload-1-photos.html">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload
+        </a>
+        <a class="btn-icon btn-icon--round" href="dashboard-dark.html" aria-label="Switch to dark theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </a>
+        <button class="avatar-button" aria-label="Account menu"><span class="avatar">A</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <div class="app-container">
+
+      <div class="page-head">
+        <div class="titles">
+          <h1 class="page-title">Receipts</h1>
+          <p class="page-sub num" style="font-size: 14px;">34 stored &middot; newest first</p>
+        </div>
+        <a href="statistics.html" style="display: inline-flex; align-items: center; gap: 7px; font-size: 14px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export this list
+        </a>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button class="btn btn--secondary btn--sm" style="font-size: 13px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+            July 2026
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <button class="btn btn--secondary btn--sm" style="font-size: 13px;">
+            Any status
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <a class="pill pill--error" href="upload-3-resolve.html" style="padding: 7px 13px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            2 need you
+          </a>
+        </div>
+        <div class="input-group" style="width: 250px;">
+          <svg class="input-group__icon" style="top: 11px;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input class="input input--with-icon" type="search" placeholder="Merchant or item" style="padding-top: 9px; padding-bottom: 9px; font-size: 13px;" aria-label="Search receipts">
+        </div>
+      </div>
+
+      <div class="card card--flush">
+        <div class="list-head">
+          <span class="th">Merchant</span>
+          <span class="th">Date</span>
+          <span class="th" style="text-align: right;">Items</span>
+          <span class="th" style="text-align: right;">Total</span>
+          <span class="th">Status</span>
+          <span></span>
+        </div>
+
+        <a class="list-row row--head" href="receipt-detail.html">
+          <span class="merchant">
+            <span class="icon-tile icon-tile--sm icon-tile--success">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8H8"/><path d="M16 12H8"/></svg>
+            </span>
+            Fresh Market
+          </span>
+          <span class="num meta" style="font-size: 13px;">20 Jul, 18:42</span>
+          <span class="num meta" style="text-align: right; font-size: 13px;">7</span>
+          <span class="num" style="text-align: right; font-size: 14px; font-weight: 600;">84.50</span>
+          <span><span class="pill pill--success"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>In the total</span></span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+
+        <a class="list-row row" href="receipt-detail.html">
+          <span class="merchant">
+            <span class="icon-tile icon-tile--sm">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8H8"/><path d="M16 12H8"/></svg>
+            </span>
+            Zoo Karma
+          </span>
+          <span class="num meta" style="font-size: 13px;">18 Jul, 11:05</span>
+          <span class="num meta" style="text-align: right; font-size: 13px;">2</span>
+          <span class="num" style="text-align: right; font-size: 14px; font-weight: 600;">89.99</span>
+          <span><span class="pill pill--success"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>In the total</span></span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+
+        <a class="list-row row" href="receipt-detail.html">
+          <span class="merchant">
+            <span class="icon-tile icon-tile--sm">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8H8"/><path d="M16 12H8"/></svg>
+            </span>
+            Uber
+          </span>
+          <span class="num meta" style="font-size: 13px;">17 Jul, 14:02</span>
+          <span class="num meta" style="text-align: right; font-size: 13px;">1</span>
+          <span class="num" style="text-align: right; font-size: 14px; font-weight: 600;">32.40</span>
+          <span><span class="pill pill--success"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>In the total</span></span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+
+        <a class="list-row row" href="upload-3-resolve.html" style="background: var(--tone-error-bg);">
+          <span class="merchant">
+            <span class="icon-tile icon-tile--sm icon-tile--error">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            </span>
+            Bistro Zielona
+          </span>
+          <span class="num meta" style="font-size: 13px;">16 Jul, 20:18</span>
+          <span class="num meta" style="text-align: right; font-size: 13px;">4</span>
+          <span class="num meta" style="text-align: right; font-size: 14px; font-weight: 600;">&mdash;</span>
+          <span><span class="pill pill--error"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Out of the total</span></span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+
+        <a class="list-row row" href="receipt-detail.html">
+          <span class="merchant">
+            <span class="icon-tile icon-tile--sm">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8H8"/><path d="M16 12H8"/></svg>
+            </span>
+            Kino Atlantic
+          </span>
+          <span class="num meta" style="font-size: 13px;">15 Jul, 19:30</span>
+          <span class="num meta" style="text-align: right; font-size: 13px;">1</span>
+          <span class="num" style="text-align: right; font-size: 14px; font-weight: 600;">45.00</span>
+          <span><span class="pill pill--success"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>In the total</span></span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+
+        <a class="list-row row" href="receipt-detail.html">
+          <span class="merchant">
+            <span class="icon-tile icon-tile--sm">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8H8"/><path d="M16 12H8"/></svg>
+            </span>
+            Apteka Nova
+          </span>
+          <span class="num meta" style="font-size: 13px;">14 Jul, 09:47</span>
+          <span class="num meta" style="text-align: right; font-size: 13px;">3</span>
+          <span class="num" style="text-align: right; font-size: 14px; font-weight: 600;">61.30</span>
+          <span><span class="pill pill--success"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>In the total</span></span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+
+        <a class="list-row row" href="upload-3-resolve.html" style="background: var(--tone-warning-bg);">
+          <span class="merchant">
+            <span class="icon-tile icon-tile--sm icon-tile--warning">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8H8"/><path d="M16 12H8"/></svg>
+            </span>
+            Fresh Market
+          </span>
+          <span class="num meta" style="font-size: 13px;">13 Jul, 17:22</span>
+          <span class="num meta" style="text-align: right; font-size: 13px;">19</span>
+          <span class="num" style="text-align: right; font-size: 14px; font-weight: 600;">212.40</span>
+          <span><span class="pill pill--warning"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>1 field to confirm</span></span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+
+        <a class="list-row row" href="receipt-detail.html">
+          <span class="merchant">
+            <span class="icon-tile icon-tile--sm">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8H8"/><path d="M16 12H8"/></svg>
+            </span>
+            Orlen
+          </span>
+          <span class="num meta" style="font-size: 13px;">12 Jul, 08:14</span>
+          <span class="num meta" style="text-align: right; font-size: 13px;">1</span>
+          <span class="num" style="text-align: right; font-size: 14px; font-weight: 600;">168.40</span>
+          <span><span class="pill pill--success"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>In the total</span></span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+
+        <a class="list-row row" href="receipt-detail.html">
+          <span class="merchant">
+            <span class="icon-tile icon-tile--sm">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8H8"/><path d="M16 12H8"/></svg>
+            </span>
+            Fresh Market
+          </span>
+          <span class="num meta" style="font-size: 13px;">10 Jul, 16:58</span>
+          <span class="num meta" style="text-align: right; font-size: 13px;">11</span>
+          <span class="num" style="text-align: right; font-size: 14px; font-weight: 600;">96.80</span>
+          <span><span class="pill pill--success"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>In the total</span></span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+
+        <a class="list-row row" href="receipt-detail.html">
+          <span class="merchant">
+            <span class="icon-tile icon-tile--sm">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8H8"/><path d="M16 12H8"/></svg>
+            </span>
+            Piekarnia Wiejska
+          </span>
+          <span class="num meta" style="font-size: 13px;">9 Jul, 07:31</span>
+          <span class="num meta" style="text-align: right; font-size: 13px;">3</span>
+          <span class="num" style="text-align: right; font-size: 14px; font-weight: 600;">24.60</span>
+          <span><span class="pill pill--success"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>In the total</span></span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+        <span class="num meta" style="font-size: 13px;">1&ndash;10 of 34</span>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button class="page-btn" aria-label="Previous page" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <button class="page-btn page-btn--current">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">4</button>
+          <button class="page-btn" aria-label="Next page">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+</body>
+</html>

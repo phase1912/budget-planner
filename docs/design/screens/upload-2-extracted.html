@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Upload 2, what we read — Budget Agent design</title>
+  <link rel="stylesheet" href="../design.css">
+  <style>
+    .item-row,
+    .item-head { display: grid; grid-template-columns: minmax(0, 1fr) 48px 84px 92px 148px; align-items: center; gap: 12px; padding: 10px 20px; }
+  </style>
+</head>
+<body>
+
+<!--
+  Step 2 shows the whole batch at once — both receipts, one under the other. Nothing is
+  stored yet; the decisions all happen on step 3.
+-->
+<div class="screen" style="height: 1200px;">
+
+  <header class="app-header">
+    <div class="app-header__inner">
+      <div class="app-header__left">
+        <span class="brand">Budget Agent</span>
+        <nav class="nav">
+          <a class="nav__link" href="dashboard.html">Dashboard</a>
+          <a class="nav__link" href="receipts.html">Receipts</a>
+          <a class="nav__link" href="categorisation.html">Categories</a>
+          <a class="nav__link" href="statistics.html">Statistics</a>
+          <a class="nav__link" href="goals.html">Goals</a>
+        </nav>
+      </div>
+      <div class="app-header__right">
+        <a class="btn btn--primary btn--compact" href="upload-1-photos.html" style="background: var(--color-primary-hover);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload
+        </a>
+        <a class="btn-icon btn-icon--round" href="dashboard-dark.html" aria-label="Switch to dark theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </a>
+        <button class="avatar-button" aria-label="Account menu"><span class="avatar">A</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main" style="padding: 36px 32px;">
+    <div class="app-container app-container--narrow" style="gap: 22px;">
+
+      <div class="stepper">
+        <span class="step step--done">
+          <span class="step__marker"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span class="step__label">Photos</span>
+        </span>
+        <span class="stepper__line stepper__line--done"></span>
+        <span class="step step--current"><span class="step__marker">2</span><span class="step__label">What we read</span></span>
+        <span class="stepper__line"></span>
+        <span class="step"><span class="step__marker">3</span><span class="step__label">Resolve</span></span>
+      </div>
+
+      <div class="titles">
+        <h1 class="page-title page-title--lg">What we read</h1>
+        <p class="page-sub num">2 receipts, 11 items, from 13 photos. Nothing is stored yet.</p>
+      </div>
+
+      <div class="note note--warning">
+        <svg class="note__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tone-warning-text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+        <span class="note__text">4 things need a decision from you &mdash; you will get to them on the next step. Read through first and fix anything obviously wrong here.</span>
+      </div>
+
+      <section class="card card--flush">
+        <div class="card__header" style="padding: 16px 20px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="display: flex; gap: 5px;">
+              <span class="photo photo--sm"></span>
+              <span class="photo photo--sm"></span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <span style="font-size: 16px; font-weight: 700;">Fresh Market</span>
+              <span class="num meta">20 July 2026 &middot; 18:42 &middot; 2 photos, one long receipt</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+              <span style="font-size: 11px; font-weight: 600; color: var(--tone-warning-text);">Total &middot; unsure</span>
+              <span class="num" style="font-size: 18px; font-weight: 700;">84.50 PLN</span>
+            </div>
+            <button class="btn-icon btn-icon--bordered" aria-label="Edit this receipt">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="item-row" style="padding-top: 10px; padding-bottom: 4px;">
+          <span class="th">Item</span>
+          <span class="th" style="text-align: right;">Qty</span>
+          <span class="th" style="text-align: right;">Unit</span>
+          <span class="th" style="text-align: right;">Total</span>
+          <span class="th">Category</span>
+        </div>
+
+        <div class="item-row row" style="background: var(--tone-accent-bg);">
+          <span class="td" style="display: flex; align-items: center; gap: 9px; font-weight: 500;">
+            Bananas 1kg
+            <span class="pill pill--accent pill--sm"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/></svg>in both photos</span>
+          </span>
+          <span class="td num meta" style="text-align: right;">1</span>
+          <span class="td num meta" style="text-align: right;">3.20</span>
+          <span class="td num" style="text-align: right; font-weight: 600;">3.20</span>
+          <span><span class="pill pill--success pill--sm">Groceries</span></span>
+        </div>
+        <div class="item-row row">
+          <span class="td" style="font-weight: 500;">Milk 2% 1L</span>
+          <span class="td num meta" style="text-align: right;">2</span>
+          <span class="td num meta" style="text-align: right;">4.50</span>
+          <span class="td num" style="text-align: right; font-weight: 600;">9.00</span>
+          <span><span class="pill pill--success pill--sm">Groceries</span></span>
+        </div>
+        <div class="item-row row">
+          <span class="td" style="font-weight: 500;">Protein Bar XL</span>
+          <span class="td num meta" style="text-align: right;">3</span>
+          <span class="td num meta" style="text-align: right;">6.90</span>
+          <span class="td num" style="text-align: right; font-weight: 600;">20.70</span>
+          <span><span class="pill pill--success pill--sm">Groceries</span></span>
+        </div>
+        <div class="item-row row">
+          <span class="td" style="font-weight: 500;">Rye bread 500g</span>
+          <span class="td num meta" style="text-align: right;">1</span>
+          <span class="td num meta" style="text-align: right;">5.40</span>
+          <span class="td num" style="text-align: right; font-weight: 600;">5.40</span>
+          <span><span class="pill pill--success pill--sm">Groceries</span></span>
+        </div>
+        <div class="item-row row">
+          <span class="td" style="font-weight: 500;">Chicken breast 0.8kg</span>
+          <span class="td num meta" style="text-align: right;">1</span>
+          <span class="td num meta" style="text-align: right;">24.90</span>
+          <span class="td num" style="text-align: right; font-weight: 600;">24.90</span>
+          <span><span class="pill pill--success pill--sm">Groceries</span></span>
+        </div>
+        <div class="item-row row">
+          <span class="td" style="font-weight: 500;">Olive oil 500ml</span>
+          <span class="td num meta" style="text-align: right;">1</span>
+          <span class="td num meta" style="text-align: right;">18.30</span>
+          <span class="td num" style="text-align: right; font-weight: 600;">18.30</span>
+          <span><span class="pill pill--success pill--sm">Groceries</span></span>
+        </div>
+        <div class="item-row row">
+          <span class="td" style="font-weight: 500;">Sparkling water 1.5L</span>
+          <span class="td num meta" style="text-align: right;">2</span>
+          <span class="td num meta" style="text-align: right;">1.50</span>
+          <span class="td num" style="text-align: right; font-weight: 600;">3.00</span>
+          <span><span class="pill pill--sm">Uncategorized</span></span>
+        </div>
+
+        <div class="card__footer">
+          <span class="num meta" style="font-size: 13px;">7 items &middot; lines add up to 84.50</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--color-primary);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            Matches the printed total
+          </span>
+        </div>
+      </section>
+
+      <section class="card card--flush card--attention">
+        <div class="card__header" style="padding: 16px 20px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="display: flex; gap: 5px;">
+              <span class="photo photo--sm"></span>
+              <span class="photo photo--sm"></span>
+              <span class="icon-tile icon-tile--sm" style="width: 34px; height: 42px; border-radius: 6px; font-size: 11px; font-weight: 700;">+8</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <span style="font-size: 16px; font-weight: 700;">Bistro Zielona</span>
+              <span class="num meta">16 July 2026 &middot; 20:18 &middot; 10 photos</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+              <span style="font-size: 11px; font-weight: 600; color: var(--color-error);">Total &middot; not found</span>
+              <span class="num meta" style="font-size: 18px; font-weight: 700;">&mdash;</span>
+            </div>
+            <button class="btn-icon btn-icon--bordered" aria-label="Edit this receipt">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="item-row" style="padding-top: 10px; padding-bottom: 4px;">
+          <span class="th">Item</span>
+          <span class="th" style="text-align: right;">Qty</span>
+          <span class="th" style="text-align: right;">Unit</span>
+          <span class="th" style="text-align: right;">Total</span>
+          <span class="th">Category</span>
+        </div>
+
+        <div class="item-row row">
+          <span class="td" style="font-weight: 500;">Zupa dnia</span>
+          <span class="td num meta" style="text-align: right;">1</span>
+          <span class="td num meta" style="text-align: right;">18.00</span>
+          <span class="td num" style="text-align: right; font-weight: 600;">18.00</span>
+          <span><span class="pill pill--accent pill--sm">Dining</span></span>
+        </div>
+        <div class="item-row row">
+          <span class="td" style="font-weight: 500;">Pierogi ruskie</span>
+          <span class="td num meta" style="text-align: right;">1</span>
+          <span class="td num meta" style="text-align: right;">32.00</span>
+          <span class="td num" style="text-align: right; font-weight: 600;">32.00</span>
+          <span><span class="pill pill--accent pill--sm">Dining</span></span>
+        </div>
+        <div class="item-row row">
+          <span class="td" style="font-weight: 500;">Lemoniada</span>
+          <span class="td num meta" style="text-align: right;">2</span>
+          <span class="td num meta" style="text-align: right;">12.00</span>
+          <span class="td num" style="text-align: right; font-weight: 600;">24.00</span>
+          <span><span class="pill pill--accent pill--sm">Dining</span></span>
+        </div>
+        <div class="item-row row">
+          <span class="td" style="font-weight: 500;">Kawa</span>
+          <span class="td num meta" style="text-align: right;">1</span>
+          <span class="td num meta" style="text-align: right;">14.00</span>
+          <span class="td num" style="text-align: right; font-weight: 600;">14.00</span>
+          <span><span class="pill pill--accent pill--sm">Dining</span></span>
+        </div>
+
+        <div class="card__footer" style="background: var(--tone-error-bg);">
+          <span class="num meta" style="font-size: 13px;">4 items &middot; lines add up to 88.00</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--color-error);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            Nothing to check them against
+          </span>
+        </div>
+      </section>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+        <a class="btn btn--ghost" href="upload-1-photos.html">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          Back to photos
+        </a>
+        <a class="btn btn--primary" href="upload-3-resolve.html" style="padding: 12px 20px;">
+          Resolve 4 things
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+</body>
+</html>

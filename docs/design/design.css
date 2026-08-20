@@ -1,0 +1,776 @@
+/*
+ * AI Budget Agent — design reference stylesheet.
+ *
+ * The single source of truth for colour, radius, shadow and control anatomy in
+ * docs/design/screens/. Ported from the sibling project budget-checker so the two
+ * stay recognisably the same product family (ADR 0004).
+ *
+ * Screens reference token names and primitive classes, never raw hex. One-off
+ * layout for a single screen stays inline in that screen's file — this stylesheet
+ * only holds what more than one screen shares.
+ *
+ * When the frontend implements F9.6.1, these values move into
+ * frontend/src/shared/styles/colors.css as a Tailwind @theme layer. The values must
+ * match; this file is what they are checked against.
+ */
+
+/* ---------------------------------------------------------------- tokens --- */
+
+:root {
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-surface: #f8fafc;
+  --color-border: #e2e8f0;
+  --color-border-strong: #cbd5e1;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+
+  --color-primary: #15803d;
+  --color-primary-hover: #166534;
+  --color-primary-foreground: #ffffff;
+
+  --color-accent: #4f46e5;
+  --color-accent-foreground: #ffffff;
+
+  --color-success: #15803d;
+  --color-error: #b91c1c;
+  --color-warning: #d97706;
+  --color-info: #1d4ed8;
+
+  /* Soft tones: a 6–12% wash of the semantic colour, with text dark enough to read
+     on it. Used by pills, banners and icon tiles. */
+  --tone-primary-bg: rgba(21, 128, 61, 0.1);
+  --tone-primary-border: rgba(21, 128, 61, 0.25);
+  --tone-primary-text: #15803d;
+
+  --tone-accent-bg: rgba(79, 70, 229, 0.1);
+  --tone-accent-border: rgba(79, 70, 229, 0.2);
+  --tone-accent-text: #4f46e5;
+  --tone-accent-prose: #312e81;
+
+  --tone-error-bg: rgba(185, 28, 28, 0.08);
+  --tone-error-border: rgba(185, 28, 28, 0.2);
+  --tone-error-text: #b91c1c;
+  --tone-error-prose: #7f1d1d;
+
+  --tone-warning-bg: rgba(217, 119, 6, 0.1);
+  --tone-warning-border: rgba(217, 119, 6, 0.25);
+  --tone-warning-text: #b45309;
+  --tone-warning-prose: #78350f;
+
+  --tone-info-bg: rgba(29, 78, 216, 0.08);
+  --tone-info-border: rgba(29, 78, 216, 0.2);
+  --tone-info-text: #1d4ed8;
+  --tone-info-prose: #1e3a8a;
+
+  --tone-neutral-bg: #f1f5f9;
+  --tone-neutral-text: #64748b;
+
+  /* Category colours are data colours, not semantic ones: they identify a series in
+     a breakdown and must stay distinguishable from each other, not carry meaning. */
+  --cat-groceries: #15803d;
+  --cat-dining: #4f46e5;
+  --cat-transport: #1d4ed8;
+  --cat-utilities: #0891b2;
+  --cat-health: #d97706;
+  --cat-entertainment: #9333ea;
+  --cat-pet: #db2777;
+  --cat-kids: #0d9488;
+  --cat-other: #94a3b8;
+  --cat-uncategorised: #cbd5e1;
+
+  --radius-chip: 10px;
+  --radius-control: 12px;
+  --radius-card: 16px;
+  --radius-pill: 9999px;
+
+  --shadow-raised: 0 1px 2px rgba(15, 23, 42, 0.08);
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-primary: 0 10px 15px -3px rgba(21, 128, 61, 0.25);
+  --shadow-pop: 0 20px 40px rgba(15, 23, 42, 0.16);
+  --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+
+  --ring-primary: 0 0 0 3px rgba(21, 128, 61, 0.2);
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+.dark {
+  --color-background: #0f172a;
+  --color-foreground: #f8fafc;
+  --color-surface: #1e293b;
+  --color-border: #334155;
+  --color-border-strong: #475569;
+  --color-muted: #1e293b;
+  --color-muted-foreground: #94a3b8;
+
+  --color-primary: #4ade80;
+  --color-primary-hover: #86efac;
+  --color-primary-foreground: #052e14;
+
+  --color-accent: #a5b4fc;
+  --color-accent-foreground: #1e1b4b;
+
+  --color-success: #4ade80;
+  --color-error: #fca5a5;
+  --color-warning: #fbbf24;
+  --color-info: #93c5fd;
+
+  --tone-primary-bg: rgba(74, 222, 128, 0.12);
+  --tone-primary-border: rgba(74, 222, 128, 0.3);
+  --tone-primary-text: #4ade80;
+
+  --tone-accent-bg: rgba(165, 180, 252, 0.12);
+  --tone-accent-border: rgba(165, 180, 252, 0.3);
+  --tone-accent-text: #a5b4fc;
+  --tone-accent-prose: #c7d2fe;
+
+  --tone-error-bg: rgba(252, 165, 165, 0.1);
+  --tone-error-border: rgba(252, 165, 165, 0.3);
+  --tone-error-text: #fca5a5;
+  --tone-error-prose: #fecaca;
+
+  --tone-warning-bg: rgba(251, 191, 36, 0.12);
+  --tone-warning-border: rgba(251, 191, 36, 0.3);
+  --tone-warning-text: #fbbf24;
+  --tone-warning-prose: #fde68a;
+
+  --tone-info-bg: rgba(147, 197, 253, 0.1);
+  --tone-info-border: rgba(147, 197, 253, 0.3);
+  --tone-info-text: #93c5fd;
+  --tone-info-prose: #bfdbfe;
+
+  --tone-neutral-bg: #1e293b;
+  --tone-neutral-text: #94a3b8;
+
+  --cat-groceries: #4ade80;
+  --cat-dining: #a5b4fc;
+  --cat-transport: #93c5fd;
+  --cat-utilities: #67e8f9;
+  --cat-health: #fbbf24;
+  --cat-entertainment: #d8b4fe;
+  --cat-pet: #f9a8d4;
+  --cat-kids: #5eead4;
+  --cat-other: #94a3b8;
+  --cat-uncategorised: #475569;
+
+  --shadow-primary: 0 10px 15px -3px rgba(74, 222, 128, 0.2);
+  --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-pop: 0 20px 40px rgba(0, 0, 0, 0.5);
+  --ring-primary: 0 0 0 3px rgba(74, 222, 128, 0.25);
+}
+
+/* ------------------------------------------------------------------ base --- */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  background: var(--color-muted);
+}
+
+a { color: var(--color-primary); text-decoration: none; font-weight: 600; }
+a:hover { color: var(--color-primary-hover); }
+
+/* Money, counts and dates align in columns only with lining tabular figures. */
+.num { font-variant-numeric: tabular-nums; }
+
+/* One screen at its design width. Fixed size is deliberate: these are artboards,
+   not the responsive build — the mobile variants are their own files. */
+.screen {
+  width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+.screen--mobile { width: 390px; }
+.screen--mobile .btn,
+.screen--mobile .btn-icon { min-height: 44px; }
+
+/* ------------------------------------------------------------ app shell --- */
+
+.app-header {
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+
+.app-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 32px;
+}
+
+.brand {
+  font-size: 20px;
+  font-weight: 700;
+  background: linear-gradient(to right, var(--color-primary), var(--color-primary-hover));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.app-header__left { display: flex; align-items: center; gap: 28px; }
+.app-header__right { display: flex; align-items: center; gap: 10px; }
+
+.nav { display: flex; align-items: center; gap: 2px; }
+
+.nav__link {
+  border-radius: var(--radius-chip);
+  color: var(--color-muted-foreground);
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.nav__link:hover { color: var(--color-foreground); }
+
+.nav__link--active {
+  background: var(--tone-primary-bg);
+  color: var(--tone-primary-text);
+  font-weight: 600;
+}
+
+.app-main { flex-grow: 1; overflow: hidden; padding: 32px; }
+
+.app-container { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.app-container--narrow { max-width: 880px; }
+.app-container--wide { max-width: 1100px; }
+
+/* --------------------------------------------------------------- buttons --- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-foreground);
+  padding: 10px 16px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn--primary {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  box-shadow: var(--shadow-primary);
+}
+
+.btn--primary:hover { background: var(--color-primary-hover); }
+
+.btn--secondary {
+  border-color: var(--color-border);
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+.btn--secondary:hover { background: var(--color-muted); }
+
+.btn--ghost { color: var(--color-muted-foreground); }
+.btn--ghost:hover { color: var(--color-foreground); }
+
+.btn--danger {
+  border-color: var(--tone-error-border);
+  background: var(--tone-error-bg);
+  color: var(--tone-error-text);
+}
+
+.btn--danger-solid { background: var(--color-error); color: #ffffff; }
+
+.btn--block { width: 100%; }
+.btn--lg { padding: 13px 22px; }
+.btn--sm { padding: 8px 13px; font-size: 13px; }
+.btn--compact { padding: 9px 14px; }
+
+.btn[disabled] { opacity: 0.45; cursor: default; }
+.btn[disabled]:hover { background: inherit; }
+
+/* Square icon-only button. Round variant is the header's theme toggle and avatar. */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: var(--color-muted-foreground);
+  padding: 8px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.btn-icon:hover { background: var(--color-muted); color: var(--color-foreground); }
+.btn-icon--bordered { border-color: var(--color-border); background: var(--color-background); color: var(--color-foreground); }
+.btn-icon--round { border-radius: var(--radius-pill); border-color: var(--color-border); background: var(--color-surface); color: var(--color-foreground); padding: 9px; }
+.btn-icon--danger { background: var(--tone-error-bg); color: var(--tone-error-text); }
+.btn-icon[disabled] { color: var(--color-border-strong); cursor: default; }
+.btn-icon[disabled]:hover { background: transparent; color: var(--color-border-strong); }
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  background: var(--tone-primary-bg);
+  color: var(--tone-primary-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.avatar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  padding: 5px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.avatar-button--active { border-color: var(--color-primary); }
+
+/* ---------------------------------------------------------------- fields --- */
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+
+.field__label { font-size: 12px; font-weight: 500; color: var(--color-muted-foreground); }
+.field__hint { font-size: 12px; color: var(--color-muted-foreground); }
+.field__error { font-size: 12px; color: var(--color-error); }
+
+.input {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-background);
+  color: var(--color-foreground);
+  padding: 11px 12px;
+  font: inherit;
+  font-size: 14px;
+}
+
+.input::placeholder { color: var(--color-muted-foreground); }
+.input:focus { outline: none; border-color: var(--color-primary); box-shadow: var(--ring-primary); }
+
+/* Static states, for artboards that need to show them without interaction. */
+.input--focused { border-color: var(--color-primary); box-shadow: var(--ring-primary); }
+.input--invalid { border-color: var(--color-error); }
+.input--locked { background: var(--color-muted); color: var(--color-muted-foreground); }
+
+/* Wraps an input that carries a leading and/or trailing icon. */
+.input-group { position: relative; }
+.input-group__icon { position: absolute; left: 12px; top: 13px; color: var(--color-muted-foreground); pointer-events: none; }
+.input-group__suffix { position: absolute; right: 12px; top: 12px; font-size: 13px; font-weight: 600; color: var(--color-muted-foreground); }
+.input-group__action { position: absolute; right: 8px; top: 8px; }
+.input--with-icon { padding-left: 36px; }
+.input--with-action { padding-right: 44px; }
+.input--with-suffix { padding-right: 52px; }
+
+.select { appearance: none; padding-right: 36px; }
+.select-chevron { position: absolute; right: 12px; top: 14px; color: var(--color-muted-foreground); pointer-events: none; }
+
+.checkbox { width: 16px; height: 16px; accent-color: var(--color-primary); margin: 0; }
+
+/* ----------------------------------------------------------------- cards --- */
+
+.card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-background);
+}
+
+.card--surface { background: var(--color-surface); box-shadow: var(--shadow-card); }
+.card--flush { overflow: hidden; }
+.card--attention { border-color: var(--tone-error-border); }
+.card--accent { border-color: var(--color-accent); }
+.card__body { padding: 22px 24px; }
+.card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 14px 18px;
+}
+.card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding: 13px 20px;
+}
+
+/* ----------------------------------------------------------------- pills --- */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--tone-neutral-bg);
+  color: var(--tone-neutral-text);
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pill--success { background: var(--tone-primary-bg); color: var(--tone-primary-text); }
+.pill--warning { background: var(--tone-warning-bg); color: var(--tone-warning-text); }
+.pill--error { background: var(--tone-error-bg); color: var(--tone-error-text); }
+.pill--info { background: var(--tone-info-bg); color: var(--tone-info-text); }
+.pill--accent { background: var(--tone-accent-bg); color: var(--tone-accent-text); }
+.pill--sm { padding: 4px 10px; }
+
+/* Counter badge: a pill reduced to a number. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  border-radius: var(--radius-pill);
+  background: var(--tone-error-bg);
+  color: var(--tone-error-text);
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------- banners --- */
+
+/* A full-width strip explaining a state the user has to know about. Tone carries
+   the meaning: warning holds something back, error blocks, info just informs. */
+.note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-muted-foreground);
+  padding: 13px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.note--warning { border-color: var(--tone-warning-border); background: var(--tone-warning-bg); color: var(--tone-warning-prose); }
+.note--error { border-color: var(--tone-error-border); background: var(--tone-error-bg); color: var(--tone-error-prose); }
+.note--info { border-color: var(--tone-info-border); background: var(--tone-info-bg); color: var(--tone-info-prose); }
+.note--accent { border-color: var(--tone-accent-border); background: var(--tone-accent-bg); color: var(--tone-accent-prose); }
+.note--success { border-color: var(--tone-primary-border); background: var(--tone-primary-bg); color: var(--tone-primary-text); }
+.note__icon { flex-shrink: 0; }
+.note__text { flex-grow: 1; }
+
+/* Square tile holding an icon at the head of a card or banner. */
+.icon-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-chip);
+  background: var(--tone-neutral-bg);
+  color: var(--tone-neutral-text);
+  flex-shrink: 0;
+}
+
+.icon-tile--sm { width: 30px; height: 30px; border-radius: 9px; }
+.icon-tile--lg { width: 40px; height: 40px; border-radius: var(--radius-control); }
+.icon-tile--round { width: 46px; height: 46px; border-radius: var(--radius-pill); }
+.icon-tile--success { background: var(--tone-primary-bg); color: var(--tone-primary-text); }
+.icon-tile--warning { background: var(--tone-warning-bg); color: var(--tone-warning-text); }
+.icon-tile--error { background: var(--tone-error-bg); color: var(--tone-error-text); }
+.icon-tile--info { background: var(--tone-info-bg); color: var(--tone-info-text); }
+.icon-tile--accent { background: var(--tone-accent-bg); color: var(--tone-accent-text); }
+
+/* ----------------------------------------------------------- typography --- */
+
+/* Title block at the top of a screen, optionally with an action opposite it. */
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+.titles { display: flex; flex-direction: column; gap: 4px; }
+
+.page-title { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+.page-title--lg { font-size: 30px; }
+.page-sub { margin: 0; font-size: 15px; color: var(--color-muted-foreground); }
+.section-title { margin: 0; font-size: 16px; font-weight: 700; }
+.section-title--lg { font-size: 18px; }
+.prose { margin: 0; font-size: 13px; line-height: 1.6; color: var(--color-muted-foreground); text-wrap: pretty; }
+.meta { font-size: 12px; color: var(--color-muted-foreground); }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted-foreground); }
+
+.th {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+  text-align: left;
+}
+
+.td { font-size: 13px; }
+
+/* A row in a listing. Rows divide with a hairline, never a full border. */
+.row { border-top: 1px solid var(--color-muted); }
+.row--head { border-top: 1px solid var(--color-border); }
+
+/* ----------------------------------------------------- composite widgets --- */
+
+/* Segmented control: mutually exclusive modes, current one raised on white. */
+.segmented {
+  display: inline-flex;
+  gap: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-muted);
+  padding: 4px;
+}
+
+.segmented__option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--color-muted-foreground);
+  padding: 9px 16px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segmented__option--active {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  box-shadow: var(--shadow-raised);
+}
+
+.segmented--sm .segmented__option { padding: 7px 13px; font-size: 13px; }
+
+/* Progress meter. Also the budget bar: the fill turns error-toned past 100%. */
+.meter { display: block; height: 10px; border-radius: 5px; background: var(--color-border); overflow: hidden; }
+.meter--sm { height: 5px; border-radius: 3px; }
+.meter--track { height: 8px; border-radius: 4px; background: var(--color-muted); }
+.meter__fill { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); }
+.meter__fill--over { background: var(--color-error); }
+
+/* Wizard stepper for the three-step upload flow. */
+.stepper { display: flex; align-items: center; }
+.step { display: inline-flex; align-items: center; gap: 10px; }
+.step__marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-background);
+  color: var(--color-border-strong);
+  font-size: 13px;
+  font-weight: 700;
+}
+.step__label { font-size: 14px; font-weight: 600; color: var(--color-border-strong); }
+.step--current .step__marker { border-color: transparent; background: var(--color-primary); color: var(--color-primary-foreground); }
+.step--current .step__label { color: var(--color-foreground); }
+.step--done .step__marker { border-color: transparent; background: var(--tone-primary-bg); color: var(--tone-primary-text); }
+.step--done .step__label { color: var(--tone-primary-text); }
+.stepper__line { flex-grow: 1; height: 2px; border-radius: 1px; background: var(--color-border); margin: 0 16px; }
+.stepper__line--done { background: var(--color-primary); }
+
+/* Modal over a dimmed screen. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  padding: 40px;
+}
+
+.modal {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-background);
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 100%;
+}
+
+.modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 20px 24px;
+}
+
+.modal__body { flex-grow: 1; overflow: hidden; padding: 20px 24px; }
+
+.modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 18px 24px;
+}
+
+/* Dropdown panel floating below its trigger. */
+.menu {
+  position: absolute;
+  z-index: 20;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-background);
+  box-shadow: var(--shadow-pop);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.menu__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-radius: 9px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-muted-foreground);
+}
+
+.menu__option--selected { background: var(--tone-primary-bg); color: var(--tone-primary-text); font-weight: 600; }
+.menu__divider { height: 1px; background: var(--color-border); margin: 5px 0; }
+
+/* Pagination control. */
+.page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-chip);
+  background: var(--color-background);
+  color: var(--color-foreground);
+  padding: 0 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.page-btn--current { border-color: var(--color-primary); background: var(--color-primary); color: var(--color-primary-foreground); }
+.page-btn[disabled] { color: var(--color-border-strong); cursor: default; }
+
+/* ------------------------------------------------- receipts & categories --- */
+
+/* Stand-in for a receipt photo: ruled paper, no attempt at a fake photograph. */
+.photo {
+  border-radius: var(--radius-chip);
+  border: 1px solid var(--color-border);
+  background: repeating-linear-gradient(
+    var(--color-background),
+    var(--color-background) 7px,
+    var(--color-muted) 7px,
+    var(--color-muted) 8px
+  );
+  flex-shrink: 0;
+}
+
+.photo--thumb { width: 72px; height: 88px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; }
+.photo--sm { width: 34px; height: 42px; border-radius: 6px; }
+.photo--md { width: 44px; height: 56px; border-radius: 6px; }
+.photo--picked { border: 2px solid var(--color-primary); }
+.photo--picked-alt { border: 2px solid var(--color-accent); }
+
+/* Dashed slot inviting another photo or another upload line. */
+.dropzone {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-chip);
+  background: var(--color-background);
+  color: var(--color-primary);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dropzone--wide { flex-direction: row; gap: 8px; border-radius: var(--radius-card); padding: 16px; font-size: 14px; width: 100%; }
+
+/* Colour key beside a category name. */
+.dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+.dot--lg { width: 10px; height: 10px; }
+.dot--groceries { background: var(--cat-groceries); }
+.dot--dining { background: var(--cat-dining); }
+.dot--transport { background: var(--cat-transport); }
+.dot--utilities { background: var(--cat-utilities); }
+.dot--health { background: var(--cat-health); }
+.dot--entertainment { background: var(--cat-entertainment); }
+.dot--pet { background: var(--cat-pet); }
+.dot--kids { background: var(--cat-kids); }
+.dot--other { background: var(--cat-other); }
+.dot--uncategorised { background: var(--cat-uncategorised); }
+
+/* Printed receipt reproduced as evidence beside extracted data. */
+.receipt-paper {
+  background: var(--color-surface);
+  border-radius: 4px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.receipt-line {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #334155;
+}
+
+.receipt-rule { border-top: 1px dashed var(--color-border-strong); margin: 3px 0; }
+.blurred { filter: blur(1.1px); }
+
+/* Lightbox behind an original photo. Always dark, in both themes. */
+.lightbox { background: #0f172a; }
