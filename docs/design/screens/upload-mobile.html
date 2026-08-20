@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Upload at 390px — Budget Agent design</title>
+  <link rel="stylesheet" href="../design.css">
+  <style>
+    .shot { position: relative; aspect-ratio: 3 / 4; }
+    .shot__index { position: absolute; left: 6px; bottom: 6px; display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; border-radius: var(--radius-pill); background: rgba(15, 23, 42, 0.75); color: #ffffff; padding: 0 6px; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+
+<div class="screen screen--mobile" style="height: 844px;">
+
+  <header class="app-header">
+    <div class="app-header__inner" style="justify-content: flex-start; gap: 8px; padding: 12px 12px 12px 8px;">
+      <a class="btn-icon" href="dashboard-mobile.html" style="width: 44px; height: 44px;" aria-label="Back">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </a>
+      <h1 class="section-title" style="font-size: 17px;">New receipt</h1>
+    </div>
+  </header>
+
+  <main class="app-main" style="padding: 16px; display: flex; flex-direction: column; gap: 16px;">
+
+    <div class="segmented" style="width: 100%;" role="tablist">
+      <button class="segmented__option segmented__option--active" role="tab" aria-selected="true" style="flex-grow: 1; justify-content: center; font-size: 13px;">One receipt</button>
+      <button class="segmented__option" role="tab" style="flex-grow: 1; justify-content: center; font-size: 13px;">Several</button>
+    </div>
+
+    <p class="prose">Long receipt? Take it in overlapping shots &mdash; items caught twice get counted once.</p>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;">
+      <span class="photo shot"><span class="shot__index">1</span></span>
+      <span class="photo shot"><span class="shot__index">2</span></span>
+      <span class="photo shot"><span class="shot__index">3</span></span>
+      <span class="photo shot"><span class="shot__index">4</span></span>
+      <button class="dropzone shot" style="border-radius: var(--radius-control);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+        <span>Camera</span>
+      </button>
+      <button class="dropzone shot" style="border-radius: var(--radius-control); color: var(--color-muted-foreground);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        <span>Gallery</span>
+      </button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 7px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between;">
+        <span class="num meta">4 of 10 photos</span>
+        <span class="num meta">21.4 of 50&#8239;MB</span>
+      </div>
+      <span class="meter meter--sm"><span class="meter__fill" style="width: 43%;"></span></span>
+    </div>
+
+    <div class="note" style="align-items: flex-start; padding: 12px 14px;">
+      <svg class="note__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 1px;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+      <span class="note__text" style="font-size: 12px;">JPEG, PNG, HEIC or a PDF scan.</span>
+    </div>
+
+  </main>
+
+  <div style="border-top: 1px solid var(--color-border); background: var(--color-surface); padding: 12px 16px 20px; flex-shrink: 0;">
+    <a class="btn btn--primary btn--block" href="upload-2-extracted.html" style="min-height: 50px; font-size: 15px;">
+      Send for processing
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    </a>
+  </div>
+
+</div>
+
+</body>
+</html>

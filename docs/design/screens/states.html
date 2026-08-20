@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Empty and error states — Budget Agent design</title>
+  <link rel="stylesheet" href="../design.css">
+  <style>
+    .panel { display: flex; flex-direction: column; }
+    .panel__label { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 11px 16px; }
+    .panel__title { font-size: 12px; font-weight: 700; }
+    .panel__ref { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: var(--color-muted-foreground); }
+    .panel__body { flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 26px 22px; }
+    .centred { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+  </style>
+</head>
+<body>
+
+<div class="screen" style="padding: 44px 48px 56px;">
+
+  <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 36px;">
+    <span class="eyebrow">Conventions</span>
+    <h1 class="page-title page-title--lg">Empty, waiting and refused</h1>
+    <p class="prose" style="max-width: 760px; font-size: 15px;">The BRD is specific about not lying by omission: a period with no receipts must say so rather than render zeros, and advice must be withheld rather than invented. One treatment each, so no screen improvises its own.</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px;">
+
+    <div class="card card--flush panel">
+      <div class="panel__label"><span class="panel__title">Period with no receipts</span><span class="panel__ref">E5</span></div>
+      <div class="panel__body">
+        <div class="centred">
+          <span class="icon-tile icon-tile--round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+          </span>
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <span style="font-size: 14px; font-weight: 700;">No receipts in March 2025</span>
+            <span class="prose" style="font-size: 12px; line-height: 1.55;">Nothing was recorded for that period. This is not a zero &mdash; there is simply nothing to total.</span>
+          </div>
+          <button class="btn btn--secondary btn--sm">Pick another period</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card--flush panel">
+      <div class="panel__label"><span class="panel__title">Not enough history for advice</span><span class="panel__ref">F5</span></div>
+      <div class="panel__body">
+        <div class="centred">
+          <span class="icon-tile icon-tile--round icon-tile--accent">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+          </span>
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <span style="font-size: 14px; font-weight: 700;">3 receipts is not a pattern</span>
+            <span class="prose" style="font-size: 12px; line-height: 1.55;">Advice needs about a month of shopping behind it. Keep uploading and it turns on by itself.</span>
+          </div>
+          <span class="meter meter--sm" style="width: 160px;"><span class="meter__fill" style="width: 22%; background: var(--color-accent);"></span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card--flush panel">
+      <div class="panel__label"><span class="panel__title">Parsing in flight</span><span class="panel__ref">N4</span></div>
+      <div class="panel__body">
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span class="icon-tile icon-tile--success">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            </span>
+            <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+              <span style="font-size: 13px; font-weight: 600;">Reading 2 receipts</span>
+              <span class="meta">You can leave this page &mdash; it keeps going.</span>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <span style="display: block; height: 34px; border-radius: var(--radius-chip); background: var(--color-muted);"></span>
+            <span style="display: block; height: 34px; border-radius: var(--radius-chip); background: var(--color-muted);"></span>
+            <span style="display: block; width: 62%; height: 34px; border-radius: var(--radius-chip); background: var(--color-muted);"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card--flush panel">
+      <div class="panel__label"><span class="panel__title">Unsupported file</span><span class="panel__ref">A2</span></div>
+      <div class="panel__body">
+        <div class="note note--error" style="align-items: flex-start; width: 100%; padding: 14px 16px;">
+          <svg class="note__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-error)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 1px;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 13px; font-weight: 700; color: var(--color-error);">&ldquo;statement.docx&rdquo; was not added</span>
+            <span style="font-size: 12px; line-height: 1.55;">Receipts come in as JPEG, PNG, HEIC or a PDF scan. The other files on this line are fine.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card--flush panel">
+      <div class="panel__label"><span class="panel__title">Possible duplicate upload</span><span class="panel__ref">A14</span></div>
+      <div class="panel__body">
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 13px;">
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span class="icon-tile icon-tile--warning">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+            </span>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 13px; font-weight: 700;">You may already have this one</span>
+              <span class="prose num" style="font-size: 12px; line-height: 1.55;">Fresh Market, 20 July 2026, 84.50&nbsp;PLN is already stored. Two trips on one day are perfectly normal &mdash; you decide.</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 9px;">
+            <button class="btn btn--secondary btn--sm" style="font-size: 12px;">Skip it</button>
+            <button class="btn btn--primary btn--sm" style="font-size: 12px;">Store as new</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card--flush panel">
+      <div class="panel__label"><span class="panel__title">Held out of the total</span><span class="panel__ref">A11 &middot; D3</span></div>
+      <div class="panel__body">
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 13px;">
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span class="icon-tile icon-tile--error">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            </span>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 13px; font-weight: 700;">Bistro Zielona needs you</span>
+              <span class="prose" style="font-size: 12px; line-height: 1.55;">No total could be read, so it is excluded from July until you fill it in. The month says so on its face.</span>
+            </div>
+          </div>
+          <button class="btn btn--danger-solid btn--sm" style="align-self: flex-start; font-size: 12px;">Enter the total</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card--flush panel">
+      <div class="panel__label"><span class="panel__title">Session expired mid-action</span><span class="panel__ref">F1.2</span></div>
+      <div class="panel__body">
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 13px;">
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span class="icon-tile icon-tile--info">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </span>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 13px; font-weight: 700;">Sign in again to finish</span>
+              <span class="prose" style="font-size: 12px; line-height: 1.55;">Your edits to this receipt are still here. Signing back in returns you to exactly this point.</span>
+            </div>
+          </div>
+          <a class="btn btn--primary btn--sm" href="login.html" style="align-self: flex-start; font-size: 12px;">Sign in</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card--flush panel">
+      <div class="panel__label"><span class="panel__title">Someone else&rsquo;s record</span><span class="panel__ref">N2</span></div>
+      <div class="panel__body">
+        <div class="centred">
+          <span class="icon-tile icon-tile--round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </span>
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <span style="font-size: 14px; font-weight: 700;">No such receipt</span>
+            <span class="prose" style="font-size: 12px; line-height: 1.55;">Always 404, never &ldquo;forbidden&rdquo; &mdash; whether a stranger&rsquo;s record exists is not ours to disclose.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card--flush panel">
+      <div class="panel__label"><span class="panel__title">Comparison not possible</span><span class="panel__ref">B6</span></div>
+      <div class="panel__body">
+        <div class="note" style="align-items: flex-start; width: 100%; padding: 14px 16px;">
+          <svg class="note__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 1px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 13px; font-weight: 700; color: var(--color-foreground);">Photo 2 could not be read</span>
+            <span style="font-size: 12px; line-height: 1.55;">Overlap checking is skipped rather than guessed. Retake that frame and it runs again.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>
