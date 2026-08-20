@@ -1,10 +1,16 @@
-# Local development stack: PostgreSQL and an S3-compatible object store (MinIO
-# stands in for the production object store — see ADR-0002). Lives at the repo
-# root, not infra/, so `docker compose up` works from a fresh clone with no
-# extra flags (F0.4.1).
+# Local development stack: the API, the client, PostgreSQL and an S3-compatible
+# object store (MinIO stands in for the production object store — see
+# ADR-0002). Lives at the repo root, not infra/, so `docker compose up` works
+# from a fresh clone with no extra flags (F0.4.1).
 #
-# The API and client run on the host (uv run / npm run dev), not in this
-# stack — only the stateful services they depend on are containerised here.
+# `backend` and `frontend` bind-mount their source and run with autoreload, so
+# editing a file on the host takes effect without a rebuild — see their
+# Dockerfiles. Their dependency directories (.venv, node_modules) live in
+# named volumes rather than the bind mount, so a host install never shadows
+# what the image built for the container's platform.
+#
+# Running the API or client on the host instead (`uv run` / `npm run dev`) still
+# works: only `docker compose up postgres minio minio-bootstrap` is then needed.
 
 services:
   postgres:
@@ -57,6 +63,36 @@ services:
       "
     restart: "no"
 
+  backend:
+    build:
+      context: ./backend
+    environment:
+      # Overrides backend/.env's DATABASE_URL: inside the compose network the
+      # database is reachable at the service name `postgres`, not localhost.
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-budget_planner}:${POSTGRES_PASSWORD:-budget_planner}@postgres:5432/${POSTGRES_DB:-budget_planner}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - backend_venv:/app/.venv
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:
   minio_data:
+  backend_venv:
+  frontend_node_modules:
