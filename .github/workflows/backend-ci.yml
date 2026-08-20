@@ -3,7 +3,16 @@ name: Backend CI
 # Lint, strict type check and the test suite for backend/, run with the exact
 # tool versions pinned in backend/uv.lock (F0.1.3) — the same versions
 # pre-commit uses locally via `uv run`, so a hook that passes locally cannot
-# fail here on a version mismatch.
+# fail here on a version mismatch. setup-uv's cache defaults to "auto", which
+# is enabled for these trigger types on GitHub-hosted runners and keys on
+# **/uv.lock, so dependency caching needs no explicit config here (F0.5.1).
+#
+# Both jobs run a real PostgreSQL service container (credentials match
+# docker-compose.yml's postgres service, F0.4.1) — the test suite needs one
+# reachable at DATABASE_URL for tests/db/test_baseline_migration.py, and the
+# migration-drift job needs one to autogenerate against (F0.5.3). ANTHROPIC_API_KEY
+# is a dummy value: app.config.Settings requires it to construct at all, but
+# nothing on either job path calls the Anthropic API.
 on:
   pull_request:
     paths:
@@ -15,12 +24,30 @@ on:
       - "backend/**"
       - ".github/workflows/backend-ci.yml"
 
+env:
+  DATABASE_URL: postgresql+asyncpg://budget_planner:budget_planner@localhost:5432/budget_planner
+  ANTHROPIC_API_KEY: sk-ant-ci-placeholder
+
 jobs:
   lint-typecheck-test:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
+    services:
+      postgres:
+        image: postgres:16.4-alpine
+        env:
+          POSTGRES_USER: budget_planner
+          POSTGRES_PASSWORD: budget_planner
+          POSTGRES_DB: budget_planner
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -41,3 +68,37 @@ jobs:
 
       - name: pytest
         run: uv run pytest
+
+  migration-drift:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16.4-alpine
+        env:
+          POSTGRES_USER: budget_planner
+          POSTGRES_PASSWORD: budget_planner
+          POSTGRES_DB: budget_planner
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - run: uv sync --locked
+
+      - name: alembic upgrade head
+        run: uv run alembic upgrade head
+
+      - name: alembic check (models match head — no missing migration)
+        run: uv run alembic check
