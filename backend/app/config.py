@@ -30,6 +30,12 @@ class Settings(BaseSettings):
     database_url: PostgresDsn = Field(
         description="Must use an async driver scheme, e.g. postgresql+asyncpg://."
     )
+    database_pool_size: int = Field(
+        default=5, description="Persistent connections kept open per process (F0.3.1)."
+    )
+    database_max_overflow: int = Field(
+        default=10, description="Extra connections allowed above the pool under load (F0.3.1)."
+    )
     anthropic_api_key: SecretStr
     build_sha: str = Field(
         default="dev",
