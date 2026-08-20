@@ -43,6 +43,13 @@ install:
 docker compose up -d postgres   # from the repository root
 ```
 
+The same compose file can also run the API itself (`docker compose up backend`,
+or `docker compose up` for the full stack including `frontend`) — it bind-mounts
+this directory and runs with autoreload, so it behaves like `uv run` for local
+editing. Its `DATABASE_URL` and `ANTHROPIC_API_KEY` come from the repo-root `.env`
+(copy `.env.example` there) rather than this directory's, since inside the compose
+network the database is reachable at the service name `postgres`, not `localhost`.
+
 Copy `.env.example` to `.env` in this directory; the default `DATABASE_URL` matches
 the compose file's default credentials. Then apply migrations:
 
