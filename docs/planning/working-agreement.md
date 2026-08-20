@@ -55,6 +55,13 @@ git switch -c task/F1-2-3-refresh-token-rotation   # one task
 git switch -c feature/F1-2-consent-flow            # a whole feature, all its tasks
 ```
 
+Before any of this, check the working tree. Uncommitted changes on the currently
+checked-out branch block starting new work — stop and ask the user how to handle them
+(commit, stash, or leave alone) before switching anywhere. Once the tree is clean, if
+the checked-out branch is not `main`, ask whether to continue from it or switch to an
+up-to-date `main` (`git switch main && git pull`) before cutting the new branch. Never
+decide either of these silently.
+
 A single-task branch closes one issue through one PR. A feature branch implements every
 task under that feature as one consistent pass — read all their acceptance criteria first,
 reconcile whatever overlaps, and commit as the work naturally divides rather than forcing
