@@ -136,6 +136,14 @@ the backend. Frontend CI regenerates the schema and fails the build if it differ
 what's committed, so a route or model change with no matching regeneration is caught in
 the PR that made it, not after merge.
 
+Colour, radius, spacing and control anatomy come from `docs/design/` — a set of plain
+HTML screens plus a token stylesheet that is the design reference for the whole
+product, and outranks the code (ADR-0004). A component that hardcodes a hex value
+instead of a token is wrong even if the pixels match, because it cannot follow a
+retheme. When a built screen and its reference in `docs/design/` disagree, the built
+screen is wrong; when implementation shows the reference itself is wrong, fix
+`docs/design/` in the same commit as the code that prompted it.
+
 ## Repository layout and the frontend/backend boundary
 
 ```

@@ -10,7 +10,8 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 
 | Entity | Meaning | Owned by |
 |---|---|---|
-| **User** | An account. Holds currency and optional monthly budget limit. | — |
+| **User** | An account. Holds currency, optional monthly budget limit, and a role (`user` or `admin`) — N2's per-user isolation applies to an admin exactly as to any other account (G8). | — |
+| **IdentityLink** | A linked Google or Facebook identity, verified-email-gated (G9-G11). | User |
 | **Receipt** | One purchase transaction, from one or more photos. | User |
 | **LineItem** | One position on a receipt: product, quantity, unit price, total. | Receipt |
 | **Category** | A spending classification. Either a system default or user-defined. | User (nullable for defaults) |
@@ -20,7 +21,13 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | **Recommendation** | Generated advice tied to a goal, with projected impact and user feedback. | User |
 
 Relationships: a User has many Receipts; a Receipt has many LineItems; a LineItem has one
-Category; a Goal produces many Recommendations.
+Category; a Goal produces many Recommendations; a User has many IdentityLinks.
+
+**Not yet groomed:** BR-7 (G1-G12, added by F0.10.1) is fully specified in the BRD, but
+E1 as currently groomed (`docs/planning/backlog.yaml`) implements only G1-G7 —
+registration, login, session refresh. G8 (admin role) and G9-G12 (OIDC linking) need
+their own tasks before BR-7 is delivered; `IdentityLink` and `User.role` above describe
+the target, not something built yet.
 
 ## Receipt lifecycle
 
@@ -82,10 +89,19 @@ Rules that must hold at all times. Each is a candidate for a test.
     no recommendation (F5).
 18. When spend is on track, report progress and suggest nothing (F6).
 
+**Identity**
+
+19. Login and registration return an identical generic error whether the email is
+    unknown or the password is wrong (G2, G4).
+20. Refresh tokens rotate on use; presenting one already exchanged revokes every token
+    issued from that session (G5, G6).
+21. An OIDC identity links to an existing account only when the provider reports a
+    verified email matching it; an unverified email never links automatically (G10, G11).
+
 **Access**
 
-19. Every query for a user-owned entity is filtered by owner (N2).
-20. A request for another user's record returns 404, not 403.
+22. Every query for a user-owned entity is filtered by owner (N2).
+23. A request for another user's record returns 404, not 403 (N2).
 
 ## Open decisions
 
@@ -97,3 +113,6 @@ here as an ADR when it arrives.
 | Confidence thresholds for OCR, categorisation and manual-review triggers | E3, E5 |
 | Whether budget periods are strictly calendar months or support custom cycles | E6 |
 | Whether thin history yields softened advice or none at all | E8 |
+| Target values for the success metrics (section 12) | Not epic-blocking — informs tuning throughout |
+| Which markets/currencies ship at launch, and whether multi-currency is truly out of scope | F1.4 |
+| Whether household/shared budgets change the single-user assumption | Resolved — phase 2, see E12 in `docs/planning/backlog.yaml` |
