@@ -1,15 +1,35 @@
-"""Typed application settings (F0.2.2).
+"""Typed application settings (F0.2.2, F0.7.1).
 
 The single place the service reads configuration from. A value that is not a
 field on `Settings` is not configurable — nothing else in the codebase should
 read `os.environ` or `os.getenv` directly, so a missing or malformed variable
 fails here, at boot, instead of wherever the untyped read happens to be.
+
+Every setting here, its purpose, default and whether it is required is also
+listed in `docs/architecture/configuration.md` — update that table in the same
+commit as a change here. Which value each environment sets is
+`docs/architecture/environments.md`'s job, not this module's: this file fixes
+defaults for local development only.
 """
 
+from enum import StrEnum
 from functools import lru_cache
 
 from pydantic import Field, PostgresDsn, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Environment(StrEnum):
+    """The three deployment tiers this system runs in (F0.7.3).
+
+    See `docs/architecture/environments.md` for what differs between them —
+    this enum only fixes the vocabulary so a typo'd tier name fails at boot
+    rather than silently falling through to local-development behaviour.
+    """
+
+    LOCAL = "local"
+    STAGING = "staging"
+    PRODUCTION = "production"
 
 
 class Settings(BaseSettings):
@@ -26,7 +46,7 @@ class Settings(BaseSettings):
         case_sensitive=False,
     )
 
-    environment: str = "development"
+    environment: Environment = Environment.LOCAL
     database_url: PostgresDsn = Field(
         description="Must use an async driver scheme, e.g. postgresql+asyncpg://."
     )
@@ -37,6 +57,37 @@ class Settings(BaseSettings):
         default=10, description="Extra connections allowed above the pool under load (F0.3.1)."
     )
     anthropic_api_key: SecretStr
+    anthropic_model: str = Field(
+        default="claude-haiku-4-5-20251001",
+        description=(
+            "Claude model id used for extraction, categorisation and advice calls. "
+            "The default is the local/staging tier; production sets its own tier "
+            "explicitly (ADR-0005, F0.7.3) rather than having this module branch on "
+            "`environment`, so the deployed model is a visible env var, not implicit."
+        ),
+    )
+    ocr_confidence_threshold: float = Field(
+        default=0.80,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Below this, an extracted required field is flagged 'low confidence' "
+            "instead of accepted silently (BRD A10). Initial value per ADR-0005, "
+            "answering BRD open question 14.5 — revisit once real extraction "
+            "accuracy data exists."
+        ),
+    )
+    categorization_confidence_threshold: float = Field(
+        default=0.70,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Below this, a line item is assigned 'Uncategorized' and flagged for "
+            "review instead of guessed (BRD C3). Initial value per ADR-0005, "
+            "answering BRD open question 14.5 — revisit once real categorisation "
+            "accuracy data exists."
+        ),
+    )
     build_sha: str = Field(
         default="dev",
         description="Set by CI/CD at deploy time; 'dev' outside a built image.",

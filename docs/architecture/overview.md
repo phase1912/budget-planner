@@ -164,6 +164,16 @@ dependency is one-directional. This is what keeps the two runtimes deployable an
 testable independently, and it is why the client is generated rather than hand-written
 — a hand-written client invites exactly the shortcut this rule forbids.
 
+## Configuration and environments
+
+`app.config.Settings` (F0.2.2, F0.7.1) is the only place the service reads
+configuration from — every field, its purpose, default and whether it's required is
+[`configuration.md`](configuration.md). What differs between the three deployment
+tiers (local, staging, production), including which Claude model tier each calls, is
+[`environments.md`](environments.md#the-matrix) (F0.7.3). How the two real secrets
+(`ANTHROPIC_API_KEY`, the database credential) are stored and rotated per environment
+is [`secrets.md`](secrets.md) (F0.7.2).
+
 ## Deliberate non-goals
 
 Out of scope by BRD section 4.2, and worth stating so nobody "helpfully" adds them:

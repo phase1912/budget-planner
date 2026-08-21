@@ -110,7 +110,7 @@ here as an ADR when it arrives.
 
 | Question | Blocks |
 |---|---|
-| Confidence thresholds for OCR, categorisation and manual-review triggers | E3, E5 |
+| Confidence thresholds for OCR, categorisation and manual-review triggers | Resolved — see ADR-0005 and `app.config.Settings.ocr_confidence_threshold` / `.categorization_confidence_threshold`; revisit once E3/E5 have real accuracy data |
 | Whether budget periods are strictly calendar months or support custom cycles | E6 |
 | Whether thin history yields softened advice or none at all | E8 |
 | Target values for the success metrics (section 12) | Not epic-blocking — informs tuning throughout |
