@@ -30,6 +30,16 @@
 # the database. A trailing "interface" feature is for genuinely aggregate screens
 # only (a dashboard over several capabilities), never for "the frontend half".
 #
+# `demo:` is how that rule is enforced rather than merely stated. Every phase-1
+# feature says how it is demonstrated by using the product, and the sync writes it
+# into the issue under "Demonstrated by". It is not always a new screen: a feature
+# may name screens that already exist ("no screen of its own — proven by ..."), and
+# some genuinely have no surface of their own. What is not allowed is a feature
+# that can only be shown to work by reading a test. If writing `demo:` is hard,
+# that is the signal the feature is a layer rather than a slice — F1.5, F2.6, F3.7,
+# F5.7, F7.7 and F8.10 were all retired for exactly that reason, and the retired
+# keys are listed at the point in the file where each used to sit.
+#
 # `phase:` separates what the product must do from what the business would like it
 # to do later. Phase 1 is the BRD scope and is what ships. Phase 2 is commercial
 # scope: planned in the open so the phase-1 design does not accidentally rule it
@@ -373,16 +383,24 @@ epics:
       Every BRD scenario begins with "Given the user is logged in", and N2 forbids one user's
       data from reaching another. This epic establishes authentication, session handling, the
       user profile fields from the BRD data model, and the scoping guarantee that all later
-      epics depend on. Full stack: the login, registration and logout screens and the
-      authenticated route table live here with the endpoints they call (F1.5), not in E9 —
-      E9 owns only the frontend groundwork that has no domain dependency.
+      epics depend on. Full stack, and paired feature by feature rather than layer by layer:
+      the login and registration screens ship inside F1.1 with the endpoints they post to,
+      and token storage, transparent refresh and the protected route table ship inside F1.2
+      with the session model they depend on. E9 owns only the frontend groundwork that has
+      no domain dependency.
     features:
 
       - key: F1.1
         title: Registration and login
-        labels: [backend, security]
+        labels: [backend, security, frontend]
+        depends_on: [F9.4, F9.6]
         intent: >
-          A person can create an account with an email and password and authenticate with it.
+          A person can create an account with an email and password and authenticate with it,
+          through the product rather than through curl: the screens ship with the endpoints.
+        demo: >
+          Create an account on /register, sign out, sign back in on /login, and land on the
+          root route as yourself. Then fail a sign-in and confirm a wrong password and an
+          unknown address are indistinguishable (BRD N2).
         tasks:
           - key: F1.1.1
             title: User table migration and SQLAlchemy model
@@ -416,13 +434,34 @@ epics:
             detail: >
               Covers the happy path, duplicate registration, wrong password, and the guarantee
               that responses do not leak account existence.
+          - key: F1.1.6
+            title: Login and registration screens
+            labels: [frontend]
+            detail: >
+              The two public routes, built from docs/design/screens/login.html and
+              register.html and posting through the generated client. The sign-in failure
+              shows one message for both an unknown address and a wrong password, matching
+              what F1.1.4 returns — the screen must not leak what the endpoint withholds.
+          - key: F1.1.7
+            title: Post-login landing at the root route
+            labels: [frontend]
+            detail: >
+              Where signing in actually lands, per docs/design/screens/home.html: account
+              facts, an honest "no receipts yet" and one way forward. F6.7 later replaces the
+              body of this same route with the dashboard rather than adding a second one
+              (ADR 0004).
 
       - key: F1.2
         title: Session and token management
-        labels: [backend, security]
+        labels: [backend, security, frontend]
+        depends_on: [F9.4]
         intent: >
           An authenticated session persists across requests, can be refreshed, and can be
-          revoked on logout.
+          revoked on logout — including on the client, where the token is held and where
+          expiry decides what the user sees.
+        demo: >
+          Stay signed in across a reload; let the access token expire mid-edit and watch the
+          action complete anyway; sign out on one device and find the other rejected.
         tasks:
           - key: F1.2.1
             title: Access token issuance
@@ -449,6 +488,21 @@ epics:
               A FastAPI dependency resolving the authenticated user, returning 401 with the
               standard error envelope when absent or expired. This is the single entry point
               every protected route uses.
+          - key: F1.2.5
+            title: Token storage and the authenticated fetch layer
+            labels: [frontend, security]
+            detail: >
+              Where the access token lives on the client and how the refresh in F1.2.2 is
+              spent: a 401 triggers one refresh and replays the original request, so a token
+              expiring mid-edit does not cost the user their work. Concurrent 401s share a
+              single refresh rather than racing to rotate the family.
+          - key: F1.2.6
+            title: Protected route table and expiry redirect
+            labels: [frontend]
+            detail: >
+              The public-versus-authenticated split F9.4.3 left open, the guard in front of
+              it, and the redirect when a session ends — returning the user to where they
+              were once they sign back in, not to the root.
 
       - key: F1.3
         title: Per-user data scoping guarantee
@@ -456,6 +510,10 @@ epics:
         intent: >
           Satisfies BRD N2 structurally rather than by convention: it must be difficult to
           write a query that returns another user's data.
+        demo: >
+          No screen of its own — it is what every other feature's cross-account check rests on.
+          Proven by signing in as a second account and finding the first account's receipts,
+          statistics and goals absent, with direct URLs answering 404 rather than 403.
         tasks:
           - key: F1.3.1
             title: Request-scoped user context
@@ -484,6 +542,9 @@ epics:
         intent: >
           A user can set the account currency and an optional monthly budget limit, which
           BRD D7 uses to express spend as a percentage of target.
+        demo: >
+          Set a monthly limit in Preferences and see it reflected on the root route. Try to
+          change currency once receipts exist and find the control locked with the reason.
         tasks:
           - key: F1.4.1
             title: GET and PATCH /me endpoints
@@ -504,18 +565,12 @@ epics:
               Displays and edits currency and monthly budget limit, backed by a MobX store
               following the conventions set in epic E9.
 
-      - key: F1.5
-        title: Authentication flows and protected routing
-        labels: [frontend]
-        depends_on: [F1.1, F1.2, F9.3, F9.4]
-        intent: >
-          The screens that make this epic's endpoints usable and testable without curl: login,
-          registration and logout, token storage, transparent refresh on 401 without losing the
-          user's in-flight action, and the authenticated-versus-public route table with its
-          redirect on expiry. Held here rather than in E9 because it is the frontend half of
-          this epic's own capability — separating the two put a working UI eight epics away
-          from the API it exercises. Not yet groomed into tasks: the storage strategy and guard
-          shape follow from F1.2's session model, which does not exist yet.
+  # F1.5 "Authentication flows and protected routing" was retired here. Collecting this
+  # epic's whole UI into one trailing feature was the same layering mistake that put
+  # authentication's screens in E9 to begin with — it just moved the seam. Its work now
+  # sits with the endpoints it exercises: the screens in F1.1.6 and F1.1.7, token storage
+  # and the route guard in F1.2.5 and F1.2.6. Issue #198 was closed by hand, as #119 was
+  # when F9.5 was retired for the same reason. The key is retired; never reuse it.
 
   - key: E2
     title: Receipt Ingestion & Storage
@@ -526,51 +581,82 @@ epics:
       Accepting receipt photos: format validation, the two upload modes with their photo-count
       and size limits, durable encrypted storage of the originals, and asynchronous processing
       status. Covers BRD A1 through A8 and the storage half of A12.
+
+      The upload screen is built here rather than parked in a trailing interface feature:
+      F2.1 puts it on screen, and F2.2, F2.3 and F2.5 each extend it as they land, so every
+      feature in this epic can be exercised by using the product.
     features:
       - key: F2.1
-        title: Upload endpoint and file format validation
-        labels: [backend]
+        title: Upload endpoint, format validation and the upload screen
+        labels: [backend, frontend]
         requirements: [A1, A2]
+        depends_on: [F1.2, F9.4]
         intent: >
           Submitted files are validated as JPEG, PNG, HEIC or PDF-scan by content inspection
-          rather than by extension, and rejections state the accepted formats.
+          rather than by extension, and rejections state the accepted formats — with the screen
+          that submits them. The first slice of docs/design/screens/upload-1-photos.html: pick
+          files, send them, see what came back.
+        demo: >
+          Choose a photo on /upload and send it. Then choose a .docx and watch it be refused
+          with the accepted formats named, per the "Unsupported file" panel in
+          docs/design/screens/states.html.
       - key: F2.2
         title: Single-receipt upload mode
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [A3, A4, A7, A8]
+        depends_on: [F2.1]
         intent: >
           One receipt captured across up to 10 photos totalling at most 50 MB, with limit
-          violations rejected and explained.
+          violations rejected and explained. Adds the mode selector, the photo strip and the
+          count-and-size meter to F2.1's screen — the limits are enforced on the server and
+          shown before bytes are sent, not only after.
+        demo: >
+          Add photos in single-receipt mode and watch the meter fill; add an eleventh and see
+          the 10-photo limit refuse it in words rather than silence.
       - key: F2.3
         title: Multiple-receipts upload mode
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [A3, A5, A6, A7, A8]
+        depends_on: [F2.2]
         intent: >
           Several distinct receipts in one session, one upload line each, with the 10-photo and
           50 MB limits applied independently per line so one bad line cannot fail the others.
+          Adds the second mode and the per-line UI to the same screen.
+        demo: >
+          Add two upload lines, overload the first past 10 photos, and confirm the second line
+          is untouched and still submits — the independence A7 requires, visible rather than
+          asserted.
       - key: F2.4
         title: Encrypted object storage for receipt images
         labels: [backend, security]
         requirements: [A12, N1]
+        depends_on: [F2.1]
         intent: >
           Original images are stored in object storage encrypted at rest, referenced from the
           receipt record, and retrievable only by their owner via time-limited URLs.
+        demo: >
+          No screen of its own — the photo thumbnails on F2.1's screen render through the
+          time-limited URL, so they prove the path works. Ownership is shown by signing in as
+          a second account and getting a 404 for the first account's image URL (BRD N2).
       - key: F2.5
         title: Asynchronous ingestion pipeline and status tracking
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [N4]
+        depends_on: [F2.1]
         intent: >
           Upload returns immediately with a tracking handle while parsing proceeds in the
           background, so the 10-second target of N4 is a processing budget rather than a
-          request timeout.
-      - key: F2.6
-        title: Upload user interface
-        labels: [frontend]
-        requirements: [A3, A4, A5, A6, A7, A8]
-        depends_on: [F2.2, F2.3, F1.5, F9.4]
-        intent: >
-          Mode selection, adding upload lines, per-line photo previews, and client-side limit
-          feedback before bytes are sent.
+          request timeout. Adds the processing state to the upload screen.
+        demo: >
+          Send a batch and watch the "Reading 2 receipts" state from
+          docs/design/screens/states.html — then leave the page and come back to find the work
+          still progressing.
+
+  # F2.6 "Upload user interface" was retired here. It was the whole epic's UI in one trailing
+  # feature, which left F2.1 through F2.5 with nothing to try by hand — the same layering
+  # mistake as F1.5, one epic further along. Its work now sits with the endpoints it exercises
+  # (F2.1, F2.2, F2.3, F2.5), and the three-step wizard frame moved to F3.1, which is where a
+  # second step first exists to step to. Issue #62 was closed by hand. The key is retired.
 
   - key: E3
     title: Receipt Parsing & Extraction
@@ -581,57 +667,108 @@ epics:
       Turning a validated photo into a structured receipt: field extraction, confidence
       handling, manual-review flagging, duplicate detection and persistence with provenance.
       Covers BRD A9 through A15.
+
+      This is where photographing a receipt starts paying off, so F3.1 puts step 2 of the
+      upload wizard on screen and every later feature in the epic extends it. Nothing here
+      ships as extraction that only a test can see.
     features:
       - key: F3.1
-        title: Vision extraction provider integration
-        labels: [ai, backend]
+        title: Vision extraction, and seeing what was read
+        labels: [ai, backend, frontend]
         requirements: [A9]
+        depends_on: [F2.1, F9.4]
         intent: >
           A versioned, testable adapter over the Claude vision API that turns receipt images
-          into structured output, with the prompt and schema under source control.
+          into structured output, with the prompt and schema under source control — and the
+          screen that shows the result. Introduces the three-step wizard frame, because this
+          is the first point at which a second step exists to step to (the frame was formerly
+          F2.6's). First slice of docs/design/screens/upload-2-extracted.html.
+        demo: >
+          Photograph a real receipt, send it, and read the merchant, date and line items back
+          off step 2 of the wizard.
       - key: F3.2
         title: Extraction schema and validation
-        labels: [ai, backend]
+        labels: [ai, backend, frontend]
         requirements: [A9]
+        depends_on: [F3.1]
         intent: >
           Merchant, transaction date, transaction time, line items (name, quantity, unit price,
-          total price) and total amount, validated for internal arithmetic consistency.
+          total price) and total amount, validated for internal arithmetic consistency. The
+          screen gains the per-receipt footer reconciling the sum of lines against the printed
+          total.
+        demo: >
+          Upload a receipt whose lines do not add up to its printed total and see the
+          disagreement stated on step 2 rather than absorbed silently.
       - key: F3.3
         title: Confidence scoring and low-confidence flagging
-        labels: [ai, backend]
+        labels: [ai, backend, frontend]
         requirements: [A10]
+        depends_on: [F3.2]
         intent: >
           Per-field confidence recorded, and fields below threshold marked "low confidence" and
-          surfaced for confirmation instead of being silently accepted.
+          surfaced for confirmation instead of being silently accepted. The screen marks those
+          fields where they appear.
+        demo: >
+          Upload a blurred receipt and find the unreadable total marked "low confidence" on
+          step 2 instead of presented as fact.
       - key: F3.4
         title: Manual-review status for missing critical fields
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [A11]
+        depends_on: [F3.3]
         intent: >
           A receipt without an extractable total or date is marked "requires manual review" and
-          excluded from all automated budget calculation until a human resolves it.
+          excluded from all automated budget calculation until a human resolves it — and says
+          so on its face wherever it appears.
+        demo: >
+          Upload a receipt with its total torn off; the screen says the total could not be
+          read and that the receipt is held out until it is supplied, per the "Held out of the
+          total" panel in docs/design/screens/states.html.
       - key: F3.5
         title: Receipt persistence with provenance
         labels: [database, backend]
         requirements: [A12, A13, A15]
+        depends_on: [F3.2]
         intent: >
           Header, line items and image reference stored under a unique receipt id, owned by the
           submitting account, stamped with processing time and parser version.
+        demo: >
+          No screen of its own — it is proven by what depends on it. Complete the wizard, then
+          re-upload the same receipt and watch F3.6 recognise it, which is only possible if
+          the first one was really stored. F3.8 then shows it in a list.
       - key: F3.6
         title: Duplicate receipt detection
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [A14]
+        depends_on: [F3.5]
         intent: >
           A receipt matching an existing one on merchant, date and total prompts the user to
-          confirm before storing, rather than being silently accepted or silently dropped.
-      - key: F3.7
-        title: Receipt review and correction interface
-        labels: [frontend]
-        requirements: [A10, A11, A14]
-        depends_on: [F3.3, F3.4, F1.5, F9.4]
+          confirm before storing, rather than being silently accepted or silently dropped. Two
+          trips to one shop on one day are normal, so this asks rather than decides.
+        demo: >
+          Upload the same receipt twice and answer the prompt both ways — once skipping, once
+          storing it as new — per the "Possible duplicate upload" panel in
+          docs/design/screens/states.html.
+      - key: F3.8
+        title: Receipt list and detail
+        labels: [backend, frontend]
+        requirements: [A12, A13, N2]
+        depends_on: [F3.5, F1.2, F9.4]
         intent: >
-          Side-by-side original photo and extracted data, with low-confidence fields highlighted
-          for confirmation and the manual-review queue reachable in one click.
+          What "Receipts" in the navigation means: the endpoint listing an account's stored
+          receipts newest first with pagination, and the screens over it — the list, and a
+          detail dialog showing the merchant and everything bought. Screens at
+          docs/design/screens/receipts.html and receipt-detail.html. Deliberately no
+          per-category summary in the dialog yet.
+        demo: >
+          Open Receipts, page through them, and click one to read its line items. Sign in as a
+          second account and confirm the first account's receipts are absent and its receipt
+          URL returns 404 rather than 403 (BRD N2).
+
+  # F3.7 "Upload step 2 — what we read" was retired here. Its screen is now built by the
+  # features whose extraction it displays: F3.1 puts it on screen, F3.2, F3.3, F3.4 and F3.6
+  # each extend it as they land. Keeping it would have left five extraction features with
+  # nothing to look at until the end of the epic. Issue #70 was closed by hand. Key retired.
 
   - key: E4
     title: Multi-Photo Position Matching
@@ -645,55 +782,95 @@ epics:
     features:
       - key: F4.1
         title: Independent per-photo extraction for comparison
-        labels: [ai, backend]
+        labels: [ai, backend, frontend]
         requirements: [B1]
+        depends_on: [F3.1]
         intent: >
           Each photo is parsed on its own before any comparison, so a match decision is never
-          an artefact of parsing the two images together.
+          an artefact of parsing the two images together. Step 2 of the wizard gains the
+          per-photo provenance that makes this visible: which frame each line came from.
+        demo: >
+          Photograph one long receipt in two overlapping frames and see, on step 2, each item
+          attributed to the frame it was read from.
       - key: F4.2
         title: Position comparison rules
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [B2, B3, B4]
+        depends_on: [F4.1]
         intent: >
           Item name, unit price, quantity and total price must all match exactly for a pair to
-          be "same position"; any difference makes it "different position".
+          be "same position"; any difference makes it "different position". Ships with the
+          conflict card that shows the comparison field by field, so the verdict is legible
+          rather than asserted.
+        demo: >
+          Upload the overlapping pair and read the evidence table for a matched item — all
+          four fields ticked — and for a near-match where one price differs.
       - key: F4.3
         title: Same-receipt scoping guard
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [B5, B9]
+        depends_on: [F4.2]
         intent: >
           Comparison runs only between photos of one physical receipt. Identical items on two
           distinct transactions are two purchases, never a duplicate — this is the requirement
           most likely to be violated by a naive deduplication implementation.
+        demo: >
+          Upload two separate receipts a week apart that each contain "Milk 2% 1L" at 4.50 and
+          confirm both purchases survive, with no match offered between them.
       - key: F4.4
         title: Comparison failure handling
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [B6]
+        depends_on: [F4.2]
         intent: >
           If either photo failed to parse, return "comparison not possible" with the reason
-          instead of guessing.
+          instead of guessing — and say so where the comparison would have been.
+        demo: >
+          Upload one clear frame and one unreadable one; the pair reports that it could not be
+          compared and why, per the "Comparison not possible" panel in
+          docs/design/screens/states.html.
       - key: F4.5
         title: Manual override and correction capture
-        labels: [backend, database]
+        labels: [backend, database, frontend]
         requirements: [B7, B8]
+        depends_on: [F4.2]
         intent: >
           A user can overturn any automatic determination, and the correction is stored as
-          labelled data for future evaluation and tuning.
+          labelled data for future evaluation and tuning. Ships with the same-item / two-items
+          control and the settled-with-undo state on the conflict card.
+        demo: >
+          Flip a "same item" verdict to two items, see the receipt total change accordingly,
+          and undo it.
       - key: F4.6
         title: Deduplicated receipt assembly
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [B3]
+        depends_on: [F4.2]
         intent: >
           Merge the per-photo extractions of one receipt into a single item list where matched
           positions appear exactly once, and reconcile the result against the printed total.
+        demo: >
+          After resolving the overlap, step 2 shows one item list for the receipt with the
+          duplicate collapsed, and its footer agrees with the printed total.
       - key: F4.7
-        title: Match review interface
-        labels: [frontend]
+        title: Upload step 3 — the resolve gate
+        labels: [backend, frontend]
         requirements: [B7]
-        depends_on: [F4.2, F4.5, F1.5, F9.4]
+        depends_on: [F4.5, F3.4, F3.6, F1.2, F9.4]
         intent: >
-          Show detected overlaps between photos with the evidence, and let the user flip any
-          decision.
+          The third step of the wizard, and the endpoint behind it: a batch of decisions is
+          applied together and the receipts are committed only once none are outstanding. One
+          queue for everything needing a human across the whole batch — a position caught in
+          two frames, a field below the confidence threshold, a receipt matching one already
+          stored, a missing total — with a counter, and nothing written while any of it is
+          open. Decisions the agent made alone appear settled and reversible in the same queue
+          rather than hidden. Kept as its own feature because it composes flags raised by four
+          features across two epics; the individual verdicts and evidence are theirs. Screen
+          at docs/design/screens/upload-3-resolve.html.
+        demo: >
+          Upload a batch that raises several kinds of conflict at once, watch "Store receipts"
+          stay disabled while the counter is above zero, settle them one by one, and only then
+          commit the batch.
 
   - key: E5
     title: Spend Categorization
@@ -707,56 +884,77 @@ epics:
     features:
       - key: F5.1
         title: Default category taxonomy
-        labels: [database, backend]
+        labels: [database, backend, frontend]
         requirements: [C1, C2]
+        depends_on: [F3.5, F9.4]
         intent: >
           Seeded default categories (Groceries, Dining, Transport, Utilities, Health,
           Entertainment, Other) plus a guaranteed Uncategorized fallback, modelled so custom
-          user categories coexist with defaults.
+          user categories coexist with defaults. Ships with the read-only taxonomy screen that
+          F5.6 later makes editable, so the seeded set is inspectable the day it lands.
+        demo: >
+          Open Categories and read the built-in list with the item count and total behind each,
+          per the "Built in" section of docs/design/screens/categories.html.
       - key: F5.2
         title: Automatic item categorization
-        labels: [ai, backend]
+        labels: [ai, backend, frontend]
         requirements: [C1]
+        depends_on: [F5.1]
         intent: >
-          Each parsed line item receives a category and a recorded confidence score.
+          Each parsed line item receives a category and a recorded confidence score, shown
+          against the item wherever line items are displayed.
+        demo: >
+          Upload a grocery receipt and find each line carrying a category chip on step 2 of
+          the wizard and in the receipt detail dialog.
       - key: F5.3
-        title: Confidence threshold and Uncategorized fallback
-        labels: [ai, backend]
+        title: Confidence threshold, Uncategorized fallback and the review queue
+        labels: [ai, backend, frontend]
         requirements: [C2, C3]
+        depends_on: [F5.2]
         intent: >
           Below-threshold classifications become Uncategorized and are flagged for review
-          rather than guessed at.
+          rather than guessed at — with the queue that collects them, oldest first. Screen at
+          docs/design/screens/categorisation.html.
+        demo: >
+          Upload a receipt with an obscure item name and find it waiting in the review queue
+          marked Uncategorized, rather than filed under a confident guess.
       - key: F5.4
         title: Manual category reassignment
         labels: [backend, frontend]
         requirements: [C4]
+        depends_on: [F5.3]
         intent: >
           Any line item's category can be changed by its owner, and the override is recorded
-          as manual so later automatic passes do not overwrite it.
+          as manual so later automatic passes do not overwrite it. Adds the inline picker to
+          the queue and to every other place a line item is shown.
+        demo: >
+          Reassign an item from the queue, then re-run categorisation and confirm your choice
+          survives — the override is respected, not overwritten.
       - key: F5.5
         title: Learning from corrections
         labels: [ai, backend]
         requirements: [C5]
+        depends_on: [F5.4]
         intent: >
           A correction creates a rule applying to future items with the same or highly similar
           name from the same merchant, which requires a defined similarity measure and a
           precedence order against automatic classification.
+        demo: >
+          No screen of its own — it is proven through F5.4's. Reassign "Protein Bar XL" from
+          Fresh Market to Health with "apply to future items" ticked, upload another Fresh
+          Market receipt containing it, and find it already filed under Health.
       - key: F5.6
         title: User-defined custom categories
         labels: [backend, frontend]
         requirements: [C6, C7]
+        depends_on: [F5.1, F5.4]
         intent: >
           Users can create their own categories, immediately available for both manual and
           automatic assignment, including the behaviour when a category in use is renamed or
-          deleted.
-      - key: F5.7
-        title: Categorization review interface
-        labels: [frontend]
-        requirements: [C3, C4, C6]
-        depends_on: [F5.3, F5.4, F1.5, F9.4]
-        intent: >
-          A review queue for flagged items and inline category editing wherever line items are
-          displayed.
+          deleted. Makes F5.1's taxonomy screen editable.
+        demo: >
+          Create "Pet Supplies", file items under it, then delete it and choose where those
+          items land — per the delete dialog in docs/design/screens/categories.html.
 
       - key: F5.8
         title: Seed script for local sample data
@@ -769,6 +967,15 @@ epics:
           this is the first point where every entity it writes exists: User (F1.1), receipt and
           line items (F3.5) and categories (F5.1). It was originally planned in E0's local
           development environment, where none of those had been built yet.
+        demo: >
+          Run `seed`, sign in as the demo user, and find two months of categorised receipts
+          already there — which is what makes E6 and E7 workable without photographing
+          anything.
+
+  # F5.7 "Categorization review interface" was retired here. The review queue now lands with
+  # F5.3, which is the feature that flags items into it, and inline editing with F5.4, which
+  # is the feature that changes them. Neither is worth building without the other half.
+  # Issue #86 was closed by hand. The key is retired.
 
   - key: E6
     title: Monthly Budget Calculation
@@ -781,55 +988,93 @@ epics:
       recalculating when history changes. Covers BRD D1 through D7.
     features:
       - key: F6.1
-        title: Monthly aggregation engine
-        labels: [backend, database]
+        title: Monthly aggregation engine, and the month view
+        labels: [backend, database, frontend]
         requirements: [D1, D2]
+        depends_on: [F3.5, F9.4]
         intent: >
           Sum line-item totals across all receipts whose transaction date — not upload date —
-          falls in the month, which makes back-dated uploads behave correctly.
+          falls in the month, which makes back-dated uploads behave correctly. Ships with the
+          figure on screen and the month switcher beside it — the first slice of
+          docs/design/screens/dashboard.html.
+        demo: >
+          Seed two months (F5.8), open the root route and read this month's total, then step
+          back a month. Upload a receipt dated last month and watch it land in last month's
+          figure rather than this one.
       - key: F6.2
         title: Transparent exclusion of receipts under review
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [D3]
+        depends_on: [F6.1, F3.4]
         intent: >
           Receipts marked "requires manual review" are excluded from the total, and the summary
           states how many were excluded and their value, so the number is never quietly wrong.
+        demo: >
+          With a flagged receipt in the month, the month view carries the notice naming how
+          many receipts and how much money sit outside the total, with a way through to fix
+          them.
       - key: F6.3
         title: Month-to-date versus finalised presentation
         labels: [backend, frontend]
         requirements: [D4]
+        depends_on: [F6.1]
         intent: >
           An in-progress month is labelled incomplete wherever it appears, so a partial figure
           is never mistaken for a full one.
+        demo: >
+          The current month reads "month-to-date, still running" with the days elapsed; step
+          back to a finished month and the label changes to finalised.
       - key: F6.4
         title: Monthly snapshot generation
         labels: [backend, database]
         requirements: [D5]
+        depends_on: [F6.3]
         intent: >
           When a month completes, persist a finalised snapshot (the MonthlySnapshot entity),
           including how the transition is triggered across user time zones.
+        demo: >
+          No screen of its own — proven through F6.3's label. Roll the clock past a month
+          boundary and watch that month switch from month-to-date to finalised and stop
+          changing, which only a persisted snapshot makes true.
       - key: F6.5
         title: Recalculation on receipt change
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [D6, N3]
+        depends_on: [F6.4]
         intent: >
           Adding, editing or deleting a receipt in a closed month recalculates and updates the
           stored snapshot, with the recalculation reflected in the same session.
+        demo: >
+          Edit the total of a receipt in a finalised month from the receipt detail dialog and
+          watch that month's figure move without a reload.
       - key: F6.6
         title: Budget limit and percentage of target
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [D7]
+        depends_on: [F6.1, F1.4]
         intent: >
           Where a monthly limit is set, express current spend as a percentage of it, including
           the over-100% case.
+        demo: >
+          Set a limit in Preferences and watch the progress bar and percentage appear on the
+          month view; push spend past the limit and confirm it reads over-100% in error tone
+          rather than clamping at full, per docs/design/screens/dashboard-dark.html.
       - key: F6.7
-        title: Budget dashboard
-        labels: [frontend]
+        title: Budget dashboard — composing the landing view
+        labels: [backend, frontend]
         requirements: [D1, D4, D7]
-        depends_on: [F6.3, F6.6, F1.5, F9.4]
+        depends_on: [F6.6, F5.2, F3.8]
         intent: >
-          The landing view: current month-to-date spend, progress against limit, excluded-receipt
-          notice, and month switching.
+          What turns F6.1's month figure into the landing view: the category breakdown beside
+          it and the latest-receipts column next to that, each opening into the screens that
+          own them. Kept as its own feature because it composes three epics' data — E6's
+          totals, E5's categories, E3's receipts — and needs the endpoint that returns them
+          together rather than three round trips. The figure, the limit bar, the excluded
+          notice and month switching are already there from F6.1, F6.2, F6.3 and F6.6; this
+          finishes docs/design/screens/dashboard.html rather than starting it.
+        demo: >
+          Open the root route on a seeded account: spend, limit, breakdown and recent receipts
+          on one screen. Click a receipt to open its dialog, click through to full statistics.
 
   - key: E7
     title: Statistics, Comparison & Export
@@ -841,54 +1086,80 @@ epics:
       empty states, chart-ready output, and data export. Covers BRD E1 through E6 and N6.
     features:
       - key: F7.1
-        title: Category statistics engine
-        labels: [backend, database]
+        title: Category statistics engine, and the ranked breakdown
+        labels: [backend, database, frontend]
         requirements: [E1, E4]
+        depends_on: [F5.2, F9.4]
         intent: >
           Total spend, share of overall spend and transaction count per category, ranked from
-          highest to lowest by default.
+          highest to lowest by default — with the screen that shows the ranking. First slice
+          of docs/design/screens/statistics.html.
+        demo: >
+          Open Statistics on a seeded account and read the table: every category with its
+          total, its share and its item count, biggest first.
       - key: F7.2
         title: Arbitrary date-range support
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [E2]
+        depends_on: [F7.1]
         intent: >
           Statistics for any start and end date, not only calendar months, with inclusive
-          boundary semantics defined once and applied everywhere.
+          boundary semantics defined once and applied everywhere. Adds the preset chips and
+          the range picker to the screen.
+        demo: >
+          Ask for 10–24 July specifically and watch the totals narrow to those fifteen days,
+          then switch to a preset and back.
       - key: F7.3
         title: Period-over-period comparison
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [E3]
+        depends_on: [F7.2]
         intent: >
           Absolute and percentage change per category between two periods, including categories
-          present in only one of them and the division-by-zero case.
+          present in only one of them and the division-by-zero case. Adds the comparison
+          columns and the note that a running month is compared like for like.
+        demo: >
+          Turn on comparison against the previous period and read the change column — Dining
+          up 29.5%, Groceries down 8.6% — with the running month compared against the same
+          number of days.
       - key: F7.4
         title: Empty-period handling
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [E5]
+        depends_on: [F7.2]
         intent: >
           A range with no receipts returns an explicit "no data" result rather than a
           zero-filled report that reads like real information.
+        demo: >
+          Pick a period before your first receipt and read "no receipts in that period" —
+          not a table of zeroes, per the E5 panel in docs/design/screens/states.html.
       - key: F7.5
-        title: Chart-ready output
-        labels: [backend]
+        title: Chart-ready output and the comparison chart
+        labels: [backend, frontend]
         requirements: [E6]
+        depends_on: [F7.3]
         intent: >
           A response shape the client can render directly, so presentation logic does not
-          re-derive aggregates.
+          re-derive aggregates — and the grouped bar chart that consumes it.
+        demo: >
+          The chart above the table shows both periods side by side per category, and moves
+          when the range changes.
       - key: F7.6
         title: Data export
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [N6]
+        depends_on: [F7.1]
         intent: >
           CSV and JSON export of the user's receipts, line items and statistics, generated
-          asynchronously for large histories.
-      - key: F7.7
-        title: Statistics and charts interface
-        labels: [frontend]
-        requirements: [E1, E3, E6]
-        depends_on: [F7.3, F7.5, F1.5, F9.4]
-        intent: >
-          Ranked category breakdown, range picker, comparison view and the export action.
+          asynchronously for large histories, reachable from where the numbers are.
+        demo: >
+          Export from Statistics and from Receipts, and open the file — the figures match what
+          the screen showed.
+
+  # F7.7 "Statistics and charts interface" was retired here. Its screen is now built up by the
+  # features whose numbers it displays — F7.1 puts the ranked table on screen, F7.2 the range
+  # picker, F7.3 the comparison, F7.4 the empty state, F7.5 the chart, F7.6 the export action.
+  # Nothing was left for a trailing feature to do. Issue #102 was closed by hand. Key retired.
 
   - key: E8
     title: Goals & AI Optimization Advice
@@ -901,79 +1172,116 @@ epics:
       with proactive warnings and a feedback loop. Covers BRD F1 through F9.
     features:
       - key: F8.1
-        title: Goal definition and storage
-        labels: [backend, database]
+        title: Goal definition, storage and the goals screen
+        labels: [backend, database, frontend]
         requirements: [F1]
+        depends_on: [F1.2, F9.4]
         intent: >
           Model both financial goals (savings target, category reduction, overall ceiling) and
           lifestyle goals (lose weight, save for a car) in one schema without collapsing the
-          distinction that F9 depends on.
+          distinction that F9 depends on — and the screen that states them. First slice of
+          docs/design/screens/goals.html.
+        demo: >
+          Set "stay under 3 000 PLN a month" and "lose weight" as goals, see them both on the
+          Goals screen, and edit one.
       - key: F8.2
         title: Lifestyle goal to spending mapping
-        labels: [ai, backend]
+        labels: [ai, backend, frontend]
         requirements: [F9]
+        depends_on: [F8.1, F5.1]
         intent: >
           Translate a non-financial goal into the relevant categories and recurring items
           before any advice is generated, since the rest of the pipeline reasons over spend.
+          The goal card shows what it decided to watch, and lets you correct it.
+        demo: >
+          The "lose weight" card lists the spending lines it maps to — sweets, snacks, sugary
+          drinks, alcohol — and you can adjust that list rather than guess at it.
       - key: F8.3
         title: Spend analysis for advice
         labels: [backend]
         requirements: [F2]
+        depends_on: [F8.2, F7.1]
         intent: >
           Identify highest-spend categories, largest recent increases, and recurring positions
           most relevant to the stated goal — the evidence every recommendation must cite.
+        demo: >
+          No screen of its own — it is the input F8.4 cites. Proven when a recommendation
+          names "9 of your 14 Fresh Market receipts", a claim only this analysis can supply.
       - key: F8.4
-        title: Recommendation generation
-        labels: [ai, backend]
+        title: Recommendation generation and the advice feed
+        labels: [ai, backend, frontend]
         requirements: [F3]
+        depends_on: [F8.3]
         intent: >
           Produce specific, actionable recommendations naming a category or an individual
           recurring item. Constraint 11.3 rules out generic financial tips, so genericness is
-          a defect to be tested for, not a style preference.
+          a defect to be tested for, not a style preference. Ships with the advice feed that
+          carries them.
+        demo: >
+          Ask for advice on a seeded account and read a recommendation naming an actual item
+          you actually buy — not "consider reducing discretionary spending".
       - key: F8.5
         title: Projected impact quantification
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [F4]
+        depends_on: [F8.4]
         intent: >
           Every recommendation states its expected effect on the goal, computed from the
           user's actual history rather than asserted by the model.
+        demo: >
+          Each advice card carries its figure — "−61.20 PLN a month", "−64% of sweet
+          purchases" — and the arithmetic can be checked against the receipts behind it.
       - key: F8.6
         title: Insufficient-data guard
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [F5]
+        depends_on: [F8.4]
         intent: >
           Below a configured minimum of history, say more data is needed instead of emitting a
           low-confidence recommendation.
+        demo: >
+          Ask for advice on a fresh account with three receipts and read that more history is
+          needed, per the F5 panel in docs/design/screens/states.html — no invented advice.
       - key: F8.7
         title: On-track progress reporting
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [F6]
+        depends_on: [F8.4, F6.6]
         intent: >
           When pace meets the goal, report positive progress and explicitly suppress
           unnecessary cuts.
+        demo: >
+          With spend on pace to finish under the ceiling, the feed leads with "nothing to cut
+          this month" and the projected finish, and offers no savings advice for that goal.
       - key: F8.8
         title: Proactive at-risk warnings
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [F7]
+        depends_on: [F8.7]
         intent: >
           Detect mid-month that projected spend will miss the goal and surface a warning with at
           least one corrective recommendation before the month ends — this requires scheduled
           evaluation and a delivery channel, not just a request handler.
+        demo: >
+          Push mid-month spend onto a pace that overshoots the ceiling and find the warning
+          waiting without having asked for it, with at least one way to correct course.
       - key: F8.9
         title: Recommendation feedback loop
-        labels: [backend, ai]
+        labels: [backend, ai, frontend]
         requirements: [F8]
+        depends_on: [F8.4]
         intent: >
           Capture "not followed" and "not helpful" feedback and deprioritise similar
-          recommendations in later generations.
-      - key: F8.10
-        title: Goals and advice interface
-        labels: [frontend]
-        requirements: [F1, F3, F6, F7, F8]
-        depends_on: [F8.4, F8.7, F1.5, F9.4]
-        intent: >
-          Goal setup, progress display, the advice feed with projected impact, and the feedback
-          controls that make F8 possible.
+          recommendations in later generations, through controls on the advice itself.
+        demo: >
+          Mark a Dining recommendation "not for me", ask for advice again, and find similar
+          Dining suggestions demoted and the dismissed one shown as such with an undo.
+  # F8.10 "Goals and advice interface" was retired here. It was the worst case of the pattern:
+  # nine features would have shipped before anything about goals could be seen at all. The
+  # screen is now built up by the features it belongs to — F8.1 the goal cards, F8.2 the
+  # mapped spending lines, F8.4 the advice feed, F8.5 the impact figures, F8.6 the
+  # insufficient-data state, F8.7 the on-track card, F8.9 the feedback controls.
+  # Issue #113 was closed by hand. The key is retired.
 
   - key: E9
     title: Web Client Foundation
@@ -1097,17 +1405,52 @@ epics:
         labels: [frontend]
         depends_on: [F9.1, F9.6]
         intent: >
-          The static frame every screen renders inside: header, navigation, responsive content
-          container, and the router mounted with public routes only. Deliberately excludes the
-          authenticated route table, the auth guard and the expiry redirect — those need F1's
-          session model, and they ship with it in F1.5. What remains here has no domain
-          dependency, so it can be built before any endpoint exists.
+          The static frame every screen renders inside, plus something to see at the root
+          before an account exists. Deliberately excludes the authenticated route table, the
+          guard and the expiry redirect — those need F1's session model and ship with it in
+          F1.2.6. What remains has no domain dependency, so it lands before any endpoint does
+          and gives E1's screens a frame to arrive into.
+        demo: >
+          Open the root route signed out and land on a real screen with working links to sign
+          in and register, inside the shell every later screen will use.
+        tasks:
+          - key: F9.4.1
+            title: Application shell — header, navigation and content container
+            labels: [frontend]
+            detail: >
+              The frame every screen renders inside: header with the brand and theme toggle,
+              the navigation row, and the responsive content container. Anatomy and spacing
+              come from docs/design/components.md, colours from the tokens in F9.6.1. No
+              global footer — login and register carry a one-line privacy strip and no other
+              screen has one, so there is nothing to share yet.
+          - key: F9.4.2
+            title: Public landing screen at the root route
+            labels: [frontend]
+            detail: >
+              What an unauthenticated visitor sees at /: the brand header, one sentence on
+              what the product does, and two actions — sign in, create an account.
+              Deliberately minimal; the BRD asks for no marketing page, and this exists so
+              the root is not blank and the shell has a real screen to prove itself against.
+              Once a session exists the same route belongs to F1.1.7.
+          - key: F9.4.3
+            title: Router with the public route table
+            labels: [frontend]
+            detail: >
+              react-router mounted with the public routes only — landing, login, register —
+              and a not-found route. The authenticated table and the guard in front of it are
+              F1.2.6's, so this task must not invent a placeholder guard for them.
       - key: F9.6
         title: Component primitives and design tokens
         labels: [frontend]
+        depends_on: [F9.1]
         intent: >
           Buttons, forms, tables, modals, currency and date formatting bound to the account
-          currency, and the token set they draw from.
+          currency, and the token set they draw from. The values are already fixed by
+          docs/design/design.css — this feature ports them into the app, it does not choose
+          them again (ADR 0004).
+        demo: >
+          Toggle the theme on any screen and watch every colour follow from the tokens, then
+          compare a button against docs/design/screens/design-language.html.
         tasks:
           - key: F9.6.1
             title: Color-token system ported from budget-checker
@@ -1146,6 +1489,9 @@ epics:
           One documented treatment for each, so the honest empty states E5 and F5 require are
           consistent rather than per-screen improvisations. Not yet groomed into tasks: easiest
           to standardise once a couple of real feature screens exist to generalise from.
+        demo: >
+          Every empty, loading and refused state in the product matches its panel in
+          docs/design/screens/states.html — checked screen by screen, not asserted.
 
   - key: E10
     title: Security, Privacy & Observability
@@ -1163,6 +1509,10 @@ epics:
         intent: >
           Receipt images and the extracted financial fields are encrypted at rest, with a
           documented key management and rotation approach.
+        demo: >
+          No screen of its own — receipt photos and totals keep rendering exactly as before,
+          which is the point. Proven at the storage layer and by rotating a key without any
+          screen changing.
       - key: F10.2
         title: Access control verification
         labels: [security, testing]
@@ -1170,13 +1520,20 @@ epics:
         intent: >
           An automated suite covering every user-owned endpoint, extending the base suite from
           F1.3 as each epic adds resources.
+        demo: >
+          No screen of its own. Proven by the suite failing when a new endpoint is added
+          without an ownership filter — the check that F1.3's guarantee stays true as the
+          product grows.
       - key: F10.3
         title: Receipt deletion and cascade
-        labels: [backend]
+        labels: [backend, frontend]
         requirements: [N3]
         intent: >
           Deleting a receipt removes it from budget and statistics results within the same
           session, including its effect on any finalised snapshot.
+        demo: >
+          Delete a receipt from its detail dialog and watch the month total and the category
+          breakdown both move without a reload.
       - key: F10.4
         title: Classification decision audit log
         labels: [backend, database]
@@ -1184,25 +1541,37 @@ epics:
         intent: >
           Every automatic category assignment and position-match decision logged with its
           confidence score, supporting both auditing and the tuning that C5 and B8 imply.
+        demo: >
+          No screen of its own — it records what the screens already show. Proven by
+          categorising a receipt and finding each decision and its confidence in the log.
       - key: F10.5
         title: Structured logging, metrics and tracing
         labels: [infra, backend]
         intent: >
           Correlated request logging with financial values redacted, plus the latency metrics
           needed to prove the N4 target is met.
+        demo: >
+          No screen of its own. Proven by uploading a receipt, following one request id from
+          the browser through every service log, and finding no amounts in any of them.
       - key: F10.6
         title: Rate limiting and abuse protection
-        labels: [security, backend]
+        labels: [security, backend, frontend]
         intent: >
           Upload and AI-backed endpoints are the expensive ones; limit them per account and
           define the behaviour when a limit is hit.
+        demo: >
+          Upload repeatedly past the limit and read the refusal on the upload screen — what
+          the limit is and when it resets — rather than a bare 429.
       - key: F10.7
         title: Account deletion and full data export
-        labels: [security, backend]
+        labels: [security, backend, frontend]
         requirements: [N6]
         intent: >
           A user can export everything held about them and delete their account with all
           receipts and images, which section 11 makes a compliance expectation.
+        demo: >
+          Export everything from Preferences and open the archive, then delete the account and
+          confirm sign-in fails and the stored images are gone.
 
   # ---------------------------------------------------------------- phase 2
   # Everything below is commercial scope, deferred until the BRD scope ships.

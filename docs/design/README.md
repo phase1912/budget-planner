@@ -38,13 +38,14 @@ Sorted by the flow they belong to, not by file name.
 |---|---|---|---|
 | `design-language.html` | — | F9.6 | DS-1 |
 | `states.html` | — | F9.7 | A2, A11, A14, B6, D3, E5, F5, N2, N4 |
-| `login.html` · `login-dark.html` | `/login` | F1.1 | N2 |
-| `register.html` | `/register` | F1.1 | N2 |
-| `profile.html` | `/profile` | F1.4 | D7 |
-| `home.html` | `/` — no receipts yet | F1.1 | — |
+| `landing.html` | `/` — no session | F9.4.2 | — |
+| `login.html` · `login-dark.html` | `/login` | F1.1.6 | N2 |
+| `register.html` | `/register` | F1.1.6 | N2 |
+| `profile.html` | `/profile` | F1.4.3 | D7 |
+| `home.html` | `/` — signed in, no receipts yet | F1.1.7 | — |
 | `dashboard.html` · `dashboard-dark.html` | `/` — once receipts exist | F6.7 | D1, D3, D4, D5, D7 |
-| `receipts.html` | `/receipts` | *not yet in the backlog* | A13, N2 |
-| `receipt-detail.html` | `/receipts/:id` | *not yet in the backlog* | A9, A12 |
+| `receipts.html` | `/receipts` | F3.8 | A12, A13, N2 |
+| `receipt-detail.html` | `/receipts/:id` | F3.8 | A9, A12 |
 | `upload-1-photos.html` | `/upload` | F2.6 | A1–A8 |
 | `upload-2-extracted.html` | `/upload/review` | F3.7 | A9, A10, A11 |
 | `upload-3-resolve.html` | `/upload/resolve` | F4.7 | A10, A14, B2–B4, B7 |
@@ -54,8 +55,8 @@ Sorted by the flow they belong to, not by file name.
 | `goals.html` | `/goals` | F8.10 | F1–F9 |
 | `dashboard-mobile.html` · `upload-mobile.html` | — | F9.6.2 | — |
 
-Two rows say *not yet in the backlog*: browsing stored receipts came out of designing the
-product and has no feature covering it. That gap is real and needs grooming.
+The routes at `/` are three states of one address, not three routes: `landing.html` with no
+session, `home.html` signed in with nothing recorded, `dashboard.html` once receipts exist.
 
 ## Decisions worth knowing before you build
 

@@ -181,6 +181,9 @@ def feature_body(feature: dict, epic: dict, epic_number: int | None,
         "### Intent",
         clean(feature.get("intent")),
     ]
+    demo = clean(feature.get("demo"))
+    if demo:
+        lines += ["", "### Demonstrated by", demo]
     tasks = feature.get("tasks") or []
     if tasks:
         lines += ["", "### Tasks"]
@@ -283,6 +286,9 @@ def render_markdown(data: dict) -> str:
                 clean(feature.get("intent")),
                 "",
             ]
+            demo = clean(feature.get("demo"))
+            if demo:
+                lines += [f"**Demonstrated by:** {demo}", ""]
             tasks = feature.get("tasks") or []
             if tasks:
                 for index, task in enumerate(tasks, start=1):
