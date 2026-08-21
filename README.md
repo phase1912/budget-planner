@@ -39,7 +39,9 @@ cp backend/.env.example backend/.env    # DATABASE_URL for host-run alembic/uv c
 ```
 
 Set `ANTHROPIC_API_KEY` in both `.env` files to your key from the Anthropic Console
-above; the defaults for everything else already match between the two files.
+above; the defaults for everything else already match between the two files. See
+[Configuration](docs/architecture/configuration.md) for every other setting, its
+default, and whether it's required.
 
 Bring up the stack and apply migrations:
 
@@ -74,6 +76,9 @@ Vite · Claude API for extraction, categorisation and advice. Rationale in
 | [Design reference](docs/design/README.md) | What every screen should look like. Open `docs/design/index.html` in a browser and click through. |
 | [Working agreement](docs/planning/working-agreement.md) | How the plan turns into commits, and how it is changed when reality disagrees with it. |
 | [Decisions](docs/adr/) | Architectural decision records. |
+| [Configuration](docs/architecture/configuration.md) | Every setting the backend reads: env var, default, required or not. |
+| [Environments](docs/architecture/environments.md) | What differs between local, staging and production. |
+| [Secrets](docs/architecture/secrets.md) | What secrets exist, where they're stored, and how they're rotated. |
 
 ## Delivery shape
 
