@@ -64,13 +64,23 @@ are the same route at two milestones.
 
 Reading a receipt and reconciling overlapping photos happen **while a receipt is being
 taken in**, not in a section the user visits. The upload wizard is therefore
-photos → what we read → resolve, and F3.7 ("Receipt review and correction interface") and
-F4.7 ("Match review interface") are steps of F2.6 rather than features of their own.
+photos → what we read → resolve.
+
+The three steps stay in the epics whose endpoints they exercise: F2.6 builds step 1 and
+the stepper frame, F3.7 supplies step 2 over E3's extraction, F4.7 supplies step 3 over
+E4's matching. What changed is their framing — both were written as standalone
+destinations ("Receipt review and correction interface", "Match review interface") and are
+now named as the steps they are, with a dependency on F2.6.
+
+> **Amended.** An earlier revision of this ADR said F3.7 and F4.7 should *become tasks
+> under F2.6*. That was wrong: it would have made F2.6 unfinishable until E3 and E4 both
+> landed, breaking the vertical slice in the other direction. Only the framing was at
+> fault, not the placement.
 
 "Receipts" in the navigation means the list of stored receipts, with a detail dialog —
-screens that no feature currently covers. Pointing that navigation entry at a receipt
-review screen, as the first draft did, is what made ingestion-time conflicts appear in
-the wrong place.
+the read side of F3.5's persistence, now F3.8. Pointing that navigation entry at a receipt
+review screen, as the first draft did, is what made ingestion-time conflicts appear in the
+wrong place.
 
 ### One conflict queue, blocking until empty
 
@@ -89,9 +99,10 @@ a redirect on expiry, and a modal has no route to redirect to.
 
 ## Consequences
 
-- Backlog changes follow, and are not optional: F3.7 and F4.7 become tasks under F2.6;
-  browsing stored receipts needs a feature that does not exist; and F1.5's UI tasks belong
-  in F1.1 and F1.2 beside the endpoints they exercise.
+- The backlog changes that follow have landed: F3.7 and F4.7 renamed as wizard steps and
+  made to depend on F2.6, F3.8 added for the receipt list and detail, F9.4 groomed with a
+  public landing screen, and F1.5 retired into F1.1.6/F1.1.7/F1.2.5/F1.2.6 beside the
+  endpoints they exercise.
 - Building a screen starts by opening its file in `docs/design/`. The `frontend` skill and
   the local `CLAUDE.md`/`AGENTS.md` point there — but both of those are untracked in this
   repository, so `docs/README.md` and this ADR are the discoverable path for anyone else.

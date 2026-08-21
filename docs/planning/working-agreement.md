@@ -40,6 +40,30 @@ be exercised through the product for the entire gap. When grooming an epic, give
 its own UI tasks. Reserve a trailing "interface" feature for screens that genuinely aggregate
 several capabilities, such as a dashboard — never for "the frontend half".
 
+Moving the screens into E1 did not fix this on its own; it only moved the seam. They were
+collected into one trailing feature, F1.5, and the same shape then repeated once per epic:
+F2.6, F3.7, F5.7, F7.7 and F8.10 each held an entire epic's UI. E8 was the worst — nine
+features would have shipped before anything about goals could be looked at. All six are now
+retired and their screens sit with the endpoints they expose.
+
+### Every feature says how it is demonstrated
+
+Each phase-1 feature in `backlog.yaml` carries a `demo:` line, which `sync` renders into the
+issue as **Demonstrated by**. It answers one question: *when this lands, what do I do in the
+product to see it?*
+
+- Usually the feature carries the slice of UI that makes it visible, and `demo:` says which
+  screen and what to click.
+- Sometimes existing screens already show it — then `demo:` names them and starts "no screen
+  of its own". F5.5 (learning from corrections) is the model: no new screen, but you correct a
+  category, upload another receipt from that merchant, and watch it come back filed your way.
+- A few features genuinely have no surface — key rotation, audit logging. They say so, and say
+  what does prove them.
+
+What is not acceptable is a feature demonstrable only by reading a test. If `demo:` is hard to
+write, the feature is a layer and wants re-cutting. Three features predate this rule and are
+exempt because they are already delivered: F9.1, F9.2 and F9.3.
+
 Two epics are exempt because they have no capability of their own: **E0** (backend and delivery
 foundation) and **E9** (the shared React/MobX floor — scaffold, stores, generated client, design
 tokens, app shell). Only work with no domain dependency belongs in either.

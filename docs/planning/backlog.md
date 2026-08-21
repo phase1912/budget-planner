@@ -3,21 +3,21 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-15 epics · 106 features · 58 tasks written so far.
+15 epics · 101 features · 65 tasks written so far.
 
 11 epics are phase 1 — the BRD scope, delivered before launch. 4 are phase 2: commercial scope that is planned but deliberately not started until phase 1 is complete.
 
 | Epic | Title | BRD | Features | Groomed | Phase |
 |---|---|---|---|---|---|
 | E0 | Foundation & Delivery Platform | — | 10 | yes | 1 |
-| E1 | Identity & Account | BR-7, N2 | 5 | yes | 1 |
-| E2 | Receipt Ingestion & Storage | BR-1 | 6 | no | 1 |
+| E1 | Identity & Account | BR-7, N2 | 4 | yes | 1 |
+| E2 | Receipt Ingestion & Storage | BR-1 | 5 | no | 1 |
 | E3 | Receipt Parsing & Extraction | BR-1 | 7 | no | 1 |
 | E4 | Multi-Photo Position Matching | BR-2 | 7 | no | 1 |
-| E5 | Spend Categorization | BR-3 | 8 | no | 1 |
+| E5 | Spend Categorization | BR-3 | 7 | no | 1 |
 | E6 | Monthly Budget Calculation | BR-4 | 7 | no | 1 |
-| E7 | Statistics, Comparison & Export | BR-5 | 7 | no | 1 |
-| E8 | Goals & AI Optimization Advice | BR-6 | 10 | no | 1 |
+| E7 | Statistics, Comparison & Export | BR-5 | 6 | no | 1 |
+| E8 | Goals & AI Optimization Advice | BR-6 | 9 | no | 1 |
 | E9 | Web Client Foundation | — | 6 | yes | 1 |
 | E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 7 | no | 1 |
 | E11 | Alternative Receipt Intake | — | 6 | no | 2 |
@@ -137,36 +137,46 @@ Every existing BRD scenario opens with "Given the user is logged in", but the BR
 
 **BRD sections:** BR-7, N2 · **Phase:** 1
 
-Every BRD scenario begins with "Given the user is logged in", and N2 forbids one user's data from reaching another. This epic establishes authentication, session handling, the user profile fields from the BRD data model, and the scoping guarantee that all later epics depend on. Full stack: the login, registration and logout screens and the authenticated route table live here with the endpoints they call (F1.5), not in E9 — E9 owns only the frontend groundwork that has no domain dependency.
+Every BRD scenario begins with "Given the user is logged in", and N2 forbids one user's data from reaching another. This epic establishes authentication, session handling, the user profile fields from the BRD data model, and the scoping guarantee that all later epics depend on. Full stack, and paired feature by feature rather than layer by layer: the login and registration screens ship inside F1.1 with the endpoints they post to, and token storage, transparent refresh and the protected route table ship inside F1.2 with the session model they depend on. E9 owns only the frontend groundwork that has no domain dependency.
 
 ### F1.1 — Registration and login
 
-*Requirements: —*
+*Requirements: —* · *Blocked by: F9.4, F9.6*
 
-A person can create an account with an email and password and authenticate with it.
+A person can create an account with an email and password and authenticate with it, through the product rather than through curl: the screens ship with the endpoints.
+
+**Demonstrated by:** Create an account on /register, sign out, sign back in on /login, and land on the root route as yourself. Then fail a sign-in and confirm a wrong password and an unknown address are indistinguishable (BRD N2).
 
 - **F1.1.1** User table migration and SQLAlchemy model — Implements the User entity from BRD section 9: user_id, email, password_hash, currency, budget_limit. The goal relationship is added by epic E8; currency and budget_limit land here because they are account-level settings.
 - **F1.1.2** Password hashing and strength policy — Argon2id with documented parameters, a minimum-length policy, and a check against a common-password list. Hashing cost must be configurable per environment so tests stay fast without weakening production.
 - **F1.1.3** POST /auth/register endpoint — Validates the payload, rejects duplicate emails without revealing whether an address is registered, and returns the created account with a session.
 - **F1.1.4** POST /auth/login endpoint — Constant-time credential verification, a uniform error for both unknown email and wrong password, and throttling on repeated failures.
 - **F1.1.5** Acceptance tests for registration and login — Covers the happy path, duplicate registration, wrong password, and the guarantee that responses do not leak account existence.
+- **F1.1.6** Login and registration screens — The two public routes, built from docs/design/screens/login.html and register.html and posting through the generated client. The sign-in failure shows one message for both an unknown address and a wrong password, matching what F1.1.4 returns — the screen must not leak what the endpoint withholds.
+- **F1.1.7** Post-login landing at the root route — Where signing in actually lands, per docs/design/screens/home.html: account facts, an honest "no receipts yet" and one way forward. F6.7 later replaces the body of this same route with the dashboard rather than adding a second one (ADR 0004).
 
 ### F1.2 — Session and token management
 
-*Requirements: —*
+*Requirements: —* · *Blocked by: F9.4*
 
-An authenticated session persists across requests, can be refreshed, and can be revoked on logout.
+An authenticated session persists across requests, can be refreshed, and can be revoked on logout — including on the client, where the token is held and where expiry decides what the user sees.
+
+**Demonstrated by:** Stay signed in across a reload; let the access token expire mid-edit and watch the action complete anyway; sign out on one device and find the other rejected.
 
 - **F1.2.1** Access token issuance — Short-lived JWT carrying the user id and issued-at, signed with a key from settings. Claims kept minimal — no financial data in the token.
 - **F1.2.2** Refresh token storage and rotation — Server-side refresh tokens with rotation on use and reuse detection that revokes the whole family, so a stolen refresh token cannot be replayed.
 - **F1.2.3** Refresh and logout endpoints — POST /auth/refresh exchanging a valid refresh token, POST /auth/logout revoking the current session.
 - **F1.2.4** Current-user dependency — A FastAPI dependency resolving the authenticated user, returning 401 with the standard error envelope when absent or expired. This is the single entry point every protected route uses.
+- **F1.2.5** Token storage and the authenticated fetch layer — Where the access token lives on the client and how the refresh in F1.2.2 is spent: a 401 triggers one refresh and replays the original request, so a token expiring mid-edit does not cost the user their work. Concurrent 401s share a single refresh rather than racing to rotate the family.
+- **F1.2.6** Protected route table and expiry redirect — The public-versus-authenticated split F9.4.3 left open, the guard in front of it, and the redirect when a session ends — returning the user to where they were once they sign back in, not to the root.
 
 ### F1.3 — Per-user data scoping guarantee
 
 *Requirements: —*
 
 Satisfies BRD N2 structurally rather than by convention: it must be difficult to write a query that returns another user's data.
+
+**Demonstrated by:** No screen of its own — it is what every other feature's cross-account check rests on. Proven by signing in as a second account and finding the first account's receipts, statistics and goals absent, with direct URLs answering 404 rather than 403.
 
 - **F1.3.1** Request-scoped user context — The authenticated user id is available to the persistence layer for the duration of the request without being threaded manually through every function signature.
 - **F1.3.2** Ownership-enforcing repository base class — A base repository that applies the user_id filter automatically for all user-owned entities. Bypassing it requires an explicit, greppable escape hatch.
@@ -178,15 +188,11 @@ Satisfies BRD N2 structurally rather than by convention: it must be difficult to
 
 A user can set the account currency and an optional monthly budget limit, which BRD D7 uses to express spend as a percentage of target.
 
+**Demonstrated by:** Set a monthly limit in Preferences and see it reflected on the root route. Try to change currency once receipts exist and find the control locked with the reason.
+
 - **F1.4.1** GET and PATCH /me endpoints — Read and partially update the profile. Changing budget_limit must not retroactively rewrite finalised monthly snapshots — it affects presentation only.
 - **F1.4.2** Currency validation and the single-currency assumption — ISO 4217 validation, and an explicit guard rejecting a currency change once receipts exist, since BRD section 4.2 puts conversion out of scope.
 - **F1.4.3** Profile screen — Displays and edits currency and monthly budget limit, backed by a MobX store following the conventions set in epic E9.
-
-### F1.5 — Authentication flows and protected routing
-
-*Requirements: —* · *Blocked by: F1.1, F1.2, F9.3, F9.4*
-
-The screens that make this epic's endpoints usable and testable without curl: login, registration and logout, token storage, transparent refresh on 401 without losing the user's in-flight action, and the authenticated-versus-public route table with its redirect on expiry. Held here rather than in E9 because it is the frontend half of this epic's own capability — separating the two put a working UI eight epics away from the API it exercises. Not yet groomed into tasks: the storage strategy and guard shape follow from F1.2's session model, which does not exist yet.
 
 ---
 
@@ -194,43 +200,47 @@ The screens that make this epic's endpoints usable and testable without curl: lo
 
 **BRD sections:** BR-1 · **Phase:** 1
 
-Accepting receipt photos: format validation, the two upload modes with their photo-count and size limits, durable encrypted storage of the originals, and asynchronous processing status. Covers BRD A1 through A8 and the storage half of A12.
+Accepting receipt photos: format validation, the two upload modes with their photo-count and size limits, durable encrypted storage of the originals, and asynchronous processing status. Covers BRD A1 through A8 and the storage half of A12. The upload screen is built here rather than parked in a trailing interface feature: F2.1 puts it on screen, and F2.2, F2.3 and F2.5 each extend it as they land, so every feature in this epic can be exercised by using the product.
 
-### F2.1 — Upload endpoint and file format validation
+### F2.1 — Upload endpoint, format validation and the upload screen
 
-*Requirements: A1, A2*
+*Requirements: A1, A2* · *Blocked by: F1.2, F9.4*
 
-Submitted files are validated as JPEG, PNG, HEIC or PDF-scan by content inspection rather than by extension, and rejections state the accepted formats.
+Submitted files are validated as JPEG, PNG, HEIC or PDF-scan by content inspection rather than by extension, and rejections state the accepted formats — with the screen that submits them. The first slice of docs/design/screens/upload-1-photos.html: pick files, send them, see what came back.
+
+**Demonstrated by:** Choose a photo on /upload and send it. Then choose a .docx and watch it be refused with the accepted formats named, per the "Unsupported file" panel in docs/design/screens/states.html.
 
 ### F2.2 — Single-receipt upload mode
 
-*Requirements: A3, A4, A7, A8*
+*Requirements: A3, A4, A7, A8* · *Blocked by: F2.1*
 
-One receipt captured across up to 10 photos totalling at most 50 MB, with limit violations rejected and explained.
+One receipt captured across up to 10 photos totalling at most 50 MB, with limit violations rejected and explained. Adds the mode selector, the photo strip and the count-and-size meter to F2.1's screen — the limits are enforced on the server and shown before bytes are sent, not only after.
+
+**Demonstrated by:** Add photos in single-receipt mode and watch the meter fill; add an eleventh and see the 10-photo limit refuse it in words rather than silence.
 
 ### F2.3 — Multiple-receipts upload mode
 
-*Requirements: A3, A5, A6, A7, A8*
+*Requirements: A3, A5, A6, A7, A8* · *Blocked by: F2.2*
 
-Several distinct receipts in one session, one upload line each, with the 10-photo and 50 MB limits applied independently per line so one bad line cannot fail the others.
+Several distinct receipts in one session, one upload line each, with the 10-photo and 50 MB limits applied independently per line so one bad line cannot fail the others. Adds the second mode and the per-line UI to the same screen.
+
+**Demonstrated by:** Add two upload lines, overload the first past 10 photos, and confirm the second line is untouched and still submits — the independence A7 requires, visible rather than asserted.
 
 ### F2.4 — Encrypted object storage for receipt images
 
-*Requirements: A12, N1*
+*Requirements: A12, N1* · *Blocked by: F2.1*
 
 Original images are stored in object storage encrypted at rest, referenced from the receipt record, and retrievable only by their owner via time-limited URLs.
 
+**Demonstrated by:** No screen of its own — the photo thumbnails on F2.1's screen render through the time-limited URL, so they prove the path works. Ownership is shown by signing in as a second account and getting a 404 for the first account's image URL (BRD N2).
+
 ### F2.5 — Asynchronous ingestion pipeline and status tracking
 
-*Requirements: N4*
+*Requirements: N4* · *Blocked by: F2.1*
 
-Upload returns immediately with a tracking handle while parsing proceeds in the background, so the 10-second target of N4 is a processing budget rather than a request timeout.
+Upload returns immediately with a tracking handle while parsing proceeds in the background, so the 10-second target of N4 is a processing budget rather than a request timeout. Adds the processing state to the upload screen.
 
-### F2.6 — Upload user interface
-
-*Requirements: A3, A4, A5, A6, A7, A8* · *Blocked by: F2.2, F2.3, F1.5, F9.4*
-
-Mode selection, adding upload lines, per-line photo previews, and client-side limit feedback before bytes are sent.
+**Demonstrated by:** Send a batch and watch the "Reading 2 receipts" state from docs/design/screens/states.html — then leave the page and come back to find the work still progressing.
 
 ---
 
@@ -238,49 +248,63 @@ Mode selection, adding upload lines, per-line photo previews, and client-side li
 
 **BRD sections:** BR-1 · **Phase:** 1
 
-Turning a validated photo into a structured receipt: field extraction, confidence handling, manual-review flagging, duplicate detection and persistence with provenance. Covers BRD A9 through A15.
+Turning a validated photo into a structured receipt: field extraction, confidence handling, manual-review flagging, duplicate detection and persistence with provenance. Covers BRD A9 through A15. This is where photographing a receipt starts paying off, so F3.1 puts step 2 of the upload wizard on screen and every later feature in the epic extends it. Nothing here ships as extraction that only a test can see.
 
-### F3.1 — Vision extraction provider integration
+### F3.1 — Vision extraction, and seeing what was read
 
-*Requirements: A9*
+*Requirements: A9* · *Blocked by: F2.1, F9.4*
 
-A versioned, testable adapter over the Claude vision API that turns receipt images into structured output, with the prompt and schema under source control.
+A versioned, testable adapter over the Claude vision API that turns receipt images into structured output, with the prompt and schema under source control — and the screen that shows the result. Introduces the three-step wizard frame, because this is the first point at which a second step exists to step to (the frame was formerly F2.6's). First slice of docs/design/screens/upload-2-extracted.html.
+
+**Demonstrated by:** Photograph a real receipt, send it, and read the merchant, date and line items back off step 2 of the wizard.
 
 ### F3.2 — Extraction schema and validation
 
-*Requirements: A9*
+*Requirements: A9* · *Blocked by: F3.1*
 
-Merchant, transaction date, transaction time, line items (name, quantity, unit price, total price) and total amount, validated for internal arithmetic consistency.
+Merchant, transaction date, transaction time, line items (name, quantity, unit price, total price) and total amount, validated for internal arithmetic consistency. The screen gains the per-receipt footer reconciling the sum of lines against the printed total.
+
+**Demonstrated by:** Upload a receipt whose lines do not add up to its printed total and see the disagreement stated on step 2 rather than absorbed silently.
 
 ### F3.3 — Confidence scoring and low-confidence flagging
 
-*Requirements: A10*
+*Requirements: A10* · *Blocked by: F3.2*
 
-Per-field confidence recorded, and fields below threshold marked "low confidence" and surfaced for confirmation instead of being silently accepted.
+Per-field confidence recorded, and fields below threshold marked "low confidence" and surfaced for confirmation instead of being silently accepted. The screen marks those fields where they appear.
+
+**Demonstrated by:** Upload a blurred receipt and find the unreadable total marked "low confidence" on step 2 instead of presented as fact.
 
 ### F3.4 — Manual-review status for missing critical fields
 
-*Requirements: A11*
+*Requirements: A11* · *Blocked by: F3.3*
 
-A receipt without an extractable total or date is marked "requires manual review" and excluded from all automated budget calculation until a human resolves it.
+A receipt without an extractable total or date is marked "requires manual review" and excluded from all automated budget calculation until a human resolves it — and says so on its face wherever it appears.
+
+**Demonstrated by:** Upload a receipt with its total torn off; the screen says the total could not be read and that the receipt is held out until it is supplied, per the "Held out of the total" panel in docs/design/screens/states.html.
 
 ### F3.5 — Receipt persistence with provenance
 
-*Requirements: A12, A13, A15*
+*Requirements: A12, A13, A15* · *Blocked by: F3.2*
 
 Header, line items and image reference stored under a unique receipt id, owned by the submitting account, stamped with processing time and parser version.
 
+**Demonstrated by:** No screen of its own — it is proven by what depends on it. Complete the wizard, then re-upload the same receipt and watch F3.6 recognise it, which is only possible if the first one was really stored. F3.8 then shows it in a list.
+
 ### F3.6 — Duplicate receipt detection
 
-*Requirements: A14*
+*Requirements: A14* · *Blocked by: F3.5*
 
-A receipt matching an existing one on merchant, date and total prompts the user to confirm before storing, rather than being silently accepted or silently dropped.
+A receipt matching an existing one on merchant, date and total prompts the user to confirm before storing, rather than being silently accepted or silently dropped. Two trips to one shop on one day are normal, so this asks rather than decides.
 
-### F3.7 — Receipt review and correction interface
+**Demonstrated by:** Upload the same receipt twice and answer the prompt both ways — once skipping, once storing it as new — per the "Possible duplicate upload" panel in docs/design/screens/states.html.
 
-*Requirements: A10, A11, A14* · *Blocked by: F3.3, F3.4, F1.5, F9.4*
+### F3.8 — Receipt list and detail
 
-Side-by-side original photo and extracted data, with low-confidence fields highlighted for confirmation and the manual-review queue reachable in one click.
+*Requirements: A12, A13, N2* · *Blocked by: F3.5, F1.2, F9.4*
+
+What "Receipts" in the navigation means: the endpoint listing an account's stored receipts newest first with pagination, and the screens over it — the list, and a detail dialog showing the merchant and everything bought. Screens at docs/design/screens/receipts.html and receipt-detail.html. Deliberately no per-category summary in the dialog yet.
+
+**Demonstrated by:** Open Receipts, page through them, and click one to read its line items. Sign in as a second account and confirm the first account's receipts are absent and its receipt URL returns 404 rather than 403 (BRD N2).
 
 ---
 
@@ -292,45 +316,59 @@ Recognising that a line item appearing on two overlapping photos of one long rec
 
 ### F4.1 — Independent per-photo extraction for comparison
 
-*Requirements: B1*
+*Requirements: B1* · *Blocked by: F3.1*
 
-Each photo is parsed on its own before any comparison, so a match decision is never an artefact of parsing the two images together.
+Each photo is parsed on its own before any comparison, so a match decision is never an artefact of parsing the two images together. Step 2 of the wizard gains the per-photo provenance that makes this visible: which frame each line came from.
+
+**Demonstrated by:** Photograph one long receipt in two overlapping frames and see, on step 2, each item attributed to the frame it was read from.
 
 ### F4.2 — Position comparison rules
 
-*Requirements: B2, B3, B4*
+*Requirements: B2, B3, B4* · *Blocked by: F4.1*
 
-Item name, unit price, quantity and total price must all match exactly for a pair to be "same position"; any difference makes it "different position".
+Item name, unit price, quantity and total price must all match exactly for a pair to be "same position"; any difference makes it "different position". Ships with the conflict card that shows the comparison field by field, so the verdict is legible rather than asserted.
+
+**Demonstrated by:** Upload the overlapping pair and read the evidence table for a matched item — all four fields ticked — and for a near-match where one price differs.
 
 ### F4.3 — Same-receipt scoping guard
 
-*Requirements: B5, B9*
+*Requirements: B5, B9* · *Blocked by: F4.2*
 
 Comparison runs only between photos of one physical receipt. Identical items on two distinct transactions are two purchases, never a duplicate — this is the requirement most likely to be violated by a naive deduplication implementation.
 
+**Demonstrated by:** Upload two separate receipts a week apart that each contain "Milk 2% 1L" at 4.50 and confirm both purchases survive, with no match offered between them.
+
 ### F4.4 — Comparison failure handling
 
-*Requirements: B6*
+*Requirements: B6* · *Blocked by: F4.2*
 
-If either photo failed to parse, return "comparison not possible" with the reason instead of guessing.
+If either photo failed to parse, return "comparison not possible" with the reason instead of guessing — and say so where the comparison would have been.
+
+**Demonstrated by:** Upload one clear frame and one unreadable one; the pair reports that it could not be compared and why, per the "Comparison not possible" panel in docs/design/screens/states.html.
 
 ### F4.5 — Manual override and correction capture
 
-*Requirements: B7, B8*
+*Requirements: B7, B8* · *Blocked by: F4.2*
 
-A user can overturn any automatic determination, and the correction is stored as labelled data for future evaluation and tuning.
+A user can overturn any automatic determination, and the correction is stored as labelled data for future evaluation and tuning. Ships with the same-item / two-items control and the settled-with-undo state on the conflict card.
+
+**Demonstrated by:** Flip a "same item" verdict to two items, see the receipt total change accordingly, and undo it.
 
 ### F4.6 — Deduplicated receipt assembly
 
-*Requirements: B3*
+*Requirements: B3* · *Blocked by: F4.2*
 
 Merge the per-photo extractions of one receipt into a single item list where matched positions appear exactly once, and reconcile the result against the printed total.
 
-### F4.7 — Match review interface
+**Demonstrated by:** After resolving the overlap, step 2 shows one item list for the receipt with the duplicate collapsed, and its footer agrees with the printed total.
 
-*Requirements: B7* · *Blocked by: F4.2, F4.5, F1.5, F9.4*
+### F4.7 — Upload step 3 — the resolve gate
 
-Show detected overlaps between photos with the evidence, and let the user flip any decision.
+*Requirements: B7* · *Blocked by: F4.5, F3.4, F3.6, F1.2, F9.4*
+
+The third step of the wizard, and the endpoint behind it: a batch of decisions is applied together and the receipts are committed only once none are outstanding. One queue for everything needing a human across the whole batch — a position caught in two frames, a field below the confidence threshold, a receipt matching one already stored, a missing total — with a counter, and nothing written while any of it is open. Decisions the agent made alone appear settled and reversible in the same queue rather than hidden. Kept as its own feature because it composes flags raised by four features across two epics; the individual verdicts and evidence are theirs. Screen at docs/design/screens/upload-3-resolve.html.
+
+**Demonstrated by:** Upload a batch that raises several kinds of conflict at once, watch "Store receipts" stay disabled while the counter is above zero, settle them one by one, and only then commit the batch.
 
 ---
 
@@ -342,51 +380,59 @@ Classifying every line item into a spending category, with a confidence-gated fa
 
 ### F5.1 — Default category taxonomy
 
-*Requirements: C1, C2*
+*Requirements: C1, C2* · *Blocked by: F3.5, F9.4*
 
-Seeded default categories (Groceries, Dining, Transport, Utilities, Health, Entertainment, Other) plus a guaranteed Uncategorized fallback, modelled so custom user categories coexist with defaults.
+Seeded default categories (Groceries, Dining, Transport, Utilities, Health, Entertainment, Other) plus a guaranteed Uncategorized fallback, modelled so custom user categories coexist with defaults. Ships with the read-only taxonomy screen that F5.6 later makes editable, so the seeded set is inspectable the day it lands.
+
+**Demonstrated by:** Open Categories and read the built-in list with the item count and total behind each, per the "Built in" section of docs/design/screens/categories.html.
 
 ### F5.2 — Automatic item categorization
 
-*Requirements: C1*
+*Requirements: C1* · *Blocked by: F5.1*
 
-Each parsed line item receives a category and a recorded confidence score.
+Each parsed line item receives a category and a recorded confidence score, shown against the item wherever line items are displayed.
 
-### F5.3 — Confidence threshold and Uncategorized fallback
+**Demonstrated by:** Upload a grocery receipt and find each line carrying a category chip on step 2 of the wizard and in the receipt detail dialog.
 
-*Requirements: C2, C3*
+### F5.3 — Confidence threshold, Uncategorized fallback and the review queue
 
-Below-threshold classifications become Uncategorized and are flagged for review rather than guessed at.
+*Requirements: C2, C3* · *Blocked by: F5.2*
+
+Below-threshold classifications become Uncategorized and are flagged for review rather than guessed at — with the queue that collects them, oldest first. Screen at docs/design/screens/categorisation.html.
+
+**Demonstrated by:** Upload a receipt with an obscure item name and find it waiting in the review queue marked Uncategorized, rather than filed under a confident guess.
 
 ### F5.4 — Manual category reassignment
 
-*Requirements: C4*
+*Requirements: C4* · *Blocked by: F5.3*
 
-Any line item's category can be changed by its owner, and the override is recorded as manual so later automatic passes do not overwrite it.
+Any line item's category can be changed by its owner, and the override is recorded as manual so later automatic passes do not overwrite it. Adds the inline picker to the queue and to every other place a line item is shown.
+
+**Demonstrated by:** Reassign an item from the queue, then re-run categorisation and confirm your choice survives — the override is respected, not overwritten.
 
 ### F5.5 — Learning from corrections
 
-*Requirements: C5*
+*Requirements: C5* · *Blocked by: F5.4*
 
 A correction creates a rule applying to future items with the same or highly similar name from the same merchant, which requires a defined similarity measure and a precedence order against automatic classification.
 
+**Demonstrated by:** No screen of its own — it is proven through F5.4's. Reassign "Protein Bar XL" from Fresh Market to Health with "apply to future items" ticked, upload another Fresh Market receipt containing it, and find it already filed under Health.
+
 ### F5.6 — User-defined custom categories
 
-*Requirements: C6, C7*
+*Requirements: C6, C7* · *Blocked by: F5.1, F5.4*
 
-Users can create their own categories, immediately available for both manual and automatic assignment, including the behaviour when a category in use is renamed or deleted.
+Users can create their own categories, immediately available for both manual and automatic assignment, including the behaviour when a category in use is renamed or deleted. Makes F5.1's taxonomy screen editable.
 
-### F5.7 — Categorization review interface
-
-*Requirements: C3, C4, C6* · *Blocked by: F5.3, F5.4, F1.5, F9.4*
-
-A review queue for flagged items and inline category editing wherever line items are displayed.
+**Demonstrated by:** Create "Pet Supplies", file items under it, then delete it and choose where those items land — per the delete dialog in docs/design/screens/categories.html.
 
 ### F5.8 — Seed script for local sample data
 
 *Requirements: —* · *Blocked by: F1.1, F3.5, F5.1*
 
 A demo user with a handful of categorised receipts spanning two months, plus the `seed` task-runner target that invokes it — enough to exercise the monthly-budget and statistics epics without uploading photos. Lands here, at the end of E5, because this is the first point where every entity it writes exists: User (F1.1), receipt and line items (F3.5) and categories (F5.1). It was originally planned in E0's local development environment, where none of those had been built yet.
+
+**Demonstrated by:** Run `seed`, sign in as the demo user, and find two months of categorised receipts already there — which is what makes E6 and E7 workable without photographing anything.
 
 ---
 
@@ -396,47 +442,61 @@ A demo user with a handful of categorised receipts spanning two months, plus the
 
 Aggregating receipts into monthly totals by transaction date, distinguishing a month-to-date figure from a finalised one, excluding flagged receipts transparently, and recalculating when history changes. Covers BRD D1 through D7.
 
-### F6.1 — Monthly aggregation engine
+### F6.1 — Monthly aggregation engine, and the month view
 
-*Requirements: D1, D2*
+*Requirements: D1, D2* · *Blocked by: F3.5, F9.4*
 
-Sum line-item totals across all receipts whose transaction date — not upload date — falls in the month, which makes back-dated uploads behave correctly.
+Sum line-item totals across all receipts whose transaction date — not upload date — falls in the month, which makes back-dated uploads behave correctly. Ships with the figure on screen and the month switcher beside it — the first slice of docs/design/screens/dashboard.html.
+
+**Demonstrated by:** Seed two months (F5.8), open the root route and read this month's total, then step back a month. Upload a receipt dated last month and watch it land in last month's figure rather than this one.
 
 ### F6.2 — Transparent exclusion of receipts under review
 
-*Requirements: D3*
+*Requirements: D3* · *Blocked by: F6.1, F3.4*
 
 Receipts marked "requires manual review" are excluded from the total, and the summary states how many were excluded and their value, so the number is never quietly wrong.
 
+**Demonstrated by:** With a flagged receipt in the month, the month view carries the notice naming how many receipts and how much money sit outside the total, with a way through to fix them.
+
 ### F6.3 — Month-to-date versus finalised presentation
 
-*Requirements: D4*
+*Requirements: D4* · *Blocked by: F6.1*
 
 An in-progress month is labelled incomplete wherever it appears, so a partial figure is never mistaken for a full one.
 
+**Demonstrated by:** The current month reads "month-to-date, still running" with the days elapsed; step back to a finished month and the label changes to finalised.
+
 ### F6.4 — Monthly snapshot generation
 
-*Requirements: D5*
+*Requirements: D5* · *Blocked by: F6.3*
 
 When a month completes, persist a finalised snapshot (the MonthlySnapshot entity), including how the transition is triggered across user time zones.
 
+**Demonstrated by:** No screen of its own — proven through F6.3's label. Roll the clock past a month boundary and watch that month switch from month-to-date to finalised and stop changing, which only a persisted snapshot makes true.
+
 ### F6.5 — Recalculation on receipt change
 
-*Requirements: D6, N3*
+*Requirements: D6, N3* · *Blocked by: F6.4*
 
 Adding, editing or deleting a receipt in a closed month recalculates and updates the stored snapshot, with the recalculation reflected in the same session.
 
+**Demonstrated by:** Edit the total of a receipt in a finalised month from the receipt detail dialog and watch that month's figure move without a reload.
+
 ### F6.6 — Budget limit and percentage of target
 
-*Requirements: D7*
+*Requirements: D7* · *Blocked by: F6.1, F1.4*
 
 Where a monthly limit is set, express current spend as a percentage of it, including the over-100% case.
 
-### F6.7 — Budget dashboard
+**Demonstrated by:** Set a limit in Preferences and watch the progress bar and percentage appear on the month view; push spend past the limit and confirm it reads over-100% in error tone rather than clamping at full, per docs/design/screens/dashboard-dark.html.
 
-*Requirements: D1, D4, D7* · *Blocked by: F6.3, F6.6, F1.5, F9.4*
+### F6.7 — Budget dashboard — composing the landing view
 
-The landing view: current month-to-date spend, progress against limit, excluded-receipt notice, and month switching.
+*Requirements: D1, D4, D7* · *Blocked by: F6.6, F5.2, F3.8*
+
+What turns F6.1's month figure into the landing view: the category breakdown beside it and the latest-receipts column next to that, each opening into the screens that own them. Kept as its own feature because it composes three epics' data — E6's totals, E5's categories, E3's receipts — and needs the endpoint that returns them together rather than three round trips. The figure, the limit bar, the excluded notice and month switching are already there from F6.1, F6.2, F6.3 and F6.6; this finishes docs/design/screens/dashboard.html rather than starting it.
+
+**Demonstrated by:** Open the root route on a seeded account: spend, limit, breakdown and recent receipts on one screen. Click a receipt to open its dialog, click through to full statistics.
 
 ---
 
@@ -446,47 +506,53 @@ The landing view: current month-to-date spend, progress against limit, excluded-
 
 Category-level insight over arbitrary date ranges, period-over-period comparison, honest empty states, chart-ready output, and data export. Covers BRD E1 through E6 and N6.
 
-### F7.1 — Category statistics engine
+### F7.1 — Category statistics engine, and the ranked breakdown
 
-*Requirements: E1, E4*
+*Requirements: E1, E4* · *Blocked by: F5.2, F9.4*
 
-Total spend, share of overall spend and transaction count per category, ranked from highest to lowest by default.
+Total spend, share of overall spend and transaction count per category, ranked from highest to lowest by default — with the screen that shows the ranking. First slice of docs/design/screens/statistics.html.
+
+**Demonstrated by:** Open Statistics on a seeded account and read the table: every category with its total, its share and its item count, biggest first.
 
 ### F7.2 — Arbitrary date-range support
 
-*Requirements: E2*
+*Requirements: E2* · *Blocked by: F7.1*
 
-Statistics for any start and end date, not only calendar months, with inclusive boundary semantics defined once and applied everywhere.
+Statistics for any start and end date, not only calendar months, with inclusive boundary semantics defined once and applied everywhere. Adds the preset chips and the range picker to the screen.
+
+**Demonstrated by:** Ask for 10–24 July specifically and watch the totals narrow to those fifteen days, then switch to a preset and back.
 
 ### F7.3 — Period-over-period comparison
 
-*Requirements: E3*
+*Requirements: E3* · *Blocked by: F7.2*
 
-Absolute and percentage change per category between two periods, including categories present in only one of them and the division-by-zero case.
+Absolute and percentage change per category between two periods, including categories present in only one of them and the division-by-zero case. Adds the comparison columns and the note that a running month is compared like for like.
+
+**Demonstrated by:** Turn on comparison against the previous period and read the change column — Dining up 29.5%, Groceries down 8.6% — with the running month compared against the same number of days.
 
 ### F7.4 — Empty-period handling
 
-*Requirements: E5*
+*Requirements: E5* · *Blocked by: F7.2*
 
 A range with no receipts returns an explicit "no data" result rather than a zero-filled report that reads like real information.
 
-### F7.5 — Chart-ready output
+**Demonstrated by:** Pick a period before your first receipt and read "no receipts in that period" — not a table of zeroes, per the E5 panel in docs/design/screens/states.html.
 
-*Requirements: E6*
+### F7.5 — Chart-ready output and the comparison chart
 
-A response shape the client can render directly, so presentation logic does not re-derive aggregates.
+*Requirements: E6* · *Blocked by: F7.3*
+
+A response shape the client can render directly, so presentation logic does not re-derive aggregates — and the grouped bar chart that consumes it.
+
+**Demonstrated by:** The chart above the table shows both periods side by side per category, and moves when the range changes.
 
 ### F7.6 — Data export
 
-*Requirements: N6*
+*Requirements: N6* · *Blocked by: F7.1*
 
-CSV and JSON export of the user's receipts, line items and statistics, generated asynchronously for large histories.
+CSV and JSON export of the user's receipts, line items and statistics, generated asynchronously for large histories, reachable from where the numbers are.
 
-### F7.7 — Statistics and charts interface
-
-*Requirements: E1, E3, E6* · *Blocked by: F7.3, F7.5, F1.5, F9.4*
-
-Ranked category breakdown, range picker, comparison view and the export action.
+**Demonstrated by:** Export from Statistics and from Receipts, and open the file — the figures match what the screen showed.
 
 ---
 
@@ -496,65 +562,77 @@ Ranked category breakdown, range picker, comparison view and the export action.
 
 The product's differentiator: a user states a financial or lifestyle goal and receives specific, evidence-based, quantified recommendations tied to their own purchase history, with proactive warnings and a feedback loop. Covers BRD F1 through F9.
 
-### F8.1 — Goal definition and storage
+### F8.1 — Goal definition, storage and the goals screen
 
-*Requirements: F1*
+*Requirements: F1* · *Blocked by: F1.2, F9.4*
 
-Model both financial goals (savings target, category reduction, overall ceiling) and lifestyle goals (lose weight, save for a car) in one schema without collapsing the distinction that F9 depends on.
+Model both financial goals (savings target, category reduction, overall ceiling) and lifestyle goals (lose weight, save for a car) in one schema without collapsing the distinction that F9 depends on — and the screen that states them. First slice of docs/design/screens/goals.html.
+
+**Demonstrated by:** Set "stay under 3 000 PLN a month" and "lose weight" as goals, see them both on the Goals screen, and edit one.
 
 ### F8.2 — Lifestyle goal to spending mapping
 
-*Requirements: F9*
+*Requirements: F9* · *Blocked by: F8.1, F5.1*
 
-Translate a non-financial goal into the relevant categories and recurring items before any advice is generated, since the rest of the pipeline reasons over spend.
+Translate a non-financial goal into the relevant categories and recurring items before any advice is generated, since the rest of the pipeline reasons over spend. The goal card shows what it decided to watch, and lets you correct it.
+
+**Demonstrated by:** The "lose weight" card lists the spending lines it maps to — sweets, snacks, sugary drinks, alcohol — and you can adjust that list rather than guess at it.
 
 ### F8.3 — Spend analysis for advice
 
-*Requirements: F2*
+*Requirements: F2* · *Blocked by: F8.2, F7.1*
 
 Identify highest-spend categories, largest recent increases, and recurring positions most relevant to the stated goal — the evidence every recommendation must cite.
 
-### F8.4 — Recommendation generation
+**Demonstrated by:** No screen of its own — it is the input F8.4 cites. Proven when a recommendation names "9 of your 14 Fresh Market receipts", a claim only this analysis can supply.
 
-*Requirements: F3*
+### F8.4 — Recommendation generation and the advice feed
 
-Produce specific, actionable recommendations naming a category or an individual recurring item. Constraint 11.3 rules out generic financial tips, so genericness is a defect to be tested for, not a style preference.
+*Requirements: F3* · *Blocked by: F8.3*
+
+Produce specific, actionable recommendations naming a category or an individual recurring item. Constraint 11.3 rules out generic financial tips, so genericness is a defect to be tested for, not a style preference. Ships with the advice feed that carries them.
+
+**Demonstrated by:** Ask for advice on a seeded account and read a recommendation naming an actual item you actually buy — not "consider reducing discretionary spending".
 
 ### F8.5 — Projected impact quantification
 
-*Requirements: F4*
+*Requirements: F4* · *Blocked by: F8.4*
 
 Every recommendation states its expected effect on the goal, computed from the user's actual history rather than asserted by the model.
 
+**Demonstrated by:** Each advice card carries its figure — "−61.20 PLN a month", "−64% of sweet purchases" — and the arithmetic can be checked against the receipts behind it.
+
 ### F8.6 — Insufficient-data guard
 
-*Requirements: F5*
+*Requirements: F5* · *Blocked by: F8.4*
 
 Below a configured minimum of history, say more data is needed instead of emitting a low-confidence recommendation.
 
+**Demonstrated by:** Ask for advice on a fresh account with three receipts and read that more history is needed, per the F5 panel in docs/design/screens/states.html — no invented advice.
+
 ### F8.7 — On-track progress reporting
 
-*Requirements: F6*
+*Requirements: F6* · *Blocked by: F8.4, F6.6*
 
 When pace meets the goal, report positive progress and explicitly suppress unnecessary cuts.
 
+**Demonstrated by:** With spend on pace to finish under the ceiling, the feed leads with "nothing to cut this month" and the projected finish, and offers no savings advice for that goal.
+
 ### F8.8 — Proactive at-risk warnings
 
-*Requirements: F7*
+*Requirements: F7* · *Blocked by: F8.7*
 
 Detect mid-month that projected spend will miss the goal and surface a warning with at least one corrective recommendation before the month ends — this requires scheduled evaluation and a delivery channel, not just a request handler.
 
+**Demonstrated by:** Push mid-month spend onto a pace that overshoots the ceiling and find the warning waiting without having asked for it, with at least one way to correct course.
+
 ### F8.9 — Recommendation feedback loop
 
-*Requirements: F8*
+*Requirements: F8* · *Blocked by: F8.4*
 
-Capture "not followed" and "not helpful" feedback and deprioritise similar recommendations in later generations.
+Capture "not followed" and "not helpful" feedback and deprioritise similar recommendations in later generations, through controls on the advice itself.
 
-### F8.10 — Goals and advice interface
-
-*Requirements: F1, F3, F6, F7, F8* · *Blocked by: F8.4, F8.7, F1.5, F9.4*
-
-Goal setup, progress display, the advice feed with projected impact, and the feedback controls that make F8 possible.
+**Demonstrated by:** Mark a Dining recommendation "not for me", ask for advice again, and find similar Dining suggestions demoted and the dismissed one shown as such with an undo.
 
 ---
 
@@ -599,13 +677,21 @@ TypeScript types and client generated from the FastAPI schema in CI, so a backen
 
 *Requirements: —* · *Blocked by: F9.1, F9.6*
 
-The static frame every screen renders inside: header, navigation, responsive content container, and the router mounted with public routes only. Deliberately excludes the authenticated route table, the auth guard and the expiry redirect — those need F1's session model, and they ship with it in F1.5. What remains here has no domain dependency, so it can be built before any endpoint exists.
+The static frame every screen renders inside, plus something to see at the root before an account exists. Deliberately excludes the authenticated route table, the guard and the expiry redirect — those need F1's session model and ship with it in F1.2.6. What remains has no domain dependency, so it lands before any endpoint does and gives E1's screens a frame to arrive into.
+
+**Demonstrated by:** Open the root route signed out and land on a real screen with working links to sign in and register, inside the shell every later screen will use.
+
+- **F9.4.1** Application shell — header, navigation and content container — The frame every screen renders inside: header with the brand and theme toggle, the navigation row, and the responsive content container. Anatomy and spacing come from docs/design/components.md, colours from the tokens in F9.6.1. No global footer — login and register carry a one-line privacy strip and no other screen has one, so there is nothing to share yet.
+- **F9.4.2** Public landing screen at the root route — What an unauthenticated visitor sees at /: the brand header, one sentence on what the product does, and two actions — sign in, create an account. Deliberately minimal; the BRD asks for no marketing page, and this exists so the root is not blank and the shell has a real screen to prove itself against. Once a session exists the same route belongs to F1.1.7.
+- **F9.4.3** Router with the public route table — react-router mounted with the public routes only — landing, login, register — and a not-found route. The authenticated table and the guard in front of it are F1.2.6's, so this task must not invent a placeholder guard for them.
 
 ### F9.6 — Component primitives and design tokens
 
-*Requirements: —*
+*Requirements: —* · *Blocked by: F9.1*
 
-Buttons, forms, tables, modals, currency and date formatting bound to the account currency, and the token set they draw from.
+Buttons, forms, tables, modals, currency and date formatting bound to the account currency, and the token set they draw from. The values are already fixed by docs/design/design.css — this feature ports them into the app, it does not choose them again (ADR 0004).
+
+**Demonstrated by:** Toggle the theme on any screen and watch every colour follow from the tokens, then compare a button against docs/design/screens/design-language.html.
 
 - **F9.6.1** Color-token system ported from budget-checker — Tailwind v4 with a `@theme` layer over semantic CSS custom properties (--color-background, --color-primary, etc.) in src/shared/styles/colors.css, light values on :root and dark overrides on .dark. One source of truth per DS-1: components reference tokens (bg-primary, text-foreground), never a raw hex.
 - **F9.6.2** Responsive breakpoint tokens (mobile / tablet / desktop) — Named breakpoint tokens in src/shared/styles/breakpoints.css and a mobile-first convention: base styles target mobile, md:/lg: Tailwind variants layer up tablet and desktop. No shared component ships a fixed pixel width.
@@ -617,6 +703,8 @@ Buttons, forms, tables, modals, currency and date formatting bound to the accoun
 *Requirements: —*
 
 One documented treatment for each, so the honest empty states E5 and F5 require are consistent rather than per-screen improvisations. Not yet groomed into tasks: easiest to standardise once a couple of real feature screens exist to generalise from.
+
+**Demonstrated by:** Every empty, loading and refused state in the product matches its panel in docs/design/screens/states.html — checked screen by screen, not asserted.
 
 ---
 
@@ -632,11 +720,15 @@ The cross-cutting non-functional requirements from BRD section 8 and the constra
 
 Receipt images and the extracted financial fields are encrypted at rest, with a documented key management and rotation approach.
 
+**Demonstrated by:** No screen of its own — receipt photos and totals keep rendering exactly as before, which is the point. Proven at the storage layer and by rotating a key without any screen changing.
+
 ### F10.2 — Access control verification
 
 *Requirements: N2*
 
 An automated suite covering every user-owned endpoint, extending the base suite from F1.3 as each epic adds resources.
+
+**Demonstrated by:** No screen of its own. Proven by the suite failing when a new endpoint is added without an ownership filter — the check that F1.3's guarantee stays true as the product grows.
 
 ### F10.3 — Receipt deletion and cascade
 
@@ -644,11 +736,15 @@ An automated suite covering every user-owned endpoint, extending the base suite 
 
 Deleting a receipt removes it from budget and statistics results within the same session, including its effect on any finalised snapshot.
 
+**Demonstrated by:** Delete a receipt from its detail dialog and watch the month total and the category breakdown both move without a reload.
+
 ### F10.4 — Classification decision audit log
 
 *Requirements: N5*
 
 Every automatic category assignment and position-match decision logged with its confidence score, supporting both auditing and the tuning that C5 and B8 imply.
+
+**Demonstrated by:** No screen of its own — it records what the screens already show. Proven by categorising a receipt and finding each decision and its confidence in the log.
 
 ### F10.5 — Structured logging, metrics and tracing
 
@@ -656,17 +752,23 @@ Every automatic category assignment and position-match decision logged with its 
 
 Correlated request logging with financial values redacted, plus the latency metrics needed to prove the N4 target is met.
 
+**Demonstrated by:** No screen of its own. Proven by uploading a receipt, following one request id from the browser through every service log, and finding no amounts in any of them.
+
 ### F10.6 — Rate limiting and abuse protection
 
 *Requirements: —*
 
 Upload and AI-backed endpoints are the expensive ones; limit them per account and define the behaviour when a limit is hit.
 
+**Demonstrated by:** Upload repeatedly past the limit and read the refusal on the upload screen — what the limit is and when it resets — rather than a bare 429.
+
 ### F10.7 — Account deletion and full data export
 
 *Requirements: N6*
 
 A user can export everything held about them and delete their account with all receipts and images, which section 11 makes a compliance expectation.
+
+**Demonstrated by:** Export everything from Preferences and open the archive, then delete the account and confirm sign-in fails and the stored images are gone.
 
 ---
 

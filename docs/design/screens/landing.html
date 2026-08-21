@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Landing — Budget Agent design</title>
+  <link rel="stylesheet" href="../design.css">
+  <style>
+    .step-card { display: flex; flex-direction: column; gap: 10px; }
+    .step-card__n { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: var(--radius-pill); background: var(--tone-primary-bg); color: var(--tone-primary-text); font-size: 12px; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<!--
+  What an unauthenticated visitor sees at /. Deliberately minimal: the BRD asks for no
+  marketing page, so this exists to keep the root from being blank and to give F9.4's
+  shell a real screen to prove itself against. Once a session exists the same route is
+  home.html, then dashboard.html.
+-->
+<div class="screen" style="height: 860px;">
+
+  <header class="app-header">
+    <div class="app-header__inner">
+      <span class="brand">Budget Agent</span>
+      <div class="app-header__right">
+        <a class="btn-icon btn-icon--round" href="login-dark.html" aria-label="Switch to dark theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </a>
+        <a class="btn btn--ghost" href="login.html">Sign in</a>
+        <a class="btn btn--primary btn--compact" href="register.html">Create an account</a>
+      </div>
+    </div>
+  </header>
+
+  <main style="flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 32px;">
+    <div style="max-width: 720px; display: flex; flex-direction: column; align-items: center; gap: 32px; text-align: center;">
+
+      <span class="icon-tile icon-tile--round icon-tile--success" style="width: 72px; height: 72px;">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+      </span>
+
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <h1 class="page-title" style="font-size: 40px; line-height: 1.15;">Photograph a receipt.<br>Get a budget.</h1>
+        <p class="page-sub" style="font-size: 17px; line-height: 1.6; max-width: 560px; margin: 0 auto; text-wrap: pretty;">Every line item read off the photo, sorted into categories, and totalled by the month it was actually bought in.</p>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <a class="btn btn--primary btn--lg" href="register.html" style="font-size: 15px;">
+          Create an account
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+        <a class="btn btn--secondary btn--lg" href="login.html" style="font-size: 15px;">I already have one</a>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; width: 100%; border-top: 1px solid var(--color-border); padding-top: 32px; text-align: left;">
+        <div class="step-card">
+          <span class="step-card__n">1</span>
+          <span style="font-size: 14px; font-weight: 600;">Shoot it</span>
+          <span class="prose" style="font-size: 13px;">One photo, or several overlapping ones for a long receipt.</span>
+        </div>
+        <div class="step-card">
+          <span class="step-card__n">2</span>
+          <span style="font-size: 14px; font-weight: 600;">Check what we read</span>
+          <span class="prose" style="font-size: 13px;">Anything unclear is flagged for you rather than quietly guessed.</span>
+        </div>
+        <div class="step-card">
+          <span class="step-card__n">3</span>
+          <span style="font-size: 14px; font-weight: 600;">See where it went</span>
+          <span class="prose" style="font-size: 13px;">Month-to-date spend by category, against a limit you set.</span>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer style="border-top: 1px solid var(--color-border); padding: 20px 32px; flex-shrink: 0;">
+    <p class="meta" style="margin: 0;">Receipt photos and their extracted data are encrypted at rest and visible only to you.</p>
+  </footer>
+
+</div>
+
+</body>
+</html>
