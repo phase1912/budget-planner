@@ -2,6 +2,7 @@
 
 @theme {
   /* Spacing steps from a 4px base: 4, 8, 12, 16, 24, 32, 48. */
+  --spacing-1-25: 5px;
   --spacing-1: 4px;
   --spacing-2: 8px;
   --spacing-2-25: 9px;
@@ -16,6 +17,8 @@
   --spacing-5-5: 22px;
   --spacing-6: 24px;
   --spacing-8: 32px;
+  --spacing-8-5: 34px;
+  --spacing-11-5: 46px;
   --spacing-12: 48px;
 }
 
