@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-15 epics · 101 features · 65 tasks written so far.
+15 epics · 101 features · 68 tasks written so far.
 
 11 epics are phase 1 — the BRD scope, delivered before launch. 4 are phase 2: commercial scope that is planned but deliberately not started until phase 1 is complete.
 
@@ -705,6 +705,10 @@ Buttons, forms, tables, modals, currency and date formatting bound to the accoun
 One documented treatment for each, so the honest empty states E5 and F5 require are consistent rather than per-screen improvisations. Not yet groomed into tasks: easiest to standardise once a couple of real feature screens exist to generalise from.
 
 **Demonstrated by:** Every empty, loading and refused state in the product matches its panel in docs/design/screens/states.html — checked screen by screen, not asserted.
+
+- **F9.7.1** Implement Loading state component — A generic loading component (e.g. spinner or skeleton) for use while fetching data.
+- **F9.7.2** Implement Empty state component — A component for screens with no data, supporting an icon, title, message, and action button.
+- **F9.7.3** Implement Error state component — A component for failure/refused states, supporting an error icon, message, and retry button.
 
 ---
 
