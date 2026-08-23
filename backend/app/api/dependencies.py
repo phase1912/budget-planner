@@ -1,5 +1,6 @@
 """API dependencies (F1.2.4)."""
 
+import uuid
 from typing import Annotated
 
 import jwt
@@ -37,8 +38,6 @@ async def get_current_user(
         raise AuthenticationError("Token expired.") from err
     except jwt.InvalidTokenError as err:
         raise AuthenticationError("Invalid token.") from err
-
-    import uuid
 
     try:
         user_id = uuid.UUID(user_id_str)

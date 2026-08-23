@@ -101,3 +101,16 @@ async def test_get_current_user_happy_path_returns_user() -> None:
 
     result = await get_current_user(credentials=credentials, session=session)
     assert result is mock_user
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_invalid_uuid_in_sub_raises() -> None:
+    """A JWT whose sub is a non-UUID string must raise AuthenticationError (line 45-46)."""
+    settings = get_settings()
+    now = datetime.now(UTC)
+    payload = {"sub": "not-a-uuid", "iat": now, "exp": now + timedelta(minutes=15)}
+    token = jwt.encode(payload, settings.jwt_secret_key.get_secret_value(), algorithm="HS256")
+    credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
+    session = _mock_session(None)
+    with pytest.raises(AuthenticationError, match="Invalid user ID in token"):
+        await get_current_user(credentials=credentials, session=session)
