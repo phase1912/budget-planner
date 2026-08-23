@@ -1492,6 +1492,16 @@ epics:
         demo: >
           Every empty, loading and refused state in the product matches its panel in
           docs/design/screens/states.html — checked screen by screen, not asserted.
+        tasks:
+          - title: Implement Loading state component
+            detail: >
+              A generic loading component (e.g. spinner or skeleton) for use while fetching data.
+          - title: Implement Empty state component
+            detail: >
+              A component for screens with no data, supporting an icon, title, message, and action button.
+          - title: Implement Error state component
+            detail: >
+              A component for failure/refused states, supporting an error icon, message, and retry button.
 
   - key: E10
     title: Security, Privacy & Observability

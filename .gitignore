@@ -38,3 +38,5 @@ frontend/openapi.json
 .venv-tools/
 
 .agents
+CLAUDE.md
+AGENTS.md
