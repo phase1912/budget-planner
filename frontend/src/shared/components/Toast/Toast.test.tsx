@@ -34,24 +34,24 @@ describe("ToastContainer", () => {
   it("renders an error toast and auto-closes after 5 seconds", () => {
     mockToastStore.toast = { message: "Test error message", type: "error" };
     render(<ToastContainer />);
-    
+
     expect(screen.getByText("Test error message")).toBeInTheDocument();
-    
+
     // Fast-forward 5 seconds
     act(() => {
       vi.advanceTimersByTime(5000);
     });
-    
+
     expect(mockToastStore.clearToast).toHaveBeenCalledTimes(1);
   });
 
   it("allows closing the toast manually", () => {
     mockToastStore.toast = { message: "Test success message", type: "success" };
     render(<ToastContainer />);
-    
+
     const closeBtn = screen.getByRole("button", { name: /close/i });
     fireEvent.click(closeBtn);
-    
+
     expect(mockToastStore.clearToast).toHaveBeenCalledTimes(1);
   });
 });

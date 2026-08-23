@@ -19,11 +19,11 @@ export class AuthStore {
   constructor(api: ApiClient = apiClient) {
     this.api = api;
     makeAutoObservable(this);
-    
+
     // Hydrate state from localStorage on boot
     const savedToken = localStorage.getItem("budget_access_token");
     const savedUser = localStorage.getItem("budget_user");
-    
+
     if (savedToken) {
       this.token = savedToken;
     }

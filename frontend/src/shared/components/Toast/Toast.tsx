@@ -11,7 +11,9 @@ export const ToastContainer = observer(function ToastContainer() {
       const timer = setTimeout(() => {
         toastStore.clearToast();
       }, 5000);
-      return () => { clearTimeout(timer); };
+      return () => {
+        clearTimeout(timer);
+      };
     }
   }, [toast, toastStore]);
 
@@ -29,7 +31,9 @@ export const ToastContainer = observer(function ToastContainer() {
       >
         <p className="text-base font-medium">{toast.message}</p>
         <button
-          onClick={() => { toastStore.clearToast(); }}
+          onClick={() => {
+            toastStore.clearToast();
+          }}
           className="opacity-70 hover:opacity-100 transition-opacity"
           aria-label="Close"
         >
