@@ -1,0 +1,211 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-foreground);
+  --color-surface: var(--color-surface);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-muted: var(--color-muted);
+  --color-muted-foreground: var(--color-muted-foreground);
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-foreground: var(--color-primary-foreground);
+  --color-accent: var(--color-accent);
+  --color-accent-foreground: var(--color-accent-foreground);
+  --color-success: var(--color-success);
+  --color-error: var(--color-error);
+  --color-warning: var(--color-warning);
+  --color-info: var(--color-info);
+  --tone-primary-bg: var(--tone-primary-bg);
+  --tone-primary-border: var(--tone-primary-border);
+  --tone-primary-text: var(--tone-primary-text);
+  --tone-accent-bg: var(--tone-accent-bg);
+  --tone-accent-border: var(--tone-accent-border);
+  --tone-accent-text: var(--tone-accent-text);
+  --tone-accent-prose: var(--tone-accent-prose);
+  --tone-error-bg: var(--tone-error-bg);
+  --tone-error-border: var(--tone-error-border);
+  --tone-error-text: var(--tone-error-text);
+  --tone-error-prose: var(--tone-error-prose);
+  --tone-warning-bg: var(--tone-warning-bg);
+  --tone-warning-border: var(--tone-warning-border);
+  --tone-warning-text: var(--tone-warning-text);
+  --tone-warning-prose: var(--tone-warning-prose);
+  --tone-info-bg: var(--tone-info-bg);
+  --tone-info-border: var(--tone-info-border);
+  --tone-info-text: var(--tone-info-text);
+  --tone-info-prose: var(--tone-info-prose);
+  --tone-neutral-bg: var(--tone-neutral-bg);
+  --tone-neutral-text: var(--tone-neutral-text);
+  --cat-groceries: var(--cat-groceries);
+  --cat-dining: var(--cat-dining);
+  --cat-transport: var(--cat-transport);
+  --cat-utilities: var(--cat-utilities);
+  --cat-health: var(--cat-health);
+  --cat-entertainment: var(--cat-entertainment);
+  --cat-pet: var(--cat-pet);
+  --cat-kids: var(--cat-kids);
+  --cat-other: var(--cat-other);
+  --cat-uncategorised: var(--cat-uncategorised);
+  --radius-chip: var(--radius-chip);
+  --radius-control: var(--radius-control);
+  --radius-card: var(--radius-card);
+  --radius-pill: var(--radius-pill);
+  --shadow-raised: var(--shadow-raised);
+  --shadow-card: var(--shadow-card);
+  --shadow-primary: var(--shadow-primary);
+  --shadow-pop: var(--shadow-pop);
+  --shadow-modal: var(--shadow-modal);
+  --ring-primary: var(--ring-primary);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+@layer base {
+  :root {
+    --color-background: #ffffff;
+      --color-foreground: #0f172a;
+      --color-surface: #f8fafc;
+      --color-border: #e2e8f0;
+      --color-border-strong: #cbd5e1;
+      --color-muted: #f1f5f9;
+      --color-muted-foreground: #64748b;
+    
+      --color-primary: #15803d;
+      --color-primary-hover: #166534;
+      --color-primary-foreground: #ffffff;
+    
+      --color-accent: #4f46e5;
+      --color-accent-foreground: #ffffff;
+    
+      --color-success: #15803d;
+      --color-error: #b91c1c;
+      --color-warning: #d97706;
+      --color-info: #1d4ed8;
+    
+      /* Soft tones: a 6–12% wash of the semantic colour, with text dark enough to read
+         on it. Used by pills, banners and icon tiles. */
+      --tone-primary-bg: rgba(21, 128, 61, 0.1);
+      --tone-primary-border: rgba(21, 128, 61, 0.25);
+      --tone-primary-text: #15803d;
+    
+      --tone-accent-bg: rgba(79, 70, 229, 0.1);
+      --tone-accent-border: rgba(79, 70, 229, 0.2);
+      --tone-accent-text: #4f46e5;
+      --tone-accent-prose: #312e81;
+    
+      --tone-error-bg: rgba(185, 28, 28, 0.08);
+      --tone-error-border: rgba(185, 28, 28, 0.2);
+      --tone-error-text: #b91c1c;
+      --tone-error-prose: #7f1d1d;
+    
+      --tone-warning-bg: rgba(217, 119, 6, 0.1);
+      --tone-warning-border: rgba(217, 119, 6, 0.25);
+      --tone-warning-text: #b45309;
+      --tone-warning-prose: #78350f;
+    
+      --tone-info-bg: rgba(29, 78, 216, 0.08);
+      --tone-info-border: rgba(29, 78, 216, 0.2);
+      --tone-info-text: #1d4ed8;
+      --tone-info-prose: #1e3a8a;
+    
+      --tone-neutral-bg: #f1f5f9;
+      --tone-neutral-text: #64748b;
+    
+      /* Category colours are data colours, not semantic ones: they identify a series in
+         a breakdown and must stay distinguishable from each other, not carry meaning. */
+      --cat-groceries: #15803d;
+      --cat-dining: #4f46e5;
+      --cat-transport: #1d4ed8;
+      --cat-utilities: #0891b2;
+      --cat-health: #d97706;
+      --cat-entertainment: #9333ea;
+      --cat-pet: #db2777;
+      --cat-kids: #0d9488;
+      --cat-other: #94a3b8;
+      --cat-uncategorised: #cbd5e1;
+    
+      --radius-chip: 10px;
+      --radius-control: 12px;
+      --radius-card: 16px;
+      --radius-pill: 9999px;
+    
+      --shadow-raised: 0 1px 2px rgba(15, 23, 42, 0.08);
+      --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
+      --shadow-primary: 0 10px 15px -3px rgba(21, 128, 61, 0.25);
+      --shadow-pop: 0 20px 40px rgba(15, 23, 42, 0.16);
+      --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+    
+      --ring-primary: 0 0 0 3px rgba(21, 128, 61, 0.2);
+    
+      --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  .dark {
+    --color-background: #0f172a;
+      --color-foreground: #f8fafc;
+      --color-surface: #1e293b;
+      --color-border: #334155;
+      --color-border-strong: #475569;
+      --color-muted: #1e293b;
+      --color-muted-foreground: #94a3b8;
+    
+      --color-primary: #4ade80;
+      --color-primary-hover: #86efac;
+      --color-primary-foreground: #052e14;
+    
+      --color-accent: #a5b4fc;
+      --color-accent-foreground: #1e1b4b;
+    
+      --color-success: #4ade80;
+      --color-error: #fca5a5;
+      --color-warning: #fbbf24;
+      --color-info: #93c5fd;
+    
+      --tone-primary-bg: rgba(74, 222, 128, 0.12);
+      --tone-primary-border: rgba(74, 222, 128, 0.3);
+      --tone-primary-text: #4ade80;
+    
+      --tone-accent-bg: rgba(165, 180, 252, 0.12);
+      --tone-accent-border: rgba(165, 180, 252, 0.3);
+      --tone-accent-text: #a5b4fc;
+      --tone-accent-prose: #c7d2fe;
+    
+      --tone-error-bg: rgba(252, 165, 165, 0.1);
+      --tone-error-border: rgba(252, 165, 165, 0.3);
+      --tone-error-text: #fca5a5;
+      --tone-error-prose: #fecaca;
+    
+      --tone-warning-bg: rgba(251, 191, 36, 0.12);
+      --tone-warning-border: rgba(251, 191, 36, 0.3);
+      --tone-warning-text: #fbbf24;
+      --tone-warning-prose: #fde68a;
+    
+      --tone-info-bg: rgba(147, 197, 253, 0.1);
+      --tone-info-border: rgba(147, 197, 253, 0.3);
+      --tone-info-text: #93c5fd;
+      --tone-info-prose: #bfdbfe;
+    
+      --tone-neutral-bg: #1e293b;
+      --tone-neutral-text: #94a3b8;
+    
+      --cat-groceries: #4ade80;
+      --cat-dining: #a5b4fc;
+      --cat-transport: #93c5fd;
+      --cat-utilities: #67e8f9;
+      --cat-health: #fbbf24;
+      --cat-entertainment: #d8b4fe;
+      --cat-pet: #f9a8d4;
+      --cat-kids: #5eead4;
+      --cat-other: #94a3b8;
+      --cat-uncategorised: #475569;
+    
+      --shadow-primary: 0 10px 15px -3px rgba(74, 222, 128, 0.2);
+      --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4);
+      --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow-pop: 0 20px 40px rgba(0, 0, 0, 0.5);
+      --ring-primary: 0 0 0 3px rgba(74, 222, 128, 0.25);
+  }
+}
