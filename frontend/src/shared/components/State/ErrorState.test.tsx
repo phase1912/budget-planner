@@ -10,19 +10,13 @@ describe("ErrorState", () => {
   });
 
   it("renders action if provided", () => {
-    render(
-      <ErrorState 
-        title="Error" 
-        message="Failed" 
-        action={<button>Retry</button>}
-      />
-    );
+    render(<ErrorState title="Error" message="Failed" action={<button>Retry</button>} />);
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 
   it("renders in banner layout", () => {
     const { container } = render(
-      <ErrorState title="Banner Error" message="Banner Message" layout="banner" />
+      <ErrorState title="Banner Error" message="Banner Message" layout="banner" />,
     );
     expect(screen.getByText("Banner Error")).toBeInTheDocument();
     // Verify it uses the banner layout classes

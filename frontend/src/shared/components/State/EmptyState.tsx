@@ -9,14 +9,13 @@ export interface EmptyStateProps {
   iconTone?: "neutral" | "accent" | "primary" | "warning" | "error" | "info";
 }
 
-export function EmptyState({ 
-  icon: Icon, 
-  title, 
-  message, 
+export function EmptyState({
+  icon: Icon,
+  title,
+  message,
   action,
-  iconTone = "neutral"
+  iconTone = "neutral",
 }: EmptyStateProps) {
-  
   const toneClasses = {
     neutral: "bg-tone-neutral-bg text-tone-neutral-text",
     accent: "bg-tone-accent-bg text-tone-accent-text",
@@ -28,7 +27,9 @@ export function EmptyState({
 
   return (
     <div className="flex flex-col items-center gap-3 text-center">
-      <span className={`flex items-center justify-center shrink-0 w-11.5 h-11.5 rounded-pill ${toneClasses[iconTone]}`}>
+      <span
+        className={`flex items-center justify-center shrink-0 w-11.5 h-11.5 rounded-pill ${toneClasses[iconTone]}`}
+      >
         <Icon size={22} strokeWidth={1.8} />
       </span>
       <div className="flex flex-col gap-1.25">

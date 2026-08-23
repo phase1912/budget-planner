@@ -12,12 +12,12 @@ describe("EmptyState", () => {
 
   it("renders action if provided", () => {
     render(
-      <EmptyState 
-        icon={Info} 
-        title="No items" 
-        message="Check back later." 
+      <EmptyState
+        icon={Info}
+        title="No items"
+        message="Check back later."
         action={<button>Refresh</button>}
-      />
+      />,
     );
     expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
   });

@@ -8,13 +8,12 @@ export interface LoadingStateProps {
   skeletonLines?: number;
 }
 
-export function LoadingState({ 
-  title = "Loading...", 
-  message, 
-  layout = "skeleton", 
-  skeletonLines = 3 
+export function LoadingState({
+  title = "Loading...",
+  message,
+  layout = "skeleton",
+  skeletonLines = 3,
 }: LoadingStateProps) {
-  
   if (layout === "spinner") {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-8 w-full text-center">

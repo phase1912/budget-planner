@@ -10,14 +10,13 @@ export interface ErrorStateProps {
   layout?: "banner" | "panel";
 }
 
-export function ErrorState({ 
-  title, 
-  message, 
-  icon: Icon = AlertTriangle, 
-  action, 
-  layout = "panel" 
+export function ErrorState({
+  title,
+  message,
+  icon: Icon = AlertTriangle,
+  action,
+  layout = "panel",
 }: ErrorStateProps) {
-  
   if (layout === "banner") {
     return (
       <div className="flex items-start w-full px-4 py-3.5 bg-tone-error-bg border border-tone-error-border rounded-control gap-3">
@@ -42,11 +41,7 @@ export function ErrorState({
           <span className="text-base leading-[1.55]">{message}</span>
         </div>
       </div>
-      {action && (
-        <div className="self-start">
-          {action}
-        </div>
-      )}
+      {action && <div className="self-start">{action}</div>}
     </div>
   );
 }
