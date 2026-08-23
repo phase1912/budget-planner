@@ -7,7 +7,7 @@ import { DashboardPage } from "./DashboardPage";
 vi.mock("@/stores/StoreContext", () => ({
   useStores: () => ({
     authStore: {
-      user: { email: "test@example.com" },
+      user: { email: "test@example.com", first_name: "Anna", last_name: "Smith", currency: "PLN" },
     },
   }),
 }));
@@ -19,7 +19,7 @@ describe("DashboardPage", () => {
         <DashboardPage />
       </BrowserRouter>,
     );
-    expect(screen.getByRole("heading", { name: /welcome back!/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /good evening, anna/i })).toBeInTheDocument();
     expect(screen.getByText(/test@example.com/i)).toBeInTheDocument();
   });
 });

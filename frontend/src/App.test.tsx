@@ -1,20 +1,29 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+import { App } from "./App";
 
-import { App } from "@/App";
+vi.mock("@/stores/StoreContext", () => ({
+  useStores: () => ({
+    authStore: {
+      isAuthenticated: false,
+    },
+    themeStore: {
+      theme: "light",
+      toggleTheme: vi.fn(),
+    },
+    toastStore: {
+      toasts: [],
+      addToast: vi.fn(),
+      removeToast: vi.fn(),
+    },
+  }),
+}));
 
-import { StoreProvider } from "@/stores/StoreContext";
-
-// Proves the Vitest + RTL harness runs end-to-end in CI (F0.5, F9.1.3).
-describe("App", () => {
-  it("renders without crashing", () => {
-    render(
-      <StoreProvider>
-        <App />
-      </StoreProvider>,
-    );
+describe("App Router", () => {
+  it("renders PublicLandingPage by default when not authenticated", () => {
+    render(<App />);
     expect(
-      screen.getByRole("heading", { name: "Budgeting made simple with AI" }),
+      screen.getByRole("heading", { name: "Photograph a receipt. Get a budget." }),
     ).toBeInTheDocument();
   });
 });
