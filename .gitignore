@@ -36,3 +36,5 @@ frontend/openapi.json
 
 # Tooling venv for scripts/
 .venv-tools/
+
+.agents
