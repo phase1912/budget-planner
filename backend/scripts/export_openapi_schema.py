@@ -17,6 +17,10 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import os
+os.environ["DATABASE_URL"] = "postgresql+asyncpg://dummy:dummy@localhost/dummy"
+os.environ["ANTHROPIC_API_KEY"] = "dummy"
+
 from app.main import create_app
 
 
