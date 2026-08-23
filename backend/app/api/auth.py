@@ -65,9 +65,9 @@ async def login(
 
     if not user:
         # Mitigate timing attack
-        from app.security import DUMMY_HASH
+        from app.security import get_dummy_hash
 
-        verify_password(login_request.password, DUMMY_HASH)
+        verify_password(login_request.password, get_dummy_hash())
         raise AuthenticationError("Invalid email or password.")
 
     if not verify_password(login_request.password, user.password_hash):

@@ -19,9 +19,17 @@ def _get_hasher() -> PasswordHasher:
     )
 
 
-# A dummy hash used to mitigate timing attacks on invalid emails.
-# Computed once on startup using the configured costs.
-DUMMY_HASH = _get_hasher().hash("dummy-password-for-timing-attack-mitigation")
+_DUMMY_HASH: str | None = None
+
+
+def get_dummy_hash() -> str:
+    """Return a dummy hash to mitigate timing attacks.
+    Computed lazily so settings aren't required at module import time.
+    """
+    global _DUMMY_HASH
+    if _DUMMY_HASH is None:
+        _DUMMY_HASH = _get_hasher().hash("dummy-password-for-timing-attack-mitigation")
+    return _DUMMY_HASH
 
 
 def get_password_hash(password: str) -> str:
