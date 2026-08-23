@@ -70,6 +70,22 @@ class PermissionDeniedError(AppError):
     title = "Permission Denied"
 
 
+class RegistrationError(AppError):
+    """Raised when registration fails, hiding the reason from the response (G2)."""
+
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = "registration_failed"
+    title = "Registration Failed"
+
+
+class AuthenticationError(AppError):
+    """Raised on any login failure, generic by design (G4)."""
+
+    status_code = status.HTTP_401_UNAUTHORIZED
+    code = "authentication_failed"
+    title = "Authentication Failed"
+
+
 _HTTP_STATUS_PROBLEMS: dict[int, tuple[str, str]] = {
     status.HTTP_400_BAD_REQUEST: ("bad_request", "Bad Request"),
     status.HTTP_401_UNAUTHORIZED: ("unauthorized", "Unauthorized"),

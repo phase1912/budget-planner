@@ -1,20 +1,33 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { observer } from "mobx-react-lite";
+import { useStores } from "@/stores/StoreContext";
 import { AppShell } from "@/features/app-shell/AppShell";
-import { PublicLandingScreen } from "@/features/public-landing/PublicLandingScreen";
-import { NotFoundScreen } from "@/features/public-landing/NotFoundScreen";
-import { LoginScreen, RegisterScreen } from "@/features/public-landing/PlaceholderScreens";
+import { PublicLandingPage } from "@/features/public-landing/pages/PublicLandingPage";
+import { NotFoundPage } from "@/features/public-landing/pages/NotFoundPage";
+import { LoginPage } from "@/features/auth/pages/LoginPage";
+import { RegisterPage } from "@/features/auth/pages/RegisterPage";
+import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 
-export function App() {
+export const App = observer(function App() {
+  const { authStore } = useStores();
+  const isAuthenticated = authStore.isAuthenticated;
+
   return (
     <BrowserRouter>
       <Routes>
         <Route element={<AppShell />}>
-          <Route path="/" element={<PublicLandingScreen />} />
-          <Route path="/login" element={<LoginScreen />} />
-          <Route path="/register" element={<RegisterScreen />} />
-          <Route path="*" element={<NotFoundScreen />} />
+          <Route path="/" element={isAuthenticated ? <DashboardPage /> : <PublicLandingPage />} />
+          <Route
+            path="/login"
+            element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+          />
+          <Route
+            path="/register"
+            element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />}
+          />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
   );
-}
+});

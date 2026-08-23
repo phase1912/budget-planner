@@ -10,7 +10,18 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 
 | Entity | Meaning | Owned by |
 |---|---|---|
-| **User** | An account. Holds currency, optional monthly budget limit, and a role (`user` or `admin`) — N2's per-user isolation applies to an admin exactly as to any other account (G8). | — |
+| **User** | An account. Holds identity (`first_name`, `last_name`, `email`), currency, optional monthly budget limit, and a role (`user` or `admin`) — N2's per-user isolation applies to an admin exactly as to any other account (G8). | — |
+| **User Attributes** | | |
+| `id` | UUID | Primary key (generated via `gen_random_uuid()`) |
+| `email` | String | Unique, used for authentication |
+| `first_name` | String | User's first name |
+| `last_name` | String | User's last name |
+| `password_hash` | String | Argon2id hash |
+| `currency` | String | Default `USD`. Used as the base currency for all monetary amounts |
+| `budget_limit` | Decimal | Optional monthly budget cap |
+| `role` | String | `user` or `admin` (controls cross-user visibility) |
+| `created_at` | Timestamp | Standard audit field |
+| `updated_at` | Timestamp | Standard audit field |
 | **IdentityLink** | A linked Google or Facebook identity, verified-email-gated (G9-G11). | User |
 | **Receipt** | One purchase transaction, from one or more photos. | User |
 | **LineItem** | One position on a receipt: product, quantity, unit price, total. | Receipt |

@@ -1,13 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { MemoryRouter } from "react-router-dom";
-import { PublicLandingScreen } from "./PublicLandingScreen";
+import { PublicLandingPage } from "./PublicLandingPage";
 
-describe("PublicLandingScreen", () => {
+describe("PublicLandingPage", () => {
   it("renders the heading and action buttons", () => {
     render(
       <MemoryRouter>
-        <PublicLandingScreen />
+        <PublicLandingPage />
       </MemoryRouter>,
     );
 

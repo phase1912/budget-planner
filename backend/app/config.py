@@ -92,6 +92,26 @@ class Settings(BaseSettings):
         default="dev",
         description="Set by CI/CD at deploy time; 'dev' outside a built image.",
     )
+    jwt_secret_key: SecretStr = Field(
+        default=SecretStr("dev-secret-key-do-not-use-in-prod"),
+        description="Used to sign access tokens.",
+    )
+    argon2_time_cost: int = Field(
+        default=2,
+        description="Number of iterations for Argon2id hashing.",
+    )
+    argon2_memory_cost: int = Field(
+        default=19456,  # ~19 MB, a common OWASP recommendation
+        description="Memory cost (in KiB) for Argon2id hashing.",
+    )
+    argon2_parallelism: int = Field(
+        default=1,
+        description="Degree of parallelism for Argon2id hashing.",
+    )
+    cors_origins: list[str] = Field(
+        default=["http://localhost:5173", "http://127.0.0.1:5173"],
+        description="List of origins allowed to make cross-origin requests.",
+    )
 
 
 @lru_cache
