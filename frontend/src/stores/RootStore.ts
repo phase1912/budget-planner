@@ -1,4 +1,7 @@
 import { ThemeStore } from "@/stores/ThemeStore";
+import { AuthStore } from "@/stores/AuthStore";
+import { ToastStore } from "@/stores/ToastStore";
+import { apiClient } from "@/api/client";
 
 /**
  * Single instantiation point for every MobX store in the client (F9.2.1). Feature
@@ -8,8 +11,12 @@ import { ThemeStore } from "@/stores/ThemeStore";
  */
 export class RootStore {
   readonly themeStore: ThemeStore;
+  readonly authStore: AuthStore;
+  readonly toastStore: ToastStore;
 
   constructor() {
     this.themeStore = new ThemeStore();
+    this.toastStore = new ToastStore();
+    this.authStore = new AuthStore(apiClient);
   }
 }

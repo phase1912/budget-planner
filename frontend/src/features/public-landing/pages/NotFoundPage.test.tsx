@@ -1,13 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { MemoryRouter } from "react-router-dom";
-import { NotFoundScreen } from "./NotFoundScreen";
+import { NotFoundPage } from "./NotFoundPage";
 
-describe("NotFoundScreen", () => {
+describe("NotFoundPage", () => {
   it("renders the 404 message and return home button", () => {
     render(
       <MemoryRouter>
-        <NotFoundScreen />
+        <NotFoundPage />
       </MemoryRouter>,
     );
 

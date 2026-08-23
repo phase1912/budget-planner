@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Stack, Button } from "@/shared/components";
 
-export const PublicLandingScreen = () => {
+export const PublicLandingPage = () => {
   return (
     <div className="flex-grow flex items-center justify-center">
       <Stack className="gap-6 max-w-[480px] text-center items-center">

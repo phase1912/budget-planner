@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Stack, Button } from "@/shared/components";
 
-export const NotFoundScreen = () => {
+export const NotFoundPage = () => {
   return (
     <div className="flex-grow flex items-center justify-center">
       <Stack className="gap-4 text-center items-center">
