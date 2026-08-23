@@ -44,7 +44,10 @@ export const RegisterPage = observer(() => {
         </div>
 
         {authStore.authState.error && (
-          <div className="p-4 bg-tone-error-bg border border-tone-error-border text-tone-error-text rounded-control">
+          <div
+            role="alert"
+            className="p-4 bg-tone-error-bg border border-tone-error-border text-tone-error-text rounded-control"
+          >
             {authStore.authState.error}
           </div>
         )}
