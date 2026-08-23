@@ -16,11 +16,13 @@
     "generate:api": "bash scripts/generate-api-types.sh"
   },
   "dependencies": {
+    "lucide-react": "^1.33.0",
     "mobx": "^7.0.3",
     "mobx-react-lite": "^5.0.3",
     "openapi-fetch": "^0.17.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.18.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
