@@ -137,7 +137,7 @@ def not_reveal_registration(auth_state):
 @given("a registered account with a known email and password")
 def existing_account(auth_state, override_db):
     client = TestClient(app)
-    client.post(
+    response = client.post(
         "/auth/register",
         json={
             "email": "user@example.com",
@@ -146,6 +146,7 @@ def existing_account(auth_state, override_db):
             "last_name": "User",
         },
     )
+    assert response.status_code == status.HTTP_201_CREATED
 
 
 @when("the person submits the correct email and password")
@@ -171,7 +172,16 @@ def login_session_established(auth_state):
 @given("a registered account")
 def registered_account(auth_state, override_db):
     client = TestClient(app)
-    client.post("/auth/register", json={"email": "test@example.com", "password": "SecurePass123!"})
+    response = client.post(
+        "/auth/register",
+        json={
+            "email": "test@example.com",
+            "password": "SecurePass123!",
+            "first_name": "Test",
+            "last_name": "User",
+        },
+    )
+    assert response.status_code == status.HTTP_201_CREATED
 
 
 @when("the person submits an unknown email, or the correct email with the wrong password")

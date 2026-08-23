@@ -45,6 +45,13 @@ describe("ToastContainer", () => {
     expect(mockToastStore.clearToast).toHaveBeenCalledTimes(1);
   });
 
+  it("renders an info toast correctly", () => {
+    mockToastStore.toast = { message: "Test info message", type: "info" };
+    render(<ToastContainer />);
+
+    expect(screen.getByText("Test info message")).toBeInTheDocument();
+  });
+
   it("allows closing the toast manually", () => {
     mockToastStore.toast = { message: "Test success message", type: "success" };
     render(<ToastContainer />);

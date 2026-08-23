@@ -18,6 +18,7 @@ from app.config import Environment, Settings, get_settings
 REQUIRED_ENV = {
     "DATABASE_URL": "postgresql://user:pass@localhost:5432/budget_planner",
     "ANTHROPIC_API_KEY": "sk-test-key",
+    "JWT_SECRET_KEY": "test-secret-key-that-is-not-default",
 }
 
 

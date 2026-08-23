@@ -15,7 +15,7 @@ defaults for local development only.
 from enum import StrEnum
 from functools import lru_cache
 
-from pydantic import Field, PostgresDsn, SecretStr
+from pydantic import Field, PostgresDsn, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -112,6 +112,18 @@ class Settings(BaseSettings):
         default=["http://localhost:5173", "http://127.0.0.1:5173"],
         description="List of origins allowed to make cross-origin requests.",
     )
+
+    @model_validator(mode="after")
+    def validate_jwt_secret_for_env(self) -> "Settings":
+        if (
+            self.environment != Environment.LOCAL
+            and self.jwt_secret_key.get_secret_value() == "dev-secret-key-do-not-use-in-prod"
+        ):
+            raise ValueError(
+                "The default dev-secret-key-do-not-use-in-prod is not permitted "
+                "in staging or production environments."
+            )
+        return self
 
 
 @lru_cache
