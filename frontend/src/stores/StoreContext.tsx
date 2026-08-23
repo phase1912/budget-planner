@@ -24,6 +24,7 @@ export function StoreProvider({ children, store }: StoreProviderProps) {
  * StoreProvider rather than silently returning undefined, so a missing provider
  * fails at the call site instead of surfacing as a confusing render bug.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useStores(): RootStore {
   const store = useContext(StoreContext);
   if (!store) {
