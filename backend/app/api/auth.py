@@ -4,6 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.errors import AuthenticationError, RegistrationError
@@ -42,7 +43,13 @@ async def register(
         last_name=request.last_name,
     )
     session.add(user)
-    await session.flush()
+    try:
+        await session.flush()
+    except IntegrityError as err:
+        await session.rollback()
+        raise RegistrationError(
+            "Registration failed. Please check your details and try again."
+        ) from err
 
     token = create_access_token(subject=user.id)
 
@@ -52,7 +59,11 @@ async def register(
     )
 
 
-@router.post("/login", response_model=AuthResponse)
+@router.post(
+    "/login",
+    response_model=AuthResponse,
+    responses={status.HTTP_429_TOO_MANY_REQUESTS: {"description": "Too Many Requests"}},
+)
 @limiter.limit("5/minute")
 async def login(
     request: Request,

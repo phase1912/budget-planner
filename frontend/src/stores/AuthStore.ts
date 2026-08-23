@@ -47,8 +47,8 @@ export class AuthStore {
         body: request,
       });
 
-      if (error) {
-        const detail = (error as ProblemDetail).detail;
+      if (error || !data) {
+        const detail = error ? (error as ProblemDetail).detail : "No data returned";
         const msg = typeof detail === "string" ? detail : "Authentication failed";
         this.authState.fail(msg);
         return false;
@@ -98,6 +98,7 @@ export class AuthStore {
     this.user = null;
     this.token = null;
     localStorage.removeItem("budget_access_token");
+    localStorage.removeItem("budget_user");
     this.authState.reset();
   }
 }
