@@ -12,16 +12,23 @@ export const Modal = ({ isOpen, onClose, children, className, ...props }: ModalP
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", handleKeyDown);
-    return () => { document.removeEventListener("keydown", handleKeyDown); };
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
-  
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[4px] p-10">
-      <div data-testid="backdrop" className="absolute inset-0" onClick={onClose} aria-hidden="true" />
-      
-      <div 
+      <div
+        data-testid="backdrop"
+        className="absolute inset-0"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      <div
         className={`relative z-10 flex flex-col overflow-hidden max-h-full border border-border rounded-card bg-background shadow-modal ${className ?? ""}`}
         role="dialog"
         aria-modal="true"
@@ -35,7 +42,10 @@ export const Modal = ({ isOpen, onClose, children, className, ...props }: ModalP
 Modal.displayName = "Modal";
 
 export const ModalHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={`flex items-start justify-between gap-4 border-b border-border bg-surface px-6 py-5 ${className ?? ""}`} {...props} />
+  <div
+    className={`flex items-start justify-between gap-4 border-b border-border bg-surface px-6 py-5 ${className ?? ""}`}
+    {...props}
+  />
 );
 ModalHeader.displayName = "ModalHeader";
 
@@ -45,6 +55,9 @@ export const ModalBody = ({ className, ...props }: React.HTMLAttributes<HTMLDivE
 ModalBody.displayName = "ModalBody";
 
 export const ModalFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={`flex items-center justify-between gap-5 border-t border-border bg-surface px-6 py-[18px] ${className ?? ""}`} {...props} />
+  <div
+    className={`flex items-center justify-between gap-5 border-t border-border bg-surface px-6 py-[18px] ${className ?? ""}`}
+    {...props}
+  />
 );
 ModalFooter.displayName = "ModalFooter";

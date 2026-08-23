@@ -16,7 +16,7 @@ describe("Table", () => {
             <TableCell>Row 1</TableCell>
           </TableRow>
         </TableBody>
-      </Table>
+      </Table>,
     );
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Col 1" })).toBeInTheDocument();

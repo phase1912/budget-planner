@@ -28,6 +28,6 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         {error && <span className="text-base text-error">{error}</span>}
       </div>
     );
-  }
+  },
 );
 Select.displayName = "Select";

@@ -15,7 +15,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     } else if (variant === "ghost") {
       variantClasses = "bg-transparent text-muted-foreground hover:bg-muted";
     } else if (variant === "danger") {
-      variantClasses = "bg-tone-error-bg text-tone-error-text border border-tone-error-border hover:bg-tone-error-border";
+      variantClasses =
+        "bg-tone-error-bg text-tone-error-text border border-tone-error-border hover:bg-tone-error-border";
     } else {
       variantClasses = "bg-error text-background hover:opacity-90";
     }
@@ -31,7 +32,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       sizeClasses = "px-3.25 py-2 text-md";
     }
 
-    const baseClasses = "inline-flex items-center justify-center gap-2 font-semibold rounded-control transition-colors disabled:opacity-45 disabled:pointer-events-none";
+    const baseClasses =
+      "inline-flex items-center justify-center gap-2 font-semibold rounded-control transition-colors disabled:opacity-45 disabled:pointer-events-none";
 
     return (
       <button
@@ -40,6 +42,6 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       />
     );
-  }
+  },
 );
 Button.displayName = "Button";

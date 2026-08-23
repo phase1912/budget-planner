@@ -11,7 +11,7 @@ describe("Layout", () => {
             <div>Item</div>
           </Grid>
         </Stack>
-      </Container>
+      </Container>,
     );
     expect(screen.getByTestId("container")).toBeInTheDocument();
     expect(screen.getByTestId("stack")).toBeInTheDocument();

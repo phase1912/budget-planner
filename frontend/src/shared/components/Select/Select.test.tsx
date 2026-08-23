@@ -7,20 +7,24 @@ describe("Select", () => {
     render(
       <Select label="Options" id="options">
         <option>One</option>
-      </Select>
+      </Select>,
     );
     const select = screen.getByLabelText("Options");
     expect(select).toBeInTheDocument();
     expect(select).toHaveRole("combobox");
   });
-  
+
   it("displays error message when provided", () => {
     render(<Select error="Select an option" />);
     expect(screen.getByText("Select an option")).toBeInTheDocument();
   });
-  
+
   it("is disabled when disabled prop is true", () => {
-    render(<Select disabled label="Options" id="options"><option>One</option></Select>);
+    render(
+      <Select disabled label="Options" id="options">
+        <option>One</option>
+      </Select>,
+    );
     expect(screen.getByLabelText("Options")).toBeDisabled();
   });
 });

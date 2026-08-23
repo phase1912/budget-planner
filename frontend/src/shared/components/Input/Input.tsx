@@ -28,6 +28,6 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {error && <span className="text-base text-error">{error}</span>}
       </div>
     );
-  }
+  },
 );
 Input.displayName = "Input";

@@ -9,7 +9,7 @@ export const Container = React.forwardRef<HTMLDivElement, ContainerProps>(
     let sizeClass = "max-w-default";
     if (size === "narrow") sizeClass = "max-w-narrow";
     if (size === "wide") sizeClass = "max-w-wide";
-    
+
     return (
       <div
         ref={ref}
@@ -17,32 +17,20 @@ export const Container = React.forwardRef<HTMLDivElement, ContainerProps>(
         {...props}
       />
     );
-  }
+  },
 );
 Container.displayName = "Container";
 
 export const Stack = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => {
-    return (
-      <div
-        ref={ref}
-        className={`flex flex-col ${className ?? ""}`}
-        {...props}
-      />
-    );
-  }
+    return <div ref={ref} className={`flex flex-col ${className ?? ""}`} {...props} />;
+  },
 );
 Stack.displayName = "Stack";
 
 export const Grid = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => {
-    return (
-      <div
-        ref={ref}
-        className={`grid ${className ?? ""}`}
-        {...props}
-      />
-    );
-  }
+    return <div ref={ref} className={`grid ${className ?? ""}`} {...props} />;
+  },
 );
 Grid.displayName = "Grid";

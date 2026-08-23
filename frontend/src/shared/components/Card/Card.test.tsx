@@ -9,7 +9,7 @@ describe("Card", () => {
         <CardHeader>Header</CardHeader>
         <CardBody>Body</CardBody>
         <CardFooter>Footer</CardFooter>
-      </Card>
+      </Card>,
     );
     expect(screen.getByTestId("card")).toBeInTheDocument();
     expect(screen.getByText("Header")).toBeInTheDocument();
