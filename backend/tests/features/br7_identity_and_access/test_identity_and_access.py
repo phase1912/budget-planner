@@ -179,7 +179,7 @@ def registered_account(auth_state, override_db):
             "password": "SecurePass123!",
             "first_name": "Test",
             "last_name": "User",
-        }
+        },
     )
     assert response.status_code == status.HTTP_201_CREATED
 
