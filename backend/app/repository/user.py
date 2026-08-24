@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,3 +18,7 @@ class UserRepository:
 
     def add(self, user: User) -> None:
         self.session.add(user)
+
+    def update(self, user: User, data: dict[str, Any]) -> None:
+        for key, value in data.items():
+            setattr(user, key, value)

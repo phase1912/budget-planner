@@ -86,6 +86,14 @@ class AuthenticationError(AppError):
     title = "Authentication Failed"
 
 
+class DomainError(AppError):
+    """Raised for business logic rule violations (e.g., F1.4.2 currency lock)."""
+
+    status_code = status.HTTP_409_CONFLICT
+    code = "domain_error"
+    title = "Domain Rule Violation"
+
+
 _HTTP_STATUS_PROBLEMS: dict[int, tuple[str, str]] = {
     status.HTTP_400_BAD_REQUEST: ("bad_request", "Bad Request"),
     status.HTTP_401_UNAUTHORIZED: ("unauthorized", "Unauthorized"),
