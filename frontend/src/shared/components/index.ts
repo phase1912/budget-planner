@@ -2,6 +2,8 @@ export * from "./Button/Button";
 export * from "./Input/Input";
 export * from "./Card/Card";
 export * from "./Table/Table";
+export * from "./Toast/Toast";
+export * from "./CurrencySelect/CurrencySelect";
 export * from "./Select/Select";
 export * from "./Modal/Modal";
 export * from "./Layout/Layout";
