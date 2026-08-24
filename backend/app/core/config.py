@@ -96,6 +96,12 @@ class Settings(BaseSettings):
         default=SecretStr("dev-secret-key-do-not-use-in-prod"),
         description="Used to sign access tokens.",
     )
+    access_token_expire_minutes: int = Field(
+        default=240, ge=1, description="Lifespan of a JWT access token (F1.2.1), default 4 hours."
+    )
+    refresh_token_expire_days: int = Field(
+        default=30, ge=1, description="Lifespan of a refresh token family (F1.2.2)."
+    )
     argon2_time_cost: int = Field(
         default=2,
         description="Number of iterations for Argon2id hashing.",
