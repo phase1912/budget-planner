@@ -17,7 +17,7 @@ describe("DashboardPage", () => {
     // Mock time to 19:00 (Good evening)
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 0, 1, 19));
-    
+
     try {
       render(
         <BrowserRouter>
