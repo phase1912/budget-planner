@@ -1,21 +1,28 @@
 import * as React from "react";
 import { observer } from "mobx-react-lite";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useStores } from "@/stores/StoreContext";
 import { Button, Input, Card } from "@/shared/components";
 
 export const LoginPage = observer(() => {
   const { authStore } = useStores();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+
+  interface LocationState {
+    from?: { pathname: string };
+  }
+  const state = location.state as LocationState | null;
+  const from = state?.from?.pathname ?? "/";
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     const success = await authStore.login({ email, password });
     if (success) {
-      await navigate("/");
+      void navigate(from, { replace: true });
     }
   };
 

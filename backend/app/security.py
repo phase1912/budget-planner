@@ -1,5 +1,6 @@
 """Security utilities for password hashing and basic tokens (F1.1.2)."""
 
+import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -46,16 +47,22 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(subject: str | Any, expires_delta: timedelta | None = None) -> str:
-    """Create a basic JWT access token. (Full token management in F1.2)."""
-    if expires_delta:
-        expire = datetime.now(UTC) + expires_delta
-    else:
-        expire = datetime.now(UTC) + timedelta(minutes=15)
-
-    to_encode = {"exp": expire, "sub": str(subject)}
+    """Create a JWT access token (F1.2.1)."""
     settings = get_settings()
+    now = datetime.now(UTC)
+    if expires_delta:
+        expire = now + expires_delta
+    else:
+        expire = now + timedelta(minutes=settings.access_token_expire_minutes)
+
+    to_encode = {"exp": expire, "iat": now, "sub": str(subject)}
 
     encoded_jwt = jwt.encode(
         to_encode, settings.jwt_secret_key.get_secret_value(), algorithm="HS256"
     )
     return encoded_jwt
+
+
+def create_refresh_token() -> str:
+    """Create a random refresh token string (F1.2.2)."""
+    return secrets.token_urlsafe(32)

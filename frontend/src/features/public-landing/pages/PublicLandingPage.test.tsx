@@ -12,9 +12,9 @@ describe("PublicLandingPage", () => {
     );
 
     expect(
-      screen.getByRole("heading", { name: "Budgeting made simple with AI" }),
+      screen.getByRole("heading", { name: "Photograph a receipt. Get a budget." }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Sign In" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Create Account" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "I already have one" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Create an account" })).toBeInTheDocument();
   });
 });
