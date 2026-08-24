@@ -1,16 +1,12 @@
 import uuid
 from datetime import UTC, datetime, timedelta
+
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import AuthenticationError, RegistrationError
 from app.core.config import get_settings
-from app.models.refresh_token import RefreshToken
-from app.models.user import User
-from app.repository.user import UserRepository
-from app.schemas.auth import LoginRequest, RefreshRequest, RegisterRequest
-from app.schemas.user import UserResponse
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -18,6 +14,11 @@ from app.core.security import (
     get_password_hash,
     verify_password,
 )
+from app.models.refresh_token import RefreshToken
+from app.models.user import User
+from app.repository.user import UserRepository
+from app.schemas.auth import LoginRequest, RefreshRequest, RegisterRequest
+from app.schemas.user import UserResponse
 
 
 class AuthService:

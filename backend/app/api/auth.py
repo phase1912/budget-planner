@@ -30,11 +30,7 @@ async def register(
 ) -> AuthResponse:
     """Create a new account and return it with a session (F1.1.3)."""
     user_response, access_token, refresh_token = await service.register(request)
-    return AuthResponse(
-        user=user_response, 
-        access_token=access_token,
-        refresh_token=refresh_token
-    )
+    return AuthResponse(user=user_response, access_token=access_token, refresh_token=refresh_token)
 
 
 @router.post(
@@ -50,11 +46,8 @@ async def login(
 ) -> AuthResponse:
     """Authenticate and return an access token (F1.1.4)."""
     user_response, access_token, refresh_token = await service.login(login_request)
-    return AuthResponse(
-        user=user_response, 
-        access_token=access_token,
-        refresh_token=refresh_token
-    )
+    return AuthResponse(user=user_response, access_token=access_token, refresh_token=refresh_token)
+
 
 @router.post("/refresh", response_model=AuthResponse)
 async def refresh(

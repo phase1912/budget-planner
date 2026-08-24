@@ -14,10 +14,10 @@ import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
 
+from app.db.session import get_db_session
 from app.main import app
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
-from app.db.session import get_db_session
 
 
 def _make_session_override(

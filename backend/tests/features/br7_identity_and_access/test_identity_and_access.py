@@ -6,9 +6,10 @@ from fastapi import status
 from fastapi.testclient import TestClient
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from app.db.session import get_db_session
 from app.api.rate_limit import limiter
+from app.db.session import get_db_session
 from app.main import app
+
 scenarios("identity_and_access.feature")
 
 
