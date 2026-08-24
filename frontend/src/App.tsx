@@ -7,6 +7,7 @@ import { NotFoundPage } from "@/features/public-landing/pages/NotFoundPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
 import { RegisterPage } from "@/features/auth/pages/RegisterPage";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
+import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 
 export const App = observer(function App() {
   const { authStore } = useStores();
@@ -25,6 +26,16 @@ export const App = observer(function App() {
             path="/register"
             element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />}
           />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            {/* Placeholders for upcoming features (prevents 404s on navigation) */}
+            <Route path="/receipts" element={<DashboardPage />} />
+            <Route path="/categories" element={<DashboardPage />} />
+            <Route path="/statistics" element={<DashboardPage />} />
+            <Route path="/goals" element={<DashboardPage />} />
+            <Route path="/upload" element={<DashboardPage />} />
+            <Route path="/profile" element={<DashboardPage />} />
+          </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

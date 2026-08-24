@@ -15,7 +15,7 @@ describe("AppShell", () => {
     );
 
     // Check brand
-    expect(screen.getByRole("link", { name: "AI Budget Agent" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Budget Agent" })).toBeInTheDocument();
 
     // Check theme toggle button
     const toggleButton = screen.getByLabelText("Toggle theme");

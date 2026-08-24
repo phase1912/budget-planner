@@ -24,3 +24,16 @@ class AuthResponse(BaseModel):
 
     user: UserResponse
     access_token: str
+    refresh_token: str
+
+
+class RefreshRequest(BaseModel):
+    """Payload for refreshing an access token (F1.2.3)."""
+
+    refresh_token: str
+
+
+class MessageResponse(BaseModel):
+    """Generic message response."""
+
+    message: str

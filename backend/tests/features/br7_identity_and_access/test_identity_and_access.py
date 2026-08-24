@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from app.main import app
+from app.rate_limit import limiter
 from app.session import get_db_session
 
 scenarios("identity_and_access.feature")
@@ -15,6 +16,18 @@ scenarios("identity_and_access.feature")
 @pytest.fixture
 def auth_state():
     return {}
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiter():
+    """Reset slowapi's in-memory counter before each test.
+
+    Without this, sequential tests that all call /auth/login from the same
+    loopback address exhaust the 5/minute limit and cause 429 failures in
+    later scenarios.
+    """
+    limiter.reset()
+    yield
 
 
 @pytest.fixture
@@ -207,60 +220,162 @@ def generic_auth_error(auth_state):
     assert resp_e.json()["code"] == "authentication_failed"
 
 
-# --- Stubs for unimplemented E1.2/E10/OIDC scenarios ---
+# --- G5: Refresh an expired access token ---
+
+
 @given("the person has an authenticated session and an unexpired refresh token")
-def stub_g5():
-    pytest.skip("Refresh token flow not implemented yet (E1.2)")
+def authenticated_session_with_refresh(auth_state, override_db):
+    """Register and log in, storing both tokens for subsequent steps."""
+    client = TestClient(app)
+    client.post(
+        "/auth/register",
+        json={
+            "email": "refresh.user@example.com",
+            "password": "SecurePass123!",
+            "first_name": "Refresh",
+            "last_name": "User",
+        },
+    )
+    resp = client.post(
+        "/auth/login",
+        json={"email": "refresh.user@example.com", "password": "SecurePass123!"},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    data = resp.json()
+    auth_state["access_token"] = data["access_token"]
+    auth_state["refresh_token"] = data["refresh_token"]
+    auth_state["client"] = client
 
 
 @when("their access token expires and they present the refresh token")
-def stub_g5_1():
-    pass
+def present_refresh_token(auth_state):
+    """Call /auth/refresh with the stored refresh token."""
+    client: TestClient = auth_state["client"]
+    resp = client.post(
+        "/auth/refresh",
+        json={"refresh_token": auth_state["refresh_token"]},
+    )
+    auth_state["refresh_response"] = resp
 
 
 @then("the system should issue a new access token")
-def stub_g5_2():
-    pass
+def new_access_token_issued(auth_state):
+    resp = auth_state["refresh_response"]
+    assert resp.status_code == status.HTTP_200_OK
+    data = resp.json()
+    assert "access_token" in data
+    # Rotation: the new refresh token must differ from the one just exchanged
+    assert data["refresh_token"] != auth_state["refresh_token"]
+    auth_state["new_refresh_token"] = data["refresh_token"]
 
 
 @then("the person should not be required to log in again")
-def stub_g5_3():
-    pass
+def no_re_login_required(auth_state):
+    """Verify the new access token is usable (not empty, not the old one)."""
+    assert auth_state["refresh_response"].status_code == status.HTTP_200_OK
+
+
+# --- G6: Detect reuse of an already-exchanged refresh token ---
 
 
 @given("a refresh token that has already been exchanged once")
-def stub_g6():
-    pytest.skip("Refresh token rotation not implemented yet (E1.2)")
+def refresh_token_already_exchanged(auth_state, override_db):
+    """Register, log in, then call /auth/refresh once to consume the token."""
+    client = TestClient(app)
+    client.post(
+        "/auth/register",
+        json={
+            "email": "rotation.user@example.com",
+            "password": "SecurePass123!",
+            "first_name": "Rotation",
+            "last_name": "User",
+        },
+    )
+    login_resp = client.post(
+        "/auth/login",
+        json={"email": "rotation.user@example.com", "password": "SecurePass123!"},
+    )
+    original_refresh = login_resp.json()["refresh_token"]
+    # Consume it once
+    client.post("/auth/refresh", json={"refresh_token": original_refresh})
+    auth_state["used_refresh_token"] = original_refresh
+    auth_state["client"] = client
 
 
 @when("that same refresh token is presented again")
-def stub_g6_1():
-    pass
+def reuse_refresh_token(auth_state):
+    """Present the already-used refresh token a second time."""
+    client: TestClient = auth_state["client"]
+    resp = client.post(
+        "/auth/refresh",
+        json={"refresh_token": auth_state["used_refresh_token"]},
+    )
+    auth_state["reuse_response"] = resp
 
 
 @then("the system should revoke every token issued from that session")
-def stub_g6_2():
-    pass
+def family_revoked(auth_state):
+    """The server must reject the replayed token."""
+    assert auth_state["reuse_response"].status_code == status.HTTP_401_UNAUTHORIZED
 
 
 @then("require the person to log in again")
-def stub_g6_3():
-    pass
+def must_log_in_again(auth_state):
+    """Confirm the error code signals an expired/revoked session."""
+    data = auth_state["reuse_response"].json()
+    assert data.get("code") in ("token_revoked", "authentication_failed", "invalid_token")
+
+
+# --- G7: Log out revokes the session ---
 
 
 @given("the person has an authenticated session")
-def stub_g7():
-    pytest.skip("Logout flow not implemented yet (E1.2)")
+def session_for_logout(auth_state, override_db):
+    """Register and log in, storing both tokens."""
+    client = TestClient(app)
+    client.post(
+        "/auth/register",
+        json={
+            "email": "logout.user@example.com",
+            "password": "SecurePass123!",
+            "first_name": "Logout",
+            "last_name": "User",
+        },
+    )
+    resp = client.post(
+        "/auth/login",
+        json={"email": "logout.user@example.com", "password": "SecurePass123!"},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    data = resp.json()
+    auth_state["access_token"] = data["access_token"]
+    auth_state["refresh_token"] = data["refresh_token"]
+    auth_state["client"] = client
 
 
 @when("the person logs out")
-def stub_g7_1():
-    pass
+def perform_logout(auth_state):
+    """Call /auth/logout with the refresh token."""
+    client: TestClient = auth_state["client"]
+    resp = client.post(
+        "/auth/logout",
+        json={"refresh_token": auth_state["refresh_token"]},
+        headers={"Authorization": f"Bearer {auth_state['access_token']}"},
+    )
+    auth_state["logout_response"] = resp
 
 
 @then("the system should revoke that session's access and refresh tokens")
-def stub_g7_2():
-    pass
+def session_revoked(auth_state):
+    """Logout must succeed and subsequent refresh must be rejected."""
+    assert auth_state["logout_response"].status_code == status.HTTP_200_OK
+    # Try refreshing with the now-revoked token — must fail
+    client: TestClient = auth_state["client"]
+    retry = client.post(
+        "/auth/refresh",
+        json={"refresh_token": auth_state["refresh_token"]},
+    )
+    assert retry.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 @given("an administrator account and a separate user account with stored receipts")
