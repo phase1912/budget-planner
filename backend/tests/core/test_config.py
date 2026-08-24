@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from app.config import Environment, Settings, get_settings
+from app.core.config import Environment, Settings, get_settings
 
 REQUIRED_ENV = {
     "DATABASE_URL": "postgresql://user:pass@localhost:5432/budget_planner",
