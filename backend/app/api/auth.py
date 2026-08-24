@@ -112,6 +112,8 @@ async def login(
     if not user:
         from app.security import get_dummy_hash
 
+        # Verify a dummy hash to equalize response time for non-existent users,
+        # preventing timing-based user enumeration.
         verify_password(login_request.password, get_dummy_hash())
         raise AuthenticationError("Invalid email or password.")
 
@@ -164,17 +166,17 @@ async def refresh(
     if not user:
         raise AuthenticationError("User not found.")
 
-    # Issue new token pair in the same family
+    # Issue new token pair in the same family.
+    # We inherit the original family's absolute expiry date so the session
+    # cannot be extended indefinitely.
     access_token = create_access_token(subject=user.id)
     new_refresh_token_str = create_refresh_token()
-    settings = get_settings()
-    expires_at = now + timedelta(days=settings.refresh_token_expire_days)
 
     new_rt = RefreshToken(
         user_id=user.id,
         token=new_refresh_token_str,
         family_id=rt.family_id,
-        expires_at=expires_at,
+        expires_at=rt.expires_at,
     )
     session.add(new_rt)
     await session.flush()
@@ -195,10 +197,14 @@ async def logout(
     stmt = select(RefreshToken).where(RefreshToken.token == request.refresh_token)
     rt = (await session.execute(stmt)).scalar_one_or_none()
 
-    if rt:
+    if rt and rt.family_id:
         now = datetime.now(UTC)
-        rt.revoked_at = now
-        rt.is_used = True
+        revoke_stmt = (
+            update(RefreshToken)
+            .where(RefreshToken.family_id == rt.family_id)
+            .values(revoked_at=now, is_used=True)
+        )
+        await session.execute(revoke_stmt)
         await session.flush()
 
     return MessageResponse(message="Logged out successfully.")

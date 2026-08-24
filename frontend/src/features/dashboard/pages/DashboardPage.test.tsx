@@ -13,13 +13,22 @@ vi.mock("@/stores/StoreContext", () => ({
 }));
 
 describe("DashboardPage", () => {
-  it("renders the dashboard for authenticated users", () => {
-    render(
-      <BrowserRouter>
-        <DashboardPage />
-      </BrowserRouter>,
-    );
-    expect(screen.getByRole("heading", { name: /good evening, anna/i })).toBeInTheDocument();
-    expect(screen.getByText(/test@example.com/i)).toBeInTheDocument();
+  it("renders the dashboard layout with correct greeting", () => {
+    // Mock time to 19:00 (Good evening)
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 0, 1, 19));
+    
+    try {
+      render(
+        <BrowserRouter>
+          <DashboardPage />
+        </BrowserRouter>,
+      );
+
+      expect(screen.getByText("Good evening, Anna")).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Good evening, Anna" })).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

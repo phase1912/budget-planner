@@ -28,6 +28,13 @@ export const App = observer(function App() {
           />
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            {/* Placeholders for upcoming features (prevents 404s on navigation) */}
+            <Route path="/receipts" element={<DashboardPage />} />
+            <Route path="/categories" element={<DashboardPage />} />
+            <Route path="/statistics" element={<DashboardPage />} />
+            <Route path="/goals" element={<DashboardPage />} />
+            <Route path="/upload" element={<DashboardPage />} />
+            <Route path="/profile" element={<DashboardPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Route>
