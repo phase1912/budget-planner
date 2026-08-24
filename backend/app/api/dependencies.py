@@ -9,10 +9,10 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import get_settings
-from app.errors import AuthenticationError
+from app.api.errors import AuthenticationError
+from app.core.config import get_settings
+from app.db.session import get_db_session
 from app.models.user import User
-from app.session import get_db_session
 
 security = HTTPBearer(auto_error=False)
 
