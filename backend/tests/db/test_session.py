@@ -14,8 +14,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import Settings
-from app.session import get_db_session, get_engine, get_session_factory
+from app.core.config import Settings
+from app.db.session import get_db_session, get_engine, get_session_factory
 
 
 @pytest.fixture(autouse=True)
@@ -41,12 +41,12 @@ def _settings(monkeypatch: pytest.MonkeyPatch) -> Settings:
         database_max_overflow=3,
         anthropic_api_key="sk-test-key",
     )
-    monkeypatch.setattr("app.session.get_settings", lambda: settings)
+    monkeypatch.setattr("app.db.session.get_settings", lambda: settings)
     return settings
 
 
 def test_engine_is_built_with_pool_settings_from_config(_settings: Settings) -> None:
-    with patch("app.session.create_async_engine") as create_async_engine:
+    with patch("app.db.session.create_async_engine") as create_async_engine:
         get_engine()
 
     args, kwargs = create_async_engine.call_args
@@ -57,7 +57,7 @@ def test_engine_is_built_with_pool_settings_from_config(_settings: Settings) -> 
 
 
 def test_get_engine_builds_the_engine_only_once(_settings: Settings) -> None:
-    with patch("app.session.create_async_engine") as create_async_engine:
+    with patch("app.db.session.create_async_engine") as create_async_engine:
         first = get_engine()
         second = get_engine()
 

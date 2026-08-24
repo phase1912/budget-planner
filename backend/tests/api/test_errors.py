@@ -12,7 +12,7 @@ import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
-from app.errors import NotFoundError, PermissionDeniedError
+from app.api.errors import NotFoundError, PermissionDeniedError
 from app.main import create_app
 
 

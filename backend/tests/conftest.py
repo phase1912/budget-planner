@@ -22,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 from sqlalchemy.pool import NullPool
 
 from alembic import command
-from app.config import get_settings
+from app.core.config import get_settings
 from tests.factories.base import ModelFactory
 
 BACKEND_ROOT = Path(__file__).resolve().parent.parent

@@ -7,9 +7,9 @@ deployment to know exactly what code and parser version it is running.
 
 from fastapi import APIRouter, Depends
 
-from app.config import Settings, get_settings
-from app.database import check_database_reachable
-from app.parsing import CURRENT_PARSER_VERSION
+from app.core.config import Settings, get_settings
+from app.db.database import check_database_reachable
+from app.ports.parsing import CURRENT_PARSER_VERSION
 
 router = APIRouter()
 

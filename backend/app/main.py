@@ -11,9 +11,9 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from app.api import include_routers
-from app.config import get_settings
-from app.errors import register_exception_handlers
-from app.rate_limit import limiter
+from app.api.errors import register_exception_handlers
+from app.api.rate_limit import limiter
+from app.core.config import get_settings
 
 
 def create_app() -> FastAPI:
@@ -30,6 +30,10 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    from app.api.middleware import UserContextMiddleware
+
+    app.add_middleware(UserContextMiddleware)
 
     register_exception_handlers(app)
     include_routers(app)
