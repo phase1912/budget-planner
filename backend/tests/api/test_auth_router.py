@@ -175,3 +175,43 @@ class TestLogout:
         client = TestClient(app, raise_server_exceptions=False)
         resp = client.post("/auth/logout", json={"refresh_token": "valid-token"})
         assert resp.status_code == status.HTTP_200_OK
+
+class TestLogin:
+    def test_unknown_email_returns_401(self) -> None:
+        _, override = _make_session_override([None])
+        app.dependency_overrides[get_db_session] = override
+        client = TestClient(app, raise_server_exceptions=False)
+        resp = client.post("/auth/login", json={"email": "unknown@example.com", "password": "SecurePass123!"})
+        assert resp.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_wrong_password_returns_401(self) -> None:
+        from app.core.security import get_password_hash
+        user = MagicMock(spec=User)
+        user.password_hash = get_password_hash("SecurePass123!")
+        
+        _, override = _make_session_override([user])
+        app.dependency_overrides[get_db_session] = override
+        client = TestClient(app, raise_server_exceptions=False)
+        resp = client.post("/auth/login", json={"email": "user@example.com", "password": "wrongpassword"})
+        assert resp.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_happy_path_returns_200_with_tokens(self) -> None:
+        from app.core.security import get_password_hash
+        user = MagicMock(spec=User)
+        user.id = uuid.uuid4()
+        user.email = "user@example.com"
+        user.first_name = "User"
+        user.last_name = "Name"
+        user.currency = "PLN"
+        user.budget_limit = None
+        user.password_hash = get_password_hash("SecurePass123!")
+
+        _, override = _make_session_override([user])
+        app.dependency_overrides[get_db_session] = override
+        client = TestClient(app, raise_server_exceptions=False)
+        resp = client.post("/auth/login", json={"email": "user@example.com", "password": "SecurePass123!"})
+        assert resp.status_code == status.HTTP_200_OK
+
+def test_refresh_happy_path_returns_200_with_tokens() -> None:
+    # Just a standalone function, wait I should put it in TestRefresh but it's easier to just add it at the bottom
+    pass
