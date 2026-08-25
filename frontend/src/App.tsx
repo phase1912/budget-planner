@@ -9,6 +9,7 @@ import { RegisterPage } from "@/features/auth/pages/RegisterPage";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 import { ProfilePage } from "@/features/profile/pages/ProfilePage";
+import { UploadPage } from "@/features/upload/pages/UploadPage";
 
 export const App = observer(function App() {
   const { authStore } = useStores();
@@ -34,7 +35,7 @@ export const App = observer(function App() {
             <Route path="/categories" element={<DashboardPage />} />
             <Route path="/statistics" element={<DashboardPage />} />
             <Route path="/goals" element={<DashboardPage />} />
-            <Route path="/upload" element={<DashboardPage />} />
+            <Route path="/upload" element={<UploadPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />

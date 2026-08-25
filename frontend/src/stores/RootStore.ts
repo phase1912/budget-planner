@@ -2,6 +2,7 @@ import { ThemeStore } from "@/stores/ThemeStore";
 import { AuthStore } from "@/stores/AuthStore";
 import { ToastStore } from "@/stores/ToastStore";
 import { ProfileStore } from "@/stores/ProfileStore";
+import { UploadStore } from "@/stores/UploadStore";
 import { apiClient } from "@/api/client";
 
 /**
@@ -15,11 +16,13 @@ export class RootStore {
   readonly authStore: AuthStore;
   readonly toastStore: ToastStore;
   readonly profileStore: ProfileStore;
+  readonly uploadStore: UploadStore;
 
   constructor() {
     this.themeStore = new ThemeStore();
     this.toastStore = new ToastStore();
     this.authStore = new AuthStore(apiClient);
     this.profileStore = new ProfileStore(apiClient, this.authStore, this.toastStore);
+    this.uploadStore = new UploadStore(apiClient);
   }
 }
