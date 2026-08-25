@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-15 epics · 101 features · 68 tasks written so far.
+15 epics · 101 features · 77 tasks written so far.
 
 11 epics are phase 1 — the BRD scope, delivered before launch. 4 are phase 2: commercial scope that is planned but deliberately not started until phase 1 is complete.
 
@@ -11,7 +11,7 @@
 |---|---|---|---|---|---|
 | E0 | Foundation & Delivery Platform | — | 10 | yes | 1 |
 | E1 | Identity & Account | BR-7, N2 | 4 | yes | 1 |
-| E2 | Receipt Ingestion & Storage | BR-1 | 5 | no | 1 |
+| E2 | Receipt Ingestion & Storage | BR-1 | 5 | yes | 1 |
 | E3 | Receipt Parsing & Extraction | BR-1 | 7 | no | 1 |
 | E4 | Multi-Photo Position Matching | BR-2 | 7 | no | 1 |
 | E5 | Spend Categorization | BR-3 | 7 | no | 1 |
@@ -218,6 +218,10 @@ One receipt captured across up to 10 photos totalling at most 50 MB, with limit 
 
 **Demonstrated by:** Add photos in single-receipt mode and watch the meter fill; add an eleventh and see the 10-photo limit refuse it in words rather than silence.
 
+- **F2.2.1** Extend upload endpoint for multiple files and limits — Modify POST /receipts/upload to accept a list of files. Enforce a maximum of 10 files per request and a total payload size of 50 MB. Return a 400 with a specific RFC 7807 problem json when limits are exceeded (BRD A4, A8).
+- **F2.2.2** Upload screen mode selector and photo strip — Update the upload UI to include a mode selector (Single vs Multiple) and a photo strip for previewing selected files, plus a meter showing count/size against the 10-photo/50MB limits before submission.
+- **F2.2.3** BDD scenarios for single-receipt mode limits — Write and wire acceptance tests verifying the 10-photo and 50MB limits are enforced on the server and explained clearly on rejection.
+
 ### F2.3 — Multiple-receipts upload mode
 
 *Requirements: A3, A5, A6, A7, A8* · *Blocked by: F2.2*
@@ -225,6 +229,9 @@ One receipt captured across up to 10 photos totalling at most 50 MB, with limit 
 Several distinct receipts in one session, one upload line each, with the 10-photo and 50 MB limits applied independently per line so one bad line cannot fail the others. Adds the second mode and the per-line UI to the same screen.
 
 **Demonstrated by:** Add two upload lines, overload the first past 10 photos, and confirm the second line is untouched and still submits — the independence A7 requires, visible rather than asserted.
+
+- **F2.3.1** Multi-line multiple-receipts upload endpoint — Extend the API to accept multiple distinct receipts in one request, with limits (10 photos / 50MB) applied independently to each receipt (BRD A7).
+- **F2.3.2** Multiple-receipts mode frontend — Add the multi-line UI for multiple-receipts mode. Let the user add distinct upload lines, each tracked and validated independently.
 
 ### F2.4 — Encrypted object storage for receipt images
 
@@ -234,6 +241,9 @@ Original images are stored in object storage encrypted at rest, referenced from 
 
 **Demonstrated by:** No screen of its own — the photo thumbnails on F2.1's screen render through the time-limited URL, so they prove the path works. Ownership is shown by signing in as a second account and getting a 404 for the first account's image URL (BRD N2).
 
+- **F2.4.1** S3-compatible storage integration — Implement a storage service client (e.g., using aiobotocore or minio) that uploads files to the configured bucket with encryption at rest (BRD A12, N1).
+- **F2.4.2** Time-limited URL generation — Implement an endpoint or service to generate presigned, time-limited URLs for viewing receipt images, ensuring only the owner can access them.
+
 ### F2.5 — Asynchronous ingestion pipeline and status tracking
 
 *Requirements: N4* · *Blocked by: F2.1*
@@ -241,6 +251,9 @@ Original images are stored in object storage encrypted at rest, referenced from 
 Upload returns immediately with a tracking handle while parsing proceeds in the background, so the 10-second target of N4 is a processing budget rather than a request timeout. Adds the processing state to the upload screen.
 
 **Demonstrated by:** Send a batch and watch the "Reading 2 receipts" state from docs/design/screens/states.html — then leave the page and come back to find the work still progressing.
+
+- **F2.5.1** Background worker queue and task submission — Introduce a background task queue (e.g. using FastAPI BackgroundTasks or celery/rq) to process receipts asynchronously and return a tracking handle immediately (BRD N4).
+- **F2.5.2** Processing state API and frontend polling — Add an endpoint to query the status of a given tracking handle. Update the upload wizard to poll this endpoint and render the processing state panel.
 
 ---
 

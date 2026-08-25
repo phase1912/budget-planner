@@ -576,7 +576,7 @@ epics:
     title: Receipt Ingestion & Storage
     br: [BR-1]
     phase: 1
-    groomed: false
+    groomed: true
     summary: >
       Accepting receipt photos: format validation, the two upload modes with their photo-count
       and size limits, durable encrypted storage of the originals, and asynchronous processing
@@ -613,6 +613,27 @@ epics:
         demo: >
           Add photos in single-receipt mode and watch the meter fill; add an eleventh and see
           the 10-photo limit refuse it in words rather than silence.
+        tasks:
+          - key: F2.2.1
+            title: Extend upload endpoint for multiple files and limits
+            labels: [backend]
+            detail: >
+              Modify POST /receipts/upload to accept a list of files. Enforce a maximum of 10
+              files per request and a total payload size of 50 MB. Return a 400 with a specific
+              RFC 7807 problem json when limits are exceeded (BRD A4, A8).
+          - key: F2.2.2
+            title: Upload screen mode selector and photo strip
+            labels: [frontend]
+            detail: >
+              Update the upload UI to include a mode selector (Single vs Multiple) and a photo
+              strip for previewing selected files, plus a meter showing count/size against the
+              10-photo/50MB limits before submission.
+          - key: F2.2.3
+            title: BDD scenarios for single-receipt mode limits
+            labels: [testing]
+            detail: >
+              Write and wire acceptance tests verifying the 10-photo and 50MB limits are enforced
+              on the server and explained clearly on rejection.
       - key: F2.3
         title: Multiple-receipts upload mode
         labels: [backend, frontend]
@@ -626,6 +647,19 @@ epics:
           Add two upload lines, overload the first past 10 photos, and confirm the second line
           is untouched and still submits — the independence A7 requires, visible rather than
           asserted.
+        tasks:
+          - key: F2.3.1
+            title: Multi-line multiple-receipts upload endpoint
+            labels: [backend]
+            detail: >
+              Extend the API to accept multiple distinct receipts in one request, with limits
+              (10 photos / 50MB) applied independently to each receipt (BRD A7).
+          - key: F2.3.2
+            title: Multiple-receipts mode frontend
+            labels: [frontend]
+            detail: >
+              Add the multi-line UI for multiple-receipts mode. Let the user add distinct upload
+              lines, each tracked and validated independently.
       - key: F2.4
         title: Encrypted object storage for receipt images
         labels: [backend, security]
@@ -638,6 +672,19 @@ epics:
           No screen of its own — the photo thumbnails on F2.1's screen render through the
           time-limited URL, so they prove the path works. Ownership is shown by signing in as
           a second account and getting a 404 for the first account's image URL (BRD N2).
+        tasks:
+          - key: F2.4.1
+            title: S3-compatible storage integration
+            labels: [backend, infra]
+            detail: >
+              Implement a storage service client (e.g., using aiobotocore or minio) that uploads
+              files to the configured bucket with encryption at rest (BRD A12, N1).
+          - key: F2.4.2
+            title: Time-limited URL generation
+            labels: [backend, security]
+            detail: >
+              Implement an endpoint or service to generate presigned, time-limited URLs for
+              viewing receipt images, ensuring only the owner can access them.
       - key: F2.5
         title: Asynchronous ingestion pipeline and status tracking
         labels: [backend, frontend]
@@ -651,6 +698,19 @@ epics:
           Send a batch and watch the "Reading 2 receipts" state from
           docs/design/screens/states.html — then leave the page and come back to find the work
           still progressing.
+        tasks:
+          - key: F2.5.1
+            title: Background worker queue and task submission
+            labels: [backend, infra]
+            detail: >
+              Introduce a background task queue (e.g. using FastAPI BackgroundTasks or celery/rq)
+              to process receipts asynchronously and return a tracking handle immediately (BRD N4).
+          - key: F2.5.2
+            title: Processing state API and frontend polling
+            labels: [backend, frontend]
+            detail: >
+              Add an endpoint to query the status of a given tracking handle. Update the upload
+              wizard to poll this endpoint and render the processing state panel.
 
   # F2.6 "Upload user interface" was retired here. It was the whole epic's UI in one trailing
   # feature, which left F2.1 through F2.5 with nothing to try by hand — the same layering

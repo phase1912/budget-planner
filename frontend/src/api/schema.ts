@@ -163,9 +163,10 @@ export interface paths {
         put?: never;
         /**
          * Upload Receipt
-         * @description Accept a receipt photo or scan (F2.1).
+         * @description Accept up to 10 photos or scans for a single receipt (F2.2).
          *
-         *     Validates that the uploaded file is a supported image or PDF (BRD A1, A2).
+         *     Validates count (max 10) and total size (max 50MB) (BRD A4, A8).
+         *     Validates that each uploaded file is a supported image or PDF (BRD A1, A2).
          */
         post: operations["upload_receipt_receipts_upload_post"];
         delete?: never;
@@ -191,8 +192,8 @@ export interface components {
         };
         /** Body_upload_receipt_receipts_upload_post */
         Body_upload_receipt_receipts_upload_post: {
-            /** File */
-            file: string;
+            /** Files */
+            files: string[];
         };
         /** HTTPValidationError */
         HTTPValidationError: {

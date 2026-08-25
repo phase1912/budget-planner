@@ -102,6 +102,14 @@ class UnsupportedFileFormatError(AppError):
     title = "Unsupported File Format"
 
 
+class UploadLimitExceededError(AppError):
+    """Raised when an upload exceeds photo count or size limits (BRD A4, A8)."""
+
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = "upload_limit_exceeded"
+    title = "Upload Limit Exceeded"
+
+
 _HTTP_STATUS_PROBLEMS: dict[int, tuple[str, str]] = {
     status.HTTP_400_BAD_REQUEST: ("bad_request", "Bad Request"),
     status.HTTP_401_UNAUTHORIZED: ("unauthorized", "Unauthorized"),
