@@ -94,6 +94,14 @@ class DomainError(AppError):
     title = "Domain Rule Violation"
 
 
+class UnsupportedFileFormatError(AppError):
+    """Raised when an uploaded file is not a supported format (BRD A2)."""
+
+    status_code = status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
+    code = "unsupported_media_type"
+    title = "Unsupported File Format"
+
+
 _HTTP_STATUS_PROBLEMS: dict[int, tuple[str, str]] = {
     status.HTTP_400_BAD_REQUEST: ("bad_request", "Bad Request"),
     status.HTTP_401_UNAUTHORIZED: ("unauthorized", "Unauthorized"),

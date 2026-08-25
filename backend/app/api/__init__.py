@@ -9,9 +9,10 @@ from fastapi import APIRouter, FastAPI
 
 from app.api.auth import router as auth_router
 from app.api.health import router as health_router
+from app.api.routers.receipts import router as receipts_router
 from app.api.routers.users import router as users_router
 
-ROUTERS: list[APIRouter] = [health_router, auth_router, users_router]
+ROUTERS: list[APIRouter] = [health_router, auth_router, users_router, receipts_router]
 
 
 def include_routers(app: FastAPI) -> None:

@@ -152,6 +152,28 @@ export interface paths {
         patch: operations["update_me_users_me_patch"];
         trace?: never;
     };
+    "/receipts/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Receipt
+         * @description Accept a receipt photo or scan (F2.1).
+         *
+         *     Validates that the uploaded file is a supported image or PDF (BRD A1, A2).
+         */
+        post: operations["upload_receipt_receipts_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -166,6 +188,11 @@ export interface components {
             access_token: string;
             /** Refresh Token */
             refresh_token: string;
+        };
+        /** Body_upload_receipt_receipts_upload_post */
+        Body_upload_receipt_receipts_upload_post: {
+            /** File */
+            file: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -217,6 +244,14 @@ export interface components {
             first_name: string;
             /** Last Name */
             last_name: string;
+        };
+        /**
+         * UploadReceiptResponse
+         * @description Response returned upon successful receipt upload.
+         */
+        UploadReceiptResponse: {
+            /** Message */
+            message: string;
         };
         /**
          * UserResponse
@@ -497,6 +532,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_receipt_receipts_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_receipt_receipts_upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadReceiptResponse"];
                 };
             };
             /** @description Validation Error */

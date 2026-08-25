@@ -57,12 +57,13 @@ same RFC 7807 problem+json shape, carrying a stable `code` the client can branch
 The most involved flow in the system, and the one where the BRD's constraints bite.
 
 ```
-upload ──► validate ──► store image ──► parse ──► match positions ──► categorise ──► persist
-           (A1, A2)     (A12, N1)      (A9-A11)    (B1-B9)            (C1-C3)       (A12-A15)
+upload ──► validate (ReceiptService) ──► store image ──► parse ──► match positions ──► categorise ──► persist
+           (A1, A2)                      (A12, N1)       (A9-A11)    (B1-B9)            (C1-C3)       (A12-A15)
 ```
 
 Three properties of this pipeline are requirements, not implementation choices:
 
+- **Centralized logic via ReceiptService.** Format validation (content inspection, A1/A2), ingestion queuing, and orchestration of the steps below belong to `ReceiptService`, keeping routers thin.
 1. **Upload returns before parsing finishes.** The BRD's 10-second target (N4) is a
    processing budget, not an HTTP timeout. Upload persists a job and returns a handle;
    the client polls or subscribes for the result.
