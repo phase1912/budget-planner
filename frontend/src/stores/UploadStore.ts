@@ -9,7 +9,7 @@ export class UploadStore {
   api: ApiClient;
 
   mode: "single" | "multiple" = "single";
-  files: File[] = [];
+  lines: File[][] = [[]];
 
   constructor(api: ApiClient) {
     this.api = api;
@@ -18,14 +18,47 @@ export class UploadStore {
 
   setMode(mode: "single" | "multiple") {
     this.mode = mode;
+    // reset lines if needed
+    if (mode === "single") {
+      this.lines = [this.lines[0] ?? []];
+    } else {
+      if (this.lines.length === 0) {
+        this.lines = [[]];
+      }
+    }
   }
 
+  get files() {
+    return this.lines[0] ?? [];
+  }
+
+  // legacy method for single mode
   addFiles(newFiles: File[]) {
-    this.files = [...this.files, ...newFiles];
+    this.addFilesToLine(0, newFiles);
   }
 
+  // legacy method for single mode
   removeFile(index: number) {
-    this.files.splice(index, 1);
+    this.removeFileFromLine(0, index);
+  }
+
+  addFilesToLine(lineIndex: number, newFiles: File[]) {
+    this.lines[lineIndex] ??= [];
+    this.lines[lineIndex] = [...this.lines[lineIndex], ...newFiles];
+  }
+
+  removeFileFromLine(lineIndex: number, fileIndex: number) {
+    if (this.lines[lineIndex]) {
+      this.lines[lineIndex].splice(fileIndex, 1);
+    }
+  }
+
+  addLine() {
+    this.lines.push([]);
+  }
+
+  removeLine(lineIndex: number) {
+    this.lines.splice(lineIndex, 1);
   }
 
   get totalSize() {
@@ -40,8 +73,35 @@ export class UploadStore {
     return this.files.length > 10 || this.totalSize > 50 * 1024 * 1024;
   }
 
+  getLineTotalSize(lineIndex: number) {
+    const line = this.lines[lineIndex] ?? [];
+    return line.reduce((acc, file) => acc + file.size, 0);
+  }
+
+  getLineTotalSizeMB(lineIndex: number) {
+    return (this.getLineTotalSize(lineIndex) / (1024 * 1024)).toFixed(1);
+  }
+
+  isLineOverLimit(lineIndex: number) {
+    const line = this.lines[lineIndex] ?? [];
+    return line.length > 10 || this.getLineTotalSize(lineIndex) > 50 * 1024 * 1024;
+  }
+
+  get isAnyLineOverLimit() {
+    return this.lines.some((_, i) => this.isLineOverLimit(i));
+  }
+
+  get totalFilesCount() {
+    return this.lines.reduce((acc, line) => acc + line.length, 0);
+  }
+
+  get allLinesTotalSizeMB() {
+    const size = this.lines.reduce((acc, _, i) => acc + this.getLineTotalSize(i), 0);
+    return (size / (1024 * 1024)).toFixed(1);
+  }
+
   async submitUpload(): Promise<boolean> {
-    if (this.files.length === 0) return false;
+    if (this.totalFilesCount === 0) return false;
 
     this.uploadState.start();
     this.errorDetails = null;
@@ -49,14 +109,33 @@ export class UploadStore {
 
     try {
       const formData = new FormData();
-      for (const file of this.files) {
-        formData.append("files", file);
-      }
 
-      const { error, response } = await this.api.POST("/receipts/upload", {
-        // @ts-expect-error openapi-fetch types do not correctly handle FormData
-        body: formData,
-      });
+      let error: unknown;
+      let response: { status: number } = { status: 200 };
+
+      if (this.mode === "single") {
+        for (const file of this.files) {
+          formData.append("files", file);
+        }
+        const res = await this.api.POST("/receipts/upload", {
+          // @ts-expect-error openapi-fetch types do not correctly handle FormData
+          body: formData,
+        });
+        error = res.error;
+        response = res.response;
+      } else {
+        this.lines.forEach((line, index) => {
+          for (const file of line) {
+            formData.append(`line_${String(index)}`, file);
+          }
+        });
+        const res = await this.api.POST("/receipts/upload/batch", {
+          // @ts-expect-error openapi-fetch types do not correctly handle FormData
+          body: formData,
+        });
+        error = res.error;
+        response = res.response;
+      }
 
       runInAction(() => {
         if (error) {
