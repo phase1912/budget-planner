@@ -4,35 +4,27 @@ import React, { useRef } from "react";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
 import { Card } from "@/shared/components/Card/Card";
 import { Button } from "@/shared/components/Button/Button";
+import { ReceiptLineCard } from "../components/ReceiptLineCard";
 
 export const UploadPage = observer(function UploadPage() {
   const { uploadStore } = useStores();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    if (files.length > 0) {
-      uploadStore.addFiles(files);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
+  const singleInputRef = useRef<HTMLInputElement>(null);
 
   const handleUploadClick = () => {
-    if (!uploadStore.isOverLimit && uploadStore.files.length > 0) {
+    if (!uploadStore.isAnyLineOverLimit && uploadStore.totalFilesCount > 0) {
       void uploadStore.submitUpload();
     }
   };
 
-  const isOverSize = uploadStore.totalSize > 50 * 1024 * 1024;
-  const isOverCount = uploadStore.files.length > 10;
-
-  // Calculate percentage of 50MB (max 100%)
-  const sizePercentage = Math.min(100, (uploadStore.totalSize / (50 * 1024 * 1024)) * 100);
-  // Calculate percentage of 10 photos (max 100%)
-  const countPercentage = Math.min(100, (uploadStore.files.length / 10) * 100);
-  const fillPercentage = Math.max(sizePercentage, countPercentage);
+  const handleSingleInitialUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length > 0) {
+      uploadStore.addFilesToLine(0, files);
+      if (singleInputRef.current) {
+        singleInputRef.current.value = "";
+      }
+    }
+  };
 
   return (
     <Container size="narrow" className="py-9">
@@ -130,129 +122,38 @@ export const UploadPage = observer(function UploadPage() {
         </div>
 
         <Stack className="gap-4">
-          {uploadStore.mode === "single" && uploadStore.files.length > 0 && (
-            <Card
-              variant="surface"
-              className={`p-5 ${uploadStore.isOverLimit ? "border-tone-error-border" : ""}`}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2.5">
-                  <span
-                    className={`inline-flex items-center justify-center w-[26px] h-[26px] rounded-pill text-xs font-bold ${uploadStore.isOverLimit ? "bg-tone-error-bg text-tone-error-text" : "bg-tone-primary-bg text-tone-primary-text"}`}
-                  >
-                    1
-                  </span>
-                  <span className="text-[15px] font-semibold">Receipt</span>
-                </div>
-              </div>
+          {uploadStore.lines.map((lineFiles, index) => {
+            // In single mode, if there are no files, we show the initial upload button below
+            if (uploadStore.mode === "single" && lineFiles.length === 0) return null;
 
-              <div className="flex items-center gap-2.5 mb-4 flex-wrap">
-                {uploadStore.files.map((_, i) => (
-                  <span
-                    key={i}
-                    className="relative inline-flex items-center justify-center border border-border rounded-chip bg-muted w-[72px] h-[88px] overflow-hidden"
-                  >
-                    <span className="absolute bottom-1 right-1 text-[10px] text-muted-foreground">
-                      {i + 1}
-                    </span>
-                    <button
-                      onClick={() => {
-                        uploadStore.removeFile(i);
-                      }}
-                      className="absolute top-1 left-1 bg-background border border-border rounded-full w-[18px] h-[18px] flex items-center justify-center cursor-pointer z-10 hover:bg-muted text-foreground"
-                      aria-label="Remove photo"
-                    >
-                      <svg
-                        width="10"
-                        height="10"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M18 6 6 18" />
-                        <path d="m6 6 12 12" />
-                      </svg>
-                    </button>
-                  </span>
-                ))}
-
-                <button
-                  className="inline-flex flex-col items-center justify-center gap-1.5 border border-dashed border-border-strong rounded-chip bg-background text-primary font-medium w-[72px] h-[88px] cursor-pointer hover:bg-muted"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M5 12h14" />
-                    <path d="M12 5v14" />
-                  </svg>
-                  <span className="text-xs">Add</span>
-                </button>
-              </div>
-
-              {uploadStore.isOverLimit && (
-                <div className="flex items-start gap-2.5 rounded-card p-3 mb-4 bg-tone-error-bg text-tone-error-text">
-                  <svg
-                    className="mt-[2px] text-tone-error-text shrink-0"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 8v4" />
-                    <path d="M12 16h.01" />
-                  </svg>
-                  <span className="text-[13px] font-medium text-tone-error-text">
-                    {isOverCount
-                      ? `${String(uploadStore.files.length - 10)} photos were not added — a receipt takes at most 10.`
-                      : `The photos add up to ${uploadStore.totalSizeMB} MB, exceeding the 50 MB limit.`}
-                  </span>
-                </div>
-              )}
-
-              <Stack className="gap-[5px]">
-                <div className="flex items-baseline justify-between">
-                  <span
-                    className={`text-xs ${isOverCount ? "font-semibold text-error" : "text-muted-foreground"}`}
-                  >
-                    {uploadStore.files.length} of 10 photos
-                  </span>
-                  <span
-                    className={`text-xs ${isOverSize ? "font-semibold text-error" : "text-muted-foreground"}`}
-                  >
-                    {uploadStore.totalSizeMB} of 50&nbsp;MB
-                  </span>
-                </div>
-                <span className="block h-[4px] rounded-[2px] bg-border overflow-hidden">
-                  <span
-                    className={`block h-full rounded-[2px] ${uploadStore.isOverLimit ? "bg-error" : "bg-primary"}`}
-                    style={{ width: `${String(fillPercentage)}%` }}
-                  ></span>
-                </span>
-              </Stack>
-            </Card>
-          )}
+            return (
+              <ReceiptLineCard
+                key={index}
+                index={index}
+                files={lineFiles}
+                totalSizeMB={uploadStore.getLineTotalSizeMB(index)}
+                isOverLimit={uploadStore.isLineOverLimit(index)}
+                isOverCount={lineFiles.length > 10}
+                isOverSize={uploadStore.getLineTotalSize(index) > 50 * 1024 * 1024}
+                onAddFiles={(files) => {
+                  uploadStore.addFilesToLine(index, files);
+                }}
+                onRemoveFile={(fileIndex) => {
+                  uploadStore.removeFileFromLine(index, fileIndex);
+                }}
+                onRemoveLine={() => {
+                  uploadStore.removeLine(index);
+                }}
+                showRemoveLine={uploadStore.mode === "multiple" && uploadStore.lines.length > 1}
+              />
+            );
+          })}
 
           {uploadStore.mode === "single" && uploadStore.files.length === 0 && (
             <Card variant="surface" className="p-5">
               <button
                 className="inline-flex flex-row items-center justify-center gap-2 border border-dashed border-border-strong rounded-card bg-background text-primary font-medium text-sm p-4 w-full cursor-pointer hover:bg-muted"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => singleInputRef.current?.click()}
               >
                 <svg
                   width="16"
@@ -269,15 +170,39 @@ export const UploadPage = observer(function UploadPage() {
                 </svg>
                 Add a receipt
               </button>
+              <input
+                type="file"
+                ref={singleInputRef}
+                className="hidden"
+                multiple
+                onChange={handleSingleInitialUpload}
+                accept="image/jpeg, image/png, image/heic, application/pdf"
+              />
             </Card>
           )}
 
           {uploadStore.mode === "multiple" && (
-            <Card variant="surface" className="p-5">
-              <p className="text-sm text-muted-foreground m-0">
-                Multiple receipts mode not yet implemented.
-              </p>
-            </Card>
+            <button
+              className="inline-flex flex-row items-center justify-center gap-2 border border-dashed border-border-strong rounded-card bg-background text-primary font-medium text-sm p-4 w-full cursor-pointer hover:bg-muted"
+              onClick={() => {
+                uploadStore.addLine();
+              }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14" />
+                <path d="M12 5v14" />
+              </svg>
+              Add another receipt
+            </button>
           )}
 
           {uploadStore.uploadState.status === "success" && (
@@ -325,29 +250,23 @@ export const UploadPage = observer(function UploadPage() {
               </div>
             </div>
           )}
-
-          <input
-            type="file"
-            ref={fileInputRef}
-            className="hidden"
-            multiple
-            onChange={handleFileChange}
-            accept="image/jpeg, image/png, image/heic, application/pdf"
-          />
         </Stack>
 
-        {uploadStore.files.length > 0 && uploadStore.mode === "single" && (
+        {uploadStore.totalFilesCount > 0 && (
           <div className="flex items-center justify-between gap-4 border-t border-border pt-5">
             <span className="text-[13px] text-muted-foreground">
-              1 receipt &middot; {uploadStore.files.length} photos &middot;{" "}
-              {uploadStore.totalSizeMB}&nbsp;MB total
+              {uploadStore.lines.length} receipt{uploadStore.lines.length === 1 ? "" : "s"} &middot;{" "}
+              {uploadStore.totalFilesCount} photos &middot; {uploadStore.allLinesTotalSizeMB}
+              &nbsp;MB total
             </span>
             <div className="flex items-center gap-3">
               <Button variant="ghost">Cancel</Button>
               <Button
                 variant="primary"
                 onClick={handleUploadClick}
-                disabled={uploadStore.isOverLimit || uploadStore.uploadState.status === "loading"}
+                disabled={
+                  uploadStore.isAnyLineOverLimit || uploadStore.uploadState.status === "loading"
+                }
               >
                 {uploadStore.uploadState.status === "loading" ? "Sending..." : "Read these photos"}
                 <svg

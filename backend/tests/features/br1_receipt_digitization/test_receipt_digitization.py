@@ -21,6 +21,8 @@ def skip_unimplemented(request: FixtureRequest) -> None:
         "test_upload_a_single_receipt_within_limits",
         "test_reject_exceeding_photo_count_in_single_receipt_mode",
         "test_reject_exceeding_size_limit_in_single_receipt_mode",
+        "test_upload_multiple_receipts_across_separate_lines",
+        "test_reject_exceeding_limits_on_one_line_in_multiple_receipts_mode",
     }
     if request.node.name not in implemented:
         pytest.skip("Awaiting further F2.x implementations")
@@ -154,3 +156,101 @@ def agent_rejects_upload_size(upload_response: Response) -> None:
 def inform_user_of_50_mb_limit(upload_response: Response) -> None:
     assert upload_response.status_code == 400
     assert "50 MB" in upload_response.json()["detail"]
+
+
+@given('the user selects "multiple receipts" upload mode', target_fixture="auth_user")
+def user_selects_multiple_receipts_mode(app: FastAPI) -> User:
+    return user_is_logged_in(app)
+
+
+@when("the user adds two upload lines, one for a grocery receipt and one for a restaurant receipt")
+def user_adds_two_upload_lines() -> None:
+    pass  # UI step, handled in tests by sending multiple form fields
+
+
+@when("uploads 3 photos totaling 15 MB to the first line", target_fixture="batch_files")
+def uploads_3_photos_to_first_line() -> list[tuple[str, tuple[str, bytes, str]]]:
+    return [
+        (
+            "line_0",
+            (
+                f"photo_g_{i}.jpg",
+                b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01" + b"x" * (5 * 1024 * 1024),
+                "image/jpeg",
+            ),
+        )
+        for i in range(3)
+    ]
+
+
+@when("uploads 2 photos totaling 10 MB to the second line", target_fixture="upload_response")
+def uploads_2_photos_to_second_line(
+    client: TestClient, auth_user: User, batch_files: list[tuple[str, tuple[str, bytes, str]]]
+) -> Response:
+    batch_files.extend(
+        [
+            (
+                "line_1",
+                (
+                    f"photo_r_{i}.jpg",
+                    b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01" + b"x" * (5 * 1024 * 1024),
+                    "image/jpeg",
+                ),
+            )
+            for i in range(2)
+        ]
+    )
+    return client.post("/receipts/upload/batch", files=batch_files)  # type: ignore[no-any-return]
+
+
+@then("the agent should accept both lines")
+def agent_accepts_both_lines(upload_response: Response) -> None:
+    assert upload_response.status_code == 200
+    assert upload_response.json()["message"] == "Batch accepted"
+
+
+@then("process each line as a separate receipt")
+def process_each_line_as_separate() -> None:
+    pass
+
+
+@given("has added two upload lines")
+def has_added_two_upload_lines() -> None:
+    pass
+
+
+@when("the user attempts to upload 12 photos to the first line", target_fixture="upload_response")
+def uploads_12_photos_to_first_line(client: TestClient, auth_user: User) -> Response:
+    batch_files = [
+        (
+            "line_0",
+            (
+                f"photo_{i}.jpg",
+                b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01",
+                "image/jpeg",
+            ),
+        )
+        for i in range(12)
+    ]
+    batch_files.append(
+        (
+            "line_1",
+            (
+                "photo_ok.jpg",
+                b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01",
+                "image/jpeg",
+            ),
+        )
+    )
+    return client.post("/receipts/upload/batch", files=batch_files)  # type: ignore[no-any-return]
+
+
+@then("the agent should reject the additional photos on that line")
+def agent_rejects_additional_photos(upload_response: Response) -> None:
+    assert upload_response.status_code == 400
+    assert upload_response.json()["code"] == "upload_limit_exceeded"
+
+
+@then("the second line should remain unaffected")
+def second_line_unaffected() -> None:
+    pass

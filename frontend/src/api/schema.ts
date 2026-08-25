@@ -175,6 +175,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/receipts/upload/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Receipts Batch
+         * @description Accept multiple receipts in one request (F2.3.1).
+         *
+         *     Each form field represents a distinct receipt. Its value must be a list of files.
+         *     Limits (max 10 photos, max 50MB) are applied independently per receipt (BRD A5, A7, A8).
+         *     Validates that each uploaded file is a supported image or PDF (BRD A1, A2).
+         */
+        post: operations["upload_receipts_batch_receipts_upload_batch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -575,6 +599,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_receipts_batch_receipts_upload_batch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    [key: string]: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadReceiptResponse"];
                 };
             };
         };
