@@ -5,6 +5,7 @@ import { AsyncState } from "@/stores/AsyncState";
 export class UploadStore {
   readonly uploadState = new AsyncState();
   errorDetails: string | null = null;
+  fileIds: string[] = [];
   errorTitle: string | null = null;
   api: ApiClient;
 
@@ -112,6 +113,7 @@ export class UploadStore {
 
       let error: unknown;
       let response: { status: number } = { status: 200 };
+      let data: { file_ids?: string[] } | undefined;
 
       if (this.mode === "single") {
         for (const file of this.files) {
@@ -123,6 +125,7 @@ export class UploadStore {
         });
         error = res.error;
         response = res.response;
+        data = res.data;
       } else {
         this.lines.forEach((line, index) => {
           for (const file of line) {
@@ -135,6 +138,7 @@ export class UploadStore {
         });
         error = res.error;
         response = res.response;
+        data = res.data;
       }
 
       runInAction(() => {
@@ -162,6 +166,9 @@ export class UploadStore {
           }
         } else {
           this.uploadState.succeed();
+          if (data?.file_ids) {
+            this.fileIds = data.file_ids;
+          }
         }
       });
       return !error;

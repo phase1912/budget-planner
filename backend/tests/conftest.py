@@ -15,6 +15,11 @@ from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 import pytest
+
+os.environ["S3_BUCKET_NAME"] = "test-bucket"
+os.environ["AWS_ACCESS_KEY_ID"] = "test"
+os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
+os.environ["S3_ENDPOINT_URL"] = "http://localhost:9000"
 import pytest_asyncio
 from alembic.config import Config
 from sqlalchemy import text

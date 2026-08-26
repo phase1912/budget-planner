@@ -5,6 +5,7 @@ description = "AI Budget Agent backend — FastAPI service (see docs/adr/0001-te
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "aiobotocore>=3.9.0",
     "alembic>=1.19.1",
     "anthropic>=0.122.0",
     "argon2-cffi>=23.1.0",

@@ -30,7 +30,36 @@ def skip_unimplemented(request: FixtureRequest) -> None:
 
 @pytest.fixture
 def app() -> FastAPI:
-    return create_app()
+    app_instance = create_app()
+
+    from typing import Any
+
+    from app.api.dependencies import get_storage_service
+    from app.ports.storage import StoragePort
+
+    class MockStoragePort(StoragePort):
+        async def upload_file(
+            self,
+            object_name: str,
+            content: bytes,
+            content_type: str,
+            metadata: dict[str, str] | None = None,
+        ) -> str:
+            return object_name
+
+        async def get_object_metadata(self, object_name: str) -> dict[str, str]:
+            return {"owner_id": "mock"}
+
+        async def generate_presigned_url(
+            self, object_name: str, expiration_seconds: int = 3600
+        ) -> str:
+            return f"https://mock-s3.local/{object_name}"
+
+    async def mock_get_storage_service() -> Any:
+        yield MockStoragePort()
+
+    app_instance.dependency_overrides[get_storage_service] = mock_get_storage_service
+    return app_instance
 
 
 @pytest.fixture
