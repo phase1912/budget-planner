@@ -10,3 +10,6 @@ from app.models.refresh_token import RefreshToken
 from app.models.user import User
 
 __all__ = ["Base", "Model", "RefreshToken", "User"]
+from app.models.upload_job import UploadJob
+
+__all__ += ["UploadJob"]

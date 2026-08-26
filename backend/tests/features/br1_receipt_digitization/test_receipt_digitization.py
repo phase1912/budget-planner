@@ -35,6 +35,7 @@ def app() -> FastAPI:
     from typing import Any
 
     from app.api.dependencies import get_storage_service
+    from app.db.session import get_db_session
     from app.ports.storage import StoragePort
 
     class MockStoragePort(StoragePort):
@@ -59,6 +60,39 @@ def app() -> FastAPI:
         yield MockStoragePort()
 
     app_instance.dependency_overrides[get_storage_service] = mock_get_storage_service
+
+    import uuid
+
+    class MockSession:
+        def add(self, obj: Any) -> None:
+            if hasattr(obj, "id") and obj.id is None:
+                obj.id = uuid.uuid4()
+
+        async def commit(self) -> None:
+            pass
+
+        async def flush(self) -> None:
+            pass
+
+    async def mock_get_db_session() -> Any:
+        yield MockSession()
+
+    app_instance.dependency_overrides[get_db_session] = mock_get_db_session
+
+    from app.api.routers.receipts import get_receipt_service
+    from app.services.receipts import ReceiptService
+
+    class MockReceiptService(ReceiptService):
+        async def process_upload_job_task(
+            self, job_id: uuid.UUID, user: User, files_data: list[dict[str, Any]]
+        ) -> None:
+            pass
+
+    def mock_get_receipt_service() -> MockReceiptService:
+        return MockReceiptService(MockStoragePort())
+
+    app_instance.dependency_overrides[get_receipt_service] = mock_get_receipt_service
+
     return app_instance
 
 

@@ -9,7 +9,9 @@ describe("UploadStore", () => {
   beforeEach(() => {
     mockApi = {
       POST: vi.fn(),
+      GET: vi.fn(),
     };
+
     store = new UploadStore(mockApi as ApiClient);
   });
 
@@ -21,7 +23,13 @@ describe("UploadStore", () => {
 
   it("should handle successful upload", async () => {
     (mockApi as { POST: ReturnType<typeof vi.fn> }).POST.mockResolvedValue({
-      data: { message: "File accepted" },
+      data: { message: "File accepted", job_id: "test-job-id" },
+      error: undefined,
+      response: { status: 200 },
+    });
+
+    (mockApi as { GET: ReturnType<typeof vi.fn> }).GET.mockResolvedValue({
+      data: { status: "completed", file_ids: ["file1"] },
       error: undefined,
       response: { status: 200 },
     });
@@ -30,6 +38,8 @@ describe("UploadStore", () => {
     const success = await store.uploadFile(file);
 
     expect(success).toBe(true);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
     expect(store.uploadState.status).toBe("success");
     expect(store.errorTitle).toBeNull();
   });
