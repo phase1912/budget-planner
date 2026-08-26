@@ -1,8 +1,11 @@
 import uuid
 
 import filetype  # type: ignore[import-untyped]
+from sqlalchemy import select
 
 from app.api.errors import UnsupportedFileFormatError
+from app.db.session import get_session_factory
+from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.ports.storage import StoragePort
 
@@ -63,3 +66,34 @@ class ReceiptService:
             ) from None
 
         return await self.storage_port.generate_presigned_url(object_name)
+
+    async def process_upload_job_task(
+        self, job_id: uuid.UUID, user: User, files_data: list[dict[str, str | bytes]]
+    ) -> None:
+        """Background task to process receipt upload, storing in MinIO and tracking status."""
+        session_factory = get_session_factory()
+        async with session_factory() as session:
+            stmt = select(UploadJob).where(UploadJob.id == job_id)
+            job = (await session.execute(stmt)).scalar_one_or_none()
+            if not job:
+                return
+
+            job.status = JobStatus.PROCESSING
+            await session.commit()
+
+            try:
+                file_ids = []
+                for file_data in files_data:
+                    content = file_data["content"]
+                    content_type = file_data["content_type"]
+
+                    file_id = await self.store_receipt_image(user, content, content_type)  # type: ignore
+                    file_ids.append(file_id)
+
+                job.file_ids = file_ids
+                job.status = JobStatus.COMPLETED
+                await session.commit()
+            except Exception:
+                job.status = JobStatus.FAILED
+                await session.commit()
+                raise

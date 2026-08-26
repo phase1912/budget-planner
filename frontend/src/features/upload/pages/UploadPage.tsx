@@ -206,7 +206,47 @@ export const UploadPage = observer(function UploadPage() {
             </button>
           )}
 
-          {uploadStore.uploadState.status === "success" && (
+          {uploadStore.isProcessing && (
+            <div className="card card--flush panel mt-4">
+              <div className="panel__label">
+                <span className="panel__title">Parsing in flight</span>
+                <span className="panel__ref">N4</span>
+              </div>
+              <div className="panel__body">
+                <div className="flex flex-col gap-3 w-full">
+                  <div className="flex items-center gap-3">
+                    <span className="icon-tile icon-tile--success">
+                      <svg
+                        width="17"
+                        height="17"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      >
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                      </svg>
+                    </span>
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <span className="text-[13px] font-semibold">
+                        Reading {uploadStore.lines.length} receipt
+                        {uploadStore.lines.length === 1 ? "" : "s"}
+                      </span>
+                      <span className="meta">You can leave this page &mdash; it keeps going.</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <span className="block h-[34px] rounded-chip bg-muted"></span>
+                    <span className="block h-[34px] rounded-chip bg-muted"></span>
+                    <span className="block w-[62%] h-[34px] rounded-chip bg-muted"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {uploadStore.uploadState.status === "success" && !uploadStore.isProcessing && (
             <div className="card card--flush panel mt-4">
               <div className="panel__body">
                 <div className="note note--success w-full mb-4">
