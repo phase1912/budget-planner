@@ -1,6 +1,5 @@
-"""API dependencies (F1.2.4)."""
-
 import uuid
+from collections.abc import AsyncGenerator
 from typing import Annotated
 
 import jwt
@@ -13,6 +12,11 @@ from app.api.errors import AuthenticationError
 from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.models.user import User
+from app.ports.storage import StoragePort
+from app.services.storage import S3StorageService
+
+"""API dependencies (F1.2.4)."""
+
 
 security = HTTPBearer(auto_error=False)
 
@@ -51,3 +55,10 @@ async def get_current_user(
         raise AuthenticationError("User not found.")
 
     return user
+
+
+async def get_storage_service() -> AsyncGenerator[StoragePort, None]:
+    """Dependency providing a StoragePort implementation."""
+    settings = get_settings()
+    async with S3StorageService(settings) as service:
+        yield service
