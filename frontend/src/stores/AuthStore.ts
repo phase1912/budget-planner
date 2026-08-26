@@ -74,12 +74,20 @@ export class AuthStore {
         ) {
           const success = await this.refresh();
           if (success) {
-            const newRequest = new Request(request);
-            const currentToken = this.token;
-            if (currentToken) {
-              newRequest.headers.set("Authorization", `Bearer ${currentToken}`);
+            try {
+              const newRequest = new Request(request);
+              const currentToken = this.token;
+              if (currentToken) {
+                newRequest.headers.set("Authorization", `Bearer ${currentToken}`);
+              }
+              return await fetch(newRequest);
+            } catch (err) {
+              // If the request body has already been consumed (e.g., FormData file uploads),
+              // we cannot retry it automatically. The user must retry the action manually.
+              console.error("Could not retry request after token refresh", err);
+              // Return the original 401 response so the caller handles the failure gracefully
+              return response;
             }
-            return await fetch(newRequest);
           } else {
             this.logoutLocally();
             window.location.href = "/login"; // Redirect on refresh fail

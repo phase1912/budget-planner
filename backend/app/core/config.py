@@ -114,6 +114,19 @@ class Settings(BaseSettings):
         default=1,
         description="Degree of parallelism for Argon2id hashing.",
     )
+
+    s3_bucket_name: str = Field(description="Name of the S3-compatible bucket for receipt images.")
+    aws_region: str = Field(default="us-east-1", description="AWS region for the S3 bucket.")
+    aws_access_key_id: SecretStr | None = Field(
+        default=None, description="AWS access key ID. If None, boto3 uses environment/IAM roles."
+    )
+    aws_secret_access_key: SecretStr | None = Field(
+        default=None, description="AWS secret access key."
+    )
+    s3_endpoint_url: str | None = Field(
+        default=None, description="Custom S3 endpoint URL (e.g., for MinIO or LocalStack)."
+    )
+
     cors_origins: list[str] = Field(
         default=["http://localhost:5173", "http://127.0.0.1:5173"],
         description="List of origins allowed to make cross-origin requests.",

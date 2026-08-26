@@ -1,19 +1,24 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
+from fastapi.responses import RedirectResponse
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, get_storage_service
 from app.api.errors import UploadLimitExceededError
 from app.models.user import User
+from app.ports.storage import StoragePort
 from app.schemas.receipts import UploadReceiptResponse
 from app.services.receipts import ReceiptService
+from app.services.storage import ObjectNotFoundError
 
 router = APIRouter(prefix="/receipts", tags=["receipts"])
 
 
-def get_receipt_service() -> ReceiptService:
+def get_receipt_service(
+    storage_port: Annotated[StoragePort, Depends(get_storage_service)],
+) -> ReceiptService:
     """Provide a ReceiptService instance."""
-    return ReceiptService()
+    return ReceiptService(storage_port)
 
 
 @router.post("/upload", response_model=UploadReceiptResponse)
@@ -31,6 +36,7 @@ async def upload_receipt(
         raise UploadLimitExceededError("You can upload at most 10 photos per receipt.")
 
     total_size = 0
+    file_ids: list[str] = []
     for file in files:
         if file.size is not None:
             total_size += file.size
@@ -39,10 +45,16 @@ async def upload_receipt(
         receipt_service.validate_receipt_file(content)
         await file.seek(0)
 
+        full_content = await file.read()
+        file_id = await receipt_service.store_receipt_image(
+            current_user, full_content, file.content_type or "application/octet-stream"
+        )
+        file_ids.append(file_id)
+
     if total_size > 50 * 1024 * 1024:
         raise UploadLimitExceededError("The photos on this line add up to more than 50 MB.")
 
-    return UploadReceiptResponse(message="Files accepted")
+    return UploadReceiptResponse(message="Files accepted", file_ids=file_ids)
 
 
 @router.post(
@@ -78,6 +90,8 @@ async def upload_receipts_batch(
     form_data = await request.form()
     from starlette.datastructures import UploadFile as StarletteUploadFile
 
+    file_ids: list[str] = []
+
     for field_name in set(form_data.keys()):
         raw_files = form_data.getlist(field_name)
         files: list[UploadFile] = [f for f in raw_files if isinstance(f, StarletteUploadFile)]  # type: ignore
@@ -96,7 +110,27 @@ async def upload_receipts_batch(
             receipt_service.validate_receipt_file(content)
             await file.seek(0)
 
+            full_content = await file.read()
+            file_id = await receipt_service.store_receipt_image(
+                current_user, full_content, file.content_type or "application/octet-stream"
+            )
+            file_ids.append(file_id)
+
         if total_size > 50 * 1024 * 1024:
             raise UploadLimitExceededError("The photos on this line add up to more than 50 MB.")
 
-    return UploadReceiptResponse(message="Batch accepted")
+    return UploadReceiptResponse(message="Batch accepted", file_ids=file_ids)
+
+
+@router.get("/images/{file_id}")
+async def get_receipt_image(
+    file_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    receipt_service: Annotated[ReceiptService, Depends(get_receipt_service)],
+) -> RedirectResponse:
+    """Redirects to a time-limited URL for the requested receipt image (F2.4.2)."""
+    try:
+        url = await receipt_service.get_presigned_url_for_image(current_user, file_id)
+        return RedirectResponse(url=url)
+    except ObjectNotFoundError:
+        raise HTTPException(status_code=404, detail="Image not found") from None

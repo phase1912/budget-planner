@@ -64,6 +64,7 @@ upload ──► validate (ReceiptService) ──► store image ──► parse
 Three properties of this pipeline are requirements, not implementation choices:
 
 - **Centralized logic via ReceiptService.** Format validation (content inspection, A1/A2), ingestion queuing, and orchestration of the steps below belong to `ReceiptService`, keeping routers thin.
+- **S3-compatible Object Storage.** The raw image bytes are physically stored in an S3 bucket encrypted at rest via AES256, returning a persistent identifier (`file_id`) before moving on to parsing (A12, N1). This guarantees the original artifacts are preserved completely independently from the structured data they produce.
 1. **Upload returns before parsing finishes.** The BRD's 10-second target (N4) is a
    processing budget, not an HTTP timeout. Upload persists a job and returns a handle;
    the client polls or subscribes for the result.

@@ -4,6 +4,7 @@ import React, { useRef } from "react";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
 import { Card } from "@/shared/components/Card/Card";
 import { Button } from "@/shared/components/Button/Button";
+import { SecureImage } from "@/shared/components";
 import { ReceiptLineCard } from "../components/ReceiptLineCard";
 
 export const UploadPage = observer(function UploadPage() {
@@ -208,13 +209,25 @@ export const UploadPage = observer(function UploadPage() {
           {uploadStore.uploadState.status === "success" && (
             <div className="card card--flush panel mt-4">
               <div className="panel__body">
-                <div className="note note--success w-full">
+                <div className="note note--success w-full mb-4">
                   <div className="flex flex-col gap-1">
                     <span className="text-[13px] font-bold text-success">
                       Files successfully added!
                     </span>
                   </div>
                 </div>
+                {uploadStore.fileIds.length > 0 && (
+                  <div className="flex flex-wrap gap-2 px-4 pb-4">
+                    {uploadStore.fileIds.map((id) => (
+                      <SecureImage
+                        key={id}
+                        fileId={id}
+                        alt="Uploaded receipt"
+                        className="w-[72px] h-[88px] object-cover rounded-chip border border-border"
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

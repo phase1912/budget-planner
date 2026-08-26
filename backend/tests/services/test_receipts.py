@@ -1,6 +1,9 @@
+from unittest.mock import AsyncMock
+
 import pytest
 
 from app.api.errors import UnsupportedFileFormatError
+from app.models.user import User
 from app.services.receipts import ReceiptService
 
 
@@ -30,3 +33,45 @@ def test_validate_receipt_file_rejects_invalid_formats() -> None:
         service.validate_receipt_file(txt_content)
 
     assert "Receipts come in as JPEG, PNG, HEIC or a PDF scan" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_store_receipt_image() -> None:
+    mock_port = AsyncMock()
+    mock_port.upload_file.return_value = "receipts/test-user-id/test-file-id"
+    service = ReceiptService(storage_port=mock_port)
+
+    user = User(id="test-user-id", email="test@test.com")
+    file_id = await service.store_receipt_image(user, b"content", "image/jpeg")
+
+    assert "-" in file_id
+    assert not file_id.startswith("receipts/")
+    mock_port.upload_file.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_presigned_url_for_image_success() -> None:
+    mock_port = AsyncMock()
+    mock_port.get_object_metadata.return_value = {"owner_id": "test-user-id"}
+    mock_port.generate_presigned_url.return_value = "https://mock-url"
+    service = ReceiptService(storage_port=mock_port)
+
+    user = User(id="test-user-id", email="test@test.com")
+    url = await service.get_presigned_url_for_image(user, "test-file-id")
+
+    assert url == "https://mock-url"
+    mock_port.get_object_metadata.assert_called_once_with("receipts/test-user-id/test-file-id")
+    mock_port.generate_presigned_url.assert_called_once_with("receipts/test-user-id/test-file-id")
+
+
+@pytest.mark.asyncio
+async def test_get_presigned_url_for_image_not_found() -> None:
+    from app.services.storage import ObjectNotFoundError
+
+    mock_port = AsyncMock()
+    mock_port.get_object_metadata.side_effect = ObjectNotFoundError()
+    service = ReceiptService(storage_port=mock_port)
+
+    user = User(id="test-user-id", email="test@test.com")
+    with pytest.raises(ObjectNotFoundError):
+        await service.get_presigned_url_for_image(user, "test-file-id")

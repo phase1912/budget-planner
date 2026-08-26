@@ -8,3 +8,4 @@ export * from "./Select/Select";
 export * from "./Modal/Modal";
 export * from "./Layout/Layout";
 export * from "./State";
+export * from "./SecureImage";

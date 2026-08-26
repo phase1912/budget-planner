@@ -199,6 +199,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/receipts/images/{file_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Receipt Image
+         * @description Redirects to a time-limited URL for the requested receipt image (F2.4.2).
+         */
+        get: operations["get_receipt_image_receipts_images__file_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -277,6 +297,11 @@ export interface components {
         UploadReceiptResponse: {
             /** Message */
             message: string;
+            /**
+             * File Ids
+             * @default []
+             */
+            file_ids: string[];
         };
         /**
          * UserResponse
@@ -625,6 +650,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UploadReceiptResponse"];
+                };
+            };
+        };
+    };
+    get_receipt_image_receipts_images__file_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                file_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

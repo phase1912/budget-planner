@@ -35,6 +35,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-budget_planner}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-budget_planner_minio}
+      MINIO_KMS_SECRET_KEY: my-minio-key:YnVkZ2V0X3BsYW5uZXJfbWluaW9fc2VjcmV0X2tleV8=
     ports:
       - "${MINIO_API_PORT:-9000}:9000"
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
@@ -56,6 +57,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-budget_planner}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-budget_planner_minio}
+      MINIO_KMS_SECRET_KEY: my-minio-key:YnVkZ2V0X3BsYW5uZXJfbWluaW9fc2VjcmV0X2tleV8=
     entrypoint: >
       sh -c "
         mc alias set local http://minio:9000 \"$$MINIO_ROOT_USER\" \"$$MINIO_ROOT_PASSWORD\" &&
@@ -71,6 +73,10 @@ services:
       # database is reachable at the service name `postgres`, not localhost.
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-budget_planner}:${POSTGRES_PASSWORD:-budget_planner}@postgres:5432/${POSTGRES_DB:-budget_planner}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_BUCKET_NAME: receipts
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-budget_planner}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-budget_planner_minio}
     ports:
       - "8000:8000"
     volumes:
