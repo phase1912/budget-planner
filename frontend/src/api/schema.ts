@@ -167,6 +167,7 @@ export interface paths {
          *
          *     Validates count (max 10) and total size (max 50MB) (BRD A4, A8).
          *     Validates that each uploaded file is a supported image or PDF (BRD A1, A2).
+         *     Returns immediately with a tracking handle (F2.5).
          */
         post: operations["upload_receipt_receipts_upload_post"];
         delete?: never;
@@ -191,8 +192,29 @@ export interface paths {
          *     Each form field represents a distinct receipt. Its value must be a list of files.
          *     Limits (max 10 photos, max 50MB) are applied independently per receipt (BRD A5, A7, A8).
          *     Validates that each uploaded file is a supported image or PDF (BRD A1, A2).
+         *     Returns immediately with a tracking handle (F2.5).
          */
         post: operations["upload_receipts_batch_receipts_upload_batch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/receipts/upload/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Upload Job Status
+         * @description Query the status of an asynchronous upload job (F2.5.2).
+         */
+        get: operations["get_upload_job_status_receipts_upload__job_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -245,6 +267,12 @@ export interface components {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
+         * JobStatus
+         * @description Lifecycle states of an asynchronous upload job.
+         * @enum {string}
+         */
+        JobStatus: "pending" | "processing" | "completed" | "failed";
+        /**
          * LoginRequest
          * @description Payload for authenticating with password (F1.1.4).
          */
@@ -291,6 +319,20 @@ export interface components {
             last_name: string;
         };
         /**
+         * UploadJobStatusResponse
+         * @description Current status of an asynchronous receipt upload job.
+         */
+        UploadJobStatusResponse: {
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            status: components["schemas"]["JobStatus"];
+            /** File Ids */
+            file_ids: string[];
+        };
+        /**
          * UploadReceiptResponse
          * @description Response returned upon successful receipt upload.
          */
@@ -298,10 +340,10 @@ export interface components {
             /** Message */
             message: string;
             /**
-             * File Ids
-             * @default []
+             * Job Id
+             * Format: uuid
              */
-            file_ids: string[];
+            job_id: string;
         };
         /**
          * UserResponse
@@ -650,6 +692,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UploadReceiptResponse"];
+                };
+            };
+        };
+    };
+    get_upload_job_status_receipts_upload__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadJobStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

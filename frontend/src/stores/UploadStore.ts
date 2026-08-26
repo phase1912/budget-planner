@@ -6,6 +6,8 @@ export class UploadStore {
   readonly uploadState = new AsyncState();
   errorDetails: string | null = null;
   fileIds: string[] = [];
+  jobId: string | null = null;
+  isProcessing = false;
   errorTitle: string | null = null;
   api: ApiClient;
 
@@ -107,13 +109,15 @@ export class UploadStore {
     this.uploadState.start();
     this.errorDetails = null;
     this.errorTitle = null;
+    this.jobId = null;
+    this.isProcessing = false;
 
     try {
       const formData = new FormData();
 
       let error: unknown;
       let response: { status: number } = { status: 200 };
-      let data: { file_ids?: string[] } | undefined;
+      let data: { job_id?: string } | undefined;
 
       if (this.mode === "single") {
         for (const file of this.files) {
@@ -141,7 +145,7 @@ export class UploadStore {
         data = res.data;
       }
 
-      runInAction(() => {
+      const startedJobId = runInAction(() => {
         if (error) {
           type ApiError =
             { detail?: { msg: string }[]; title?: string } | { detail?: string; title?: string };
@@ -164,14 +168,21 @@ export class UploadStore {
             this.errorTitle = "Upload Error";
             this.errorDetails = "An unexpected error occurred during upload.";
           }
+          return null;
         } else {
-          this.uploadState.succeed();
-          if (data?.file_ids) {
-            this.fileIds = data.file_ids;
+          if (data?.job_id) {
+            this.jobId = data.job_id;
+            this.isProcessing = true;
+            return data.job_id;
           }
+          return null;
         }
       });
-      return !error;
+
+      if (startedJobId) {
+        void this.pollJobStatus(startedJobId);
+      }
+      return startedJobId !== null;
     } catch {
       runInAction(() => {
         this.uploadState.fail("Network error");
@@ -179,6 +190,48 @@ export class UploadStore {
         this.errorDetails = "Failed to communicate with the server.";
       });
       return false;
+    }
+  }
+
+  async pollJobStatus(jobId: string) {
+    let polling = true;
+    while (polling) {
+      try {
+        const res = await this.api.GET("/receipts/upload/{job_id}", {
+          params: { path: { job_id: jobId } },
+        });
+
+        if (res.data) {
+          runInAction(() => {
+            if (res.data.status === "completed") {
+              this.isProcessing = false;
+              this.uploadState.succeed();
+              this.fileIds = res.data.file_ids;
+              polling = false;
+            } else if (res.data.status === "failed") {
+              this.isProcessing = false;
+              this.uploadState.fail("Background processing failed");
+              this.errorTitle = "Processing Error";
+              this.errorDetails = "An error occurred while reading the receipt.";
+              polling = false;
+            }
+          });
+        } else {
+          runInAction(() => {
+            this.isProcessing = false;
+            this.uploadState.fail("Polling failed");
+            this.errorTitle = "Network Error";
+            this.errorDetails = "Failed to fetch job status.";
+          });
+          polling = false;
+        }
+      } catch (err) {
+        console.error("Polling error", err);
+      }
+
+      if (polling) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
     }
   }
 
