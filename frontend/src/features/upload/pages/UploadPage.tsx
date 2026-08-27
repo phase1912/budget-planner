@@ -4,8 +4,9 @@ import React, { useRef } from "react";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
 import { Card } from "@/shared/components/Card/Card";
 import { Button } from "@/shared/components/Button/Button";
-import { SecureImage } from "@/shared/components";
+
 import { ReceiptLineCard } from "../components/ReceiptLineCard";
+import { ExtractedStep } from "../components/ExtractedStep";
 
 export const UploadPage = observer(function UploadPage() {
   const { uploadStore } = useStores();
@@ -26,6 +27,10 @@ export const UploadPage = observer(function UploadPage() {
       }
     }
   };
+
+  if (uploadStore.uploadState.status === "success" && uploadStore.extractedData) {
+    return <ExtractedStep />;
+  }
 
   return (
     <Container size="narrow" className="py-9">
@@ -242,32 +247,6 @@ export const UploadPage = observer(function UploadPage() {
                     <span className="block w-[62%] h-[34px] rounded-chip bg-muted"></span>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {uploadStore.uploadState.status === "success" && !uploadStore.isProcessing && (
-            <div className="card card--flush panel mt-4">
-              <div className="panel__body">
-                <div className="note note--success w-full mb-4">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[13px] font-bold text-success">
-                      Files successfully added!
-                    </span>
-                  </div>
-                </div>
-                {uploadStore.fileIds.length > 0 && (
-                  <div className="flex flex-wrap gap-2 px-4 pb-4">
-                    {uploadStore.fileIds.map((id) => (
-                      <SecureImage
-                        key={id}
-                        fileId={id}
-                        alt="Uploaded receipt"
-                        className="w-[72px] h-[88px] object-cover rounded-chip border border-border"
-                      />
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           )}

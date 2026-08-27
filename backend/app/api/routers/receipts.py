@@ -6,8 +6,11 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.adapters.vision_agent import VisionAgentAdapter
+from app.agent.core import Agent
 from app.api.dependencies import get_current_user, get_storage_service
 from app.api.errors import UploadLimitExceededError
+from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.models.upload_job import UploadJob
 from app.models.user import User
@@ -22,8 +25,12 @@ router = APIRouter(prefix="/receipts", tags=["receipts"])
 def get_receipt_service(
     storage_port: Annotated[StoragePort, Depends(get_storage_service)],
 ) -> ReceiptService:
-    """Provide a ReceiptService instance."""
-    return ReceiptService(storage_port)
+    """Provide a ReceiptService with storage and vision parser wired up."""
+    settings = get_settings()
+    api_key = settings.llm_api_key.get_secret_value() if settings.llm_api_key else None
+    agent = Agent(model=settings.llm_model, api_key=api_key)
+    parser = VisionAgentAdapter(agent)
+    return ReceiptService(storage_port, parser_port=parser)
 
 
 @router.post("/upload", response_model=UploadReceiptResponse)
@@ -160,7 +167,9 @@ async def get_upload_job_status(
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    return UploadJobStatusResponse(job_id=job.id, status=job.status, file_ids=job.file_ids)
+    return UploadJobStatusResponse(
+        job_id=job.id, status=job.status, file_ids=job.file_ids, extracted_data=job.result_data
+    )
 
 
 @router.get("/images/{file_id}")

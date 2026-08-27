@@ -56,6 +56,9 @@ def app() -> FastAPI:
         ) -> str:
             return f"https://mock-s3.local/{object_name}"
 
+        async def download_file(self, object_name: str) -> bytes:
+            return b"fake-image-data"
+
     async def mock_get_storage_service() -> Any:
         yield MockStoragePort()
 

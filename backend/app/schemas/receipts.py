@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -13,8 +14,14 @@ class UploadReceiptResponse(BaseModel):
 
 
 class UploadJobStatusResponse(BaseModel):
-    """Current status of an asynchronous receipt upload job."""
+    """Current status of an asynchronous receipt upload job.
+
+    Once the job completes, ``extracted_data`` contains the structured
+    extraction output (an ``ExtractedReceipt`` dict) for the "What we read"
+    wizard screen.
+    """
 
     job_id: uuid.UUID
     status: JobStatus
     file_ids: list[str]
+    extracted_data: dict[str, Any] | None = None
