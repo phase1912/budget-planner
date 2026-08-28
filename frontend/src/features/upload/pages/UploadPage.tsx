@@ -222,6 +222,7 @@ export const UploadPage = observer(function UploadPage() {
                   <div className="flex items-center gap-3">
                     <span className="icon-tile icon-tile--success">
                       <svg
+                        className="animate-spin"
                         width="17"
                         height="17"
                         viewBox="0 0 24 24"
