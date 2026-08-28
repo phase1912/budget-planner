@@ -16,7 +16,7 @@ the Claude API.
 ```
 React + MobX  ──HTTP/JSON──►  FastAPI  ──►  PostgreSQL   (receipts, items, budgets)
                                     ├──►  Object store  (receipt images, encrypted)
-                                    └──►  Claude API     (extraction, categorisation, advice)
+                                    └──►  LLM API     (Gemini/Claude/OpenAI via litellm)
 ```
 
 There is no separate worker service yet. Receipt processing runs as a background task
@@ -35,10 +35,11 @@ above.
 | **Router** | HTTP concerns: parse request, check auth, serialise response | Contain business rules or build queries |
 | **Service** | Business rules, orchestration, transactions | Know about HTTP status codes or SQL |
 | **Repository** | Data access, ownership filtering | Make business decisions |
+| **Agent** | Provider-agnostic LLM capabilities (wrapped via `litellm`) | Connect to the database or define HTTP routes |
 | **Port** | Protocol describing an external dependency | Reference a concrete vendor SDK |
 
 Services depend on ports, not implementations. `ReceiptParser`, `ItemCategoriser` and
-`AdviceGenerator` are protocols; the Claude-backed classes implementing them are wired
+`AdviceGenerator` are protocols; the Claude-backed or Agent-backed classes implementing them are wired
 in by FastAPI `Depends`. This is what allows the BDD acceptance suite to run the real
 business logic against stub implementations with no network access.
 

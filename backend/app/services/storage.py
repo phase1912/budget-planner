@@ -104,3 +104,17 @@ class S3StorageService(StoragePort):
         if "http://minio:9000" in url_str:
             url_str = url_str.replace("http://minio:9000", "http://localhost:9000")
         return url_str
+
+    async def download_file(self, object_name: str) -> bytes:
+        """Download the raw bytes of a stored object from S3."""
+        if not self._client:
+            raise RuntimeError("S3StorageService must be used as an async context manager.")
+
+        try:
+            response = await self._client.get_object(Bucket=self.bucket, Key=object_name)
+            async with response["Body"] as stream:
+                return await stream.read()  # type: ignore[no-any-return]
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "NoSuchKey":
+                raise ObjectNotFoundError(f"Object {object_name} not found") from e
+            raise

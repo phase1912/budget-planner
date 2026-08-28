@@ -24,3 +24,7 @@ class StoragePort(Protocol):
     async def generate_presigned_url(self, object_name: str, expiration_seconds: int = 3600) -> str:
         """Generate a time-limited URL for retrieving an object."""
         ...
+
+    async def download_file(self, object_name: str) -> bytes:
+        """Download and return the raw bytes of a stored object."""
+        ...

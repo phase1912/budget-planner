@@ -66,6 +66,23 @@ class Settings(BaseSettings):
             "`environment`, so the deployed model is a visible env var, not implicit."
         ),
     )
+    llm_model: str = Field(
+        default="gemini/gemini-3.6-flash",
+        description=(
+            "litellm model string for the universal agent (ADR-0006). "
+            "The prefix determines the provider: 'gemini/' → Google AI Studio, "
+            "'anthropic/' → Anthropic, 'openai/' → OpenAI. Any litellm-supported "
+            "model works without code changes."
+        ),
+    )
+    llm_api_key: SecretStr | None = Field(
+        default=None,
+        description=(
+            "API key for the LLM provider chosen by llm_model. When None, "
+            "litellm falls back to provider-specific env vars "
+            "(GEMINI_API_KEY, ANTHROPIC_API_KEY, etc.)."
+        ),
+    )
     ocr_confidence_threshold: float = Field(
         default=0.80,
         ge=0.0,

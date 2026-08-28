@@ -29,6 +29,7 @@ on:
 env:
   DATABASE_URL: postgresql+asyncpg://budget_planner:budget_planner@localhost:5432/budget_planner
   ANTHROPIC_API_KEY: sk-ant-ci-placeholder
+  S3_BUCKET_NAME: budget-planner-receipts-ci
 
 jobs:
   lint-typecheck-test:

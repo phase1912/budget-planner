@@ -13,6 +13,7 @@ dependencies = [
     "email-validator>=2.1.0",
     "fastapi>=0.141.1",
     "filetype>=1.2.0",
+    "litellm>=1.72.0",
     "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
     "pyjwt>=2.9.0",

@@ -321,6 +321,10 @@ export interface components {
         /**
          * UploadJobStatusResponse
          * @description Current status of an asynchronous receipt upload job.
+         *
+         *     Once the job completes, ``extracted_data`` contains the structured
+         *     extraction output (an ``ExtractedReceipt`` dict) for the "What we read"
+         *     wizard screen.
          */
         UploadJobStatusResponse: {
             /**
@@ -331,6 +335,10 @@ export interface components {
             status: components["schemas"]["JobStatus"];
             /** File Ids */
             file_ids: string[];
+            /** Extracted Data */
+            extracted_data?: {
+                [key: string]: unknown;
+            } | null;
         };
         /**
          * UploadReceiptResponse

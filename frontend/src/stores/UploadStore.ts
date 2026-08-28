@@ -10,6 +10,7 @@ export class UploadStore {
   isProcessing = false;
   errorTitle: string | null = null;
   api: ApiClient;
+  extractedData: Record<string, unknown> | null = null;
 
   mode: "single" | "multiple" = "single";
   lines: File[][] = [[]];
@@ -111,6 +112,7 @@ export class UploadStore {
     this.errorTitle = null;
     this.jobId = null;
     this.isProcessing = false;
+    this.extractedData = null;
 
     try {
       const formData = new FormData();
@@ -207,6 +209,7 @@ export class UploadStore {
               this.isProcessing = false;
               this.uploadState.succeed();
               this.fileIds = res.data.file_ids;
+              this.extractedData = res.data.extracted_data ?? null;
               polling = false;
             } else if (res.data.status === "failed") {
               this.isProcessing = false;
