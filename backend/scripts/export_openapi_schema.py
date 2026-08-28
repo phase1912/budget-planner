@@ -18,6 +18,7 @@ from typing import Any
 
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://dummy:dummy@localhost/dummy"
 os.environ["ANTHROPIC_API_KEY"] = "dummy"
+os.environ["S3_BUCKET_NAME"] = "dummy"
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
