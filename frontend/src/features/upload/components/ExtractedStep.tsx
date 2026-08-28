@@ -198,7 +198,8 @@ export const ExtractedStep = observer(function ExtractedStep() {
               >
                 <div className="flex items-center justify-between w-full">
                   <span className="text-[13px] text-muted-foreground tabular-nums">
-                    {lineItems.length} items &middot; lines add up to {data.computed_total ?? "0.00"}
+                    {lineItems.length} items &middot; lines add up to{" "}
+                    {data.computed_total ?? "0.00"}
                   </span>
                   {matchesTotal === true && (
                     <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-tone-success-text">
