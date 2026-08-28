@@ -2,7 +2,7 @@ import enum
 import uuid
 from typing import Any
 
-from sqlalchemy import JSON, Enum, ForeignKey
+from sqlalchemy import JSON, Enum, ForeignKey, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Model
@@ -38,7 +38,7 @@ class UploadJob(Model):
     file_ids: Mapped[list[str]] = mapped_column(
         JSON,
         default=list,
-        server_default="[]",
+        server_default=text("'[]'::json"),
         nullable=False,
     )
     result_data: Mapped[dict[str, Any] | None] = mapped_column(
