@@ -87,7 +87,7 @@ def app() -> FastAPI:
 
     class MockReceiptService(ReceiptService):
         async def process_upload_job_task(
-            self, job_id: uuid.UUID, user: User, files_data: list[dict[str, Any]]
+            self, job_id: uuid.UUID, user: User, receipts_data: list[list[dict[str, Any]]]
         ) -> None:
             pass
 

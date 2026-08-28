@@ -23,25 +23,27 @@ describe("ExtractedStep", () => {
 
     // Mock the extracted data
     mockStore.uploadStore.extractedData = {
-      merchant_name: "Test Store",
-      transaction_date: "2026-08-28",
-      receipt_total: "150.00",
-      currency: "PLN",
-      items_sum_matches_total: true,
-      line_items: [
-        {
-          name: "Item 1",
-          quantity: "2",
-          unit_price: "25.00",
-          total_price: "50.00",
-        },
-        {
-          name: "Item 2",
-          quantity: "1",
-          unit_price: "100.00",
-          total_price: "100.00",
-        },
-      ],
+      extractions: [{
+        merchant_name: "Test Store",
+        transaction_date: "2026-08-28",
+        receipt_total: "150.00",
+        currency: "PLN",
+        items_sum_matches_total: true,
+        line_items: [
+          {
+            name: "Item 1",
+            quantity: "2",
+            unit_price: "25.00",
+            total_price: "50.00",
+          },
+          {
+            name: "Item 2",
+            quantity: "1",
+            unit_price: "100.00",
+            total_price: "100.00",
+          },
+        ],
+      }]
     };
   });
 
@@ -76,9 +78,11 @@ describe("ExtractedStep", () => {
 
   it("should display warning message when total is missing", () => {
     mockStore.uploadStore.extractedData = {
-      ...mockStore.uploadStore.extractedData,
-      items_sum_matches_total: null,
-      receipt_total: null,
+      extractions: [{
+        ...((mockStore.uploadStore.extractedData as { extractions: Record<string, unknown>[] }).extractions[0]),
+        items_sum_matches_total: null,
+        receipt_total: null,
+      }]
     };
     renderComponent();
     expect(screen.getByText(/Total · unsure/)).toBeInTheDocument();
@@ -87,8 +91,10 @@ describe("ExtractedStep", () => {
 
   it("should display error message when total mismatch", () => {
     mockStore.uploadStore.extractedData = {
-      ...mockStore.uploadStore.extractedData,
-      items_sum_matches_total: false,
+      extractions: [{
+        ...((mockStore.uploadStore.extractedData as { extractions: Record<string, unknown>[] }).extractions[0]),
+        items_sum_matches_total: false,
+      }]
     };
     renderComponent();
     expect(screen.getByText(/Lines do not match printed total/)).toBeInTheDocument();

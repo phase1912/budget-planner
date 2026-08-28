@@ -67,7 +67,7 @@ class Settings(BaseSettings):
         ),
     )
     llm_model: str = Field(
-        default="gemini/gemini-2.0-flash",
+        default="gemini/gemini-3.6-flash",
         description=(
             "litellm model string for the universal agent (ADR-0006). "
             "The prefix determines the provider: 'gemini/' → Google AI Studio, "
