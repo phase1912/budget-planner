@@ -18,6 +18,7 @@ interface ExtractedData {
   receipt_total?: string | null;
   currency?: string;
   items_sum_matches_total?: boolean | null;
+  computed_total?: string | null;
   line_items?: ExtractedLineItem[];
   file_ids?: string[];
 }
@@ -31,7 +32,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
 
   const handleBack = () => {
     uploadStore.resetError();
-    uploadStore.extractedData = null;
+    uploadStore.resetData();
     uploadStore.uploadState.reset();
   };
 
@@ -198,12 +199,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                 <div className="flex items-center justify-between w-full">
                   <span className="text-[13px] text-muted-foreground tabular-nums">
                     {lineItems.length} items &middot; lines add up to{" "}
-                    {lineItems
-                      .reduce((acc, item) => {
-                        const price = parseFloat((item.total_price || "0").replace(",", "."));
-                        return acc + (isNaN(price) ? 0 : price);
-                      }, 0)
-                      .toFixed(2)}
+                    {data.computed_total ?? "0.00"}
                   </span>
                   {matchesTotal === true && (
                     <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-tone-success-text">
