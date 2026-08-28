@@ -37,7 +37,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
 
   const payload = uploadStore.extractedData as unknown as ExtractedDataPayload | null;
   const extractions = payload?.extractions;
-  
+
   if (!extractions || extractions.length === 0) return null;
 
   const hasAnyWarning = extractions.some(
