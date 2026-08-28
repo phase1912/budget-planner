@@ -1,8 +1,10 @@
-from unittest.mock import AsyncMock
+import uuid
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from app.api.errors import UnsupportedFileFormatError
+from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.services.receipts import ReceiptService
 
@@ -75,3 +77,81 @@ async def test_get_presigned_url_for_image_not_found() -> None:
     user = User(id="test-user-id", email="test@test.com")
     with pytest.raises(ObjectNotFoundError):
         await service.get_presigned_url_for_image(user, "test-file-id")
+
+
+@pytest.mark.asyncio
+async def test_process_upload_job_task_success() -> None:
+    mock_storage = AsyncMock()
+    mock_parser = AsyncMock()
+
+    # Mock parser return value
+    mock_extraction = MagicMock()
+    mock_extraction.model_dump.return_value = {
+        "merchant_name": "Test",
+        "receipt_total": "100.00",
+        "currency": "USD",
+        "items_sum_matches_total": True,
+        "line_items": [],
+    }
+    mock_parser.parse.return_value = mock_extraction
+    mock_storage.download_file.return_value = b"image-data"
+
+    service = ReceiptService(storage_port=mock_storage, parser_port=mock_parser)
+
+    job_id = uuid.uuid4()
+    user = User(id=uuid.uuid4(), email="test@test.com")
+    receipts_data: list[list[dict[str, str | bytes]]] = [
+        [{"content": b"test", "content_type": "image/jpeg"}]
+    ]
+
+    mock_job = UploadJob(id=job_id, user_id=user.id)
+
+    mock_session = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = mock_job
+    mock_session.execute.return_value = mock_result
+
+    mock_session_factory = MagicMock()
+    mock_session_factory.return_value.__aenter__.return_value = mock_session
+
+    with (
+        patch("app.services.receipts.get_session_factory", return_value=mock_session_factory),
+        patch.object(service, "store_receipt_image", new_callable=AsyncMock) as mock_store,
+    ):
+        mock_store.return_value = "file-123"
+        await service.process_upload_job_task(job_id, user, receipts_data)
+
+    assert mock_job.status == JobStatus.COMPLETED
+    assert mock_job.result_data is not None
+    assert "extractions" in mock_job.result_data
+
+
+@pytest.mark.asyncio
+async def test_process_upload_job_task_failure() -> None:
+    service = ReceiptService()
+
+    job_id = uuid.uuid4()
+    user = User(id=uuid.uuid4(), email="test@test.com")
+    receipts_data: list[list[dict[str, str | bytes]]] = [
+        [{"content": b"test", "content_type": "image/jpeg"}]
+    ]
+
+    mock_job = UploadJob(id=job_id, user_id=user.id, status=JobStatus.PENDING)
+
+    mock_session = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = mock_job
+    mock_session.execute.return_value = mock_result
+
+    mock_session_factory = MagicMock()
+    mock_session_factory.return_value.__aenter__.return_value = mock_session
+
+    with (
+        patch("app.services.receipts.get_session_factory", return_value=mock_session_factory),
+        patch.object(service, "store_receipt_image", new_callable=AsyncMock) as mock_store,
+        pytest.raises(Exception, match="Failed"),
+    ):
+        mock_store.side_effect = Exception("Failed")
+        await service.process_upload_job_task(job_id, user, receipts_data)
+
+    assert mock_job.status == JobStatus.FAILED
