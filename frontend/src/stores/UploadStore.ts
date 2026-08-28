@@ -244,6 +244,11 @@ export class UploadStore {
     this.uploadState.reset();
   }
 
+  resetData() {
+    this.extractedData = null;
+    this.fileIds = [];
+  }
+
   // Legacy method for existing tests/components
   async uploadFile(file: File): Promise<boolean> {
     this.addFiles([file]);

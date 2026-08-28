@@ -15,7 +15,9 @@ service layer converts to ``Decimal`` when persisting to domain entities.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from decimal import Decimal, InvalidOperation
+
+from pydantic import BaseModel, Field, model_validator
 
 
 class ExtractedLineItem(BaseModel):
@@ -93,3 +95,36 @@ class ExtractedReceipt(BaseModel):
             "None when either side is missing."
         ),
     )
+
+    computed_total: str | None = Field(
+        default=None,
+        description="The calculated sum of line-item totals. Set by backend validation.",
+    )
+
+    @model_validator(mode="after")
+    def validate_arithmetic(self) -> ExtractedReceipt:
+        """Validate whether the printed total matches the sum of line items (BRD A9)."""
+        if not self.line_items:
+            self.items_sum_matches_total = None
+            return self
+
+        try:
+            computed_total_dec = Decimal("0")
+            for item in self.line_items:
+                if not item.total_price:
+                    self.items_sum_matches_total = None
+                    return self
+                computed_total_dec += Decimal(item.total_price.replace(",", "."))
+
+            self.computed_total = str(computed_total_dec)
+
+            if not self.receipt_total:
+                self.items_sum_matches_total = None
+                return self
+
+            printed_total = Decimal(self.receipt_total.replace(",", "."))
+            self.items_sum_matches_total = computed_total_dec == printed_total
+        except InvalidOperation:
+            self.items_sum_matches_total = None
+
+        return self

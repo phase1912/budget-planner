@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ExtractedStep } from "./ExtractedStep";
 import { StoreProvider } from "@/stores/StoreContext";
 import { RootStore } from "@/stores/RootStore";
+import { runInAction } from "mobx";
 
 // Mock the SecureImage component since it requires API context
 vi.mock("@/shared/components", () => ({
@@ -17,36 +18,38 @@ describe("ExtractedStep", () => {
   beforeEach(() => {
     mockStore = new RootStore();
 
-    // Set up default state
-    mockStore.uploadStore.fileIds = ["file-1", "file-2"];
-    mockStore.uploadStore.lines = [[]]; // 1 receipt line
+    runInAction(() => {
+      // Set up default state
+      mockStore.uploadStore.fileIds = ["file-1", "file-2"];
+      mockStore.uploadStore.lines = [[]]; // 1 receipt line
 
-    // Mock the extracted data
-    mockStore.uploadStore.extractedData = {
-      extractions: [
-        {
-          merchant_name: "Test Store",
-          transaction_date: "2026-08-28",
-          receipt_total: "150.00",
-          currency: "PLN",
-          items_sum_matches_total: true,
-          line_items: [
-            {
-              name: "Item 1",
-              quantity: "2",
-              unit_price: "25.00",
-              total_price: "50.00",
-            },
-            {
-              name: "Item 2",
-              quantity: "1",
-              unit_price: "100.00",
-              total_price: "100.00",
-            },
-          ],
-        },
-      ],
-    };
+      // Mock the extracted data
+      mockStore.uploadStore.extractedData = {
+        extractions: [
+          {
+            merchant_name: "Test Store",
+            transaction_date: "2026-08-28",
+            receipt_total: "150.00",
+            currency: "PLN",
+            items_sum_matches_total: true,
+            line_items: [
+              {
+                name: "Item 1",
+                quantity: "2",
+                unit_price: "25.00",
+                total_price: "50.00",
+              },
+              {
+                name: "Item 2",
+                quantity: "1",
+                unit_price: "100.00",
+                total_price: "100.00",
+              },
+            ],
+          },
+        ],
+      };
+    });
   });
 
   const renderComponent = () =>
@@ -79,31 +82,35 @@ describe("ExtractedStep", () => {
   });
 
   it("should display warning message when total is missing", () => {
-    mockStore.uploadStore.extractedData = {
-      extractions: [
-        {
-          ...(mockStore.uploadStore.extractedData as { extractions: Record<string, unknown>[] })
-            .extractions[0],
-          items_sum_matches_total: null,
-          receipt_total: null,
-        },
-      ],
-    };
+    runInAction(() => {
+      mockStore.uploadStore.extractedData = {
+        extractions: [
+          {
+            ...(mockStore.uploadStore.extractedData as { extractions: Record<string, unknown>[] })
+              .extractions[0],
+            items_sum_matches_total: null,
+            receipt_total: null,
+          },
+        ],
+      };
+    });
     renderComponent();
     expect(screen.getByText(/Total · unsure/)).toBeInTheDocument();
     expect(screen.getByText("—")).toBeInTheDocument();
   });
 
   it("should display error message when total mismatch", () => {
-    mockStore.uploadStore.extractedData = {
-      extractions: [
-        {
-          ...(mockStore.uploadStore.extractedData as { extractions: Record<string, unknown>[] })
-            .extractions[0],
-          items_sum_matches_total: false,
-        },
-      ],
-    };
+    runInAction(() => {
+      mockStore.uploadStore.extractedData = {
+        extractions: [
+          {
+            ...(mockStore.uploadStore.extractedData as { extractions: Record<string, unknown>[] })
+              .extractions[0],
+            items_sum_matches_total: false,
+          },
+        ],
+      };
+    });
     renderComponent();
     expect(screen.getByText(/Lines do not match printed total/)).toBeInTheDocument();
   });
