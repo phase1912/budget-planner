@@ -6,8 +6,11 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.adapters.vision_agent import VisionAgentAdapter
+from app.agent.core import Agent
 from app.api.dependencies import get_current_user, get_storage_service
 from app.api.errors import UploadLimitExceededError
+from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.models.upload_job import UploadJob
 from app.models.user import User
@@ -22,8 +25,12 @@ router = APIRouter(prefix="/receipts", tags=["receipts"])
 def get_receipt_service(
     storage_port: Annotated[StoragePort, Depends(get_storage_service)],
 ) -> ReceiptService:
-    """Provide a ReceiptService instance."""
-    return ReceiptService(storage_port)
+    """Provide a ReceiptService with storage and vision parser wired up."""
+    settings = get_settings()
+    api_key = settings.llm_api_key.get_secret_value() if settings.llm_api_key else None
+    agent = Agent(model=settings.llm_model, api_key=api_key)
+    parser = VisionAgentAdapter(agent)
+    return ReceiptService(storage_port, parser_port=parser)
 
 
 @router.post("/upload", response_model=UploadReceiptResponse)
@@ -65,7 +72,7 @@ async def upload_receipt(
     await session.commit()
 
     background_tasks.add_task(
-        receipt_service.process_upload_job_task, job.id, current_user, files_data
+        receipt_service.process_upload_job_task, job.id, current_user, [files_data]
     )
 
     return UploadReceiptResponse(message="Files accepted", job_id=job.id)
@@ -107,9 +114,14 @@ async def upload_receipts_batch(
     form_data = await request.form()
     from starlette.datastructures import UploadFile as StarletteUploadFile
 
-    files_data: list[dict[str, str | bytes]] = []
+    receipts_data: list[list[dict[str, str | bytes]]] = []
 
-    for field_name in set(form_data.keys()):
+    field_names = sorted(
+        [k for k in form_data if k.startswith("line_")],
+        key=lambda x: int(x.split("_")[1]) if "_" in x and x.split("_")[1].isdigit() else 0,
+    )
+
+    for field_name in field_names:
         raw_files = form_data.getlist(field_name)
         files: list[UploadFile] = [f for f in raw_files if isinstance(f, StarletteUploadFile)]  # type: ignore
         if not files:
@@ -119,6 +131,7 @@ async def upload_receipts_batch(
             raise UploadLimitExceededError("You can upload at most 10 photos per receipt.")
 
         total_size = 0
+        receipt_data: list[dict[str, str | bytes]] = []
         for file in files:
             if file.size is not None:
                 total_size += file.size
@@ -126,7 +139,7 @@ async def upload_receipts_batch(
             content = await file.read()
             receipt_service.validate_receipt_file(content[:2048])
 
-            files_data.append(
+            receipt_data.append(
                 {
                     "content": content,
                     "content_type": file.content_type or "application/octet-stream",
@@ -136,12 +149,14 @@ async def upload_receipts_batch(
         if total_size > 50 * 1024 * 1024:
             raise UploadLimitExceededError("The photos on this line add up to more than 50 MB.")
 
+        receipts_data.append(receipt_data)
+
     job = UploadJob(user_id=current_user.id)
     session.add(job)
     await session.commit()
 
     background_tasks.add_task(
-        receipt_service.process_upload_job_task, job.id, current_user, files_data
+        receipt_service.process_upload_job_task, job.id, current_user, receipts_data
     )
 
     return UploadReceiptResponse(message="Batch accepted", job_id=job.id)
@@ -160,7 +175,9 @@ async def get_upload_job_status(
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    return UploadJobStatusResponse(job_id=job.id, status=job.status, file_ids=job.file_ids)
+    return UploadJobStatusResponse(
+        job_id=job.id, status=job.status, file_ids=job.file_ids, extracted_data=job.result_data
+    )
 
 
 @router.get("/images/{file_id}")

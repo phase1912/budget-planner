@@ -2,10 +2,11 @@ import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/StoreContext";
 import React, { useRef } from "react";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
-import { Card } from "@/shared/components/Card/Card";
+import { Card, CardBody } from "@/shared/components/Card/Card";
 import { Button } from "@/shared/components/Button/Button";
-import { SecureImage } from "@/shared/components";
+
 import { ReceiptLineCard } from "../components/ReceiptLineCard";
+import { ExtractedStep } from "../components/ExtractedStep";
 
 export const UploadPage = observer(function UploadPage() {
   const { uploadStore } = useStores();
@@ -26,6 +27,10 @@ export const UploadPage = observer(function UploadPage() {
       }
     }
   };
+
+  if (uploadStore.uploadState.status === "success" && uploadStore.extractedData) {
+    return <ExtractedStep />;
+  }
 
   return (
     <Container size="narrow" className="py-9">
@@ -207,16 +212,17 @@ export const UploadPage = observer(function UploadPage() {
           )}
 
           {uploadStore.isProcessing && (
-            <div className="card card--flush panel mt-4">
-              <div className="panel__label">
-                <span className="panel__title">Parsing in flight</span>
-                <span className="panel__ref">N4</span>
+            <Card flush className="mt-4">
+              <div className="flex items-center justify-between bg-surface border-b border-border px-5 py-2">
+                <span className="text-[11px] font-bold text-foreground">Parsing in flight</span>
+                <span className="text-[11px] font-bold text-muted-foreground">N4</span>
               </div>
-              <div className="panel__body">
+              <CardBody>
                 <div className="flex flex-col gap-3 w-full">
                   <div className="flex items-center gap-3">
-                    <span className="icon-tile icon-tile--success">
+                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-success text-success-foreground shrink-0">
                       <svg
+                        className="animate-spin"
                         width="17"
                         height="17"
                         viewBox="0 0 24 24"
@@ -229,59 +235,37 @@ export const UploadPage = observer(function UploadPage() {
                       </svg>
                     </span>
                     <div className="flex flex-col gap-1 min-w-0">
-                      <span className="text-[13px] font-semibold">
+                      <span className="text-[13px] font-semibold text-foreground">
                         Reading {uploadStore.lines.length} receipt
                         {uploadStore.lines.length === 1 ? "" : "s"}
                       </span>
-                      <span className="meta">You can leave this page &mdash; it keeps going.</span>
+                      <span className="text-xs text-muted-foreground">
+                        You can leave this page &mdash; it keeps going.
+                      </span>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <span className="block h-[34px] rounded-chip bg-muted"></span>
-                    <span className="block h-[34px] rounded-chip bg-muted"></span>
-                    <span className="block w-[62%] h-[34px] rounded-chip bg-muted"></span>
+                  <div className="flex flex-col gap-2 mt-1">
+                    <span className="block h-[34px] rounded-[6px] bg-muted"></span>
+                    <span className="block h-[34px] rounded-[6px] bg-muted"></span>
+                    <span className="block w-[62%] h-[34px] rounded-[6px] bg-muted"></span>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {uploadStore.uploadState.status === "success" && !uploadStore.isProcessing && (
-            <div className="card card--flush panel mt-4">
-              <div className="panel__body">
-                <div className="note note--success w-full mb-4">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[13px] font-bold text-success">
-                      Files successfully added!
-                    </span>
-                  </div>
-                </div>
-                {uploadStore.fileIds.length > 0 && (
-                  <div className="flex flex-wrap gap-2 px-4 pb-4">
-                    {uploadStore.fileIds.map((id) => (
-                      <SecureImage
-                        key={id}
-                        fileId={id}
-                        alt="Uploaded receipt"
-                        className="w-[72px] h-[88px] object-cover rounded-chip border border-border"
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+              </CardBody>
+            </Card>
           )}
 
           {uploadStore.uploadState.status === "error" && uploadStore.errorTitle && (
-            <div className="card card--flush panel mt-4 card--attention">
-              <div className="panel__label">
-                <span className="panel__title">{uploadStore.errorTitle}</span>
-                <span className="panel__ref">ERR</span>
+            <Card flush className="mt-4 border-tone-error-border">
+              <div className="flex items-center justify-between bg-tone-error-bg border-b border-tone-error-border px-5 py-2">
+                <span className="text-[11px] font-bold text-tone-error-text">
+                  {uploadStore.errorTitle}
+                </span>
+                <span className="text-[11px] font-bold text-tone-error-text">ERR</span>
               </div>
-              <div className="panel__body">
-                <div className="note note--error items-start w-full">
+              <CardBody>
+                <div className="flex gap-2 text-tone-error-text bg-tone-error-bg p-3 rounded-md">
                   <svg
-                    className="note__icon mt-0.5"
+                    className="mt-0.5 shrink-0"
                     width="18"
                     height="18"
                     viewBox="0 0 24 24"
@@ -300,8 +284,8 @@ export const UploadPage = observer(function UploadPage() {
                     <span className="text-xs leading-relaxed">{uploadStore.errorDetails}</span>
                   </div>
                 </div>
-              </div>
-            </div>
+              </CardBody>
+            </Card>
           )}
         </Stack>
 

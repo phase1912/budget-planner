@@ -56,6 +56,9 @@ def app() -> FastAPI:
         ) -> str:
             return f"https://mock-s3.local/{object_name}"
 
+        async def download_file(self, object_name: str) -> bytes:
+            return b"fake-image-data"
+
     async def mock_get_storage_service() -> Any:
         yield MockStoragePort()
 
@@ -84,7 +87,7 @@ def app() -> FastAPI:
 
     class MockReceiptService(ReceiptService):
         async def process_upload_job_task(
-            self, job_id: uuid.UUID, user: User, files_data: list[dict[str, Any]]
+            self, job_id: uuid.UUID, user: User, receipts_data: list[list[dict[str, Any]]]
         ) -> None:
             pass
 

@@ -32,6 +32,9 @@ class MockStoragePort(StoragePort):
     async def generate_presigned_url(self, object_name: str, expiration_seconds: int = 3600) -> str:
         return f"https://mock-s3.local/{object_name}"
 
+    async def download_file(self, object_name: str) -> bytes:
+        return b"fake-image-data"
+
 
 @pytest.fixture
 def app() -> FastAPI:

@@ -30,7 +30,7 @@ def upgrade() -> None:
             sa.Enum("PENDING", "PROCESSING", "COMPLETED", "FAILED", name="job_status_enum"),
             nullable=False,
         ),
-        sa.Column("file_ids", sa.JSON(), server_default="[]", nullable=False),
+        sa.Column("file_ids", sa.JSON(), server_default=sa.text("'[]'::json"), nullable=False),
         sa.Column("id", sa.Uuid(), server_default=sa.text("gen_random_uuid()"), nullable=False),
         sa.Column(
             "created_at",
