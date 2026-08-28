@@ -34,7 +34,7 @@ async def test_agent_run_unstructured(mock_acompletion: MagicMock) -> None:
         model="test-model",
         messages=[{"role": "user", "content": "Hello"}],
         temperature=0.0,
-        max_tokens=8192,
+        max_tokens=32768,
     )
 
 
