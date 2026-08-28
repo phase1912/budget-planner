@@ -37,7 +37,10 @@ For each extracted field, set the corresponding confidence score:
 
 If a field cannot be read at all, set it to null and its confidence to 0.0.
 
-Return ONLY valid JSON matching the schema. No extra text or explanation.\
+IMPORTANT:
+1. Return ONLY valid JSON matching the schema. No extra text or explanation.
+2. For confidence scores, do NOT output floats with more than 2 decimal places. Use values
+   like 1.0, 0.8, 0.5. Never output numbers like 1.000000000001.
 """
 
 

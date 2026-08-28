@@ -72,7 +72,7 @@ async def upload_receipt(
     await session.commit()
 
     background_tasks.add_task(
-        receipt_service.process_upload_job_task, job.id, current_user, files_data
+        receipt_service.process_upload_job_task, job.id, current_user, [files_data]
     )
 
     return UploadReceiptResponse(message="Files accepted", job_id=job.id)
@@ -114,9 +114,14 @@ async def upload_receipts_batch(
     form_data = await request.form()
     from starlette.datastructures import UploadFile as StarletteUploadFile
 
-    files_data: list[dict[str, str | bytes]] = []
+    receipts_data: list[list[dict[str, str | bytes]]] = []
 
-    for field_name in set(form_data.keys()):
+    field_names = sorted(
+        [k for k in form_data if k.startswith("line_")],
+        key=lambda x: int(x.split("_")[1]) if "_" in x and x.split("_")[1].isdigit() else 0,
+    )
+
+    for field_name in field_names:
         raw_files = form_data.getlist(field_name)
         files: list[UploadFile] = [f for f in raw_files if isinstance(f, StarletteUploadFile)]  # type: ignore
         if not files:
@@ -126,6 +131,7 @@ async def upload_receipts_batch(
             raise UploadLimitExceededError("You can upload at most 10 photos per receipt.")
 
         total_size = 0
+        receipt_data: list[dict[str, str | bytes]] = []
         for file in files:
             if file.size is not None:
                 total_size += file.size
@@ -133,7 +139,7 @@ async def upload_receipts_batch(
             content = await file.read()
             receipt_service.validate_receipt_file(content[:2048])
 
-            files_data.append(
+            receipt_data.append(
                 {
                     "content": content,
                     "content_type": file.content_type or "application/octet-stream",
@@ -143,12 +149,14 @@ async def upload_receipts_batch(
         if total_size > 50 * 1024 * 1024:
             raise UploadLimitExceededError("The photos on this line add up to more than 50 MB.")
 
+        receipts_data.append(receipt_data)
+
     job = UploadJob(user_id=current_user.id)
     session.add(job)
     await session.commit()
 
     background_tasks.add_task(
-        receipt_service.process_upload_job_task, job.id, current_user, files_data
+        receipt_service.process_upload_job_task, job.id, current_user, receipts_data
     )
 
     return UploadReceiptResponse(message="Batch accepted", job_id=job.id)

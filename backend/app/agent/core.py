@@ -65,7 +65,7 @@ class Agent:
         messages: list[Message],
         *,
         temperature: float | None = None,
-        max_tokens: int = 4096,
+        max_tokens: int = 8192,
     ) -> str:
         """Send messages to the LLM and return the assistant's text reply.
 
@@ -101,7 +101,7 @@ class Agent:
         schema: type[T],
         *,
         temperature: float | None = None,
-        max_tokens: int = 4096,
+        max_tokens: int = 8192,
     ) -> T:
         """Send messages and parse the response into a Pydantic model.
 

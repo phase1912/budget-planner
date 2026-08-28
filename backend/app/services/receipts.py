@@ -75,7 +75,7 @@ class ReceiptService:
         return await self.storage_port.generate_presigned_url(object_name)
 
     async def process_upload_job_task(
-        self, job_id: uuid.UUID, user: User, files_data: list[dict[str, str | bytes]]
+        self, job_id: uuid.UUID, user: User, receipts_data: list[list[dict[str, str | bytes]]]
     ) -> None:
         """Background task: store images in MinIO, then extract via vision LLM.
 
@@ -99,21 +99,30 @@ class ReceiptService:
             await session.commit()
 
             try:
-                file_ids: list[str] = []
-                content_types: list[str] = []
-                for file_data in files_data:
-                    content = file_data["content"]
-                    content_type = file_data["content_type"]
+                all_file_ids: list[str] = []
+                all_extractions: list[dict[str, object]] = []
 
-                    file_id = await self.store_receipt_image(user, content, content_type)  # type: ignore[arg-type]
-                    file_ids.append(file_id)
-                    content_types.append(str(content_type))
+                for files_data in receipts_data:
+                    file_ids: list[str] = []
+                    content_types: list[str] = []
+                    for file_data in files_data:
+                        content = file_data["content"]
+                        content_type = file_data["content_type"]
 
-                job.file_ids = file_ids
+                        file_id = await self.store_receipt_image(user, content, content_type)  # type: ignore[arg-type]
+                        file_ids.append(file_id)
+                        content_types.append(str(content_type))
 
+                    all_file_ids.extend(file_ids)
+
+                    if self.parser_port and self.storage_port:
+                        extraction = await self._run_extraction(user, file_ids, content_types)
+                        extraction["file_ids"] = file_ids
+                        all_extractions.append(extraction)
+
+                job.file_ids = all_file_ids
                 if self.parser_port and self.storage_port:
-                    extraction = await self._run_extraction(user, file_ids, content_types)
-                    job.result_data = extraction
+                    job.result_data = {"extractions": all_extractions}
 
                 job.status = JobStatus.COMPLETED
                 await session.commit()
