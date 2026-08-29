@@ -2,7 +2,7 @@ import * as React from "react";
 import { observer } from "mobx-react-lite";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useStores } from "@/stores/StoreContext";
-import { Button, Input, Card } from "@/shared/components";
+import { Button, Input, Card, Note } from "@/shared/components";
 
 export const LoginPage = observer(() => {
   const { authStore } = useStores();
@@ -34,14 +34,7 @@ export const LoginPage = observer(() => {
           <p className="text-base text-muted-foreground">Sign in to your account</p>
         </div>
 
-        {authStore.authState.error && (
-          <div
-            role="alert"
-            className="p-4 bg-tone-error-bg border border-tone-error-border text-tone-error-text rounded-control"
-          >
-            {authStore.authState.error}
-          </div>
-        )}
+        {authStore.authState.error && <Note tone="error">{authStore.authState.error}</Note>}
 
         <form
           onSubmit={(e) => {
