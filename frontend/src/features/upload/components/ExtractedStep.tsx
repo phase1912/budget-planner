@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/StoreContext";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
 import { Button } from "@/shared/components/Button/Button";
-import { SecureImage, Note } from "@/shared/components";
+import { SecureImage, Note, IconTile } from "@/shared/components";
 import { Card, CardHeader, CardFooter } from "@/shared/components/Card/Card";
 
 interface ExtractedLineItem {
@@ -26,6 +26,7 @@ interface ExtractedData {
   currency?: string;
   items_sum_matches_total?: boolean | null;
   computed_total?: string | null;
+  requires_manual_review?: boolean | null;
   line_items?: ExtractedLineItem[];
   file_ids?: string[];
 }
@@ -218,6 +219,40 @@ export const ExtractedStep = observer(function ExtractedStep() {
                     </span>
                   </div>
                 </Note>
+              )}
+              {data.requires_manual_review && (
+                <div className="flex flex-col gap-3 px-5 py-4 border-b border-border bg-card">
+                  <div className="flex items-start gap-3">
+                    <IconTile tone="error">
+                      <svg
+                        width="17"
+                        height="17"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+                        <path d="M12 9v4" />
+                        <path d="M12 17h.01" />
+                      </svg>
+                    </IconTile>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[13px] font-bold text-foreground">
+                        {merchantName || "Receipt"} needs you
+                      </span>
+                      <span className="text-[12px] leading-relaxed text-muted-foreground prose">
+                        No total or date could be read, so it is excluded from budget calculation
+                        until you fill it in. The month says so on its face.
+                      </span>
+                    </div>
+                  </div>
+                  <Button variant="danger-solid" size="sm" className="self-start text-[12px]">
+                    Enter the total
+                  </Button>
+                </div>
               )}
 
               <div className="grid grid-cols-[minmax(0,1fr)_48px_84px_92px_148px] items-center gap-3 px-5 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">

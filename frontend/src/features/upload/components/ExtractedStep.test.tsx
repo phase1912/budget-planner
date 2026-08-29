@@ -118,6 +118,23 @@ describe("ExtractedStep", () => {
     expect(screen.getByText(/Lines do not match printed total/)).toBeInTheDocument();
   });
 
+  it("should display manual review UI when requires_manual_review is true", () => {
+    runInAction(() => {
+      mockStore.uploadStore.extractedData = {
+        extractions: [
+          {
+            ...(mockStore.uploadStore.extractedData as { extractions: Record<string, unknown>[] })
+              .extractions[0],
+            requires_manual_review: true,
+          },
+        ],
+      };
+    });
+    renderComponent();
+    expect(screen.getByText("Test Store needs you")).toBeInTheDocument();
+    expect(screen.getByText(/No total or date could be read/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Enter the total" })).toBeInTheDocument();
+  });
   it("should reset state and handle back button", () => {
     renderComponent();
     const backButton = screen.getByText("Back to photos");

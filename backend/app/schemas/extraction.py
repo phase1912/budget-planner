@@ -108,9 +108,16 @@ class ExtractedReceipt(BaseModel):
         description="The calculated sum of line-item totals. Set by backend validation.",
     )
 
+    requires_manual_review: bool | None = Field(
+        default=False,
+        description="True if critical fields missing, requiring manual review (BRD A11).",
+    )
+
     @model_validator(mode="after")
     def validate_arithmetic(self) -> ExtractedReceipt:
         """Validate whether the printed total matches the sum of line items (BRD A9)."""
+        self.requires_manual_review = not self.receipt_total or not self.transaction_date
+
         if not self.line_items:
             self.items_sum_matches_total = None
             return self
