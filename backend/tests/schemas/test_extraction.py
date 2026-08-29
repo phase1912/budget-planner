@@ -97,3 +97,30 @@ def test_receipt_arithmetic_invalid_decimal() -> None:
     )
     assert receipt.items_sum_matches_total is None
     assert receipt.computed_total is None
+
+
+def test_receipt_requires_manual_review_when_total_missing() -> None:
+    receipt = ExtractedReceipt(
+        transaction_date="2026-08-18",
+        line_items=[],
+        receipt_total=None,
+    )
+    assert receipt.requires_manual_review is True
+
+
+def test_receipt_requires_manual_review_when_date_missing() -> None:
+    receipt = ExtractedReceipt(
+        transaction_date=None,
+        line_items=[],
+        receipt_total="10.00",
+    )
+    assert receipt.requires_manual_review is True
+
+
+def test_receipt_no_manual_review_when_both_present() -> None:
+    receipt = ExtractedReceipt(
+        transaction_date="2026-08-18",
+        line_items=[],
+        receipt_total="10.00",
+    )
+    assert receipt.requires_manual_review is False
