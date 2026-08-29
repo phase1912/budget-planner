@@ -83,7 +83,7 @@ def app() -> FastAPI:
     app_instance.dependency_overrides[get_db_session] = mock_get_db_session
 
     from app.api.routers.receipts import get_receipt_service
-    from app.services.receipts import ReceiptService
+    from app.services.receipt import ReceiptService
 
     class MockReceiptService(ReceiptService):
         async def process_upload_job_task(

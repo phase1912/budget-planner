@@ -1,21 +1,37 @@
-from uuid import UUID
+import typing
+import uuid
 
-from sqlalchemy import text
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
+
+from app.models.receipt import Receipt
+from app.repository.base import BaseRepository
 
 
-class ReceiptRepository:
-    """Data access for Receipt entities."""
+class ReceiptRepository(BaseRepository[Receipt]):
+    """Repository for managing receipts."""
 
     def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+        super().__init__(model_class=Receipt, session=session)
 
-    async def exists_for_user(self, user_id: UUID) -> bool:
-        """Check if any receipts exist for the given user.
+    def bypass_ownership(self) -> "ReceiptRepository":
+        """Skip user-ownership filtering for system-level operations."""
+        super().bypass_ownership()
+        return self
 
-        Returns False if the receipts table does not exist yet (pre-Epic E2).
-        """
+    async def get_with_items(self, id: uuid.UUID) -> Receipt | None:
+        """Fetch a receipt including its line items."""
+        stmt = select(self.model_class).where(self.model_class.id == id)
+        stmt = stmt.options(joinedload(self.model_class.line_items))
+        stmt = self._apply_ownership(stmt)
+        return (await self.session.execute(stmt)).unique().scalar_one_or_none()
+
+    async def exists_for_user(self, user_id: uuid.UUID) -> bool:
+        """Check if any receipts exist for the given user."""
+        from sqlalchemy import text
+        from sqlalchemy.exc import ProgrammingError
+
         try:
             async with self.session.begin_nested():
                 stmt = text("SELECT 1 FROM receipts WHERE user_id = :user_id LIMIT 1")
@@ -23,3 +39,81 @@ class ReceiptRepository:
                 return result.scalar() is not None
         except ProgrammingError:
             return False
+
+    def create_from_extraction(
+        self,
+        user_id: uuid.UUID,
+        file_ids: list[str],
+        extraction: dict[str, typing.Any],
+        parser_version: str,
+    ) -> Receipt:
+        """Instantiate and save a Receipt and its LineItems from a parser extraction."""
+        import contextlib
+        import datetime
+        from decimal import Decimal
+
+        from app.models.line_item import LineItem
+        from app.models.receipt import ReceiptStatus
+
+        receipt_status = (
+            ReceiptStatus.MANUAL_REVIEW
+            if extraction.get("requires_manual_review")
+            else ReceiptStatus.PARSED
+        )
+
+        dt = None
+        t_date = extraction.get("transaction_date")
+        if t_date:
+            try:
+                d = datetime.datetime.strptime(t_date, "%Y-%m-%d")
+                t_time = extraction.get("transaction_time")
+                if t_time:
+                    t = datetime.datetime.strptime(t_time, "%H:%M").time()
+                    d = datetime.datetime.combine(d.date(), t)
+                dt = d.replace(tzinfo=datetime.UTC)
+            except ValueError:
+                pass
+
+        total_amt = None
+        rt = extraction.get("receipt_total")
+        if rt:
+            with contextlib.suppress(Exception):
+                total_amt = Decimal(str(rt).replace(",", "."))
+
+        receipt = Receipt(
+            user_id=user_id,
+            merchant_name=extraction.get("merchant_name"),
+            transaction_date=dt,
+            total_amount=total_amt,
+            status=receipt_status,
+            file_ids=file_ids,
+            parser_version=parser_version,
+        )
+
+        items_data = extraction.get("line_items", [])
+        if not isinstance(items_data, list):
+            items_data = []
+
+        line_items = []
+        for item_data in items_data:
+            if not isinstance(item_data, dict):
+                continue
+            try:
+                qty = Decimal(str(item_data.get("quantity", "1")).replace(",", "."))
+                up = Decimal(str(item_data.get("unit_price", "0")).replace(",", "."))
+                tp = Decimal(str(item_data.get("total_price", "0")).replace(",", "."))
+            except Exception:
+                qty, up, tp = Decimal("1"), Decimal("0"), Decimal("0")
+
+            line_items.append(
+                LineItem(
+                    name=item_data.get("name", "Unknown Item"),
+                    quantity=qty,
+                    unit_price=up,
+                    total_price=tp,
+                )
+            )
+
+        receipt.line_items = line_items
+        self.add(receipt)
+        return receipt
