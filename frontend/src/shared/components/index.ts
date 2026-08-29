@@ -9,3 +9,4 @@ export * from "./Modal/Modal";
 export * from "./Layout/Layout";
 export * from "./State";
 export * from "./SecureImage";
+export * from "./Note";

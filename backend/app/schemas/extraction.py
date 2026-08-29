@@ -31,11 +31,11 @@ class ExtractedLineItem(BaseModel):
     quantity: str = Field(description="Quantity purchased, e.g. '1' or '0.5'")
     unit_price: str = Field(description="Price per unit, e.g. '3.20'")
     total_price: str = Field(description="Line total (quantity x unit price), e.g. '6.40'")
-    confidence: float = Field(
-        default=1.0,
-        ge=0.0,
-        le=1.0,
-        description="Extraction confidence for this line item (e.g. 1.0) (BRD A10)",
+    confidence: int = Field(
+        default=100,
+        ge=0,
+        le=100,
+        description="Extraction confidence for this line item (0-100, e.g. 100) (BRD A10)",
     )
 
 
@@ -50,24 +50,24 @@ class ExtractedReceipt(BaseModel):
     merchant_name: str | None = Field(
         default=None, description="Store or merchant name from the receipt header"
     )
-    merchant_name_confidence: float = Field(
-        default=1.0, ge=0.0, le=1.0, description="Confidence score between 0.0 and 1.0 (e.g. 1.0)"
+    merchant_name_confidence: int = Field(
+        default=100, ge=0, le=100, description="Confidence score between 0 and 100 (e.g. 100)"
     )
 
     transaction_date: str | None = Field(
         default=None,
         description="Transaction date in ISO 8601 format (YYYY-MM-DD)",
     )
-    transaction_date_confidence: float = Field(
-        default=1.0, ge=0.0, le=1.0, description="Confidence score between 0.0 and 1.0 (e.g. 1.0)"
+    transaction_date_confidence: int = Field(
+        default=100, ge=0, le=100, description="Confidence score between 0 and 100 (e.g. 100)"
     )
 
     transaction_time: str | None = Field(
         default=None,
         description="Transaction time in HH:MM format (24-hour)",
     )
-    transaction_time_confidence: float = Field(
-        default=1.0, ge=0.0, le=1.0, description="Confidence score between 0.0 and 1.0 (e.g. 1.0)"
+    transaction_time_confidence: int = Field(
+        default=100, ge=0, le=100, description="Confidence score between 0 and 100 (e.g. 100)"
     )
 
     currency: str = Field(
@@ -84,8 +84,15 @@ class ExtractedReceipt(BaseModel):
         default=None,
         description="Printed total from the receipt footer, e.g. '84.50'",
     )
-    receipt_total_confidence: float = Field(
-        default=1.0, ge=0.0, le=1.0, description="Confidence score between 0.0 and 1.0 (e.g. 1.0)"
+    receipt_total_confidence: int = Field(
+        default=100, ge=0, le=100, description="Confidence score between 0 and 100 (e.g. 100)"
+    )
+
+    is_receipt_confidence: int = Field(
+        default=100,
+        ge=0,
+        le=100,
+        description="Confidence score (0-100) indicating if the image is actually a receipt.",
     )
 
     items_sum_matches_total: bool | None = Field(

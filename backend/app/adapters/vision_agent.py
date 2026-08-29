@@ -30,17 +30,24 @@ Extract the following into the JSON schema provided:
 - items_sum_matches_total: true if the sum of line item totals equals the \
   receipt total, false if they differ, null if either side is missing
 
-For each extracted field, set the corresponding confidence score:
-- 1.0 if clearly readable
-- 0.5-0.9 if partially readable or inferred
-- Below 0.5 if guessing
+For each extracted field (merchant_name, transaction_date, etc.), set the corresponding
+confidence score:
+- 100 if clearly readable
+- 50-90 if partially readable or inferred
+- Below 50 if guessing
+For ALL `_confidence` fields and `confidence` fields inside `line_items`:
+   you MUST return an integer between 0 and 100 representing your confidence.
+   DO NOT return floats.
 
-If a field cannot be read at all, set it to null and its confidence to 0.0.
+Also, set `is_receipt_confidence` (0 to 100) indicating whether the image
+actually looks like a receipt (100 = definitely a receipt, 0 = definitely not).
 
 IMPORTANT:
-1. Return ONLY valid JSON matching the schema. No extra text or explanation.
-2. For confidence scores, do NOT output floats with more than 2 decimal places. Use values
-   like 1.0, 0.8, 0.5. Never output numbers like 1.000000000001.
+1. Return ONLY valid JSON matching the schema. No extra text or explanation. Always extract
+   all line items if visible.
+2. For prices, extract exactly as printed.
+3. If quantity or unit price is not explicitly printed for an item, infer them (e.g., quantity "1",
+   unit_price same as total_price). DO NOT skip line items just because these details are implicit.
 """
 
 

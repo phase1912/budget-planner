@@ -142,6 +142,10 @@ class Agent:
         if not raw:
             raise AgentError("LLM returned empty content for structured request")
 
+        logger.debug("================ RAW LLM STRUCTURED RESPONSE ================")
+        logger.debug(raw)
+        logger.debug("=============================================================")
+
         return self._parse_response(str(raw), schema)
 
     @staticmethod
