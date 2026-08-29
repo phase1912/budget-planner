@@ -14,6 +14,7 @@ interface ReceiptLineCardProps {
   onRemoveFile: (fileIndex: number) => void;
   onRemoveLine?: () => void;
   showRemoveLine?: boolean;
+  isLoading?: boolean;
 }
 
 export function ReceiptLineCard({
@@ -27,6 +28,7 @@ export function ReceiptLineCard({
   onRemoveFile,
   onRemoveLine,
   showRemoveLine,
+  isLoading,
 }: ReceiptLineCardProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -59,7 +61,7 @@ export function ReceiptLineCard({
           </span>
           <span className="text-[15px] font-semibold">Receipt</span>
         </div>
-        {showRemoveLine && onRemoveLine && (
+        {!isLoading && showRemoveLine && onRemoveLine && (
           <button
             onClick={onRemoveLine}
             className="text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted transition-colors cursor-pointer"
@@ -91,28 +93,31 @@ export function ReceiptLineCard({
             onRemove={() => {
               onRemoveFile(i);
             }}
+            isLoading={isLoading}
           />
         ))}
 
-        <button
-          className="inline-flex flex-col items-center justify-center gap-1.5 border border-dashed border-border-strong rounded-chip bg-background text-primary font-medium w-[72px] h-[88px] cursor-pointer hover:bg-muted"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {!isLoading && (
+          <button
+            className="inline-flex flex-col items-center justify-center gap-1.5 border border-dashed border-border-strong rounded-chip bg-background text-primary font-medium w-[72px] h-[88px] cursor-pointer hover:bg-muted"
+            onClick={() => fileInputRef.current?.click()}
           >
-            <path d="M5 12h14" />
-            <path d="M12 5v14" />
-          </svg>
-          <span className="text-xs">Add</span>
-        </button>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 12h14" />
+              <path d="M12 5v14" />
+            </svg>
+            <span className="text-xs">Add</span>
+          </button>
+        )}
       </div>
 
       {isOverLimit && (
@@ -161,14 +166,16 @@ export function ReceiptLineCard({
         </span>
       </Stack>
 
-      <input
-        type="file"
-        ref={fileInputRef}
-        className="hidden"
-        multiple
-        onChange={handleFileChange}
-        accept="image/jpeg, image/png, image/heic, application/pdf"
-      />
+      {!isLoading && (
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          multiple
+          onChange={handleFileChange}
+          accept="image/jpeg, image/png, image/heic, application/pdf"
+        />
+      )}
     </Card>
   );
 }

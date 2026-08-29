@@ -5,12 +5,15 @@ import { StoreProvider } from "@/stores/StoreContext";
 import { RootStore } from "@/stores/RootStore";
 import { runInAction } from "mobx";
 
-// Mock the SecureImage component since it requires API context
-vi.mock("@/shared/components", () => ({
-  SecureImage: ({ fileId, alt }: { fileId: string; alt: string }) => (
-    <img src={`mock-${fileId}`} alt={alt} data-testid="secure-image" />
-  ),
-}));
+vi.mock("@/shared/components", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/shared/components")>();
+  return {
+    ...actual,
+    SecureImage: ({ fileId, alt }: { fileId: string; alt: string }) => (
+      <img src={`mock-${fileId}`} alt={alt} data-testid="secure-image" />
+    ),
+  };
+});
 
 describe("ExtractedStep", () => {
   let mockStore: RootStore;

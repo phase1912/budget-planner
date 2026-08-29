@@ -2,7 +2,7 @@ import * as React from "react";
 import { observer } from "mobx-react-lite";
 import { useNavigate, Link } from "react-router-dom";
 import { useStores } from "@/stores/StoreContext";
-import { Button, Input, Card } from "@/shared/components";
+import { Button, Input, Card, Note } from "@/shared/components";
 
 export const RegisterPage = observer(() => {
   const { authStore } = useStores();
@@ -43,14 +43,7 @@ export const RegisterPage = observer(() => {
           <p className="text-base text-muted-foreground">Start tracking your budget today</p>
         </div>
 
-        {authStore.authState.error && (
-          <div
-            role="alert"
-            className="p-4 bg-tone-error-bg border border-tone-error-border text-tone-error-text rounded-control"
-          >
-            {authStore.authState.error}
-          </div>
-        )}
+        {authStore.authState.error && <Note tone="error">{authStore.authState.error}</Note>}
 
         <form
           onSubmit={(e) => {

@@ -37,24 +37,24 @@ export const UploadPage = observer(function UploadPage() {
       <Stack className="gap-6">
         <div className="flex items-center">
           <span className="inline-flex items-center gap-2.5">
-            <span className="inline-flex items-center justify-center w-7 h-7 border border-transparent rounded-pill bg-primary text-primary-foreground text-[13px] font-bold">
+            <span className="inline-flex items-center justify-center w-[28px] h-[28px] border border-transparent rounded-pill bg-primary text-primary-foreground text-[13px] font-bold">
               1
             </span>
-            <span className="text-sm font-semibold text-foreground">Photos</span>
+            <span className="text-[14px] font-semibold text-foreground">Photos</span>
           </span>
           <span className="grow h-[2px] rounded-[1px] bg-border mx-4"></span>
           <span className="inline-flex items-center gap-2.5">
-            <span className="inline-flex items-center justify-center w-7 h-7 border border-border rounded-pill bg-background text-border-strong text-[13px] font-bold">
+            <span className="inline-flex items-center justify-center w-[28px] h-[28px] border border-border rounded-pill bg-background text-border-strong text-[13px] font-bold">
               2
             </span>
-            <span className="text-sm font-semibold text-border-strong">What we read</span>
+            <span className="text-[14px] font-semibold text-border-strong">What we read</span>
           </span>
           <span className="grow h-[2px] rounded-[1px] bg-border mx-4"></span>
           <span className="inline-flex items-center gap-2.5">
-            <span className="inline-flex items-center justify-center w-7 h-7 border border-border rounded-pill bg-background text-border-strong text-[13px] font-bold">
+            <span className="inline-flex items-center justify-center w-[28px] h-[28px] border border-border rounded-pill bg-background text-border-strong text-[13px] font-bold">
               3
             </span>
-            <span className="text-sm font-semibold text-border-strong">Resolve</span>
+            <span className="text-[14px] font-semibold text-border-strong">Resolve</span>
           </span>
         </div>
 
@@ -151,6 +151,7 @@ export const UploadPage = observer(function UploadPage() {
                   uploadStore.removeLine(index);
                 }}
                 showRemoveLine={uploadStore.mode === "multiple" && uploadStore.lines.length > 1}
+                isLoading={uploadStore.isProcessing}
               />
             );
           })}
@@ -187,7 +188,7 @@ export const UploadPage = observer(function UploadPage() {
             </Card>
           )}
 
-          {uploadStore.mode === "multiple" && (
+          {uploadStore.mode === "multiple" && !uploadStore.isProcessing && (
             <button
               className="inline-flex flex-row items-center justify-center gap-2 border border-dashed border-border-strong rounded-card bg-background text-primary font-medium text-sm p-4 w-full cursor-pointer hover:bg-muted"
               onClick={() => {
@@ -209,49 +210,6 @@ export const UploadPage = observer(function UploadPage() {
               </svg>
               Add another receipt
             </button>
-          )}
-
-          {uploadStore.isProcessing && (
-            <Card flush className="mt-4">
-              <div className="flex items-center justify-between bg-surface border-b border-border px-5 py-2">
-                <span className="text-[11px] font-bold text-foreground">Parsing in flight</span>
-                <span className="text-[11px] font-bold text-muted-foreground">N4</span>
-              </div>
-              <CardBody>
-                <div className="flex flex-col gap-3 w-full">
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-success text-success-foreground shrink-0">
-                      <svg
-                        className="animate-spin"
-                        width="17"
-                        height="17"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      >
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                      </svg>
-                    </span>
-                    <div className="flex flex-col gap-1 min-w-0">
-                      <span className="text-[13px] font-semibold text-foreground">
-                        Reading {uploadStore.lines.length} receipt
-                        {uploadStore.lines.length === 1 ? "" : "s"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        You can leave this page &mdash; it keeps going.
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2 mt-1">
-                    <span className="block h-[34px] rounded-[6px] bg-muted"></span>
-                    <span className="block h-[34px] rounded-[6px] bg-muted"></span>
-                    <span className="block w-[62%] h-[34px] rounded-[6px] bg-muted"></span>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
           )}
 
           {uploadStore.uploadState.status === "error" && uploadStore.errorTitle && (

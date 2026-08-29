@@ -4,9 +4,10 @@ interface FilePreviewProps {
   file: File;
   index: number;
   onRemove: () => void;
+  isLoading?: boolean;
 }
 
-export function FilePreview({ file, index, onRemove }: FilePreviewProps) {
+export function FilePreview({ file, index, onRemove, isLoading }: FilePreviewProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -21,7 +22,9 @@ export function FilePreview({ file, index, onRemove }: FilePreviewProps) {
   }, [file]);
 
   return (
-    <span className="relative inline-flex items-center justify-center border border-border rounded-chip bg-muted w-[72px] h-[88px] overflow-hidden shrink-0">
+    <span
+      className={`relative inline-flex items-center justify-center border border-border rounded-chip bg-muted w-[72px] h-[88px] overflow-hidden shrink-0 ${isLoading ? "animate-pulse" : ""}`}
+    >
       {previewUrl ? (
         <img
           src={previewUrl}
@@ -36,25 +39,27 @@ export function FilePreview({ file, index, onRemove }: FilePreviewProps) {
       <span className="absolute bottom-1 right-1 text-[10px] bg-background/80 text-foreground px-1 rounded backdrop-blur-sm shadow-sm font-medium z-10 pointer-events-none">
         {index + 1}
       </span>
-      <button
-        onClick={onRemove}
-        className="absolute top-1 left-1 bg-background border border-border rounded-full w-[18px] h-[18px] flex items-center justify-center cursor-pointer z-10 hover:bg-muted text-foreground shadow-sm"
-        aria-label="Remove photo"
-      >
-        <svg
-          width="10"
-          height="10"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+      {!isLoading && (
+        <button
+          onClick={onRemove}
+          className="absolute top-1 left-1 bg-background border border-border rounded-full w-[18px] h-[18px] flex items-center justify-center cursor-pointer z-10 hover:bg-muted text-foreground shadow-sm"
+          aria-label="Remove photo"
         >
-          <path d="M18 6 6 18" />
-          <path d="m6 6 12 12" />
-        </svg>
-      </button>
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      )}
     </span>
   );
 }
