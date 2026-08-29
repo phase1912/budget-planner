@@ -43,6 +43,7 @@ class BaseRepository[ModelType: DeclarativeBase]:
         uid = current_user_id.get()
         if not uid:
             from app.api.errors import AuthenticationError
+
             raise AuthenticationError("No user context available for ownership filtering.")
 
         return stmt.where(self.model_class.user_id == uid)  # type: ignore[attr-defined]
@@ -69,6 +70,7 @@ class BaseRepository[ModelType: DeclarativeBase]:
             uid = current_user_id.get()
             if not uid:
                 from app.api.errors import AuthenticationError
+
                 raise AuthenticationError("No user context available for ownership filtering.")
             # Automatically assign ownership if not set, or ensure it matches
             obj_user_id = getattr(obj, "user_id", None)
@@ -76,5 +78,6 @@ class BaseRepository[ModelType: DeclarativeBase]:
                 obj.user_id = uid  # type: ignore[attr-defined]
             elif obj_user_id != uid:
                 from app.api.errors import PermissionDeniedError
+
                 raise PermissionDeniedError("Cannot create records owned by another user.")
         self.session.add(obj)
