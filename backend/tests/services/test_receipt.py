@@ -6,7 +6,7 @@ import pytest
 from app.api.errors import UnsupportedFileFormatError
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
-from app.services.receipts import ReceiptService
+from app.services.receipt import ReceiptService
 
 
 def test_validate_receipt_file_accepts_valid_formats() -> None:
@@ -115,7 +115,7 @@ async def test_process_upload_job_task_success() -> None:
     mock_session_factory.return_value.__aenter__.return_value = mock_session
 
     with (
-        patch("app.services.receipts.get_session_factory", return_value=mock_session_factory),
+        patch("app.services.receipt.get_session_factory", return_value=mock_session_factory),
         patch.object(service, "store_receipt_image", new_callable=AsyncMock) as mock_store,
     ):
         mock_store.return_value = "file-123"
@@ -147,7 +147,7 @@ async def test_process_upload_job_task_failure() -> None:
     mock_session_factory.return_value.__aenter__.return_value = mock_session
 
     with (
-        patch("app.services.receipts.get_session_factory", return_value=mock_session_factory),
+        patch("app.services.receipt.get_session_factory", return_value=mock_session_factory),
         patch.object(service, "store_receipt_image", new_callable=AsyncMock) as mock_store,
         pytest.raises(Exception, match="Failed"),
     ):

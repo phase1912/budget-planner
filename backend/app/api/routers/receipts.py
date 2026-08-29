@@ -15,8 +15,8 @@ from app.db.session import get_db_session
 from app.models.upload_job import UploadJob
 from app.models.user import User
 from app.ports.storage import StoragePort
-from app.schemas.receipts import UploadJobStatusResponse, UploadReceiptResponse
-from app.services.receipts import ReceiptService
+from app.schemas.receipt import UploadJobStatusResponse, UploadReceiptResponse
+from app.services.receipt import ReceiptService
 from app.services.storage import ObjectNotFoundError
 
 router = APIRouter(prefix="/receipts", tags=["receipts"])

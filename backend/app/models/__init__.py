@@ -6,10 +6,20 @@ epic (E1+) adds a concrete entity — F0.3 delivers only the base and convention
 """
 
 from app.models.base import Base, Model
+from app.models.category import Category
+from app.models.line_item import LineItem
+from app.models.receipt import Receipt
 from app.models.refresh_token import RefreshToken
+from app.models.upload_job import UploadJob
 from app.models.user import User
 
-__all__ = ["Base", "Model", "RefreshToken", "User"]
-from app.models.upload_job import UploadJob
-
-__all__ += ["UploadJob"]
+__all__ = [
+    "Base",
+    "Category",
+    "LineItem",
+    "Model",
+    "Receipt",
+    "RefreshToken",
+    "UploadJob",
+    "User",
+]

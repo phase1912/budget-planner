@@ -10,6 +10,7 @@ from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.ports.parsing import ReceiptParserPort
 from app.ports.storage import StoragePort
+from app.repository.receipt import ReceiptRepository
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +120,15 @@ class ReceiptService:
                         extraction = await self._run_extraction(user, file_ids, content_types)
                         extraction["file_ids"] = file_ids
                         all_extractions.append(extraction)
+
+                        # Instantiate Receipt and LineItems
+                        repo = ReceiptRepository(session).bypass_ownership()
+                        repo.create_from_extraction(
+                            user_id=user.id,
+                            file_ids=file_ids,
+                            extraction=extraction,
+                            parser_version="1.0.0",  # TODO: Get from parser
+                        )
 
                 job.file_ids = all_file_ids
                 if self.parser_port and self.storage_port:
