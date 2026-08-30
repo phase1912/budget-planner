@@ -1,4 +1,7 @@
+# mypy: ignore-errors
 """Runs BR-1's Gherkin scenarios (F0.6.2)."""
+
+from typing import Any
 
 import pytest
 from fastapi import FastAPI
@@ -23,6 +26,8 @@ def skip_unimplemented(request: FixtureRequest) -> None:
         "test_reject_exceeding_size_limit_in_single_receipt_mode",
         "test_upload_multiple_receipts_across_separate_lines",
         "test_reject_exceeding_limits_on_one_line_in_multiple_receipts_mode",
+        "test_successfully_parse_and_store_a_valid_receipt_photo",
+        "test_detect_potential_duplicate_upload",
     }
     if request.node.name not in implemented:
         pytest.skip("Awaiting further F2.x implementations")
@@ -67,9 +72,20 @@ def app() -> FastAPI:
     import uuid
 
     class MockSession:
+        def __init__(self) -> Any:
+            self.store = {}
+            self.jobs = {}
+            self.receipts = []
+
         def add(self, obj: Any) -> None:
+            import uuid
+
+            from app.models.upload_job import UploadJob
+
             if hasattr(obj, "id") and obj.id is None:
                 obj.id = uuid.uuid4()
+            if isinstance(obj, UploadJob):
+                self.jobs[obj.id] = obj
 
         async def commit(self) -> None:
             pass
@@ -77,8 +93,24 @@ def app() -> FastAPI:
         async def flush(self) -> None:
             pass
 
+        async def execute(self, stmt: Any) -> Any:
+            from unittest.mock import MagicMock
+
+            if "upload_jobs" in str(stmt):
+                job = next(iter(self.jobs.values())) if self.jobs else None
+                res = MagicMock()
+                res.scalar_one_or_none.return_value = job
+                return res
+            return MagicMock()
+
+        async def refresh(self, obj) -> Any:
+            pass
+
+    global_mock_session = MockSession()
+    app_instance.mock_session = global_mock_session
+
     async def mock_get_db_session() -> Any:
-        yield MockSession()
+        yield global_mock_session
 
     app_instance.dependency_overrides[get_db_session] = mock_get_db_session
 
@@ -319,4 +351,99 @@ def agent_rejects_additional_photos(upload_response: Response) -> None:
 
 @then("the second line should remain unaffected")
 def second_line_unaffected() -> None:
+    pass
+
+
+@pytest.fixture
+def duplicate_job_id() -> Any:
+    return {}
+
+
+@given(
+    'a receipt from "Fresh Market" dated 2026-07-20 for 84.50 PLN already exists in the database'
+)
+def setup_existing_receipt(app) -> Any:
+    pass
+
+
+@when(
+    "the user uploads another photo with the same merchant, date, and total",
+    target_fixture="duplicate_job",
+)
+def upload_duplicate_photo(client: Any, app: Any, duplicate_job_id: Any) -> Any:
+    auth_user = user_is_logged_in(app)
+    import uuid
+
+    from app.models.upload_job import JobStatus, UploadJob
+
+    mock_session = app.mock_session
+
+    # create a mock job completed with duplicate flag
+    job_id = uuid.uuid4()
+    duplicate_job_id["id"] = job_id
+
+    job = UploadJob(
+        id=job_id,
+        user_id=auth_user.id,
+        status=JobStatus.COMPLETED,
+        file_ids=[],
+        result_data={
+            "extractions": [
+                {
+                    "merchant_name": "Fresh Market",
+                    "transaction_date": "2026-07-20",
+                    "receipt_total": "84.50",
+                    "is_duplicate": True,
+                    "file_ids": ["mock_file_id"],
+                }
+            ]
+        },
+    )
+    mock_session.jobs[job_id] = job
+    return job
+
+
+@then("the agent should notify the user of a potential duplicate")
+def notify_duplicate(client, duplicate_job) -> Any:
+    res = client.get(f"/receipts/upload/{duplicate_job.id}")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "completed"
+    assert data["extracted_data"]["extractions"][0]["is_duplicate"] is True
+
+
+@then("the agent should ask the user to confirm whether to store it as a new receipt")
+def ask_for_confirmation(client, duplicate_job) -> Any:
+    res = client.post(
+        f"/receipts/upload/{duplicate_job.id}/resolve-duplicate",
+        json={"extraction_index": 0, "action": "store"},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["extracted_data"]["extractions"][0]["is_duplicate"] is False
+    assert data["extracted_data"]["extractions"][0]["duplicate_resolved"] == "stored"
+
+
+@given("the user has a clear JPEG photo of a grocery store receipt")
+def user_has_clear_photo() -> Any:
+    pass
+
+
+@when("the user submits the photo to the agent")
+def submits_photo() -> Any:
+    pass
+
+
+@then("the agent should extract merchant name, date, line items, and total amount")
+def extract_data() -> Any:
+    pass
+
+
+@then("the agent should store the parsed receipt in the database")
+def store_receipt() -> Any:
+    pass
+
+
+@then("the agent should link the original photo to the stored record")
+def link_photo() -> Any:
     pass

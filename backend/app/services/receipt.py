@@ -1,5 +1,6 @@
 import logging
 import uuid
+from typing import cast
 
 import filetype  # type: ignore[import-untyped]
 from sqlalchemy import select
@@ -121,14 +122,26 @@ class ReceiptService:
                         extraction["file_ids"] = file_ids
                         all_extractions.append(extraction)
 
-                        # Instantiate Receipt and LineItems
                         repo = ReceiptRepository(session).bypass_ownership()
-                        repo.create_from_extraction(
+
+                        is_dup = await repo.has_duplicate(
                             user_id=user.id,
-                            file_ids=file_ids,
-                            extraction=extraction,
-                            parser_version="1.0.0",  # TODO: Get from parser
+                            merchant_name=cast(str | None, extraction.get("merchant_name")),
+                            transaction_date_str=cast(
+                                str | None, extraction.get("transaction_date")
+                            ),
+                            total_amount_str=cast(str | None, extraction.get("receipt_total")),
                         )
+
+                        extraction["is_duplicate"] = is_dup
+
+                        if not is_dup:
+                            repo.create_from_extraction(
+                                user_id=user.id,
+                                file_ids=file_ids,
+                                extraction=extraction,
+                                parser_version="1.0.0",  # TODO: Get from parser
+                            )
 
                 job.file_ids = all_file_ids
                 if self.parser_port and self.storage_port:
@@ -136,10 +149,13 @@ class ReceiptService:
 
                 job.status = JobStatus.COMPLETED
                 await session.commit()
-            except Exception:
+            except Exception as e:
+                logger.exception("Background task failed")
+                await session.rollback()
                 job.status = JobStatus.FAILED
+                session.add(job)
                 await session.commit()
-                raise
+                raise e
 
     async def _run_extraction(
         self, user: User, file_ids: list[str], content_types: list[str]

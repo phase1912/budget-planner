@@ -29,6 +29,9 @@ interface ExtractedData {
   requires_manual_review?: boolean | null;
   line_items?: ExtractedLineItem[];
   file_ids?: string[];
+  is_duplicate?: boolean | null;
+  duplicate_resolved?: string | null;
+  is_skipped?: boolean | null;
 }
 
 interface ExtractedDataPayload {
@@ -49,16 +52,18 @@ export const ExtractedStep = observer(function ExtractedStep() {
 
   if (!extractions || extractions.length === 0) return null;
 
-  const hasLowConfidence = extractions.some(
-    (data) =>
-      data.items_sum_matches_total === false ||
-      data.items_sum_matches_total === null ||
-      (data.is_receipt_confidence ?? 100) < 50 ||
-      (data.merchant_name_confidence ?? 100) < 80 ||
-      (data.transaction_date_confidence ?? 100) < 80 ||
-      (data.receipt_total_confidence ?? 100) < 80 ||
-      (data.line_items?.some((item) => (item.confidence ?? 100) < 80) ?? false),
-  );
+  const hasLowConfidence =
+    extractions.some((data) => data.is_duplicate) ||
+    extractions.some(
+      (data) =>
+        data.items_sum_matches_total === false ||
+        data.items_sum_matches_total === null ||
+        (data.is_receipt_confidence ?? 100) < 50 ||
+        (data.merchant_name_confidence ?? 100) < 80 ||
+        (data.transaction_date_confidence ?? 100) < 80 ||
+        (data.receipt_total_confidence ?? 100) < 80 ||
+        (data.line_items?.some((item) => (item.confidence ?? 100) < 80) ?? false),
+    );
   const totalItems = extractions.reduce((acc, data) => acc + (data.line_items?.length ?? 0), 0);
 
   return (
@@ -118,6 +123,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
         )}
 
         {extractions.map((data, index) => {
+          if (data.is_skipped) return null;
           const merchantName = data.merchant_name ?? "Unknown merchant";
           const merchantNameLowConf = (data.merchant_name_confidence ?? 100) < 80;
           const transactionDate = data.transaction_date ?? "Unknown date";
@@ -220,6 +226,61 @@ export const ExtractedStep = observer(function ExtractedStep() {
                   </div>
                 </Note>
               )}
+
+              {data.is_duplicate && (
+                <div className="flex flex-col gap-3 px-5 py-4 border-b border-border bg-card">
+                  <div className="flex items-start gap-3">
+                    <IconTile tone="warning">
+                      <svg
+                        width="17"
+                        height="17"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                        <polyline points="2 17 12 22 22 17" />
+                        <polyline points="2 12 12 17 22 12" />
+                      </svg>
+                    </IconTile>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[13px] font-bold text-foreground">
+                        You may already have this one
+                      </span>
+                      <span className="text-[12px] leading-relaxed text-muted-foreground prose tabular-nums">
+                        {merchantName}, {transactionDate}, {data.receipt_total} {data.currency} is
+                        already stored. Two trips on one day are perfectly normal — you decide.
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="self-start text-[12px]"
+                      onClick={() => {
+                        void uploadStore.resolveDuplicate(index, "skip");
+                      }}
+                    >
+                      Skip it
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="self-start text-[12px]"
+                      onClick={() => {
+                        void uploadStore.resolveDuplicate(index, "store");
+                      }}
+                    >
+                      Store as new
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {data.requires_manual_review && (
                 <div className="flex flex-col gap-3 px-5 py-4 border-b border-border bg-card">
                   <div className="flex items-start gap-3">
