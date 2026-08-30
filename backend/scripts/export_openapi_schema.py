@@ -18,9 +18,6 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.main import create_app
-
-
 def build_schema() -> dict[str, Any]:
     """Return the app's OpenAPI schema, built from route/model introspection alone."""
 
@@ -32,6 +29,7 @@ def build_schema() -> dict[str, Any]:
         from app.core.config import get_settings
 
         get_settings.cache_clear()
+        from app.main import create_app
         return create_app().openapi()
     finally:
         os.environ.clear()
