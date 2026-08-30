@@ -16,18 +16,29 @@ import sys
 from pathlib import Path
 from typing import Any
 
-os.environ["DATABASE_URL"] = "postgresql+asyncpg://dummy:dummy@localhost/dummy"
-os.environ["ANTHROPIC_API_KEY"] = "dummy"
-os.environ["S3_BUCKET_NAME"] = "dummy"
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from app.main import create_app
 
 
 def build_schema() -> dict[str, Any]:
     """Return the app's OpenAPI schema, built from route/model introspection alone."""
-    return create_app().openapi()
+
+    original = dict(os.environ)
+    os.environ["DATABASE_URL"] = "postgresql+asyncpg://dummy:dummy@localhost/dummy"
+    os.environ["ANTHROPIC_API_KEY"] = "dummy"
+    os.environ["S3_BUCKET_NAME"] = "dummy"
+    try:
+        from app.core.config import get_settings
+
+        get_settings.cache_clear()
+        from app.main import create_app
+
+        return create_app().openapi()
+    finally:
+        os.environ.clear()
+        os.environ.update(original)
+        from app.core.config import get_settings
+
+        get_settings.cache_clear()
 
 
 def main() -> None:

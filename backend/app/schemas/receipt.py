@@ -1,5 +1,5 @@
 import uuid
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -25,3 +25,10 @@ class UploadJobStatusResponse(BaseModel):
     status: JobStatus
     file_ids: list[str]
     extracted_data: dict[str, Any] | None = None
+
+
+class ResolveDuplicateRequest(BaseModel):
+    """Request to resolve a duplicate receipt extraction."""
+
+    extraction_index: int
+    action: Literal["store", "skip"]

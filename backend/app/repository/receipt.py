@@ -40,6 +40,46 @@ class ReceiptRepository(BaseRepository[Receipt]):
         except ProgrammingError:
             return False
 
+    async def has_duplicate(
+        self,
+        user_id: uuid.UUID,
+        merchant_name: str | None,
+        transaction_date_str: str | None,
+        total_amount_str: str | None,
+    ) -> bool:
+        """Check if a receipt with the same merchant, date, and total exists for the user."""
+        if not merchant_name or not transaction_date_str or not total_amount_str:
+            return False
+
+        import contextlib
+        from decimal import Decimal
+
+        from sqlalchemy import Date, cast
+
+        total_amount = None
+        with contextlib.suppress(Exception):
+            total_amount = Decimal(str(total_amount_str).replace(",", "."))
+
+        if total_amount is None:
+            return False
+
+        stmt = select(self.model_class).where(
+            self.model_class.user_id == user_id,
+            self.model_class.merchant_name == merchant_name,
+            self.model_class.total_amount == total_amount,
+        )
+
+        try:
+            import datetime
+
+            dt = datetime.datetime.strptime(transaction_date_str, "%Y-%m-%d").date()
+            stmt = stmt.where(cast(self.model_class.transaction_date, Date) == dt)
+        except ValueError:
+            return False
+
+        result = await self.session.execute(stmt.limit(1))
+        return result.scalar_one_or_none() is not None
+
     def create_from_extraction(
         self,
         user_id: uuid.UUID,
