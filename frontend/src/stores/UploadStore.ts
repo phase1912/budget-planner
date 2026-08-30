@@ -254,4 +254,25 @@ export class UploadStore {
     this.addFiles([file]);
     return this.submitUpload();
   }
+
+  /**
+   * Submits the user's decision (store or skip) for a flagged duplicate receipt.
+   * Resolves the extraction server-side so it can proceed or be discarded.
+   */
+  async resolveDuplicate(index: number, action: "store" | "skip") {
+    if (!this.jobId) return;
+    try {
+      const res = await this.api.POST("/receipts/upload/{job_id}/resolve-duplicate", {
+        params: { path: { job_id: this.jobId } },
+        body: { extraction_index: index, action },
+      });
+      if (res.data) {
+        runInAction(() => {
+          this.extractedData = res.data.extracted_data ?? null;
+        });
+      }
+    } catch (err) {
+      console.error("Resolve duplicate error", err);
+    }
+  }
 }

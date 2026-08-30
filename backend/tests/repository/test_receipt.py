@@ -133,3 +133,46 @@ async def test_exists_for_user(db_session: AsyncSession) -> None:
     await db_session.flush()
 
     assert await repo.exists_for_user(user.id)
+
+
+@pytest.mark.asyncio
+async def test_has_duplicate(db_session: AsyncSession) -> None:
+    import datetime
+    import uuid
+    from decimal import Decimal
+
+    from app.models.receipt import Receipt, ReceiptStatus
+    from app.repository.receipt import ReceiptRepository
+    from tests.factories.user import UserFactory
+
+    auth_user = await UserFactory.create_async(email="dup2@example.com")
+    repo = ReceiptRepository(db_session)
+
+    # Empty
+    assert await repo.has_duplicate(auth_user.id, "Test", "2026-01-01", "100.00") is False
+
+    # Create one
+    receipt = Receipt(
+        id=uuid.uuid4(),
+        user_id=auth_user.id,
+        merchant_name="Test Merchant",
+        transaction_date=datetime.datetime(2026, 7, 20, tzinfo=datetime.UTC),
+        total_amount=Decimal("84.50"),
+        status=ReceiptStatus.UPLOADED,
+        file_ids=[],
+    )
+    db_session.add(receipt)
+    await db_session.flush()
+
+    # Exact match
+    assert await repo.has_duplicate(auth_user.id, "Test Merchant", "2026-07-20", "84.50") is True
+    # Different amount
+    assert await repo.has_duplicate(auth_user.id, "Test Merchant", "2026-07-20", "84.51") is False
+    # Different date
+    assert await repo.has_duplicate(auth_user.id, "Test Merchant", "2026-07-21", "84.50") is False
+    # Different merchant
+    assert await repo.has_duplicate(auth_user.id, "Other", "2026-07-20", "84.50") is False
+    # Invalid date string
+    assert await repo.has_duplicate(auth_user.id, "Test Merchant", "invalid", "84.50") is False
+    # Invalid amount string
+    assert await repo.has_duplicate(auth_user.id, "Test Merchant", "2026-07-20", "invalid") is False

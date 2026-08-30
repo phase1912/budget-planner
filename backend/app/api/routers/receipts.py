@@ -15,7 +15,12 @@ from app.db.session import get_db_session
 from app.models.upload_job import UploadJob
 from app.models.user import User
 from app.ports.storage import StoragePort
-from app.schemas.receipt import UploadJobStatusResponse, UploadReceiptResponse
+from app.repository.receipt import ReceiptRepository
+from app.schemas.receipt import (
+    ResolveDuplicateRequest,
+    UploadJobStatusResponse,
+    UploadReceiptResponse,
+)
 from app.services.receipt import ReceiptService
 from app.services.storage import ObjectNotFoundError
 
@@ -192,3 +197,55 @@ async def get_receipt_image(
         return RedirectResponse(url=url)
     except ObjectNotFoundError:
         raise HTTPException(status_code=404, detail="Image not found") from None
+
+
+@router.post("/upload/{job_id}/resolve-duplicate", response_model=UploadJobStatusResponse)
+async def resolve_duplicate(
+    job_id: uuid.UUID,
+    request_data: ResolveDuplicateRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> UploadJobStatusResponse:
+    """Resolve a duplicate receipt detection by confirming or skipping (A14)."""
+    stmt = select(UploadJob).where(UploadJob.id == job_id, UploadJob.user_id == current_user.id)
+    job = (await session.execute(stmt)).scalar_one_or_none()
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if not job.result_data or "extractions" not in job.result_data:
+        raise HTTPException(status_code=400, detail="Job has no extractions")
+
+    extractions = job.result_data["extractions"]
+    idx = request_data.extraction_index
+    if idx < 0 or idx >= len(extractions):
+        raise HTTPException(status_code=400, detail="Invalid extraction index")
+
+    extraction = extractions[idx]
+    if not extraction.get("is_duplicate"):
+        raise HTTPException(status_code=400, detail="Extraction is not flagged as duplicate")
+
+    if request_data.action == "store":
+        repo = ReceiptRepository(session).bypass_ownership()
+        repo.create_from_extraction(
+            user_id=current_user.id,
+            file_ids=extraction.get("file_ids", []),
+            extraction=extraction,
+            parser_version="1.0.0",
+        )
+        extraction["is_duplicate"] = False
+        extraction["duplicate_resolved"] = "stored"
+    else:
+        # action == "skip"
+        extraction["is_duplicate"] = False
+        extraction["is_skipped"] = True
+        extraction["duplicate_resolved"] = "skipped"
+
+    import copy
+
+    job.result_data = copy.deepcopy(job.result_data)
+    await session.commit()
+
+    return UploadJobStatusResponse(
+        job_id=job.id, status=job.status, file_ids=job.file_ids, extracted_data=job.result_data
+    )
