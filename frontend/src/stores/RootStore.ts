@@ -5,6 +5,8 @@ import { ProfileStore } from "@/stores/ProfileStore";
 import { UploadStore } from "@/stores/UploadStore";
 import { apiClient } from "@/api/client";
 
+import { ReceiptStore } from "@/stores/ReceiptStore";
+
 /**
  * Single instantiation point for every MobX store in the client (F9.2.1). Feature
  * epics add their store as a field here; a component or another store never imports
@@ -17,6 +19,7 @@ export class RootStore {
   readonly toastStore: ToastStore;
   readonly profileStore: ProfileStore;
   readonly uploadStore: UploadStore;
+  readonly receiptStore: ReceiptStore;
 
   constructor() {
     this.themeStore = new ThemeStore();
@@ -24,5 +27,6 @@ export class RootStore {
     this.authStore = new AuthStore(apiClient);
     this.profileStore = new ProfileStore(apiClient, this.authStore, this.toastStore);
     this.uploadStore = new UploadStore(apiClient);
+    this.receiptStore = new ReceiptStore(this.toastStore);
   }
 }

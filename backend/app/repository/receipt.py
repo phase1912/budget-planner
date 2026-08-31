@@ -23,9 +23,35 @@ class ReceiptRepository(BaseRepository[Receipt]):
     async def get_with_items(self, id: uuid.UUID) -> Receipt | None:
         """Fetch a receipt including its line items."""
         stmt = select(self.model_class).where(self.model_class.id == id)
-        stmt = stmt.options(joinedload(self.model_class.line_items))
+        from app.models.line_item import LineItem
+
+        stmt = stmt.options(joinedload(self.model_class.line_items).joinedload(LineItem.category))
         stmt = self._apply_ownership(stmt)
         return (await self.session.execute(stmt)).unique().scalar_one_or_none()
+
+    async def list_paginated(self, skip: int, limit: int) -> tuple[typing.Sequence[Receipt], int]:
+        """Return a page of receipts and the total count."""
+        from sqlalchemy import func
+
+        # Count query
+        count_stmt = select(func.count()).select_from(self.model_class)
+        count_stmt = self._apply_ownership(count_stmt)
+        total = await self.session.scalar(count_stmt) or 0
+
+        # Items query
+        stmt = select(self.model_class)
+        stmt = self._apply_ownership(stmt)
+        stmt = stmt.order_by(
+            self.model_class.transaction_date.desc().nulls_last(),
+            self.model_class.created_at.desc(),
+        )
+        stmt = stmt.offset(skip).limit(limit)
+
+        stmt = stmt.options(joinedload(self.model_class.line_items))
+
+        result = await self.session.execute(stmt)
+        items = result.unique().scalars().all()
+        return items, total
 
     async def exists_for_user(self, user_id: uuid.UUID) -> bool:
         """Check if any receipts exist for the given user."""
