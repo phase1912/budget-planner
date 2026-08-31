@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -77,3 +79,75 @@ def test_owner_access_redirects(app: FastAPI) -> None:
     assert (
         response.status_code == 307 or response.status_code == 302
     )  # FastAPI RedirectResponse is 307?
+
+
+def test_list_receipts_endpoint(app: FastAPI) -> None:
+    import uuid
+
+    import jwt
+
+    from app.core.config import get_settings
+    from app.db.session import get_db_session
+
+    user = User(id=uuid.uuid4(), email="list@test.com")
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    async def mock_db_session() -> Any:
+        from unittest.mock import AsyncMock, MagicMock
+
+        session = AsyncMock()
+        result_mock = MagicMock()
+        result_mock.unique().scalars().all.return_value = []
+        result_mock.scalar_one_or_none.return_value = 0
+        result_mock.scalar.return_value = 0
+        session.execute.return_value = result_mock
+        session.scalar.return_value = 0
+        yield session
+
+    app.dependency_overrides[get_db_session] = mock_db_session
+
+    client = TestClient(app, follow_redirects=False)
+    token = jwt.encode(
+        {"sub": str(user.id)}, get_settings().jwt_secret_key.get_secret_value(), algorithm="HS256"
+    )
+    client.headers["Authorization"] = f"Bearer {token}"
+
+    response = client.get("/receipts?page=1&size=20")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 0
+    assert len(data["items"]) == 0
+
+
+def test_get_receipt_detail_endpoint(app: FastAPI) -> None:
+    import uuid
+
+    import jwt
+
+    from app.core.config import get_settings
+    from app.db.session import get_db_session
+
+    user = User(id=uuid.uuid4(), email="detail@test.com")
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    async def mock_db_session() -> Any:
+        from unittest.mock import AsyncMock, MagicMock
+
+        session = AsyncMock()
+        result_mock = MagicMock()
+        result_mock.unique().scalar_one_or_none.return_value = None
+        session.execute.return_value = result_mock
+        yield session
+
+    app.dependency_overrides[get_db_session] = mock_db_session
+
+    client = TestClient(app, follow_redirects=False)
+    token = jwt.encode(
+        {"sub": str(user.id)}, get_settings().jwt_secret_key.get_secret_value(), algorithm="HS256"
+    )
+    client.headers["Authorization"] = f"Bearer {token}"
+
+    random_id = str(uuid.uuid4())
+    response = client.get(f"/receipts/{random_id}")
+    assert response.status_code == 404
+    assert response.json()["code"] == "not_found"

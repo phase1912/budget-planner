@@ -176,3 +176,42 @@ async def test_has_duplicate(db_session: AsyncSession) -> None:
     assert await repo.has_duplicate(auth_user.id, "Test Merchant", "invalid", "84.50") is False
     # Invalid amount string
     assert await repo.has_duplicate(auth_user.id, "Test Merchant", "2026-07-20", "invalid") is False
+
+
+@pytest.mark.asyncio
+async def test_list_paginated(db_session: AsyncSession) -> None:
+    user = await UserFactory.create_async(email="paginated@example.com")
+    current_user_id.set(user.id)
+
+    repo = ReceiptRepository(db_session)
+    items, total = await repo.list_paginated(0, 10)
+    assert total == 0
+    assert len(items) == 0
+
+    import datetime
+
+    # Create 3 receipts
+    for i in range(3):
+        receipt = Receipt(
+            id=uuid.uuid4(),
+            user_id=user.id,
+            merchant_name=f"Merchant {i}",
+            status=ReceiptStatus.PARSED,
+            file_ids=["1"],
+            transaction_date=datetime.datetime(2026, 7, 20 + i, tzinfo=datetime.UTC),
+        )
+        db_session.add(receipt)
+
+    await db_session.flush()
+
+    items, total = await repo.list_paginated(0, 2)
+    assert total == 3
+    assert len(items) == 2
+    # Check ordering: newest first
+    assert items[0].merchant_name == "Merchant 2"
+    assert items[1].merchant_name == "Merchant 1"
+
+    items, total = await repo.list_paginated(2, 2)
+    assert total == 3
+    assert len(items) == 1
+    assert items[0].merchant_name == "Merchant 0"

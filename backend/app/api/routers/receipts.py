@@ -17,6 +17,9 @@ from app.models.user import User
 from app.ports.storage import StoragePort
 from app.repository.receipt import ReceiptRepository
 from app.schemas.receipt import (
+    PaginatedReceiptsResponse,
+    ReceiptDetailResponse,
+    ReceiptResponse,
     ResolveDuplicateRequest,
     UploadJobStatusResponse,
     UploadReceiptResponse,
@@ -249,3 +252,45 @@ async def resolve_duplicate(
     return UploadJobStatusResponse(
         job_id=job.id, status=job.status, file_ids=job.file_ids, extracted_data=job.result_data
     )
+
+
+@router.get("", response_model=PaginatedReceiptsResponse)
+async def list_receipts(
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    page: int = 1,
+    size: int = 20,
+) -> PaginatedReceiptsResponse:
+    """List an account's stored receipts newest first with pagination (F3.8)."""
+    if page < 1:
+        page = 1
+    if size < 1:
+        size = 20
+
+    repo = ReceiptRepository(session)
+    items, total = await repo.list_paginated(skip=(page - 1) * size, limit=size)
+    pages = (total + size - 1) // size if size else 0
+
+    return PaginatedReceiptsResponse(
+        items=[ReceiptResponse.model_validate(i) for i in items],
+        total=total,
+        page=page,
+        size=size,
+        pages=pages,
+    )
+
+
+@router.get("/{receipt_id}", response_model=ReceiptDetailResponse)
+async def get_receipt(
+    receipt_id: uuid.UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> ReceiptDetailResponse:
+    """Get a receipt's detail including its line items (F3.8)."""
+    repo = ReceiptRepository(session)
+    receipt = await repo.get_with_items(receipt_id)
+
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+
+    return ReceiptDetailResponse.model_validate(receipt)

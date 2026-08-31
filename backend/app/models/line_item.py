@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Model
 
 if TYPE_CHECKING:
+    from app.models.category import Category
     from app.models.receipt import Receipt
 
 
@@ -28,3 +29,4 @@ class LineItem(Model):
     )
 
     receipt: Mapped["Receipt"] = relationship("Receipt", back_populates="line_items")
+    category: Mapped["Category"] = relationship("Category", lazy="joined", innerjoin=False)
