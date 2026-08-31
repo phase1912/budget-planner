@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from unittest.mock import AsyncMock, patch
@@ -19,7 +20,7 @@ scenarios("receipt_viewing.feature")
 
 
 @pytest.fixture
-def mock_repo():
+def mock_repo() -> Iterator[AsyncMock]:
     with patch("app.api.routers.receipts.ReceiptRepository") as mock:
         instance = mock.return_value
         yield instance
