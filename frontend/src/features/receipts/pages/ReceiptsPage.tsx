@@ -16,12 +16,17 @@ export const ReceiptsPage = observer(() => {
       <div className="w-full max-w-[960px] flex flex-col gap-7">
         <div className="flex items-end justify-between gap-6">
           <div className="flex flex-col gap-1">
-            <h1 className="m-0 text-[28px] font-bold tracking-[-0.02em] text-foreground">Receipts</h1>
+            <h1 className="m-0 text-[28px] font-bold tracking-[-0.02em] text-foreground">
+              Receipts
+            </h1>
             <p className="m-0 text-[15px] text-muted-foreground tabular-nums">
               {String(receiptStore.total)} stored &middot; newest first
             </p>
           </div>
-          <a href="/statistics" className="inline-flex items-center gap-[7px] text-[14px] font-semibold text-primary hover:text-primary-hover">
+          <a
+            href="/statistics"
+            className="inline-flex items-center gap-[7px] text-[14px] font-semibold text-primary hover:text-primary-hover"
+          >
             <svg
               width="16"
               height="16"
@@ -105,11 +110,21 @@ export const ReceiptsPage = observer(() => {
 
         <Card flush>
           <div className="grid grid-cols-[minmax(0,1fr)_120px_92px_120px_170px_28px] items-center gap-4 px-[18px] py-[12px] bg-surface border-b border-border">
-            <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">Merchant</span>
-            <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">Date</span>
-            <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-right">Items</span>
-            <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-right">Total</span>
-            <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">Status</span>
+            <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
+              Merchant
+            </span>
+            <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
+              Date
+            </span>
+            <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-right">
+              Items
+            </span>
+            <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-right">
+              Total
+            </span>
+            <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
+              Status
+            </span>
             <span></span>
           </div>
 
@@ -137,13 +152,41 @@ export const ReceiptsPage = observer(() => {
                 >
                   <span className="flex items-center gap-[11px] text-[14px] font-semibold text-foreground">
                     <IconTile
-                      tone={isParsed ? "success" : isFailed ? "error" : isReview ? "warning" : "default"}
+                      tone={
+                        isParsed ? "success" : isFailed ? "error" : isReview ? "warning" : "default"
+                      }
                       size="sm"
                     >
                       {isFailed ? (
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+                          <path d="M12 9v4" />
+                          <path d="M12 17h.01" />
+                        </svg>
                       ) : (
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8H8"/><path d="M16 12H8"/></svg>
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
+                          <path d="M16 8H8" />
+                          <path d="M16 12H8" />
+                        </svg>
                       )}
                     </IconTile>
                     {receipt.merchant_name ?? "Unknown Merchant"}
@@ -180,15 +223,58 @@ export const ReceiptsPage = observer(() => {
                       }`}
                     >
                       {isParsed && (
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
                       )}
                       {isFailed && (
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+                          <path d="M12 9v4" />
+                          <path d="M12 17h.01" />
+                        </svg>
                       )}
                       {isReview && (
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M12 8v4" />
+                          <path d="M12 16h.01" />
+                        </svg>
                       )}
-                      {isParsed ? "In the total" : isFailed ? "Out of the total" : isReview ? "Needs review" : receipt.status}
+                      {isParsed
+                        ? "In the total"
+                        : isFailed
+                          ? "Out of the total"
+                          : isReview
+                            ? "Needs review"
+                            : receipt.status}
                     </span>
                   </span>
                   <svg

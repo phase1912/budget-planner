@@ -87,11 +87,21 @@ export const ReceiptDetailModal = observer(() => {
 
       <ModalBody>
         <div className="grid grid-cols-[minmax(0,1fr)_44px_78px_86px_132px] items-center gap-[12px] pb-1 border-b border-border">
-          <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">Item</span>
-          <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-right">Qty</span>
-          <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-right">Unit</span>
-          <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-right">Total</span>
-          <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">Category</span>
+          <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
+            Item
+          </span>
+          <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-right">
+            Qty
+          </span>
+          <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-right">
+            Unit
+          </span>
+          <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-right">
+            Total
+          </span>
+          <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
+            Category
+          </span>
         </div>
 
         {receipt.line_items.map((item) => (
@@ -100,8 +110,12 @@ export const ReceiptDetailModal = observer(() => {
             className="grid grid-cols-[minmax(0,1fr)_44px_78px_86px_132px] items-center gap-[12px] py-[11px] border-b border-border min-h-[44px] last:border-0"
           >
             <span className="text-[13px] font-medium">{item.name}</span>
-            <span className="tabular-nums text-muted-foreground text-right text-[13px]">{Number(item.quantity).toFixed(0)}</span>
-            <span className="tabular-nums text-muted-foreground text-right text-[13px]">{Number(item.unit_price).toFixed(2)}</span>
+            <span className="tabular-nums text-muted-foreground text-right text-[13px]">
+              {Number(item.quantity).toFixed(0)}
+            </span>
+            <span className="tabular-nums text-muted-foreground text-right text-[13px]">
+              {Number(item.unit_price).toFixed(2)}
+            </span>
             <span className="tabular-nums text-right text-[14px] font-semibold">
               {Number(item.total_price).toFixed(2)}
             </span>
@@ -122,9 +136,7 @@ export const ReceiptDetailModal = observer(() => {
 
       <ModalFooter>
         <div className="flex items-baseline gap-[10px]">
-          <span className="text-[13px] font-medium text-muted-foreground">
-            Total
-          </span>
+          <span className="text-[13px] font-medium text-muted-foreground">Total</span>
           <span className="tabular-nums text-[22px] font-bold tracking-[-0.02em] text-foreground">
             {receipt.total_amount ? Number(receipt.total_amount).toFixed(2) : "—"}
           </span>

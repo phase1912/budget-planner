@@ -28,6 +28,7 @@ def mock_repo():
 @pytest.fixture
 def test_app() -> FastAPI:
     from app.db.session import get_db_session
+
     app = create_app()
     app.dependency_overrides[get_db_session] = lambda: AsyncMock()
     return app
@@ -82,8 +83,12 @@ def user_has_receipts(state: dict[str, Any], count: int) -> None:
 
 
 @when(parsers.parse("the user requests the first page of receipts with a limit of {limit:d}"))
-def request_receipts(client: TestClient, limit: int, state: dict[str, Any], mock_repo: AsyncMock) -> None:
-    mock_repo.list_paginated = AsyncMock(return_value=(state["receipts"][:limit], len(state["receipts"])))
+def request_receipts(
+    client: TestClient, limit: int, state: dict[str, Any], mock_repo: AsyncMock
+) -> None:
+    mock_repo.list_paginated = AsyncMock(
+        return_value=(state["receipts"][:limit], len(state["receipts"]))
+    )
     state["response"] = client.get(f"/receipts?page=1&size={limit}")
 
 
