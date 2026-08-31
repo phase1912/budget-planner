@@ -17,8 +17,8 @@ Being listed here means acceptance criteria exist for a requirement, not that th
 | A9 | `br1_receipt_digitization/receipt_digitization.feature`: Successfully parse and store a valid receipt photo |
 | A10 | `br1_receipt_digitization/receipt_digitization.feature`: Flag low-confidence extraction |
 | A11 | `br1_receipt_digitization/receipt_digitization.feature`: Handle missing critical fields |
-| A12 | `br1_receipt_digitization/receipt_digitization.feature`: Successfully parse and store a valid receipt photo |
-| A13 | `br1_receipt_digitization/receipt_digitization.feature`: Successfully parse and store a valid receipt photo |
+| A12 | `br1_receipt_digitization/receipt_digitization.feature`: Successfully parse and store a valid receipt photo<br>`br1_receipt_digitization/receipt_viewing.feature`: User views the first page of their receipts |
+| A13 | `br1_receipt_digitization/receipt_digitization.feature`: Successfully parse and store a valid receipt photo<br>`br1_receipt_digitization/receipt_viewing.feature`: User views the first page of their receipts |
 | A14 | `br1_receipt_digitization/receipt_digitization.feature`: Detect potential duplicate upload |
 | A15 | `br1_receipt_digitization/receipt_digitization.feature`: Successfully parse and store a valid receipt photo |
 | B1 | `br2_multi_photo_position_matching/multi_photo_position_matching.feature`: Identify identical position split across two photos of the same long receipt |
@@ -72,7 +72,7 @@ Being listed here means acceptance criteria exist for a requirement, not that th
 | G11 | `br7_identity_and_access/identity_and_access.feature`: Reject linking on an unverified provider email |
 | G12 | `br7_identity_and_access/identity_and_access.feature`: Sign in with either a linked provider or a password |
 | N1 | `nfr_cross_cutting/cross_cutting.feature`: Receipt images and extracted data are encrypted at rest |
-| N2 | `nfr_cross_cutting/cross_cutting.feature`: A user cannot access another user's data |
+| N2 | `br1_receipt_digitization/receipt_viewing.feature`: User cannot view another user's receipt<br>`nfr_cross_cutting/cross_cutting.feature`: A user cannot access another user's data |
 | N3 | `nfr_cross_cutting/cross_cutting.feature`: Deleting a receipt removes it from budget and statistics immediately |
 | N4 | `nfr_cross_cutting/cross_cutting.feature`: Parsing responds within the performance target |
 | N5 | `nfr_cross_cutting/cross_cutting.feature`: Automatic classification decisions are logged with confidence scores |
