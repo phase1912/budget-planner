@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import cast
+from typing import Any, cast
 
 import filetype  # type: ignore[import-untyped]
 from sqlalchemy import select
@@ -168,17 +168,50 @@ class ReceiptService:
         assert self.storage_port is not None
         assert self.parser_port is not None
 
-        images: list[bytes] = []
-        mime_types: list[str] = []
+        merged_extraction: dict[str, Any] | None = None
+        all_line_items: list[dict[str, Any]] = []
+
         for file_id, ct in zip(file_ids, content_types, strict=True):
             object_name = f"receipts/{user.id}/{file_id}"
             image_bytes = await self.storage_port.download_file(object_name)
-            images.append(image_bytes)
-            mime_types.append(ct)
+
+            try:
+                result = await self.parser_port.parse([image_bytes], mime_types=[ct])
+                result_dict = result.model_dump()
+
+                for item in result_dict.get("line_items", []):
+                    item["file_id"] = file_id
+                    all_line_items.append(item)
+
+                if merged_extraction is None:
+                    merged_extraction = result_dict
+                else:
+                    for field in [
+                        "merchant_name",
+                        "transaction_date",
+                        "transaction_time",
+                        "receipt_total",
+                    ]:
+                        conf_field = f"{field}_confidence"
+                        if result_dict.get(conf_field, 0) > merged_extraction.get(conf_field, 0):
+                            merged_extraction[field] = result_dict.get(field)
+                            merged_extraction[conf_field] = result_dict.get(conf_field)
+            except Exception:
+                logger.exception(
+                    "Vision extraction failed for user %s, file_id %s", user.id, file_id
+                )
+                return {"error": "extraction_failed"}
+
+        if merged_extraction is None:
+            return {"error": "extraction_failed"}
+
+        merged_extraction["line_items"] = all_line_items
+
+        from app.schemas.extraction import ExtractedReceipt
 
         try:
-            result = await self.parser_port.parse(images, mime_types=mime_types)
-            return result.model_dump()
+            final_result = ExtractedReceipt(**merged_extraction)
+            return final_result.model_dump()
         except Exception:
-            logger.exception("Vision extraction failed for user %s", user.id)
+            logger.exception("Merged extraction validation failed for user %s", user.id)
             return {"error": "extraction_failed"}
