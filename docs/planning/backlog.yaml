@@ -834,7 +834,7 @@ epics:
     title: Multi-Photo Position Matching
     br: [BR-2]
     phase: 1
-    groomed: false
+    groomed: true
     summary: >
       Recognising that a line item appearing on two overlapping photos of one long receipt is
       the same purchase, so it is counted once — while never collapsing genuinely repeated
@@ -852,6 +852,17 @@ epics:
         demo: >
           Photograph one long receipt in two overlapping frames and see, on step 2, each item
           attributed to the frame it was read from.
+        tasks:
+          - key: F4.1.1
+            title: Parse photos independently in _run_extraction
+            labels: [backend]
+            detail: >
+              Modify process_upload_job_task to parse each image sequentially/independently rather than in one batch array to Claude. Add file_id tracking per line item.
+          - key: F4.1.2
+            title: Expose per-photo provenance in frontend Step 2
+            labels: [frontend]
+            detail: >
+              Update frontend receipt wizard step 2 to show which frame each line item came from (tagging line items with their source image).
       - key: F4.2
         title: Position comparison rules
         labels: [backend, frontend]
@@ -865,6 +876,17 @@ epics:
         demo: >
           Upload the overlapping pair and read the evidence table for a matched item — all
           four fields ticked — and for a near-match where one price differs.
+        tasks:
+          - key: F4.2.1
+            title: Implement position comparison logic
+            labels: [backend]
+            detail: >
+              Compare extracted items on exact match of name, unit price, quantity, and total. Yield matches or mismatches.
+          - key: F4.2.2
+            title: Build conflict card UI
+            labels: [frontend]
+            detail: >
+              Show the conflict card field by field comparison as specified in design.
       - key: F4.3
         title: Same-receipt scoping guard
         labels: [backend, frontend]
@@ -877,6 +899,12 @@ epics:
         demo: >
           Upload two separate receipts a week apart that each contain "Milk 2% 1L" at 4.50 and
           confirm both purchases survive, with no match offered between them.
+        tasks:
+          - key: F4.3.1
+            title: Restrict position match to single receipt
+            labels: [backend]
+            detail: >
+              Ensure the comparison only runs across photos that belong to the same physical receipt group, and never across separate receipts.
       - key: F4.4
         title: Comparison failure handling
         labels: [backend, frontend]
@@ -889,6 +917,12 @@ epics:
           Upload one clear frame and one unreadable one; the pair reports that it could not be
           compared and why, per the "Comparison not possible" panel in
           docs/design/screens/states.html.
+        tasks:
+          - key: F4.4.1
+            title: Handle parse failures during comparison
+            labels: [backend, frontend]
+            detail: >
+              Return "comparison not possible" when a photo fails to parse, and render the corresponding failure panel on the frontend.
       - key: F4.5
         title: Manual override and correction capture
         labels: [backend, database, frontend]
@@ -901,6 +935,17 @@ epics:
         demo: >
           Flip a "same item" verdict to two items, see the receipt total change accordingly,
           and undo it.
+        tasks:
+          - key: F4.5.1
+            title: Manual override endpoints and DB storage
+            labels: [backend, database]
+            detail: >
+              Provide API to flip "same item" decisions. Store correction as labelled data.
+          - key: F4.5.2
+            title: Implement manual override UI controls
+            labels: [frontend]
+            detail: >
+              Implement the same-item / two-items control and settled-with-undo state on the conflict card.
       - key: F4.6
         title: Deduplicated receipt assembly
         labels: [backend, frontend]
@@ -912,6 +957,12 @@ epics:
         demo: >
           After resolving the overlap, step 2 shows one item list for the receipt with the
           duplicate collapsed, and its footer agrees with the printed total.
+        tasks:
+          - key: F4.6.1
+            title: Assemble deduplicated receipt item list
+            labels: [backend, frontend]
+            detail: >
+              Merge per-photo extractions into a single item list where matched positions appear once, updating totals on backend and displaying cleanly on step 2.
       - key: F4.7
         title: Upload step 3 — the resolve gate
         labels: [backend, frontend]
@@ -931,6 +982,17 @@ epics:
           Upload a batch that raises several kinds of conflict at once, watch "Store receipts"
           stay disabled while the counter is above zero, settle them one by one, and only then
           commit the batch.
+        tasks:
+          - key: F4.7.1
+            title: Resolve gate API
+            labels: [backend]
+            detail: >
+              Create a central queue endpoint for outstanding decisions and block saving the batch until all are settled.
+          - key: F4.7.2
+            title: Step 3 UI implementation
+            labels: [frontend]
+            detail: >
+              Implement the third step of the wizard showing the queue and disabling "Store receipts" until empty.
 
   - key: E5
     title: Spend Categorization

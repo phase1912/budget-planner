@@ -37,6 +37,13 @@ class ExtractedLineItem(BaseModel):
         le=100,
         description="Extraction confidence for this line item (0-100, e.g. 100) (BRD A10)",
     )
+    file_id: str | None = Field(
+        default=None,
+        description=(
+            "The ID of the file (image) this line item was extracted from. "
+            "Populated by the backend, not the LLM."
+        ),
+    )
 
 
 class ExtractedReceipt(BaseModel):

@@ -11,6 +11,7 @@ interface ExtractedLineItem {
   unit_price: string;
   total_price: string;
   confidence?: number;
+  file_id?: string | null;
 }
 
 interface ExtractedData {
@@ -326,16 +327,26 @@ export const ExtractedStep = observer(function ExtractedStep() {
 
               {lineItems.map((item, idx) => {
                 const itemLowConf = (item.confidence ?? 100) < 80;
+                const fileIndex = item.file_id ? fileIds.indexOf(item.file_id) + 1 : 0;
+                const showProvenance = fileIds.length > 1 && fileIndex > 0;
+
                 return (
                   <div
                     key={idx}
                     className="grid grid-cols-[minmax(0,1fr)_48px_84px_92px_148px] items-center gap-3 px-5 py-3 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors text-[13px]"
                   >
-                    <span
-                      className={`font-medium truncate ${itemLowConf ? "text-tone-warning-text" : "text-foreground"}`}
-                    >
-                      {item.name}
-                    </span>
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      {showProvenance && (
+                        <span className="shrink-0 inline-flex items-center justify-center h-4 px-1.5 rounded-sm bg-muted text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
+                          P{fileIndex}
+                        </span>
+                      )}
+                      <span
+                        className={`font-medium truncate ${itemLowConf ? "text-tone-warning-text" : "text-foreground"}`}
+                      >
+                        {item.name}
+                      </span>
+                    </div>
                     <span
                       className={`text-right tabular-nums ${itemLowConf ? "text-tone-warning-text" : "text-muted-foreground"}`}
                     >

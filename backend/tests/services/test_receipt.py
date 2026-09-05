@@ -1,4 +1,5 @@
 import uuid
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -107,6 +108,7 @@ async def test_process_upload_job_task_success() -> None:
     mock_job = UploadJob(id=job_id, user_id=user.id)
 
     mock_session = AsyncMock()
+    mock_session.add = MagicMock()
     mock_result = MagicMock()
     mock_result.scalar_one_or_none.return_value = mock_job
     mock_session.execute.return_value = mock_result
@@ -139,6 +141,7 @@ async def test_process_upload_job_task_failure() -> None:
     mock_job = UploadJob(id=job_id, user_id=user.id, status=JobStatus.PENDING)
 
     mock_session = AsyncMock()
+    mock_session.add = MagicMock()
     mock_result = MagicMock()
     mock_result.scalar_one_or_none.return_value = mock_job
     mock_session.execute.return_value = mock_result
@@ -155,3 +158,73 @@ async def test_process_upload_job_task_failure() -> None:
         await service.process_upload_job_task(job_id, user, receipts_data)
 
     assert mock_job.status == JobStatus.FAILED
+
+
+@pytest.mark.asyncio
+async def test_run_extraction_multiple_photos_merges_items_and_headers() -> None:
+    mock_storage = AsyncMock()
+    mock_parser = AsyncMock()
+
+    mock_storage.download_file.side_effect = [b"img1", b"img2"]
+
+    # First image extraction
+    mock_ext1 = MagicMock()
+    mock_ext1.model_dump.return_value = {
+        "merchant_name": "Store",
+        "merchant_name_confidence": 90,
+        "receipt_total": "100.00",
+        "receipt_total_confidence": 50,
+        "line_items": [
+            {"name": "Item A", "total_price": "50.00", "quantity": "1", "unit_price": "50.00"}
+        ],
+    }
+
+    # Second image extraction
+    mock_ext2 = MagicMock()
+    mock_ext2.model_dump.return_value = {
+        "merchant_name": "Store",
+        "merchant_name_confidence": 80,  # lower conf
+        "receipt_total": "100.00",
+        "receipt_total_confidence": 95,  # higher conf
+        "line_items": [
+            {"name": "Item B", "total_price": "50.00", "quantity": "1", "unit_price": "50.00"}
+        ],
+    }
+
+    mock_parser.parse.side_effect = [mock_ext1, mock_ext2]
+
+    service = ReceiptService(storage_port=mock_storage, parser_port=mock_parser)
+    user = User(id=uuid.uuid4(), email="test@test.com")
+
+    # Using private method directly for the unit test
+    result = await service._run_extraction(user, ["f1", "f2"], ["image/jpeg", "image/png"])
+
+    assert "error" not in result
+    assert result["merchant_name"] == "Store"
+    assert result["merchant_name_confidence"] == 90  # kept from ext1
+    assert result["receipt_total"] == "100.00"
+    assert result["receipt_total_confidence"] == 95  # updated from ext2
+
+    # Line items should be combined and tagged
+    items = cast(list[dict[str, Any]], result["line_items"])
+    assert len(items) == 2
+    assert items[0]["name"] == "Item A"
+    assert items[0]["file_id"] == "f1"
+    assert items[1]["name"] == "Item B"
+    assert items[1]["file_id"] == "f2"
+
+
+@pytest.mark.asyncio
+async def test_run_extraction_failure_returns_error_dict() -> None:
+    mock_storage = AsyncMock()
+    mock_parser = AsyncMock()
+
+    mock_storage.download_file.return_value = b"img1"
+    mock_parser.parse.side_effect = Exception("Vision LLM Error")
+
+    service = ReceiptService(storage_port=mock_storage, parser_port=mock_parser)
+    user = User(id=uuid.uuid4(), email="test@test.com")
+
+    result = await service._run_extraction(user, ["f1"], ["image/jpeg"])
+
+    assert result == {"error": "extraction_failed"}

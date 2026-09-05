@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-15 epics · 101 features · 77 tasks written so far.
+15 epics · 101 features · 88 tasks written so far.
 
 11 epics are phase 1 — the BRD scope, delivered before launch. 4 are phase 2: commercial scope that is planned but deliberately not started until phase 1 is complete.
 
@@ -13,7 +13,7 @@
 | E1 | Identity & Account | BR-7, N2 | 4 | yes | 1 |
 | E2 | Receipt Ingestion & Storage | BR-1 | 5 | yes | 1 |
 | E3 | Receipt Parsing & Extraction | BR-1 | 7 | no | 1 |
-| E4 | Multi-Photo Position Matching | BR-2 | 7 | no | 1 |
+| E4 | Multi-Photo Position Matching | BR-2 | 7 | yes | 1 |
 | E5 | Spend Categorization | BR-3 | 7 | no | 1 |
 | E6 | Monthly Budget Calculation | BR-4 | 7 | no | 1 |
 | E7 | Statistics, Comparison & Export | BR-5 | 6 | no | 1 |
@@ -335,6 +335,9 @@ Each photo is parsed on its own before any comparison, so a match decision is ne
 
 **Demonstrated by:** Photograph one long receipt in two overlapping frames and see, on step 2, each item attributed to the frame it was read from.
 
+- **F4.1.1** Parse photos independently in _run_extraction — Modify process_upload_job_task to parse each image sequentially/independently rather than in one batch array to Claude. Add file_id tracking per line item.
+- **F4.1.2** Expose per-photo provenance in frontend Step 2 — Update frontend receipt wizard step 2 to show which frame each line item came from (tagging line items with their source image).
+
 ### F4.2 — Position comparison rules
 
 *Requirements: B2, B3, B4* · *Blocked by: F4.1*
@@ -342,6 +345,9 @@ Each photo is parsed on its own before any comparison, so a match decision is ne
 Item name, unit price, quantity and total price must all match exactly for a pair to be "same position"; any difference makes it "different position". Ships with the conflict card that shows the comparison field by field, so the verdict is legible rather than asserted.
 
 **Demonstrated by:** Upload the overlapping pair and read the evidence table for a matched item — all four fields ticked — and for a near-match where one price differs.
+
+- **F4.2.1** Implement position comparison logic — Compare extracted items on exact match of name, unit price, quantity, and total. Yield matches or mismatches.
+- **F4.2.2** Build conflict card UI — Show the conflict card field by field comparison as specified in design.
 
 ### F4.3 — Same-receipt scoping guard
 
@@ -351,6 +357,8 @@ Comparison runs only between photos of one physical receipt. Identical items on 
 
 **Demonstrated by:** Upload two separate receipts a week apart that each contain "Milk 2% 1L" at 4.50 and confirm both purchases survive, with no match offered between them.
 
+- **F4.3.1** Restrict position match to single receipt — Ensure the comparison only runs across photos that belong to the same physical receipt group, and never across separate receipts.
+
 ### F4.4 — Comparison failure handling
 
 *Requirements: B6* · *Blocked by: F4.2*
@@ -358,6 +366,8 @@ Comparison runs only between photos of one physical receipt. Identical items on 
 If either photo failed to parse, return "comparison not possible" with the reason instead of guessing — and say so where the comparison would have been.
 
 **Demonstrated by:** Upload one clear frame and one unreadable one; the pair reports that it could not be compared and why, per the "Comparison not possible" panel in docs/design/screens/states.html.
+
+- **F4.4.1** Handle parse failures during comparison — Return "comparison not possible" when a photo fails to parse, and render the corresponding failure panel on the frontend.
 
 ### F4.5 — Manual override and correction capture
 
@@ -367,6 +377,9 @@ A user can overturn any automatic determination, and the correction is stored as
 
 **Demonstrated by:** Flip a "same item" verdict to two items, see the receipt total change accordingly, and undo it.
 
+- **F4.5.1** Manual override endpoints and DB storage — Provide API to flip "same item" decisions. Store correction as labelled data.
+- **F4.5.2** Implement manual override UI controls — Implement the same-item / two-items control and settled-with-undo state on the conflict card.
+
 ### F4.6 — Deduplicated receipt assembly
 
 *Requirements: B3* · *Blocked by: F4.2*
@@ -375,6 +388,8 @@ Merge the per-photo extractions of one receipt into a single item list where mat
 
 **Demonstrated by:** After resolving the overlap, step 2 shows one item list for the receipt with the duplicate collapsed, and its footer agrees with the printed total.
 
+- **F4.6.1** Assemble deduplicated receipt item list — Merge per-photo extractions into a single item list where matched positions appear once, updating totals on backend and displaying cleanly on step 2.
+
 ### F4.7 — Upload step 3 — the resolve gate
 
 *Requirements: B7* · *Blocked by: F4.5, F3.4, F3.6, F1.2, F9.4*
@@ -382,6 +397,9 @@ Merge the per-photo extractions of one receipt into a single item list where mat
 The third step of the wizard, and the endpoint behind it: a batch of decisions is applied together and the receipts are committed only once none are outstanding. One queue for everything needing a human across the whole batch — a position caught in two frames, a field below the confidence threshold, a receipt matching one already stored, a missing total — with a counter, and nothing written while any of it is open. Decisions the agent made alone appear settled and reversible in the same queue rather than hidden. Kept as its own feature because it composes flags raised by four features across two epics; the individual verdicts and evidence are theirs. Screen at docs/design/screens/upload-3-resolve.html.
 
 **Demonstrated by:** Upload a batch that raises several kinds of conflict at once, watch "Store receipts" stay disabled while the counter is above zero, settle them one by one, and only then commit the batch.
+
+- **F4.7.1** Resolve gate API — Create a central queue endpoint for outstanding decisions and block saving the batch until all are settled.
+- **F4.7.2** Step 3 UI implementation — Implement the third step of the wizard showing the queue and disabling "Store receipts" until empty.
 
 ---
 
