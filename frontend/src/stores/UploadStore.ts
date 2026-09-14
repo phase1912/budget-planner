@@ -14,6 +14,7 @@ export class UploadStore {
 
   mode: "single" | "multiple" = "single";
   lines: File[][] = [[]];
+  currentStep: 1 | 2 | 3 = 1;
 
   constructor(api: ApiClient) {
     this.api = api;
@@ -210,6 +211,7 @@ export class UploadStore {
               this.uploadState.succeed();
               this.fileIds = res.data.file_ids;
               this.extractedData = res.data.extracted_data ?? null;
+              this.currentStep = 2;
               polling = false;
             } else if (res.data.status === "failed") {
               this.isProcessing = false;
@@ -247,6 +249,7 @@ export class UploadStore {
   resetData() {
     this.extractedData = null;
     this.fileIds = [];
+    this.currentStep = 1;
   }
 
   // Legacy method for existing tests/components
