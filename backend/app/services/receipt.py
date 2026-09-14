@@ -211,6 +211,27 @@ class ReceiptService:
 
         try:
             final_result = ExtractedReceipt(**merged_extraction)
+
+            from app.domain.position_matching import ComparisonNotPossible, match_positions
+            from app.schemas.extraction import PositionMatch
+
+            matches = []
+            items = final_result.line_items
+            for i, a in enumerate(items):
+                for j in range(i + 1, len(items)):
+                    b = items[j]
+
+                    if a.file_id and b.file_id and a.file_id != b.file_id and a.name == b.name:
+                        try:
+                            res = match_positions(a, b, same_receipt=True)
+                            matches.append(
+                                PositionMatch(item_a_index=i, item_b_index=j, result=res)
+                            )
+                        except ComparisonNotPossible:
+                            pass
+
+            final_result.position_matches = matches
+
             return final_result.model_dump()
         except Exception:
             logger.exception("Merged extraction validation failed for user %s", user.id)

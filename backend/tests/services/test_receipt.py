@@ -228,3 +228,110 @@ async def test_run_extraction_failure_returns_error_dict() -> None:
     result = await service._run_extraction(user, ["f1"], ["image/jpeg"])
 
     assert result == {"error": "extraction_failed"}
+
+
+@pytest.mark.asyncio
+async def test_process_upload_job_task_position_matches() -> None:
+    mock_storage = AsyncMock()
+    mock_parser = AsyncMock()
+
+    # We will upload 2 photos for 1 receipt
+    # The parser will be called twice (once per photo)
+    # Mock parser to return two different extractions that have a common line item
+
+    mock_extraction_1 = MagicMock()
+    mock_extraction_1.model_dump.return_value = {
+        "merchant_name": "Test",
+        "receipt_total": "100.00",
+        "currency": "USD",
+        "items_sum_matches_total": True,
+        "line_items": [
+            {
+                "name": "Bananas",
+                "unit_price": "3.20",
+                "quantity": "1",
+                "total_price": "3.20",
+            },
+            {
+                "name": "Apples",
+                "unit_price": "2.00",
+                "quantity": "2",
+                "total_price": "4.00",
+            },
+        ],
+    }
+
+    mock_extraction_2 = MagicMock()
+    mock_extraction_2.model_dump.return_value = {
+        "merchant_name": "Test",
+        "receipt_total": "100.00",
+        "currency": "USD",
+        "items_sum_matches_total": True,
+        "line_items": [
+            {
+                "name": "Bananas",
+                "unit_price": "3.20",
+                "quantity": "1",
+                "total_price": "3.20",
+            },
+            {
+                "name": "Oranges",
+                "unit_price": "1.00",
+                "quantity": "5",
+                "total_price": "5.00",
+            },
+        ],
+    }
+
+    mock_parser.parse.side_effect = [mock_extraction_1, mock_extraction_2]
+    mock_storage.download_file.return_value = b"image-data"
+
+    service = ReceiptService(storage_port=mock_storage, parser_port=mock_parser)
+
+    job_id = uuid.uuid4()
+    user = User(id=uuid.uuid4(), email="test@test.com")
+
+    # 1 receipt, 2 photos
+    receipts_data: list[list[dict[str, str | bytes]]] = [
+        [
+            {"content": b"photo1", "content_type": "image/jpeg"},
+            {"content": b"photo2", "content_type": "image/jpeg"},
+        ]
+    ]
+
+    mock_job = UploadJob(id=job_id, user_id=user.id)
+
+    mock_session = AsyncMock()
+    mock_session.add = MagicMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = mock_job
+    mock_session.execute.return_value = mock_result
+
+    mock_session_factory = MagicMock()
+    mock_session_factory.return_value.__aenter__.return_value = mock_session
+
+    with (
+        patch("app.services.receipt.get_session_factory", return_value=mock_session_factory),
+        patch.object(service, "store_receipt_image", new_callable=AsyncMock) as mock_store,
+    ):
+        mock_store.side_effect = ["file-1", "file-2"]
+        await service.process_upload_job_task(job_id, user, receipts_data)
+
+    assert mock_job.status == JobStatus.COMPLETED
+    assert mock_job.result_data is not None
+
+    extractions = mock_job.result_data["extractions"]
+    assert len(extractions) == 1  # 1 receipt
+    extracted = extractions[0]
+
+    assert len(extracted["line_items"]) == 4
+
+    matches = extracted.get("position_matches", [])
+    assert len(matches) == 1
+
+    match = matches[0]
+    # item_a_index should be the index of Bananas in photo 1 (0)
+    # item_b_index should be the index of Bananas in photo 2 (2)
+    assert match["item_a_index"] == 0
+    assert match["item_b_index"] == 2
+    assert match["result"] == "same"
