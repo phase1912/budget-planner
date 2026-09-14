@@ -19,6 +19,16 @@ from decimal import Decimal, InvalidOperation
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.domain.position_matching import MatchResult
+
+
+class PositionMatch(BaseModel):
+    """Result of comparing two line items (BRD B2-B4)."""
+
+    item_a_index: int = Field(description="Index of the first item in the line_items array")
+    item_b_index: int = Field(description="Index of the second item in the line_items array")
+    result: MatchResult = Field(description="Comparison result ('same' or 'different')")
+
 
 class ExtractedLineItem(BaseModel):
     """A single line item on a receipt (BRD A9).
@@ -85,6 +95,11 @@ class ExtractedReceipt(BaseModel):
     line_items: list[ExtractedLineItem] = Field(
         default_factory=list,
         description="Every line item found on the receipt",
+    )
+
+    position_matches: list[PositionMatch] = Field(
+        default_factory=list,
+        description="Results of comparing overlapping line items across photos (BRD B2-B4).",
     )
 
     receipt_total: str | None = Field(

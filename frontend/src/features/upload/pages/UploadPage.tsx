@@ -8,6 +8,8 @@ import { Button } from "@/shared/components/Button/Button";
 import { ReceiptLineCard } from "../components/ReceiptLineCard";
 import { ExtractedStep } from "../components/ExtractedStep";
 
+import { ResolveStep } from "../components/ResolveStep";
+
 export const UploadPage = observer(function UploadPage() {
   const { uploadStore } = useStores();
   const singleInputRef = useRef<HTMLInputElement>(null);
@@ -28,8 +30,20 @@ export const UploadPage = observer(function UploadPage() {
     }
   };
 
-  if (uploadStore.uploadState.status === "success" && uploadStore.extractedData) {
+  if (
+    uploadStore.currentStep === 2 &&
+    uploadStore.uploadState.status === "success" &&
+    uploadStore.extractedData
+  ) {
     return <ExtractedStep />;
+  }
+
+  if (
+    uploadStore.currentStep === 3 &&
+    uploadStore.uploadState.status === "success" &&
+    uploadStore.extractedData
+  ) {
+    return <ResolveStep />;
   }
 
   return (

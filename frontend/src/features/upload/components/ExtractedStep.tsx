@@ -444,7 +444,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
             </svg>
             Back to photos
           </Button>
-          <Button variant="primary">
+          <Button variant="primary" onClick={() => (uploadStore.currentStep = 3)}>
             Resolve {totalItems} things
             <svg
               width="16"
