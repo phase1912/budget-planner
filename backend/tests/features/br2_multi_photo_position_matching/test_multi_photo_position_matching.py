@@ -41,7 +41,7 @@ def given_overlapping_shots(context: dict[str, object]) -> None:
 @given(
     parsers.parse(
         'the item "{name}" priced at {price} PLN, quantity {qty}, '
-        'appears near the bottom of photo one'
+        "appears near the bottom of photo one"
     )
 )
 def given_item_photo_one(context: dict[str, object], name: str, price: str, qty: str) -> None:
@@ -56,7 +56,7 @@ def given_item_photo_one(context: dict[str, object], name: str, price: str, qty:
 @given(
     parsers.parse(
         'the same item "{name}" priced at {price} PLN, quantity {qty}, '
-        'also appears near the top of photo two'
+        "also appears near the top of photo two"
     )
 )
 def given_item_photo_two(context: dict[str, object], name: str, price: str, qty: str) -> None:
@@ -155,10 +155,7 @@ def then_no_items_classified(context: dict[str, object], expected_class: str) ->
 
 
 @given(
-    parsers.parse(
-        'the user has a receipt dated {date} containing "{name}" '
-        'priced at {price} PLN'
-    )
+    parsers.parse('the user has a receipt dated {date} containing "{name}" priced at {price} PLN')
 )
 def given_receipt_dated_1(context: dict[str, object], date: str, name: str, price: str) -> None:
     item_a = context["item_a"]
