@@ -33,6 +33,13 @@ interface ExtractedData {
   is_duplicate?: boolean | null;
   duplicate_resolved?: string | null;
   is_skipped?: boolean | null;
+  position_matches?: {
+    item_a_index: number;
+    item_b_index: number;
+    result: "same" | "different" | "not_possible";
+    reason?: string | null;
+    user_overridden?: boolean;
+  }[];
 }
 
 interface ExtractedDataPayload {
@@ -134,6 +141,16 @@ export const ExtractedStep = observer(function ExtractedStep() {
           const matchesTotal = data.items_sum_matches_total;
           const lineItems = data.line_items ?? [];
           const fileIds = data.file_ids ?? [];
+
+          const duplicateIndices = new Set(
+            (data.position_matches ?? [])
+              .filter((m) => m.result === "same")
+              .map((m) => m.item_b_index),
+          );
+
+          const deduplicatedItems = lineItems
+            .map((item, idx) => ({ item, idx }))
+            .filter(({ idx }) => !duplicateIndices.has(idx));
 
           return (
             <Card
@@ -325,10 +342,34 @@ export const ExtractedStep = observer(function ExtractedStep() {
                 <span>Category</span>
               </div>
 
-              {lineItems.map((item, idx) => {
+              {deduplicatedItems.map(({ item, idx }) => {
                 const itemLowConf = (item.confidence ?? 100) < 80;
                 const fileIndex = item.file_id ? fileIds.indexOf(item.file_id) + 1 : 0;
-                const showProvenance = fileIds.length > 1 && fileIndex > 0;
+                const matchesForThisItem = (data.position_matches ?? []).filter(
+                  (m) => m.item_a_index === idx && m.result === "same",
+                );
+
+                let provenanceLabel = "";
+                if (fileIds.length > 1 && fileIndex > 0) {
+                  provenanceLabel = `P${fileIndex.toString()}`;
+                  if (matchesForThisItem.length > 0) {
+                    const otherFileIndices = [
+                      ...new Set(
+                        matchesForThisItem
+                          .map((m) => {
+                            const bItem = lineItems[m.item_b_index];
+                            return bItem?.file_id ? fileIds.indexOf(bItem.file_id) + 1 : 0;
+                          })
+                          .filter((val) => val > 0 && val !== fileIndex),
+                      ),
+                    ];
+
+                    if (otherFileIndices.length > 0) {
+                      provenanceLabel += ` & P${otherFileIndices.join(" & P")}`;
+                    }
+                  }
+                }
+                const showProvenance = !!provenanceLabel;
 
                 return (
                   <div
@@ -338,7 +379,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                     <div className="flex items-center gap-2 overflow-hidden">
                       {showProvenance && (
                         <span className="shrink-0 inline-flex items-center justify-center h-4 px-1.5 rounded-sm bg-muted text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
-                          P{fileIndex}
+                          {provenanceLabel}
                         </span>
                       )}
                       <span
@@ -380,7 +421,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
               >
                 <div className="flex items-center justify-between w-full">
                   <span className="text-[13px] text-muted-foreground tabular-nums">
-                    {lineItems.length} items &middot; lines add up to{" "}
+                    {deduplicatedItems.length} items &middot; lines add up to{" "}
                     {data.computed_total ?? "0.00"}
                   </span>
                   {matchesTotal === true && (
