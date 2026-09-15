@@ -216,6 +216,7 @@ class ReceiptService:
 
             from app.domain.position_matching import (
                 ComparisonNotPossible,
+                MatchResult,
                 are_photos_from_same_receipt,
                 match_positions,
             )
@@ -239,8 +240,15 @@ class ReceiptService:
                             matches.append(
                                 PositionMatch(item_a_index=i, item_b_index=j, result=res)
                             )
-                        except ComparisonNotPossible:
-                            pass
+                        except ComparisonNotPossible as e:
+                            matches.append(
+                                PositionMatch(
+                                    item_a_index=i,
+                                    item_b_index=j,
+                                    result=MatchResult.NOT_POSSIBLE,
+                                    reason=str(e),
+                                )
+                            )
 
             final_result.position_matches = matches
 
