@@ -16,7 +16,8 @@ interface ExtractedLineItem {
 interface PositionMatch {
   item_a_index: number;
   item_b_index: number;
-  result: "same" | "different";
+  result: "same" | "different" | "not_possible";
+  reason?: string | null;
 }
 
 interface ExtractedData {
@@ -145,6 +146,70 @@ export const ResolveStep = observer(function ResolveStep() {
             if (!itemA || !itemB) return null;
 
             // F4.2.2 expects us to render the conflict card
+            if (match.result === "not_possible") {
+              return (
+                <Card key={String(eIdx) + "-" + String(mIdx)} flush>
+                  <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-muted/30">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-accent text-accent-foreground">
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                          <polyline points="2 17 12 22 22 17" />
+                          <polyline points="2 12 12 17 22 12" />
+                        </svg>
+                      </span>
+                      <span className="text-[15px] font-bold">
+                        "{itemA.name}" appears in both photos
+                      </span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-pill bg-muted text-[12px] font-medium text-foreground">
+                        {merchantName}
+                      </span>
+                    </div>
+                    <span className="text-[13px] font-semibold text-muted-foreground">
+                      {mIdx + 1} of {conflictsCount}
+                    </span>
+                  </div>
+
+                  <div className="p-4 md:p-[18px]">
+                    <div className="flex items-start gap-3 w-full p-3.5 border border-tone-error-border bg-tone-error-bg text-tone-error-prose rounded-control">
+                      <svg
+                        className="shrink-0 text-tone-error-text mt-[1px]"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                      </svg>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[13px] font-bold text-foreground">
+                          Comparison not possible
+                        </span>
+                        <span className="text-[12px] leading-relaxed">
+                          {match.reason ??
+                            "Overlap checking is skipped rather than guessed. Retake that frame and it runs again."}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              );
+            }
+
             return (
               <Card key={String(eIdx) + "-" + String(mIdx)} flush>
                 <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-muted/30">

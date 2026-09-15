@@ -22,6 +22,7 @@ def are_photos_from_same_receipt(header_a: dict[str, Any], header_b: dict[str, A
 class MatchResult(StrEnum):
     SAME = "same"
     DIFFERENT = "different"
+    NOT_POSSIBLE = "not_possible"
 
 
 class ComparisonNotPossible(Exception):
