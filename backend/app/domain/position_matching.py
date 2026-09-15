@@ -1,5 +1,22 @@
 from enum import StrEnum
-from typing import Protocol
+from typing import Any, Protocol
+
+
+def are_photos_from_same_receipt(header_a: dict[str, Any], header_b: dict[str, Any]) -> bool:
+    """Determine if two parsed photos belong to the same physical receipt.
+
+    Enforces BRD B5 and B9 by checking that the transaction dates and merchant names
+    do not conflict. If they definitively differ, the photos represent distinct receipts
+    and their items must never be matched. Missing fields (None) are treated as non-conflicting.
+    """
+    date_a = header_a.get("transaction_date")
+    date_b = header_b.get("transaction_date")
+    if date_a and date_b and date_a != date_b:
+        return False
+
+    merchant_a = header_a.get("merchant_name")
+    merchant_b = header_b.get("merchant_name")
+    return not (merchant_a and merchant_b and merchant_a != merchant_b)
 
 
 class MatchResult(StrEnum):
