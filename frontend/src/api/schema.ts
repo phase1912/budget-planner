@@ -261,6 +261,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/receipts/upload/{job_id}/resolve-position-match": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Position Match
+         * @description Resolve a position match conflict by overriding the decision (BRD B7).
+         */
+        post: operations["resolve_position_match_receipts_upload__job_id__resolve_position_match_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts": {
         parameters: {
             query?: never;
@@ -500,6 +520,21 @@ export interface components {
              * @enum {string}
              */
             action: "store" | "skip";
+        };
+        /**
+         * ResolvePositionMatchRequest
+         * @description Request to override an automatic position match decision (BRD B7).
+         */
+        ResolvePositionMatchRequest: {
+            /** Extraction Index */
+            extraction_index: number;
+            /** Match Index */
+            match_index: number;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "same" | "different";
         };
         /**
          * UploadJobStatusResponse
@@ -961,6 +996,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ResolveDuplicateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadJobStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_position_match_receipts_upload__job_id__resolve_position_match_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolvePositionMatchRequest"];
             };
         };
         responses: {

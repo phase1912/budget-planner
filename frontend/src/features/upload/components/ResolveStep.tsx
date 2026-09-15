@@ -35,7 +35,10 @@ interface ExtractedDataPayload {
   extractions?: ExtractedData[];
 }
 
+import { useState } from "react";
+
 export const ResolveStep = observer(function ResolveStep() {
+  const [expandedMatches, setExpandedMatches] = useState<Set<string>>(new Set());
   const { uploadStore } = useStores();
 
   const handleBack = () => {
@@ -48,12 +51,15 @@ export const ResolveStep = observer(function ResolveStep() {
   if (extractions.length === 0) return null;
 
   let conflictsCount = 0;
-  const settledCount = 0;
+  let settledCount = 0;
 
   // Here we'd count total conflicts. For now we just count position_matches.
   extractions.forEach((data) => {
     if (data.position_matches) {
       conflictsCount += data.position_matches.length;
+      settledCount += data.position_matches.filter(
+        (m) => m.result === "same" || m.result === "different",
+      ).length;
     }
   });
 
@@ -210,8 +216,77 @@ export const ResolveStep = observer(function ResolveStep() {
               );
             }
 
+            const matchKey = String(eIdx) + "-" + String(mIdx);
+            const isExpanded = expandedMatches.has(matchKey);
+
+            if (!isExpanded) {
+              return (
+                <Card key={matchKey} variant="surface" flush>
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-tone-success-bg text-tone-success-text">
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                      </span>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[15px] font-bold text-muted-foreground">
+                          "{itemA.name}" kept as{" "}
+                          {match.result === "same" ? "one purchase" : "two purchases"}
+                        </span>
+                        <span className="text-[13px] font-semibold text-muted-foreground">
+                          {match.result === "same"
+                            ? "Counted once in the total."
+                            : "Counted twice in the total."}
+                        </span>
+                      </div>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-pill bg-muted text-[12px] font-medium text-foreground ml-2">
+                        {merchantName}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs underline px-2 h-7"
+                        onClick={() => {
+                          const next = new Set(expandedMatches);
+                          next.add(matchKey);
+                          setExpandedMatches(next);
+                        }}
+                      >
+                        Change
+                      </Button>
+                      <svg
+                        width="17"
+                        height="17"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        className="text-muted-foreground"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </div>
+                  </div>
+                </Card>
+              );
+            }
+
             return (
-              <Card key={String(eIdx) + "-" + String(mIdx)} flush>
+              <Card key={matchKey} flush>
                 <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-muted/30">
                   <div className="flex items-center gap-3">
                     <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-accent text-accent-foreground">
@@ -251,28 +326,48 @@ export const ResolveStep = observer(function ResolveStep() {
 
                   <div className="flex flex-col md:flex-row gap-[14px] mb-[18px]">
                     <div
-                      className={`flex flex-col gap-2.5 flex-1 p-4 rounded-[14px] border border-primary shadow-[0_0_0_1px_var(--color-primary)]`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => {
+                        void uploadStore.resolvePositionMatch(eIdx, mIdx, "same").then(() => {
+                          const next = new Set(expandedMatches);
+                          next.delete(matchKey);
+                          setExpandedMatches(next);
+                        });
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          void uploadStore.resolvePositionMatch(eIdx, mIdx, "same").then(() => {
+                            const next = new Set(expandedMatches);
+                            next.delete(matchKey);
+                            setExpandedMatches(next);
+                          });
+                        }
+                      }}
+                      className={`cursor-pointer flex flex-col gap-2.5 flex-1 p-4 rounded-[14px] border ${match.result === "same" ? "border-primary shadow-[0_0_0_1px_var(--color-primary)]" : "border-border hover:border-primary/50"}`}
                     >
                       <div className="flex items-center justify-between gap-2.5">
                         <span className="flex items-center gap-2.5 text-[14px] font-bold">
-                          <span className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-pill bg-primary text-primary-foreground">
-                            <svg
-                              width="11"
-                              height="11"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="3.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M20 6 9 17l-5-5" />
-                            </svg>
+                          <span
+                            className={`inline-flex items-center justify-center w-[18px] h-[18px] rounded-pill shrink-0 ${match.result === "same" ? "bg-primary text-primary-foreground" : "border-2 border-border-strong"}`}
+                          >
+                            {match.result === "same" && (
+                              <svg
+                                width="11"
+                                height="11"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="3.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M20 6 9 17l-5-5" />
+                              </svg>
+                            )}
                           </span>
                           One item, counted once
-                        </span>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-pill bg-tone-success-bg text-tone-success-text text-[11px] font-bold uppercase tracking-wider">
-                          our read
                         </span>
                       </div>
                       <div className="flex items-baseline justify-between border-t border-dashed border-border pt-2.5 mt-1">
@@ -285,16 +380,56 @@ export const ResolveStep = observer(function ResolveStep() {
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-2.5 flex-1 p-4 rounded-[14px] border border-border">
-                      <span className="flex items-center gap-2.5 text-[14px] font-bold text-muted-foreground">
-                        <span className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-pill border-2 border-border-strong shrink-0"></span>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => {
+                        void uploadStore.resolvePositionMatch(eIdx, mIdx, "different").then(() => {
+                          const next = new Set(expandedMatches);
+                          next.delete(matchKey);
+                          setExpandedMatches(next);
+                        });
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          void uploadStore
+                            .resolvePositionMatch(eIdx, mIdx, "different")
+                            .then(() => {
+                              const next = new Set(expandedMatches);
+                              next.delete(matchKey);
+                              setExpandedMatches(next);
+                            });
+                        }
+                      }}
+                      className={`cursor-pointer flex flex-col gap-2.5 flex-1 p-4 rounded-[14px] border ${match.result === "different" ? "border-primary shadow-[0_0_0_1px_var(--color-primary)]" : "border-border hover:border-primary/50"}`}
+                    >
+                      <span className="flex items-center gap-2.5 text-[14px] font-bold">
+                        <span
+                          className={`inline-flex items-center justify-center w-[18px] h-[18px] rounded-pill shrink-0 ${match.result === "different" ? "bg-primary text-primary-foreground" : "border-2 border-border-strong"}`}
+                        >
+                          {match.result === "different" && (
+                            <svg
+                              width="11"
+                              height="11"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="3.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M20 6 9 17l-5-5" />
+                            </svg>
+                          )}
+                        </span>
                         Two items, counted twice
                       </span>
                       <div className="flex items-baseline justify-between border-t border-dashed border-border pt-2.5 mt-1">
                         <span className="text-[13px] font-semibold text-muted-foreground">
                           2 &times; {itemA.unit_price}
                         </span>
-                        <span className="text-[17px] font-bold text-muted-foreground">
+                        <span className="text-[17px] font-bold">
                           {(parseFloat(itemA.total_price) * 2).toFixed(2)} {data.currency ?? "PLN"}
                         </span>
                       </div>
@@ -414,28 +549,6 @@ export const ResolveStep = observer(function ResolveStep() {
                       </svg>
                     </div>
                   </Card>
-
-                  <div className="flex items-center justify-end gap-2.5 mt-4">
-                    <Button variant="ghost" size="sm">
-                      Look at the photos
-                    </Button>
-                    <Button variant="primary" size="sm" className="px-[18px]">
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="mr-2"
-                      >
-                        <path d="M20 6 9 17l-5-5" />
-                      </svg>
-                      Settle it
-                    </Button>
-                  </div>
                 </div>
               </Card>
             );

@@ -5,7 +5,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
+from app.models.match_override import PositionMatchOverride
 from app.models.receipt import Receipt
+from app.models.upload_job import UploadJob
 from app.repository.base import BaseRepository
 
 
@@ -119,7 +121,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         from decimal import Decimal
 
         from app.models.line_item import LineItem
-        from app.models.receipt import ReceiptStatus
+        from app.models.receipt import Receipt, ReceiptStatus
 
         receipt_status = (
             ReceiptStatus.MANUAL_REVIEW
@@ -160,8 +162,19 @@ class ReceiptRepository(BaseRepository[Receipt]):
         if not isinstance(items_data, list):
             items_data = []
 
+        duplicate_indices = set()
+        matches = extraction.get("position_matches", [])
+        if isinstance(matches, list):
+            for match in matches:
+                if isinstance(match, dict) and match.get("result") == "same":
+                    idx = match.get("item_b_index")
+                    if isinstance(idx, int):
+                        duplicate_indices.add(idx)
+
         line_items = []
-        for item_data in items_data:
+        for i, item_data in enumerate(items_data):
+            if i in duplicate_indices:
+                continue
             if not isinstance(item_data, dict):
                 continue
             try:
@@ -183,3 +196,11 @@ class ReceiptRepository(BaseRepository[Receipt]):
         receipt.line_items = line_items
         self.add(receipt)
         return receipt
+
+    async def get_upload_job(self, job_id: uuid.UUID, user_id: uuid.UUID) -> UploadJob | None:
+        stmt = select(UploadJob).where(UploadJob.id == job_id, UploadJob.user_id == user_id)
+        return (await self.session.execute(stmt)).scalar_one_or_none()
+
+    async def add_position_match_override(self, override: PositionMatchOverride) -> None:
+        self.session.add(override)
+        # Flush is handled by unit of work / commit outside

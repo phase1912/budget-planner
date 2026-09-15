@@ -21,6 +21,7 @@ from app.schemas.receipt import (
     ReceiptDetailResponse,
     ReceiptResponse,
     ResolveDuplicateRequest,
+    ResolvePositionMatchRequest,
     UploadJobStatusResponse,
     UploadReceiptResponse,
 )
@@ -252,6 +253,27 @@ async def resolve_duplicate(
     return UploadJobStatusResponse(
         job_id=job.id, status=job.status, file_ids=job.file_ids, extracted_data=job.result_data
     )
+
+
+@router.post("/upload/{job_id}/resolve-position-match", response_model=UploadJobStatusResponse)
+async def resolve_position_match(
+    job_id: uuid.UUID,
+    request_data: ResolvePositionMatchRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> UploadJobStatusResponse:
+    """Resolve a position match conflict by overriding the decision (BRD B7)."""
+    receipt_service = ReceiptService(repository=ReceiptRepository(session))
+    try:
+        response = await receipt_service.resolve_position_match(
+            job_id, current_user.id, request_data
+        )
+        await session.commit()
+        return response
+    except ValueError as e:
+        if "not found" in str(e).lower():
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("", response_model=PaginatedReceiptsResponse)

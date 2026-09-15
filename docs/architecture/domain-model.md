@@ -27,18 +27,24 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | **LineItem** | One position on a receipt: product, quantity, unit price, total. | Receipt |
 | **Category** | A spending classification. Either a system default or user-defined. | User (nullable for defaults) |
 | **PositionMatch** | A decision that two line items are, or are not, the same physical purchase. | Receipt |
+| **PositionMatchOverride** | A user correction flipping a same-item/two-items decision. Kept as labelled data (B7). | User |
 | **MonthlySnapshot** | A finalised monthly total. A cache of derived data. | User |
 | **Goal** | A financial or lifestyle objective the user declared. | User |
 | **Recommendation** | Generated advice tied to a goal, with projected impact and user feedback. | User |
 
 Relationships: a User has many Receipts; a Receipt has many LineItems; a LineItem has one
-Category; a Goal produces many Recommendations; a User has many IdentityLinks.
+Category; a Goal produces many Recommendations; a User has many IdentityLinks; a User has many PositionMatchOverrides.
 
 **Not yet groomed:** BR-7 (G1-G12, added by F0.10.1) is fully specified in the BRD, but
 E1 as currently groomed (`docs/planning/backlog.yaml`) implements only G1-G7 —
 registration, login, session refresh. G8 (admin role) and G9-G12 (OIDC linking) need
 their own tasks before BR-7 is delivered; `IdentityLink` and `User.role` above describe
 the target, not something built yet.
+
+### Position matching rules (B1–B9)
+- Comparing extracted items checks the name, unit price, quantity and total.
+- If they match exactly, they are the same position (B2).
+- The user can review and flip this decision (B7). When a user overrides a match, it calculates the new totals accordingly, and saves a `PositionMatchOverride` entity to capture this correction as labelled data.
 
 ## Receipt lifecycle
 
