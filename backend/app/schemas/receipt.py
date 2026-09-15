@@ -36,6 +36,14 @@ class ResolveDuplicateRequest(BaseModel):
     action: Literal["store", "skip"]
 
 
+class ResolvePositionMatchRequest(BaseModel):
+    """Request to override an automatic position match decision (BRD B7)."""
+
+    extraction_index: int
+    match_index: int
+    action: Literal["same", "different"]
+
+
 class CategoryResponse(BaseModel):
     id: uuid.UUID
     name: str

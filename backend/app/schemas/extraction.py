@@ -31,6 +31,9 @@ class PositionMatch(BaseModel):
         description="Comparison result ('same', 'different', or 'not_possible')"
     )
     reason: str | None = Field(default=None, description="Reason if comparison not possible")
+    user_overridden: bool = Field(
+        default=False, description="True if the user manually changed this result"
+    )
 
 
 class ExtractedLineItem(BaseModel):
@@ -149,7 +152,16 @@ class ExtractedReceipt(BaseModel):
 
         try:
             computed_total_dec = Decimal("0")
-            for item in self.line_items:
+
+            duplicate_indices = {
+                match.item_b_index
+                for match in self.position_matches
+                if match.result == MatchResult.SAME
+            }
+
+            for i, item in enumerate(self.line_items):
+                if i in duplicate_indices:
+                    continue
                 if not item.total_price:
                     self.items_sum_matches_total = None
                     return self

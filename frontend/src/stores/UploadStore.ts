@@ -278,4 +278,30 @@ export class UploadStore {
       console.error("Resolve duplicate error", err);
     }
   }
+
+  /**
+   * Overrides an automatic position match decision (BRD B7).
+   */
+  async resolvePositionMatch(
+    extractionIndex: number,
+    matchIndex: number,
+    action: "same" | "different",
+  ) {
+    if (!this.jobId) return;
+    try {
+      const res = await this.api.POST("/receipts/upload/{job_id}/resolve-position-match", {
+        params: { path: { job_id: this.jobId } },
+        body: { extraction_index: extractionIndex, match_index: matchIndex, action },
+      });
+      if (res.error) throw new Error(res.error.detail?.[0]?.msg ?? "Failed to resolve match");
+      runInAction(() => {
+        if (res.data.extracted_data) {
+          this.extractedData = res.data.extracted_data;
+        }
+      });
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  }
 }
