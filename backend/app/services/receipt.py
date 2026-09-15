@@ -1,17 +1,22 @@
+import copy
 import logging
 import uuid
 from typing import Any, cast
 
 import filetype  # type: ignore[import-untyped]
 from sqlalchemy import select
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.api.errors import UnsupportedFileFormatError
 from app.db.session import get_session_factory
+from app.models.match_override import PositionMatchOverride
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.ports.parsing import ReceiptParserPort
 from app.ports.storage import StoragePort
 from app.repository.receipt import ReceiptRepository
+from app.schemas.extraction import ExtractedReceipt
+from app.schemas.receipt import ResolvePositionMatchRequest, UploadJobStatusResponse
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +37,11 @@ class ReceiptService:
         self,
         storage_port: StoragePort | None = None,
         parser_port: ReceiptParserPort | None = None,
+        repository: "ReceiptRepository | None" = None,
     ):
         self.storage_port = storage_port
         self.parser_port = parser_port
+        self.repository = repository
 
     def validate_receipt_file(self, content: bytes) -> None:
         """Validate that the file is a supported image format or PDF."""
@@ -209,8 +216,6 @@ class ReceiptService:
 
         merged_extraction["line_items"] = all_line_items
 
-        from app.schemas.extraction import ExtractedReceipt
-
         try:
             final_result = ExtractedReceipt(**merged_extraction)
 
@@ -256,3 +261,66 @@ class ReceiptService:
         except Exception:
             logger.exception("Merged extraction validation failed for user %s", user.id)
             return {"error": "extraction_failed"}
+
+    async def resolve_position_match(
+        self,
+        job_id: uuid.UUID,
+        user_id: uuid.UUID,
+        request_data: ResolvePositionMatchRequest,
+    ) -> UploadJobStatusResponse:
+        assert self.repository is not None
+        job = await self.repository.get_upload_job(job_id, user_id)
+        if not job:
+            raise ValueError("Job not found")
+
+        if not job.result_data or "extractions" not in job.result_data:
+            raise ValueError("Job has no extractions")
+
+        extractions = job.result_data["extractions"]
+        ext_idx = request_data.extraction_index
+        if ext_idx < 0 or ext_idx >= len(extractions):
+            raise ValueError("Invalid extraction index")
+
+        extraction = extractions[ext_idx]
+        matches = extraction.get("position_matches", [])
+        match_idx = request_data.match_index
+
+        if match_idx < 0 or match_idx >= len(matches):
+            raise ValueError("Invalid match index")
+
+        match_dict = matches[match_idx]
+        old_result = match_dict.get("result")
+        new_result = request_data.action
+
+        if old_result != new_result:
+            match_dict["result"] = new_result
+            match_dict["user_overridden"] = True
+            extraction["position_matches"][match_idx] = match_dict
+
+            parsed = ExtractedReceipt(**extraction)
+
+            updated_extraction = copy.deepcopy(extraction)
+            updated_extraction["computed_total"] = str(parsed.computed_total)
+            updated_extraction["items_sum_matches_total"] = parsed.items_sum_matches_total
+            updated_extraction["requires_manual_review"] = parsed.requires_manual_review
+
+            extractions[ext_idx] = updated_extraction
+            job.result_data["extractions"] = extractions
+            flag_modified(job, "result_data")
+
+            override = PositionMatchOverride(
+                user_id=user_id,
+                job_id=job.id,
+                extraction_index=ext_idx,
+                match_index=match_idx,
+                original_result=old_result or "unknown",
+                corrected_result=new_result,
+            )
+            await self.repository.add_position_match_override(override)
+
+        return UploadJobStatusResponse(
+            job_id=job.id,
+            file_ids=job.file_ids,
+            status=job.status,
+            extracted_data=job.result_data,
+        )
