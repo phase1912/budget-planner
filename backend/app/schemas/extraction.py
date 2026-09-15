@@ -27,7 +27,10 @@ class PositionMatch(BaseModel):
 
     item_a_index: int = Field(description="Index of the first item in the line_items array")
     item_b_index: int = Field(description="Index of the second item in the line_items array")
-    result: MatchResult = Field(description="Comparison result ('same' or 'different')")
+    result: MatchResult = Field(
+        description="Comparison result ('same', 'different', or 'not_possible')"
+    )
+    reason: str | None = Field(default=None, description="Reason if comparison not possible")
 
 
 class ExtractedLineItem(BaseModel):
