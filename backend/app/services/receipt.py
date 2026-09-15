@@ -170,6 +170,7 @@ class ReceiptService:
 
         merged_extraction: dict[str, Any] | None = None
         all_line_items: list[dict[str, Any]] = []
+        parsed_headers: dict[str, dict[str, Any]] = {}
 
         for file_id, ct in zip(file_ids, content_types, strict=True):
             object_name = f"receipts/{user.id}/{file_id}"
@@ -178,6 +179,7 @@ class ReceiptService:
             try:
                 result = await self.parser_port.parse([image_bytes], mime_types=[ct])
                 result_dict = result.model_dump()
+                parsed_headers[file_id] = result_dict
 
                 for item in result_dict.get("line_items", []):
                     item["file_id"] = file_id
@@ -212,7 +214,11 @@ class ReceiptService:
         try:
             final_result = ExtractedReceipt(**merged_extraction)
 
-            from app.domain.position_matching import ComparisonNotPossible, match_positions
+            from app.domain.position_matching import (
+                ComparisonNotPossible,
+                are_photos_from_same_receipt,
+                match_positions,
+            )
             from app.schemas.extraction import PositionMatch
 
             matches = []
@@ -222,6 +228,12 @@ class ReceiptService:
                     b = items[j]
 
                     if a.file_id and b.file_id and a.file_id != b.file_id and a.name == b.name:
+                        header_a = parsed_headers.get(a.file_id, {})
+                        header_b = parsed_headers.get(b.file_id, {})
+
+                        if not are_photos_from_same_receipt(header_a, header_b):
+                            continue
+
                         try:
                             res = match_positions(a, b, same_receipt=True)
                             matches.append(

@@ -335,3 +335,41 @@ async def test_process_upload_job_task_position_matches() -> None:
     assert match["item_a_index"] == 0
     assert match["item_b_index"] == 2
     assert match["result"] == "same"
+
+
+@pytest.mark.asyncio
+async def test_run_extraction_skips_matching_for_distinct_receipts() -> None:
+    mock_storage = AsyncMock()
+    mock_parser = AsyncMock()
+
+    mock_storage.download_file.side_effect = [b"img1", b"img2"]
+
+    # First image extraction
+    mock_ext1 = MagicMock()
+    mock_ext1.model_dump.return_value = {
+        "merchant_name": "Store A",
+        "transaction_date": "2026-07-01",
+        "line_items": [
+            {"name": "Milk 2% 1L", "total_price": "4.50", "quantity": "1", "unit_price": "4.50"}
+        ],
+    }
+
+    # Second image extraction (distinct receipt)
+    mock_ext2 = MagicMock()
+    mock_ext2.model_dump.return_value = {
+        "merchant_name": "Store B",
+        "transaction_date": "2026-07-08",
+        "line_items": [
+            {"name": "Milk 2% 1L", "total_price": "4.50", "quantity": "1", "unit_price": "4.50"}
+        ],
+    }
+
+    mock_parser.parse.side_effect = [mock_ext1, mock_ext2]
+
+    service = ReceiptService(storage_port=mock_storage, parser_port=mock_parser)
+    user = User(id=uuid.uuid4(), email="test@test.com")
+
+    result = await service._run_extraction(user, ["f1", "f2"], ["image/jpeg", "image/png"])
+
+    assert len(cast(list[Any], result.get("line_items", []))) == 2
+    assert result.get("position_matches") == []
