@@ -142,14 +142,6 @@ class ReceiptService:
 
                         extraction["is_duplicate"] = is_dup
 
-                        if not is_dup:
-                            repo.create_from_extraction(
-                                user_id=user.id,
-                                file_ids=file_ids,
-                                extraction=extraction,
-                                parser_version="1.0.0",  # TODO: Get from parser
-                            )
-
                 job.file_ids = all_file_ids
                 if self.parser_port and self.storage_port:
                     job.result_data = {"extractions": all_extractions}

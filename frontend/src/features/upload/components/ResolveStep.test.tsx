@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
+
 import { describe, it, expect, beforeEach } from "vitest";
 import { ResolveStep } from "./ResolveStep";
 import { StoreProvider } from "@/stores/StoreContext";
@@ -57,7 +58,7 @@ describe("ResolveStep", () => {
     renderComponent();
 
     // The header of the card
-    expect(screen.getByText('"Bananas" appears in both photos')).toBeInTheDocument();
+    expect(screen.getByText("“Bananas” appears in both photos")).toBeInTheDocument();
 
     // The specific 'Comparison not possible' error text
     expect(screen.getByText("Comparison not possible")).toBeInTheDocument();
@@ -102,9 +103,9 @@ describe("ResolveStep", () => {
 
     renderComponent();
 
-    expect(screen.getByText('"Milk" kept as one purchase')).toBeInTheDocument();
+    expect(screen.getByText("“Milk” kept as one purchase")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Change"));
-    expect(screen.getByText('"Milk" appears in both photos')).toBeInTheDocument();
+    expect(screen.getByText("“Milk” appears in both photos")).toBeInTheDocument();
     expect(screen.getByText("One item, counted once")).toBeInTheDocument();
     expect(screen.getByText("Two items, counted twice")).toBeInTheDocument();
   });

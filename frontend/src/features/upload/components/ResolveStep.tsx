@@ -29,6 +29,11 @@ interface ExtractedData {
   is_duplicate?: boolean | null;
   duplicate_resolved?: string | null;
   is_skipped?: boolean | null;
+  receipt_total?: string | null;
+  receipt_total_confidence?: number;
+  requires_manual_review?: boolean | null;
+  computed_total?: string | null;
+  transaction_date?: string | null;
 }
 
 interface ExtractedDataPayload {
@@ -36,6 +41,91 @@ interface ExtractedDataPayload {
 }
 
 import { useState } from "react";
+
+/**
+ * Inline component for resolving a missing or low-confidence receipt total.
+ */
+function ResolveTotalInline({
+  data,
+  eIdx,
+  merchantName,
+  isMissing,
+}: {
+  data: ExtractedData;
+  eIdx: number;
+  merchantName: string;
+  isMissing: boolean;
+}) {
+  const [total, setTotal] = useState(data.computed_total ?? "");
+  const { uploadStore } = useStores();
+
+  return (
+    <Card flush>
+      <div className="flex flex-col gap-4 p-4 border-b border-border">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-tone-error-bg text-tone-error-text">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+              <path d="M12 9v4" />
+              <path d="M12 17h.01" />
+            </svg>
+          </span>
+          <div className="flex flex-col gap-[2px]">
+            <span className="text-[15px] font-bold">
+              {isMissing ? "No total anywhere on the photos" : "The printed total was hard to read"}
+            </span>
+            <span className="text-[13px] font-semibold text-muted-foreground">
+              {data.line_items?.length ?? 0} lines add up to {data.computed_total ?? "0.00"} &mdash;
+              enter the printed total or accept that sum
+            </span>
+          </div>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-pill bg-muted text-[12px] font-semibold">
+            {merchantName}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2.5 pl-9">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              void uploadStore.resolveTotal(eIdx, data.computed_total ?? "0.00");
+            }}
+          >
+            {data.computed_total ?? "0.00"} is right
+          </Button>
+          <span className="text-[13px] text-muted-foreground">or</span>
+          <input
+            type="text"
+            className="flex h-9 w-[160px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            placeholder="0.00"
+            value={total}
+            onChange={(e) => {
+              setTotal(e.target.value);
+            }}
+          />
+          <Button
+            size="sm"
+            onClick={() => {
+              void uploadStore.resolveTotal(eIdx, total);
+            }}
+          >
+            Update
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 export const ResolveStep = observer(function ResolveStep() {
   const [expandedMatches, setExpandedMatches] = useState<Set<string>>(new Set());
@@ -53,13 +143,29 @@ export const ResolveStep = observer(function ResolveStep() {
   let conflictsCount = 0;
   let settledCount = 0;
 
-  // Here we'd count total conflicts. For now we just count position_matches.
   extractions.forEach((data) => {
+    if (data.is_skipped) return;
+
+    // Position matches
     if (data.position_matches) {
       conflictsCount += data.position_matches.length;
       settledCount += data.position_matches.filter(
         (m) => m.result === "same" || m.result === "different",
       ).length;
+    }
+
+    // Duplicate detection
+    if (data.is_duplicate) {
+      conflictsCount++;
+      if (data.duplicate_resolved) settledCount++;
+    }
+
+    // Missing total or low-confidence total
+    if (data.requires_manual_review) {
+      conflictsCount++;
+    }
+    if (data.receipt_total_confidence !== undefined && data.receipt_total_confidence < 80) {
+      conflictsCount++;
     }
   });
 
@@ -146,14 +252,124 @@ export const ResolveStep = observer(function ResolveStep() {
           const items = data.line_items ?? [];
           const merchantName = data.merchant_name ?? "Unknown merchant";
 
-          return matches.map((match, mIdx) => {
+          const cards: React.ReactNode[] = [];
+
+          {
+            /* Duplicate detection card */
+          }
+          if (data.is_duplicate || data.duplicate_resolved) {
+            const isSettled = !!data.duplicate_resolved;
+            cards.push(
+              <Card key={`dup-${String(eIdx)}`} flush>
+                <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-transparent">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`inline-flex items-center justify-center w-6 h-6 rounded-md ${isSettled ? "bg-tone-success-bg text-tone-success-text" : "bg-tone-warning-bg text-tone-warning-text"}`}
+                    >
+                      {isSettled ? (
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                      ) : (
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <rect x="8" y="8" width="13" height="13" rx="2" />
+                          <path d="M5 16V5a2 2 0 0 1 2-2h11" />
+                        </svg>
+                      )}
+                    </span>
+                    <div className="flex flex-col gap-[2px]">
+                      <span className="text-[15px] font-bold">
+                        {isSettled ? "Duplicate resolved" : "You may already have this receipt"}
+                      </span>
+                      <span className="text-[13px] font-semibold text-muted-foreground">
+                        {merchantName}, {data.transaction_date ?? "unknown date"},{" "}
+                        {data.receipt_total ?? "?"} {data.currency ?? "PLN"} is already stored
+                      </span>
+                    </div>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-pill bg-muted text-[12px] font-semibold">
+                      {merchantName}
+                    </span>
+                  </div>
+                  {!isSettled && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          void uploadStore.resolveDuplicate(eIdx, "skip");
+                        }}
+                      >
+                        Skip
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => {
+                          void uploadStore.resolveDuplicate(eIdx, "store");
+                        }}
+                      >
+                        Store anyway
+                      </Button>
+                    </div>
+                  )}
+                  {isSettled && (
+                    <span className="text-[13px] font-semibold text-muted-foreground">
+                      {data.duplicate_resolved === "stored" ? "Stored" : "Skipped"}
+                    </span>
+                  )}
+                </div>
+              </Card>,
+            );
+          }
+
+          {
+            /* Missing total / low-confidence total card */
+          }
+          if (
+            data.requires_manual_review ||
+            (data.receipt_total_confidence !== undefined && data.receipt_total_confidence < 80)
+          ) {
+            const isMissing = data.requires_manual_review;
+            cards.push(
+              <ResolveTotalInline
+                key={`total-${String(eIdx)}`}
+                data={data}
+                eIdx={eIdx}
+                merchantName={merchantName}
+                isMissing={!!isMissing}
+              />,
+            );
+          }
+
+          {
+            /* Position match cards (existing) */
+          }
+          matches.forEach((match, mIdx) => {
             const itemA = items[match.item_a_index];
             const itemB = items[match.item_b_index];
-            if (!itemA || !itemB) return null;
+            if (!itemA || !itemB) return;
 
             // F4.2.2 expects us to render the conflict card
             if (match.result === "not_possible") {
-              return (
+              cards.push(
                 <Card key={String(eIdx) + "-" + String(mIdx)} flush>
                   <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-muted/30">
                     <div className="flex items-center gap-3">
@@ -174,7 +390,7 @@ export const ResolveStep = observer(function ResolveStep() {
                         </svg>
                       </span>
                       <span className="text-[15px] font-bold">
-                        "{itemA.name}" appears in both photos
+                        &ldquo;{itemA.name}&rdquo; appears in both photos
                       </span>
                       <span className="inline-flex items-center px-2 py-0.5 rounded-pill bg-muted text-[12px] font-medium text-foreground">
                         {merchantName}
@@ -212,15 +428,16 @@ export const ResolveStep = observer(function ResolveStep() {
                       </div>
                     </div>
                   </div>
-                </Card>
+                </Card>,
               );
+              return;
             }
 
             const matchKey = String(eIdx) + "-" + String(mIdx);
             const isExpanded = expandedMatches.has(matchKey);
 
             if (!isExpanded) {
-              return (
+              cards.push(
                 <Card key={matchKey} variant="surface" flush>
                   <div className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -240,7 +457,7 @@ export const ResolveStep = observer(function ResolveStep() {
                       </span>
                       <div className="flex flex-col gap-0.5">
                         <span className="text-[15px] font-bold text-muted-foreground">
-                          "{itemA.name}" kept as{" "}
+                          &ldquo;{itemA.name}&rdquo; kept as{" "}
                           {match.result === "same" ? "one purchase" : "two purchases"}
                         </span>
                         <span className="text-[13px] font-semibold text-muted-foreground">
@@ -281,11 +498,12 @@ export const ResolveStep = observer(function ResolveStep() {
                       </svg>
                     </div>
                   </div>
-                </Card>
+                </Card>,
               );
+              return;
             }
 
-            return (
+            cards.push(
               <Card key={matchKey} flush>
                 <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-muted/30">
                   <div className="flex items-center gap-3">
@@ -306,7 +524,7 @@ export const ResolveStep = observer(function ResolveStep() {
                       </svg>
                     </span>
                     <span className="text-[15px] font-bold">
-                      "{itemA.name}" appears in both photos
+                      &ldquo;{itemA.name}&rdquo; appears in both photos
                     </span>
                     <span className="inline-flex items-center px-2 py-0.5 rounded-pill bg-muted text-[12px] font-medium text-foreground">
                       {merchantName}
@@ -550,9 +768,11 @@ export const ResolveStep = observer(function ResolveStep() {
                     </div>
                   </Card>
                 </div>
-              </Card>
+              </Card>,
             );
           });
+
+          return cards;
         })}
 
         <div className="flex items-center justify-between gap-4 border-t border-border pt-[18px]">

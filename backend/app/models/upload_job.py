@@ -14,6 +14,7 @@ class JobStatus(enum.StrEnum):
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
+    STORED = "stored"
     FAILED = "failed"
 
 
