@@ -12,16 +12,18 @@ from app.api.dependencies import get_current_user, get_storage_service
 from app.api.errors import UploadLimitExceededError
 from app.core.config import get_settings
 from app.db.session import get_db_session
-from app.models.upload_job import UploadJob
+from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.ports.storage import StoragePort
 from app.repository.receipt import ReceiptRepository
+from app.schemas.extraction import ExtractedReceipt
 from app.schemas.receipt import (
     PaginatedReceiptsResponse,
     ReceiptDetailResponse,
     ReceiptResponse,
     ResolveDuplicateRequest,
     ResolvePositionMatchRequest,
+    ResolveTotalRequest,
     UploadJobStatusResponse,
     UploadReceiptResponse,
 )
@@ -230,13 +232,6 @@ async def resolve_duplicate(
         raise HTTPException(status_code=400, detail="Extraction is not flagged as duplicate")
 
     if request_data.action == "store":
-        repo = ReceiptRepository(session).bypass_ownership()
-        repo.create_from_extraction(
-            user_id=current_user.id,
-            file_ids=extraction.get("file_ids", []),
-            extraction=extraction,
-            parser_version="1.0.0",
-        )
         extraction["is_duplicate"] = False
         extraction["duplicate_resolved"] = "stored"
     else:
@@ -316,3 +311,103 @@ async def get_receipt(
         raise HTTPException(status_code=404, detail="Receipt not found")
 
     return ReceiptDetailResponse.model_validate(receipt)
+
+
+@router.post("/upload/{job_id}/resolve-total", response_model=UploadJobStatusResponse)
+async def resolve_total(
+    job_id: uuid.UUID,
+    request_data: ResolveTotalRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> UploadJobStatusResponse:
+    """Resolve a missing or low-confidence total (F4.7)."""
+    stmt = select(UploadJob).where(UploadJob.id == job_id, UploadJob.user_id == current_user.id)
+    job = (await session.execute(stmt)).scalar_one_or_none()
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if not job.result_data or "extractions" not in job.result_data:
+        raise HTTPException(status_code=400, detail="Job has no extractions")
+
+    extractions = job.result_data["extractions"]
+    idx = request_data.extraction_index
+    if idx < 0 or idx >= len(extractions):
+        raise HTTPException(status_code=400, detail="Invalid extraction index")
+
+    extraction = extractions[idx]
+
+    extraction["receipt_total"] = request_data.receipt_total
+    extraction["receipt_total_confidence"] = 100
+
+    parsed = ExtractedReceipt(**extraction)
+
+    import copy
+
+    updated_extraction = copy.deepcopy(extraction)
+    updated_extraction["computed_total"] = (
+        str(parsed.computed_total) if parsed.computed_total is not None else None
+    )
+    updated_extraction["items_sum_matches_total"] = parsed.items_sum_matches_total
+    updated_extraction["requires_manual_review"] = parsed.requires_manual_review
+
+    extractions[idx] = updated_extraction
+    job.result_data = copy.deepcopy(job.result_data)
+    await session.commit()
+
+    return UploadJobStatusResponse(
+        job_id=job.id, status=job.status, file_ids=job.file_ids, extracted_data=job.result_data
+    )
+
+
+@router.post("/upload/{job_id}/commit", response_model=UploadJobStatusResponse)
+async def commit_job(
+    job_id: uuid.UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> UploadJobStatusResponse:
+    """Commit all resolved extractions to the database (F4.7)."""
+    stmt = select(UploadJob).where(UploadJob.id == job_id, UploadJob.user_id == current_user.id)
+    job = (await session.execute(stmt)).scalar_one_or_none()
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if not job.result_data or "extractions" not in job.result_data:
+        raise HTTPException(status_code=400, detail="Job has no extractions")
+
+    extractions = job.result_data["extractions"]
+
+    for i, extraction in enumerate(extractions):
+        if extraction.get("is_duplicate") and not extraction.get("duplicate_resolved"):
+            raise HTTPException(status_code=400, detail=f"Extraction {i} has unresolved duplicate")
+        if extraction.get("requires_manual_review"):
+            raise HTTPException(status_code=400, detail=f"Extraction {i} requires manual review")
+        if extraction.get("receipt_total_confidence", 100) < 80:
+            raise HTTPException(status_code=400, detail=f"Extraction {i} has low confidence total")
+
+        position_matches = extraction.get("position_matches") or []
+        for match in position_matches:
+            if match.get("result") not in ("same", "different"):
+                raise HTTPException(
+                    status_code=400, detail=f"Extraction {i} has unresolved position match"
+                )
+
+    repo = ReceiptRepository(session).bypass_ownership()
+    for extraction in extractions:
+        if extraction.get("duplicate_resolved") == "skip":
+            continue
+
+        repo.create_from_extraction(
+            user_id=current_user.id,
+            file_ids=extraction.get("file_ids", []),
+            extraction=extraction,
+            parser_version="1.0.0",
+        )
+
+    job.status = JobStatus.STORED
+    await session.commit()
+
+    return UploadJobStatusResponse(
+        job_id=job.id, status=job.status, file_ids=job.file_ids, extracted_data=job.result_data
+    )

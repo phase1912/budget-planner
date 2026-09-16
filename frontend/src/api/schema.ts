@@ -321,6 +321,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/receipts/upload/{job_id}/resolve-total": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Total
+         * @description Resolve a missing or low-confidence total (F4.7).
+         */
+        post: operations["resolve_total_receipts_upload__job_id__resolve_total_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/receipts/upload/{job_id}/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Commit Job
+         * @description Commit all resolved extractions to the database (F4.7).
+         */
+        post: operations["commit_job_receipts_upload__job_id__commit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -361,7 +401,7 @@ export interface components {
          * @description Lifecycle states of an asynchronous upload job.
          * @enum {string}
          */
-        JobStatus: "pending" | "processing" | "completed" | "failed";
+        JobStatus: "pending" | "processing" | "completed" | "stored" | "failed";
         /**
          * LineItemResponse
          * @description Schema for a single line item on a receipt.
@@ -535,6 +575,16 @@ export interface components {
              * @enum {string}
              */
             action: "same" | "different";
+        };
+        /**
+         * ResolveTotalRequest
+         * @description Request to resolve a missing or low-confidence total.
+         */
+        ResolveTotalRequest: {
+            /** Extraction Index */
+            extraction_index: number;
+            /** Receipt Total */
+            receipt_total: string;
         };
         /**
          * UploadJobStatusResponse
@@ -1104,6 +1154,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReceiptDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_total_receipts_upload__job_id__resolve_total_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveTotalRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadJobStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    commit_job_receipts_upload__job_id__commit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadJobStatusResponse"];
                 };
             };
             /** @description Validation Error */

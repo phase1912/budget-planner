@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ExtractedStep } from "./ExtractedStep";
 import { StoreProvider } from "@/stores/StoreContext";
@@ -58,7 +59,9 @@ describe("ExtractedStep", () => {
   const renderComponent = () =>
     render(
       <StoreProvider store={mockStore}>
-        <ExtractedStep />
+        <MemoryRouter>
+          <ExtractedStep />
+        </MemoryRouter>
       </StoreProvider>,
     );
 
