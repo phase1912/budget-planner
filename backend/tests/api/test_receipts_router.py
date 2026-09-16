@@ -620,28 +620,13 @@ def test_resolve_position_match_errors(app: FastAPI) -> None:
     client = TestClient(app, follow_redirects=False)
     client.headers["Authorization"] = f"Bearer {token}"
 
-    def mock_service_exception(exc_msg: str) -> None:
-        async def mock_db_session() -> Any:
-            from unittest.mock import AsyncMock
-
-            session = AsyncMock()
-            yield session
-
-        # Patch the ReceiptService directly
-        from unittest.mock import patch
-
-        with patch(
-            "app.api.routers.receipts.ReceiptService.resolve_position_match", new_callable=AsyncMock
-        ) as mock_resolve:
-            mock_resolve.side_effect = ValueError(exc_msg)
-            app.dependency_overrides[get_db_session] = mock_db_session
-            yield
 
     import contextlib
+    from collections.abc import Iterator
     from unittest.mock import AsyncMock, patch
 
     @contextlib.contextmanager
-    def patch_service(exc_msg: str):
+    def patch_service(exc_msg: str) -> Iterator[None]:
 
         with patch(
             "app.api.routers.receipts.ReceiptService.resolve_position_match", new_callable=AsyncMock
