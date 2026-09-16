@@ -620,7 +620,6 @@ def test_resolve_position_match_errors(app: FastAPI) -> None:
     client = TestClient(app, follow_redirects=False)
     client.headers["Authorization"] = f"Bearer {token}"
 
-
     import contextlib
     from collections.abc import Iterator
     from unittest.mock import AsyncMock, patch
