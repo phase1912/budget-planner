@@ -628,7 +628,7 @@ def test_resolve_position_match_errors(app: FastAPI) -> None:
             yield session
 
         # Patch the ReceiptService directly
-        from unittest.mock import patch, AsyncMock
+        from unittest.mock import patch
 
         with patch(
             "app.api.routers.receipts.ReceiptService.resolve_position_match", new_callable=AsyncMock
@@ -638,11 +638,10 @@ def test_resolve_position_match_errors(app: FastAPI) -> None:
             yield
 
     import contextlib
-    from unittest.mock import patch, AsyncMock
+    from unittest.mock import AsyncMock, patch
 
     @contextlib.contextmanager
     def patch_service(exc_msg: str):
-        from unittest.mock import AsyncMock
 
         with patch(
             "app.api.routers.receipts.ReceiptService.resolve_position_match", new_callable=AsyncMock
@@ -661,7 +660,8 @@ def test_resolve_position_match_errors(app: FastAPI) -> None:
             f"/receipts/upload/{job_id}/resolve-position-match",
             json={
                 "extraction_index": 0,
-                "match_index": 0, "action": "different",
+                "match_index": 0,
+                "action": "different",
             },
         )
         assert resp.status_code == 404
@@ -671,7 +671,8 @@ def test_resolve_position_match_errors(app: FastAPI) -> None:
             f"/receipts/upload/{job_id}/resolve-position-match",
             json={
                 "extraction_index": 0,
-                "match_index": 0, "action": "different",
+                "match_index": 0,
+                "action": "different",
             },
         )
         assert resp.status_code == 400
