@@ -1,4 +1,5 @@
 import { observer } from "mobx-react-lite";
+import { useNavigate } from "react-router-dom";
 import { useStores } from "@/stores/StoreContext";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
 import { Button } from "@/shared/components/Button/Button";
@@ -48,6 +49,7 @@ interface ExtractedDataPayload {
 
 export const ExtractedStep = observer(function ExtractedStep() {
   const { uploadStore } = useStores();
+  const navigate = useNavigate();
 
   const handleBack = () => {
     uploadStore.resetError();
@@ -60,18 +62,6 @@ export const ExtractedStep = observer(function ExtractedStep() {
 
   if (!extractions || extractions.length === 0) return null;
 
-  const hasLowConfidence =
-    extractions.some((data) => data.is_duplicate) ||
-    extractions.some(
-      (data) =>
-        data.items_sum_matches_total === false ||
-        data.items_sum_matches_total === null ||
-        (data.is_receipt_confidence ?? 100) < 50 ||
-        (data.merchant_name_confidence ?? 100) < 80 ||
-        (data.transaction_date_confidence ?? 100) < 80 ||
-        (data.receipt_total_confidence ?? 100) < 80 ||
-        (data.line_items?.some((item) => (item.confidence ?? 100) < 80) ?? false),
-    );
   const totalItems = extractions.reduce((acc, data) => acc + (data.line_items?.length ?? 0), 0);
 
   return (
@@ -123,10 +113,11 @@ export const ExtractedStep = observer(function ExtractedStep() {
           </p>
         </div>
 
-        {hasLowConfidence && (
+        {uploadStore.conflictsCount > 0 && (
           <Note tone="warning">
-            Some things need a decision from you — you will get to them on the next step. Read
-            through first and fix anything obviously wrong here.
+            {uploadStore.conflictsCount} thing{uploadStore.conflictsCount !== 1 ? "s" : ""} need
+            {uploadStore.conflictsCount === 1 ? "s" : ""} a decision from you — you will get to them
+            on the next step. Read through first and fix anything obviously wrong here.
           </Note>
         )}
 
@@ -485,23 +476,48 @@ export const ExtractedStep = observer(function ExtractedStep() {
             </svg>
             Back to photos
           </Button>
-          <Button variant="primary" onClick={() => (uploadStore.currentStep = 3)}>
-            Resolve {totalItems} things
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="ml-2"
+          {uploadStore.conflictsCount > 0 ? (
+            <Button variant="primary" onClick={() => (uploadStore.currentStep = 3)}>
+              Resolve {uploadStore.conflictsCount} things
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="ml-2"
+              >
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              onClick={() => {
+                void uploadStore.commitJob(navigate);
+              }}
             >
-              <path d="M5 12h14" />
-              <path d="m12 5 7 7-7 7" />
-            </svg>
-          </Button>
+              Store {extractions.length} receipt{extractions.length !== 1 ? "s" : ""}
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="ml-2"
+              >
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
+            </Button>
+          )}
         </div>
       </Stack>
     </Container>

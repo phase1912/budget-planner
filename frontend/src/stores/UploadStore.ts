@@ -304,4 +304,64 @@ export class UploadStore {
       throw err;
     }
   }
+  get conflictsCount(): number {
+    if (!this.extractedData) return 0;
+    const payload = this.extractedData;
+    const extractions = (payload.extractions ?? []) as Record<string, unknown>[];
+    let count = 0;
+    for (const extraction of extractions) {
+      if (extraction.is_duplicate && !extraction.duplicate_resolved) {
+        count++;
+      }
+      if (extraction.requires_manual_review) {
+        count++;
+      }
+      if (
+        typeof extraction.receipt_total_confidence === "number" &&
+        extraction.receipt_total_confidence < 80
+      ) {
+        count++;
+      }
+      const matches = (extraction.position_matches ?? []) as Record<string, unknown>[];
+      count += matches.filter((m) => m.result !== "same" && m.result !== "different").length;
+    }
+    return count;
+  }
+
+  async resolveTotal(extractionIndex: number, receiptTotal: string) {
+    if (!this.jobId) return;
+    try {
+      const res = await this.api.POST("/receipts/upload/{job_id}/resolve-total", {
+        params: { path: { job_id: this.jobId } },
+        body: { extraction_index: extractionIndex, receipt_total: receiptTotal },
+      });
+      if (res.error) throw new Error(res.error.detail?.[0]?.msg ?? "Failed to resolve total");
+      runInAction(() => {
+        if (res.data.extracted_data) {
+          this.extractedData = res.data.extracted_data;
+        }
+      });
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  }
+
+  async commitJob(navigate: (path: string) => unknown) {
+    if (!this.jobId) return;
+    try {
+      const res = await this.api.POST("/receipts/upload/{job_id}/commit", {
+        params: { path: { job_id: this.jobId } },
+      });
+      if (res.error) throw new Error(res.error.detail?.[0]?.msg ?? "Failed to commit");
+      runInAction(() => {
+        this.resetData();
+        this.resetError();
+      });
+      navigate("/");
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  }
 }

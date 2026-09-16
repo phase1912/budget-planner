@@ -44,6 +44,13 @@ class ResolvePositionMatchRequest(BaseModel):
     action: Literal["same", "different"]
 
 
+class ResolveTotalRequest(BaseModel):
+    """Request to resolve a missing or low-confidence total."""
+
+    extraction_index: int
+    receipt_total: str
+
+
 class CategoryResponse(BaseModel):
     id: uuid.UUID
     name: str
