@@ -27,6 +27,8 @@ class UploadJobStatusResponse(BaseModel):
     status: JobStatus
     file_ids: list[str]
     extracted_data: dict[str, Any] | None = None
+    total_items: int = 0
+    processed_items: int = 0
 
 
 class ResolveDuplicateRequest(BaseModel):
@@ -49,6 +51,12 @@ class ResolveTotalRequest(BaseModel):
 
     extraction_index: int
     receipt_total: str
+
+
+class CommitJobRequest(BaseModel):
+    """Request to commit selected extractions to the database."""
+
+    indices_to_store: list[int]
 
 
 class CategoryResponse(BaseModel):

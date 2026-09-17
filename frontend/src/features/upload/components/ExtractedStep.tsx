@@ -41,6 +41,7 @@ interface ExtractedData {
     reason?: string | null;
     user_overridden?: boolean;
   }[];
+  error?: string | null;
 }
 
 interface ExtractedDataPayload {
@@ -143,6 +144,40 @@ export const ExtractedStep = observer(function ExtractedStep() {
             .map((item, idx) => ({ item, idx }))
             .filter(({ idx }) => !duplicateIndices.has(idx));
 
+          if (data.error) {
+            return (
+              <Card key={index} flush className="mt-4 border-tone-error-border">
+                <CardHeader className="flex items-center justify-between bg-tone-error-bg">
+                  <div className="flex items-center gap-3.5">
+                    <div className="flex gap-1.5">
+                      {fileIds.slice(0, 2).map((id) => (
+                        <SecureImage
+                          key={id}
+                          fileId={id}
+                          alt="receipt thumb"
+                          className="w-9 h-11 object-cover rounded-md opacity-50 grayscale"
+                        />
+                      ))}
+                      {fileIds.length > 2 && (
+                        <span className="inline-flex items-center justify-center w-9 h-11 rounded-md bg-muted text-[11px] font-bold text-muted-foreground opacity-50">
+                          +{fileIds.length - 2}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-base font-bold text-tone-error-text">
+                        Failed to process this receipt
+                      </span>
+                      <span className="text-[13px] text-tone-error-text opacity-90">
+                        The AI service was temporarily overloaded or unavailable.
+                      </span>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            );
+          }
+
           return (
             <Card
               key={index}
@@ -218,6 +253,14 @@ export const ExtractedStep = observer(function ExtractedStep() {
                       <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
                     </svg>
                   </button>
+                  <input
+                    type="checkbox"
+                    checked={uploadStore.selectedIndices.has(index)}
+                    onChange={() => {
+                      uploadStore.toggleSelection(index);
+                    }}
+                    className="w-5 h-5 rounded border-border text-primary focus:ring-primary cursor-pointer ml-1"
+                  />
                 </div>
               </CardHeader>
 
@@ -497,11 +540,13 @@ export const ExtractedStep = observer(function ExtractedStep() {
           ) : (
             <Button
               variant="primary"
+              disabled={uploadStore.selectedIndices.size === 0}
               onClick={() => {
                 void uploadStore.commitJob(navigate);
               }}
             >
-              Store {extractions.length} receipt{extractions.length !== 1 ? "s" : ""}
+              Store {uploadStore.selectedIndices.size} receipt
+              {uploadStore.selectedIndices.size !== 1 ? "s" : ""}
               <svg
                 width="16"
                 height="16"

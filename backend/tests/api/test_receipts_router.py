@@ -248,7 +248,7 @@ def test_commit_job_endpoint(app: FastAPI) -> None:
     )
     client.headers["Authorization"] = f"Bearer {token}"
 
-    response = client.post(f"/receipts/upload/{job_id}/commit")
+    response = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "stored"
@@ -305,7 +305,7 @@ def test_commit_job_endpoint_skip_duplicate(app: FastAPI) -> None:
     )
     client.headers["Authorization"] = f"Bearer {token}"
 
-    response = client.post(f"/receipts/upload/{job_id}/commit")
+    response = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "stored"
@@ -418,7 +418,7 @@ def test_commit_job_errors(app: FastAPI) -> None:
 
     # 1. Job not found
     mock_db_with_job(None)
-    resp = client.post(f"/receipts/upload/{job_id}/commit")
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
     assert resp.status_code == 404
 
     # 2. Job has no extractions
@@ -426,7 +426,7 @@ def test_commit_job_errors(app: FastAPI) -> None:
         id=job_id, user_id=user.id, status=JobStatus.COMPLETED, file_ids=[], result_data={}
     )
     mock_db_with_job(job_no_ext)
-    resp = client.post(f"/receipts/upload/{job_id}/commit")
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
     assert resp.status_code == 400
 
     # 3. Unresolved duplicate
@@ -438,7 +438,7 @@ def test_commit_job_errors(app: FastAPI) -> None:
         result_data={"extractions": [{"is_duplicate": True}]},
     )
     mock_db_with_job(job_dup)
-    resp = client.post(f"/receipts/upload/{job_id}/commit")
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
     assert resp.status_code == 400
     assert "unresolved duplicate" in resp.json()["detail"]
 
@@ -451,7 +451,7 @@ def test_commit_job_errors(app: FastAPI) -> None:
         result_data={"extractions": [{"requires_manual_review": True}]},
     )
     mock_db_with_job(job_man)
-    resp = client.post(f"/receipts/upload/{job_id}/commit")
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
     assert resp.status_code == 400
     assert "manual review" in resp.json()["detail"]
 
@@ -464,7 +464,7 @@ def test_commit_job_errors(app: FastAPI) -> None:
         result_data={"extractions": [{"receipt_total_confidence": 50}]},
     )
     mock_db_with_job(job_low)
-    resp = client.post(f"/receipts/upload/{job_id}/commit")
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
     assert resp.status_code == 400
     assert "low confidence" in resp.json()["detail"]
 
@@ -477,9 +477,34 @@ def test_commit_job_errors(app: FastAPI) -> None:
         result_data={"extractions": [{"position_matches": [{"result": "not_possible"}]}]},
     )
     mock_db_with_job(job_pos)
-    resp = client.post(f"/receipts/upload/{job_id}/commit")
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
     assert resp.status_code == 400
     assert "position match" in resp.json()["detail"]
+
+    # 7. A failed parse must never be stored as an empty receipt
+    job_err = UploadJob(
+        id=job_id,
+        user_id=user.id,
+        status=JobStatus.COMPLETED,
+        file_ids=[],
+        result_data={"extractions": [{"error": "extraction_failed", "file_ids": ["f1"]}]},
+    )
+    mock_db_with_job(job_err)
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
+    assert resp.status_code == 400
+    assert "failed to parse" in resp.json()["detail"]
+
+    # 8. Selecting nothing is a mistake, not a silent success
+    mock_db_with_job(job_err)
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": []})
+    assert resp.status_code == 400
+    assert "No extractions selected" in resp.json()["detail"]
+
+    # 9. An index the job does not have is rejected rather than ignored
+    mock_db_with_job(job_err)
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [5]})
+    assert resp.status_code == 400
+    assert "Unknown extraction indices" in resp.json()["detail"]
 
 
 def test_resolve_duplicate_errors(app: FastAPI) -> None:

@@ -45,7 +45,11 @@ actually looks like a receipt (100 = definitely a receipt, 0 = definitely not).
 IMPORTANT:
 1. Return ONLY valid JSON matching the schema. No extra text or explanation. Always extract
    all line items if visible.
-2. For prices, extract exactly as printed.
+2. For prices, give the number only. Receipts print a VAT class letter next to
+   each amount ("7,49A", "13,99C") and a unit next to each quantity ("10szt") —
+   leave those out and keep the decimal separator as printed ("7,49", "10").
+   If a line has no price printed at all, return an empty string for it rather
+   than repeating the VAT letter.
 3. If quantity or unit price is not explicitly printed for an item, infer them (e.g., quantity "1",
    unit_price same as total_price). DO NOT skip line items just because these details are implicit.
 """
@@ -71,10 +75,48 @@ class VisionAgentAdapter:
         """
         resolved_types = mime_types or ["image/jpeg"] * len(images)
 
+        import io
+
+        import pillow_heif
+        from PIL import Image
+
+        # Register HEIF opener with Pillow
+        pillow_heif.register_heif_opener()  # type: ignore[attr-defined]
+
+        processed_images = []
+        processed_types = []
+
+        for img_bytes, mime in zip(images, resolved_types, strict=True):
+            if (
+                mime.lower() in ("image/heic", "image/heif")
+                or img_bytes.startswith(b"\x00\x00\x00\x1cftypheic")
+                or img_bytes.startswith(b"\x00\x00\x00\x18ftypheic")
+            ):
+                # Convert HEIC to JPEG
+                try:
+                    img: Image.Image = Image.open(io.BytesIO(img_bytes))
+                    if img.mode not in ("RGB", "L"):
+                        img = img.convert("RGB")
+                    out = io.BytesIO()
+                    img.save(out, format="JPEG")
+                    processed_images.append(out.getvalue())
+                    processed_types.append("image/jpeg")
+                except Exception as e:
+                    import logging
+
+                    logging.error(f"HEIC conversion failed: {e}")
+
+                    # Fallback to original if conversion fails
+                    processed_images.append(img_bytes)
+                    processed_types.append(mime)
+            else:
+                processed_images.append(img_bytes)
+                processed_types.append(mime)
+
         content_parts: list[dict[str, object]] = [
             {"type": "text", "text": RECEIPT_EXTRACTION_PROMPT}
         ]
-        for img_bytes, mime in zip(images, resolved_types, strict=True):
+        for img_bytes, mime in zip(processed_images, processed_types, strict=True):
             content_parts.append(ImageContent(data=img_bytes, media_type=mime).to_content_part())
 
         messages = [

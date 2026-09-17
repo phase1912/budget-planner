@@ -14,6 +14,7 @@ from fastapi.testclient import TestClient
 from app.core.config import Settings, get_settings
 from app.db.database import check_database_reachable
 from app.main import create_app
+from app.ports.parsing import CURRENT_PARSER_VERSION
 
 
 @pytest.fixture
@@ -59,4 +60,7 @@ def test_version_reports_build_sha_and_parser_version(app: FastAPI, client: Test
     response = client.get("/version")
 
     assert response.status_code == 200
-    assert response.json() == {"build_sha": "abc1234", "parser_version": "1"}
+    assert response.json() == {
+        "build_sha": "abc1234",
+        "parser_version": CURRENT_PARSER_VERSION,
+    }

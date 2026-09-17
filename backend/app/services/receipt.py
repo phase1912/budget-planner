@@ -1,3 +1,4 @@
+import asyncio
 import copy
 import logging
 import uuid
@@ -38,10 +39,14 @@ class ReceiptService:
         storage_port: StoragePort | None = None,
         parser_port: ReceiptParserPort | None = None,
         repository: "ReceiptRepository | None" = None,
+        max_concurrency: int = 2,
+        job_timeout_seconds: int = 900,
     ):
         self.storage_port = storage_port
         self.parser_port = parser_port
         self.repository = repository
+        self.max_concurrency = max_concurrency
+        self.job_timeout_seconds = job_timeout_seconds
 
     def validate_receipt_file(self, content: bytes) -> None:
         """Validate that the file is a supported image format or PDF."""
@@ -96,6 +101,9 @@ class ReceiptService:
         2. If a ``ReceiptParserPort`` is configured, download the stored images
            and send them to the vision LLM for structured extraction.
         3. Save the extraction result to ``job.result_data``.
+
+        Extraction is bounded by ``job_timeout_seconds``; on timeout the job is
+        marked failed rather than left in PROCESSING for a client to poll forever.
         """
         session_factory = get_session_factory()
         async with session_factory() as session:
@@ -105,32 +113,64 @@ class ReceiptService:
                 return
 
             job.status = JobStatus.PROCESSING
+            job.total_items = len(receipts_data)
+            job.processed_items = 0
             await session.commit()
 
             try:
                 all_file_ids: list[str] = []
                 all_extractions: list[dict[str, object]] = []
 
-                for files_data in receipts_data:
+                async def process_single_receipt(
+                    files_data: list[dict[str, str | bytes]],
+                ) -> dict[str, object]:
                     file_ids: list[str] = []
                     content_types: list[str] = []
                     for file_data in files_data:
                         content = file_data["content"]
                         content_type = file_data["content_type"]
-
                         file_id = await self.store_receipt_image(user, content, content_type)  # type: ignore[arg-type]
                         file_ids.append(file_id)
                         content_types.append(str(content_type))
 
+                    extraction: dict[str, object] = {"file_ids": file_ids}
+                    if self.parser_port and self.storage_port:
+                        ext = await self._run_extraction(user, file_ids, content_types)
+                        ext["file_ids"] = file_ids
+                        extraction = ext
+
+                    return extraction
+
+                semaphore = asyncio.Semaphore(self.max_concurrency)
+
+                async def bound_process(fd: list[dict[str, str | bytes]]) -> dict[str, object]:
+                    async with semaphore:
+                        return await process_single_receipt(fd)
+
+                tasks = [
+                    asyncio.create_task(bound_process(files_data)) for files_data in receipts_data
+                ]
+
+                try:
+                    async with asyncio.timeout(self.job_timeout_seconds):
+                        for completed_task in asyncio.as_completed(tasks):
+                            await completed_task
+                            job.processed_items += 1
+                            await session.commit()
+                except BaseException:
+                    # Without this the survivors keep uploading and calling the LLM
+                    # long after the job has been marked failed.
+                    for task in tasks:
+                        task.cancel()
+                    await asyncio.gather(*tasks, return_exceptions=True)
+                    raise
+
+                for extraction in (task.result() for task in tasks):
+                    file_ids = cast(list[str], extraction.get("file_ids", []))
                     all_file_ids.extend(file_ids)
 
                     if self.parser_port and self.storage_port:
-                        extraction = await self._run_extraction(user, file_ids, content_types)
-                        extraction["file_ids"] = file_ids
-                        all_extractions.append(extraction)
-
                         repo = ReceiptRepository(session).bypass_ownership()
-
                         is_dup = await repo.has_duplicate(
                             user_id=user.id,
                             merchant_name=cast(str | None, extraction.get("merchant_name")),
@@ -139,8 +179,8 @@ class ReceiptService:
                             ),
                             total_amount_str=cast(str | None, extraction.get("receipt_total")),
                         )
-
                         extraction["is_duplicate"] = is_dup
+                        all_extractions.append(extraction)
 
                 job.file_ids = all_file_ids
                 if self.parser_port and self.storage_port:
@@ -315,4 +355,6 @@ class ReceiptService:
             file_ids=job.file_ids,
             status=job.status,
             extracted_data=job.result_data,
+            total_items=job.total_items or 0,
+            processed_items=job.processed_items or 0,
         )

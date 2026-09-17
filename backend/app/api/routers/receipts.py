@@ -14,10 +14,12 @@ from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
+from app.ports.parsing import CURRENT_PARSER_VERSION
 from app.ports.storage import StoragePort
 from app.repository.receipt import ReceiptRepository
 from app.schemas.extraction import ExtractedReceipt
 from app.schemas.receipt import (
+    CommitJobRequest,
     PaginatedReceiptsResponse,
     ReceiptDetailResponse,
     ReceiptResponse,
@@ -39,9 +41,20 @@ def get_receipt_service(
     """Provide a ReceiptService with storage and vision parser wired up."""
     settings = get_settings()
     api_key = settings.llm_api_key.get_secret_value() if settings.llm_api_key else None
-    agent = Agent(model=settings.llm_model, api_key=api_key)
+    agent = Agent(
+        model=settings.llm_model,
+        api_key=api_key,
+        api_base=settings.llm_api_base,
+        disable_reasoning=settings.llm_disable_reasoning,
+        disable_json_schema=settings.llm_disable_json_schema,
+    )
     parser = VisionAgentAdapter(agent)
-    return ReceiptService(storage_port, parser_port=parser)
+    return ReceiptService(
+        storage_port,
+        parser_port=parser,
+        max_concurrency=settings.llm_max_concurrency,
+        job_timeout_seconds=settings.upload_job_timeout_seconds,
+    )
 
 
 @router.post("/upload", response_model=UploadReceiptResponse)
@@ -187,7 +200,12 @@ async def get_upload_job_status(
         raise HTTPException(status_code=404, detail="Job not found")
 
     return UploadJobStatusResponse(
-        job_id=job.id, status=job.status, file_ids=job.file_ids, extracted_data=job.result_data
+        job_id=job.id,
+        status=job.status,
+        file_ids=job.file_ids,
+        extracted_data=job.result_data,
+        total_items=job.total_items or 0,
+        processed_items=job.processed_items or 0,
     )
 
 
@@ -246,7 +264,12 @@ async def resolve_duplicate(
     await session.commit()
 
     return UploadJobStatusResponse(
-        job_id=job.id, status=job.status, file_ids=job.file_ids, extracted_data=job.result_data
+        job_id=job.id,
+        status=job.status,
+        file_ids=job.file_ids,
+        extracted_data=job.result_data,
+        total_items=job.total_items or 0,
+        processed_items=job.processed_items or 0,
     )
 
 
@@ -356,13 +379,19 @@ async def resolve_total(
     await session.commit()
 
     return UploadJobStatusResponse(
-        job_id=job.id, status=job.status, file_ids=job.file_ids, extracted_data=job.result_data
+        job_id=job.id,
+        status=job.status,
+        file_ids=job.file_ids,
+        extracted_data=job.result_data,
+        total_items=job.total_items or 0,
+        processed_items=job.processed_items or 0,
     )
 
 
 @router.post("/upload/{job_id}/commit", response_model=UploadJobStatusResponse)
 async def commit_job(
     job_id: uuid.UUID,
+    request: CommitJobRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> UploadJobStatusResponse:
@@ -378,7 +407,22 @@ async def commit_job(
 
     extractions = job.result_data["extractions"]
 
+    selected = set(request.indices_to_store)
+    if not selected:
+        raise HTTPException(status_code=400, detail="No extractions selected")
+
+    out_of_range = sorted(i for i in selected if not 0 <= i < len(extractions))
+    if out_of_range:
+        raise HTTPException(status_code=400, detail=f"Unknown extraction indices: {out_of_range}")
+
     for i, extraction in enumerate(extractions):
+        if i not in selected:
+            continue
+
+        # A failed parse carries none of the fields the checks below look at, so
+        # without this it passes every one of them and stores an empty receipt.
+        if extraction.get("error"):
+            raise HTTPException(status_code=400, detail=f"Extraction {i} failed to parse")
         if extraction.get("is_duplicate") and not extraction.get("duplicate_resolved"):
             raise HTTPException(status_code=400, detail=f"Extraction {i} has unresolved duplicate")
         if extraction.get("requires_manual_review"):
@@ -394,7 +438,9 @@ async def commit_job(
                 )
 
     repo = ReceiptRepository(session).bypass_ownership()
-    for extraction in extractions:
+    for i, extraction in enumerate(extractions):
+        if i not in selected:
+            continue
         if extraction.get("duplicate_resolved") == "skip":
             continue
 
@@ -402,12 +448,17 @@ async def commit_job(
             user_id=current_user.id,
             file_ids=extraction.get("file_ids", []),
             extraction=extraction,
-            parser_version="1.0.0",
+            parser_version=CURRENT_PARSER_VERSION,
         )
 
     job.status = JobStatus.STORED
     await session.commit()
 
     return UploadJobStatusResponse(
-        job_id=job.id, status=job.status, file_ids=job.file_ids, extracted_data=job.result_data
+        job_id=job.id,
+        status=job.status,
+        file_ids=job.file_ids,
+        extracted_data=job.result_data,
+        total_items=job.total_items or 0,
+        processed_items=job.processed_items or 0,
     )

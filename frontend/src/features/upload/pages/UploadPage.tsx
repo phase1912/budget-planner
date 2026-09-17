@@ -277,20 +277,26 @@ export const UploadPage = observer(function UploadPage() {
                   uploadStore.isAnyLineOverLimit || uploadStore.uploadState.status === "loading"
                 }
               >
-                {uploadStore.uploadState.status === "loading" ? "Sending..." : "Read these photos"}
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 12h14" />
-                  <path d="m12 5 7 7-7 7" />
-                </svg>
+                {uploadStore.uploadState.status === "loading"
+                  ? uploadStore.totalItems > 0
+                    ? `Processed ${uploadStore.processedItems.toString()} of ${uploadStore.totalItems.toString()}...`
+                    : "Sending..."
+                  : "Read these photos"}
+                {uploadStore.uploadState.status !== "loading" && (
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                  </svg>
+                )}
               </Button>
             </div>
           </div>

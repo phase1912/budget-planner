@@ -391,6 +391,14 @@ export interface components {
             /** Name */
             name: string;
         };
+        /**
+         * CommitJobRequest
+         * @description Request to commit selected extractions to the database.
+         */
+        CommitJobRequest: {
+            /** Indices To Store */
+            indices_to_store: number[];
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -607,6 +615,16 @@ export interface components {
             extracted_data?: {
                 [key: string]: unknown;
             } | null;
+            /**
+             * Total Items
+             * @default 0
+             */
+            total_items: number;
+            /**
+             * Processed Items
+             * @default 0
+             */
+            processed_items: number;
         };
         /**
          * UploadReceiptResponse
@@ -1211,7 +1229,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommitJobRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
