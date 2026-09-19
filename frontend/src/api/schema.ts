@@ -971,7 +971,9 @@ export interface operations {
     };
     get_me_users_me_get: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -987,11 +989,22 @@ export interface operations {
                     "application/json": components["schemas"]["UserResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     update_me_users_me_patch: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1024,7 +1037,9 @@ export interface operations {
     };
     upload_receipt_receipts_upload_post: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1057,7 +1072,9 @@ export interface operations {
     };
     upload_receipts_batch_receipts_upload_batch_post: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1079,11 +1096,22 @@ export interface operations {
                     "application/json": components["schemas"]["UploadReceiptResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     get_upload_job_status_receipts_upload__job_id__get: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 job_id: string;
@@ -1114,7 +1142,9 @@ export interface operations {
     };
     get_receipt_image_receipts_images__file_id__get: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 file_id: string;
@@ -1145,7 +1175,9 @@ export interface operations {
     };
     resolve_duplicate_receipts_upload__job_id__resolve_duplicate_post: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 job_id: string;
@@ -1180,7 +1212,9 @@ export interface operations {
     };
     resolve_position_match_receipts_upload__job_id__resolve_position_match_post: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 job_id: string;
@@ -1218,6 +1252,7 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                token?: string | null;
             };
             header?: never;
             path?: never;
@@ -1247,7 +1282,9 @@ export interface operations {
     };
     get_receipt_receipts__receipt_id__get: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 receipt_id: string;
@@ -1278,7 +1315,9 @@ export interface operations {
     };
     delete_receipt_receipts__receipt_id__delete: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 receipt_id: string;
@@ -1307,7 +1346,9 @@ export interface operations {
     };
     update_receipt_receipts__receipt_id__patch: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 receipt_id: string;
@@ -1342,7 +1383,9 @@ export interface operations {
     };
     resolve_total_receipts_upload__job_id__resolve_total_post: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 job_id: string;
@@ -1377,7 +1420,9 @@ export interface operations {
     };
     edit_line_item_receipts_upload__job_id__line_item_post: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 job_id: string;
@@ -1412,7 +1457,9 @@ export interface operations {
     };
     commit_job_receipts_upload__job_id__commit_post: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 job_id: string;
