@@ -64,6 +64,9 @@ def app() -> FastAPI:
         async def download_file(self, object_name: str) -> bytes:
             return b"fake-image-data"
 
+        async def delete_file(self, object_name: str) -> None:
+            return None
+
     async def mock_get_storage_service() -> Any:
         yield MockStoragePort()
 

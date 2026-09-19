@@ -15,11 +15,30 @@ service layer converts to ``Decimal`` when persisting to domain entities.
 
 from __future__ import annotations
 
+import re
 from decimal import Decimal, InvalidOperation
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.domain.position_matching import MatchResult
+
+_TRAILING_LETTERS = re.compile(r"(?<=\d)\s*[A-Za-z]+\.?$")
+
+
+def normalise_amount(value: str) -> str:
+    """Drop the unit or tax-class letter receipts print next to a number.
+
+    Polish receipts tag each line with its VAT class, so the LLM faithfully
+    reports "7,49A" or "10szt" when asked to extract the printed value.  Those
+    strings raise ``InvalidOperation`` the moment anything converts them to
+    ``Decimal``, and the conversions downstream swallow that and substitute
+    zero, so an entire receipt is stored priced at nothing.
+
+    Returns "" when nothing numeric is left, which callers already treat as a
+    missing value rather than as zero.
+    """
+    stripped = _TRAILING_LETTERS.sub("", value).strip()
+    return stripped if any(char.isdigit() for char in stripped) else ""
 
 
 class PositionMatch(BaseModel):
@@ -40,8 +59,13 @@ class ExtractedLineItem(BaseModel):
     """A single line item on a receipt (BRD A9).
 
     All monetary values are strings to avoid floating-point representation
-    issues in the JSON round-trip from the LLM.
+    issues in the JSON round-trip from the LLM.  Models routinely answer with
+    a bare number anyway (``"quantity": 1``), so numbers are coerced rather
+    than rejected — losing a whole receipt over JSON's number/string
+    distinction helps nobody.
     """
+
+    model_config = ConfigDict(coerce_numbers_to_str=True)
 
     name: str = Field(description="Item name as printed on the receipt")
     quantity: str = Field(description="Quantity purchased, e.g. '1' or '0.5'")
@@ -61,6 +85,11 @@ class ExtractedLineItem(BaseModel):
         ),
     )
 
+    @field_validator("quantity", "unit_price", "total_price", mode="after")
+    @classmethod
+    def _strip_printed_suffix(cls, value: str) -> str:
+        return normalise_amount(value)
+
 
 class ExtractedReceipt(BaseModel):
     """Structured output from parsing one receipt image set (BRD A9).
@@ -69,6 +98,8 @@ class ExtractedReceipt(BaseModel):
     not be read are set to ``None`` and flagged via the corresponding
     confidence field, triggering the manual-review path (BRD A11).
     """
+
+    model_config = ConfigDict(coerce_numbers_to_str=True)
 
     merchant_name: str | None = Field(
         default=None, description="Store or merchant name from the receipt header"
@@ -140,6 +171,11 @@ class ExtractedReceipt(BaseModel):
         default=False,
         description="True if critical fields missing, requiring manual review (BRD A11).",
     )
+
+    @field_validator("receipt_total", mode="after")
+    @classmethod
+    def _strip_printed_suffix(cls, value: str | None) -> str | None:
+        return normalise_amount(value) or None if value else value
 
     @model_validator(mode="after")
     def validate_arithmetic(self) -> ExtractedReceipt:

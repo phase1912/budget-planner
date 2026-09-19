@@ -215,3 +215,28 @@ async def test_list_paginated(db_session: AsyncSession) -> None:
     assert total == 3
     assert len(items) == 1
     assert items[0].merchant_name == "Merchant 0"
+
+
+@pytest.mark.asyncio
+async def test_a_line_with_no_readable_price_is_refused_rather_than_stored_as_zero(
+    db_session: AsyncSession,
+) -> None:
+    """Storing 0.00 for a price we could not read understates the user's spending."""
+    # Given
+    user = await UserFactory.create_async(email="unpriced@example.com")
+    current_user_id.set(user.id)
+    repo = ReceiptRepository(db_session)
+
+    extraction = {
+        "merchant_name": "euro sklep",
+        "receipt_total": "13.99",
+        "line_items": [
+            {"name": "AGRO-FARM Jaja", "quantity": "10", "unit_price": "", "total_price": ""}
+        ],
+    }
+
+    # When / Then
+    with pytest.raises(ValueError, match="no readable total price"):
+        repo.create_from_extraction(
+            user_id=user.id, file_ids=["f1"], extraction=extraction, parser_version="3"
+        )

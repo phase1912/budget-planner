@@ -30,3 +30,64 @@ describe("Modal", () => {
     expect(screen.queryByTestId("content")).not.toBeInTheDocument();
   });
 });
+
+describe("Modal focus management", () => {
+  it("moves focus into the dialog when it opens", () => {
+    render(
+      <Modal isOpen={true} onClose={vi.fn()}>
+        <ModalBody>
+          <button>Inside</button>
+        </ModalBody>
+      </Modal>,
+    );
+
+    expect(screen.getByRole("dialog")).toHaveFocus();
+  });
+
+  it("keeps Tab inside the dialog", () => {
+    render(
+      <Modal isOpen={true} onClose={vi.fn()}>
+        <ModalBody>
+          <button>First</button>
+          <button>Last</button>
+        </ModalBody>
+      </Modal>,
+    );
+
+    const first = screen.getByText("First");
+    const last = screen.getByText("Last");
+
+    last.focus();
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(first).toHaveFocus();
+
+    first.focus();
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(last).toHaveFocus();
+  });
+
+  it("returns focus to whatever opened it", () => {
+    const trigger = document.createElement("button");
+    document.body.appendChild(trigger);
+    trigger.focus();
+
+    const { rerender } = render(
+      <Modal isOpen={true} onClose={vi.fn()}>
+        <ModalBody>
+          <button>Inside</button>
+        </ModalBody>
+      </Modal>,
+    );
+
+    rerender(
+      <Modal isOpen={false} onClose={vi.fn()}>
+        <ModalBody>
+          <button>Inside</button>
+        </ModalBody>
+      </Modal>,
+    );
+
+    expect(trigger).toHaveFocus();
+    trigger.remove();
+  });
+});

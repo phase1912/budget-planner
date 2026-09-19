@@ -5,6 +5,9 @@ themselves through `app.api.ROUTERS`; nothing here should need to change as
 routers, or later middleware, are added.
 """
 
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
@@ -14,11 +17,22 @@ from app.api import include_routers
 from app.api.errors import register_exception_handlers
 from app.api.rate_limit import limiter
 from app.core.config import get_settings
+from app.db.session import get_session_factory
+from app.services.job_recovery import fail_orphaned_upload_jobs
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Clear upload jobs the previous process left mid-flight before serving."""
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        await fail_orphaned_upload_jobs(session)
+    yield
 
 
 def create_app() -> FastAPI:
     """Build and wire a fresh FastAPI application instance."""
-    app = FastAPI(title="AI Budget Agent")
+    app = FastAPI(title="AI Budget Agent", lifespan=lifespan)
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 

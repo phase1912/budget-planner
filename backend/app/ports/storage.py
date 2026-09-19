@@ -28,3 +28,12 @@ class StoragePort(Protocol):
     async def download_file(self, object_name: str) -> bytes:
         """Download and return the raw bytes of a stored object."""
         ...
+
+    async def delete_file(self, object_name: str) -> None:
+        """Permanently remove a stored object.
+
+        Succeeds whether or not the object is there. A caller deleting a
+        receipt's photos has already committed to losing them, and failing on
+        one that is already gone would leave the caller unable to retry.
+        """
+        ...

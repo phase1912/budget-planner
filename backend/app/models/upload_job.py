@@ -47,3 +47,7 @@ class UploadJob(Model):
         default=None,
         nullable=True,
     )
+    total_items: Mapped[int] = mapped_column(default=0, server_default=text("0"), nullable=False)
+    processed_items: Mapped[int] = mapped_column(
+        default=0, server_default=text("0"), nullable=False
+    )

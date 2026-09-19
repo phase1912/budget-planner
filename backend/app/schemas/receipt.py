@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Literal
 
@@ -27,6 +27,8 @@ class UploadJobStatusResponse(BaseModel):
     status: JobStatus
     file_ids: list[str]
     extracted_data: dict[str, Any] | None = None
+    total_items: int = 0
+    processed_items: int = 0
 
 
 class ResolveDuplicateRequest(BaseModel):
@@ -49,6 +51,60 @@ class ResolveTotalRequest(BaseModel):
 
     extraction_index: int
     receipt_total: str
+
+
+class EditLineItemRequest(BaseModel):
+    """Correct one line item the parser misread, before anything is stored (BRD A9, A11).
+
+    Every field is optional and `None` means "leave it alone". An empty string is
+    a real value meaning "there is no readable amount here", which is what the
+    parser itself returns for a line it could not price — so the two cannot be
+    collapsed. Callers must send only the fields they are changing.
+    """
+
+    extraction_index: int
+    item_index: int
+    name: str | None = None
+    quantity: str | None = None
+    unit_price: str | None = None
+    total_price: str | None = None
+
+
+class LineItemInput(BaseModel):
+    """One line item in an `UpdateReceiptRequest`.
+
+    An existing line carries its `id`; a new line omits it. An existing id that
+    is not resent is deleted, so the request represents the receipt's *entire*
+    desired line-item list, not a diff.
+    """
+
+    id: uuid.UUID | None = None
+    name: str
+    quantity: Decimal
+    unit_price: Decimal
+    total_price: Decimal
+
+
+class UpdateReceiptRequest(BaseModel):
+    """Correct a stored receipt's header and line items (BRD A9, A11, D6).
+
+    Represents the receipt's full desired state, mirroring what the detail
+    dialog already shows the user — not a partial patch. `total_amount` must
+    equal the sum of `line_items`' totals, the same invariant enforced when the
+    receipt was first stored; the two are never allowed to drift apart here
+    either.
+    """
+
+    merchant_name: str | None
+    transaction_date: date | None
+    total_amount: Decimal
+    line_items: list[LineItemInput]
+
+
+class CommitJobRequest(BaseModel):
+    """Request to commit selected extractions to the database."""
+
+    indices_to_store: list[int]
 
 
 class CategoryResponse(BaseModel):
