@@ -14,16 +14,20 @@ from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
+from app.ports.parsing import CURRENT_PARSER_VERSION
 from app.ports.storage import StoragePort
 from app.repository.receipt import ReceiptRepository
 from app.schemas.extraction import ExtractedReceipt
 from app.schemas.receipt import (
+    CommitJobRequest,
+    EditLineItemRequest,
     PaginatedReceiptsResponse,
     ReceiptDetailResponse,
     ReceiptResponse,
     ResolveDuplicateRequest,
     ResolvePositionMatchRequest,
     ResolveTotalRequest,
+    UpdateReceiptRequest,
     UploadJobStatusResponse,
     UploadReceiptResponse,
 )
@@ -39,9 +43,20 @@ def get_receipt_service(
     """Provide a ReceiptService with storage and vision parser wired up."""
     settings = get_settings()
     api_key = settings.llm_api_key.get_secret_value() if settings.llm_api_key else None
-    agent = Agent(model=settings.llm_model, api_key=api_key)
+    agent = Agent(
+        model=settings.llm_model,
+        api_key=api_key,
+        api_base=settings.llm_api_base,
+        disable_reasoning=settings.llm_disable_reasoning,
+        disable_json_schema=settings.llm_disable_json_schema,
+    )
     parser = VisionAgentAdapter(agent)
-    return ReceiptService(storage_port, parser_port=parser)
+    return ReceiptService(
+        storage_port,
+        parser_port=parser,
+        max_concurrency=settings.llm_max_concurrency,
+        job_timeout_seconds=settings.upload_job_timeout_seconds,
+    )
 
 
 @router.post("/upload", response_model=UploadReceiptResponse)
@@ -187,7 +202,12 @@ async def get_upload_job_status(
         raise HTTPException(status_code=404, detail="Job not found")
 
     return UploadJobStatusResponse(
-        job_id=job.id, status=job.status, file_ids=job.file_ids, extracted_data=job.result_data
+        job_id=job.id,
+        status=job.status,
+        file_ids=job.file_ids,
+        extracted_data=job.result_data,
+        total_items=job.total_items or 0,
+        processed_items=job.processed_items or 0,
     )
 
 
@@ -246,7 +266,12 @@ async def resolve_duplicate(
     await session.commit()
 
     return UploadJobStatusResponse(
-        job_id=job.id, status=job.status, file_ids=job.file_ids, extracted_data=job.result_data
+        job_id=job.id,
+        status=job.status,
+        file_ids=job.file_ids,
+        extracted_data=job.result_data,
+        total_items=job.total_items or 0,
+        processed_items=job.processed_items or 0,
     )
 
 
@@ -313,6 +338,45 @@ async def get_receipt(
     return ReceiptDetailResponse.model_validate(receipt)
 
 
+@router.patch("/{receipt_id}", response_model=ReceiptDetailResponse)
+async def update_receipt(
+    receipt_id: uuid.UUID,
+    request_data: UpdateReceiptRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> ReceiptDetailResponse:
+    """Correct a stored receipt's header and line items (F3.9, BRD A9, A11)."""
+    receipt_service = ReceiptService(repository=ReceiptRepository(session))
+    try:
+        receipt = await receipt_service.update_receipt(receipt_id, request_data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+
+    await session.commit()
+    return ReceiptDetailResponse.model_validate(receipt)
+
+
+@router.delete("/{receipt_id}", status_code=204)
+async def delete_receipt(
+    receipt_id: uuid.UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    storage_port: Annotated[StoragePort, Depends(get_storage_service)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> None:
+    """Permanently delete a receipt together with its line items and photos."""
+    receipt_service = ReceiptService(
+        storage_port=storage_port, repository=ReceiptRepository(session)
+    )
+
+    if not await receipt_service.delete_receipt(receipt_id):
+        raise HTTPException(status_code=404, detail="Receipt not found")
+
+    await session.commit()
+
+
 @router.post("/upload/{job_id}/resolve-total", response_model=UploadJobStatusResponse)
 async def resolve_total(
     job_id: uuid.UUID,
@@ -356,13 +420,40 @@ async def resolve_total(
     await session.commit()
 
     return UploadJobStatusResponse(
-        job_id=job.id, status=job.status, file_ids=job.file_ids, extracted_data=job.result_data
+        job_id=job.id,
+        status=job.status,
+        file_ids=job.file_ids,
+        extracted_data=job.result_data,
+        total_items=job.total_items or 0,
+        processed_items=job.processed_items or 0,
     )
+
+
+@router.post("/upload/{job_id}/line-item", response_model=UploadJobStatusResponse)
+async def edit_line_item(
+    job_id: uuid.UUID,
+    request_data: EditLineItemRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> UploadJobStatusResponse:
+    """Correct a line item the parser misread, before the batch is stored (BRD A9)."""
+    receipt_service = ReceiptService(repository=ReceiptRepository(session))
+    try:
+        response = await receipt_service.edit_extracted_line_item(
+            job_id, current_user.id, request_data
+        )
+        await session.commit()
+        return response
+    except ValueError as e:
+        if "not found" in str(e).lower():
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/upload/{job_id}/commit", response_model=UploadJobStatusResponse)
 async def commit_job(
     job_id: uuid.UUID,
+    request: CommitJobRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> UploadJobStatusResponse:
@@ -378,7 +469,22 @@ async def commit_job(
 
     extractions = job.result_data["extractions"]
 
+    selected = set(request.indices_to_store)
+    if not selected:
+        raise HTTPException(status_code=400, detail="No extractions selected")
+
+    out_of_range = sorted(i for i in selected if not 0 <= i < len(extractions))
+    if out_of_range:
+        raise HTTPException(status_code=400, detail=f"Unknown extraction indices: {out_of_range}")
+
     for i, extraction in enumerate(extractions):
+        if i not in selected:
+            continue
+
+        # A failed parse carries none of the fields the checks below look at, so
+        # without this it passes every one of them and stores an empty receipt.
+        if extraction.get("error"):
+            raise HTTPException(status_code=400, detail=f"Extraction {i} failed to parse")
         if extraction.get("is_duplicate") and not extraction.get("duplicate_resolved"):
             raise HTTPException(status_code=400, detail=f"Extraction {i} has unresolved duplicate")
         if extraction.get("requires_manual_review"):
@@ -393,8 +499,24 @@ async def commit_job(
                     status_code=400, detail=f"Extraction {i} has unresolved position match"
                 )
 
+        # Last, because an unresolved position match makes the sum meaningless.
+        # None means the arithmetic could not be checked at all — usually a line
+        # with no readable price — so it blocks just as firmly as a mismatch.
+        if extraction.get("items_sum_matches_total") is not True:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Extraction {i}: the line items add up to "
+                    f"{extraction.get('computed_total') or 'an amount we could not work out'}, "
+                    f"not the printed {extraction.get('receipt_total') or 'total'}. "
+                    "Correct the lines before storing."
+                ),
+            )
+
     repo = ReceiptRepository(session).bypass_ownership()
-    for extraction in extractions:
+    for i, extraction in enumerate(extractions):
+        if i not in selected:
+            continue
         if extraction.get("duplicate_resolved") == "skip":
             continue
 
@@ -402,12 +524,17 @@ async def commit_job(
             user_id=current_user.id,
             file_ids=extraction.get("file_ids", []),
             extraction=extraction,
-            parser_version="1.0.0",
+            parser_version=CURRENT_PARSER_VERSION,
         )
 
     job.status = JobStatus.STORED
     await session.commit()
 
     return UploadJobStatusResponse(
-        job_id=job.id, status=job.status, file_ids=job.file_ids, extracted_data=job.result_data
+        job_id=job.id,
+        status=job.status,
+        file_ids=job.file_ids,
+        extracted_data=job.result_data,
+        total_items=job.total_items or 0,
+        processed_items=job.processed_items or 0,
     )

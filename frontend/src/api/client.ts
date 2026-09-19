@@ -11,8 +11,10 @@ import type { paths } from "@/api/schema";
  * No import may reach the backend any other way: this is the boundary the
  * generated OpenAPI client exists to enforce (docs/architecture/overview.md).
  */
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+
 export const apiClient = createClient<paths>({
-  baseUrl: import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000",
+  baseUrl: API_BASE_URL,
 });
 
 export type ApiClient = typeof apiClient;

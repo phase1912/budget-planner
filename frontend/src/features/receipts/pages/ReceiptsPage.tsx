@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/StoreContext";
+import { DeleteReceiptDialog } from "../components/DeleteReceiptDialog";
+import { EditReceiptDialog } from "../components/EditReceiptDialog";
 import { ReceiptDetailModal } from "../components/ReceiptDetailModal";
 import { Card, Button, Input, IconTile } from "@/shared/components";
 
@@ -354,6 +356,8 @@ export const ReceiptsPage = observer(() => {
         </div>
 
         {receiptStore.selectedReceiptId && <ReceiptDetailModal />}
+        <DeleteReceiptDialog />
+        <EditReceiptDialog />
       </div>
     </div>
   );

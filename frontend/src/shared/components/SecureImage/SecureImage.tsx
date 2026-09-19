@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useStores } from "@/stores/StoreContext";
+import { API_BASE_URL } from "@/api/client";
 
 interface SecureImageProps {
   fileId: string;
@@ -9,41 +10,41 @@ interface SecureImageProps {
 
 export function SecureImage({ fileId, className, alt }: SecureImageProps) {
   const { authStore } = useStores();
-  const [src, setSrc] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
-    let objectUrl: string | null = null;
-    let isMounted = true;
+  if (!authStore.token) {
+    return <div className={`bg-muted animate-pulse ${className ?? ""}`} />;
+  }
 
-    async function fetchImage() {
-      if (!authStore.token) return;
+  // Pass the token as a query parameter so the browser can natively load and redirect to S3
+  // without triggering CORS blocks caused by fetch + Authorization header on redirects.
+  const srcUrl = `${API_BASE_URL}/receipts/images/${fileId}?token=${authStore.token}`;
 
-      try {
-        const response = await fetch(`http://localhost:8000/receipts/images/${fileId}`, {
-          headers: {
-            Authorization: `Bearer ${authStore.token}`,
-          },
-        });
-
-        if (response.ok && isMounted) {
-          const blob = await response.blob();
-          objectUrl = URL.createObjectURL(blob);
-          setSrc(objectUrl);
-        }
-      } catch (err) {
-        console.error("Failed to fetch image", err);
-      }
-    }
-
-    void fetchImage();
-
-    return () => {
-      isMounted = false;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [fileId, authStore.token]);
-
-  if (!src) return <div className={`bg-muted animate-pulse ${className ?? ""}`} />;
-
-  return <img src={src} alt={alt} className={className} />;
+  return (
+    <>
+      {!loaded && !error && <div className={`bg-muted animate-pulse ${className ?? ""}`} />}
+      {error && (
+        <div
+          className={`bg-muted flex items-center justify-center text-xs text-muted-foreground ${className ?? ""}`}
+        >
+          Failed to load
+        </div>
+      )}
+      {!error && (
+        <img
+          src={srcUrl}
+          alt={alt}
+          className={`${className ?? ""} ${loaded ? "block" : "hidden"}`}
+          onLoad={() => {
+            setLoaded(true);
+          }}
+          onError={() => {
+            setLoaded(true);
+            setError(true);
+          }}
+        />
+      )}
+    </>
+  );
 }

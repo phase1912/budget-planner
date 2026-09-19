@@ -1,4 +1,5 @@
 import { observer } from "mobx-react-lite";
+import { FixExtractionDialog } from "./FixExtractionDialog";
 import { useNavigate } from "react-router-dom";
 import { useStores } from "@/stores/StoreContext";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
@@ -41,6 +42,7 @@ interface ExtractedData {
     reason?: string | null;
     user_overridden?: boolean;
   }[];
+  error?: string | null;
 }
 
 interface ExtractedDataPayload {
@@ -143,6 +145,40 @@ export const ExtractedStep = observer(function ExtractedStep() {
             .map((item, idx) => ({ item, idx }))
             .filter(({ idx }) => !duplicateIndices.has(idx));
 
+          if (data.error) {
+            return (
+              <Card key={index} flush className="mt-4 border-tone-error-border">
+                <CardHeader className="flex items-center justify-between bg-tone-error-bg">
+                  <div className="flex items-center gap-3.5">
+                    <div className="flex gap-1.5">
+                      {fileIds.slice(0, 2).map((id) => (
+                        <SecureImage
+                          key={id}
+                          fileId={id}
+                          alt="receipt thumb"
+                          className="w-9 h-11 object-cover rounded-md opacity-50 grayscale"
+                        />
+                      ))}
+                      {fileIds.length > 2 && (
+                        <span className="inline-flex items-center justify-center w-9 h-11 rounded-md bg-muted text-[11px] font-bold text-muted-foreground opacity-50">
+                          +{fileIds.length - 2}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-base font-bold text-tone-error-text">
+                        Failed to process this receipt
+                      </span>
+                      <span className="text-[13px] text-tone-error-text opacity-90">
+                        The AI service was temporarily overloaded or unavailable.
+                      </span>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            );
+          }
+
           return (
             <Card
               key={index}
@@ -189,7 +225,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                     )}
                     {matchesTotal === false && (
                       <span className="text-[11px] font-semibold text-tone-error-text">
-                        Total &middot; not found
+                        Total &middot; does not match
                       </span>
                     )}
                     <span
@@ -203,6 +239,9 @@ export const ExtractedStep = observer(function ExtractedStep() {
                   <button
                     className="inline-flex items-center justify-center w-8 h-8 rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors ml-1"
                     aria-label="Edit this receipt"
+                    onClick={() => {
+                      uploadStore.startEditingExtraction(index);
+                    }}
                   >
                     <svg
                       width="15"
@@ -218,6 +257,14 @@ export const ExtractedStep = observer(function ExtractedStep() {
                       <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
                     </svg>
                   </button>
+                  <input
+                    type="checkbox"
+                    checked={uploadStore.selectedIndices.has(index)}
+                    onChange={() => {
+                      uploadStore.toggleSelection(index);
+                    }}
+                    className="w-5 h-5 rounded border-border text-primary focus:ring-primary cursor-pointer ml-1"
+                  />
                 </div>
               </CardHeader>
 
@@ -412,8 +459,10 @@ export const ExtractedStep = observer(function ExtractedStep() {
               >
                 <div className="flex items-center justify-between w-full">
                   <span className="text-[13px] text-muted-foreground tabular-nums">
-                    {deduplicatedItems.length} items &middot; lines add up to{" "}
-                    {data.computed_total ?? "0.00"}
+                    {deduplicatedItems.length} items &middot;{" "}
+                    {data.computed_total
+                      ? `lines add up to ${data.computed_total}`
+                      : "a line has no price, so these cannot be added up"}
                   </span>
                   {matchesTotal === true && (
                     <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary">
@@ -497,11 +546,13 @@ export const ExtractedStep = observer(function ExtractedStep() {
           ) : (
             <Button
               variant="primary"
+              disabled={uploadStore.selectedIndices.size === 0}
               onClick={() => {
                 void uploadStore.commitJob(navigate);
               }}
             >
-              Store {extractions.length} receipt{extractions.length !== 1 ? "s" : ""}
+              Store {uploadStore.selectedIndices.size} receipt
+              {uploadStore.selectedIndices.size !== 1 ? "s" : ""}
               <svg
                 width="16"
                 height="16"
@@ -520,6 +571,8 @@ export const ExtractedStep = observer(function ExtractedStep() {
           )}
         </div>
       </Stack>
+
+      <FixExtractionDialog />
     </Container>
   );
 });

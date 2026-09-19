@@ -83,6 +83,53 @@ class Settings(BaseSettings):
             "(GEMINI_API_KEY, ANTHROPIC_API_KEY, etc.)."
         ),
     )
+    llm_api_base: str | None = Field(
+        default=None,
+        description=(
+            "Optional custom base URL for the LLM provider. Required for "
+            "proxies, OpenAI-compatible APIs (like Z-AI), or self-hosted models."
+        ),
+    )
+    llm_disable_json_schema: bool = Field(
+        default=False,
+        description=(
+            "Stop asking the provider to enforce the response JSON schema natively. "
+            "LM Studio's constrained decoding corrupts the key names it emits, "
+            "producing JSON that parses but matches no field, so every extraction "
+            "comes back empty. With this set the model follows the prompt instead and "
+            "`Agent._parse_response` reads what it returns. Leave False for hosted "
+            "providers, whose structured output works."
+        ),
+    )
+    llm_max_concurrency: int = Field(
+        default=2,
+        ge=1,
+        description=(
+            "How many receipts are extracted in parallel in one upload job. Keep "
+            "this at 1 for a locally served model: a single model instance "
+            "serialises the requests anyway, and concurrent calls evict each "
+            "other's prompt cache, which makes the batch slower rather than faster."
+        ),
+    )
+    upload_job_timeout_seconds: int = Field(
+        default=900,
+        ge=1,
+        description=(
+            "How long one upload job may spend extracting before it is abandoned "
+            "and marked failed. Without it a wedged provider call leaves the job "
+            "in PROCESSING forever and the client polling forever."
+        ),
+    )
+    llm_disable_reasoning: bool = Field(
+        default=False,
+        description=(
+            "Ask the provider to answer without a reasoning pass. Needed for local "
+            "hybrid-reasoning models served by LM Studio or Ollama (Qwen3 and kin), "
+            "which otherwise emit the whole answer into the reasoning channel and "
+            "leave `content` empty, breaking every structured extraction. Leave "
+            "False for hosted providers, which do not accept the parameter."
+        ),
+    )
     ocr_confidence_threshold: float = Field(
         default=0.80,
         ge=0.0,

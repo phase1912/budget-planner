@@ -57,6 +57,10 @@ uploaded ──► parsing ──┬─► parsed          (counts toward budget
 `manual_review` is not an error state — it is a receipt that exists and is known to be
 incomplete. It stays visible to the user and stays out of the arithmetic (A11, D3).
 
+Deletion is terminal and physical, from any state. There is no `deleted` state and no
+tombstone: the row, its line items and its stored photos are erased together, so a
+deleted receipt cannot be listed, counted or recovered (ADR-0007).
+
 ## Invariants
 
 Rules that must hold at all times. Each is a candidate for a test.
@@ -76,7 +80,9 @@ Rules that must hold at all times. Each is a candidate for a test.
    alongside the total — the number is never quietly incomplete (D3).
 6. An in-progress month is always labelled incomplete wherever it is displayed (D4).
 7. Snapshots are derived data. Any mutation of a receipt in a snapshotted month
-   recalculates it (D6, N3).
+   recalculates it (D6, N3). Not yet true of deletion: the delete path erases the
+   receipt but recalculates nothing, because no budget or statistics exist to
+   recalculate. Closing that gap is F10.3.
 
 **Position matching**
 
@@ -119,6 +125,13 @@ Rules that must hold at all times. Each is a candidate for a test.
 
 22. Every query for a user-owned entity is filtered by owner (N2).
 23. A request for another user's record returns 404, not 403 (N2).
+
+**Deletion**
+
+24. Deleting a receipt erases its line items and every one of its stored photos; no
+    orphaned object survives in storage (A12, N2).
+25. Deleting a receipt discards the transient upload-job payload that named those
+    photos, so no screen can ask for an image that is gone (A12).
 
 ## Open decisions
 

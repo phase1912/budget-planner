@@ -1,16 +1,30 @@
-from typing import Any
+import uuid
+from datetime import UTC, datetime
+from decimal import Decimal
+from typing import Any, ClassVar
+from unittest.mock import AsyncMock, patch
 
+import jwt
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_current_user, get_storage_service
+from app.api.errors import DomainError
+from app.core.config import get_settings
+from app.db.session import get_db_session
 from app.main import create_app
+from app.models.receipt import Receipt, ReceiptStatus
+from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.ports.storage import StoragePort
 
 
 class MockStoragePort(StoragePort):
+    # Class-level because the app fixture builds a fresh instance per request,
+    # so a test asserting on deletions has nothing else to look at.
+    deleted: ClassVar[list[str]] = []
+
     async def upload_file(
         self,
         object_name: str,
@@ -36,6 +50,9 @@ class MockStoragePort(StoragePort):
 
     async def download_file(self, object_name: str) -> bytes:
         return b"fake-image-data"
+
+    async def delete_file(self, object_name: str) -> None:
+        MockStoragePort.deleted.append(object_name)
 
 
 @pytest.fixture
@@ -227,7 +244,11 @@ def test_commit_job_endpoint(app: FastAPI) -> None:
         user_id=user.id,
         status=JobStatus.COMPLETED,
         file_ids=[],
-        result_data={"extractions": [{"merchant_name": "Test", "line_items": []}]},
+        result_data={
+            "extractions": [
+                {"merchant_name": "Test", "line_items": [], "items_sum_matches_total": True}
+            ]
+        },
     )
     app.dependency_overrides[get_current_user] = lambda: user
 
@@ -248,7 +269,7 @@ def test_commit_job_endpoint(app: FastAPI) -> None:
     )
     client.headers["Authorization"] = f"Bearer {token}"
 
-    response = client.post(f"/receipts/upload/{job_id}/commit")
+    response = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "stored"
@@ -282,6 +303,7 @@ def test_commit_job_endpoint_skip_duplicate(app: FastAPI) -> None:
                     "line_items": [],
                     "is_duplicate": True,
                     "duplicate_resolved": "skip",
+                    "items_sum_matches_total": True,
                 }
             ]
         },
@@ -305,7 +327,7 @@ def test_commit_job_endpoint_skip_duplicate(app: FastAPI) -> None:
     )
     client.headers["Authorization"] = f"Bearer {token}"
 
-    response = client.post(f"/receipts/upload/{job_id}/commit")
+    response = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "stored"
@@ -418,7 +440,7 @@ def test_commit_job_errors(app: FastAPI) -> None:
 
     # 1. Job not found
     mock_db_with_job(None)
-    resp = client.post(f"/receipts/upload/{job_id}/commit")
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
     assert resp.status_code == 404
 
     # 2. Job has no extractions
@@ -426,7 +448,7 @@ def test_commit_job_errors(app: FastAPI) -> None:
         id=job_id, user_id=user.id, status=JobStatus.COMPLETED, file_ids=[], result_data={}
     )
     mock_db_with_job(job_no_ext)
-    resp = client.post(f"/receipts/upload/{job_id}/commit")
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
     assert resp.status_code == 400
 
     # 3. Unresolved duplicate
@@ -438,7 +460,7 @@ def test_commit_job_errors(app: FastAPI) -> None:
         result_data={"extractions": [{"is_duplicate": True}]},
     )
     mock_db_with_job(job_dup)
-    resp = client.post(f"/receipts/upload/{job_id}/commit")
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
     assert resp.status_code == 400
     assert "unresolved duplicate" in resp.json()["detail"]
 
@@ -451,7 +473,7 @@ def test_commit_job_errors(app: FastAPI) -> None:
         result_data={"extractions": [{"requires_manual_review": True}]},
     )
     mock_db_with_job(job_man)
-    resp = client.post(f"/receipts/upload/{job_id}/commit")
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
     assert resp.status_code == 400
     assert "manual review" in resp.json()["detail"]
 
@@ -464,7 +486,7 @@ def test_commit_job_errors(app: FastAPI) -> None:
         result_data={"extractions": [{"receipt_total_confidence": 50}]},
     )
     mock_db_with_job(job_low)
-    resp = client.post(f"/receipts/upload/{job_id}/commit")
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
     assert resp.status_code == 400
     assert "low confidence" in resp.json()["detail"]
 
@@ -477,9 +499,34 @@ def test_commit_job_errors(app: FastAPI) -> None:
         result_data={"extractions": [{"position_matches": [{"result": "not_possible"}]}]},
     )
     mock_db_with_job(job_pos)
-    resp = client.post(f"/receipts/upload/{job_id}/commit")
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
     assert resp.status_code == 400
     assert "position match" in resp.json()["detail"]
+
+    # 7. A failed parse must never be stored as an empty receipt
+    job_err = UploadJob(
+        id=job_id,
+        user_id=user.id,
+        status=JobStatus.COMPLETED,
+        file_ids=[],
+        result_data={"extractions": [{"error": "extraction_failed", "file_ids": ["f1"]}]},
+    )
+    mock_db_with_job(job_err)
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
+    assert resp.status_code == 400
+    assert "failed to parse" in resp.json()["detail"]
+
+    # 8. Selecting nothing is a mistake, not a silent success
+    mock_db_with_job(job_err)
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": []})
+    assert resp.status_code == 400
+    assert "No extractions selected" in resp.json()["detail"]
+
+    # 9. An index the job does not have is rejected rather than ignored
+    mock_db_with_job(job_err)
+    resp = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [5]})
+    assert resp.status_code == 400
+    assert "Unknown extraction indices" in resp.json()["detail"]
 
 
 def test_resolve_duplicate_errors(app: FastAPI) -> None:
@@ -660,3 +707,241 @@ def test_resolve_position_match_errors(app: FastAPI) -> None:
             },
         )
         assert resp.status_code == 400
+
+
+def _authenticated_client(app: FastAPI, user: User) -> TestClient:
+    """Wire a client whose JWT also satisfies UserContextMiddleware.
+
+    The middleware reads the raw header rather than the dependency, so a
+    `get_current_user` override alone leaves the ownership ContextVar unset.
+    """
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    async def mock_db_session() -> Any:
+        from unittest.mock import AsyncMock
+
+        yield AsyncMock()
+
+    app.dependency_overrides[get_db_session] = mock_db_session
+
+    client = TestClient(app, follow_redirects=False)
+    token = jwt.encode(
+        {"sub": str(user.id)}, get_settings().jwt_secret_key.get_secret_value(), algorithm="HS256"
+    )
+    client.headers["Authorization"] = f"Bearer {token}"
+    return client
+
+
+def test_deleting_a_receipt_returns_no_content(app: FastAPI) -> None:
+    # Given
+    user = User(id=uuid.uuid4(), email="owner@test.com")
+    client = _authenticated_client(app, user)
+    receipt_id = uuid.uuid4()
+
+    with patch("app.api.routers.receipts.ReceiptService") as service_cls:
+        service_cls.return_value.delete_receipt = AsyncMock(return_value=True)
+
+        # When
+        response = client.delete(f"/receipts/{receipt_id}")
+
+    # Then
+    assert response.status_code == 204
+    assert response.content == b""
+
+
+def test_deleting_another_users_receipt_returns_404(app: FastAPI) -> None:
+    # Given the ownership filter reports nothing deleted, as it does for a
+    # receipt owned by somebody else (BRD N2)
+    user = User(id=uuid.uuid4(), email="intruder@test.com")
+    client = _authenticated_client(app, user)
+
+    with patch("app.api.routers.receipts.ReceiptService") as service_cls:
+        service_cls.return_value.delete_receipt = AsyncMock(return_value=False)
+
+        # When
+        response = client.delete(f"/receipts/{uuid.uuid4()}")
+
+    # Then it is indistinguishable from a receipt that never existed
+    assert response.status_code == 404
+    assert response.json()["code"] == "not_found"
+
+
+def _job_with_one_unpriced_line(user: User, job_id: uuid.UUID) -> UploadJob:
+    """A euro sklep receipt whose eggs line the parser could not price."""
+    return UploadJob(
+        id=job_id,
+        user_id=user.id,
+        status=JobStatus.COMPLETED,
+        file_ids=[],
+        result_data={
+            "extractions": [
+                {
+                    "merchant_name": "euro sklep",
+                    "receipt_total": "21,48",
+                    "line_items": [
+                        {
+                            "name": "MILKA",
+                            "quantity": "1",
+                            "unit_price": "7,49",
+                            "total_price": "7,49",
+                        },
+                        {
+                            "name": "AGRO-FARM Jaja",
+                            "quantity": "10",
+                            "unit_price": "",
+                            "total_price": "",
+                        },
+                    ],
+                    "items_sum_matches_total": None,
+                    "computed_total": None,
+                }
+            ]
+        },
+    )
+
+
+def test_a_receipt_whose_lines_do_not_add_up_is_not_stored(app: FastAPI) -> None:
+    # Given
+    user = User(id=uuid.uuid4(), email="gate@test.com")
+    job_id = uuid.uuid4()
+    job = _job_with_one_unpriced_line(user, job_id)
+    assert job.result_data is not None
+    job.result_data["extractions"][0]["items_sum_matches_total"] = False
+    job.result_data["extractions"][0]["computed_total"] = "7.49"
+
+    client = _authenticated_client(app, user)
+
+    async def mock_db_session() -> Any:
+        from unittest.mock import AsyncMock, MagicMock
+
+        session = AsyncMock()
+        result_mock = MagicMock()
+        result_mock.scalar_one_or_none.return_value = job
+        session.execute.return_value = result_mock
+        yield session
+
+    app.dependency_overrides[get_db_session] = mock_db_session
+
+    # When
+    response = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
+
+    # Then the message says what did not add up, not just that something failed
+    assert response.status_code == 400
+    assert "7.49" in response.json()["detail"]
+    assert "21,48" in response.json()["detail"]
+
+
+def test_a_receipt_that_could_not_be_checked_at_all_is_not_stored(app: FastAPI) -> None:
+    # Given a line with no readable price, which leaves the sum unknowable
+    user = User(id=uuid.uuid4(), email="unchecked@test.com")
+    job_id = uuid.uuid4()
+    job = _job_with_one_unpriced_line(user, job_id)
+
+    client = _authenticated_client(app, user)
+
+    async def mock_db_session() -> Any:
+        from unittest.mock import AsyncMock, MagicMock
+
+        session = AsyncMock()
+        result_mock = MagicMock()
+        result_mock.scalar_one_or_none.return_value = job
+        session.execute.return_value = result_mock
+        yield session
+
+    app.dependency_overrides[get_db_session] = mock_db_session
+
+    # When
+    response = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
+
+    # Then "unknown" is refused just as firmly as "wrong"
+    assert response.status_code == 400
+    assert "could not work out" in response.json()["detail"]
+
+
+def test_updating_a_receipt_returns_the_new_state(app: FastAPI) -> None:
+    # Given
+    user = User(id=uuid.uuid4(), email="update-owner@test.com")
+    client = _authenticated_client(app, user)
+    receipt_id = uuid.uuid4()
+
+    updated = Receipt(
+        id=receipt_id,
+        user_id=user.id,
+        merchant_name="euro sklep",
+        transaction_date=None,
+        total_amount=Decimal("13.99"),
+        status=ReceiptStatus.PARSED,
+        file_ids=[],
+    )
+    updated.line_items = []
+    # Server-generated in production; this object never touches the database.
+    updated.created_at = datetime.now(UTC)
+
+    with patch("app.api.routers.receipts.ReceiptService") as service_cls:
+        service_cls.return_value.update_receipt = AsyncMock(return_value=updated)
+
+        # When
+        response = client.patch(
+            f"/receipts/{receipt_id}",
+            json={
+                "merchant_name": "euro sklep",
+                "transaction_date": None,
+                "total_amount": "13.99",
+                "line_items": [],
+            },
+        )
+
+    # Then
+    assert response.status_code == 200
+    assert response.json()["total_amount"] == "13.99"
+
+
+def test_updating_another_users_receipt_returns_404(app: FastAPI) -> None:
+    # Given the service reports nothing found, as it does for a receipt owned
+    # by somebody else (BRD N2)
+    user = User(id=uuid.uuid4(), email="update-intruder@test.com")
+    client = _authenticated_client(app, user)
+
+    with patch("app.api.routers.receipts.ReceiptService") as service_cls:
+        service_cls.return_value.update_receipt = AsyncMock(return_value=None)
+
+        # When
+        response = client.patch(
+            f"/receipts/{uuid.uuid4()}",
+            json={
+                "merchant_name": "x",
+                "transaction_date": None,
+                "total_amount": "1.00",
+                "line_items": [],
+            },
+        )
+
+    # Then it is indistinguishable from a receipt that never existed
+    assert response.status_code == 404
+    assert response.json()["code"] == "not_found"
+
+
+def test_updating_a_receipt_with_mismatched_lines_is_refused(app: FastAPI) -> None:
+    # Given the service enforces the same arithmetic invariant as the commit gate
+    user = User(id=uuid.uuid4(), email="update-mismatch@test.com")
+    client = _authenticated_client(app, user)
+
+    with patch("app.api.routers.receipts.ReceiptService") as service_cls:
+        service_cls.return_value.update_receipt = AsyncMock(
+            side_effect=DomainError("The lines add up to 7.49, not the total of 999.00.")
+        )
+
+        # When
+        response = client.patch(
+            f"/receipts/{uuid.uuid4()}",
+            json={
+                "merchant_name": "x",
+                "transaction_date": None,
+                "total_amount": "999.00",
+                "line_items": [],
+            },
+        )
+
+    # Then
+    assert response.status_code == 409
+    assert response.json()["code"] == "domain_error"

@@ -24,16 +24,18 @@ security = HTTPBearer(auto_error=False)
 async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
+    token: str | None = None,
 ) -> User:
     """Dependency resolving the authenticated user from the Bearer token."""
-    if not credentials:
+    if not credentials and not token:
         raise AuthenticationError("Not authenticated.")
 
-    token = credentials.credentials
+    actual_token = credentials.credentials if credentials else token
+    assert actual_token is not None
     settings = get_settings()
     try:
         payload = jwt.decode(
-            token, settings.jwt_secret_key.get_secret_value(), algorithms=["HS256"]
+            actual_token, settings.jwt_secret_key.get_secret_value(), algorithms=["HS256"]
         )
         user_id_str: str | None = payload.get("sub")
         if user_id_str is None:

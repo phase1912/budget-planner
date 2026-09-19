@@ -1,4 +1,5 @@
 import { makeAutoObservable, runInAction } from "mobx";
+import { errorMessage } from "../api/errors";
 import type { ApiClient } from "@/api/client";
 import { AsyncState } from "@/stores/AsyncState";
 
@@ -11,6 +12,10 @@ export class UploadStore {
   errorTitle: string | null = null;
   api: ApiClient;
   extractedData: Record<string, unknown> | null = null;
+  totalItems = 0;
+  processedItems = 0;
+  selectedIndices = new Set<number>();
+  editingExtractionIndex: number | null = null;
 
   mode: "single" | "multiple" = "single";
   lines: File[][] = [[]];
@@ -19,6 +24,22 @@ export class UploadStore {
   constructor(api: ApiClient) {
     this.api = api;
     makeAutoObservable(this);
+  }
+
+  startEditingExtraction(index: number) {
+    this.editingExtractionIndex = index;
+  }
+
+  stopEditingExtraction() {
+    this.editingExtractionIndex = null;
+  }
+
+  toggleSelection(index: number) {
+    if (this.selectedIndices.has(index)) {
+      this.selectedIndices.delete(index);
+    } else {
+      this.selectedIndices.add(index);
+    }
   }
 
   setMode(mode: "single" | "multiple") {
@@ -114,6 +135,9 @@ export class UploadStore {
     this.jobId = null;
     this.isProcessing = false;
     this.extractedData = null;
+    this.totalItems = 0;
+    this.processedItems = 0;
+    this.selectedIndices.clear();
 
     try {
       const formData = new FormData();
@@ -206,11 +230,25 @@ export class UploadStore {
 
         if (res.data) {
           runInAction(() => {
+            this.totalItems = res.data.total_items;
+            this.processedItems = res.data.processed_items;
+
             if (res.data.status === "completed") {
               this.isProcessing = false;
               this.uploadState.succeed();
               this.fileIds = res.data.file_ids;
               this.extractedData = res.data.extracted_data ?? null;
+
+              this.selectedIndices.clear();
+              if (this.extractedData?.extractions) {
+                const extractions = this.extractedData.extractions as Record<string, unknown>[];
+                extractions.forEach((ext, idx) => {
+                  if (!ext.error) {
+                    this.selectedIndices.add(idx);
+                  }
+                });
+              }
+
               this.currentStep = 2;
               polling = false;
             } else if (res.data.status === "failed") {
@@ -249,6 +287,9 @@ export class UploadStore {
   resetData() {
     this.extractedData = null;
     this.fileIds = [];
+    this.totalItems = 0;
+    this.processedItems = 0;
+    this.selectedIndices.clear();
     this.currentStep = 1;
   }
 
@@ -293,7 +334,7 @@ export class UploadStore {
         params: { path: { job_id: this.jobId } },
         body: { extraction_index: extractionIndex, match_index: matchIndex, action },
       });
-      if (res.error) throw new Error(res.error.detail?.[0]?.msg ?? "Failed to resolve match");
+      if (res.error) throw new Error(errorMessage(res.error, "Failed to resolve match"));
       runInAction(() => {
         if (res.data.extracted_data) {
           this.extractedData = res.data.extracted_data;
@@ -309,7 +350,12 @@ export class UploadStore {
     const payload = this.extractedData;
     const extractions = (payload.extractions ?? []) as Record<string, unknown>[];
     let count = 0;
-    for (const extraction of extractions) {
+    for (let i = 0; i < extractions.length; i++) {
+      if (!this.selectedIndices.has(i)) continue;
+
+      const extraction = extractions[i];
+      if (!extraction) continue;
+
       if (extraction.is_duplicate && !extraction.duplicate_resolved) {
         count++;
       }
@@ -322,8 +368,12 @@ export class UploadStore {
       ) {
         count++;
       }
-      const matches = (extraction.position_matches ?? []) as Record<string, unknown>[];
-      count += matches.filter((m) => m.result !== "same" && m.result !== "different").length;
+      const positionMatches = (extraction.position_matches ?? []) as Record<string, unknown>[];
+      for (const match of positionMatches) {
+        if (match.result !== "same" && match.result !== "different") {
+          count++;
+        }
+      }
     }
     return count;
   }
@@ -335,7 +385,38 @@ export class UploadStore {
         params: { path: { job_id: this.jobId } },
         body: { extraction_index: extractionIndex, receipt_total: receiptTotal },
       });
-      if (res.error) throw new Error(res.error.detail?.[0]?.msg ?? "Failed to resolve total");
+      if (res.error) throw new Error(errorMessage(res.error, "Failed to resolve total"));
+      runInAction(() => {
+        if (res.data.extracted_data) {
+          this.extractedData = res.data.extracted_data;
+        }
+      });
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  }
+
+  /**
+   * Correct one line item the parser misread, before anything is stored.
+   *
+   * Only the fields given are sent: the backend leaves the rest as parsed, and
+   * an empty string clears a price rather than setting it to zero. The response
+   * carries the recomputed totals, so the footer and the commit gate update
+   * from the same round trip.
+   */
+  async updateLineItem(
+    extractionIndex: number,
+    itemIndex: number,
+    values: { name?: string; quantity?: string; unit_price?: string; total_price?: string },
+  ) {
+    if (!this.jobId) return;
+    try {
+      const res = await this.api.POST("/receipts/upload/{job_id}/line-item", {
+        params: { path: { job_id: this.jobId } },
+        body: { extraction_index: extractionIndex, item_index: itemIndex, ...values },
+      });
+      if (res.error) throw new Error(errorMessage(res.error, "Failed to update the line"));
       runInAction(() => {
         if (res.data.extracted_data) {
           this.extractedData = res.data.extracted_data;
@@ -352,8 +433,9 @@ export class UploadStore {
     try {
       const res = await this.api.POST("/receipts/upload/{job_id}/commit", {
         params: { path: { job_id: this.jobId } },
+        body: { indices_to_store: Array.from(this.selectedIndices) },
       });
-      if (res.error) throw new Error(res.error.detail?.[0]?.msg ?? "Failed to commit");
+      if (res.error) throw new Error(errorMessage(res.error, "Failed to commit"));
       runInAction(() => {
         this.resetData();
         this.resetError();
