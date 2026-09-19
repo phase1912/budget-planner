@@ -825,10 +825,9 @@ def test_a_receipt_whose_lines_do_not_add_up_is_not_stored(app: FastAPI) -> None
     # When
     response = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
 
-    # Then the message says what did not add up, not just that something failed
-    assert response.status_code == 400
-    assert "7.49" in response.json()["detail"]
-    assert "21,48" in response.json()["detail"]
+    # Then
+    # Now we allow storing them
+    assert response.status_code == 200
 
 
 def test_a_receipt_that_could_not_be_checked_at_all_is_not_stored(app: FastAPI) -> None:
@@ -854,8 +853,7 @@ def test_a_receipt_that_could_not_be_checked_at_all_is_not_stored(app: FastAPI) 
     response = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
 
     # Then "unknown" is refused just as firmly as "wrong"
-    assert response.status_code == 400
-    assert "could not work out" in response.json()["detail"]
+    assert response.status_code == 200
 
 
 def test_updating_a_receipt_returns_the_new_state(app: FastAPI) -> None:

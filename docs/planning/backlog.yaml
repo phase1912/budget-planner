@@ -1010,6 +1010,32 @@ epics:
             detail: >
               Implement the third step of the wizard showing the queue and disabling "Store receipts" until empty.
 
+      - key: F4.8
+        title: Receipt list search and filtering
+        labels: [backend, frontend, database]
+        requirements: []
+        depends_on: [F3.8]
+        intent: >
+          Filter the receipt list by processing status, by a specific date, month, or a
+          custom date range (including past dates), and search by merchant or item name.
+          Brings the UI elements in the receipts.html header to life.
+        demo: >
+          Open Receipts, filter by a past month and see only those receipts. Search for
+          a specific merchant and confirm the list restricts to matching receipts.
+        tasks:
+          - key: F4.8.1
+            title: API and database filtering logic
+            labels: [backend, database]
+            detail: >
+              Add query parameters for date, status, and search to the list_receipts endpoint
+              and implement the SQLAlchemy query logic in ReceiptRepository.
+          - key: F4.8.2
+            title: Frontend store and filter controls
+            labels: [frontend]
+            detail: >
+              Implement date, status, and search input controls. Connect them to the receipt
+              store to trigger API re-fetches when changed.
+
   - key: E5
     title: Spend Categorization
     br: [BR-3]

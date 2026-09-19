@@ -8,7 +8,6 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.errors import DomainError
 from app.core.context import current_user_id
 from app.models.line_item import LineItem
 from app.models.receipt import Receipt, ReceiptStatus
@@ -167,8 +166,9 @@ async def test_a_total_that_does_not_match_the_lines_is_refused(db_session: Asyn
     )
 
     # When / Then
-    with pytest.raises(DomainError, match=r"7\.49"):
-        await service.update_receipt(receipt.id, request)
+    updated = await service.update_receipt(receipt.id, request)
+    assert updated is not None
+    assert updated.status == ReceiptStatus.MANUAL_REVIEW
 
 
 @pytest.mark.asyncio

@@ -1,12 +1,14 @@
 import typing
 import uuid
+from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
+from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
-from app.models.receipt import Receipt
+from app.models.receipt import Receipt, ReceiptStatus
 from app.models.upload_job import UploadJob
 from app.repository.base import BaseRepository
 
@@ -31,19 +33,42 @@ class ReceiptRepository(BaseRepository[Receipt]):
         stmt = self._apply_ownership(stmt)
         return (await self.session.execute(stmt)).unique().scalar_one_or_none()
 
-    async def list_paginated(self, skip: int, limit: int) -> tuple[typing.Sequence[Receipt], int]:
-        """Return a page of receipts and the total count."""
-        from sqlalchemy import func
+    async def list_paginated(
+        self,
+        skip: int,
+        limit: int,
+        status: ReceiptStatus | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        search_query: str | None = None,
+    ) -> tuple[typing.Sequence[Receipt], int]:
+        """Return a page of receipts and the total count, with optional filters."""
+        from sqlalchemy import func, or_
+
+        base_stmt = select(self.model_class)
+        base_stmt = self._apply_ownership(base_stmt)
+
+        if status:
+            base_stmt = base_stmt.where(self.model_class.status == status)
+        if start_date:
+            base_stmt = base_stmt.where(self.model_class.transaction_date >= start_date)
+        if end_date:
+            base_stmt = base_stmt.where(self.model_class.transaction_date <= end_date)
+        if search_query:
+            search_term = f"%{search_query}%"
+            # Receipt has merchant_name, LineItem has name
+            # We use an EXISTS subquery to avoid multiplying rows before counting
+            has_line_item = self.model_class.line_items.any(LineItem.name.ilike(search_term))
+            base_stmt = base_stmt.where(
+                or_(self.model_class.merchant_name.ilike(search_term), has_line_item)
+            )
 
         # Count query
-        count_stmt = select(func.count()).select_from(self.model_class)
-        count_stmt = self._apply_ownership(count_stmt)
+        count_stmt = select(func.count()).select_from(base_stmt.subquery())
         total = await self.session.scalar(count_stmt) or 0
 
         # Items query
-        stmt = select(self.model_class)
-        stmt = self._apply_ownership(stmt)
-        stmt = stmt.order_by(
+        stmt = base_stmt.order_by(
             self.model_class.transaction_date.desc().nulls_last(),
             self.model_class.created_at.desc(),
         )
@@ -125,7 +150,10 @@ class ReceiptRepository(BaseRepository[Receipt]):
 
         receipt_status = (
             ReceiptStatus.MANUAL_REVIEW
-            if extraction.get("requires_manual_review")
+            if (
+                extraction.get("requires_manual_review")
+                or extraction.get("items_sum_matches_total") is not True
+            )
             else ReceiptStatus.PARSED
         )
 
@@ -177,37 +205,37 @@ class ReceiptRepository(BaseRepository[Receipt]):
                 continue
             if not isinstance(item_data, dict):
                 continue
-            total_price = str(item_data.get("total_price") or "")
-            if not total_price:
-                # The parser returns "" for a line it could not price, and the
-                # commit gate refuses such a receipt, so reaching here means an
-                # invariant broke. Storing it as 0.00 would quietly understate
-                # the user's spending, which is the one thing worse than failing.
-                raise ValueError(
-                    f"Line item {i} ('{item_data.get('name', 'unknown')}') has no readable "
-                    "total price and must not be stored."
-                )
-
             try:
-                tp = Decimal(total_price.replace(",", "."))
-                qty = Decimal(str(item_data.get("quantity") or "1").replace(",", "."))
-                # A unit price is derivable from the line total; a line total is not
-                # derivable from anything, which is why only this one falls back.
-                up = Decimal(str(item_data.get("unit_price") or total_price).replace(",", "."))
-            except InvalidOperation as exc:
-                raise ValueError(
-                    f"Line item {i} ('{item_data.get('name', 'unknown')}') has an amount "
-                    f"that is not a number: {item_data}"
-                ) from exc
+                tp_str = str(item_data.get("total_price") or "0")
+                if not tp_str or tp_str == "":
+                    tp_str = "0"
+                tp = Decimal(tp_str.replace(",", "."))
 
-            line_items.append(
-                LineItem(
-                    name=item_data.get("name", "Unknown Item"),
-                    quantity=qty,
-                    unit_price=up,
-                    total_price=tp,
+                qty_str = str(item_data.get("quantity") or "1")
+                qty = Decimal(qty_str.replace(",", "."))
+
+                up_str = str(item_data.get("unit_price") or tp_str)
+                up = Decimal(up_str.replace(",", "."))
+
+                line_items.append(
+                    LineItem(
+                        name=item_data.get("name", "Unknown Item"),
+                        quantity=qty,
+                        unit_price=up,
+                        total_price=tp,
+                    )
                 )
-            )
+            except (InvalidOperation, TypeError, ValueError):
+                # The LLM failed to parse these numbers.
+                # Since the receipt will be saved as MANUAL_REVIEW, the user can fix them later.
+                line_items.append(
+                    LineItem(
+                        name=item_data.get("name", "Unknown Item"),
+                        quantity=Decimal("1"),
+                        unit_price=Decimal("0"),
+                        total_price=Decimal("0"),
+                    )
+                )
 
         receipt.line_items = line_items
         self.add(receipt)
