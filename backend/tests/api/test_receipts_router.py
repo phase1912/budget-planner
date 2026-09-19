@@ -856,7 +856,6 @@ def test_a_receipt_that_could_not_be_checked_at_all_is_not_stored(app: FastAPI) 
     assert response.status_code == 200
 
 
-
 def test_updating_a_receipt_returns_the_new_state(app: FastAPI) -> None:
     # Given
     user = User(id=uuid.uuid4(), email="update-owner@test.com")
