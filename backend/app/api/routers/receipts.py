@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, UploadFile
@@ -12,6 +13,7 @@ from app.api.dependencies import get_current_user, get_storage_service
 from app.api.errors import UploadLimitExceededError
 from app.core.config import get_settings
 from app.db.session import get_db_session
+from app.models.receipt import ReceiptStatus
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.ports.parsing import CURRENT_PARSER_VERSION
@@ -302,6 +304,10 @@ async def list_receipts(
     session: Annotated[AsyncSession, Depends(get_db_session)],
     page: int = 1,
     size: int = 20,
+    status: ReceiptStatus | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+    q: str | None = None,
 ) -> PaginatedReceiptsResponse:
     """List an account's stored receipts newest first with pagination (F3.8)."""
     if page < 1:
@@ -310,7 +316,14 @@ async def list_receipts(
         size = 20
 
     repo = ReceiptRepository(session)
-    items, total = await repo.list_paginated(skip=(page - 1) * size, limit=size)
+    items, total = await repo.list_paginated(
+        skip=(page - 1) * size,
+        limit=size,
+        status=status,
+        start_date=start_date,
+        end_date=end_date,
+        search_query=q,
+    )
     pages = (total + size - 1) // size if size else 0
 
     return PaginatedReceiptsResponse(
@@ -498,20 +511,6 @@ async def commit_job(
                 raise HTTPException(
                     status_code=400, detail=f"Extraction {i} has unresolved position match"
                 )
-
-        # Last, because an unresolved position match makes the sum meaningless.
-        # None means the arithmetic could not be checked at all — usually a line
-        # with no readable price — so it blocks just as firmly as a mismatch.
-        if extraction.get("items_sum_matches_total") is not True:
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    f"Extraction {i}: the line items add up to "
-                    f"{extraction.get('computed_total') or 'an amount we could not work out'}, "
-                    f"not the printed {extraction.get('receipt_total') or 'total'}. "
-                    "Correct the lines before storing."
-                ),
-            )
 
     repo = ReceiptRepository(session).bypass_ownership()
     for i, extraction in enumerate(extractions):

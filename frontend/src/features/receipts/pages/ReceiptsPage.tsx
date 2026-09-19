@@ -4,7 +4,9 @@ import { useStores } from "@/stores/StoreContext";
 import { DeleteReceiptDialog } from "../components/DeleteReceiptDialog";
 import { EditReceiptDialog } from "../components/EditReceiptDialog";
 import { ReceiptDetailModal } from "../components/ReceiptDetailModal";
-import { Card, Button, Input, IconTile } from "@/shared/components";
+import { DateFilterModal } from "../components/DateFilterModal";
+import { StatusFilterDropdown } from "../components/StatusFilterDropdown";
+import { Card, Input, IconTile } from "@/shared/components";
 
 export const ReceiptsPage = observer(() => {
   const { receiptStore } = useStores();
@@ -49,42 +51,8 @@ export const ReceiptsPage = observer(() => {
 
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-[10px]">
-            {/* Mock filters for now */}
-            <Button variant="secondary" size="sm">
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-muted-foreground"
-              >
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <path d="M16 2v4" />
-                <path d="M8 2v4" />
-                <path d="M3 10h18" />
-              </svg>
-              All dates
-            </Button>
-            <Button variant="secondary" size="sm">
-              Any status
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-muted-foreground"
-              >
-                <path d="m6 9 6 6 6-6" />
-              </svg>
-            </Button>
+            <DateFilterModal />
+            <StatusFilterDropdown />
           </div>
           <div className="relative w-[250px]">
             <svg
@@ -106,6 +74,10 @@ export const ReceiptsPage = observer(() => {
               type="search"
               placeholder="Merchant or item"
               aria-label="Search receipts"
+              value={receiptStore.searchQuery ?? ""}
+              onChange={(e) => {
+                receiptStore.setFilters({ searchQuery: e.target.value || undefined });
+              }}
             />
           </div>
         </div>

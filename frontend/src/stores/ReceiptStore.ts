@@ -15,6 +15,11 @@ export class ReceiptStore {
   size = 20;
   pages = 0;
 
+  statusFilter: components["schemas"]["ReceiptStatus"] | undefined = undefined;
+  startDateFilter: string | undefined = undefined;
+  endDateFilter: string | undefined = undefined;
+  searchQuery: string | undefined = undefined;
+
   isLoadingList = false;
   listError: string | null = null;
 
@@ -37,13 +42,65 @@ export class ReceiptStore {
     makeAutoObservable(this, {}, { autoBind: true });
   }
 
+  setFilters(filters: {
+    status?: components["schemas"]["ReceiptStatus"] | undefined;
+    startDate?: string | undefined;
+    endDate?: string | undefined;
+    searchQuery?: string | undefined;
+  }) {
+    let changed = false;
+    if (filters.status !== undefined && this.statusFilter !== filters.status) {
+      this.statusFilter = filters.status;
+      changed = true;
+    } else if (filters.status === undefined && "status" in filters) {
+      this.statusFilter = undefined;
+      changed = true;
+    }
+
+    if (filters.startDate !== undefined && this.startDateFilter !== filters.startDate) {
+      this.startDateFilter = filters.startDate;
+      changed = true;
+    } else if (filters.startDate === undefined && "startDate" in filters) {
+      this.startDateFilter = undefined;
+      changed = true;
+    }
+
+    if (filters.endDate !== undefined && this.endDateFilter !== filters.endDate) {
+      this.endDateFilter = filters.endDate;
+      changed = true;
+    } else if (filters.endDate === undefined && "endDate" in filters) {
+      this.endDateFilter = undefined;
+      changed = true;
+    }
+
+    if (filters.searchQuery !== undefined && this.searchQuery !== filters.searchQuery) {
+      this.searchQuery = filters.searchQuery;
+      changed = true;
+    } else if (filters.searchQuery === undefined && "searchQuery" in filters) {
+      this.searchQuery = undefined;
+      changed = true;
+    }
+
+    if (changed) {
+      this.page = 1;
+      void this.fetchReceipts(1, this.size);
+    }
+  }
+
   async fetchReceipts(page = 1, size = 20) {
     this.isLoadingList = true;
     this.listError = null;
     try {
       const response = await apiClient.GET("/receipts", {
         params: {
-          query: { page, size },
+          query: {
+            page,
+            size,
+            ...(this.statusFilter && { status: this.statusFilter }),
+            ...(this.startDateFilter && { start_date: this.startDateFilter }),
+            ...(this.endDateFilter && { end_date: this.endDateFilter }),
+            ...(this.searchQuery && { q: this.searchQuery }),
+          },
         },
       });
 
