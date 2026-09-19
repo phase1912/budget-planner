@@ -88,6 +88,7 @@ async def test_create_from_extraction(db_session: AsyncSession) -> None:
         "transaction_time": "12:00",
         "receipt_total": "10.00",
         "requires_manual_review": False,
+            "items_sum_matches_total": True,
         "line_items": [
             {
                 "name": "Item 1",
@@ -236,7 +237,78 @@ async def test_a_line_with_no_readable_price_is_refused_rather_than_stored_as_ze
     }
 
     # When / Then
-    with pytest.raises(ValueError, match="no readable total price"):
-        repo.create_from_extraction(
-            user_id=user.id, file_ids=["f1"], extraction=extraction, parser_version="3"
-        )
+    # Now it is allowed to store them as 0, but the receipt will be MANUAL_REVIEW
+    receipt = repo.create_from_extraction(
+        user_id=user.id, file_ids=["f1"], extraction=extraction, parser_version="3"
+    )
+    assert receipt.status.value == "manual_review"
+    assert receipt.line_items[0].total_price == 0
+
+@pytest.mark.asyncio
+async def test_list_paginated_filters(db_session: AsyncSession) -> None:
+    import datetime
+    user = await UserFactory.create_async(email="filters@example.com")
+    current_user_id.set(user.id)
+
+    # 1. Past receipt, parsed, merchant "Apple", item "MacBook"
+    r1 = Receipt(
+        id=uuid.uuid4(),
+        user_id=user.id,
+        merchant_name="Apple Store",
+        status=ReceiptStatus.PARSED,
+        transaction_date=datetime.datetime(2025, 5, 10, tzinfo=datetime.UTC),
+    )
+    db_session.add(r1)
+
+    # 2. Recent receipt, uploaded, merchant "Amazon", item "Keyboard"
+    r2 = Receipt(
+        id=uuid.uuid4(),
+        user_id=user.id,
+        merchant_name="Amazon",
+        status=ReceiptStatus.UPLOADED,
+        transaction_date=datetime.datetime(2026, 1, 15, tzinfo=datetime.UTC),
+    )
+    db_session.add(r2)
+
+    await db_session.flush()
+
+    item1 = LineItem(
+        id=uuid.uuid4(), receipt_id=r1.id, name="MacBook Pro",
+        quantity=Decimal(1), unit_price=Decimal(2000), total_price=Decimal(2000)
+    )
+    item2 = LineItem(
+        id=uuid.uuid4(), receipt_id=r2.id, name="Mechanical Keyboard",
+        quantity=Decimal(1), unit_price=Decimal(100), total_price=Decimal(100)
+    )
+    db_session.add_all([item1, item2])
+    await db_session.flush()
+
+    repo = ReceiptRepository(db_session)
+
+    # Status filter
+    items, total = await repo.list_paginated(0, 10, status=ReceiptStatus.UPLOADED)
+    assert total == 1
+    assert items[0].id == r2.id
+
+    # Date range filter
+    items, total = await repo.list_paginated(
+        0, 10,
+        start_date=datetime.datetime(2025, 1, 1, tzinfo=datetime.UTC),
+        end_date=datetime.datetime(2025, 12, 31, tzinfo=datetime.UTC)
+    )
+    assert total == 1
+    assert items[0].id == r1.id
+
+    # Search filter (merchant name match)
+    items, total = await repo.list_paginated(0, 10, search_query="apple")
+    assert total == 1
+    assert items[0].id == r1.id
+
+    # Search filter (line item name match)
+    items, total = await repo.list_paginated(0, 10, search_query="keyboard")
+    assert total == 1
+    assert items[0].id == r2.id
+
+    # Search filter (no match)
+    items, total = await repo.list_paginated(0, 10, search_query="unknown")
+    assert total == 0

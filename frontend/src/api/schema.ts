@@ -603,6 +603,12 @@ export interface components {
             line_items: components["schemas"]["LineItemResponse"][];
         };
         /**
+         * ReceiptStatus
+         * @description Lifecycle states of a receipt.
+         * @enum {string}
+         */
+        ReceiptStatus: "uploaded" | "parsing" | "parsed" | "manual_review" | "failed";
+        /**
          * RefreshRequest
          * @description Payload for refreshing an access token (F1.2.3).
          */
@@ -1252,6 +1258,10 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                status?: components["schemas"]["ReceiptStatus"] | null;
+                start_date?: string | null;
+                end_date?: string | null;
+                q?: string | null;
                 token?: string | null;
             };
             header?: never;
