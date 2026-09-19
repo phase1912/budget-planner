@@ -53,6 +53,43 @@ async def test_store_receipt_image() -> None:
 
 
 @pytest.mark.asyncio
+async def test_store_receipt_image_heic_conversion() -> None:
+    mock_port = AsyncMock()
+    service = ReceiptService(storage_port=mock_port)
+    user = User(id="test-user-id", email="test@test.com")
+
+    # Create a valid dummy HEIC file structure so that pillow_heif doesn't throw a parsing error.
+    # Actually, if we just mock Image.open and pillow_heif, we don't need a real HEIC file.
+    # But since the conversion logic uses real PIL, we need to mock it or provide a real image.
+    import io
+
+    from PIL import Image
+
+    # Generate a dummy JPEG to simulate the conversion output
+    dummy_img = Image.new("RGB", (10, 10))
+    dummy_io = io.BytesIO()
+    dummy_img.save(dummy_io, format="JPEG")
+    expected_jpeg_content = dummy_io.getvalue()
+
+    # We will mock Image.open to return our dummy_img
+    from unittest.mock import patch
+
+    with patch("PIL.Image.open") as mock_open:
+        mock_open.return_value = dummy_img
+        # Pass a fake HEIC signature so it enters the conversion block
+        fake_heic_bytes = b"\x00\x00\x00\x1cftypheic_fake_data"
+        file_id = await service.store_receipt_image(user, fake_heic_bytes, "image/heic")
+
+    assert "-" in file_id
+
+    # Verify that upload_file was called with the converted JPEG content and content_type
+    mock_port.upload_file.assert_called_once()
+    args, _ = mock_port.upload_file.call_args
+    assert args[1] == expected_jpeg_content
+    assert args[2] == "image/jpeg"
+
+
+@pytest.mark.asyncio
 async def test_get_presigned_url_for_image_success() -> None:
     mock_port = AsyncMock()
     mock_port.get_object_metadata.return_value = {"owner_id": "test-user-id"}

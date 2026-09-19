@@ -8,7 +8,6 @@ export type Receipt = components["schemas"]["ReceiptResponse"];
 export type ReceiptDetail = components["schemas"]["ReceiptDetailResponse"];
 export type UpdateReceiptRequest = components["schemas"]["UpdateReceiptRequest"];
 
-
 export class ReceiptStore {
   receipts: Receipt[] = [];
   total = 0;

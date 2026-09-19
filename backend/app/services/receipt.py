@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import io
 import logging
 import uuid
 from datetime import UTC, datetime
@@ -7,6 +8,8 @@ from decimal import Decimal
 from typing import Any, cast
 
 import filetype  # type: ignore[import-untyped]
+import pillow_heif
+from PIL import Image
 from sqlalchemy import select
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -84,6 +87,26 @@ class ReceiptService:
         """Uploads a receipt image to object storage, tagged with owner ID."""
         if not self.storage_port:
             raise RuntimeError("Storage port not configured.")
+
+        # Convert HEIC to JPEG so browsers can render it natively via presigned URLs
+        if (
+            content_type.lower() in ("image/heic", "image/heif")
+            or content.startswith(b"\x00\x00\x00\x1cftypheic")
+            or content.startswith(b"\x00\x00\x00\x18ftypheic")
+        ):
+            pillow_heif.register_heif_opener()  # type: ignore[attr-defined]
+            try:
+                img: Image.Image = Image.open(io.BytesIO(content))
+                if img.mode not in ("RGB", "L"):
+                    img = img.convert("RGB")
+                out = io.BytesIO()
+                img.save(out, format="JPEG")
+                content = out.getvalue()
+                content_type = "image/jpeg"
+            except Exception as e:
+                import logging
+
+                logging.error(f"HEIC conversion failed in store_receipt_image: {e}")
 
         file_id = str(uuid.uuid4())
         object_name = receipt_object_name(user.id, file_id)

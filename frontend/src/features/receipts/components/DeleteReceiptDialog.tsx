@@ -53,8 +53,8 @@ export const DeleteReceiptDialog = observer(function DeleteReceiptDialog() {
             </h2>
             <p className="text-[13px] leading-relaxed text-muted-foreground">
               {itemCount} item{itemCount === 1 ? "" : "s"}
-              {total ? ` worth ${total}` : ""} and {photoCount}{" "}
-              photo{photoCount === 1 ? "" : "s"} will be erased. This cannot be undone.
+              {total ? ` worth ${total}` : ""} and {photoCount} photo{photoCount === 1 ? "" : "s"}{" "}
+              will be erased. This cannot be undone.
             </p>
           </div>
         </div>

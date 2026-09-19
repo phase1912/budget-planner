@@ -94,16 +94,28 @@ class S3StorageService(StoragePort):
         if not self._client:
             raise RuntimeError("S3StorageService must be used as an async context manager.")
 
-        url = await self._client.generate_presigned_url(
-            "get_object",
-            Params={"Bucket": self.bucket, "Key": object_name},
-            ExpiresIn=expiration_seconds,
-        )
-        url_str = str(url)
-        # Translate internal docker-compose hostname to localhost for the browser
-        if "http://minio:9000" in url_str:
-            url_str = url_str.replace("http://minio:9000", "http://localhost:9000")
-        return url_str
+        external_endpoint = self.endpoint_url
+        if external_endpoint and "http://minio:9000" in external_endpoint:
+            external_endpoint = external_endpoint.replace(
+                "http://minio:9000", "http://localhost:9000"
+            )
+
+        client_kwargs: dict[str, Any] = {
+            "region_name": self.region,
+            "endpoint_url": external_endpoint,
+            "config": Config(signature_version="s3v4"),
+        }
+        if self.access_key and self.secret_key:
+            client_kwargs["aws_access_key_id"] = self.access_key
+            client_kwargs["aws_secret_access_key"] = self.secret_key
+
+        async with self._session.create_client("s3", **client_kwargs) as client:
+            url = await client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": self.bucket, "Key": object_name},
+                ExpiresIn=expiration_seconds,
+            )
+        return str(url)
 
     async def download_file(self, object_name: str) -> bytes:
         """Download the raw bytes of a stored object from S3."""
