@@ -315,10 +315,18 @@ export interface paths {
         get: operations["get_receipt_receipts__receipt_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Receipt
+         * @description Permanently delete a receipt together with its line items and photos.
+         */
+        delete: operations["delete_receipt_receipts__receipt_id__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update Receipt
+         * @description Correct a stored receipt's header and line items (F3.9, BRD A9, A11).
+         */
+        patch: operations["update_receipt_receipts__receipt_id__patch"];
         trace?: never;
     };
     "/receipts/upload/{job_id}/resolve-total": {
@@ -335,6 +343,26 @@ export interface paths {
          * @description Resolve a missing or low-confidence total (F4.7).
          */
         post: operations["resolve_total_receipts_upload__job_id__resolve_total_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/receipts/upload/{job_id}/line-item": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Edit Line Item
+         * @description Correct a line item the parser misread, before the batch is stored (BRD A9).
+         */
+        post: operations["edit_line_item_receipts_upload__job_id__line_item_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -399,6 +427,29 @@ export interface components {
             /** Indices To Store */
             indices_to_store: number[];
         };
+        /**
+         * EditLineItemRequest
+         * @description Correct one line item the parser misread, before anything is stored (BRD A9, A11).
+         *
+         *     Every field is optional and `None` means "leave it alone". An empty string is
+         *     a real value meaning "there is no readable amount here", which is what the
+         *     parser itself returns for a line it could not price — so the two cannot be
+         *     collapsed. Callers must send only the fields they are changing.
+         */
+        EditLineItemRequest: {
+            /** Extraction Index */
+            extraction_index: number;
+            /** Item Index */
+            item_index: number;
+            /** Name */
+            name?: string | null;
+            /** Quantity */
+            quantity?: string | null;
+            /** Unit Price */
+            unit_price?: string | null;
+            /** Total Price */
+            total_price?: string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -410,6 +461,26 @@ export interface components {
          * @enum {string}
          */
         JobStatus: "pending" | "processing" | "completed" | "stored" | "failed";
+        /**
+         * LineItemInput
+         * @description One line item in an `UpdateReceiptRequest`.
+         *
+         *     An existing line carries its `id`; a new line omits it. An existing id that
+         *     is not resent is deleted, so the request represents the receipt's *entire*
+         *     desired line-item list, not a diff.
+         */
+        LineItemInput: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name: string;
+            /** Quantity */
+            quantity: number | string;
+            /** Unit Price */
+            unit_price: number | string;
+            /** Total Price */
+            total_price: number | string;
+        };
         /**
          * LineItemResponse
          * @description Schema for a single line item on a receipt.
@@ -593,6 +664,26 @@ export interface components {
             extraction_index: number;
             /** Receipt Total */
             receipt_total: string;
+        };
+        /**
+         * UpdateReceiptRequest
+         * @description Correct a stored receipt's header and line items (BRD A9, A11, D6).
+         *
+         *     Represents the receipt's full desired state, mirroring what the detail
+         *     dialog already shows the user — not a partial patch. `total_amount` must
+         *     equal the sum of `line_items`' totals, the same invariant enforced when the
+         *     receipt was first stored; the two are never allowed to drift apart here
+         *     either.
+         */
+        UpdateReceiptRequest: {
+            /** Merchant Name */
+            merchant_name: string | null;
+            /** Transaction Date */
+            transaction_date: string | null;
+            /** Total Amount */
+            total_amount: number | string;
+            /** Line Items */
+            line_items: components["schemas"]["LineItemInput"][];
         };
         /**
          * UploadJobStatusResponse
@@ -1185,6 +1276,70 @@ export interface operations {
             };
         };
     };
+    delete_receipt_receipts__receipt_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_receipt_receipts__receipt_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateReceiptRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     resolve_total_receipts_upload__job_id__resolve_total_post: {
         parameters: {
             query?: never;
@@ -1197,6 +1352,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ResolveTotalRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadJobStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_line_item_receipts_upload__job_id__line_item_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditLineItemRequest"];
             };
         };
         responses: {

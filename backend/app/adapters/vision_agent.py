@@ -52,6 +52,10 @@ IMPORTANT:
    than repeating the VAT letter.
 3. If quantity or unit price is not explicitly printed for an item, infer them (e.g., quantity "1",
    unit_price same as total_price). DO NOT skip line items just because these details are implicit.
+4. NEVER invent an amount you cannot read. If a price is unreadable, cut off or hidden, return an
+   empty string for it. "0" means the receipt actually printed a zero, and nothing else. Guessing
+   zero silently understates what the user spent, which is worse than admitting the line is
+   unreadable.
 """
 
 

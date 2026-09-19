@@ -118,3 +118,12 @@ class S3StorageService(StoragePort):
             if e.response["Error"]["Code"] == "NoSuchKey":
                 raise ObjectNotFoundError(f"Object {object_name} not found") from e
             raise
+
+    async def delete_file(self, object_name: str) -> None:
+        """Permanently remove a stored object, whether or not it exists."""
+        if not self._client:
+            raise RuntimeError("S3StorageService must be used as an async context manager.")
+
+        # S3 answers 204 for a key that was never there, so there is no
+        # missing-object branch to write here.
+        await self._client.delete_object(Bucket=self.bucket, Key=object_name)

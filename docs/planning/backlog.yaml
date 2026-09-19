@@ -825,6 +825,22 @@ epics:
           second account and confirm the first account's receipts are absent and its receipt
           URL returns 404 rather than 403 (BRD N2).
 
+      - key: F3.9
+        title: Correct a stored receipt
+        labels: [backend, frontend]
+        requirements: [A11, D6]
+        depends_on: [F3.8]
+        intent: >
+          Edit the merchant, date, total and line items of a receipt that is already stored,
+          from the detail dialog the "Edit" button already sits in. A11 marks a receipt
+          "requires manual review ... until resolved" and D6 assumes a receipt can be edited
+          after the fact, but nothing in the product can currently change a stored receipt:
+          there is no PATCH endpoint and the button has no handler. Groomed late because F6.5
+          was written assuming this capability rather than building it.
+        demo: >
+          Open a stored receipt whose total the parser misread, correct it from the detail
+          dialog, and see the list row and the receipt itself both show the new figure.
+
   # F3.7 "Upload step 2 — what we read" was retired here. Its screen is now built by the
   # features whose extraction it displays: F3.1 puts it on screen, F3.2, F3.3, F3.4 and F3.6
   # each extend it as they land. Keeping it would have left five extraction features with

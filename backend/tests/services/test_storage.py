@@ -91,3 +91,43 @@ async def test_s3_storage_service_generate_presigned_url(settings: Settings) -> 
                 Params={"Bucket": "test-bucket", "Key": "receipts/user1/uuid.jpg"},
                 ExpiresIn=3600,
             )
+
+
+@pytest.mark.asyncio
+async def test_delete_file_removes_the_object(settings: Settings) -> None:
+    with patch("aiobotocore.session.get_session") as mock_get_session:
+        mock_client = AsyncMock()
+        mock_client_ctx = AsyncMock()
+        mock_client_ctx.__aenter__.return_value = mock_client
+        mock_get_session.return_value.create_client.return_value = mock_client_ctx
+
+        async with S3StorageService(settings) as service:
+            await service.delete_file("receipts/user/uuid.jpg")
+
+        mock_client.delete_object.assert_called_once_with(
+            Bucket="test-bucket", Key="receipts/user/uuid.jpg"
+        )
+
+
+@pytest.mark.asyncio
+async def test_deleting_an_object_that_is_already_gone_succeeds(settings: Settings) -> None:
+    # Given a bucket that no longer holds the key — S3 answers 204 either way,
+    # which is what lets a half-finished delete be retried (BRD A12).
+    with patch("aiobotocore.session.get_session") as mock_get_session:
+        mock_client = AsyncMock()
+        mock_client.delete_object.return_value = {"ResponseMetadata": {"HTTPStatusCode": 204}}
+        mock_client_ctx = AsyncMock()
+        mock_client_ctx.__aenter__.return_value = mock_client
+        mock_get_session.return_value.create_client.return_value = mock_client_ctx
+
+        # When / Then it does not raise
+        async with S3StorageService(settings) as service:
+            await service.delete_file("receipts/user/never-existed.jpg")
+
+
+@pytest.mark.asyncio
+async def test_delete_file_outside_the_context_manager_raises(settings: Settings) -> None:
+    service = S3StorageService(settings)
+
+    with pytest.raises(RuntimeError, match="async context manager"):
+        await service.delete_file("receipts/user/uuid.jpg")

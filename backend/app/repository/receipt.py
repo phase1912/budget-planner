@@ -118,7 +118,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         """Instantiate and save a Receipt and its LineItems from a parser extraction."""
         import contextlib
         import datetime
-        from decimal import Decimal
+        from decimal import Decimal, InvalidOperation
 
         from app.models.line_item import LineItem
         from app.models.receipt import Receipt, ReceiptStatus
@@ -177,12 +177,28 @@ class ReceiptRepository(BaseRepository[Receipt]):
                 continue
             if not isinstance(item_data, dict):
                 continue
+            total_price = str(item_data.get("total_price") or "")
+            if not total_price:
+                # The parser returns "" for a line it could not price, and the
+                # commit gate refuses such a receipt, so reaching here means an
+                # invariant broke. Storing it as 0.00 would quietly understate
+                # the user's spending, which is the one thing worse than failing.
+                raise ValueError(
+                    f"Line item {i} ('{item_data.get('name', 'unknown')}') has no readable "
+                    "total price and must not be stored."
+                )
+
             try:
-                qty = Decimal(str(item_data.get("quantity", "1")).replace(",", "."))
-                up = Decimal(str(item_data.get("unit_price", "0")).replace(",", "."))
-                tp = Decimal(str(item_data.get("total_price", "0")).replace(",", "."))
-            except Exception:
-                qty, up, tp = Decimal("1"), Decimal("0"), Decimal("0")
+                tp = Decimal(total_price.replace(",", "."))
+                qty = Decimal(str(item_data.get("quantity") or "1").replace(",", "."))
+                # A unit price is derivable from the line total; a line total is not
+                # derivable from anything, which is why only this one falls back.
+                up = Decimal(str(item_data.get("unit_price") or total_price).replace(",", "."))
+            except InvalidOperation as exc:
+                raise ValueError(
+                    f"Line item {i} ('{item_data.get('name', 'unknown')}') has an amount "
+                    f"that is not a number: {item_data}"
+                ) from exc
 
             line_items.append(
                 LineItem(
@@ -200,6 +216,40 @@ class ReceiptRepository(BaseRepository[Receipt]):
     async def get_upload_job(self, job_id: uuid.UUID, user_id: uuid.UUID) -> UploadJob | None:
         stmt = select(UploadJob).where(UploadJob.id == job_id, UploadJob.user_id == user_id)
         return (await self.session.execute(stmt)).scalar_one_or_none()
+
+    async def discard_upload_job_payloads(self, user_id: uuid.UUID, file_ids: list[str]) -> int:
+        """Forget the extraction payload of every job that named these photos.
+
+        An upload job keeps the parsed result and the file ids it produced so the
+        wizard can show "What we read". Once the receipt those photos belong to
+        is deleted the images are gone, and the screen would render tiles that
+        load forever. Returns how many jobs were cleared.
+
+        Only the owner's jobs are considered, so this can never reach across
+        users (BRD N2).
+        """
+        if not file_ids:
+            return 0
+
+        # Filtered in Python rather than with a JSON containment operator:
+        # UploadJob.file_ids is plain JSON, not JSONB, so an overlap test would
+        # need a cast, and one user's jobs are few enough that it earns nothing.
+        wanted = set(file_ids)
+        stmt = select(UploadJob).where(UploadJob.user_id == user_id)
+        jobs = (await self.session.execute(stmt)).scalars().all()
+
+        cleared = 0
+        for job in jobs:
+            if not wanted.intersection(job.file_ids or []):
+                continue
+            job.file_ids = []
+            job.result_data = None
+            cleared += 1
+
+        if cleared:
+            await self.session.flush()
+
+        return cleared
 
     async def add_position_match_override(self, override: PositionMatchOverride) -> None:
         self.session.add(override)

@@ -20,12 +20,14 @@ from app.repository.receipt import ReceiptRepository
 from app.schemas.extraction import ExtractedReceipt
 from app.schemas.receipt import (
     CommitJobRequest,
+    EditLineItemRequest,
     PaginatedReceiptsResponse,
     ReceiptDetailResponse,
     ReceiptResponse,
     ResolveDuplicateRequest,
     ResolvePositionMatchRequest,
     ResolveTotalRequest,
+    UpdateReceiptRequest,
     UploadJobStatusResponse,
     UploadReceiptResponse,
 )
@@ -336,6 +338,45 @@ async def get_receipt(
     return ReceiptDetailResponse.model_validate(receipt)
 
 
+@router.patch("/{receipt_id}", response_model=ReceiptDetailResponse)
+async def update_receipt(
+    receipt_id: uuid.UUID,
+    request_data: UpdateReceiptRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> ReceiptDetailResponse:
+    """Correct a stored receipt's header and line items (F3.9, BRD A9, A11)."""
+    receipt_service = ReceiptService(repository=ReceiptRepository(session))
+    try:
+        receipt = await receipt_service.update_receipt(receipt_id, request_data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+
+    await session.commit()
+    return ReceiptDetailResponse.model_validate(receipt)
+
+
+@router.delete("/{receipt_id}", status_code=204)
+async def delete_receipt(
+    receipt_id: uuid.UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    storage_port: Annotated[StoragePort, Depends(get_storage_service)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> None:
+    """Permanently delete a receipt together with its line items and photos."""
+    receipt_service = ReceiptService(
+        storage_port=storage_port, repository=ReceiptRepository(session)
+    )
+
+    if not await receipt_service.delete_receipt(receipt_id):
+        raise HTTPException(status_code=404, detail="Receipt not found")
+
+    await session.commit()
+
+
 @router.post("/upload/{job_id}/resolve-total", response_model=UploadJobStatusResponse)
 async def resolve_total(
     job_id: uuid.UUID,
@@ -388,6 +429,27 @@ async def resolve_total(
     )
 
 
+@router.post("/upload/{job_id}/line-item", response_model=UploadJobStatusResponse)
+async def edit_line_item(
+    job_id: uuid.UUID,
+    request_data: EditLineItemRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> UploadJobStatusResponse:
+    """Correct a line item the parser misread, before the batch is stored (BRD A9)."""
+    receipt_service = ReceiptService(repository=ReceiptRepository(session))
+    try:
+        response = await receipt_service.edit_extracted_line_item(
+            job_id, current_user.id, request_data
+        )
+        await session.commit()
+        return response
+    except ValueError as e:
+        if "not found" in str(e).lower():
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
 @router.post("/upload/{job_id}/commit", response_model=UploadJobStatusResponse)
 async def commit_job(
     job_id: uuid.UUID,
@@ -436,6 +498,20 @@ async def commit_job(
                 raise HTTPException(
                     status_code=400, detail=f"Extraction {i} has unresolved position match"
                 )
+
+        # Last, because an unresolved position match makes the sum meaningless.
+        # None means the arithmetic could not be checked at all — usually a line
+        # with no readable price — so it blocks just as firmly as a mismatch.
+        if extraction.get("items_sum_matches_total") is not True:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Extraction {i}: the line items add up to "
+                    f"{extraction.get('computed_total') or 'an amount we could not work out'}, "
+                    f"not the printed {extraction.get('receipt_total') or 'total'}. "
+                    "Correct the lines before storing."
+                ),
+            )
 
     repo = ReceiptRepository(session).bypass_ownership()
     for i, extraction in enumerate(extractions):

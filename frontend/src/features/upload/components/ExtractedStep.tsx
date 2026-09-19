@@ -1,4 +1,5 @@
 import { observer } from "mobx-react-lite";
+import { FixExtractionDialog } from "./FixExtractionDialog";
 import { useNavigate } from "react-router-dom";
 import { useStores } from "@/stores/StoreContext";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
@@ -224,7 +225,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                     )}
                     {matchesTotal === false && (
                       <span className="text-[11px] font-semibold text-tone-error-text">
-                        Total &middot; not found
+                        Total &middot; does not match
                       </span>
                     )}
                     <span
@@ -238,6 +239,9 @@ export const ExtractedStep = observer(function ExtractedStep() {
                   <button
                     className="inline-flex items-center justify-center w-8 h-8 rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors ml-1"
                     aria-label="Edit this receipt"
+                    onClick={() => {
+                      uploadStore.startEditingExtraction(index);
+                    }}
                   >
                     <svg
                       width="15"
@@ -455,8 +459,10 @@ export const ExtractedStep = observer(function ExtractedStep() {
               >
                 <div className="flex items-center justify-between w-full">
                   <span className="text-[13px] text-muted-foreground tabular-nums">
-                    {deduplicatedItems.length} items &middot; lines add up to{" "}
-                    {data.computed_total ?? "0.00"}
+                    {deduplicatedItems.length} items &middot;{" "}
+                    {data.computed_total
+                      ? `lines add up to ${data.computed_total}`
+                      : "a line has no price, so these cannot be added up"}
                   </span>
                   {matchesTotal === true && (
                     <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary">
@@ -565,6 +571,8 @@ export const ExtractedStep = observer(function ExtractedStep() {
           )}
         </div>
       </Stack>
+
+      <FixExtractionDialog />
     </Container>
   );
 });

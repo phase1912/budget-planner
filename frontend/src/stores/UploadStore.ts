@@ -1,4 +1,5 @@
 import { makeAutoObservable, runInAction } from "mobx";
+import { errorMessage } from "../api/errors";
 import type { ApiClient } from "@/api/client";
 import { AsyncState } from "@/stores/AsyncState";
 
@@ -14,6 +15,7 @@ export class UploadStore {
   totalItems = 0;
   processedItems = 0;
   selectedIndices = new Set<number>();
+  editingExtractionIndex: number | null = null;
 
   mode: "single" | "multiple" = "single";
   lines: File[][] = [[]];
@@ -22,6 +24,14 @@ export class UploadStore {
   constructor(api: ApiClient) {
     this.api = api;
     makeAutoObservable(this);
+  }
+
+  startEditingExtraction(index: number) {
+    this.editingExtractionIndex = index;
+  }
+
+  stopEditingExtraction() {
+    this.editingExtractionIndex = null;
   }
 
   toggleSelection(index: number) {
@@ -324,7 +334,7 @@ export class UploadStore {
         params: { path: { job_id: this.jobId } },
         body: { extraction_index: extractionIndex, match_index: matchIndex, action },
       });
-      if (res.error) throw new Error(res.error.detail?.[0]?.msg ?? "Failed to resolve match");
+      if (res.error) throw new Error(errorMessage(res.error, "Failed to resolve match"));
       runInAction(() => {
         if (res.data.extracted_data) {
           this.extractedData = res.data.extracted_data;
@@ -375,7 +385,38 @@ export class UploadStore {
         params: { path: { job_id: this.jobId } },
         body: { extraction_index: extractionIndex, receipt_total: receiptTotal },
       });
-      if (res.error) throw new Error(res.error.detail?.[0]?.msg ?? "Failed to resolve total");
+      if (res.error) throw new Error(errorMessage(res.error, "Failed to resolve total"));
+      runInAction(() => {
+        if (res.data.extracted_data) {
+          this.extractedData = res.data.extracted_data;
+        }
+      });
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  }
+
+  /**
+   * Correct one line item the parser misread, before anything is stored.
+   *
+   * Only the fields given are sent: the backend leaves the rest as parsed, and
+   * an empty string clears a price rather than setting it to zero. The response
+   * carries the recomputed totals, so the footer and the commit gate update
+   * from the same round trip.
+   */
+  async updateLineItem(
+    extractionIndex: number,
+    itemIndex: number,
+    values: { name?: string; quantity?: string; unit_price?: string; total_price?: string },
+  ) {
+    if (!this.jobId) return;
+    try {
+      const res = await this.api.POST("/receipts/upload/{job_id}/line-item", {
+        params: { path: { job_id: this.jobId } },
+        body: { extraction_index: extractionIndex, item_index: itemIndex, ...values },
+      });
+      if (res.error) throw new Error(errorMessage(res.error, "Failed to update the line"));
       runInAction(() => {
         if (res.data.extracted_data) {
           this.extractedData = res.data.extracted_data;
@@ -394,7 +435,7 @@ export class UploadStore {
         params: { path: { job_id: this.jobId } },
         body: { indices_to_store: Array.from(this.selectedIndices) },
       });
-      if (res.error) throw new Error(res.error.detail?.[0]?.msg ?? "Failed to commit");
+      if (res.error) throw new Error(errorMessage(res.error, "Failed to commit"));
       runInAction(() => {
         this.resetData();
         this.resetError();

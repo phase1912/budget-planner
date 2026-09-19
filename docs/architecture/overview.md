@@ -65,7 +65,7 @@ upload ──► validate (ReceiptService) ──► store image ──► parse
 Three properties of this pipeline are requirements, not implementation choices:
 
 - **Centralized logic via ReceiptService.** Format validation (content inspection, A1/A2), ingestion queuing, and orchestration of the steps below belong to `ReceiptService`, keeping routers thin.
-- **S3-compatible Object Storage.** The raw image bytes are physically stored in an S3 bucket encrypted at rest via AES256, returning a persistent identifier (`file_id`) before moving on to parsing (A12, N1). This guarantees the original artifacts are preserved completely independently from the structured data they produce.
+- **S3-compatible Object Storage.** The raw image bytes are physically stored in an S3 bucket encrypted at rest via AES256, returning a persistent identifier (`file_id`) before moving on to parsing (A12, N1). The original artifacts are stored independently of the structured data they produce, but their lifetime is bound to it: deleting a receipt deletes its objects, because a user who erases a receipt has asked for the photo to go too (ADR-0007).
 1. **Upload returns before parsing finishes.** The BRD's 10-second target (N4) is a
    processing budget, not an HTTP timeout. Upload persists a job and returns a handle;
    the client polls or subscribes for the result.
@@ -106,6 +106,10 @@ A completed month is snapshotted (D5), but the snapshot is a cache, not the trut
 Editing, adding or deleting a receipt in a closed month recalculates and rewrites it
 (D6, N3). Any code path that mutates a receipt must trigger recalculation; this is the
 easiest invariant in the system to break silently.
+
+Deletion does not do this yet. `DELETE /receipts/{id}` erases the receipt, its items and
+its photos, but recalculates nothing — there are no budgets or statistics to recalculate
+until E6 and E7 exist. F10.3 is where the two meet, and N3 stays unsatisfied until then.
 
 ## Security posture
 

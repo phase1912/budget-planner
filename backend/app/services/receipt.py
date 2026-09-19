@@ -2,24 +2,42 @@ import asyncio
 import copy
 import logging
 import uuid
+from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Any, cast
 
 import filetype  # type: ignore[import-untyped]
 from sqlalchemy import select
 from sqlalchemy.orm.attributes import flag_modified
 
-from app.api.errors import UnsupportedFileFormatError
 from app.db.session import get_session_factory
+from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
+from app.models.receipt import Receipt
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.ports.parsing import ReceiptParserPort
 from app.ports.storage import StoragePort
 from app.repository.receipt import ReceiptRepository
 from app.schemas.extraction import ExtractedReceipt
-from app.schemas.receipt import ResolvePositionMatchRequest, UploadJobStatusResponse
+from app.schemas.receipt import (
+    EditLineItemRequest,
+    ResolvePositionMatchRequest,
+    UpdateReceiptRequest,
+    UploadJobStatusResponse,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def receipt_object_name(user_id: uuid.UUID, file_id: str) -> str:
+    """Build the object-storage key for one receipt image.
+
+    The owning user's id is part of the key, which is what makes cross-user
+    access impossible to express: a caller can only ever name keys under its
+    own prefix (BRD N2).
+    """
+    return f"receipts/{user_id}/{file_id}"
 
 
 class ReceiptService:
@@ -53,6 +71,10 @@ class ReceiptService:
         kind = filetype.guess(content)
 
         if kind is None or kind.mime not in self.SUPPORTED_MIME_TYPES:
+            # Imported here, not at module scope: `app.api` pulls in the routers,
+            # which import this module back (see repository/base.py for the same).
+            from app.api.errors import UnsupportedFileFormatError
+
             raise UnsupportedFileFormatError(
                 "Receipts come in as JPEG, PNG, HEIC or a PDF scan. "
                 "The other files on this line are fine."
@@ -64,7 +86,7 @@ class ReceiptService:
             raise RuntimeError("Storage port not configured.")
 
         file_id = str(uuid.uuid4())
-        object_name = f"receipts/{user.id}/{file_id}"
+        object_name = receipt_object_name(user.id, file_id)
         metadata = {"owner_id": str(user.id)}
 
         await self.storage_port.upload_file(object_name, content, content_type, metadata)
@@ -75,7 +97,7 @@ class ReceiptService:
         if not self.storage_port:
             raise RuntimeError("Storage port not configured.")
 
-        object_name = f"receipts/{user.id}/{file_id}"
+        object_name = receipt_object_name(user.id, file_id)
 
         from app.services.storage import ObjectNotFoundError
 
@@ -212,7 +234,7 @@ class ReceiptService:
         parsed_headers: dict[str, dict[str, Any]] = {}
 
         for file_id, ct in zip(file_ids, content_types, strict=True):
-            object_name = f"receipts/{user.id}/{file_id}"
+            object_name = receipt_object_name(user.id, file_id)
             image_bytes = await self.storage_port.download_file(object_name)
 
             try:
@@ -293,6 +315,183 @@ class ReceiptService:
         except Exception:
             logger.exception("Merged extraction validation failed for user %s", user.id)
             return {"error": "extraction_failed"}
+
+    async def delete_receipt(self, receipt_id: uuid.UUID) -> bool:
+        """Permanently delete a receipt, its line items and its stored photos.
+
+        Returns False when the receipt does not exist or belongs to someone
+        else — the repository's ownership filter makes those two cases
+        indistinguishable on purpose (BRD N2).
+
+        Line items go with the row through the database cascade, and any upload
+        job that still named these photos has its transient payload discarded so
+        the wizard cannot render tiles for images that no longer exist. The
+        photos are deleted one by one and a failure on any of them is logged rather than
+        raised: orphaned bytes in object storage cost nothing, while letting the
+        error roll the transaction back would leave a receipt whose photos are
+        already half gone.
+        """
+        assert self.repository is not None
+        assert self.storage_port is not None
+
+        receipt = await self.repository.get(receipt_id)
+        if not receipt:
+            return False
+
+        owner_id = receipt.user_id
+        file_ids = list(receipt.file_ids or [])
+
+        deleted = await self.repository.delete(receipt_id)
+        if not deleted:
+            return False
+
+        await self.repository.discard_upload_job_payloads(owner_id, file_ids)
+
+        for file_id in file_ids:
+            object_name = receipt_object_name(owner_id, file_id)
+            try:
+                await self.storage_port.delete_file(object_name)
+            except Exception:
+                logger.exception("Could not delete receipt image %s", object_name)
+
+        return True
+
+    async def edit_extracted_line_item(
+        self,
+        job_id: uuid.UUID,
+        user_id: uuid.UUID,
+        request_data: EditLineItemRequest,
+    ) -> UploadJobStatusResponse:
+        """Correct one extracted line item and re-check the receipt's arithmetic.
+
+        Only the fields the caller actually sent are applied, so an omitted field
+        keeps its parsed value while an empty string deliberately clears one
+        (BRD A9). The whole extraction is re-validated afterwards, which is what
+        recomputes `computed_total` and `items_sum_matches_total` and therefore
+        what lets a corrected receipt through the commit gate (BRD A11).
+
+        Raises ValueError when the job, the extraction or the item is unknown.
+        """
+        assert self.repository is not None
+        job = await self.repository.get_upload_job(job_id, user_id)
+        if not job:
+            raise ValueError("Job not found")
+
+        if not job.result_data or "extractions" not in job.result_data:
+            raise ValueError("Job has no extractions")
+
+        extractions = job.result_data["extractions"]
+        ext_idx = request_data.extraction_index
+        if ext_idx < 0 or ext_idx >= len(extractions):
+            raise ValueError("Invalid extraction index")
+
+        extraction = extractions[ext_idx]
+        items = extraction.get("line_items", [])
+        item_idx = request_data.item_index
+        if item_idx < 0 or item_idx >= len(items):
+            raise ValueError("Invalid item index")
+
+        changes = request_data.model_dump(exclude_unset=True)
+        changes.pop("extraction_index", None)
+        changes.pop("item_index", None)
+        if not changes:
+            raise ValueError("No fields to update")
+
+        items[item_idx] = {**items[item_idx], **changes}
+        extraction["line_items"] = items
+
+        # Round-tripping through the schema re-runs normalise_amount on what the
+        # user typed and recomputes the totals the commit gate reads.
+        parsed = ExtractedReceipt(**extraction)
+        updated = parsed.model_dump()
+        updated["is_duplicate"] = extraction.get("is_duplicate")
+        updated["duplicate_resolved"] = extraction.get("duplicate_resolved")
+
+        extractions[ext_idx] = updated
+        job.result_data["extractions"] = extractions
+        flag_modified(job, "result_data")
+
+        return UploadJobStatusResponse(
+            job_id=job.id,
+            file_ids=job.file_ids,
+            status=job.status,
+            extracted_data=job.result_data,
+            total_items=job.total_items or 0,
+            processed_items=job.processed_items or 0,
+        )
+
+    async def update_receipt(
+        self, receipt_id: uuid.UUID, request_data: UpdateReceiptRequest
+    ) -> Receipt | None:
+        """Correct a stored receipt's header and line items (BRD A9, A11, D6).
+
+        Replaces the whole line-item list rather than diffing it: an existing
+        line resent with its id is updated in place, one without an id is
+        created, and an existing id that is not resent is deleted through the
+        ``delete-orphan`` cascade on ``Receipt.line_items``.
+
+        Returns None when the receipt does not exist or belongs to someone else
+        — the repository's ownership filter makes the two indistinguishable on
+        purpose (BRD N2).
+
+        Raises DomainError when the line totals do not sum to `total_amount`,
+        the same invariant the upload wizard's commit gate enforces (BRD A9):
+        a stored receipt must never disagree with its own line items.
+        """
+        assert self.repository is not None
+
+        receipt = await self.repository.get_with_items(receipt_id)
+        if not receipt:
+            return None
+
+        computed = sum((item.total_price for item in request_data.line_items), start=Decimal("0"))
+        if computed != request_data.total_amount:
+            from app.api.errors import DomainError
+
+            raise DomainError(
+                f"The lines add up to {computed}, not the total of "
+                f"{request_data.total_amount}. Correct the lines or the total before saving."
+            )
+
+        receipt.merchant_name = request_data.merchant_name
+        receipt.transaction_date = (
+            datetime.combine(request_data.transaction_date, datetime.min.time(), tzinfo=UTC)
+            if request_data.transaction_date
+            else None
+        )
+        receipt.total_amount = request_data.total_amount
+
+        existing_by_id = {item.id: item for item in receipt.line_items}
+        sent_ids = {item.id for item in request_data.line_items if item.id is not None}
+        unknown_ids = sent_ids - existing_by_id.keys()
+        if unknown_ids:
+            raise ValueError(f"Line item(s) not found on this receipt: {unknown_ids}")
+
+        updated_items: list[LineItem] = []
+        for line in request_data.line_items:
+            if line.id is not None:
+                existing = existing_by_id[line.id]
+                existing.name = line.name
+                existing.quantity = line.quantity
+                existing.unit_price = line.unit_price
+                existing.total_price = line.total_price
+                updated_items.append(existing)
+            else:
+                updated_items.append(
+                    LineItem(
+                        name=line.name,
+                        quantity=line.quantity,
+                        unit_price=line.unit_price,
+                        total_price=line.total_price,
+                    )
+                )
+
+        # Reassigning the collection is what lets delete-orphan drop any
+        # existing line the caller did not resend.
+        receipt.line_items = updated_items
+
+        await self.repository.session.flush()
+        return receipt
 
     async def resolve_position_match(
         self,

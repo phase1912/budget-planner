@@ -1,10 +1,33 @@
+import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/StoreContext";
-import { Modal, ModalHeader, ModalBody, ModalFooter, Button, IconTile } from "@/shared/components";
+import {
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button,
+  IconTile,
+  SecureImage,
+} from "@/shared/components";
+
+/**
+ * Render an amount, or an em dash when there is nothing to render.
+ *
+ * `Number("")` is 0, so formatting a value the parser never read would claim the
+ * user spent nothing on that line — the "renders zeros instead of saying there
+ * is no data" defect docs/design/README.md calls out.
+ */
+function formatAmount(value: string | null | undefined, digits: number): string {
+  if (value === null || value === undefined || value === "") return "—";
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? "—" : parsed.toFixed(digits);
+}
 
 export const ReceiptDetailModal = observer(() => {
   const { receiptStore } = useStores();
   const receipt = receiptStore.receiptDetail;
+  const [showPhotos, setShowPhotos] = useState(false);
 
   const handleClose = () => {
     receiptStore.clearSelection();
@@ -111,13 +134,13 @@ export const ReceiptDetailModal = observer(() => {
           >
             <span className="text-[13px] font-medium">{item.name}</span>
             <span className="tabular-nums text-muted-foreground text-right text-[13px]">
-              {Number(item.quantity).toFixed(0)}
+              {formatAmount(item.quantity, 0)}
             </span>
             <span className="tabular-nums text-muted-foreground text-right text-[13px]">
-              {Number(item.unit_price).toFixed(2)}
+              {formatAmount(item.unit_price, 2)}
             </span>
             <span className="tabular-nums text-right text-[14px] font-semibold">
-              {Number(item.total_price).toFixed(2)}
+              {formatAmount(item.total_price, 2)}
             </span>
             <span>
               <span
@@ -132,6 +155,25 @@ export const ReceiptDetailModal = observer(() => {
             </span>
           </div>
         ))}
+
+        {showPhotos && (
+          <div className="flex flex-wrap gap-3 pt-5 mt-5 border-t border-border">
+            {receipt.file_ids.length === 0 ? (
+              <span className="text-[13px] text-muted-foreground">
+                No photos are stored for this receipt.
+              </span>
+            ) : (
+              receipt.file_ids.map((fileId) => (
+                <SecureImage
+                  key={fileId}
+                  fileId={fileId}
+                  alt={`Original photo of the receipt from ${receipt.merchant_name ?? "this merchant"}`}
+                  className="w-[132px] h-[176px] object-cover rounded-md border border-border"
+                />
+              ))
+            )}
+          </div>
+        )}
       </ModalBody>
 
       <ModalFooter>
@@ -142,7 +184,36 @@ export const ReceiptDetailModal = observer(() => {
           </span>
         </div>
         <div className="flex items-center gap-[10px]">
-          <Button variant="secondary" size="sm">
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => {
+              receiptStore.confirmDelete(receipt.id);
+            }}
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 6h18" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+            Delete
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setShowPhotos((shown) => !shown);
+            }}
+          >
             <svg
               width="15"
               height="15"
@@ -158,9 +229,15 @@ export const ReceiptDetailModal = observer(() => {
               <circle cx="9" cy="9" r="2" />
               <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
             </svg>
-            Original photos
+            {showPhotos ? "Hide photos" : "Original photos"}
           </Button>
-          <Button variant="primary" size="sm">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              receiptStore.startEditingReceipt();
+            }}
+          >
             <svg
               width="15"
               height="15"
