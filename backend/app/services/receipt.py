@@ -468,13 +468,15 @@ class ReceiptService:
             return None
 
         computed = sum((item.total_price for item in request_data.line_items), start=Decimal("0"))
-        if computed != request_data.total_amount:
-            from app.api.errors import DomainError
 
-            raise DomainError(
-                f"The lines add up to {computed}, not the total of "
-                f"{request_data.total_amount}. Correct the lines or the total before saving."
-            )
+        from app.models.receipt import ReceiptStatus
+
+        if computed != request_data.total_amount:
+            # The sum does not match, but we let the user store it anyway as NEEDS_REVIEW.
+            receipt.status = ReceiptStatus.MANUAL_REVIEW
+        else:
+            # If they fixed the sums, it's valid again.
+            receipt.status = ReceiptStatus.PARSED
 
         receipt.merchant_name = request_data.merchant_name
         receipt.transaction_date = (

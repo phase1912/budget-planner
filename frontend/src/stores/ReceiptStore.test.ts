@@ -110,4 +110,67 @@ describe("ReceiptStore", () => {
     expect(store.selectedReceiptId).toBeNull();
     expect(store.receiptDetail).toBeNull();
   });
+
+  it("updates filters and fetches receipts on page 1", async () => {
+    vi.mocked(apiClient.GET).mockResolvedValue({
+      data: { items: [], total: 0, page: 1, size: 20, pages: 0 },
+      response: new Response(),
+    });
+
+    store.page = 3; // Ensure page resets to 1
+
+    store.setFilters({
+      status: "uploaded",
+      startDate: "2025-01-01T00:00:00Z",
+      endDate: "2025-12-31T23:59:59Z",
+      searchQuery: "apple",
+    });
+
+    // Should fetch with new filters
+    expect(store.page).toBe(1);
+    expect(store.statusFilter).toBe("uploaded");
+    expect(store.startDateFilter).toBe("2025-01-01T00:00:00Z");
+    expect(store.searchQuery).toBe("apple");
+
+    // Wait for the async fetch to be called
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(apiClient.GET).toHaveBeenCalledWith("/receipts", {
+      params: {
+        query: {
+          page: 1,
+          size: 20,
+          status: "uploaded",
+          start_date: "2025-01-01T00:00:00Z",
+          end_date: "2025-12-31T23:59:59Z",
+          q: "apple",
+        },
+      },
+    });
+  });
+
+  it("clearing a filter removes it from the query", async () => {
+    store.statusFilter = "parsed";
+    vi.mocked(apiClient.GET).mockResolvedValue({
+      data: { items: [], total: 0, page: 1, size: 20, pages: 0 },
+      response: new Response(),
+    });
+
+    // Clear status
+    store.setFilters({ status: undefined });
+
+    expect(store.statusFilter).toBeUndefined();
+
+    // Wait for the async fetch to be called
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(apiClient.GET).toHaveBeenCalledWith("/receipts", {
+      params: {
+        query: {
+          page: 1,
+          size: 20,
+        },
+      },
+    });
+  });
 });
