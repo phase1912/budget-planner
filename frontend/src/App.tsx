@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 import { ProfilePage } from "@/features/profile/pages/ProfilePage";
 import { UploadPage } from "@/features/upload/pages/UploadPage";
 import { ReceiptsPage } from "@/features/receipts/pages/ReceiptsPage";
+import { CategoriesPage } from "@/features/categories/pages/CategoriesPage";
 
 export const App = observer(function App() {
   const { authStore } = useStores();
@@ -33,7 +34,7 @@ export const App = observer(function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             {/* Placeholders for upcoming features (prevents 404s on navigation) */}
             <Route path="/receipts" element={<ReceiptsPage />} />
-            <Route path="/categories" element={<DashboardPage />} />
+            <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/statistics" element={<DashboardPage />} />
             <Route path="/goals" element={<DashboardPage />} />
             <Route path="/upload" element={<UploadPage />} />
