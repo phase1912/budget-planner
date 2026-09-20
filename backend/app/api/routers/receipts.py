@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.adapters.categorisation_agent import ItemCategoriserAdapter
 from app.adapters.vision_agent import VisionAgentAdapter
 from app.agent.core import Agent
 from app.api.dependencies import get_current_user, get_storage_service
@@ -53,9 +54,11 @@ def get_receipt_service(
         disable_json_schema=settings.llm_disable_json_schema,
     )
     parser = VisionAgentAdapter(agent)
+    categoriser = ItemCategoriserAdapter(agent)
     return ReceiptService(
         storage_port,
         parser_port=parser,
+        categoriser_port=categoriser,
         max_concurrency=settings.llm_max_concurrency,
         job_timeout_seconds=settings.upload_job_timeout_seconds,
     )

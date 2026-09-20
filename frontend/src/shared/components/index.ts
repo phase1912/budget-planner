@@ -11,3 +11,4 @@ export * from "./State";
 export * from "./SecureImage";
 export * from "./Note";
 export * from "./IconTile";
+export * from "./Pill";

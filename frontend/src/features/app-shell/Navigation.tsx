@@ -15,7 +15,12 @@ export const Navigation = () => {
   return (
     <nav className="flex items-center gap-[2px]">
       {links.map((link) => {
-        const isActive = currentPath === link.path;
+        // Both /categories and /categories/manage belong to the Categories item,
+        // which every design screen draws as active on either.
+        const isActive =
+          link.path === "/"
+            ? currentPath === "/"
+            : currentPath === link.path || currentPath.startsWith(`${link.path}/`);
         return (
           <Link
             key={link.name}

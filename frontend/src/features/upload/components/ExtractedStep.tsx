@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useStores } from "@/stores/StoreContext";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
 import { Button } from "@/shared/components/Button/Button";
-import { SecureImage, Note, IconTile } from "@/shared/components";
+import { SecureImage, Note, IconTile, Pill } from "@/shared/components";
+import type { PillProps } from "@/shared/components";
 import { Card, CardHeader, CardFooter } from "@/shared/components/Card/Card";
 
 interface ExtractedLineItem {
@@ -14,6 +15,23 @@ interface ExtractedLineItem {
   total_price: string;
   confidence?: number;
   file_id?: string | null;
+  category_id?: string | null;
+  category_name?: string | null;
+  category_confidence?: number | null;
+  /** Set by the backend against the configured threshold — never recomputed here (ADR-0005). */
+  category_is_low_confidence?: boolean;
+}
+
+/**
+ * Pick the chip colour for an item's category.
+ *
+ * Mirrors `receipt-detail.html`: a confident category reads as settled, one the
+ * agent doubted is a warning, and an item with no category at all is neutral
+ * rather than alarming — it is waiting, not wrong.
+ */
+function categoryTone(item: ExtractedLineItem): PillProps["tone"] {
+  if (item.category_is_low_confidence) return "warning";
+  return item.category_name ? "success" : "default";
 }
 
 interface ExtractedData {
@@ -442,9 +460,15 @@ export const ExtractedStep = observer(function ExtractedStep() {
                       {item.total_price}
                     </span>
                     <span>
-                      <span className="inline-flex items-center justify-center h-[22px] px-2 rounded-full bg-muted text-muted-foreground text-[11px] font-bold">
-                        Uncategorized
-                      </span>
+                      <Pill
+                        size="sm"
+                        tone={categoryTone(item)}
+                        title={
+                          item.category_is_low_confidence ? "Low confidence category" : undefined
+                        }
+                      >
+                        {item.category_name ?? "Uncategorized"}
+                      </Pill>
                     </span>
                   </div>
                 );

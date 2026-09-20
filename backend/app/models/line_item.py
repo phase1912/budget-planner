@@ -2,7 +2,7 @@ import uuid
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Numeric, String
+from sqlalchemy import ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Model
@@ -27,6 +27,7 @@ class LineItem(Model):
     category_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
     )
+    category_confidence: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     receipt: Mapped["Receipt"] = relationship("Receipt", back_populates="line_items")
     category: Mapped["Category"] = relationship("Category", lazy="joined", innerjoin=False)
