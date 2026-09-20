@@ -13,6 +13,24 @@ from app.models.upload_job import UploadJob
 from app.repository.base import BaseRepository
 
 
+def _read_category(item_data: dict[str, typing.Any]) -> tuple[uuid.UUID | None, int | None]:
+    """Read one extracted item's category, refusing anything unusable.
+
+    The id travels as a string through `UploadJob.result_data`, so a malformed
+    one has to be rejected here rather than at the column. Confidence stays
+    `None` when the item was never categorised — a default of 100 would file an
+    unclassified item as a certainty and hide it from BRD C3's review queue.
+    """
+    raw_id = item_data.get("category_id")
+    try:
+        category_id = uuid.UUID(str(raw_id)) if raw_id else None
+    except ValueError:
+        category_id = None
+
+    confidence = item_data.get("category_confidence")
+    return category_id, confidence if isinstance(confidence, int) else None
+
+
 class ReceiptRepository(BaseRepository[Receipt]):
     """Repository for managing receipts."""
 
@@ -217,9 +235,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
                 up_str = str(item_data.get("unit_price") or tp_str)
                 up = Decimal(up_str.replace(",", "."))
 
-                cat_id_str = item_data.get("category_id")
-                cat_id = uuid.UUID(cat_id_str) if cat_id_str else None
-                cat_conf = item_data.get("category_confidence")
+                category_id, category_confidence = _read_category(item_data)
 
                 line_items.append(
                     LineItem(
@@ -227,32 +243,23 @@ class ReceiptRepository(BaseRepository[Receipt]):
                         quantity=qty,
                         unit_price=up,
                         total_price=tp,
-                        category_id=cat_id,
-                        category_confidence=cat_conf if cat_conf is not None else 100,
+                        category_id=category_id,
+                        category_confidence=category_confidence,
                     )
                 )
             except (InvalidOperation, TypeError, ValueError):
                 # The LLM failed to parse these numbers.
                 # Since the receipt will be saved as MANUAL_REVIEW, the user can fix them later.
-                cat_id_str = item_data.get("category_id") if isinstance(item_data, dict) else None
-                try:
-                    cat_id = uuid.UUID(cat_id_str) if cat_id_str else None
-                except ValueError:
-                    cat_id = None
-                cat_conf = (
-                    item_data.get("category_confidence") if isinstance(item_data, dict) else 100
-                )
+                category_id, category_confidence = _read_category(item_data)
 
                 line_items.append(
                     LineItem(
-                        name=item_data.get("name", "Unknown Item")
-                        if isinstance(item_data, dict)
-                        else "Unknown Item",
+                        name=item_data.get("name", "Unknown Item"),
                         quantity=Decimal("1"),
                         unit_price=Decimal("0"),
                         total_price=Decimal("0"),
-                        category_id=cat_id,
-                        category_confidence=cat_conf if cat_conf is not None else 100,
+                        category_id=category_id,
+                        category_confidence=category_confidence,
                     )
                 )
 

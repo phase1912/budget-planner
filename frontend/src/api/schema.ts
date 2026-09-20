@@ -398,10 +398,7 @@ export interface paths {
         };
         /**
          * List Categories
-         * @description List all categories (built-in and custom) with aggregated statistics.
-         *
-         *     Statistics (item_count and total_amount) are calculated only over the
-         *     current user's line items.
+         * @description List the taxonomy — built-in and custom — with this user's totals (BRD C1, C2).
          */
         get: operations["list_categories_api_v1_categories_get"];
         put?: never;
@@ -546,6 +543,15 @@ export interface components {
             category?: components["schemas"]["CategoryResponse"] | null;
             /** Category Confidence */
             category_confidence?: number | null;
+            /**
+             * Category Is Low Confidence
+             * @description Whether the category needs a human look before it is trusted (BRD C3).
+             *
+             *     Decided server-side against `Settings.categorization_confidence_threshold`
+             *     so the browser renders a verdict instead of recomputing one from a
+             *     threshold ADR-0005 says must not be restated at a call site.
+             */
+            readonly category_is_low_confidence: boolean;
         };
         /**
          * LoginRequest

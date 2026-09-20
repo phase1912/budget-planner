@@ -3,6 +3,7 @@ import copy
 import io
 import logging
 import uuid
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any, cast
@@ -10,7 +11,8 @@ from typing import Any, cast
 import filetype  # type: ignore[import-untyped]
 import pillow_heif
 from PIL import Image
-from sqlalchemy import or_, select
+from pydantic import ValidationError
+from sqlalchemy import select
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.db.session import get_session_factory
@@ -23,6 +25,7 @@ from app.models.user import User
 from app.ports.categorisation import ItemCategoriserPort
 from app.ports.parsing import ReceiptParserPort
 from app.ports.storage import StoragePort
+from app.repository.category import CategoryRepository
 from app.repository.receipt import ReceiptRepository
 from app.schemas.extraction import ExtractedLineItem, ExtractedReceipt
 from app.schemas.receipt import (
@@ -170,10 +173,7 @@ class ReceiptService:
                 all_file_ids: list[str] = []
                 all_extractions: list[dict[str, object]] = []
 
-                cat_stmt = select(Category).where(
-                    or_(Category.user_id == user.id, Category.user_id.is_(None))
-                )
-                categories = list((await session.execute(cat_stmt)).scalars().all())
+                categories = await CategoryRepository(session).list_available(user.id)
 
                 async def process_single_receipt(
                     files_data: list[dict[str, str | bytes]],
@@ -192,40 +192,7 @@ class ReceiptService:
                         ext = await self._run_extraction(user, file_ids, content_types)
                         ext["file_ids"] = file_ids
 
-                        if self.categoriser_port and categories:
-                            items_data = ext.get("line_items", [])
-                            if isinstance(items_data, list):
-                                parsed_items = []
-                                valid_indices = []
-                                for i, d in enumerate(items_data):
-                                    if isinstance(d, dict):
-                                        try:
-                                            parsed_items.append(ExtractedLineItem(**d))
-                                            valid_indices.append(i)
-                                        except Exception as e:
-                                            logger.warning(
-                                                "ExtractedLineItem parse error: %s", e
-                                            )
-
-                                if parsed_items:
-                                    categorised_items = (
-                                        await self.categoriser_port.categorise_items(
-                                            parsed_items, categories
-                                        )
-                                    )
-                                    for idx, cat_item in zip(
-                                        valid_indices, categorised_items, strict=False
-                                    ):
-                                        items_data[idx]["category_id"] = (
-                                            str(cat_item.category_id)
-                                            if cat_item.category_id
-                                            else None
-                                        )
-                                        items_data[idx]["category_name"] = cat_item.category_name
-                                        items_data[idx]["category_confidence"] = (
-                                            cat_item.category_confidence
-                                        )
-
+                        await self._categorise_extraction(ext, categories)
                         extraction = ext
 
                     return extraction
@@ -284,6 +251,49 @@ class ReceiptService:
                 session.add(job)
                 await session.commit()
                 raise e
+
+    async def _categorise_extraction(
+        self,
+        extraction: dict[str, object],
+        categories: Sequence[Category],
+    ) -> None:
+        """Add a category to every line item the parser read, in place (BRD C1).
+
+        Works on the raw extraction dict because that is what is persisted to
+        `UploadJob.result_data` and replayed to the wizard; the items are parsed
+        into `ExtractedLineItem` only so the port receives a typed contract.
+
+        An item whose numbers the parser mangled badly enough to fail validation
+        is skipped rather than dropped — it still reaches the user's review
+        screen, just uncategorised.
+        """
+        if not self.categoriser_port or not categories:
+            return
+
+        items_data = extraction.get("line_items")
+        if not isinstance(items_data, list):
+            return
+
+        parsed: list[ExtractedLineItem] = []
+        indices: list[int] = []
+        for index, raw in enumerate(items_data):
+            if not isinstance(raw, dict):
+                continue
+            try:
+                parsed.append(ExtractedLineItem(**raw))
+            except ValidationError:
+                logger.warning("Line item %s failed validation; leaving it uncategorised", index)
+                continue
+            indices.append(index)
+
+        if not parsed:
+            return
+
+        categorised = await self.categoriser_port.categorise_items(parsed, categories)
+        for index, item in zip(indices, categorised, strict=True):
+            items_data[index]["category_id"] = str(item.category_id) if item.category_id else None
+            items_data[index]["category_name"] = item.category_name
+            items_data[index]["category_confidence"] = item.category_confidence
 
     async def _run_extraction(
         self, user: User, file_ids: list[str], content_types: list[str]

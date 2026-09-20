@@ -19,8 +19,17 @@ import re
 import uuid
 from decimal import Decimal, InvalidOperation
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 
+from app.core.config import get_settings
+from app.domain.categories import is_low_confidence
 from app.domain.position_matching import MatchResult
 
 _TRAILING_LETTERS = re.compile(r"(?<=\d)\s*[A-Za-z]+\.?$")
@@ -87,18 +96,38 @@ class ExtractedLineItem(BaseModel):
     )
     category_id: uuid.UUID | None = Field(
         default=None,
-        description="Assigned category UUID",
+        description=(
+            "The assigned category's UUID. Populated by the backend from the "
+            "categoriser's answer, not by the extracting LLM."
+        ),
     )
     category_name: str | None = Field(
         default=None,
-        description="Assigned category name",
+        description="The assigned category's name. Populated by the backend, not the LLM.",
     )
-    category_confidence: int = Field(
-        default=100,
+    category_confidence: int | None = Field(
+        default=None,
         ge=0,
         le=100,
-        description="Confidence score for the category assignment (0-100)",
+        description=(
+            "Categorisation confidence (0-100), or None when nothing categorised "
+            "this item — which is not the same as categorising it badly (BRD C3)."
+        ),
     )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def category_is_low_confidence(self) -> bool:
+        """Whether the category needs a human look before it is trusted (BRD C3).
+
+        Decided here, against `Settings.categorization_confidence_threshold`,
+        because ADR-0005 forbids the number being restated at a call site — and
+        a browser is the last place a threshold should live.
+        """
+        return is_low_confidence(
+            self.category_confidence,
+            get_settings().categorization_confidence_threshold,
+        )
 
     @field_validator("quantity", "unit_price", "total_price", mode="after")
     @classmethod

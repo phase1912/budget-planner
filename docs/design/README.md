@@ -49,8 +49,8 @@ Sorted by the flow they belong to, not by file name.
 | `upload-1-photos.html` | `/upload` | F2.6 | A1–A8 |
 | `upload-2-extracted.html` | `/upload/review` | F3.7 | A9, A10, A11 |
 | `upload-3-resolve.html` | `/upload/resolve` | F4.7 | A10, A14, B2–B4, B7 |
-| `categorisation.html` | `/categories` | F5.7 | C3, C4, C5 |
-| `categories.html` | `/categories/manage` | F5.6 | C6, C7 |
+| `categorisation.html` | `/categories` | F5.3 · F5.4 | C3, C4, C5 |
+| `categories.html` | `/categories/manage` | F5.1 · F5.6 | C1, C2, C6, C7 |
 | `statistics.html` | `/statistics` | F7.7 | E1–E4, E6 |
 | `goals.html` | `/goals` | F8.10 | F1–F9 |
 | `dashboard-mobile.html` · `upload-mobile.html` | — | F9.6.2 | — |
@@ -70,6 +70,10 @@ the short version:
 - **One conflict queue.** Cross-photo duplicates, low-confidence fields and suspected
   duplicate receipts all queue together, with a counter, and nothing is stored while
   anything is open.
+- **`/categories` is the queue, not the taxonomy.** `categorisation.html` owns the
+  address and the nav item; the list of categories lives one level down at
+  `/categories/manage`. F5.1 ships the list before F5.3 ships the queue, so until then
+  `/categories` redirects to `/categories/manage` — a stand-in, not the destination.
 - **Separate `/login` and `/register`,** not budget-checker's tabbed modal — F1.5 needs a
   route table and a redirect on expiry, and a modal has no route to redirect to.
 

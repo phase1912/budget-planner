@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Protocol
 
 from app.models.category import Category
@@ -5,16 +6,21 @@ from app.schemas.extraction import ExtractedLineItem
 
 
 class ItemCategoriserPort(Protocol):
-    """Protocol for assigning categories to extracted line items."""
+    """Assigns a spending category to each extracted line item (BRD C1)."""
 
     async def categorise_items(
         self,
         items: list[ExtractedLineItem],
-        categories: list[Category],
+        categories: Sequence[Category],
     ) -> list[ExtractedLineItem]:
-        """Assign a category to each line item.
+        """Fill in `category_id`, `category_name` and `category_confidence` per item.
 
-        Returns a new list of `ExtractedLineItem` with `category_id`,
-        `category_name`, and `category_confidence` fields populated.
+        Implementations mutate and return the items they were given, choosing
+        only from `categories`. An item that cannot be placed comes back with
+        those three fields left as `None` rather than as a confident guess,
+        which is what BRD C3's review path reads.
+
+        Must not raise: a categorisation failure leaves the items untouched, so
+        a parsed receipt is never lost over a classification.
         """
         ...

@@ -1,13 +1,38 @@
 import uuid
+from collections.abc import Sequence
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from app.api.errors import UnsupportedFileFormatError
+from app.models.category import Category
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
+from app.schemas.extraction import ExtractedLineItem
 from app.services.receipt import ReceiptService
+
+
+def _session_returning(job: UploadJob, categories: list[Category]) -> AsyncMock:
+    """A session that answers the two queries the upload task issues.
+
+    `process_upload_job_task` opens its own session, loads the job, then asks
+    the category repository what the user may be filed under. Which statement
+    is which is read off the compiled SQL because both go through `execute`.
+    """
+    session = AsyncMock()
+    session.add = MagicMock()
+
+    def execute(stmt: Any, *args: Any, **kwargs: Any) -> MagicMock:
+        result = MagicMock()
+        if "FROM categories" in str(stmt):
+            result.scalars.return_value.all.return_value = categories
+        else:
+            result.scalar_one_or_none.return_value = job
+        return result
+
+    session.execute.side_effect = execute
+    return session
 
 
 def test_validate_receipt_file_accepts_valid_formats() -> None:
@@ -412,12 +437,34 @@ async def test_run_extraction_skips_matching_for_distinct_receipts() -> None:
     assert result.get("position_matches") == []
 
 
+class _StubCategoriser:
+    """A substitutable `ItemCategoriserPort`: files everything under one category.
+
+    Honours the port's contract rather than a convenient subset of it — it
+    mutates the items it is given and returns them — so a change to the real
+    adapter's contract breaks this test instead of quietly passing.
+    """
+
+    def __init__(self, category: Category) -> None:
+        self.category = category
+
+    async def categorise_items(
+        self, items: list[ExtractedLineItem], categories: Sequence[Category]
+    ) -> list[ExtractedLineItem]:
+        for item in items:
+            item.category_id = self.category.id
+            item.category_name = self.category.name
+            item.category_confidence = 95
+        return items
+
+
 @pytest.mark.asyncio
-async def test_process_upload_job_task_with_categorisation() -> None:
+async def test_extracted_items_carry_their_category_into_the_job_result() -> None:
+    """The wizard reads categories off `result_data`, so they must be written there (BRD C1)."""
+    category = Category(id=uuid.uuid4(), name="Groceries")
+
     mock_storage = AsyncMock()
     mock_parser = AsyncMock()
-    mock_categoriser = AsyncMock()
-
     mock_extraction = MagicMock()
     mock_extraction.model_dump.return_value = {
         "merchant_name": "Test",
@@ -431,74 +478,75 @@ async def test_process_upload_job_task_with_categorisation() -> None:
     mock_parser.parse.return_value = mock_extraction
     mock_storage.download_file.return_value = b"image-data"
 
-    cat_id = uuid.uuid4()
-
-
-    class MockCatResult:
-        category_id = cat_id
-        category_name = "Groceries"
-        category_confidence = 95
-
-    mock_categoriser.categorise_items.return_value = [MockCatResult()]
-
     service = ReceiptService(
-        storage_port=mock_storage, parser_port=mock_parser, categoriser_port=mock_categoriser
+        storage_port=mock_storage,
+        parser_port=mock_parser,
+        categoriser_port=_StubCategoriser(category),
     )
 
     job_id = uuid.uuid4()
     user = User(id=uuid.uuid4(), email="test@test.com")
+    job = UploadJob(id=job_id, user_id=user.id)
     receipts_data: list[list[dict[str, str | bytes]]] = [
         [{"content": b"test", "content_type": "image/jpeg"}]
     ]
 
-    mock_job = UploadJob(id=job_id, user_id=user.id)
-
-    mock_session = AsyncMock()
-    mock_session.add = MagicMock()
-
-    # Needs to handle two queries now: UploadJob and Categories
-    # So we'll use side_effect
-    from app.models.category import Category
-
-    mock_cat = Category(id=cat_id, name="Groceries")
-
-    from typing import Any
-
-    def mock_scalar_one_or_none() -> UploadJob:
-        return mock_job
-
-    def mock_scalars() -> MagicMock:
-        mock_scalars_obj = MagicMock()
-        mock_scalars_obj.all.return_value = [mock_cat]
-        return mock_scalars_obj
-
-    def execute_side_effect(stmt: Any, *args: Any, **kwargs: Any) -> MagicMock:
-        mock_res = MagicMock()
-        if "FROM upload_jobs" in str(stmt):
-            mock_res.scalar_one_or_none = mock_scalar_one_or_none
-        elif "FROM categories" in str(stmt):
-            mock_res.scalars = mock_scalars
-        return mock_res
-
-    mock_session.execute.side_effect = execute_side_effect
-
-    mock_session_factory = MagicMock()
-    mock_session_factory.return_value.__aenter__.return_value = mock_session
+    session = _session_returning(job=job, categories=[category])
+    session_factory = MagicMock()
+    session_factory.return_value.__aenter__.return_value = session
 
     with (
-        patch("app.services.receipt.get_session_factory", return_value=mock_session_factory),
+        patch("app.services.receipt.get_session_factory", return_value=session_factory),
         patch.object(service, "store_receipt_image", new_callable=AsyncMock) as mock_store,
     ):
         mock_store.return_value = "file-123"
         await service.process_upload_job_task(job_id, user, receipts_data)
 
-    assert mock_job.status == JobStatus.COMPLETED
+    assert job.status == JobStatus.COMPLETED
+    assert job.result_data is not None
+    item = job.result_data["extractions"][0]["line_items"][0]
+    assert item["category_id"] == str(category.id)
+    assert item["category_name"] == "Groceries"
+    assert item["category_confidence"] == 95
 
-    assert mock_job.result_data is not None
-    extractions = mock_job.result_data.get("extractions")
-    assert isinstance(extractions, list)
-    extracted_items = extractions[0]["line_items"]
-    assert isinstance(extracted_items, list)
-    assert extracted_items[0]["category_id"] == str(cat_id)
-    assert extracted_items[0]["category_name"] == "Groceries"
-    assert extracted_items[0]["category_confidence"] == 95
+
+@pytest.mark.asyncio
+async def test_items_stay_uncategorised_when_no_categoriser_is_wired_in() -> None:
+    """Without a categoriser, confidence stays absent rather than defaulting to certainty."""
+    mock_storage = AsyncMock()
+    mock_parser = AsyncMock()
+    mock_extraction = MagicMock()
+    mock_extraction.model_dump.return_value = {
+        "merchant_name": "Test",
+        "receipt_total": "2.00",
+        "currency": "PLN",
+        "line_items": [
+            {"name": "Milk", "quantity": "1", "unit_price": "2.0", "total_price": "2.0"}
+        ],
+    }
+    mock_parser.parse.return_value = mock_extraction
+    mock_storage.download_file.return_value = b"image-data"
+
+    service = ReceiptService(storage_port=mock_storage, parser_port=mock_parser)
+
+    job_id = uuid.uuid4()
+    user = User(id=uuid.uuid4(), email="test@test.com")
+    job = UploadJob(id=job_id, user_id=user.id)
+
+    session = _session_returning(job=job, categories=[])
+    session_factory = MagicMock()
+    session_factory.return_value.__aenter__.return_value = session
+
+    with (
+        patch("app.services.receipt.get_session_factory", return_value=session_factory),
+        patch.object(service, "store_receipt_image", new_callable=AsyncMock) as mock_store,
+    ):
+        mock_store.return_value = "file-123"
+        await service.process_upload_job_task(
+            job_id, user, [[{"content": b"test", "content_type": "image/jpeg"}]]
+        )
+
+    assert job.result_data is not None
+    item = job.result_data["extractions"][0]["line_items"][0]
+    assert item.get("category_id") is None
+    assert item.get("category_confidence") is None

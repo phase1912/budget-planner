@@ -3,8 +3,10 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, computed_field
 
+from app.core.config import get_settings
+from app.domain.categories import is_low_confidence
 from app.models.upload_job import JobStatus
 
 
@@ -127,6 +129,20 @@ class LineItemResponse(BaseModel):
     category_confidence: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def category_is_low_confidence(self) -> bool:
+        """Whether the category needs a human look before it is trusted (BRD C3).
+
+        Decided server-side against `Settings.categorization_confidence_threshold`
+        so the browser renders a verdict instead of recomputing one from a
+        threshold ADR-0005 says must not be restated at a call site.
+        """
+        return is_low_confidence(
+            self.category_confidence,
+            get_settings().categorization_confidence_threshold,
+        )
 
 
 class ReceiptResponse(BaseModel):

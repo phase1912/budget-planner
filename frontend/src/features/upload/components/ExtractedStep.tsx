@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useStores } from "@/stores/StoreContext";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
 import { Button } from "@/shared/components/Button/Button";
-import { SecureImage, Note, IconTile } from "@/shared/components";
+import { SecureImage, Note, IconTile, Pill } from "@/shared/components";
+import type { PillProps } from "@/shared/components";
 import { Card, CardHeader, CardFooter } from "@/shared/components/Card/Card";
 
 interface ExtractedLineItem {
@@ -17,6 +18,20 @@ interface ExtractedLineItem {
   category_id?: string | null;
   category_name?: string | null;
   category_confidence?: number | null;
+  /** Set by the backend against the configured threshold — never recomputed here (ADR-0005). */
+  category_is_low_confidence?: boolean;
+}
+
+/**
+ * Pick the chip colour for an item's category.
+ *
+ * Mirrors `receipt-detail.html`: a confident category reads as settled, one the
+ * agent doubted is a warning, and an item with no category at all is neutral
+ * rather than alarming — it is waiting, not wrong.
+ */
+function categoryTone(item: ExtractedLineItem): PillProps["tone"] {
+  if (item.category_is_low_confidence) return "warning";
+  return item.category_name ? "success" : "default";
 }
 
 interface ExtractedData {
@@ -445,23 +460,15 @@ export const ExtractedStep = observer(function ExtractedStep() {
                       {item.total_price}
                     </span>
                     <span>
-                      <span
-                        className={`pill pill--sm ${
-                          (item.category_confidence ?? 100) < 80 ? "pill--warning" : ""
-                        }`}
+                      <Pill
+                        size="sm"
+                        tone={categoryTone(item)}
                         title={
-                          (item.category_confidence ?? 100) < 80
-                            ? "Low confidence category"
-                            : undefined
+                          item.category_is_low_confidence ? "Low confidence category" : undefined
                         }
                       >
                         {item.category_name ?? "Uncategorized"}
-                        {item.category_confidence != null && (
-                          <span className="ml-1 opacity-70">
-                            {item.category_confidence}%
-                          </span>
-                        )}
-                      </span>
+                      </Pill>
                     </span>
                   </div>
                 );

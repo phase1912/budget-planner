@@ -9,7 +9,24 @@ import {
   Button,
   IconTile,
   SecureImage,
+  Pill,
 } from "@/shared/components";
+import type { PillProps } from "@/shared/components";
+import type { components } from "@/api/schema";
+
+type LineItem = components["schemas"]["LineItemResponse"];
+
+/**
+ * Pick the chip colour for a stored item's category.
+ *
+ * Mirrors `receipt-detail.html`. The low-confidence verdict is the backend's,
+ * computed against the configured threshold — ADR-0005 forbids restating that
+ * number here.
+ */
+function categoryTone(item: LineItem): PillProps["tone"] {
+  if (item.category_is_low_confidence) return "warning";
+  return item.category ? "success" : "default";
+}
 
 /**
  * Render an amount, or an em dash when there is nothing to render.
@@ -143,21 +160,13 @@ export const ReceiptDetailModal = observer(() => {
               {formatAmount(item.total_price, 2)}
             </span>
             <span>
-              <span
-                className={`pill pill--sm ${
-                  (item.category_confidence ?? 100) < 80 ? "pill--warning" : ""
-                }`}
-                title={
-                  (item.category_confidence ?? 100) < 80 ? "Low confidence category" : undefined
-                }
+              <Pill
+                size="sm"
+                tone={categoryTone(item)}
+                title={item.category_is_low_confidence ? "Low confidence category" : undefined}
               >
                 {item.category?.name ?? "Uncategorized"}
-                {item.category_confidence != null && (
-                  <span className="ml-1 opacity-70">
-                    {item.category_confidence}%
-                  </span>
-                )}
-              </span>
+              </Pill>
             </span>
           </div>
         ))}
