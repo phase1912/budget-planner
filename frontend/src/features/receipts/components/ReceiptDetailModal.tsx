@@ -145,10 +145,15 @@ export const ReceiptDetailModal = observer(() => {
             <span>
               <span
                 className={`inline-flex items-center rounded-full px-[10px] py-[4px] text-[12px] font-semibold whitespace-nowrap ${
-                  item.category?.name
-                    ? "bg-tone-primary-bg text-tone-primary-text"
-                    : "bg-muted text-muted-foreground"
+                  (item.category_confidence ?? 100) < 80
+                    ? "bg-tone-warning-bg text-tone-warning-text"
+                    : item.category?.name
+                      ? "bg-tone-primary-bg text-tone-primary-text"
+                      : "bg-muted text-muted-foreground"
                 }`}
+                title={
+                  (item.category_confidence ?? 100) < 80 ? "Low confidence category" : undefined
+                }
               >
                 {item.category?.name ?? "Uncategorized"}
               </span>

@@ -124,6 +124,7 @@ class LineItemResponse(BaseModel):
     total_price: Decimal
     category_id: uuid.UUID | None
     category: CategoryResponse | None = None
+    category_confidence: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

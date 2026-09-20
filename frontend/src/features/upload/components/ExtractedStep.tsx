@@ -14,6 +14,9 @@ interface ExtractedLineItem {
   total_price: string;
   confidence?: number;
   file_id?: string | null;
+  category_id?: string | null;
+  category_name?: string | null;
+  category_confidence?: number | null;
 }
 
 interface ExtractedData {
@@ -442,8 +445,19 @@ export const ExtractedStep = observer(function ExtractedStep() {
                       {item.total_price}
                     </span>
                     <span>
-                      <span className="inline-flex items-center justify-center h-[22px] px-2 rounded-full bg-muted text-muted-foreground text-[11px] font-bold">
-                        Uncategorized
+                      <span
+                        className={`inline-flex items-center justify-center h-[22px] px-2 rounded-full text-[11px] font-bold ${
+                          (item.category_confidence ?? 100) < 80
+                            ? "bg-tone-warning-bg text-tone-warning-text"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                        title={
+                          (item.category_confidence ?? 100) < 80
+                            ? "Low confidence category"
+                            : undefined
+                        }
+                      >
+                        {item.category_name ?? "Uncategorized"}
                       </span>
                     </span>
                   </div>

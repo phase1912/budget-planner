@@ -19,6 +19,7 @@ from app.models.match_override import PositionMatchOverride
 from app.models.receipt import Receipt
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
+from app.ports.categorisation import ItemCategoriserPort
 from app.ports.parsing import ReceiptParserPort
 from app.ports.storage import StoragePort
 from app.repository.receipt import ReceiptRepository
@@ -59,12 +60,14 @@ class ReceiptService:
         self,
         storage_port: StoragePort | None = None,
         parser_port: ReceiptParserPort | None = None,
+        categoriser_port: "ItemCategoriserPort | None" = None,
         repository: "ReceiptRepository | None" = None,
         max_concurrency: int = 2,
         job_timeout_seconds: int = 900,
     ):
         self.storage_port = storage_port
         self.parser_port = parser_port
+        self.categoriser_port = categoriser_port
         self.repository = repository
         self.max_concurrency = max_concurrency
         self.job_timeout_seconds = job_timeout_seconds
@@ -166,6 +169,15 @@ class ReceiptService:
                 all_file_ids: list[str] = []
                 all_extractions: list[dict[str, object]] = []
 
+                from sqlalchemy import or_
+
+                from app.models.category import Category
+
+                cat_stmt = select(Category).where(
+                    or_(Category.user_id == user.id, Category.user_id.is_(None))
+                )
+                categories = list((await session.execute(cat_stmt)).scalars().all())
+
                 async def process_single_receipt(
                     files_data: list[dict[str, str | bytes]],
                 ) -> dict[str, object]:
@@ -182,6 +194,41 @@ class ReceiptService:
                     if self.parser_port and self.storage_port:
                         ext = await self._run_extraction(user, file_ids, content_types)
                         ext["file_ids"] = file_ids
+
+                        if self.categoriser_port and categories:
+                            from app.schemas.extraction import ExtractedLineItem
+
+                            items_data = ext.get("line_items", [])
+                            if isinstance(items_data, list):
+                                parsed_items = []
+                                valid_indices = []
+                                for i, d in enumerate(items_data):
+                                    if isinstance(d, dict):
+                                        try:
+                                            parsed_items.append(ExtractedLineItem(**d))
+                                            valid_indices.append(i)
+                                        except Exception:
+                                            pass
+
+                                if parsed_items:
+                                    categorised_items = (
+                                        await self.categoriser_port.categorise_items(
+                                            parsed_items, categories
+                                        )
+                                    )
+                                    for idx, cat_item in zip(
+                                        valid_indices, categorised_items, strict=False
+                                    ):
+                                        items_data[idx]["category_id"] = (
+                                            str(cat_item.category_id)
+                                            if cat_item.category_id
+                                            else None
+                                        )
+                                        items_data[idx]["category_name"] = cat_item.category_name
+                                        items_data[idx]["category_confidence"] = (
+                                            cat_item.category_confidence
+                                        )
+
                         extraction = ext
 
                     return extraction

@@ -217,23 +217,42 @@ class ReceiptRepository(BaseRepository[Receipt]):
                 up_str = str(item_data.get("unit_price") or tp_str)
                 up = Decimal(up_str.replace(",", "."))
 
+                cat_id_str = item_data.get("category_id")
+                cat_id = uuid.UUID(cat_id_str) if cat_id_str else None
+                cat_conf = item_data.get("category_confidence")
+
                 line_items.append(
                     LineItem(
                         name=item_data.get("name", "Unknown Item"),
                         quantity=qty,
                         unit_price=up,
                         total_price=tp,
+                        category_id=cat_id,
+                        category_confidence=cat_conf if cat_conf is not None else 100,
                     )
                 )
             except (InvalidOperation, TypeError, ValueError):
                 # The LLM failed to parse these numbers.
                 # Since the receipt will be saved as MANUAL_REVIEW, the user can fix them later.
+                cat_id_str = item_data.get("category_id") if isinstance(item_data, dict) else None
+                try:
+                    cat_id = uuid.UUID(cat_id_str) if cat_id_str else None
+                except ValueError:
+                    cat_id = None
+                cat_conf = (
+                    item_data.get("category_confidence") if isinstance(item_data, dict) else 100
+                )
+
                 line_items.append(
                     LineItem(
-                        name=item_data.get("name", "Unknown Item"),
+                        name=item_data.get("name", "Unknown Item")
+                        if isinstance(item_data, dict)
+                        else "Unknown Item",
                         quantity=Decimal("1"),
                         unit_price=Decimal("0"),
                         total_price=Decimal("0"),
+                        category_id=cat_id,
+                        category_confidence=cat_conf if cat_conf is not None else 100,
                     )
                 )
 

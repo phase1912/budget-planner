@@ -53,9 +53,13 @@ def get_receipt_service(
         disable_json_schema=settings.llm_disable_json_schema,
     )
     parser = VisionAgentAdapter(agent)
+    from app.adapters.categorisation_agent import ItemCategoriserAdapter
+
+    categoriser = ItemCategoriserAdapter(agent)
     return ReceiptService(
         storage_port,
         parser_port=parser,
+        categoriser_port=categoriser,
         max_concurrency=settings.llm_max_concurrency,
         job_timeout_seconds=settings.upload_job_timeout_seconds,
     )

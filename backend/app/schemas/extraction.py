@@ -16,6 +16,7 @@ service layer converts to ``Decimal`` when persisting to domain entities.
 from __future__ import annotations
 
 import re
+import uuid
 from decimal import Decimal, InvalidOperation
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -83,6 +84,20 @@ class ExtractedLineItem(BaseModel):
             "The ID of the file (image) this line item was extracted from. "
             "Populated by the backend, not the LLM."
         ),
+    )
+    category_id: uuid.UUID | None = Field(
+        default=None,
+        description="Assigned category UUID",
+    )
+    category_name: str | None = Field(
+        default=None,
+        description="Assigned category name",
+    )
+    category_confidence: int = Field(
+        default=100,
+        ge=0,
+        le=100,
+        description="Confidence score for the category assignment (0-100)",
     )
 
     @field_validator("quantity", "unit_price", "total_price", mode="after")

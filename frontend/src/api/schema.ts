@@ -502,6 +502,8 @@ export interface components {
             /** Category Id */
             category_id: string | null;
             category?: components["schemas"]["CategoryResponse"] | null;
+            /** Category Confidence */
+            category_confidence?: number | null;
         };
         /**
          * LoginRequest
