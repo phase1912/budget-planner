@@ -10,10 +10,11 @@ from typing import Any, cast
 import filetype  # type: ignore[import-untyped]
 import pillow_heif
 from PIL import Image
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.db.session import get_session_factory
+from app.models.category import Category
 from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
 from app.models.receipt import Receipt
@@ -23,7 +24,7 @@ from app.ports.categorisation import ItemCategoriserPort
 from app.ports.parsing import ReceiptParserPort
 from app.ports.storage import StoragePort
 from app.repository.receipt import ReceiptRepository
-from app.schemas.extraction import ExtractedReceipt
+from app.schemas.extraction import ExtractedLineItem, ExtractedReceipt
 from app.schemas.receipt import (
     EditLineItemRequest,
     ResolvePositionMatchRequest,
@@ -169,10 +170,6 @@ class ReceiptService:
                 all_file_ids: list[str] = []
                 all_extractions: list[dict[str, object]] = []
 
-                from sqlalchemy import or_
-
-                from app.models.category import Category
-
                 cat_stmt = select(Category).where(
                     or_(Category.user_id == user.id, Category.user_id.is_(None))
                 )
@@ -196,8 +193,6 @@ class ReceiptService:
                         ext["file_ids"] = file_ids
 
                         if self.categoriser_port and categories:
-                            from app.schemas.extraction import ExtractedLineItem
-
                             items_data = ext.get("line_items", [])
                             if isinstance(items_data, list):
                                 parsed_items = []
@@ -207,8 +202,10 @@ class ReceiptService:
                                         try:
                                             parsed_items.append(ExtractedLineItem(**d))
                                             valid_indices.append(i)
-                                        except Exception:
-                                            pass
+                                        except Exception as e:
+                                            logger.warning(
+                                                "ExtractedLineItem parse error: %s", e
+                                            )
 
                                 if parsed_items:
                                     categorised_items = (

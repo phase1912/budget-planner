@@ -446,10 +446,8 @@ export const ExtractedStep = observer(function ExtractedStep() {
                     </span>
                     <span>
                       <span
-                        className={`inline-flex items-center justify-center h-[22px] px-2 rounded-full text-[11px] font-bold ${
-                          (item.category_confidence ?? 100) < 80
-                            ? "bg-tone-warning-bg text-tone-warning-text"
-                            : "bg-muted text-muted-foreground"
+                        className={`pill pill--sm ${
+                          (item.category_confidence ?? 100) < 80 ? "pill--warning" : ""
                         }`}
                         title={
                           (item.category_confidence ?? 100) < 80
@@ -458,6 +456,11 @@ export const ExtractedStep = observer(function ExtractedStep() {
                         }
                       >
                         {item.category_name ?? "Uncategorized"}
+                        {item.category_confidence != null && (
+                          <span className="ml-1 opacity-70">
+                            {item.category_confidence}%
+                          </span>
+                        )}
                       </span>
                     </span>
                   </div>

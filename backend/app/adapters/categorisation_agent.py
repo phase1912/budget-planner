@@ -26,7 +26,6 @@ class CategorisationResponse(BaseModel):
 
 
 class ItemCategoriserAdapter(ItemCategoriserPort):
-    """Adapter for ItemCategoriserPort using the universal Agent."""
 
     def __init__(self, agent: Agent) -> None:
         self._agent = agent
@@ -85,5 +84,4 @@ class ItemCategoriserAdapter(ItemCategoriserPort):
 
         except Exception as e:
             logger.error(f"Categorisation failed: {e}")
-            # Return unchanged items
             return items

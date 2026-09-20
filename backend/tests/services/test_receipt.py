@@ -410,3 +410,95 @@ async def test_run_extraction_skips_matching_for_distinct_receipts() -> None:
 
     assert len(cast(list[Any], result.get("line_items", []))) == 2
     assert result.get("position_matches") == []
+
+
+@pytest.mark.asyncio
+async def test_process_upload_job_task_with_categorisation() -> None:
+    mock_storage = AsyncMock()
+    mock_parser = AsyncMock()
+    mock_categoriser = AsyncMock()
+
+    mock_extraction = MagicMock()
+    mock_extraction.model_dump.return_value = {
+        "merchant_name": "Test",
+        "receipt_total": "100.00",
+        "currency": "USD",
+        "items_sum_matches_total": True,
+        "line_items": [
+            {"name": "Milk", "quantity": "1", "unit_price": "2.0", "total_price": "2.0"}
+        ],
+    }
+    mock_parser.parse.return_value = mock_extraction
+    mock_storage.download_file.return_value = b"image-data"
+
+    cat_id = uuid.uuid4()
+
+
+    class MockCatResult:
+        category_id = cat_id
+        category_name = "Groceries"
+        category_confidence = 95
+
+    mock_categoriser.categorise_items.return_value = [MockCatResult()]
+
+    service = ReceiptService(
+        storage_port=mock_storage, parser_port=mock_parser, categoriser_port=mock_categoriser
+    )
+
+    job_id = uuid.uuid4()
+    user = User(id=uuid.uuid4(), email="test@test.com")
+    receipts_data: list[list[dict[str, str | bytes]]] = [
+        [{"content": b"test", "content_type": "image/jpeg"}]
+    ]
+
+    mock_job = UploadJob(id=job_id, user_id=user.id)
+
+    mock_session = AsyncMock()
+    mock_session.add = MagicMock()
+
+    # Needs to handle two queries now: UploadJob and Categories
+    # So we'll use side_effect
+    from app.models.category import Category
+
+    mock_cat = Category(id=cat_id, name="Groceries")
+
+    from typing import Any
+
+    def mock_scalar_one_or_none() -> UploadJob:
+        return mock_job
+
+    def mock_scalars() -> MagicMock:
+        mock_scalars_obj = MagicMock()
+        mock_scalars_obj.all.return_value = [mock_cat]
+        return mock_scalars_obj
+
+    def execute_side_effect(stmt: Any, *args: Any, **kwargs: Any) -> MagicMock:
+        mock_res = MagicMock()
+        if "FROM upload_jobs" in str(stmt):
+            mock_res.scalar_one_or_none = mock_scalar_one_or_none
+        elif "FROM categories" in str(stmt):
+            mock_res.scalars = mock_scalars
+        return mock_res
+
+    mock_session.execute.side_effect = execute_side_effect
+
+    mock_session_factory = MagicMock()
+    mock_session_factory.return_value.__aenter__.return_value = mock_session
+
+    with (
+        patch("app.services.receipt.get_session_factory", return_value=mock_session_factory),
+        patch.object(service, "store_receipt_image", new_callable=AsyncMock) as mock_store,
+    ):
+        mock_store.return_value = "file-123"
+        await service.process_upload_job_task(job_id, user, receipts_data)
+
+    assert mock_job.status == JobStatus.COMPLETED
+
+    assert mock_job.result_data is not None
+    extractions = mock_job.result_data.get("extractions")
+    assert isinstance(extractions, list)
+    extracted_items = extractions[0]["line_items"]
+    assert isinstance(extracted_items, list)
+    assert extracted_items[0]["category_id"] == str(cat_id)
+    assert extracted_items[0]["category_name"] == "Groceries"
+    assert extracted_items[0]["category_confidence"] == 95
