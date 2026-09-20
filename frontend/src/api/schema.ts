@@ -389,6 +389,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Categories
+         * @description List all categories (built-in and custom) with aggregated statistics.
+         *
+         *     Statistics (item_count and total_amount) are calculated only over the
+         *     current user's line items.
+         */
+        get: operations["list_categories_api_v1_categories_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -408,6 +431,25 @@ export interface components {
         Body_upload_receipt_receipts_upload_post: {
             /** Files */
             files: string[];
+        };
+        /**
+         * CategoryOut
+         * @description A category with its aggregated statistics for the current user.
+         */
+        CategoryOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Is Builtin */
+            is_builtin: boolean;
+            /** Item Count */
+            item_count: number;
+            /** Total Amount */
+            total_amount: string;
         };
         /** CategoryResponse */
         CategoryResponse: {
@@ -1489,6 +1531,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UploadJobStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_categories_api_v1_categories_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryOut"][];
                 };
             };
             /** @description Validation Error */
