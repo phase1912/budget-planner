@@ -5,6 +5,7 @@ import { ProfileStore } from "@/stores/ProfileStore";
 import { UploadStore } from "@/stores/UploadStore";
 import { apiClient } from "@/api/client";
 
+import { CategoriesStore } from "@/stores/CategoriesStore";
 import { ReceiptStore } from "@/stores/ReceiptStore";
 
 /**
@@ -20,6 +21,7 @@ export class RootStore {
   readonly profileStore: ProfileStore;
   readonly uploadStore: UploadStore;
   readonly receiptStore: ReceiptStore;
+  readonly categoriesStore: CategoriesStore;
 
   constructor() {
     this.themeStore = new ThemeStore();
@@ -28,5 +30,6 @@ export class RootStore {
     this.profileStore = new ProfileStore(apiClient, this.authStore, this.toastStore);
     this.uploadStore = new UploadStore(apiClient);
     this.receiptStore = new ReceiptStore(this.toastStore);
+    this.categoriesStore = new CategoriesStore();
   }
 }
