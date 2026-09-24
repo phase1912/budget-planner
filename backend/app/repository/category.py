@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import ColumnElement, Select, case, func, or_, select
+from sqlalchemy import ColumnElement, Select, case, delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.categories import DEFAULT_CATEGORY_ORDER, normalise_name
@@ -142,3 +142,60 @@ class CategoryRepository(BaseRepository[Category]):
         rule.created_at = datetime.now(UTC)
         await self.session.flush()
         return rule
+
+    async def get_owned(self, category_id: uuid.UUID, user_id: uuid.UUID) -> Category | None:
+        """One of the user's own categories; None for a built-in or another user's (N2)."""
+        stmt = select(Category).where(Category.id == category_id, Category.user_id == user_id)
+        return (await self.session.execute(stmt)).scalar_one_or_none()
+
+    async def name_taken(
+        self, user_id: uuid.UUID, name: str, *, ignoring: uuid.UUID | None = None
+    ) -> bool:
+        """Whether a category this user can see already has this name, ignoring case (C6)."""
+        stmt = self._visible_to(user_id).where(func.lower(Category.name) == name.lower())
+        if ignoring is not None:
+            stmt = stmt.where(Category.id != ignoring)
+        return (await self.session.execute(stmt)).first() is not None
+
+    async def create_custom(self, user_id: uuid.UUID, name: str) -> Category:
+        """Store a new custom category owned by this user (C6)."""
+        category = Category(user_id=user_id, name=name)
+        self.session.add(category)
+        await self.session.flush()
+        return category
+
+    async def move_items(
+        self, user_id: uuid.UUID, source_id: uuid.UUID, target_id: uuid.UUID
+    ) -> None:
+        """Refile this user's items from one category to another (C7)."""
+        owned_receipts = select(Receipt.id).where(Receipt.user_id == user_id)
+        await self.session.execute(
+            update(LineItem)
+            .where(LineItem.category_id == source_id, LineItem.receipt_id.in_(owned_receipts))
+            .values(category_id=target_id)
+            .execution_options(synchronize_session=False)
+        )
+
+    async def move_rules(
+        self, user_id: uuid.UUID, source_id: uuid.UUID, target_id: uuid.UUID
+    ) -> None:
+        """Point this user's correction rules at another category (C5, C7)."""
+        await self.session.execute(
+            update(CategoryRule)
+            .where(CategoryRule.user_id == user_id, CategoryRule.category_id == source_id)
+            .values(category_id=target_id)
+            .execution_options(synchronize_session=False)
+        )
+
+    async def delete_rules(self, user_id: uuid.UUID, category_id: uuid.UUID) -> None:
+        """Forget this user's correction rules that file into one category (C5, C7)."""
+        await self.session.execute(
+            delete(CategoryRule).where(
+                CategoryRule.user_id == user_id, CategoryRule.category_id == category_id
+            )
+        )
+
+    async def remove(self, category: Category) -> None:
+        """Delete a category row; callers move what referenced it first."""
+        await self.session.delete(category)
+        await self.session.flush()

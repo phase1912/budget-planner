@@ -103,7 +103,8 @@ async def test_owner_reassigns_an_item_and_it_leaves_the_review_queue(
     assert body["category_confidence"] == 40
 
     queue = await _call(db_session, owner, "GET", "/receipts/line-items")
-    assert queue.json() == {"items": [], "needs_review_count": 0}
+    assert queue.json()["items"] == []
+    assert queue.json()["needs_review_count"] == 0
 
 
 @pytest.mark.asyncio

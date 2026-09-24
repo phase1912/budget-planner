@@ -31,6 +31,14 @@ const mockStore = {
     fetchReviewQueue: mockFetchReviewQueue,
     queueView: "needs_review" as ItemView,
     queueSearch: "",
+    queueStartDate: undefined as string | undefined,
+    queueEndDate: undefined as string | undefined,
+    queuePage: 1,
+    queuePages: 0,
+    queueTotal: 0,
+    queueSize: 20,
+    setQueueDates: vi.fn(),
+    setQueuePage: vi.fn(),
     needsReviewCount: 0,
     setQueueView: vi.fn(),
     setQueueSearch: vi.fn(),
@@ -64,6 +72,9 @@ describe("CategorisationQueuePage", () => {
     mockStore.categoriesStore.queueView = "needs_review";
     mockStore.categoriesStore.queueSearch = "";
     mockStore.categoriesStore.needsReviewCount = 0;
+    mockStore.categoriesStore.queueTotal = 0;
+    mockStore.categoriesStore.queuePages = 0;
+    mockStore.categoriesStore.queuePage = 1;
   });
 
   it("fetches the review queue on mount", () => {
@@ -124,5 +135,30 @@ describe("CategorisationQueuePage", () => {
     renderPage();
     fireEvent.change(screen.getByLabelText("Find an item"), { target: { value: "bar" } });
     expect(mockStore.categoriesStore.setQueueSearch).toHaveBeenCalledWith("bar");
+  });
+
+  it("pages through a long view", () => {
+    mockStore.categoriesStore.reviewQueue = [queueItem];
+    mockStore.categoriesStore.queueTotal = 45;
+    mockStore.categoriesStore.queuePages = 3;
+    mockStore.categoriesStore.queuePage = 2;
+    renderPage();
+
+    expect(screen.getByText("21–40 of 45")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+    expect(mockStore.categoriesStore.setQueuePage).toHaveBeenCalledWith(3);
+  });
+
+  it("filters the view by purchase date", () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /All dates/i }));
+    fireEvent.change(screen.getByLabelText("Mode"), { target: { value: "month" } });
+    fireEvent.change(screen.getByLabelText("Month"), { target: { value: "2026-07" } });
+    fireEvent.click(screen.getByRole("button", { name: /Apply filter/i }));
+
+    expect(mockStore.categoriesStore.setQueueDates).toHaveBeenCalledWith(
+      "2026-07-01T00:00:00Z",
+      "2026-07-31T23:59:59Z",
+    );
   });
 });

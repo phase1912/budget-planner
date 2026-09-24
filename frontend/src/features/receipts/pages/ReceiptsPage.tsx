@@ -6,7 +6,7 @@ import { EditReceiptDialog } from "../components/EditReceiptDialog";
 import { ReceiptDetailModal } from "../components/ReceiptDetailModal";
 import { DateFilterModal } from "../components/DateFilterModal";
 import { StatusFilterDropdown } from "../components/StatusFilterDropdown";
-import { Card, Input, IconTile } from "@/shared/components";
+import { Card, Input, IconTile, Pagination } from "@/shared/components";
 
 export const ReceiptsPage = observer(() => {
   const { receiptStore } = useStores();
@@ -270,61 +270,16 @@ export const ReceiptsPage = observer(() => {
           )}
         </Card>
 
-        <div className="flex items-center justify-between gap-4 mt-4">
-          <span className="tabular-nums text-muted-foreground text-[13px]">
-            {receiptStore.total > 0
-              ? `${String((receiptStore.page - 1) * receiptStore.size + 1)}–${String(
-                  Math.min(receiptStore.page * receiptStore.size, receiptStore.total),
-                )} of ${String(receiptStore.total)}`
-              : "0 of 0"}
-          </span>
-          <div className="flex items-center gap-[6px]">
-            <button
-              className="inline-flex items-center justify-center min-w-[36px] h-[36px] border border-border rounded-chip bg-background text-foreground px-[10px] text-[13px] font-semibold cursor-pointer disabled:text-border-strong disabled:cursor-default"
-              aria-label="Previous page"
-              disabled={receiptStore.page <= 1}
-              onClick={() => {
-                void receiptStore.fetchReceipts(receiptStore.page - 1, receiptStore.size);
-              }}
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="m15 18-6-6 6-6" />
-              </svg>
-            </button>
-            <span className="inline-flex items-center justify-center min-w-[36px] h-[36px] border border-primary rounded-chip bg-primary text-primary-foreground px-[10px] text-[13px] font-semibold">
-              {receiptStore.page}
-            </span>
-            <button
-              className="inline-flex items-center justify-center min-w-[36px] h-[36px] border border-border rounded-chip bg-background text-foreground px-[10px] text-[13px] font-semibold cursor-pointer disabled:text-border-strong disabled:cursor-default"
-              aria-label="Next page"
-              disabled={receiptStore.page >= receiptStore.pages}
-              onClick={() => {
-                void receiptStore.fetchReceipts(receiptStore.page + 1, receiptStore.size);
-              }}
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="m9 18 6-6-6-6" />
-              </svg>
-            </button>
-          </div>
+        <div className="mt-4">
+          <Pagination
+            page={receiptStore.page}
+            pages={receiptStore.pages}
+            size={receiptStore.size}
+            total={receiptStore.total}
+            onPageChange={(page) => {
+              void receiptStore.fetchReceipts(page, receiptStore.size);
+            }}
+          />
         </div>
 
         {receiptStore.selectedReceiptId && <ReceiptDetailModal />}

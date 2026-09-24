@@ -1126,6 +1126,12 @@ epics:
         demo: >
           Create "Pet Supplies", file items under it, then delete it and choose where those
           items land — per the delete dialog in docs/design/screens/categories.html.
+        tasks:
+          - custom categories - create, rename, delete with a "move items to" choice (C6, C7).
+          - >
+            unplanned, added during F5.6 at the owner's request - pagination and a purchase-date
+            filter on the categorisation screen's views (/categories), which returned every item
+            in one response. Shares DateRangeFilter and Pagination with the receipts list.
 
       - key: F5.8
         title: Seed script for local sample data

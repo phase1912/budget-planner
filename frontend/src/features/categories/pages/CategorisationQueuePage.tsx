@@ -7,10 +7,12 @@ import { useStores } from "@/stores/StoreContext";
 import {
   Card,
   EmptyState,
+  DateRangeFilter,
   ErrorState,
   Input,
   LoadingState,
   Note,
+  Pagination,
   SegmentedControl,
 } from "@/shared/components";
 import type { ItemView, ReviewQueueItem } from "@/stores/CategoriesStore";
@@ -45,8 +47,9 @@ function purchaseDate(item: ReviewQueueItem): string {
 export const CategorisationQueuePage = observer(function CategorisationQueuePage() {
   const { categoriesStore } = useStores();
   const { reviewQueue, isLoadingQueue, queueError, queueView, queueSearch } = categoriesStore;
-  const empty = queueSearch.trim()
-    ? { title: "No matching items", message: `Nothing here is named like “${queueSearch}”.` }
+  const filtered = Boolean(queueSearch.trim() || categoriesStore.queueStartDate);
+  const empty = filtered
+    ? { title: "No matching items", message: "Nothing in this view matches the name or dates." }
     : EMPTY_MESSAGES[queueView];
 
   useEffect(() => {
@@ -92,22 +95,31 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
               { value: "all", label: "All items" },
             ]}
           />
-          <div className="relative w-full md:w-60">
-            <Search
-              size={16}
-              aria-hidden="true"
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            />
-            <Input
-              className="pl-9 py-2.25 text-md"
-              type="search"
-              placeholder="Find an item"
-              aria-label="Find an item"
-              value={queueSearch}
-              onChange={(e) => {
-                categoriesStore.setQueueSearch(e.target.value);
+          <div className="flex items-center gap-2.5">
+            <DateRangeFilter
+              start={categoriesStore.queueStartDate}
+              end={categoriesStore.queueEndDate}
+              onApply={(start, end) => {
+                categoriesStore.setQueueDates(start, end);
               }}
             />
+            <div className="relative w-full md:w-60">
+              <Search
+                size={16}
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                className="pl-9 py-2.25 text-md"
+                type="search"
+                placeholder="Find an item"
+                aria-label="Find an item"
+                value={queueSearch}
+                onChange={(e) => {
+                  categoriesStore.setQueueSearch(e.target.value);
+                }}
+              />
+            </div>
           </div>
         </div>
 
@@ -173,6 +185,18 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
               ))}
             </ul>
           </Card>
+        )}
+
+        {categoriesStore.queueTotal > 0 && (
+          <Pagination
+            page={categoriesStore.queuePage}
+            pages={categoriesStore.queuePages}
+            size={categoriesStore.queueSize}
+            total={categoriesStore.queueTotal}
+            onPageChange={(page) => {
+              categoriesStore.setQueuePage(page);
+            }}
+          />
         )}
 
         <Note tone="accent">

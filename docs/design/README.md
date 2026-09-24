@@ -72,9 +72,14 @@ the short version:
   anything is open.
 - **`/categories` is the queue, not the taxonomy.** `categorisation.html` owns the
   address and the nav item; the list of categories lives one level down at
-  `/categories/manage`. The picker is a native `select` rather than the drawn menu: the
-  menu's "apply to future items" checkbox and "Create a new category" link arrive with
-  F5.5 and F5.6, and until then a `select` is the accessible, mobile-friendly equivalent.
+  `/categories/manage`. The picker is a native `select` rather than the drawn menu,
+  because it is the accessible, mobile-friendly equivalent. The menu's "apply to future
+  items" checkbox sits under the picker instead, ticked by default as drawn. The menu's
+  "Create a new category" link is not built: categories are created on the taxonomy screen.
+- **A new category is named in a dialog.** `categories.html` draws only the "New category"
+  button. A dialog, styled like the drawn delete dialog, opens where the user is looking.
+  A row appended below a long list of categories would be off screen, and a refused name
+  can be explained next to the field.
 - **Separate `/login` and `/register`,** not budget-checker's tabbed modal — F1.5 needs a
   route table and a redirect on expiry, and a modal has no route to redirect to.
 

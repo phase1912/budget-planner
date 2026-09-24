@@ -290,7 +290,7 @@ export interface paths {
         };
         /**
          * List Line Items
-         * @description List the caller's line items for one categorisation view, oldest first (BRD C3, C4).
+         * @description One page of the caller's line items for a categorisation view, oldest first (C3, C4).
          */
         get: operations["list_line_items_receipts_line_items_get"];
         put?: never;
@@ -462,11 +462,39 @@ export interface paths {
          */
         get: operations["list_categories_api_v1_categories_get"];
         put?: never;
-        post?: never;
+        /**
+         * Create Category
+         * @description Create a custom category, available to the picker and the agent at once (BRD C6).
+         */
+        post: operations["create_category_api_v1_categories_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/categories/{category_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Category
+         * @description Delete one of the caller's categories, moving its items to `move_to_id` (BRD C7).
+         */
+        delete: operations["delete_category_api_v1_categories__category_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Rename Category
+         * @description Rename one of the caller's own categories (BRD C6).
+         */
+        patch: operations["rename_category_api_v1_categories__category_id__patch"];
         trace?: never;
     };
 }
@@ -488,6 +516,14 @@ export interface components {
         Body_upload_receipt_receipts_upload_post: {
             /** Files */
             files: string[];
+        };
+        /**
+         * CategoryCreate
+         * @description A new custom category (BRD C6).
+         */
+        CategoryCreate: {
+            /** Name */
+            name: string;
         };
         /**
          * CategoryOut
@@ -515,6 +551,14 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * CategoryUpdate
+         * @description A new name for one of the user's own categories (BRD C6).
+         */
+        CategoryUpdate: {
             /** Name */
             name: string;
         };
@@ -591,11 +635,19 @@ export interface components {
         };
         /**
          * LineItemListResponse
-         * @description One view of the categorisation screen, plus the queue size for its badge (BRD C3).
+         * @description One page of a categorisation-screen view, plus the queue size for its badge (BRD C3).
          */
         LineItemListResponse: {
             /** Items */
             items: components["schemas"]["ReviewQueueItemResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Pages */
+            pages: number;
             /** Needs Review Count */
             needs_review_count: number;
         };
@@ -1461,6 +1513,10 @@ export interface operations {
             query?: {
                 view?: components["schemas"]["ItemView"];
                 q?: string | null;
+                start_date?: string | null;
+                end_date?: string | null;
+                page?: number;
+                size?: number;
                 token?: string | null;
             };
             header?: never;
@@ -1826,6 +1882,110 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CategoryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_category_api_v1_categories_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_category_api_v1_categories__category_id__delete: {
+        parameters: {
+            query: {
+                move_to_id: string;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_category_api_v1_categories__category_id__patch: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryOut"];
                 };
             };
             /** @description Validation Error */
