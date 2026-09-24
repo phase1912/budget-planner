@@ -103,6 +103,12 @@ Rules that must hold at all times. Each is a candidate for a test.
     with the same or a highly similar name from the same merchant (C5). Precedence:
     the owner's manual choice on a stored item, then a matching rule, then the
     categoriser under its threshold (ADR-0008).
+14a. A user's own categories sit beside the built-ins and are offered to the picker and
+    the categoriser as soon as they exist (C6). No two categories a user can see share a
+    name, ignoring case. Built-ins cannot be renamed or deleted. Deleting one of the
+    user's own moves its items, amounts unchanged, to a category the user chooses, never
+    the deleted one. Its correction rules follow, unless the target is Uncategorized, in
+    which case they are dropped (C7).
 
 **Advice**
 

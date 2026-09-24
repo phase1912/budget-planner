@@ -28,6 +28,12 @@ export class CategoriesStore {
   queueError: string | null = null;
   queueView: ItemView = "needs_review";
   queueSearch = "";
+  queueStartDate: string | undefined = undefined;
+  queueEndDate: string | undefined = undefined;
+  queuePage = 1;
+  queuePages = 0;
+  queueTotal = 0;
+  readonly queueSize = 20;
   needsReviewCount = 0;
 
   private queueRequest = 0;
@@ -135,14 +141,32 @@ export class CategoriesStore {
 
     try {
       const response = await apiClient.GET("/receipts/line-items", {
-        params: { query: { view: this.queueView, q: this.queueSearch.trim() || undefined } },
+        params: {
+          query: {
+            view: this.queueView,
+            q: this.queueSearch.trim() || undefined,
+            start_date: this.queueStartDate,
+            end_date: this.queueEndDate,
+            page: this.queuePage,
+            size: this.queueSize,
+          },
+        },
       });
       if (response.error) {
         throw new Error(errorMessage(response.error, "Failed to fetch review queue"));
       }
       if (request !== this.queueRequest) return;
+      const { items, pages } = response.data;
+      if (items.length === 0 && this.queuePage > 1 && pages > 0) {
+        // Filing the last item on the last page empties it; show the new last page instead.
+        this.queuePage = pages;
+        await this.fetchReviewQueue();
+        return;
+      }
       runInAction(() => {
         this.reviewQueue = response.data.items;
+        this.queueTotal = response.data.total;
+        this.queuePages = response.data.pages;
         this.needsReviewCount = response.data.needs_review_count;
         this.isLoadingQueue = false;
       });
@@ -156,19 +180,74 @@ export class CategoriesStore {
     }
   }
 
-  /** Switch between "Needs review", "Corrected by you" and "All items". */
+  /** Switch between "Needs review", "Corrected by you" and "All items", from page 1. */
   setQueueView(view: ItemView): void {
     if (view === this.queueView) return;
     this.queueView = view;
+    this.queuePage = 1;
     void this.fetchReviewQueue();
   }
 
-  /** Narrow the current view by item name, once the user pauses typing. */
+  /** Narrow the current view by item name, once the user pauses typing; back to page 1. */
   setQueueSearch(search: string): void {
     this.queueSearch = search;
     clearTimeout(this.searchTimer);
     this.searchTimer = setTimeout(() => {
+      runInAction(() => {
+        this.queuePage = 1;
+      });
       void this.fetchReviewQueue();
     }, SEARCH_DEBOUNCE_MS);
+  }
+
+  /** Narrow the current view to a purchase-date range (UTC bounds), from page 1. */
+  setQueueDates(start: string | undefined, end: string | undefined): void {
+    this.queueStartDate = start;
+    this.queueEndDate = end;
+    this.queuePage = 1;
+    void this.fetchReviewQueue();
+  }
+
+  /** Show another page of the current view. */
+  setQueuePage(page: number): void {
+    this.queuePage = page;
+    void this.fetchReviewQueue();
+  }
+
+  /** Create a new custom category (BRD C6). */
+  async createCategory(name: string): Promise<string | null> {
+    const response = await apiClient.POST("/api/v1/categories", {
+      body: { name },
+    });
+    if (response.error) {
+      return errorMessage(response.error, "Could not create category");
+    }
+    void this.fetchCategories();
+    return null;
+  }
+
+  /** Rename a custom category. */
+  async renameCategory(id: string, name: string): Promise<string | null> {
+    const response = await apiClient.PATCH("/api/v1/categories/{category_id}", {
+      params: { path: { category_id: id } },
+      body: { name },
+    });
+    if (response.error) {
+      return errorMessage(response.error, "Could not rename category");
+    }
+    void this.fetchCategories();
+    return null;
+  }
+
+  /** Delete a custom category and reassign its items (BRD C7). */
+  async deleteCategory(id: string, moveToId: string): Promise<string | null> {
+    const response = await apiClient.DELETE("/api/v1/categories/{category_id}", {
+      params: { path: { category_id: id }, query: { move_to_id: moveToId } },
+    });
+    if (response.error) {
+      return errorMessage(response.error, "Could not delete category");
+    }
+    void this.fetchCategories();
+    return null;
   }
 }

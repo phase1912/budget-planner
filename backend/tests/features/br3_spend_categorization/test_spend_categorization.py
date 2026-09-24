@@ -1,8 +1,8 @@
 # mypy: ignore-errors
 """Runs BR-3's Gherkin scenarios (F0.6.2).
 
-C1 is live as of F5.2, C2/C3 as of F5.3, C4/C5 as of F5.4/F5.5. C6/C7 stay
-skipped until F5.6's custom categories land.
+C1 is live as of F5.2, C2/C3 as of F5.3, C4/C5 as of F5.4/F5.5 and C6/C7 as
+of F5.6: every BR-3 scenario now runs.
 """
 
 import asyncio
@@ -11,7 +11,6 @@ from datetime import UTC, datetime
 from unittest.mock import AsyncMock
 
 import pytest
-from pytest import FixtureRequest
 from pytest_bdd import given, scenarios, then, when
 
 from app.adapters.categorisation_agent import (
@@ -29,19 +28,9 @@ from app.schemas.extraction import ExtractedLineItem
 from app.schemas.receipt import LineItemResponse
 from app.services.categorisation import CategorisationService
 from app.services.receipt import ReceiptService
+from app.services.taxonomy import TaxonomyService
 
 scenarios("spend_categorization.feature")
-
-
-@pytest.fixture(autouse=True)
-def skip_unimplemented(request: FixtureRequest) -> None:
-    implemented = {
-        "test_automatically_categorize_a_recognized_item",
-        "test_fallback_to_uncategorized_for_unrecognized_item",
-        "test_user_corrects_a_category_and_agent_learns_from_it",
-    }
-    if request.node.name not in implemented:
-        pytest.skip("Awaiting F5.6 custom categories")
 
 
 @pytest.fixture
@@ -274,3 +263,57 @@ def future_receipts_categorized_as_health(
     asyncio.run(service._categorise_extraction(extraction, taxonomy, rules))
 
     assert extraction["line_items"][0]["category_name"] == "Health"
+
+
+class _InMemoryTaxonomy:
+    """Just enough of `CategoryRepository` for `TaxonomyService.create`."""
+
+    def __init__(self, taxonomy: list[Category]) -> None:
+        self.taxonomy = taxonomy
+
+    async def name_taken(self, user_id: uuid.UUID, name: str, **_: object) -> bool:
+        return any(category.name.lower() == name.lower() for category in self.taxonomy)
+
+    async def create_custom(self, user_id: uuid.UUID, name: str) -> Category:
+        category = Category(id=uuid.uuid4(), user_id=user_id, name=name)
+        self.taxonomy.append(category)
+        return category
+
+
+@given('the user wants to track "Pet Supplies" separately')
+def user_wants_pet_supplies(context: dict[str, object], taxonomy: list[Category]) -> None:
+    context["user_id"] = uuid.uuid4()
+    context["repository"] = _InMemoryTaxonomy(taxonomy)
+
+
+@when('the user creates a new category named "Pet Supplies"')
+def user_creates_pet_supplies(context: dict[str, object]) -> None:
+    service = TaxonomyService(context["repository"])
+    context["created"] = asyncio.run(service.create(context["user_id"], "Pet Supplies"))
+
+
+@then("the category should be added to the available taxonomy")
+def pet_supplies_in_taxonomy(context: dict[str, object], taxonomy: list[Category]) -> None:
+    assert context["created"] in taxonomy
+
+
+@then("it should be selectable for manual or automatic assignment on future receipts")
+def pet_supplies_is_assignable(
+    context: dict[str, object], agent: AsyncMock, taxonomy: list[Category]
+) -> None:
+    pets = context["created"]
+    agent.run_structured.return_value = CategorisationResponse(
+        assignments=[
+            CategoryAssignment(
+                item_index=0, category_id=str(pets.id), category_name="Pet Supplies", confidence=93
+            )
+        ]
+    )
+    [item] = asyncio.run(
+        ItemCategoriserAdapter(agent).categorise_items(
+            [ExtractedLineItem(name="Dog food 2kg", quantity="1", unit_price="9", total_price="9")],
+            taxonomy,
+        )
+    )
+    # The adapter only accepts categories it offered, so this proves the new one was offered.
+    assert item.category_id == pets.id

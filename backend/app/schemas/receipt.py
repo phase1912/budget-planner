@@ -172,9 +172,13 @@ class ReviewQueueItemResponse(LineItemResponse):
 
 
 class LineItemListResponse(BaseModel):
-    """One view of the categorisation screen, plus the queue size for its badge (BRD C3)."""
+    """One page of a categorisation-screen view, plus the queue size for its badge (BRD C3)."""
 
     items: list[ReviewQueueItemResponse]
+    total: int
+    page: int
+    size: int
+    pages: int
     needs_review_count: int
 
 

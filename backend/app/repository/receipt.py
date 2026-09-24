@@ -64,24 +64,29 @@ class ReceiptRepository(BaseRepository[Receipt]):
         stmt = self._apply_ownership(stmt)
         return (await self.session.execute(stmt)).unique().scalar_one_or_none()
 
-    async def list_items(self, view: ItemView, search: str | None = None) -> Sequence[LineItem]:
-        """The current user's line items for one categorisation-screen view, oldest first.
+    async def list_items(
+        self,
+        view: ItemView,
+        *,
+        search: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> tuple[Sequence[LineItem], int]:
+        """One page of the user's line items for a categorisation view, oldest first, and the total.
 
         `needs_review` is the queue (BRD C3): items under Uncategorized, or left
         with no category at all. `corrected` is what the owner reassigned by hand
-        (C4). "Oldest" is the purchase date, falling back to upload time, and
-        each receipt's items keep their printed order.
+        (C4). "Oldest" and the date filter both use the purchase date, falling
+        back to upload time for a receipt whose date was never read, so such a
+        receipt is neither lost from a date range nor sorted to the end.
         """
+        purchased = func.coalesce(Receipt.transaction_date, Receipt.created_at)
         stmt = (
             select(LineItem)
             .join(Receipt, LineItem.receipt_id == Receipt.id)
             .outerjoin(Category, LineItem.category_id == Category.id)
-            .options(contains_eager(LineItem.receipt), contains_eager(LineItem.category))
-            .order_by(
-                func.coalesce(Receipt.transaction_date, Receipt.created_at).asc(),
-                Receipt.id,
-                LineItem.position,
-            )
         )
         if view is ItemView.NEEDS_REVIEW:
             stmt = stmt.where(_needs_review())
@@ -89,8 +94,22 @@ class ReceiptRepository(BaseRepository[Receipt]):
             stmt = stmt.where(LineItem.is_category_manual.is_(True))
         if search:
             stmt = stmt.where(LineItem.name.ilike(f"%{_escape_like(search)}%", escape="\\"))
+        if start_date:
+            stmt = stmt.where(purchased >= start_date)
+        if end_date:
+            stmt = stmt.where(purchased <= end_date)
         stmt = self._apply_ownership(stmt)
-        return (await self.session.execute(stmt)).scalars().all()
+
+        total: int = (
+            await self.session.execute(select(func.count()).select_from(stmt.subquery()))
+        ).scalar_one()
+        page = (
+            stmt.options(contains_eager(LineItem.receipt), contains_eager(LineItem.category))
+            .order_by(purchased.asc(), Receipt.id, LineItem.position)
+            .offset(skip)
+            .limit(limit)
+        )
+        return (await self.session.execute(page)).scalars().all(), total
 
     async def count_needs_review(self) -> int:
         """How many of the current user's items wait in the review queue (BRD C3)."""

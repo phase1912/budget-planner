@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, UploadFile
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -324,12 +324,27 @@ async def list_line_items(
     session: Annotated[AsyncSession, Depends(get_db_session)],
     view: ItemView = ItemView.NEEDS_REVIEW,
     q: str | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> LineItemListResponse:
-    """List the caller's line items for one categorisation view, oldest first (BRD C3, C4)."""
+    """One page of the caller's line items for a categorisation view, oldest first (C3, C4)."""
     repo = ReceiptRepository(session)
-    items = await repo.list_items(view, search=q)
+    items, total = await repo.list_items(
+        view,
+        search=q,
+        start_date=start_date,
+        end_date=end_date,
+        skip=(page - 1) * size,
+        limit=size,
+    )
     return LineItemListResponse(
         items=[ReviewQueueItemResponse.model_validate(item) for item in items],
+        total=total,
+        page=page,
+        size=size,
+        pages=(total + size - 1) // size,
         needs_review_count=await repo.count_needs_review(),
     )
 
