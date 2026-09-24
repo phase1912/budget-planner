@@ -5,6 +5,7 @@ import { apiClient } from "@/api/client";
 import { errorMessage } from "@/api/errors";
 
 export type Category = components["schemas"]["CategoryOut"];
+export type ReviewQueueItem = components["schemas"]["ReviewQueueItemResponse"];
 
 /**
  * Holds the category taxonomy for the current user (BRD C1, C2).
@@ -16,6 +17,10 @@ export class CategoriesStore {
   categories: Category[] = [];
   isLoading = false;
   error: string | null = null;
+
+  reviewQueue: ReviewQueueItem[] = [];
+  isLoadingQueue = false;
+  queueError: string | null = null;
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
@@ -58,6 +63,35 @@ export class CategoriesStore {
       runInAction(() => {
         this.error = message;
         this.isLoading = false;
+      });
+    }
+  }
+
+  /**
+   * Fetch the line items filed under Uncategorized, oldest purchase first (BRD C3).
+   *
+   * The server decides what belongs in the queue; this only mirrors it.
+   */
+  async fetchReviewQueue(): Promise<void> {
+    this.isLoadingQueue = true;
+    this.queueError = null;
+
+    try {
+      const response = await apiClient.GET("/receipts/line-items/review", {});
+
+      if (response.error) {
+        throw new Error(errorMessage(response.error, "Failed to fetch review queue"));
+      }
+
+      runInAction(() => {
+        this.reviewQueue = response.data;
+        this.isLoadingQueue = false;
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      runInAction(() => {
+        this.queueError = message;
+        this.isLoadingQueue = false;
       });
     }
   }

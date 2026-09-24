@@ -12,6 +12,7 @@ import { ProfilePage } from "@/features/profile/pages/ProfilePage";
 import { UploadPage } from "@/features/upload/pages/UploadPage";
 import { ReceiptsPage } from "@/features/receipts/pages/ReceiptsPage";
 import { CategoriesPage } from "@/features/categories/pages/CategoriesPage";
+import { CategorisationQueuePage } from "@/features/categories/pages/CategorisationQueuePage";
 
 export const App = observer(function App() {
   const { authStore } = useStores();
@@ -34,12 +35,7 @@ export const App = observer(function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/receipts" element={<ReceiptsPage />} />
             <Route path="/categories/manage" element={<CategoriesPage />} />
-            {/*
-              `/categories` belongs to F5.3's review queue (design: categorisation.html).
-              Until that lands the nav item would dead-end, so it stands in for the
-              taxonomy; remove this redirect when the queue takes the address.
-            */}
-            <Route path="/categories" element={<Navigate to="/categories/manage" replace />} />
+            <Route path="/categories" element={<CategorisationQueuePage />} />
             {/* Placeholders for upcoming features (prevents 404s on navigation) */}
             <Route path="/statistics" element={<DashboardPage />} />
             <Route path="/goals" element={<DashboardPage />} />

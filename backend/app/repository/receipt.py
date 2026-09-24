@@ -2,10 +2,12 @@ import typing
 import uuid
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import contains_eager, joinedload
 
+from app.domain.categories import UNCATEGORIZED
+from app.models.category import Category
 from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
 from app.models.receipt import Receipt, ReceiptStatus
@@ -50,6 +52,29 @@ class ReceiptRepository(BaseRepository[Receipt]):
         stmt = stmt.options(joinedload(self.model_class.line_items).joinedload(LineItem.category))
         stmt = self._apply_ownership(stmt)
         return (await self.session.execute(stmt)).unique().scalar_one_or_none()
+
+    async def list_uncategorized_items(self) -> typing.Sequence[LineItem]:
+        """Fetch the user's line items filed under Uncategorized, oldest first (BRD C3).
+
+        This is the categorisation review queue. "Oldest" is the purchase date,
+        falling back to upload time for receipts whose date was never read, so an
+        undated receipt still takes its place rather than sinking to the end.
+        Receipt and item order break ties so the queue does not reshuffle.
+        """
+        stmt = (
+            select(LineItem)
+            .join(Receipt, LineItem.receipt_id == Receipt.id)
+            .join(Category, LineItem.category_id == Category.id)
+            .where(Category.name == UNCATEGORIZED)
+            .options(contains_eager(LineItem.receipt), contains_eager(LineItem.category))
+            .order_by(
+                func.coalesce(Receipt.transaction_date, Receipt.created_at).asc(),
+                Receipt.id,
+                LineItem.id,
+            )
+        )
+        stmt = self._apply_ownership(stmt)
+        return (await self.session.execute(stmt)).scalars().all()
 
     async def list_paginated(
         self,

@@ -3,7 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, computed_field
+from pydantic import AliasPath, BaseModel, ConfigDict, Field, computed_field
 
 from app.core.config import get_settings
 from app.domain.categories import is_low_confidence
@@ -143,6 +143,23 @@ class LineItemResponse(BaseModel):
             self.category_confidence,
             get_settings().categorization_confidence_threshold,
         )
+
+
+class ReviewQueueItemResponse(LineItemResponse):
+    """A line item waiting in the categorisation review queue (BRD C2, C3).
+
+    Carries its receipt's merchant and date so the queue can be read without
+    opening each receipt. The date stays a timestamp: receipts store the
+    printed time too, and truncating is the browser's formatting decision.
+    """
+
+    receipt_id: uuid.UUID
+    merchant_name: str | None = Field(
+        default=None, validation_alias=AliasPath("receipt", "merchant_name")
+    )
+    transaction_date: datetime | None = Field(
+        default=None, validation_alias=AliasPath("receipt", "transaction_date")
+    )
 
 
 class ReceiptResponse(BaseModel):

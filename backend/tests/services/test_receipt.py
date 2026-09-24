@@ -550,3 +550,65 @@ async def test_items_stay_uncategorised_when_no_categoriser_is_wired_in() -> Non
     item = job.result_data["extractions"][0]["line_items"][0]
     assert item.get("category_id") is None
     assert item.get("category_confidence") is None
+
+
+class _ScriptedCategoriser:
+    """A substitutable `ItemCategoriserPort` that answers each item by name.
+
+    An item whose name is not in the script is declined — left with no category
+    and no confidence, exactly as the real adapter leaves one the model skipped.
+    """
+
+    def __init__(self, answers: dict[str, tuple[Category, int]]) -> None:
+        self.answers = answers
+
+    async def categorise_items(
+        self, items: list[ExtractedLineItem], categories: Sequence[Category]
+    ) -> list[ExtractedLineItem]:
+        for item in items:
+            if item.name in self.answers:
+                category, confidence = self.answers[item.name]
+                item.category_id = category.id
+                item.category_name = category.name
+                item.category_confidence = confidence
+        return items
+
+
+def _line(name: str) -> dict[str, object]:
+    return {"name": name, "quantity": "1", "unit_price": "2.00", "total_price": "2.00"}
+
+
+@pytest.mark.asyncio
+async def test_below_threshold_guess_is_filed_as_uncategorized_not_guessed() -> None:
+    """BRD C3: a weak guess is never stored as the answer; its confidence stays auditable."""
+    groceries = Category(id=uuid.uuid4(), name="Groceries")
+    uncategorized = Category(id=uuid.uuid4(), name="Uncategorized")
+    service = ReceiptService(
+        categoriser_port=_ScriptedCategoriser(
+            {"Bananas": (groceries, 96), "XJ-42": (groceries, 40)}
+        )
+    )
+    extraction: dict[str, object] = {"line_items": [_line("Bananas"), _line("XJ-42")]}
+
+    await service._categorise_extraction(extraction, [groceries, uncategorized])
+
+    confident, weak = cast(list[dict[str, Any]], extraction["line_items"])
+    assert confident["category_id"] == str(groceries.id)
+    assert weak["category_id"] == str(uncategorized.id)
+    assert weak["category_name"] == "Uncategorized"
+    assert weak["category_confidence"] == 40
+
+
+@pytest.mark.asyncio
+async def test_items_the_categoriser_declines_or_cannot_read_fall_back_to_uncategorized() -> None:
+    """BRD C2: every line item ends up with a category — the fallback, if nothing better."""
+    uncategorized = Category(id=uuid.uuid4(), name="Uncategorized")
+    service = ReceiptService(categoriser_port=_ScriptedCategoriser({}))
+    unreadable = {"name": "???", "quantity": "1", "unit_price": "x", "total_price": "x"}
+    extraction: dict[str, object] = {"line_items": [_line("Mystery"), unreadable]}
+
+    await service._categorise_extraction(extraction, [uncategorized])
+
+    for item in cast(list[dict[str, Any]], extraction["line_items"]):
+        assert item["category_id"] == str(uncategorized.id)
+        assert item["category_confidence"] is None
