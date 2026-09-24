@@ -281,6 +281,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/receipts/line-items/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Review Queue
+         * @description List the caller's line items filed under Uncategorized, oldest first (BRD C2, C3).
+         */
+        get: operations["list_review_queue_receipts_line_items_review_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts": {
         parameters: {
             query?: never;
@@ -720,6 +740,52 @@ export interface components {
             extraction_index: number;
             /** Receipt Total */
             receipt_total: string;
+        };
+        /**
+         * ReviewQueueItemResponse
+         * @description A line item waiting in the categorisation review queue (BRD C2, C3).
+         *
+         *     Carries its receipt's merchant and date so the queue can be read without
+         *     opening each receipt. The date stays a timestamp: receipts store the
+         *     printed time too, and truncating is the browser's formatting decision.
+         */
+        ReviewQueueItemResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Quantity */
+            quantity: string;
+            /** Unit Price */
+            unit_price: string;
+            /** Total Price */
+            total_price: string;
+            /** Category Id */
+            category_id: string | null;
+            category?: components["schemas"]["CategoryResponse"] | null;
+            /** Category Confidence */
+            category_confidence?: number | null;
+            /**
+             * Receipt Id
+             * Format: uuid
+             */
+            receipt_id: string;
+            /** Merchant Name */
+            merchant_name?: string | null;
+            /** Transaction Date */
+            transaction_date?: string | null;
+            /**
+             * Category Is Low Confidence
+             * @description Whether the category needs a human look before it is trusted (BRD C3).
+             *
+             *     Decided server-side against `Settings.categorization_confidence_threshold`
+             *     so the browser renders a verdict instead of recomputing one from a
+             *     threshold ADR-0005 says must not be restated at a call site.
+             */
+            readonly category_is_low_confidence: boolean;
         };
         /**
          * UpdateReceiptRequest
@@ -1290,6 +1356,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UploadJobStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_review_queue_receipts_line_items_review_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewQueueItemResponse"][];
                 };
             };
             /** @description Validation Error */

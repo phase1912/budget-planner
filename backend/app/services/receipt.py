@@ -15,7 +15,9 @@ from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm.attributes import flag_modified
 
+from app.core.config import get_settings
 from app.db.session import get_session_factory
+from app.domain.categories import UNCATEGORIZED, is_low_confidence
 from app.models.category import Category
 from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
@@ -257,15 +259,16 @@ class ReceiptService:
         extraction: dict[str, object],
         categories: Sequence[Category],
     ) -> None:
-        """Add a category to every line item the parser read, in place (BRD C1).
+        """Add a category to every line item the parser read, in place (BRD C1-C3).
 
         Works on the raw extraction dict because that is what is persisted to
         `UploadJob.result_data` and replayed to the wizard; the items are parsed
         into `ExtractedLineItem` only so the port receives a typed contract.
 
-        An item whose numbers the parser mangled badly enough to fail validation
-        is skipped rather than dropped — it still reaches the user's review
-        screen, just uncategorised.
+        Anything not confidently placed — below the threshold, declined by the
+        categoriser, or too mangled to validate — is filed under Uncategorized
+        rather than guessed at, which is what puts it in the review queue. The
+        categoriser's own confidence is kept so the weak guess stays auditable.
         """
         if not self.categoriser_port or not categories:
             return
@@ -282,18 +285,32 @@ class ReceiptService:
             try:
                 parsed.append(ExtractedLineItem(**raw))
             except ValidationError:
-                logger.warning("Line item %s failed validation; leaving it uncategorised", index)
+                logger.warning("Line item %s failed validation; filing it as Uncategorized", index)
                 continue
             indices.append(index)
 
-        if not parsed:
-            return
+        categorised = (
+            await self.categoriser_port.categorise_items(parsed, categories) if parsed else []
+        )
+        by_index = dict(zip(indices, categorised, strict=True))
+        uncategorized = next((c for c in categories if c.name == UNCATEGORIZED), None)
+        threshold = get_settings().categorization_confidence_threshold
 
-        categorised = await self.categoriser_port.categorise_items(parsed, categories)
-        for index, item in zip(indices, categorised, strict=True):
-            items_data[index]["category_id"] = str(item.category_id) if item.category_id else None
-            items_data[index]["category_name"] = item.category_name
-            items_data[index]["category_confidence"] = item.category_confidence
+        for index, raw in enumerate(items_data):
+            if not isinstance(raw, dict):
+                continue
+            item = by_index.get(index)
+            raw["category_confidence"] = item.category_confidence if item else None
+            if (
+                item is not None
+                and item.category_id is not None
+                and not is_low_confidence(item.category_confidence, threshold)
+            ):
+                raw["category_id"] = str(item.category_id)
+                raw["category_name"] = item.category_name
+            elif uncategorized is not None:
+                raw["category_id"] = str(uncategorized.id)
+                raw["category_name"] = uncategorized.name
 
     async def _run_extraction(
         self, user: User, file_ids: list[str], content_types: list[str]

@@ -30,6 +30,7 @@ from app.schemas.receipt import (
     ResolveDuplicateRequest,
     ResolvePositionMatchRequest,
     ResolveTotalRequest,
+    ReviewQueueItemResponse,
     UpdateReceiptRequest,
     UploadJobStatusResponse,
     UploadReceiptResponse,
@@ -299,6 +300,16 @@ async def resolve_position_match(
         if "not found" in str(e).lower():
             raise HTTPException(status_code=404, detail=str(e)) from e
         raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.get("/line-items/review", response_model=list[ReviewQueueItemResponse])
+async def list_review_queue(
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> list[ReviewQueueItemResponse]:
+    """List the caller's line items filed under Uncategorized, oldest first (BRD C2, C3)."""
+    items = await ReceiptRepository(session).list_uncategorized_items()
+    return [ReviewQueueItemResponse.model_validate(item) for item in items]
 
 
 @router.get("", response_model=PaginatedReceiptsResponse)

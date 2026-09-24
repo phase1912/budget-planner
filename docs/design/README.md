@@ -72,8 +72,8 @@ the short version:
   anything is open.
 - **`/categories` is the queue, not the taxonomy.** `categorisation.html` owns the
   address and the nav item; the list of categories lives one level down at
-  `/categories/manage`. F5.1 ships the list before F5.3 ships the queue, so until then
-  `/categories` redirects to `/categories/manage` — a stand-in, not the destination.
+  `/categories/manage`. F5.3 ships the queue read-only; F5.4 adds the inline picker and
+  the "Corrected by you" / "All items" views the screen shows.
 - **Separate `/login` and `/register`,** not budget-checker's tabbed modal — F1.5 needs a
   route table and a redirect on expiry, and a modal has no route to redirect to.
 

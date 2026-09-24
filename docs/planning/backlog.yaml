@@ -1082,6 +1082,13 @@ epics:
         demo: >
           Upload a receipt with an obscure item name and find it waiting in the review queue
           marked Uncategorized, rather than filed under a confident guess.
+        tasks:
+          - implement backend categorization fallback: check confidence against threshold and assign Uncategorized.
+          - create backend repository method `list_uncategorized_items` sorting by date.
+          - add API endpoint `GET /receipts/line-items/review` to expose the review queue.
+          - implement frontend MobX `CategoriesStore` queue fetching.
+          - create frontend `CategorisationQueuePage.tsx` mimicking the design.
+          - map frontend router to `/categories` and move existing taxonomy to `/categories/manage`.
       - key: F5.4
         title: Manual category reassignment
         labels: [backend, frontend]
