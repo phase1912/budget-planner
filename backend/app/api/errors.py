@@ -110,6 +110,18 @@ class UploadLimitExceededError(AppError):
     title = "Upload Limit Exceeded"
 
 
+class CategoriserUnavailableError(AppError):
+    """The categoriser gave no answer at all, so nothing was changed (BRD C3).
+
+    Distinct from a completed pass that left items Uncategorized: the user
+    should retry later rather than read the result as the agent's verdict.
+    """
+
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = "categoriser_unavailable"
+    title = "Categoriser Unavailable"
+
+
 _HTTP_STATUS_PROBLEMS: dict[int, tuple[str, str]] = {
     status.HTTP_400_BAD_REQUEST: ("bad_request", "Bad Request"),
     status.HTTP_401_UNAUTHORIZED: ("unauthorized", "Unauthorized"),

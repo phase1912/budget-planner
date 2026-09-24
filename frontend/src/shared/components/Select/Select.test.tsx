@@ -27,4 +27,9 @@ describe("Select", () => {
     );
     expect(screen.getByLabelText("Options")).toBeDisabled();
   });
+
+  it("marks a value that still needs a decision with the warning tone", () => {
+    render(<Select aria-label="Category" tone="warning" />);
+    expect(screen.getByLabelText("Category")).toHaveClass("border-tone-warning-border");
+  });
 });

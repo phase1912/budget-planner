@@ -6,6 +6,15 @@ const mockClearSelection = vi.fn();
 
 vi.mock("@/stores/StoreContext", () => ({
   useStores: () => ({
+    categoriesStore: {
+      isLoading: false,
+      assignableBuiltIns: [{ id: "c1", name: "Groceries", is_builtin: true }],
+      customCategories: [],
+      isUncategorized: () => false,
+      ensureCategories: vi.fn(),
+      reassignCategory: vi.fn(),
+    },
+    toastStore: { showError: vi.fn() },
     receiptStore: {
       isLoadingDetail: false,
       receiptDetail: {

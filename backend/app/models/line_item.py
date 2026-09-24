@@ -28,6 +28,8 @@ class LineItem(Model):
         ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
     )
     category_confidence: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    is_category_manual: Mapped[bool] = mapped_column(default=False, server_default="false")
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
     receipt: Mapped["Receipt"] = relationship("Receipt", back_populates="line_items")
     category: Mapped["Category"] = relationship("Category", lazy="joined", innerjoin=False)

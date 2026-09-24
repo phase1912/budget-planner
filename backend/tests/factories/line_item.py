@@ -11,3 +11,5 @@ class LineItemFactory(ModelFactory[LineItem]):
     category_id = None
     category = None
     receipt = None
+    # Automatic is the normal case; a test about a manual override says so.
+    is_category_manual = False

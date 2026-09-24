@@ -60,6 +60,15 @@ class CategoryRepository(BaseRepository[Category]):
         stmt = self._visible_to(user_id).order_by(*self._ordering())
         return (await self.session.execute(stmt)).scalars().all()
 
+    async def get_available(self, category_id: uuid.UUID, user_id: uuid.UUID) -> Category | None:
+        """One category this user may assign from, or None if it is not theirs to use.
+
+        A built-in or the user's own; another user's custom category comes back
+        as None, exactly like one that does not exist (BRD N2).
+        """
+        stmt = self._visible_to(user_id).where(Category.id == category_id)
+        return (await self.session.execute(stmt)).scalar_one_or_none()
+
     async def list_with_statistics(self, user_id: uuid.UUID) -> list[CategoryWithStatistics]:
         """The taxonomy with each category's item count and total for this user.
 

@@ -130,7 +130,7 @@ def test_list_receipts_endpoint(app: FastAPI) -> None:
     client.headers["Authorization"] = f"Bearer {token}"
 
     response = client.get("/receipts?page=1&size=20")
-    assert response.status_code == 200
+    assert response.status_code == 200, response.json()
     data = response.json()
     assert data["total"] == 0
     assert len(data["items"]) == 0
@@ -217,7 +217,7 @@ def test_resolve_total_endpoint(app: FastAPI) -> None:
         f"/receipts/upload/{job_id}/resolve-total",
         json={"extraction_index": 0, "receipt_total": "0.00"},
     )
-    assert response.status_code == 200
+    assert response.status_code == 200, response.json()
     data = response.json()
     assert data["job_id"] == str(job_id)
     assert data["extracted_data"]["extractions"][0]["receipt_total"] == "0.00"
@@ -270,7 +270,7 @@ def test_commit_job_endpoint(app: FastAPI) -> None:
     client.headers["Authorization"] = f"Bearer {token}"
 
     response = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
-    assert response.status_code == 200
+    assert response.status_code == 200, response.json()
     data = response.json()
     assert data["status"] == "stored"
     assert job.status.value == "stored"
@@ -328,7 +328,7 @@ def test_commit_job_endpoint_skip_duplicate(app: FastAPI) -> None:
     client.headers["Authorization"] = f"Bearer {token}"
 
     response = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
-    assert response.status_code == 200
+    assert response.status_code == 200, response.json()
     data = response.json()
     assert data["status"] == "stored"
 
@@ -827,7 +827,7 @@ def test_a_receipt_whose_lines_do_not_add_up_is_not_stored(app: FastAPI) -> None
 
     # Then
     # Now we allow storing them
-    assert response.status_code == 200
+    assert response.status_code == 200, response.json()
 
 
 def test_a_receipt_that_could_not_be_checked_at_all_is_not_stored(app: FastAPI) -> None:
@@ -853,7 +853,7 @@ def test_a_receipt_that_could_not_be_checked_at_all_is_not_stored(app: FastAPI) 
     response = client.post(f"/receipts/upload/{job_id}/commit", json={"indices_to_store": [0]})
 
     # Then "unknown" is refused just as firmly as "wrong"
-    assert response.status_code == 200
+    assert response.status_code == 200, response.json()
 
 
 def test_updating_a_receipt_returns_the_new_state(app: FastAPI) -> None:
@@ -890,7 +890,7 @@ def test_updating_a_receipt_returns_the_new_state(app: FastAPI) -> None:
         )
 
     # Then
-    assert response.status_code == 200
+    assert response.status_code == 200, response.json()
     assert response.json()["total_amount"] == "13.99"
 
 
