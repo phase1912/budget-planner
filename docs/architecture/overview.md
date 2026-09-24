@@ -76,6 +76,13 @@ Three properties of this pipeline are requirements, not implementation choices:
    receipts would be a correctness bug: buying milk weekly produces identical line items
    on different receipts, and those are separate purchases (B9).
 
+Categorisation also runs outside the pipeline: `CategorisationService` reassigns a stored
+item by hand (`PATCH /receipts/line-items/{id}/category`, C4) and re-runs the categoriser
+on one stored receipt (`POST /receipts/{id}/categorise`). The re-run skips every item
+marked `is_category_manual` and applies the same threshold rule as upload
+(`app.domain.categories.confident_category`). There is deliberately no bulk
+re-categorisation of old receipts.
+
 ## Persistence
 
 Every domain entity extends `app.models.base.Model` (F0.3.3), which fixes a UUID

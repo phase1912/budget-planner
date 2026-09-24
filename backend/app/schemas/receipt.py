@@ -103,6 +103,12 @@ class UpdateReceiptRequest(BaseModel):
     line_items: list[LineItemInput]
 
 
+class UpdateLineItemCategoryRequest(BaseModel):
+    """Update a line item's category (BRD C4)."""
+
+    category_id: uuid.UUID
+
+
 class CommitJobRequest(BaseModel):
     """Request to commit selected extractions to the database."""
 
@@ -127,6 +133,7 @@ class LineItemResponse(BaseModel):
     category_id: uuid.UUID | None
     category: CategoryResponse | None = None
     category_confidence: int | None = None
+    is_category_manual: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -137,9 +144,10 @@ class LineItemResponse(BaseModel):
 
         Decided server-side against `Settings.categorization_confidence_threshold`
         so the browser renders a verdict instead of recomputing one from a
-        threshold ADR-0005 says must not be restated at a call site.
+        threshold ADR-0005 says must not be restated at a call site. A category
+        the owner chose by hand is never flagged, whatever the agent scored (C4).
         """
-        return is_low_confidence(
+        return not self.is_category_manual and is_low_confidence(
             self.category_confidence,
             get_settings().categorization_confidence_threshold,
         )
@@ -160,6 +168,13 @@ class ReviewQueueItemResponse(LineItemResponse):
     transaction_date: datetime | None = Field(
         default=None, validation_alias=AliasPath("receipt", "transaction_date")
     )
+
+
+class LineItemListResponse(BaseModel):
+    """One view of the categorisation screen, plus the queue size for its badge (BRD C3)."""
+
+    items: list[ReviewQueueItemResponse]
+    needs_review_count: int
 
 
 class ReceiptResponse(BaseModel):

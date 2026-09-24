@@ -9,24 +9,9 @@ import {
   Button,
   IconTile,
   SecureImage,
-  Pill,
 } from "@/shared/components";
-import type { PillProps } from "@/shared/components";
-import type { components } from "@/api/schema";
-
-type LineItem = components["schemas"]["LineItemResponse"];
-
-/**
- * Pick the chip colour for a stored item's category.
- *
- * Mirrors `receipt-detail.html`. The low-confidence verdict is the backend's,
- * computed against the configured threshold — ADR-0005 forbids restating that
- * number here.
- */
-function categoryTone(item: LineItem): PillProps["tone"] {
-  if (item.category_is_low_confidence) return "warning";
-  return item.category ? "success" : "default";
-}
+import { RefreshCw } from "lucide-react";
+import { InlineCategoryPicker } from "@/features/categories/components/InlineCategoryPicker";
 
 /**
  * Render an amount, or an em dash when there is nothing to render.
@@ -126,7 +111,24 @@ export const ReceiptDetailModal = observer(() => {
       </ModalHeader>
 
       <ModalBody>
-        <div className="grid grid-cols-[minmax(0,1fr)_44px_78px_86px_132px] items-center gap-[12px] pb-1 border-b border-border">
+        <div className="flex justify-end pb-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={receiptStore.isRecategorising}
+            onClick={() => {
+              void receiptStore.recategoriseReceipt();
+            }}
+          >
+            <RefreshCw
+              size={14}
+              aria-hidden="true"
+              className={receiptStore.isRecategorising ? "animate-spin" : ""}
+            />
+            Re-run categorisation
+          </Button>
+        </div>
+        <div className="grid grid-cols-[minmax(0,1fr)_36px_70px_86px_156px] items-center gap-[12px] pb-1 border-b border-border">
           <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
             Item
           </span>
@@ -147,7 +149,7 @@ export const ReceiptDetailModal = observer(() => {
         {receipt.line_items.map((item) => (
           <div
             key={item.id}
-            className="grid grid-cols-[minmax(0,1fr)_44px_78px_86px_132px] items-center gap-[12px] py-[11px] border-b border-border min-h-[44px] last:border-0"
+            className="grid grid-cols-[minmax(0,1fr)_36px_70px_86px_156px] items-center gap-[12px] py-[11px] border-b border-border min-h-[44px] last:border-0"
           >
             <span className="text-[13px] font-medium">{item.name}</span>
             <span className="tabular-nums text-muted-foreground text-right text-[13px]">
@@ -160,13 +162,15 @@ export const ReceiptDetailModal = observer(() => {
               {formatAmount(item.total_price, 2)}
             </span>
             <span>
-              <Pill
-                size="sm"
-                tone={categoryTone(item)}
-                title={item.category_is_low_confidence ? "Low confidence category" : undefined}
-              >
-                {item.category?.name ?? "Uncategorized"}
-              </Pill>
+              <InlineCategoryPicker
+                itemId={item.id}
+                itemName={item.name}
+                currentCategoryId={item.category_id}
+                lowConfidence={item.category_is_low_confidence}
+                onCategoryChanged={() => {
+                  void receiptStore.reloadReceiptDetail();
+                }}
+              />
             </span>
           </div>
         ))}

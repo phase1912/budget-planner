@@ -323,3 +323,35 @@ async def test_list_paginated_filters(db_session: AsyncSession) -> None:
     # Search filter (no match)
     items, total = await repo.list_paginated(0, 10, search_query="unknown")
     assert total == 0
+
+
+@pytest.mark.asyncio
+async def test_line_items_keep_their_printed_order_after_one_is_updated(
+    db_session: AsyncSession,
+) -> None:
+    """Postgres returns rows in physical order; an updated row must not jump to the end."""
+    from tests.factories.receipt import ReceiptFactory
+
+    user = await UserFactory.create_async()
+    current_user_id.set(user.id)
+    receipt = await ReceiptFactory.create_async(user_id=user.id)
+    await db_session.refresh(receipt, ["line_items"])
+    receipt.line_items = [
+        LineItem(
+            name=name,
+            quantity=Decimal(1),
+            unit_price=Decimal(1),
+            total_price=Decimal(1),
+        )
+        for name in ("First", "Second", "Third")
+    ]
+    await db_session.flush()
+
+    receipt.line_items[0].name = "First (edited)"
+    await db_session.flush()
+    db_session.expunge_all()
+
+    fetched = await ReceiptRepository(db_session).get_with_items(receipt.id)
+
+    assert fetched is not None
+    assert [item.name for item in fetched.line_items] == ["First (edited)", "Second", "Third"]

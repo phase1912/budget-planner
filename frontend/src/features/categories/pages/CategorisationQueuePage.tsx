@@ -1,25 +1,33 @@
 import { useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { Link } from "react-router-dom";
-import { CheckCircle2, SlidersHorizontal } from "lucide-react";
+import { CheckCircle2, Search, SlidersHorizontal } from "lucide-react";
 
 import { useStores } from "@/stores/StoreContext";
 import {
   Card,
   EmptyState,
   ErrorState,
+  Input,
   LoadingState,
-  Pill,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  SegmentedControl,
 } from "@/shared/components";
-import type { ReviewQueueItem } from "@/stores/CategoriesStore";
+import type { ItemView, ReviewQueueItem } from "@/stores/CategoriesStore";
+import { InlineCategoryPicker } from "../components/InlineCategoryPicker";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" });
+
+const EMPTY_MESSAGES: Record<ItemView, { title: string; message: string }> = {
+  needs_review: {
+    title: "Nothing needs review",
+    message: "Every item the agent has seen was placed with confidence.",
+  },
+  corrected: {
+    title: "No corrections yet",
+    message: "Items you file under a category by hand will be listed here.",
+  },
+  all: { title: "No items yet", message: "Upload a receipt and its items will appear here." },
+};
 
 function purchaseDate(item: ReviewQueueItem): string {
   return item.transaction_date ? DATE_FORMAT.format(new Date(item.transaction_date)) : "—";
@@ -27,14 +35,18 @@ function purchaseDate(item: ReviewQueueItem): string {
 
 /**
  * The categorisation review queue: items the agent filed under Uncategorized
- * because it was not confident, oldest purchase first (BRD C2, C3 — F5.3).
+ * because it was not confident, oldest purchase first (BRD C2-C4 — F5.3, F5.4).
  *
- * Read-only until F5.4 adds the inline category picker and the "Corrected by
- * you" / "All items" views shown in docs/design/screens/categorisation.html.
+ * Picking a category files the item for good and drops it from the queue; the
+ * "Corrected by you" and "All items" views show the rest of the user's items
+ * (docs/design/screens/categorisation.html).
  */
 export const CategorisationQueuePage = observer(function CategorisationQueuePage() {
   const { categoriesStore } = useStores();
-  const { reviewQueue, isLoadingQueue, queueError } = categoriesStore;
+  const { reviewQueue, isLoadingQueue, queueError, queueView, queueSearch } = categoriesStore;
+  const empty = queueSearch.trim()
+    ? { title: "No matching items", message: `Nothing here is named like “${queueSearch}”.` }
+    : EMPTY_MESSAGES[queueView];
 
   useEffect(() => {
     void categoriesStore.fetchReviewQueue();
@@ -61,7 +73,44 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
           </Link>
         </header>
 
-        {isLoadingQueue ? (
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <SegmentedControl<ItemView>
+            label="Which items to show"
+            size="sm"
+            value={queueView}
+            onChange={(view) => {
+              categoriesStore.setQueueView(view);
+            }}
+            options={[
+              {
+                value: "needs_review",
+                label: "Needs review",
+                badge: categoriesStore.needsReviewCount,
+              },
+              { value: "corrected", label: "Corrected by you" },
+              { value: "all", label: "All items" },
+            ]}
+          />
+          <div className="relative w-full md:w-60">
+            <Search
+              size={16}
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              className="pl-9 py-2.25 text-md"
+              type="search"
+              placeholder="Find an item"
+              aria-label="Find an item"
+              value={queueSearch}
+              onChange={(e) => {
+                categoriesStore.setQueueSearch(e.target.value);
+              }}
+            />
+          </div>
+        </div>
+
+        {isLoadingQueue && reviewQueue.length === 0 ? (
           <LoadingState title="Loading the review queue…" />
         ) : queueError ? (
           <ErrorState
@@ -74,44 +123,53 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
             <EmptyState
               icon={CheckCircle2}
               iconTone="primary"
-              title="Nothing needs review"
-              message="Every item the agent has seen was placed with confidence."
+              title={empty.title}
+              message={empty.message}
             />
           </Card>
         ) : (
           <Card flush>
-            <Table>
-              <TableHeader className="bg-surface">
-                <TableRow>
-                  <TableHead>Item</TableHead>
-                  <TableHead>Merchant</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Category</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {reviewQueue.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-semibold">{item.name}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {item.merchant_name ?? "—"}
-                    </TableCell>
-                    <TableCell className="tabular-nums text-muted-foreground whitespace-nowrap">
-                      {purchaseDate(item)}
-                    </TableCell>
-                    <TableCell className="tabular-nums text-right font-semibold">
-                      {Number(item.total_price).toFixed(2)}
-                    </TableCell>
-                    <TableCell>
-                      <Pill tone="warning" size="sm">
-                        {item.category?.name ?? "Uncategorized"}
-                      </Pill>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div
+              aria-hidden="true"
+              className="hidden md:grid md:grid-cols-[minmax(0,1fr)_150px_110px_100px_210px] gap-x-4 px-4.5 py-3 bg-surface border-b border-border text-sm font-semibold uppercase tracking-[0.05em] text-muted-foreground"
+            >
+              <span>Item</span>
+              <span>Merchant</span>
+              <span>Date</span>
+              <span className="text-right">Amount</span>
+              <span>Category</span>
+            </div>
+            <ul className="m-0 p-0 list-none">
+              {reviewQueue.map((item) => (
+                <li
+                  key={item.id}
+                  className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 px-4 py-3.5 border-t border-border first:border-t-0 md:grid-cols-[minmax(0,1fr)_150px_110px_100px_210px] md:items-center md:px-4.5"
+                >
+                  <span className="text-lg font-semibold">{item.name}</span>
+                  <span className="order-3 col-span-2 text-md text-muted-foreground md:order-none md:col-span-1">
+                    {item.merchant_name ?? "—"}
+                    <span className="md:hidden"> · {purchaseDate(item)}</span>
+                  </span>
+                  <span className="hidden md:block tabular-nums text-md text-muted-foreground">
+                    {purchaseDate(item)}
+                  </span>
+                  <span className="order-2 tabular-nums text-right text-lg font-semibold md:order-none">
+                    {Number(item.total_price).toFixed(2)}
+                  </span>
+                  <div className="order-4 col-span-2 md:order-none md:col-span-1">
+                    <InlineCategoryPicker
+                      itemId={item.id}
+                      itemName={item.name}
+                      currentCategoryId={item.category_id}
+                      lowConfidence={item.category_is_low_confidence}
+                      onCategoryChanged={() => {
+                        void categoriesStore.fetchReviewQueue();
+                      }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
           </Card>
         )}
       </div>

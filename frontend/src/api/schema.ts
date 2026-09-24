@@ -281,7 +281,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/receipts/line-items/review": {
+    "/receipts/line-items": {
         parameters: {
             query?: never;
             header?: never;
@@ -289,10 +289,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List Review Queue
-         * @description List the caller's line items filed under Uncategorized, oldest first (BRD C2, C3).
+         * List Line Items
+         * @description List the caller's line items for one categorisation view, oldest first (BRD C3, C4).
          */
-        get: operations["list_review_queue_receipts_line_items_review_get"];
+        get: operations["list_line_items_receipts_line_items_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -409,6 +409,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/receipts/line-items/{item_id}/category": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Line Item Category
+         * @description Reassign one line item to a category of the owner's choosing (BRD C4).
+         */
+        patch: operations["update_line_item_category_receipts_line_items__item_id__category_patch"];
+        trace?: never;
+    };
+    "/receipts/{receipt_id}/categorise": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recategorise Receipt
+         * @description Re-run automatic categorisation on a stored receipt, sparing manual choices (C3, C4).
+         */
+        post: operations["recategorise_receipt_receipts__receipt_id__categorise_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/categories": {
         parameters: {
             query?: never;
@@ -515,6 +555,15 @@ export interface components {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
+         * ItemView
+         * @description The three lists on the categorisation screen (docs/design/screens/categorisation.html).
+         *
+         *     `needs_review` is the queue itself (C3); `corrected` is what the owner
+         *     reassigned by hand (C4); `all` is every item they have.
+         * @enum {string}
+         */
+        ItemView: "needs_review" | "corrected" | "all";
+        /**
          * JobStatus
          * @description Lifecycle states of an asynchronous upload job.
          * @enum {string}
@@ -541,6 +590,16 @@ export interface components {
             total_price: number | string;
         };
         /**
+         * LineItemListResponse
+         * @description One view of the categorisation screen, plus the queue size for its badge (BRD C3).
+         */
+        LineItemListResponse: {
+            /** Items */
+            items: components["schemas"]["ReviewQueueItemResponse"][];
+            /** Needs Review Count */
+            needs_review_count: number;
+        };
+        /**
          * LineItemResponse
          * @description Schema for a single line item on a receipt.
          */
@@ -564,12 +623,18 @@ export interface components {
             /** Category Confidence */
             category_confidence?: number | null;
             /**
+             * Is Category Manual
+             * @default false
+             */
+            is_category_manual: boolean;
+            /**
              * Category Is Low Confidence
              * @description Whether the category needs a human look before it is trusted (BRD C3).
              *
              *     Decided server-side against `Settings.categorization_confidence_threshold`
              *     so the browser renders a verdict instead of recomputing one from a
-             *     threshold ADR-0005 says must not be restated at a call site.
+             *     threshold ADR-0005 says must not be restated at a call site. A category
+             *     the owner chose by hand is never flagged, whatever the agent scored (C4).
              */
             readonly category_is_low_confidence: boolean;
         };
@@ -769,6 +834,11 @@ export interface components {
             /** Category Confidence */
             category_confidence?: number | null;
             /**
+             * Is Category Manual
+             * @default false
+             */
+            is_category_manual: boolean;
+            /**
              * Receipt Id
              * Format: uuid
              */
@@ -783,9 +853,21 @@ export interface components {
              *
              *     Decided server-side against `Settings.categorization_confidence_threshold`
              *     so the browser renders a verdict instead of recomputing one from a
-             *     threshold ADR-0005 says must not be restated at a call site.
+             *     threshold ADR-0005 says must not be restated at a call site. A category
+             *     the owner chose by hand is never flagged, whatever the agent scored (C4).
              */
             readonly category_is_low_confidence: boolean;
+        };
+        /**
+         * UpdateLineItemCategoryRequest
+         * @description Update a line item's category (BRD C4).
+         */
+        UpdateLineItemCategoryRequest: {
+            /**
+             * Category Id
+             * Format: uuid
+             */
+            category_id: string;
         };
         /**
          * UpdateReceiptRequest
@@ -1369,9 +1451,11 @@ export interface operations {
             };
         };
     };
-    list_review_queue_receipts_line_items_review_get: {
+    list_line_items_receipts_line_items_get: {
         parameters: {
             query?: {
+                view?: components["schemas"]["ItemView"];
+                q?: string | null;
                 token?: string | null;
             };
             header?: never;
@@ -1386,7 +1470,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ReviewQueueItemResponse"][];
+                    "application/json": components["schemas"]["LineItemListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1636,6 +1720,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UploadJobStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_line_item_category_receipts_line_items__item_id__category_patch: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLineItemCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LineItemResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recategorise_receipt_receipts__receipt_id__categorise_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetailResponse"];
                 };
             };
             /** @description Validation Error */

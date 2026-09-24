@@ -72,8 +72,9 @@ the short version:
   anything is open.
 - **`/categories` is the queue, not the taxonomy.** `categorisation.html` owns the
   address and the nav item; the list of categories lives one level down at
-  `/categories/manage`. F5.3 ships the queue read-only; F5.4 adds the inline picker and
-  the "Corrected by you" / "All items" views the screen shows.
+  `/categories/manage`. The picker is a native `select` rather than the drawn menu: the
+  menu's "apply to future items" checkbox and "Create a new category" link arrive with
+  F5.5 and F5.6, and until then a `select` is the accessible, mobile-friendly equivalent.
 - **Separate `/login` and `/register`,** not budget-checker's tabbed modal — F1.5 needs a
   route table and a redirect on expiry, and a modal has no route to redirect to.
 

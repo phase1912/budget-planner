@@ -14,7 +14,7 @@ from app.api.dependencies import get_current_user
 from app.core.config import get_settings
 from app.core.context import current_user_id
 from app.db.session import get_db_session
-from app.domain.categories import UNCATEGORIZED
+from app.domain.categories import UNCATEGORIZED, ItemView
 from app.main import create_app
 from app.models.category import Category
 from app.models.line_item import LineItem
@@ -63,7 +63,7 @@ async def test_queue_holds_only_uncategorized_items_oldest_purchase_first(
     )
     await _item_on_receipt(user.id, groceries, "Bananas", datetime(2026, 7, 1, tzinfo=UTC))
 
-    queue = await ReceiptRepository(db_session).list_uncategorized_items()
+    queue = await ReceiptRepository(db_session).list_items(ItemView.NEEDS_REVIEW)
 
     assert [item.id for item in queue] == [older.id, newer.id]
 
@@ -79,7 +79,7 @@ async def test_queue_item_carries_its_receipt_merchant_and_timed_date(
     bought = datetime(2026, 7, 2, 14, 32, tzinfo=UTC)
     await _item_on_receipt(user.id, uncategorized, "Protein Bar XL", bought)
 
-    [item] = await ReceiptRepository(db_session).list_uncategorized_items()
+    [item] = await ReceiptRepository(db_session).list_items(ItemView.NEEDS_REVIEW)
     response = ReviewQueueItemResponse.model_validate(item)
 
     assert response.merchant_name == "Fresh Market"
@@ -97,7 +97,7 @@ async def test_another_users_uncategorized_items_never_reach_my_queue(
     await _item_on_receipt(someone_else.id, uncategorized, "Their item", None)
     current_user_id.set(me.id)
 
-    assert await ReceiptRepository(db_session).list_uncategorized_items() == []
+    assert await ReceiptRepository(db_session).list_items(ItemView.NEEDS_REVIEW) == []
 
 
 @pytest.mark.asyncio
@@ -126,10 +126,54 @@ async def test_review_queue_endpoint_returns_the_receipt_details_over_http(
         base_url="http://test",
         headers={"Authorization": f"Bearer {token}"},
     ) as client:
-        response = await client.get("/receipts/line-items/review")
+        response = await client.get("/receipts/line-items")
 
     assert response.status_code == 200
-    [item] = response.json()
+    [item] = response.json()["items"]
     assert item["merchant_name"] == "Fresh Market"
     assert item["transaction_date"].startswith("2026-07-02T14:32")
     assert item["category"]["name"] == UNCATEGORIZED
+
+
+@pytest.mark.asyncio
+async def test_views_split_items_by_whether_they_need_or_got_a_human_decision(
+    db_session: AsyncSession,
+) -> None:
+    user = await UserFactory.create_async()
+    current_user_id.set(user.id)
+    uncategorized = await _seeded(db_session, UNCATEGORIZED)
+    health = await _seeded(db_session, "Health")
+    waiting = await _item_on_receipt(user.id, uncategorized, "XJ-42", None)
+    waiting.is_category_manual = False
+    corrected = await _item_on_receipt(user.id, health, "Protein Bar XL", None)
+    corrected.is_category_manual = True
+    legacy_receipt = await ReceiptFactory.create_async(user_id=user.id)
+    uncategorised_legacy = await LineItemFactory.create_async(
+        receipt=legacy_receipt, name="Old item", category=None, is_category_manual=False
+    )
+    await db_session.flush()
+    repo = ReceiptRepository(db_session)
+
+    needs_review = {i.id for i in await repo.list_items(ItemView.NEEDS_REVIEW)}
+    corrected_view = {i.id for i in await repo.list_items(ItemView.CORRECTED)}
+    everything = {i.id for i in await repo.list_items(ItemView.ALL)}
+
+    assert needs_review == {waiting.id, uncategorised_legacy.id}
+    assert corrected_view == {corrected.id}
+    assert everything == {waiting.id, corrected.id, uncategorised_legacy.id}
+    assert await repo.count_needs_review() == 2
+
+
+@pytest.mark.asyncio
+async def test_search_matches_item_names_and_treats_wildcards_literally(
+    db_session: AsyncSession,
+) -> None:
+    user = await UserFactory.create_async()
+    current_user_id.set(user.id)
+    health = await _seeded(db_session, "Health")
+    bar = await _item_on_receipt(user.id, health, "Protein Bar XL", None)
+    discount = await _item_on_receipt(user.id, health, "Discount 100%", None)
+    repo = ReceiptRepository(db_session)
+
+    assert [i.id for i in await repo.list_items(ItemView.ALL, search="protein")] == [bar.id]
+    assert [i.id for i in await repo.list_items(ItemView.ALL, search="%")] == [discount.id]

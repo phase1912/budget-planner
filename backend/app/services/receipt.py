@@ -17,7 +17,7 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from app.core.config import get_settings
 from app.db.session import get_session_factory
-from app.domain.categories import UNCATEGORIZED, is_low_confidence
+from app.domain.categories import UNCATEGORIZED, confident_category
 from app.models.category import Category
 from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
@@ -301,11 +301,7 @@ class ReceiptService:
                 continue
             item = by_index.get(index)
             raw["category_confidence"] = item.category_confidence if item else None
-            if (
-                item is not None
-                and item.category_id is not None
-                and not is_low_confidence(item.category_confidence, threshold)
-            ):
+            if item and confident_category(item.category_id, item.category_confidence, threshold):
                 raw["category_id"] = str(item.category_id)
                 raw["category_name"] = item.category_name
             elif uncategorized is not None:

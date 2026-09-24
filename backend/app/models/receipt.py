@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, text
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Model
@@ -51,6 +52,12 @@ class Receipt(Model):
     processing_time_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     parser_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
+    # `ordering_list` numbers the items as they are assigned, so the order the
+    # receipt was printed in (or the user arranged it in) survives any later update.
     line_items: Mapped[list["LineItem"]] = relationship(
-        "LineItem", back_populates="receipt", cascade="all, delete-orphan"
+        "LineItem",
+        back_populates="receipt",
+        cascade="all, delete-orphan",
+        order_by="LineItem.position",
+        collection_class=ordering_list("position"),
     )

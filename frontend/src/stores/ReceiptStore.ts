@@ -27,6 +27,7 @@ export class ReceiptStore {
   receiptDetail: ReceiptDetail | null = null;
   isLoadingDetail = false;
   detailError: string | null = null;
+  isRecategorising = false;
 
   pendingDeleteId: string | null = null;
   isDeleting = false;
@@ -155,6 +156,50 @@ export class ReceiptStore {
       });
       this.toastStore.showError(errorMessage);
     }
+  }
+
+  /**
+   * Refetch the open receipt without blanking the dialog.
+   *
+   * Used after an in-place change such as a category reassignment (BRD C4),
+   * where flashing a loading state would lose the user's place.
+   */
+  async reloadReceiptDetail(): Promise<void> {
+    const id = this.selectedReceiptId;
+    if (!id) return;
+    const response = await apiClient.GET("/receipts/{receipt_id}", {
+      params: { path: { receipt_id: id } },
+    });
+    if (response.error) {
+      this.toastStore.showError(errorMessage(response.error, "Failed to refresh the receipt"));
+      return;
+    }
+    runInAction(() => {
+      if (this.selectedReceiptId === id) this.receiptDetail = response.data;
+    });
+  }
+
+  /**
+   * Re-run automatic categorisation on the open receipt (BRD C3, C4).
+   *
+   * Categories the owner chose by hand are left alone by the server.
+   */
+  async recategoriseReceipt(): Promise<void> {
+    const id = this.selectedReceiptId;
+    if (!id) return;
+    this.isRecategorising = true;
+    const response = await apiClient.POST("/receipts/{receipt_id}/categorise", {
+      params: { path: { receipt_id: id } },
+    });
+    runInAction(() => {
+      this.isRecategorising = false;
+      if (response.error) {
+        this.toastStore.showError(errorMessage(response.error, "Could not re-run categorisation"));
+        return;
+      }
+      if (this.selectedReceiptId === id) this.receiptDetail = response.data;
+      this.toastStore.showSuccess("Categories updated. Your own choices were kept.");
+    });
   }
 
   clearSelection() {

@@ -14,16 +14,21 @@ from app.api.dependencies import get_current_user, get_storage_service
 from app.api.errors import UploadLimitExceededError
 from app.core.config import get_settings
 from app.db.session import get_db_session
+from app.domain.categories import ItemView
 from app.models.receipt import ReceiptStatus
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
+from app.ports.categorisation import ItemCategoriserPort
 from app.ports.parsing import CURRENT_PARSER_VERSION
 from app.ports.storage import StoragePort
+from app.repository.category import CategoryRepository
 from app.repository.receipt import ReceiptRepository
 from app.schemas.extraction import ExtractedReceipt
 from app.schemas.receipt import (
     CommitJobRequest,
     EditLineItemRequest,
+    LineItemListResponse,
+    LineItemResponse,
     PaginatedReceiptsResponse,
     ReceiptDetailResponse,
     ReceiptResponse,
@@ -31,14 +36,34 @@ from app.schemas.receipt import (
     ResolvePositionMatchRequest,
     ResolveTotalRequest,
     ReviewQueueItemResponse,
+    UpdateLineItemCategoryRequest,
     UpdateReceiptRequest,
     UploadJobStatusResponse,
     UploadReceiptResponse,
 )
+from app.services.categorisation import CategorisationService
 from app.services.receipt import ReceiptService
 from app.services.storage import ObjectNotFoundError
 
 router = APIRouter(prefix="/receipts", tags=["receipts"])
+
+
+def _build_agent() -> Agent:
+    """The LLM client every AI port is backed by, configured from settings."""
+    settings = get_settings()
+    api_key = settings.llm_api_key.get_secret_value() if settings.llm_api_key else None
+    return Agent(
+        model=settings.llm_model,
+        api_key=api_key,
+        api_base=settings.llm_api_base,
+        disable_reasoning=settings.llm_disable_reasoning,
+        disable_json_schema=settings.llm_disable_json_schema,
+    )
+
+
+def get_item_categoriser() -> ItemCategoriserPort:
+    """Provide the categoriser port; tests override this to stay off the network."""
+    return ItemCategoriserAdapter(_build_agent())
 
 
 def get_receipt_service(
@@ -46,20 +71,11 @@ def get_receipt_service(
 ) -> ReceiptService:
     """Provide a ReceiptService with storage and vision parser wired up."""
     settings = get_settings()
-    api_key = settings.llm_api_key.get_secret_value() if settings.llm_api_key else None
-    agent = Agent(
-        model=settings.llm_model,
-        api_key=api_key,
-        api_base=settings.llm_api_base,
-        disable_reasoning=settings.llm_disable_reasoning,
-        disable_json_schema=settings.llm_disable_json_schema,
-    )
-    parser = VisionAgentAdapter(agent)
-    categoriser = ItemCategoriserAdapter(agent)
+    agent = _build_agent()
     return ReceiptService(
         storage_port,
-        parser_port=parser,
-        categoriser_port=categoriser,
+        parser_port=VisionAgentAdapter(agent),
+        categoriser_port=ItemCategoriserAdapter(agent),
         max_concurrency=settings.llm_max_concurrency,
         job_timeout_seconds=settings.upload_job_timeout_seconds,
     )
@@ -302,14 +318,20 @@ async def resolve_position_match(
         raise HTTPException(status_code=400, detail=str(e)) from e
 
 
-@router.get("/line-items/review", response_model=list[ReviewQueueItemResponse])
-async def list_review_queue(
+@router.get("/line-items", response_model=LineItemListResponse)
+async def list_line_items(
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
-) -> list[ReviewQueueItemResponse]:
-    """List the caller's line items filed under Uncategorized, oldest first (BRD C2, C3)."""
-    items = await ReceiptRepository(session).list_uncategorized_items()
-    return [ReviewQueueItemResponse.model_validate(item) for item in items]
+    view: ItemView = ItemView.NEEDS_REVIEW,
+    q: str | None = None,
+) -> LineItemListResponse:
+    """List the caller's line items for one categorisation view, oldest first (BRD C3, C4)."""
+    repo = ReceiptRepository(session)
+    items = await repo.list_items(view, search=q)
+    return LineItemListResponse(
+        items=[ReviewQueueItemResponse.model_validate(item) for item in items],
+        needs_review_count=await repo.count_needs_review(),
+    )
 
 
 @router.get("", response_model=PaginatedReceiptsResponse)
@@ -551,3 +573,33 @@ async def commit_job(
         total_items=job.total_items or 0,
         processed_items=job.processed_items or 0,
     )
+
+
+@router.patch("/line-items/{item_id}/category", response_model=LineItemResponse)
+async def update_line_item_category(
+    item_id: uuid.UUID,
+    request_data: UpdateLineItemCategoryRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> LineItemResponse:
+    """Reassign one line item to a category of the owner's choosing (BRD C4)."""
+    service = CategorisationService(ReceiptRepository(session), CategoryRepository(session))
+    item = await service.reassign(item_id, request_data.category_id, current_user.id)
+    await session.commit()
+    return LineItemResponse.model_validate(item)
+
+
+@router.post("/{receipt_id}/categorise", response_model=ReceiptDetailResponse)
+async def recategorise_receipt(
+    receipt_id: uuid.UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    categoriser: Annotated[ItemCategoriserPort, Depends(get_item_categoriser)],
+) -> ReceiptDetailResponse:
+    """Re-run automatic categorisation on a stored receipt, sparing manual choices (C3, C4)."""
+    service = CategorisationService(
+        ReceiptRepository(session), CategoryRepository(session), categoriser
+    )
+    receipt = await service.recategorise(receipt_id, current_user.id)
+    await session.commit()
+    return ReceiptDetailResponse.model_validate(receipt)

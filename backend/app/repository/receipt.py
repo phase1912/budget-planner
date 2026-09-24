@@ -1,12 +1,13 @@
 import typing
 import uuid
+from collections.abc import Sequence
 from datetime import datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import ColumnElement, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager, joinedload
 
-from app.domain.categories import UNCATEGORIZED
+from app.domain.categories import UNCATEGORIZED, ItemView
 from app.models.category import Category
 from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
@@ -33,6 +34,16 @@ def _read_category(item_data: dict[str, typing.Any]) -> tuple[uuid.UUID | None, 
     return category_id, confidence if isinstance(confidence, int) else None
 
 
+def _needs_review() -> ColumnElement[bool]:
+    """An item the owner still has to decide on: Uncategorized, or no category at all."""
+    return or_(LineItem.category_id.is_(None), Category.name == UNCATEGORIZED)
+
+
+def _escape_like(term: str) -> str:
+    """Make `%` and `_` in a search term match themselves rather than act as wildcards."""
+    return term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 class ReceiptRepository(BaseRepository[Receipt]):
     """Repository for managing receipts."""
 
@@ -53,28 +64,45 @@ class ReceiptRepository(BaseRepository[Receipt]):
         stmt = self._apply_ownership(stmt)
         return (await self.session.execute(stmt)).unique().scalar_one_or_none()
 
-    async def list_uncategorized_items(self) -> typing.Sequence[LineItem]:
-        """Fetch the user's line items filed under Uncategorized, oldest first (BRD C3).
+    async def list_items(self, view: ItemView, search: str | None = None) -> Sequence[LineItem]:
+        """The current user's line items for one categorisation-screen view, oldest first.
 
-        This is the categorisation review queue. "Oldest" is the purchase date,
-        falling back to upload time for receipts whose date was never read, so an
-        undated receipt still takes its place rather than sinking to the end.
-        Receipt and item order break ties so the queue does not reshuffle.
+        `needs_review` is the queue (BRD C3): items under Uncategorized, or left
+        with no category at all. `corrected` is what the owner reassigned by hand
+        (C4). "Oldest" is the purchase date, falling back to upload time, and
+        each receipt's items keep their printed order.
         """
         stmt = (
             select(LineItem)
             .join(Receipt, LineItem.receipt_id == Receipt.id)
-            .join(Category, LineItem.category_id == Category.id)
-            .where(Category.name == UNCATEGORIZED)
+            .outerjoin(Category, LineItem.category_id == Category.id)
             .options(contains_eager(LineItem.receipt), contains_eager(LineItem.category))
             .order_by(
                 func.coalesce(Receipt.transaction_date, Receipt.created_at).asc(),
                 Receipt.id,
-                LineItem.id,
+                LineItem.position,
             )
         )
+        if view is ItemView.NEEDS_REVIEW:
+            stmt = stmt.where(_needs_review())
+        elif view is ItemView.CORRECTED:
+            stmt = stmt.where(LineItem.is_category_manual.is_(True))
+        if search:
+            stmt = stmt.where(LineItem.name.ilike(f"%{_escape_like(search)}%", escape="\\"))
         stmt = self._apply_ownership(stmt)
         return (await self.session.execute(stmt)).scalars().all()
+
+    async def count_needs_review(self) -> int:
+        """How many of the current user's items wait in the review queue (BRD C3)."""
+        stmt = (
+            select(func.count(LineItem.id))
+            .join(Receipt, LineItem.receipt_id == Receipt.id)
+            .outerjoin(Category, LineItem.category_id == Category.id)
+            .where(_needs_review())
+        )
+        stmt = self._apply_ownership(stmt)
+        count: int = (await self.session.execute(stmt)).scalar_one()
+        return count
 
     async def list_paginated(
         self,
@@ -333,3 +361,13 @@ class ReceiptRepository(BaseRepository[Receipt]):
     async def add_position_match_override(self, override: PositionMatchOverride) -> None:
         self.session.add(override)
         # Flush is handled by unit of work / commit outside
+
+    async def get_line_item(self, item_id: uuid.UUID) -> LineItem | None:
+        """Fetch one line item on a receipt the current user owns (BRD N2).
+
+        Another user's item comes back as None, indistinguishable from one that
+        does not exist.
+        """
+        stmt = select(LineItem).join(Receipt).where(LineItem.id == item_id)
+        stmt = self._apply_ownership(stmt)
+        return (await self.session.execute(stmt)).scalar_one_or_none()
