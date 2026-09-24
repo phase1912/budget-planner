@@ -107,6 +107,7 @@ class UpdateLineItemCategoryRequest(BaseModel):
     """Update a line item's category (BRD C4)."""
 
     category_id: uuid.UUID
+    apply_to_future: bool = False
 
 
 class CommitJobRequest(BaseModel):

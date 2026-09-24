@@ -19,8 +19,11 @@ from app.db.session import get_db_session
 from app.domain.categories import UNCATEGORIZED
 from app.main import create_app
 from app.models.category import Category
+from app.models.category_rule import CategoryRule
 from app.models.line_item import LineItem
+from app.models.receipt import Receipt
 from app.models.user import User
+from app.repository.category import CategoryRepository
 from app.schemas.extraction import ExtractedLineItem
 from tests.factories.category import CategoryFactory
 from tests.factories.line_item import LineItemFactory
@@ -310,3 +313,104 @@ async def test_another_users_receipt_cannot_be_recategorised(db_session: AsyncSe
     response = await _recategorise(db_session, intruder, item.receipt_id, _ScriptedCategoriser({}))
 
     assert response.status_code == 404
+
+
+async def _rules_of(session: AsyncSession, user: User) -> list[CategoryRule]:
+    stmt = select(CategoryRule).where(CategoryRule.user_id == user.id)
+    return list((await session.execute(stmt)).scalars())
+
+
+@pytest.mark.asyncio
+async def test_apply_to_future_remembers_the_choice_once_per_item(
+    db_session: AsyncSession,
+) -> None:
+    """Reassigning the same item twice leaves one rule holding the latest choice (C5)."""
+    owner = await UserFactory.create_async()
+    item = await _uncertain_item(owner, db_session)
+    receipt = await db_session.get(Receipt, item.receipt_id)
+    assert receipt is not None
+    receipt.merchant_name = "Fresh Market"
+    health = await _built_in(db_session, "Health")
+    groceries = await _built_in(db_session, "Groceries")
+
+    for category in (groceries, health):
+        response = await _call(
+            db_session,
+            owner,
+            "PATCH",
+            f"/receipts/line-items/{item.id}/category",
+            {"category_id": str(category.id), "apply_to_future": True},
+        )
+        assert response.status_code == 200, response.json()
+
+    [rule] = await _rules_of(db_session, owner)
+    assert (rule.merchant_name, rule.item_name, rule.category_id) == (
+        "fresh market",
+        "protein bar xl",
+        health.id,
+    )
+
+
+@pytest.mark.asyncio
+async def test_a_plain_reassignment_makes_no_rule(db_session: AsyncSession) -> None:
+    owner = await UserFactory.create_async()
+    item = await _uncertain_item(owner, db_session)
+    health = await _built_in(db_session, "Health")
+
+    await _call(
+        db_session,
+        owner,
+        "PATCH",
+        f"/receipts/line-items/{item.id}/category",
+        {"category_id": str(health.id)},
+    )
+
+    assert await _rules_of(db_session, owner) == []
+
+
+@pytest.mark.asyncio
+async def test_rerun_files_by_the_users_rule_ahead_of_the_agent(db_session: AsyncSession) -> None:
+    """The F5.5 demo, on a stored receipt: the rule wins, the agent is not even asked."""
+    owner = await UserFactory.create_async()
+    health = await _built_in(db_session, "Health")
+    groceries = await _built_in(db_session, "Groceries")
+    await CategoryRepository(db_session).save_rule(
+        owner.id, "Fresh Market", "Protein Bar XL", health.id
+    )
+    receipt = await ReceiptFactory.create_async(
+        user_id=owner.id, merchant_name="Fresh Market", file_ids=["f1"]
+    )
+    await LineItemFactory.create_async(
+        receipt=receipt, name="Protein Bar XL.", category=None, category_confidence=35
+    )
+    categoriser = _ScriptedCategoriser({"Protein Bar XL.": (groceries, 99)})
+
+    response = await _recategorise(db_session, owner, receipt.id, categoriser)
+
+    assert response.status_code == 200, response.json()
+    [line] = response.json()["line_items"]
+    assert line["category"]["name"] == "Health"
+    assert line["category_is_low_confidence"] is False
+    assert categoriser.seen == []
+
+
+@pytest.mark.asyncio
+async def test_another_users_rules_never_file_my_items(db_session: AsyncSession) -> None:
+    owner = await UserFactory.create_async()
+    someone_else = await UserFactory.create_async()
+    health = await _built_in(db_session, "Health")
+    groceries = await _built_in(db_session, "Groceries")
+    await CategoryRepository(db_session).save_rule(
+        someone_else.id, "Fresh Market", "Protein Bar XL", health.id
+    )
+    receipt = await ReceiptFactory.create_async(
+        user_id=owner.id, merchant_name="Fresh Market", file_ids=["f1"]
+    )
+    await LineItemFactory.create_async(receipt=receipt, name="Protein Bar XL", category=None)
+
+    response = await _recategorise(
+        db_session, owner, receipt.id, _ScriptedCategoriser({"Protein Bar XL": (groceries, 95)})
+    )
+
+    [line] = response.json()["line_items"]
+    assert line["category"]["name"] == "Groceries"

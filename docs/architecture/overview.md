@@ -79,9 +79,10 @@ Three properties of this pipeline are requirements, not implementation choices:
 Categorisation also runs outside the pipeline: `CategorisationService` reassigns a stored
 item by hand (`PATCH /receipts/line-items/{id}/category`, C4) and re-runs the categoriser
 on one stored receipt (`POST /receipts/{id}/categorise`). The re-run skips every item
-marked `is_category_manual` and applies the same threshold rule as upload
-(`app.domain.categories.confident_category`). There is deliberately no bulk
-re-categorisation of old receipts.
+marked `is_category_manual`. Both upload and re-run apply the user's correction rules
+(`category_rules`, C5) before asking the categoriser, then the same threshold rule
+(`app.domain.categories.match_rule` and `confident_category`; ADR-0008). There is
+deliberately no bulk re-categorisation of old receipts.
 
 ## Persistence
 

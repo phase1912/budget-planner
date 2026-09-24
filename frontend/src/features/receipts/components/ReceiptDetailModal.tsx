@@ -165,6 +165,7 @@ export const ReceiptDetailModal = observer(() => {
               <InlineCategoryPicker
                 itemId={item.id}
                 itemName={item.name}
+                merchantName={receipt.merchant_name}
                 currentCategoryId={item.category_id}
                 lowConfidence={item.category_is_low_confidence}
                 onCategoryChanged={() => {

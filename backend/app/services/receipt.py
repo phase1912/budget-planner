@@ -17,8 +17,9 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from app.core.config import get_settings
 from app.db.session import get_session_factory
-from app.domain.categories import UNCATEGORIZED, confident_category
+from app.domain.categories import UNCATEGORIZED, confident_category, match_rule
 from app.models.category import Category
+from app.models.category_rule import CategoryRule
 from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
 from app.models.receipt import Receipt
@@ -175,7 +176,9 @@ class ReceiptService:
                 all_file_ids: list[str] = []
                 all_extractions: list[dict[str, object]] = []
 
-                categories = await CategoryRepository(session).list_available(user.id)
+                category_repository = CategoryRepository(session)
+                categories = await category_repository.list_available(user.id)
+                rules = await category_repository.list_rules(user.id)
 
                 async def process_single_receipt(
                     files_data: list[dict[str, str | bytes]],
@@ -194,7 +197,7 @@ class ReceiptService:
                         ext = await self._run_extraction(user, file_ids, content_types)
                         ext["file_ids"] = file_ids
 
-                        await self._categorise_extraction(ext, categories)
+                        await self._categorise_extraction(ext, categories, rules)
                         extraction = ext
 
                     return extraction
@@ -258,29 +261,46 @@ class ReceiptService:
         self,
         extraction: dict[str, object],
         categories: Sequence[Category],
+        rules: Sequence[CategoryRule] = (),
     ) -> None:
-        """Add a category to every line item the parser read, in place (BRD C1-C3).
+        """Add a category to every line item the parser read, in place (BRD C1-C3, C5).
 
         Works on the raw extraction dict because that is what is persisted to
         `UploadJob.result_data` and replayed to the wizard; the items are parsed
         into `ExtractedLineItem` only so the port receives a typed contract.
 
-        Anything not confidently placed — below the threshold, declined by the
-        categoriser, or too mangled to validate — is filed under Uncategorized
-        rather than guessed at, which is what puts it in the review queue. The
-        categoriser's own confidence is kept so the weak guess stays auditable.
+        The user's correction rules go first and need no categoriser at all. The
+        rest go to the categoriser, and anything it does not confidently place —
+        below the threshold, declined, or too mangled to validate — is filed under
+        Uncategorized rather than guessed at, which puts it in the review queue.
         """
-        if not self.categoriser_port or not categories:
+        if not categories:
             return
-
         items_data = extraction.get("line_items")
         if not isinstance(items_data, list):
+            return
+
+        by_id = {category.id: category for category in categories}
+        merchant = extraction.get("merchant_name")
+        merchant_name = merchant if isinstance(merchant, str) else None
+        ruled: set[int] = set()
+        for index, raw in enumerate(items_data):
+            if not isinstance(raw, dict):
+                continue
+            chosen = match_rule(str(raw.get("name") or ""), merchant_name, rules)
+            if chosen in by_id:
+                raw["category_id"] = str(chosen)
+                raw["category_name"] = by_id[chosen].name
+                raw["category_confidence"] = None
+                ruled.add(index)
+
+        if not self.categoriser_port:
             return
 
         parsed: list[ExtractedLineItem] = []
         indices: list[int] = []
         for index, raw in enumerate(items_data):
-            if not isinstance(raw, dict):
+            if not isinstance(raw, dict) or index in ruled:
                 continue
             try:
                 parsed.append(ExtractedLineItem(**raw))
@@ -297,7 +317,7 @@ class ReceiptService:
         threshold = get_settings().categorization_confidence_threshold
 
         for index, raw in enumerate(items_data):
-            if not isinstance(raw, dict):
+            if not isinstance(raw, dict) or index in ruled:
                 continue
             item = by_index.get(index)
             raw["category_confidence"] = item.category_confidence if item else None

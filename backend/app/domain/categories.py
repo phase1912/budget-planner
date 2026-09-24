@@ -5,9 +5,13 @@ need them and neither owns them — the repository sorts by the order, and the
 API decides from the gate whether an item goes to the review queue (BRD C1-C3).
 """
 
+import difflib
 import enum
 import uuid
+from collections.abc import Iterable
+from datetime import datetime
 from decimal import Decimal
+from typing import Protocol
 
 UNCATEGORIZED = "Uncategorized"
 
@@ -69,3 +73,51 @@ class ItemView(enum.StrEnum):
     NEEDS_REVIEW = "needs_review"
     CORRECTED = "corrected"
     ALL = "all"
+
+
+RULE_NAME_SIMILARITY = 0.8
+"""How alike two item names must be for a correction rule to cover both (BRD C5, ADR-0008).
+
+`difflib.SequenceMatcher` ratio on normalised names. 0.8 absorbs OCR noise and
+punctuation ("Protein Bar XL" / "Protein Bar XL.") without letting unrelated
+products from the same shop collide.
+"""
+
+
+def normalise_name(value: str | None) -> str:
+    """Case- and whitespace-insensitive form of a merchant or item name, for rule matching."""
+    return " ".join((value or "").lower().split())
+
+
+class CorrectionRule(Protocol):
+    """What rule matching needs from a stored rule; `CategoryRule` satisfies it."""
+
+    merchant_name: str
+    item_name: str
+    category_id: uuid.UUID
+    created_at: datetime
+
+
+def match_rule(
+    item_name: str, merchant_name: str | None, rules: Iterable[CorrectionRule]
+) -> uuid.UUID | None:
+    """The category a correction rule files this item under, or None (BRD C5, ADR-0008).
+
+    A rule covers only its own merchant. Among those, an exact name beats a
+    similar one, a closer name beats a looser one, and on a tie the newest
+    rule wins, because it is the user's latest word. Rules outrank the
+    categoriser; manual choices on stored items outrank rules (invariant 13).
+    """
+    merchant = normalise_name(merchant_name)
+    name = normalise_name(item_name)
+    best: tuple[float, datetime, uuid.UUID] | None = None
+    for rule in rules:
+        if rule.merchant_name != merchant:
+            continue
+        similarity = difflib.SequenceMatcher(None, rule.item_name, name).ratio()
+        if similarity < RULE_NAME_SIMILARITY:
+            continue
+        candidate = (similarity, rule.created_at, rule.category_id)
+        if best is None or candidate[:2] > best[:2]:
+            best = candidate
+    return best[2] if best else None

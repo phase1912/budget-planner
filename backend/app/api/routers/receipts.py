@@ -584,7 +584,12 @@ async def update_line_item_category(
 ) -> LineItemResponse:
     """Reassign one line item to a category of the owner's choosing (BRD C4)."""
     service = CategorisationService(ReceiptRepository(session), CategoryRepository(session))
-    item = await service.reassign(item_id, request_data.category_id, current_user.id)
+    item = await service.reassign(
+        item_id,
+        request_data.category_id,
+        current_user.id,
+        apply_to_future=request_data.apply_to_future,
+    )
     await session.commit()
     return LineItemResponse.model_validate(item)
 

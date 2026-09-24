@@ -58,7 +58,7 @@ describe("InlineCategoryPicker", () => {
 
     fireEvent.change(picker, { target: { value: health.id } });
 
-    expect(reassignCategory).toHaveBeenCalledWith("item-1", health.id);
+    expect(reassignCategory).toHaveBeenCalledWith("item-1", health.id, true);
     await waitFor(() => {
       expect(onCategoryChanged).toHaveBeenCalled();
     });
@@ -74,5 +74,20 @@ describe("InlineCategoryPicker", () => {
       expect(showError).toHaveBeenCalledWith("Category not found");
     });
     expect(onCategoryChanged).not.toHaveBeenCalled();
+  });
+
+  it("remembers the choice for future items unless the user unticks it", async () => {
+    reassignCategory.mockResolvedValue(null);
+    const { picker } = renderPicker(uncategorized.id);
+    const remember = screen.getByRole("checkbox", { name: "Apply to future items" });
+    expect(remember).toBeChecked();
+
+    fireEvent.click(remember);
+    fireEvent.change(picker, { target: { value: health.id } });
+
+    expect(reassignCategory).toHaveBeenCalledWith("item-1", health.id, false);
+    await waitFor(() => {
+      expect(reassignCategory).toHaveBeenCalledTimes(1);
+    });
   });
 });

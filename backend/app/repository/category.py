@@ -1,14 +1,16 @@
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import ColumnElement, Select, case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domain.categories import DEFAULT_CATEGORY_ORDER
+from app.domain.categories import DEFAULT_CATEGORY_ORDER, normalise_name
 from app.models.category import Category
+from app.models.category_rule import CategoryRule
 from app.models.line_item import LineItem
 from app.models.receipt import Receipt
 from app.repository.base import BaseRepository
@@ -107,3 +109,36 @@ class CategoryRepository(BaseRepository[Category]):
             )
             for row in rows
         ]
+
+    async def list_rules(self, user_id: uuid.UUID) -> Sequence[CategoryRule]:
+        """Every correction rule this user has made; never another user's (BRD C5, N2)."""
+        stmt = select(CategoryRule).where(CategoryRule.user_id == user_id)
+        return (await self.session.execute(stmt)).scalars().all()
+
+    async def save_rule(
+        self,
+        user_id: uuid.UUID,
+        merchant_name: str | None,
+        item_name: str,
+        category_id: uuid.UUID,
+    ) -> CategoryRule:
+        """Remember a correction for future items, replacing any earlier one for that item (C5).
+
+        Names are stored normalised, so "Protein Bar XL" and "protein bar xl" at
+        the same merchant are one rule, and the latest choice wins.
+        """
+        merchant = normalise_name(merchant_name)
+        item = normalise_name(item_name)
+        stmt = select(CategoryRule).where(
+            CategoryRule.user_id == user_id,
+            CategoryRule.merchant_name == merchant,
+            CategoryRule.item_name == item,
+        )
+        rule = (await self.session.execute(stmt)).scalar_one_or_none()
+        if rule is None:
+            rule = CategoryRule(user_id=user_id, merchant_name=merchant, item_name=item)
+            self.session.add(rule)
+        rule.category_id = category_id
+        rule.created_at = datetime.now(UTC)
+        await self.session.flush()
+        return rule
