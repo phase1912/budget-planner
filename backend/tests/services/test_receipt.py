@@ -1,5 +1,6 @@
 import uuid
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -7,6 +8,7 @@ import pytest
 
 from app.api.errors import UnsupportedFileFormatError
 from app.models.category import Category
+from app.models.category_rule import CategoryRule
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.schemas.extraction import ExtractedLineItem
@@ -612,3 +614,50 @@ async def test_items_the_categoriser_declines_or_cannot_read_fall_back_to_uncate
     for item in cast(list[dict[str, Any]], extraction["line_items"]):
         assert item["category_id"] == str(uncategorized.id)
         assert item["category_confidence"] is None
+
+
+@pytest.mark.asyncio
+async def test_correction_rules_file_items_even_without_a_categoriser() -> None:
+    """A user's rule is their own decision; it must not wait on the LLM being configured (C5)."""
+    health = Category(id=uuid.uuid4(), name="Health")
+    rule = CategoryRule(
+        user_id=uuid.uuid4(),
+        merchant_name="fresh market",
+        item_name="protein bar xl",
+        category_id=health.id,
+        created_at=datetime.now(UTC),
+    )
+    extraction: dict[str, object] = {
+        "merchant_name": "Fresh Market",
+        "line_items": [_line("Protein Bar XL"), _line("Bananas")],
+    }
+
+    await ReceiptService()._categorise_extraction(extraction, [health], [rule])
+
+    ruled, other = cast(list[dict[str, Any]], extraction["line_items"])
+    assert ruled["category_id"] == str(health.id)
+    assert ruled["category_confidence"] is None
+    assert "category_id" not in other
+
+
+@pytest.mark.asyncio
+async def test_a_rule_for_a_category_no_longer_offered_is_ignored() -> None:
+    """If the rule's category is not in the user's taxonomy, the item goes to the agent."""
+    groceries = Category(id=uuid.uuid4(), name="Groceries")
+    rule = CategoryRule(
+        user_id=uuid.uuid4(),
+        merchant_name="fresh market",
+        item_name="bananas",
+        category_id=uuid.uuid4(),
+        created_at=datetime.now(UTC),
+    )
+    service = ReceiptService(categoriser_port=_ScriptedCategoriser({"Bananas": (groceries, 96)}))
+    extraction: dict[str, object] = {
+        "merchant_name": "Fresh Market",
+        "line_items": [_line("Bananas")],
+    }
+
+    await service._categorise_extraction(extraction, [groceries], [rule])
+
+    [item] = cast(list[dict[str, Any]], extraction["line_items"])
+    assert item["category_id"] == str(groceries.id)

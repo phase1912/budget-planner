@@ -10,6 +10,7 @@ import {
   ErrorState,
   Input,
   LoadingState,
+  Note,
   SegmentedControl,
 } from "@/shared/components";
 import type { ItemView, ReviewQueueItem } from "@/stores/CategoriesStore";
@@ -160,6 +161,7 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
                     <InlineCategoryPicker
                       itemId={item.id}
                       itemName={item.name}
+                      merchantName={item.merchant_name}
                       currentCategoryId={item.category_id}
                       lowConfidence={item.category_is_low_confidence}
                       onCategoryChanged={() => {
@@ -172,6 +174,12 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
             </ul>
           </Card>
         )}
+
+        <Note tone="accent">
+          Each correction you make can become a rule: with “Apply to future items” ticked, the same
+          item from the same merchant is categorised your way next time, and automatic passes leave
+          it alone.
+        </Note>
       </div>
     </div>
   );

@@ -99,8 +99,10 @@ Rules that must hold at all times. Each is a candidate for a test.
 12. Every line item has a category. Below the confidence threshold it is `Uncategorized`
     and flagged for review, never guessed (C2, C3).
 13. A manual category override is never overwritten by a later automatic pass (C4).
-14. A correction creates a rule for future items with the same or similar name from the
-    same merchant (C5).
+14. A correction the owner marks "apply to future items" creates a rule for later items
+    with the same or a highly similar name from the same merchant (C5). Precedence:
+    the owner's manual choice on a stored item, then a matching rule, then the
+    categoriser under its threshold (ADR-0008).
 
 **Advice**
 

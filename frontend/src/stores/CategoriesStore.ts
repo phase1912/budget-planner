@@ -78,10 +78,14 @@ export class CategoriesStore {
    *
    * Resolves to null on success, or to a message the caller can show.
    */
-  async reassignCategory(itemId: string, categoryId: string): Promise<string | null> {
+  async reassignCategory(
+    itemId: string,
+    categoryId: string,
+    applyToFuture = false,
+  ): Promise<string | null> {
     const response = await apiClient.PATCH("/receipts/line-items/{item_id}/category", {
       params: { path: { item_id: itemId } },
-      body: { category_id: categoryId },
+      body: { category_id: categoryId, apply_to_future: applyToFuture },
     });
     return response.error ? errorMessage(response.error, "Could not change the category") : null;
   }

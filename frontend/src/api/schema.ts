@@ -868,6 +868,11 @@ export interface components {
              * Format: uuid
              */
             category_id: string;
+            /**
+             * Apply To Future
+             * @default false
+             */
+            apply_to_future: boolean;
         };
         /**
          * UpdateReceiptRequest
