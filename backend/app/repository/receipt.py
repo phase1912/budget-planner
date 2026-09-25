@@ -1,9 +1,11 @@
 import typing
 import uuid
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
 
-from sqlalchemy import ColumnElement, func, or_, select
+from sqlalchemy import ColumnElement, Select, case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager, joinedload
 
@@ -44,6 +46,30 @@ def _escape_like(term: str) -> str:
     return term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
+def _purchased() -> ColumnElement[datetime]:
+    """When a receipt's items were bought: its printed date, else when it was uploaded."""
+    return func.coalesce(Receipt.transaction_date, Receipt.created_at)
+
+
+@dataclass(frozen=True)
+class ItemSpend:
+    """What a set of line items cost, and what was held out of that (D1, D3)."""
+
+    total: Decimal
+    excluded_count: int
+    excluded_amount: Decimal
+
+
+@dataclass(frozen=True)
+class CategorySpend:
+    """One category's share of a set of line items; `category_id` is None for none at all."""
+
+    category_id: uuid.UUID | None
+    name: str | None
+    item_count: int
+    total: Decimal
+
+
 class ReceiptRepository(BaseRepository[Receipt]):
     """Repository for managing receipts."""
 
@@ -64,25 +90,20 @@ class ReceiptRepository(BaseRepository[Receipt]):
         stmt = self._apply_ownership(stmt)
         return (await self.session.execute(stmt)).unique().scalar_one_or_none()
 
-    async def list_items(
+    def _filtered_items(
         self,
         view: ItemView,
         *,
-        search: str | None = None,
-        start_date: datetime | None = None,
-        end_date: datetime | None = None,
-        skip: int = 0,
-        limit: int = 20,
-    ) -> tuple[Sequence[LineItem], int]:
-        """One page of the user's line items for a categorisation view, oldest first, and the total.
+        search: str | None,
+        start_date: datetime | None,
+        end_date: datetime | None,
+        category_id: uuid.UUID | None,
+    ) -> Select[tuple[LineItem]]:
+        """The current user's line items matching the categorisation screen's filters.
 
-        `needs_review` is the queue (BRD C3): items under Uncategorized, or left
-        with no category at all. `corrected` is what the owner reassigned by hand
-        (C4). "Oldest" and the date filter both use the purchase date, falling
-        back to upload time for a receipt whose date was never read, so such a
-        receipt is neither lost from a date range nor sorted to the end.
+        One definition of "matching", so the page, its total and its category
+        breakdown can never disagree about which items they describe.
         """
-        purchased = func.coalesce(Receipt.transaction_date, Receipt.created_at)
         stmt = (
             select(LineItem)
             .join(Receipt, LineItem.receipt_id == Receipt.id)
@@ -95,21 +116,116 @@ class ReceiptRepository(BaseRepository[Receipt]):
         if search:
             stmt = stmt.where(LineItem.name.ilike(f"%{_escape_like(search)}%", escape="\\"))
         if start_date:
-            stmt = stmt.where(purchased >= start_date)
+            stmt = stmt.where(_purchased() >= start_date)
         if end_date:
-            stmt = stmt.where(purchased <= end_date)
-        stmt = self._apply_ownership(stmt)
+            stmt = stmt.where(_purchased() <= end_date)
+        if category_id:
+            stmt = stmt.where(LineItem.category_id == category_id)
+        filtered: Select[tuple[LineItem]] = self._apply_ownership(stmt)
+        return filtered
 
+    async def list_items(
+        self,
+        view: ItemView,
+        *,
+        search: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        category_id: uuid.UUID | None = None,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> tuple[Sequence[LineItem], int]:
+        """One page of the user's line items for a categorisation view, oldest first, and the total.
+
+        `needs_review` is the queue (BRD C3): items under Uncategorized, or left
+        with no category at all. `corrected` is what the owner reassigned by hand
+        (C4). "Oldest" and the date filter both use the purchase date, falling
+        back to upload time for a receipt whose date was never read, so such a
+        receipt is neither lost from a date range nor sorted to the end.
+        """
+        stmt = self._filtered_items(
+            view,
+            search=search,
+            start_date=start_date,
+            end_date=end_date,
+            category_id=category_id,
+        )
         total: int = (
             await self.session.execute(select(func.count()).select_from(stmt.subquery()))
         ).scalar_one()
         page = (
             stmt.options(contains_eager(LineItem.receipt), contains_eager(LineItem.category))
-            .order_by(purchased.asc(), Receipt.id, LineItem.position)
+            .order_by(_purchased().asc(), Receipt.id, LineItem.position)
             .offset(skip)
             .limit(limit)
         )
         return (await self.session.execute(page)).scalars().all(), total
+
+    async def item_spend(
+        self,
+        view: ItemView,
+        *,
+        search: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        category_id: uuid.UUID | None = None,
+    ) -> ItemSpend:
+        """What the matching items cost, and what was held out because it is unreliable.
+
+        Only items on `parsed` receipts count toward the total, the same rule as the
+        month's budget (domain model invariant 4). Items on receipts under manual
+        review are reported separately, never silently dropped (invariant 5).
+        """
+        matching = self._filtered_items(
+            view,
+            search=search,
+            start_date=start_date,
+            end_date=end_date,
+            category_id=category_id,
+        ).subquery()
+        counted = Receipt.status == ReceiptStatus.PARSED
+        stmt = (
+            select(
+                func.coalesce(func.sum(case((counted, matching.c.total_price))), 0),
+                func.count().filter(~counted),
+                func.coalesce(func.sum(case((~counted, matching.c.total_price))), 0),
+            )
+            .select_from(matching)
+            .join(Receipt, Receipt.id == matching.c.receipt_id)
+        )
+        total, excluded_count, excluded_amount = (await self.session.execute(stmt)).one()
+        return ItemSpend(Decimal(total), int(excluded_count), Decimal(excluded_amount))
+
+    async def spend_by_category(
+        self,
+        view: ItemView,
+        *,
+        search: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> list[CategorySpend]:
+        """The matching items' spend per category, highest first, counted like `item_spend`.
+
+        Ignores any category filter on purpose: it is the list the user picks a
+        category from, so it must keep showing the other categories.
+        """
+        matching = self._filtered_items(
+            view, search=search, start_date=start_date, end_date=end_date, category_id=None
+        ).where(Receipt.status == ReceiptStatus.PARSED)
+        stmt = (
+            matching.with_only_columns(
+                Category.id,
+                Category.name,
+                func.count(LineItem.id),
+                func.coalesce(func.sum(LineItem.total_price), 0),
+            )
+            .group_by(Category.id, Category.name)
+            .order_by(func.sum(LineItem.total_price).desc(), Category.name)
+        )
+        return [
+            CategorySpend(category_id, name, int(count), Decimal(amount))
+            for category_id, name, count, amount in (await self.session.execute(stmt)).all()
+        ]
 
     async def count_needs_review(self) -> int:
         """How many of the current user's items wait in the review queue (BRD C3)."""
@@ -122,6 +238,33 @@ class ReceiptRepository(BaseRepository[Receipt]):
         stmt = self._apply_ownership(stmt)
         count: int = (await self.session.execute(stmt)).scalar_one()
         return count
+
+    async def month_total(self, start: datetime, end: datetime) -> tuple[Decimal, int]:
+        """The current user's spend in `[start, end)` and how many receipts it covers (D1, D2).
+
+        Sums line-item totals, not printed receipt totals, and only over `parsed`
+        receipts: one under manual review has an unreliable total and is held
+        out (domain model invariants 4 and 5). Filters on the transaction date,
+        never the upload date, so a back-dated receipt lands in its own month.
+        """
+        in_month = select(Receipt.id).where(
+            Receipt.status == ReceiptStatus.PARSED,
+            Receipt.transaction_date >= start,
+            Receipt.transaction_date < end,
+        )
+        in_month = self._apply_ownership(in_month)
+        total_stmt = select(func.coalesce(func.sum(LineItem.total_price), 0)).where(
+            LineItem.receipt_id.in_(in_month)
+        )
+        count_stmt = select(func.count()).select_from(in_month.subquery())
+        total: Decimal = Decimal((await self.session.execute(total_stmt)).scalar_one())
+        count: int = (await self.session.execute(count_stmt)).scalar_one()
+        return total, count
+
+    async def has_any(self) -> bool:
+        """Whether the current user has stored a receipt yet; before that, `/` is a welcome."""
+        stmt = self._apply_ownership(select(Receipt.id)).limit(1)
+        return (await self.session.execute(stmt)).first() is not None
 
     async def list_paginated(
         self,

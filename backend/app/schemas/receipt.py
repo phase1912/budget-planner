@@ -7,6 +7,7 @@ from pydantic import AliasPath, BaseModel, ConfigDict, Field, computed_field, fi
 
 from app.core.config import get_settings
 from app.domain.categories import is_low_confidence
+from app.models.receipt import ReceiptStatus
 from app.models.upload_job import JobStatus
 
 
@@ -185,10 +186,26 @@ class ReviewQueueItemResponse(LineItemResponse):
     transaction_date: datetime | None = Field(
         default=None, validation_alias=AliasPath("receipt", "transaction_date")
     )
+    receipt_status: ReceiptStatus = Field(validation_alias=AliasPath("receipt", "status"))
+
+
+class CategorySpendResponse(BaseModel):
+    """One category's share of the items on screen; `category_id` is null for none at all."""
+
+    category_id: uuid.UUID | None
+    name: str | None
+    item_count: int
+    total_amount: Decimal
 
 
 class LineItemListResponse(BaseModel):
-    """One page of a categorisation-screen view, plus the queue size for its badge (BRD C3)."""
+    """One page of a categorisation-screen view, with what the whole view costs (C3, D1).
+
+    `total_amount` covers every matching item across all pages, not just this one,
+    counted like the month's budget: items on receipts under manual review are
+    held out and reported in `excluded_*`. `categories` breaks the same items down
+    per category, ignoring the category filter, so it can be picked from.
+    """
 
     items: list[ReviewQueueItemResponse]
     total: int
@@ -196,6 +213,10 @@ class LineItemListResponse(BaseModel):
     size: int
     pages: int
     needs_review_count: int
+    total_amount: Decimal
+    excluded_item_count: int
+    excluded_amount: Decimal
+    categories: list[CategorySpendResponse]
 
 
 class ReceiptResponse(BaseModel):

@@ -76,6 +76,11 @@ the short version:
   because it is the accessible, mobile-friendly equivalent. The menu's "apply to future
   items" checkbox sits under the picker instead, ticked by default as drawn. The menu's
   "Create a new category" link is not built: categories are created on the taxonomy screen.
+- **The categorisation screen also answers "what did this cost".** `categorisation.html`
+  draws a review queue only. The built screen adds a "Where it went" list above the
+  table, in the dashboard's breakdown style: each category's spend for the current filters,
+  pressed to filter to that category. It also adds a footer totalling the selection. Money
+  is counted like the month total: items on receipts under review are marked, not counted.
 - **A new category is named in a dialog.** `categories.html` draws only the "New category"
   button. A dialog, styled like the drawn delete dialog, opens where the user is looking.
   A row appended below a long list of categories would be off screen, and a refused name

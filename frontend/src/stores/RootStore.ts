@@ -7,6 +7,7 @@ import { apiClient } from "@/api/client";
 
 import { CategoriesStore } from "@/stores/CategoriesStore";
 import { ReceiptStore } from "@/stores/ReceiptStore";
+import { BudgetStore } from "@/stores/BudgetStore";
 
 /**
  * Single instantiation point for every MobX store in the client (F9.2.1). Feature
@@ -22,6 +23,7 @@ export class RootStore {
   readonly uploadStore: UploadStore;
   readonly receiptStore: ReceiptStore;
   readonly categoriesStore: CategoriesStore;
+  readonly budgetStore: BudgetStore;
 
   constructor() {
     this.themeStore = new ThemeStore();
@@ -31,5 +33,6 @@ export class RootStore {
     this.uploadStore = new UploadStore(apiClient, this.toastStore);
     this.receiptStore = new ReceiptStore(this.toastStore);
     this.categoriesStore = new CategoriesStore();
+    this.budgetStore = new BudgetStore();
   }
 }

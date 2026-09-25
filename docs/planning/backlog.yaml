@@ -1190,6 +1190,26 @@ epics:
           Seed two months (F5.8), open the root route and read this month's total, then step
           back a month. Upload a receipt dated last month and watch it land in last month's
           figure rather than this one.
+        tasks:
+          - >
+            ADR-0009 - calendar months; a receipt belongs to the month printed on it (its stored
+            transaction date, the shop's wall clock, unconverted); the current month is the
+            browser's.
+          - >
+            GET /api/v1/budget/months/{year}/{month} - the sum of line-item totals of parsed
+            receipts dated in the month, the receipt count, and whether the user has any
+            receipts at all (D1, D2). Cross-user isolated (N2).
+          - >
+            the month view at / once a receipt exists - month switcher that stops at the
+            current month, and the month's figure; the welcome screen stays for a user with
+            none. Limit, month-to-date label, excluded-receipts notice and breakdown are
+            F6.6, F6.3, F6.2 and F6.7.
+          - >
+            unplanned, added at the owner's request - the categorisation screen (/categories)
+            gains a category filter and totals. A "Where it went" list shows each category's
+            spend for the current filters and picks the category; the list footer totals the
+            whole selection. Counted like the month total, so items on receipts under review
+            are listed and marked but held out, and their count and value are stated.
       - key: F6.2
         title: Transparent exclusion of receipts under review
         labels: [backend, frontend]

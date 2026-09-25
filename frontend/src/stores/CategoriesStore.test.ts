@@ -109,3 +109,46 @@ describe("CategoriesStore review queue paging", () => {
     expect(store.reviewQueue).toHaveLength(1);
   });
 });
+
+describe("CategoriesStore category filter", () => {
+  beforeEach(() => {
+    vi.mocked(apiClient.GET).mockReset();
+  });
+
+  it("narrows the view to one category from the first page, and clears again", async () => {
+    vi.mocked(apiClient.GET).mockResolvedValue({
+      data: {
+        items: [],
+        pages: 0,
+        total: 0,
+        page: 1,
+        size: 20,
+        needs_review_count: 0,
+        total_amount: "90.00",
+        excluded_item_count: 0,
+        excluded_amount: "0",
+        categories: [],
+      },
+      response: new Response(),
+    });
+    const store = new CategoriesStore();
+    store.queuePage = 3;
+
+    store.setQueueCategory("c-clothing");
+
+    expect(store.queuePage).toBe(1);
+    await vi.waitFor(() => {
+      expect(store.queueTotalAmount).toBe("90.00");
+    });
+    expect(apiClient.GET).toHaveBeenLastCalledWith("/receipts/line-items", {
+      params: { query: expect.objectContaining({ category_id: "c-clothing" }) as unknown },
+    });
+
+    store.setQueueCategory(null);
+    await vi.waitFor(() => {
+      expect(apiClient.GET).toHaveBeenLastCalledWith("/receipts/line-items", {
+        params: { query: expect.objectContaining({ category_id: undefined }) as unknown },
+      });
+    });
+  });
+});

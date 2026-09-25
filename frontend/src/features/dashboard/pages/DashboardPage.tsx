@@ -1,77 +1,98 @@
+import { useEffect } from "react";
 import { observer } from "mobx-react-lite";
-import { Link } from "react-router-dom";
+
 import { useStores } from "@/stores/StoreContext";
-import { Camera, Upload } from "lucide-react";
-import { Button, Card } from "@/shared/components";
+import { Card, ErrorState, LoadingState } from "@/shared/components";
+import { MonthSwitcher } from "../components/MonthSwitcher";
+import { WelcomePanel } from "../components/WelcomePanel";
 
+const MONTH_AND_YEAR = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" });
+const MONTH = new Intl.DateTimeFormat("en-GB", { month: "long" });
+const AMOUNT = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+/**
+ * The landing view (docs/design/screens/dashboard.html): the month's spend by
+ * receipt date, with a switcher to step back through earlier months (BRD D1,
+ * D2 — F6.1). A user with no receipts yet sees the welcome instead.
+ *
+ * This is the first slice of the dashboard. The limit bar, the month-to-date
+ * label, the excluded-receipts notice and the category breakdown arrive with
+ * F6.6, F6.3, F6.2 and F6.7.
+ */
 export const DashboardPage = observer(function DashboardPage() {
-  const { authStore } = useStores();
+  const { budgetStore, authStore } = useStores();
+  const { summary, isLoading, error } = budgetStore;
 
-  const user = authStore.user;
+  useEffect(() => {
+    void budgetStore.showCurrentMonth();
+  }, [budgetStore]);
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
-  };
+  if (!summary) {
+    return (
+      <div className="flex-grow flex flex-col items-center py-10 px-4 md:px-8">
+        <div className="w-full max-w-[960px]">
+          {error ? (
+            <ErrorState layout="banner" title="The month could not be loaded" message={error} />
+          ) : (
+            <LoadingState title="Loading your month…" />
+          )}
+        </div>
+      </div>
+    );
+  }
 
-  const greeting = user?.first_name ? `${getGreeting()}, ${user.first_name}` : getGreeting();
-  const currency = user?.currency ?? "PLN";
+  if (!summary.has_receipts) return <WelcomePanel />;
+
+  const selected = new Date(budgetStore.year, budgetStore.month - 1, 1);
+  // The figure's own month, not the selection: while the next month loads, the
+  // old figure stays labelled as what it is.
+  const figureMonth = new Date(summary.year, summary.month - 1, 1);
+  const { current } = budgetStore;
+  const figureIsCurrent = summary.year === current.year && summary.month === current.month;
+  const currency = authStore.user?.currency ?? "PLN";
+  const heading = figureIsCurrent
+    ? `Spent so far in ${MONTH.format(figureMonth)}`
+    : `Spent in ${MONTH.format(figureMonth)}`;
 
   return (
-    <div className="flex-grow flex flex-col items-center py-10 px-8">
-      <div className="w-full max-w-[960px] flex flex-col gap-7">
-        <div className="flex flex-col gap-1.5">
-          <h1 className="text-3xl font-bold">{greeting}</h1>
-          <p className="text-lg text-muted-foreground">
-            Nothing recorded yet — your first receipt starts the budget.
+    <div className="flex-grow flex flex-col items-center py-7 px-4 md:px-8">
+      <div className="w-full max-w-[960px] flex flex-col gap-5">
+        <MonthSwitcher
+          label={MONTH_AND_YEAR.format(selected)}
+          canGoForward={budgetStore.canGoForward}
+          onPrevious={() => {
+            void budgetStore.showPreviousMonth();
+          }}
+          onNext={() => {
+            void budgetStore.showNextMonth();
+          }}
+        />
+
+        {error && (
+          <ErrorState layout="banner" title="The month could not be loaded" message={error} />
+        )}
+
+        <Card
+          variant="surface"
+          aria-busy={isLoading}
+          className={`flex flex-col gap-2.5 px-6 py-7 md:px-8 transition-opacity ${isLoading ? "opacity-60" : ""}`}
+        >
+          <span className="text-md font-medium text-muted-foreground">{heading}</span>
+          <p className="m-0 flex flex-wrap items-baseline gap-3">
+            <span className="tabular-nums text-[46px] font-bold leading-none tracking-[-0.025em]">
+              {AMOUNT.format(Number(summary.total))}
+            </span>
+            <span className="text-xl font-semibold text-muted-foreground">{currency}</span>
           </p>
-        </div>
-
-        <Card className="p-12 flex flex-col items-center gap-4 text-center">
-          <div className="w-16 h-16 rounded-full bg-tone-primary-bg text-tone-primary-text flex items-center justify-center">
-            <Camera size={30} strokeWidth={1.8} />
-          </div>
-          <div className="flex flex-col gap-1.5 max-w-[460px]">
-            <h2 className="text-[19px] font-semibold">Photograph your first receipt</h2>
-            <p className="text-[14px] text-muted-foreground">
-              Merchant, date, every line item and the total are read off the photo. Long receipts
-              can be shot in several overlapping frames — items caught twice are counted once.
-            </p>
-          </div>
-          <Link to="/upload" className="contents">
-            <Button size="lg" className="mt-2">
-              <Upload size={16} className="mr-2" />
-              Upload a receipt
-            </Button>
-          </Link>
+          <span className="tabular-nums text-md text-muted-foreground">
+            {summary.receipt_count === 1
+              ? "1 receipt"
+              : `${String(summary.receipt_count)} receipts`}
+          </span>
         </Card>
-
-        <section className="flex flex-col gap-3 mt-4">
-          <div className="flex items-baseline justify-between">
-            <h2 className="text-[17px] font-semibold">Your account</h2>
-            <Link to="/profile" className="text-[14px] text-primary hover:underline">
-              Edit preferences
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="p-5 flex flex-col gap-1.5">
-              <span className="text-sm text-muted-foreground">Signed in as</span>
-              <span className="text-[15px] font-semibold">{user?.email}</span>
-            </Card>
-            <Card className="p-5 flex flex-col gap-1.5">
-              <span className="text-sm text-muted-foreground">Currency</span>
-              <span className="text-[15px] font-semibold">{currency}</span>
-            </Card>
-            <Card className="p-5 flex flex-col gap-1.5">
-              <span className="text-sm text-muted-foreground">Monthly limit</span>
-              <span className="text-[15px] font-semibold tracking-tight">
-                {user?.budget_limit ? `${user.budget_limit} ${currency}` : `Not set`}
-              </span>
-            </Card>
-          </div>
-        </section>
       </div>
     </div>
   );

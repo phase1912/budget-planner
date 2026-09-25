@@ -71,7 +71,11 @@ Rules that must hold at all times. Each is a candidate for a test.
    currency exactly, and these numbers are shown to users as their own money.
 2. A receipt belongs to the month of its **transaction date**, never its upload date (D2).
 3. Timestamps are timezone-aware UTC. Month boundaries are derived, and a naive datetime
-   silently shifts a receipt into the wrong month near midnight.
+   silently shifts a receipt into the wrong month near midnight. A receipt's
+   `transaction_date` is the exception in meaning, not type: it holds the time printed on
+   the receipt, the shop's wall clock, stored unconverted. So a receipt belongs to the
+   calendar month printed on it, and "the current month" is the user's, decided by their
+   browser (ADR-0009).
 
 **Aggregation**
 
@@ -149,7 +153,7 @@ here as an ADR when it arrives.
 | Question | Blocks |
 |---|---|
 | Confidence thresholds for OCR, categorisation and manual-review triggers | Resolved — see ADR-0005 and `app.config.Settings.ocr_confidence_threshold` / `.categorization_confidence_threshold`; revisit once E3/E5 have real accuracy data |
-| Whether budget periods are strictly calendar months or support custom cycles | E6 |
+| Whether budget periods are strictly calendar months or support custom cycles | Resolved — calendar months, see ADR-0009 |
 | Whether thin history yields softened advice or none at all | E8 |
 | Target values for the success metrics (section 12) | Not epic-blocking — informs tuning throughout |
 | Which markets/currencies ship at launch, and whether multi-currency is truly out of scope | F1.4 |

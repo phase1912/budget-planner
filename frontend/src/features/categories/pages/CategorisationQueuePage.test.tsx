@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BrowserRouter } from "react-router-dom";
 
-import type { ItemView, ReviewQueueItem } from "@/stores/CategoriesStore";
+import type { CategorySpend, ItemView, ReviewQueueItem } from "@/stores/CategoriesStore";
 import { CategorisationQueuePage } from "./CategorisationQueuePage";
 
 const mockFetchReviewQueue = vi.fn();
@@ -21,6 +21,7 @@ const queueItem: ReviewQueueItem = {
   is_category_manual: false,
   merchant_name: "Fresh Market",
   transaction_date: "2026-07-20T14:32:00Z",
+  receipt_status: "parsed",
 };
 
 const mockStore = {
@@ -38,6 +39,12 @@ const mockStore = {
     queueTotal: 0,
     queueSize: 20,
     setQueueDates: vi.fn(),
+    queueCategoryId: null as string | null,
+    queueTotalAmount: "0",
+    queueExcludedCount: 0,
+    queueExcludedAmount: "0",
+    queueCategorySpend: [] as CategorySpend[],
+    setQueueCategory: vi.fn(),
     setQueuePage: vi.fn(),
     needsReviewCount: 0,
     setQueueView: vi.fn(),
@@ -50,6 +57,7 @@ const mockStore = {
     reassignCategory: vi.fn(),
   },
   toastStore: { showError: vi.fn() },
+  authStore: { user: { currency: "PLN" } },
 };
 
 vi.mock("@/stores/StoreContext", () => ({
@@ -75,6 +83,10 @@ describe("CategorisationQueuePage", () => {
     mockStore.categoriesStore.queueTotal = 0;
     mockStore.categoriesStore.queuePages = 0;
     mockStore.categoriesStore.queuePage = 1;
+    mockStore.categoriesStore.queueCategoryId = null;
+    mockStore.categoriesStore.queueTotalAmount = "0";
+    mockStore.categoriesStore.queueExcludedCount = 0;
+    mockStore.categoriesStore.queueCategorySpend = [];
   });
 
   it("fetches the review queue on mount", () => {
@@ -160,5 +172,63 @@ describe("CategorisationQueuePage", () => {
       "2026-07-01T00:00:00Z",
       "2026-07-31T23:59:59Z",
     );
+  });
+
+  it("shows what each category cost and filters to one when it is picked", () => {
+    mockStore.categoriesStore.queueCategorySpend = [
+      { category_id: "c-clothing", name: "Clothing", item_count: 2, total_amount: "90.00" },
+      { category_id: "c-groceries", name: "Groceries", item_count: 2, total_amount: "15.00" },
+    ];
+    renderPage();
+
+    const clothing = screen.getByRole("button", { name: /Clothing.*90\.00.*86%/ });
+    expect(clothing).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(clothing);
+    expect(mockStore.categoriesStore.setQueueCategory).toHaveBeenCalledWith("c-clothing");
+  });
+
+  it("picking the chosen category again shows every category once more", () => {
+    mockStore.categoriesStore.queueCategoryId = "c-clothing";
+    mockStore.categoriesStore.queueCategorySpend = [
+      { category_id: "c-clothing", name: "Clothing", item_count: 2, total_amount: "90.00" },
+    ];
+    renderPage();
+
+    const clothing = screen.getByRole("button", { name: /Clothing/ });
+    expect(clothing).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(clothing);
+    expect(mockStore.categoriesStore.setQueueCategory).toHaveBeenCalledWith(null);
+  });
+
+  it("totals the whole selection and says what under-review items were left out", () => {
+    mockStore.categoriesStore.reviewQueue = [
+      queueItem,
+      { ...queueItem, id: "item-2", name: "Winter coat", receipt_status: "manual_review" },
+    ];
+    mockStore.categoriesStore.queueTotal = 45;
+    mockStore.categoriesStore.queueTotalAmount = "1234.5";
+    mockStore.categoriesStore.queueExcludedCount = 1;
+    mockStore.categoriesStore.queueExcludedAmount = "999";
+    renderPage();
+
+    expect(screen.getByText("1,234.50 PLN")).toBeInTheDocument();
+    expect(
+      screen.getByText(/45 items · 1 under review, worth 999\.00 PLN, not counted/),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Under review")).toBeInTheDocument();
+  });
+
+  it("draws no bar for a category that sums below zero, such as discounts", () => {
+    mockStore.categoriesStore.queueCategorySpend = [
+      { category_id: "c-groceries", name: "Groceries", item_count: 3, total_amount: "90.00" },
+      { category_id: "c-other", name: "Other", item_count: 2, total_amount: "-10.00" },
+    ];
+    renderPage();
+
+    const other = screen.getByRole("button", { name: /Other/ });
+    const bar = Array.from(other.querySelectorAll<HTMLElement>("span[style]")).find(
+      (span) => span.style.width !== "",
+    );
+    expect(bar).toHaveStyle({ width: "0%" });
   });
 });
