@@ -121,23 +121,71 @@ describe("ExtractedStep", () => {
     expect(screen.getByText(/Lines do not match printed total/)).toBeInTheDocument();
   });
 
-  it("should display manual review UI when requires_manual_review is true", () => {
+  function withExtraction(overrides: Record<string, unknown>) {
     runInAction(() => {
       mockStore.uploadStore.extractedData = {
         extractions: [
           {
             ...(mockStore.uploadStore.extractedData as { extractions: Record<string, unknown>[] })
               .extractions[0],
-            requires_manual_review: true,
+            ...overrides,
           },
         ],
       };
     });
+  }
+
+  it("says only the total is missing when the date was read", () => {
+    withExtraction({ requires_manual_review: true, receipt_total: null, computed_total: "150.00" });
     renderComponent();
     expect(screen.getByText("Test Store needs you")).toBeInTheDocument();
-    expect(screen.getByText(/No total or date could be read/)).toBeInTheDocument();
+    expect(screen.getByText(/^No total could be read/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Enter the total" })).toBeInTheDocument();
   });
+
+  it("opens the total form with the lines' sum offered and prefilled", () => {
+    withExtraction({ requires_manual_review: true, receipt_total: null, computed_total: "150.00" });
+    renderComponent();
+
+    fireEvent.click(screen.getByRole("button", { name: "Enter the total" }));
+
+    const field = screen.getByLabelText("Printed total");
+    expect(field).toHaveValue("150.00");
+    expect(field).toHaveFocus();
+    expect(screen.getByRole("button", { name: "150.00 is right" })).toBeInTheDocument();
+  });
+
+  it("accepting the lines' sum saves it as the total", () => {
+    const resolveTotal = vi.spyOn(mockStore.uploadStore, "resolveTotal").mockResolvedValue(true);
+    withExtraction({ requires_manual_review: true, receipt_total: null, computed_total: "150.00" });
+    renderComponent();
+
+    fireEvent.click(screen.getByRole("button", { name: "Enter the total" }));
+    fireEvent.click(screen.getByRole("button", { name: "150.00 is right" }));
+
+    expect(resolveTotal).toHaveBeenCalledWith(0, "150.00");
+  });
+
+  it("will not save something that is not an amount", () => {
+    withExtraction({ requires_manual_review: true, receipt_total: null, computed_total: "150.00" });
+    renderComponent();
+    fireEvent.click(screen.getByRole("button", { name: "Enter the total" }));
+
+    fireEvent.change(screen.getByLabelText("Printed total"), { target: { value: "abc" } });
+    expect(screen.getByText("Enter a number, e.g. 37.00")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save total" })).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText("Printed total"), { target: { value: "37,00" } });
+    expect(screen.getByRole("button", { name: "Save total" })).toBeEnabled();
+  });
+
+  it("offers no total form when only the date is missing", () => {
+    withExtraction({ requires_manual_review: true, transaction_date: null });
+    renderComponent();
+    expect(screen.getByText(/^No date could be read/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Enter the total" })).not.toBeInTheDocument();
+  });
+
   it("should reset state and handle back button", () => {
     renderComponent();
     const backButton = screen.getByText("Back to photos");

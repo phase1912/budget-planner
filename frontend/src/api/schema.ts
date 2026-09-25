@@ -850,7 +850,7 @@ export interface components {
         };
         /**
          * ResolveTotalRequest
-         * @description Request to resolve a missing or low-confidence total.
+         * @description The printed total the user typed for a receipt the parser could not read (BRD A11).
          */
         ResolveTotalRequest: {
             /** Extraction Index */

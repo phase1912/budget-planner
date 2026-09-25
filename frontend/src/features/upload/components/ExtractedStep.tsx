@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { FixExtractionDialog } from "./FixExtractionDialog";
-import { useNavigate } from "react-router-dom";
+import { ResolveTotalForm } from "./ResolveTotalForm";
 import { useStores } from "@/stores/StoreContext";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
 import { Button } from "@/shared/components/Button/Button";
@@ -67,9 +68,25 @@ interface ExtractedDataPayload {
   extractions?: ExtractedData[];
 }
 
+/**
+ * Say exactly what the parser could not read, so the user fixes the right thing.
+ *
+ * Such a receipt is still stored, flagged for review and left out of the month's
+ * budget until it is complete (BRD A11, D3). A missing date is set later from the
+ * receipt's Edit dialog, since this step has no date field.
+ */
+function missingFieldsMessage(data: ExtractedData): string {
+  const missing = [!data.receipt_total && "total", !data.transaction_date && "date"].filter(
+    Boolean,
+  );
+  const what = missing.length === 2 ? "No total or date" : `No ${String(missing[0] ?? "total")}`;
+  const after = data.receipt_total ? " Set it from the receipt's Edit once it is stored." : "";
+  return `${what} could be read, so it is excluded from budget calculation until you fill it in.${after}`;
+}
+
 export const ExtractedStep = observer(function ExtractedStep() {
   const { uploadStore } = useStores();
-  const navigate = useNavigate();
+  const [enteringTotalFor, setEnteringTotalFor] = useState<number | null>(null);
 
   const handleBack = () => {
     uploadStore.resetError();
@@ -379,14 +396,30 @@ export const ExtractedStep = observer(function ExtractedStep() {
                         {merchantName || "Receipt"} needs you
                       </span>
                       <span className="text-[12px] leading-relaxed text-muted-foreground prose">
-                        No total or date could be read, so it is excluded from budget calculation
-                        until you fill it in. The month says so on its face.
+                        {missingFieldsMessage(data)}
                       </span>
                     </div>
                   </div>
-                  <Button variant="danger-solid" size="sm" className="self-start text-[12px]">
-                    Enter the total
-                  </Button>
+                  {!data.receipt_total &&
+                    (enteringTotalFor === index ? (
+                      <ResolveTotalForm
+                        extractionIndex={index}
+                        computedTotal={data.computed_total}
+                        lineCount={lineItems.length}
+                        autoFocusField
+                      />
+                    ) : (
+                      <Button
+                        variant="danger-solid"
+                        size="sm"
+                        className="self-start text-[12px]"
+                        onClick={() => {
+                          setEnteringTotalFor(index);
+                        }}
+                      >
+                        Enter the total
+                      </Button>
+                    ))}
                 </div>
               )}
 
@@ -551,7 +584,8 @@ export const ExtractedStep = observer(function ExtractedStep() {
           </Button>
           {uploadStore.conflictsCount > 0 ? (
             <Button variant="primary" onClick={() => (uploadStore.currentStep = 3)}>
-              Resolve {uploadStore.conflictsCount} things
+              Resolve {uploadStore.conflictsCount}{" "}
+              {uploadStore.conflictsCount === 1 ? "thing" : "things"}
               <svg
                 width="16"
                 height="16"
@@ -570,9 +604,9 @@ export const ExtractedStep = observer(function ExtractedStep() {
           ) : (
             <Button
               variant="primary"
-              disabled={uploadStore.selectedIndices.size === 0}
+              disabled={uploadStore.selectedIndices.size === 0 || uploadStore.isCommitting}
               onClick={() => {
-                void uploadStore.commitJob(navigate);
+                void uploadStore.commitJob();
               }}
             >
               Store {uploadStore.selectedIndices.size} receipt

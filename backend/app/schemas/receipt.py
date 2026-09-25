@@ -1,9 +1,9 @@
 import uuid
 from datetime import date, datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Any, Literal
 
-from pydantic import AliasPath, BaseModel, ConfigDict, Field, computed_field
+from pydantic import AliasPath, BaseModel, ConfigDict, Field, computed_field, field_validator
 
 from app.core.config import get_settings
 from app.domain.categories import is_low_confidence
@@ -49,10 +49,26 @@ class ResolvePositionMatchRequest(BaseModel):
 
 
 class ResolveTotalRequest(BaseModel):
-    """Request to resolve a missing or low-confidence total."""
+    """The printed total the user typed for a receipt the parser could not read (BRD A11)."""
 
     extraction_index: int
     receipt_total: str
+
+    @field_validator("receipt_total")
+    @classmethod
+    def _as_money(cls, value: str) -> str:
+        """Accept "37,00" as well as "37.00" and store it as "37.00".
+
+        Rejects anything that is not a non-negative amount here, at the boundary:
+        the text would otherwise be saved into the job and only fail at commit.
+        """
+        try:
+            amount = Decimal(value.strip().replace(" ", "").replace(",", "."))
+        except InvalidOperation:
+            raise ValueError("Enter the total as a number, e.g. 37.00") from None
+        if not amount.is_finite() or amount < 0:
+            raise ValueError("The total cannot be negative")
+        return str(amount.quantize(Decimal("0.01")))
 
 
 class EditLineItemRequest(BaseModel):
