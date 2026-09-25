@@ -1,7 +1,24 @@
 import { makeAutoObservable, runInAction } from "mobx";
+import type { ToastStore } from "./ToastStore";
 import { errorMessage } from "../api/errors";
 import type { ApiClient } from "@/api/client";
 import { AsyncState } from "@/stores/AsyncState";
+
+/**
+ * Whether a receipt's printed total still needs the user (BRD A11): none was
+ * read, or it was read with low confidence. One decision either way, so the
+ * "N things" counter and the cards on both wizard steps agree.
+ */
+export function totalNeedsDecision(extraction: {
+  receipt_total?: unknown;
+  receipt_total_confidence?: unknown;
+}): boolean {
+  if (!extraction.receipt_total) return true;
+  return (
+    typeof extraction.receipt_total_confidence === "number" &&
+    extraction.receipt_total_confidence < 80
+  );
+}
 
 export class UploadStore {
   readonly uploadState = new AsyncState();
@@ -21,9 +38,25 @@ export class UploadStore {
   lines: File[][] = [[]];
   currentStep: 1 | 2 | 3 = 1;
 
-  constructor(api: ApiClient) {
+  isCommitting = false;
+  private readonly toastStore: ToastStore | undefined;
+
+  constructor(api: ApiClient, toastStore?: ToastStore) {
     this.api = api;
+    this.toastStore = toastStore;
     makeAutoObservable(this);
+  }
+
+  /**
+   * Tell the user a wizard action failed, and report whether it succeeded.
+   *
+   * Every action here is fired from a click handler that cannot await it, so
+   * an error thrown back to the caller vanished unseen; it is shown here instead.
+   */
+  private report(error: unknown, fallback: string): false {
+    console.error(error);
+    this.toastStore?.showError(error instanceof Error ? error.message : fallback);
+    return false;
   }
 
   startEditingExtraction(index: number) {
@@ -293,6 +326,32 @@ export class UploadStore {
     this.currentStep = 1;
   }
 
+  /**
+   * Back to an empty first step, ready for the next receipt.
+   *
+   * Unlike `resetData`, which "Back to photos" uses to keep the chosen photos for
+   * another try, this also forgets the photos, the mode and the job: they belong
+   * to receipts that are now stored.
+   */
+  startOver() {
+    this.resetData();
+    this.resetError();
+    this.lines = [[]];
+    this.mode = "single";
+    this.jobId = null;
+    this.isProcessing = false;
+    this.editingExtractionIndex = null;
+  }
+
+  /** How many receipts a commit of the current selection would store; skipped duplicates don't count. */
+  get receiptsToStore(): number {
+    const extractions = (this.extractedData?.extractions ?? []) as Record<string, unknown>[];
+    return Array.from(this.selectedIndices).filter((i) => {
+      const extraction = extractions[i];
+      return extraction && !extraction.is_skipped && extraction.duplicate_resolved !== "skipped";
+    }).length;
+  }
+
   // Legacy method for existing tests/components
   async uploadFile(file: File): Promise<boolean> {
     this.addFiles([file]);
@@ -303,20 +362,20 @@ export class UploadStore {
    * Submits the user's decision (store or skip) for a flagged duplicate receipt.
    * Resolves the extraction server-side so it can proceed or be discarded.
    */
-  async resolveDuplicate(index: number, action: "store" | "skip") {
-    if (!this.jobId) return;
+  async resolveDuplicate(index: number, action: "store" | "skip"): Promise<boolean> {
+    if (!this.jobId) return false;
     try {
       const res = await this.api.POST("/receipts/upload/{job_id}/resolve-duplicate", {
         params: { path: { job_id: this.jobId } },
         body: { extraction_index: index, action },
       });
-      if (res.data) {
-        runInAction(() => {
-          this.extractedData = res.data.extracted_data ?? null;
-        });
-      }
+      if (res.error) throw new Error(errorMessage(res.error, "Failed to resolve the duplicate"));
+      runInAction(() => {
+        this.extractedData = res.data.extracted_data ?? null;
+      });
+      return true;
     } catch (err) {
-      console.error("Resolve duplicate error", err);
+      return this.report(err, "Failed to resolve the duplicate");
     }
   }
 
@@ -327,8 +386,8 @@ export class UploadStore {
     extractionIndex: number,
     matchIndex: number,
     action: "same" | "different",
-  ) {
-    if (!this.jobId) return;
+  ): Promise<boolean> {
+    if (!this.jobId) return false;
     try {
       const res = await this.api.POST("/receipts/upload/{job_id}/resolve-position-match", {
         params: { path: { job_id: this.jobId } },
@@ -340,9 +399,9 @@ export class UploadStore {
           this.extractedData = res.data.extracted_data;
         }
       });
+      return true;
     } catch (err) {
-      console.error(err);
-      throw err;
+      return this.report(err, "Failed to resolve match");
     }
   }
   get conflictsCount(): number {
@@ -359,13 +418,7 @@ export class UploadStore {
       if (extraction.is_duplicate && !extraction.duplicate_resolved) {
         count++;
       }
-      if (extraction.requires_manual_review) {
-        count++;
-      }
-      if (
-        typeof extraction.receipt_total_confidence === "number" &&
-        extraction.receipt_total_confidence < 80
-      ) {
+      if (totalNeedsDecision(extraction)) {
         count++;
       }
       const positionMatches = (extraction.position_matches ?? []) as Record<string, unknown>[];
@@ -378,8 +431,8 @@ export class UploadStore {
     return count;
   }
 
-  async resolveTotal(extractionIndex: number, receiptTotal: string) {
-    if (!this.jobId) return;
+  async resolveTotal(extractionIndex: number, receiptTotal: string): Promise<boolean> {
+    if (!this.jobId) return false;
     try {
       const res = await this.api.POST("/receipts/upload/{job_id}/resolve-total", {
         params: { path: { job_id: this.jobId } },
@@ -391,9 +444,9 @@ export class UploadStore {
           this.extractedData = res.data.extracted_data;
         }
       });
+      return true;
     } catch (err) {
-      console.error(err);
-      throw err;
+      return this.report(err, "Failed to resolve total");
     }
   }
 
@@ -410,7 +463,7 @@ export class UploadStore {
     itemIndex: number,
     values: { name?: string; quantity?: string; unit_price?: string; total_price?: string },
   ) {
-    if (!this.jobId) return;
+    if (!this.jobId) return false;
     try {
       const res = await this.api.POST("/receipts/upload/{job_id}/line-item", {
         params: { path: { job_id: this.jobId } },
@@ -422,28 +475,42 @@ export class UploadStore {
           this.extractedData = res.data.extracted_data;
         }
       });
+      return true;
     } catch (err) {
-      console.error(err);
-      throw err;
+      return this.report(err, "Failed to update the line");
     }
   }
 
-  async commitJob(navigate: (path: string) => unknown) {
-    if (!this.jobId) return;
+  /**
+   * Store the selected receipts and start the wizard afresh for the next one (F4.7).
+   *
+   * Stays on the upload page rather than leaving it: receipts are usually added
+   * several in a row. The server re-checks every gate, so a refusal is shown
+   * rather than swallowed; the button is disabled meanwhile so one click stores once.
+   */
+  async commitJob(): Promise<boolean> {
+    if (!this.jobId || this.isCommitting) return false;
+    this.isCommitting = true;
+    const stored = this.receiptsToStore;
     try {
       const res = await this.api.POST("/receipts/upload/{job_id}/commit", {
         params: { path: { job_id: this.jobId } },
         body: { indices_to_store: Array.from(this.selectedIndices) },
       });
-      if (res.error) throw new Error(errorMessage(res.error, "Failed to commit"));
+      if (res.error) throw new Error(errorMessage(res.error, "Failed to store the receipts"));
       runInAction(() => {
-        this.resetData();
-        this.resetError();
+        this.startOver();
       });
-      navigate("/");
+      this.toastStore?.showSuccess(
+        stored === 1 ? "1 receipt stored" : `${String(stored)} receipts stored`,
+      );
+      return true;
     } catch (err) {
-      console.error(err);
-      throw err;
+      return this.report(err, "Failed to store the receipts");
+    } finally {
+      runInAction(() => {
+        this.isCommitting = false;
+      });
     }
   }
 }

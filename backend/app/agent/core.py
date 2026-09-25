@@ -138,13 +138,16 @@ class Agent:
         Uses ``response_format`` with the JSON schema derived from the Pydantic
         model so providers that support structured output (Gemini, OpenAI, newer
         Claude) return valid JSON directly.  Falls back to extracting JSON from
-        the text reply if the provider ignores ``response_format``, and skips
-        ``response_format`` altogether when ``disable_json_schema`` is set.
+        the text reply if the provider ignores ``response_format``. When
+        ``disable_json_schema`` is set, the schema goes into the prompt instead:
+        without either, a local model answers the question in prose.
 
         Raises ``AgentError`` if parsing fails after all attempts.
         """
         import litellm
 
+        if self.disable_json_schema:
+            messages = [*messages, self._json_only_instruction(schema)]
         kwargs: dict[str, Any] = {
             "model": self.model,
             "messages": [m.to_dict() for m in messages],
@@ -184,6 +187,22 @@ class Agent:
         return self._parse_response(str(raw), schema)
 
     @staticmethod
+    def _json_only_instruction(schema: type[BaseModel]) -> Message:
+        """Ask for bare JSON in words, for providers that cannot enforce a schema.
+
+        Every adapter would otherwise have to remember to say it; the
+        categoriser did not, and got markdown analysis back instead of JSON.
+        """
+        return Message(
+            role="user",
+            content=(
+                "Respond with a single JSON object that conforms to this JSON Schema, "
+                "and nothing else: no explanation, no markdown.\n"
+                f"{json.dumps(schema.model_json_schema())}"
+            ),
+        )
+
+    @staticmethod
     def _empty_content_reason(message: Any, base: str) -> str:
         """Explain an empty reply, naming the reasoning channel when it is the cause.
 
@@ -203,9 +222,9 @@ class Agent:
     def _parse_response(raw: str, schema: type[T]) -> T:
         """Extract and validate JSON from the LLM's raw text output.
 
-        Handles both clean JSON responses and responses wrapped in markdown
-        code fences (```json ... ```), which some providers add even when
-        asked for raw JSON.
+        Handles clean JSON, JSON wrapped in markdown code fences (```json ... ```)
+        and JSON surrounded by a sentence of prose, all of which providers
+        return even when asked for raw JSON.
         """
         text = raw.strip()
 
@@ -218,9 +237,17 @@ class Agent:
         try:
             data = json.loads(text)
         except json.JSONDecodeError as exc:
-            raise AgentError(
-                f"Failed to parse LLM response as JSON: {exc}\nRaw: {raw[:500]}"
-            ) from exc
+            # Small models often wrap the object in a sentence even when told not
+            # to; the outermost braces are the answer, the rest is chatter.
+            start, end = text.find("{"), text.rfind("}")
+            try:
+                if start == -1 or end < start:
+                    raise exc
+                data = json.loads(text[start : end + 1])
+            except json.JSONDecodeError:
+                raise AgentError(
+                    f"Failed to parse LLM response as JSON: {exc}\nRaw: {raw[:500]}"
+                ) from exc
 
         try:
             return schema.model_validate(data)

@@ -207,3 +207,64 @@ async def test_schema_is_enforced_natively_by_default(mock_acompletion: MagicMoc
     # Then
     response_format = mock_acompletion.call_args.kwargs["response_format"]
     assert response_format["json_schema"]["name"] == "MockSchema"
+
+
+def _reply(content: str) -> MagicMock:
+    response = MagicMock()
+    response.choices = [MagicMock()]
+    response.choices[0].message.content = content
+    return response
+
+
+@pytest.mark.asyncio
+@patch("litellm.acompletion")
+async def test_without_native_schema_the_prompt_asks_for_bare_json(
+    mock_acompletion: MagicMock,
+) -> None:
+    """A local model given no schema answered the categoriser in markdown prose."""
+    mock_acompletion.return_value = _reply('{"name": "test", "value": 42}')
+    agent = Agent(model="test-model", disable_json_schema=True)
+
+    await agent.run_structured([Message(role="user", content="Categorise")], schema=MockSchema)
+
+    sent = mock_acompletion.call_args.kwargs["messages"]
+    assert sent[0] == {"role": "user", "content": "Categorise"}
+    instruction = sent[-1]["content"]
+    assert "JSON Schema" in instruction
+    assert '"value"' in instruction
+
+
+@pytest.mark.asyncio
+@patch("litellm.acompletion")
+async def test_with_native_schema_the_prompt_is_left_alone(mock_acompletion: MagicMock) -> None:
+    mock_acompletion.return_value = _reply('{"name": "test", "value": 42}')
+    agent = Agent(model="test-model")
+
+    await agent.run_structured([Message(role="user", content="Categorise")], schema=MockSchema)
+
+    assert mock_acompletion.call_args.kwargs["messages"] == [
+        {"role": "user", "content": "Categorise"}
+    ]
+
+
+@pytest.mark.asyncio
+@patch("litellm.acompletion")
+async def test_json_wrapped_in_a_sentence_is_still_read(mock_acompletion: MagicMock) -> None:
+    mock_acompletion.return_value = _reply(
+        'Here is the result:\n{"name": "test", "value": 42}\nLet me know if you need more.'
+    )
+    agent = Agent(model="test-model", disable_json_schema=True)
+
+    result = await agent.run_structured([Message(role="user", content="x")], schema=MockSchema)
+
+    assert (result.name, result.value) == ("test", 42)
+
+
+@pytest.mark.asyncio
+@patch("litellm.acompletion")
+async def test_prose_with_no_json_at_all_is_still_an_error(mock_acompletion: MagicMock) -> None:
+    mock_acompletion.return_value = _reply("### Analysis\n1. Item 0 is a mug, so Groceries.")
+    agent = Agent(model="test-model", disable_json_schema=True)
+
+    with pytest.raises(AgentError, match="Failed to parse LLM response as JSON"):
+        await agent.run_structured([Message(role="user", content="x")], schema=MockSchema)

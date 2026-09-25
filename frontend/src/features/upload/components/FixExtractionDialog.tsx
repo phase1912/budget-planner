@@ -61,12 +61,14 @@ export const FixExtractionDialog = observer(function FixExtractionDialog() {
           original.total_price !== item.total_price;
         if (!changed) continue;
 
-        await uploadStore.updateLineItem(index, row, {
+        const saved = await uploadStore.updateLineItem(index, row, {
           name: item.name,
           quantity: item.quantity,
           unit_price: item.unit_price,
           total_price: item.total_price,
         });
+        // The store has said why; keep the dialog open so the edit is not lost.
+        if (!saved) return;
       }
       close();
     } finally {

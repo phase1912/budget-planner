@@ -28,7 +28,7 @@ export class RootStore {
     this.toastStore = new ToastStore();
     this.authStore = new AuthStore(apiClient);
     this.profileStore = new ProfileStore(apiClient, this.authStore, this.toastStore);
-    this.uploadStore = new UploadStore(apiClient);
+    this.uploadStore = new UploadStore(apiClient, this.toastStore);
     this.receiptStore = new ReceiptStore(this.toastStore);
     this.categoriesStore = new CategoriesStore();
   }

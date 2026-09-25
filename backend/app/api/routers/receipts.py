@@ -6,6 +6,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, R
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.adapters.categorisation_agent import ItemCategoriserAdapter
 from app.adapters.vision_agent import VisionAgentAdapter
@@ -282,9 +283,9 @@ async def resolve_duplicate(
         extraction["is_skipped"] = True
         extraction["duplicate_resolved"] = "skipped"
 
-    import copy
-
-    job.result_data = copy.deepcopy(job.result_data)
+    # The extraction was edited in place; SQLAlchemy cannot see that inside a
+    # JSON column, and without this flag the decision is never written.
+    flag_modified(job, "result_data")
     await session.commit()
 
     return UploadJobStatusResponse(
@@ -480,7 +481,9 @@ async def resolve_total(
     updated_extraction["requires_manual_review"] = parsed.requires_manual_review
 
     extractions[idx] = updated_extraction
-    job.result_data = copy.deepcopy(job.result_data)
+    # Replaced in place inside the JSON column, which SQLAlchemy cannot see:
+    # without this flag the typed total is returned but never saved.
+    flag_modified(job, "result_data")
     await session.commit()
 
     return UploadJobStatusResponse(

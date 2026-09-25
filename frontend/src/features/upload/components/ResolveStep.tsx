@@ -1,8 +1,10 @@
 import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/StoreContext";
+import { totalNeedsDecision } from "@/stores/UploadStore";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
 import { Button } from "@/shared/components/Button/Button";
 import { Card } from "@/shared/components/Card/Card";
+import { ResolveTotalForm } from "./ResolveTotalForm";
 
 interface ExtractedLineItem {
   name: string;
@@ -56,9 +58,6 @@ function ResolveTotalInline({
   merchantName: string;
   isMissing: boolean;
 }) {
-  const [total, setTotal] = useState(data.computed_total ?? "");
-  const { uploadStore } = useStores();
-
   return (
     <Card flush>
       <div className="flex flex-col gap-4 p-4 border-b border-border">
@@ -83,44 +82,18 @@ function ResolveTotalInline({
             <span className="text-[15px] font-bold">
               {isMissing ? "No total anywhere on the photos" : "The printed total was hard to read"}
             </span>
-            <span className="text-[13px] font-semibold text-muted-foreground">
-              {data.line_items?.length ?? 0} lines add up to {data.computed_total ?? "0.00"} &mdash;
-              enter the printed total or accept that sum
-            </span>
           </div>
           <span className="inline-flex items-center px-2 py-0.5 rounded-pill bg-muted text-[12px] font-semibold">
             {merchantName}
           </span>
         </div>
 
-        <div className="flex items-center gap-2.5 pl-9">
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => {
-              void uploadStore.resolveTotal(eIdx, data.computed_total ?? "0.00");
-            }}
-          >
-            {data.computed_total ?? "0.00"} is right
-          </Button>
-          <span className="text-[13px] text-muted-foreground">or</span>
-          <input
-            type="text"
-            className="flex h-9 w-[160px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            placeholder="0.00"
-            value={total}
-            onChange={(e) => {
-              setTotal(e.target.value);
-            }}
+        <div className="pl-9">
+          <ResolveTotalForm
+            extractionIndex={eIdx}
+            computedTotal={data.computed_total}
+            lineCount={data.line_items?.length ?? 0}
           />
-          <Button
-            size="sm"
-            onClick={() => {
-              void uploadStore.resolveTotal(eIdx, total);
-            }}
-          >
-            Update
-          </Button>
         </div>
       </div>
     </Card>
@@ -343,18 +316,15 @@ export const ResolveStep = observer(function ResolveStep() {
           {
             /* Missing total / low-confidence total card */
           }
-          if (
-            data.requires_manual_review ||
-            (data.receipt_total_confidence !== undefined && data.receipt_total_confidence < 80)
-          ) {
-            const isMissing = data.requires_manual_review;
+          if (totalNeedsDecision(data)) {
+            const isMissing = !data.receipt_total;
             cards.push(
               <ResolveTotalInline
                 key={`total-${String(eIdx)}`}
                 data={data}
                 eIdx={eIdx}
                 merchantName={merchantName}
-                isMissing={!!isMissing}
+                isMissing={isMissing}
               />,
             );
           }
@@ -547,20 +517,26 @@ export const ResolveStep = observer(function ResolveStep() {
                       role="button"
                       tabIndex={0}
                       onClick={() => {
-                        void uploadStore.resolvePositionMatch(eIdx, mIdx, "same").then(() => {
-                          const next = new Set(expandedMatches);
-                          next.delete(matchKey);
-                          setExpandedMatches(next);
-                        });
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          void uploadStore.resolvePositionMatch(eIdx, mIdx, "same").then(() => {
+                        void uploadStore
+                          .resolvePositionMatch(eIdx, mIdx, "same")
+                          .then((resolved) => {
+                            if (!resolved) return;
                             const next = new Set(expandedMatches);
                             next.delete(matchKey);
                             setExpandedMatches(next);
                           });
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          void uploadStore
+                            .resolvePositionMatch(eIdx, mIdx, "same")
+                            .then((resolved) => {
+                              if (!resolved) return;
+                              const next = new Set(expandedMatches);
+                              next.delete(matchKey);
+                              setExpandedMatches(next);
+                            });
                         }
                       }}
                       className={`cursor-pointer flex flex-col gap-2.5 flex-1 p-4 rounded-[14px] border ${match.result === "same" ? "border-primary shadow-[0_0_0_1px_var(--color-primary)]" : "border-border hover:border-primary/50"}`}
@@ -602,18 +578,22 @@ export const ResolveStep = observer(function ResolveStep() {
                       role="button"
                       tabIndex={0}
                       onClick={() => {
-                        void uploadStore.resolvePositionMatch(eIdx, mIdx, "different").then(() => {
-                          const next = new Set(expandedMatches);
-                          next.delete(matchKey);
-                          setExpandedMatches(next);
-                        });
+                        void uploadStore
+                          .resolvePositionMatch(eIdx, mIdx, "different")
+                          .then((resolved) => {
+                            if (!resolved) return;
+                            const next = new Set(expandedMatches);
+                            next.delete(matchKey);
+                            setExpandedMatches(next);
+                          });
                       }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
                           void uploadStore
                             .resolvePositionMatch(eIdx, mIdx, "different")
-                            .then(() => {
+                            .then((resolved) => {
+                              if (!resolved) return;
                               const next = new Set(expandedMatches);
                               next.delete(matchKey);
                               setExpandedMatches(next);
