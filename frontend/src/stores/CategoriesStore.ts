@@ -9,6 +9,7 @@ const UNCATEGORIZED = "Uncategorized";
 export type Category = components["schemas"]["CategoryOut"];
 export type ReviewQueueItem = components["schemas"]["ReviewQueueItemResponse"];
 export type ItemView = components["schemas"]["ItemView"];
+export type CategorySpend = components["schemas"]["CategorySpendResponse"];
 
 const SEARCH_DEBOUNCE_MS = 250;
 
@@ -29,6 +30,14 @@ export class CategoriesStore {
   queueView: ItemView = "needs_review";
   queueSearch = "";
   queueStartDate: string | undefined = undefined;
+  /** The category the view is narrowed to, or null for every category. */
+  queueCategoryId: string | null = null;
+  /** What every matching item costs, across all pages; items under review excluded. */
+  queueTotalAmount = "0";
+  queueExcludedCount = 0;
+  queueExcludedAmount = "0";
+  /** The matching items' spend per category, highest first — what a category is picked from. */
+  queueCategorySpend: CategorySpend[] = [];
   queueEndDate: string | undefined = undefined;
   queuePage = 1;
   queuePages = 0;
@@ -147,6 +156,7 @@ export class CategoriesStore {
             q: this.queueSearch.trim() || undefined,
             start_date: this.queueStartDate,
             end_date: this.queueEndDate,
+            category_id: this.queueCategoryId ?? undefined,
             page: this.queuePage,
             size: this.queueSize,
           },
@@ -166,6 +176,10 @@ export class CategoriesStore {
       runInAction(() => {
         this.reviewQueue = response.data.items;
         this.queueTotal = response.data.total;
+        this.queueTotalAmount = response.data.total_amount;
+        this.queueExcludedCount = response.data.excluded_item_count;
+        this.queueExcludedAmount = response.data.excluded_amount;
+        this.queueCategorySpend = response.data.categories;
         this.queuePages = response.data.pages;
         this.needsReviewCount = response.data.needs_review_count;
         this.isLoadingQueue = false;
@@ -204,6 +218,13 @@ export class CategoriesStore {
   setQueueDates(start: string | undefined, end: string | undefined): void {
     this.queueStartDate = start;
     this.queueEndDate = end;
+    this.queuePage = 1;
+    void this.fetchReviewQueue();
+  }
+
+  /** Narrow the view to one category, or pass null for all of them; back to page 1. */
+  setQueueCategory(categoryId: string | null): void {
+    this.queueCategoryId = categoryId;
     this.queuePage = 1;
     void this.fetchReviewQueue();
   }

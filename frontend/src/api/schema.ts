@@ -290,7 +290,7 @@ export interface paths {
         };
         /**
          * List Line Items
-         * @description One page of the caller's line items for a categorisation view, oldest first (C3, C4).
+         * @description One page of the caller's line items, with what the whole selection costs (C3, C4, D1).
          */
         get: operations["list_line_items_receipts_line_items_get"];
         put?: never;
@@ -497,6 +497,29 @@ export interface paths {
         patch: operations["rename_category_api_v1_categories__category_id__patch"];
         trace?: never;
     };
+    "/api/v1/budget/months/{year}/{month}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Month Summary
+         * @description The caller's spend in one calendar month, by receipt date (BRD D1, D2).
+         *
+         *     The client names the month: which month is "now" depends on the user's own
+         *     clock, which only the browser knows (ADR-0009).
+         */
+        get: operations["get_month_summary_api_v1_budget_months__year___month__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -553,6 +576,20 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+        };
+        /**
+         * CategorySpendResponse
+         * @description One category's share of the items on screen; `category_id` is null for none at all.
+         */
+        CategorySpendResponse: {
+            /** Category Id */
+            category_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Item Count */
+            item_count: number;
+            /** Total Amount */
+            total_amount: string;
         };
         /**
          * CategoryUpdate
@@ -635,7 +672,12 @@ export interface components {
         };
         /**
          * LineItemListResponse
-         * @description One page of a categorisation-screen view, plus the queue size for its badge (BRD C3).
+         * @description One page of a categorisation-screen view, with what the whole view costs (C3, D1).
+         *
+         *     `total_amount` covers every matching item across all pages, not just this one,
+         *     counted like the month's budget: items on receipts under manual review are
+         *     held out and reported in `excluded_*`. `categories` breaks the same items down
+         *     per category, ignoring the category filter, so it can be picked from.
          */
         LineItemListResponse: {
             /** Items */
@@ -650,6 +692,14 @@ export interface components {
             pages: number;
             /** Needs Review Count */
             needs_review_count: number;
+            /** Total Amount */
+            total_amount: string;
+            /** Excluded Item Count */
+            excluded_item_count: number;
+            /** Excluded Amount */
+            excluded_amount: string;
+            /** Categories */
+            categories: components["schemas"]["CategorySpendResponse"][];
         };
         /**
          * LineItemResponse
@@ -710,6 +760,22 @@ export interface components {
         MessageResponse: {
             /** Message */
             message: string;
+        };
+        /**
+         * MonthSummaryResponse
+         * @description One calendar month's spend, as the month view shows it (BRD D1, D2).
+         */
+        MonthSummaryResponse: {
+            /** Year */
+            year: number;
+            /** Month */
+            month: number;
+            /** Total */
+            total: string;
+            /** Receipt Count */
+            receipt_count: number;
+            /** Has Receipts */
+            has_receipts: boolean;
         };
         /**
          * PaginatedReceiptsResponse
@@ -899,6 +965,7 @@ export interface components {
             merchant_name?: string | null;
             /** Transaction Date */
             transaction_date?: string | null;
+            receipt_status: components["schemas"]["ReceiptStatus"];
             /**
              * Category Is Low Confidence
              * @description Whether the category needs a human look before it is trusted (BRD C3).
@@ -1515,6 +1582,7 @@ export interface operations {
                 q?: string | null;
                 start_date?: string | null;
                 end_date?: string | null;
+                category_id?: string | null;
                 page?: number;
                 size?: number;
                 token?: string | null;
@@ -1986,6 +2054,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CategoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_month_summary_api_v1_budget_months__year___month__get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                year: number;
+                month: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthSummaryResponse"];
                 };
             };
             /** @description Validation Error */

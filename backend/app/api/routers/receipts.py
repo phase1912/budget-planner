@@ -26,6 +26,7 @@ from app.repository.category import CategoryRepository
 from app.repository.receipt import ReceiptRepository
 from app.schemas.extraction import ExtractedReceipt
 from app.schemas.receipt import (
+    CategorySpendResponse,
     CommitJobRequest,
     EditLineItemRequest,
     LineItemListResponse,
@@ -327,18 +328,26 @@ async def list_line_items(
     q: str | None = None,
     start_date: datetime | None = None,
     end_date: datetime | None = None,
+    category_id: uuid.UUID | None = None,
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> LineItemListResponse:
-    """One page of the caller's line items for a categorisation view, oldest first (C3, C4)."""
+    """One page of the caller's line items, with what the whole selection costs (C3, C4, D1)."""
     repo = ReceiptRepository(session)
     items, total = await repo.list_items(
         view,
         search=q,
         start_date=start_date,
         end_date=end_date,
+        category_id=category_id,
         skip=(page - 1) * size,
         limit=size,
+    )
+    spend = await repo.item_spend(
+        view, search=q, start_date=start_date, end_date=end_date, category_id=category_id
+    )
+    by_category = await repo.spend_by_category(
+        view, search=q, start_date=start_date, end_date=end_date
     )
     return LineItemListResponse(
         items=[ReviewQueueItemResponse.model_validate(item) for item in items],
@@ -347,6 +356,18 @@ async def list_line_items(
         size=size,
         pages=(total + size - 1) // size,
         needs_review_count=await repo.count_needs_review(),
+        total_amount=spend.total,
+        excluded_item_count=spend.excluded_count,
+        excluded_amount=spend.excluded_amount,
+        categories=[
+            CategorySpendResponse(
+                category_id=c.category_id,
+                name=c.name,
+                item_count=c.item_count,
+                total_amount=c.total,
+            )
+            for c in by_category
+        ],
     )
 
 

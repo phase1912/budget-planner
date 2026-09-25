@@ -13,12 +13,24 @@ import {
   LoadingState,
   Note,
   Pagination,
+  Pill,
   SegmentedControl,
 } from "@/shared/components";
 import type { ItemView, ReviewQueueItem } from "@/stores/CategoriesStore";
+import { CategorySpendList } from "../components/CategorySpendList";
 import { InlineCategoryPicker } from "../components/InlineCategoryPicker";
 
+const AMOUNT = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 const DATE_FORMAT = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" });
+
+const SUBTITLES: Record<ItemView, string> = {
+  needs_review: "Items the agent was not confident about, oldest first.",
+  corrected: "Items you filed by hand, oldest first.",
+  all: "Everything you bought and what it cost, oldest first.",
+};
 
 const EMPTY_MESSAGES: Record<ItemView, { title: string; message: string }> = {
   needs_review: {
@@ -45,11 +57,15 @@ function purchaseDate(item: ReviewQueueItem): string {
  * (docs/design/screens/categorisation.html).
  */
 export const CategorisationQueuePage = observer(function CategorisationQueuePage() {
-  const { categoriesStore } = useStores();
+  const { categoriesStore, authStore } = useStores();
   const { reviewQueue, isLoadingQueue, queueError, queueView, queueSearch } = categoriesStore;
-  const filtered = Boolean(queueSearch.trim() || categoriesStore.queueStartDate);
+  const filtered =
+    queueSearch.trim() !== "" ||
+    categoriesStore.queueStartDate !== undefined ||
+    categoriesStore.queueCategoryId !== null;
+  const currency = authStore.user?.currency ?? "PLN";
   const empty = filtered
-    ? { title: "No matching items", message: "Nothing in this view matches the name or dates." }
+    ? { title: "No matching items", message: "Nothing in this view matches these filters." }
     : EMPTY_MESSAGES[queueView];
 
   useEffect(() => {
@@ -64,9 +80,7 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
             <h1 className="m-0 text-[28px] font-bold tracking-[-0.02em] text-foreground">
               Categories
             </h1>
-            <p className="m-0 text-lg text-muted-foreground">
-              Items the agent was not confident about, oldest first.
-            </p>
+            <p className="m-0 text-lg text-muted-foreground">{SUBTITLES[queueView]}</p>
           </div>
           <Link
             to="/categories/manage"
@@ -123,6 +137,16 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
           </div>
         </div>
 
+        {!queueError && (
+          <CategorySpendList
+            spend={categoriesStore.queueCategorySpend}
+            selectedId={categoriesStore.queueCategoryId}
+            onSelect={(categoryId) => {
+              categoriesStore.setQueueCategory(categoryId);
+            }}
+          />
+        )}
+
         {isLoadingQueue && reviewQueue.length === 0 ? (
           <LoadingState title="Loading the review queue…" />
         ) : queueError ? (
@@ -158,7 +182,18 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
                   key={item.id}
                   className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 px-4 py-3.5 border-t border-border first:border-t-0 md:grid-cols-[minmax(0,1fr)_150px_110px_100px_210px] md:items-center md:px-4.5"
                 >
-                  <span className="text-lg font-semibold">{item.name}</span>
+                  <span className="flex flex-wrap items-center gap-2 text-lg font-semibold">
+                    {item.name}
+                    {item.receipt_status === "manual_review" && (
+                      <Pill
+                        tone="warning"
+                        size="sm"
+                        title="Its receipt is under review, so it is not counted in the total"
+                      >
+                        Under review
+                      </Pill>
+                    )}
+                  </span>
                   <span className="order-3 col-span-2 text-md text-muted-foreground md:order-none md:col-span-1">
                     {item.merchant_name ?? "—"}
                     <span className="md:hidden"> · {purchaseDate(item)}</span>
@@ -184,6 +219,18 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
                 </li>
               ))}
             </ul>
+            <p className="m-0 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-4 py-3.5 border-t border-border bg-surface md:px-4.5">
+              <span className="text-md text-muted-foreground">
+                {categoriesStore.queueTotal === 1
+                  ? "1 item"
+                  : `${String(categoriesStore.queueTotal)} items`}
+                {categoriesStore.queueExcludedCount > 0 &&
+                  ` · ${String(categoriesStore.queueExcludedCount)} under review, worth ${AMOUNT.format(Number(categoriesStore.queueExcludedAmount))} ${currency}, not counted`}
+              </span>
+              <span className="tabular-nums text-lg font-bold">
+                {AMOUNT.format(Number(categoriesStore.queueTotalAmount))} {currency}
+              </span>
+            </p>
           </Card>
         )}
 
