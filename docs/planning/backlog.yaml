@@ -209,8 +209,8 @@ epics:
             labels: [infra]
             detail: >
               up, down, migrate, test, lint, typecheck. Both languages behind the same
-              interface so nobody memorises two toolchains. A `seed` target lands with the
-              seed script itself in F5.8, once there are entities to seed.
+              interface so nobody memorises two toolchains. The `seed` target landed with
+              the seed script itself in F5.8.
           - key: F0.4.4
             title: Quickstart section in the README
             labels: [infra]
@@ -1148,6 +1148,18 @@ epics:
           Run `seed`, sign in as the demo user, and find two months of categorised receipts
           already there — which is what makes E6 and E7 workable without photographing
           anything.
+        tasks:
+          - >
+            the demo data is exported from real uploads (`make seed-export EMAIL=...`), not
+            invented: 22 receipts with their categories, including a custom category and a
+            receipt under manual review (D3). Dates shift by whole months on load, so the
+            newest receipt always falls in the current month.
+          - >
+            `make seed` recreates demo@budget-agent.local idempotently, with a PLN budget
+            limit to measure the months against.
+          - >
+            unplanned, added at the owner's request - toasts get an opaque background (the
+            header showed through) and the success toast its missing colours.
 
   # F5.7 "Categorization review interface" was retired here. The review queue now lands with
   # F5.3, which is the feature that flags items into it, and inline editing with F5.4, which

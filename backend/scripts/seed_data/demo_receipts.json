@@ -1,0 +1,1101 @@
+{
+  "custom_categories": [
+    "Clothing"
+  ],
+  "receipts": [
+    {
+      "merchant_name": "Biedronka",
+      "transaction_date": "2026-04-22T17:25:00+00:00",
+      "total_amount": "50.49",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "W Polaris Gaz 0,5l",
+          "quantity": "1.000",
+          "unit_price": "0.75",
+          "total_price": "0.75",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "JajkoNiespodzian20g",
+          "quantity": "1.000",
+          "unit_price": "5.99",
+          "total_price": "5.99",
+          "category": "Groceries",
+          "category_confidence": 98,
+          "is_category_manual": false
+        },
+        {
+          "name": "BatPawelAdvocat45g",
+          "quantity": "1.000",
+          "unit_price": "3.49",
+          "total_price": "3.49",
+          "category": "Groceries",
+          "category_confidence": 98,
+          "is_category_manual": false
+        },
+        {
+          "name": "CzekPotGorzMarc100g",
+          "quantity": "1.000",
+          "unit_price": "8.99",
+          "total_price": "8.99",
+          "category": "Groceries",
+          "category_confidence": 98,
+          "is_category_manual": false
+        },
+        {
+          "name": "Filec Klop175-200g",
+          "quantity": "2.000",
+          "unit_price": "11.99",
+          "total_price": "23.98",
+          "category": "Groceries",
+          "category_confidence": 98,
+          "is_category_manual": false
+        },
+        {
+          "name": "MajoDekWinia250 ml",
+          "quantity": "1.000",
+          "unit_price": "6.79",
+          "total_price": "6.79",
+          "category": "Groceries",
+          "category_confidence": 98,
+          "is_category_manual": false
+        },
+        {
+          "name": "But plastik kaucja",
+          "quantity": "1.000",
+          "unit_price": "0.50",
+          "total_price": "0.50",
+          "category": "Groceries",
+          "category_confidence": 90,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "AUCHAN POLSKA SP. Z O.O.",
+      "transaction_date": "2026-05-16T13:25:00+00:00",
+      "total_amount": "99.28",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "GRANOLA OR 314575C",
+          "quantity": "1.000",
+          "unit_price": "8.98",
+          "total_price": "8.98",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "GRANOLA OR 314575C",
+          "quantity": "1.000",
+          "unit_price": "8.98",
+          "total_price": "8.98",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "ACTIMEL NA 609076C",
+          "quantity": "1.000",
+          "unit_price": "8.98",
+          "total_price": "8.98",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "ACTIMEL NA 609076C",
+          "quantity": "1.000",
+          "unit_price": "8.98",
+          "total_price": "8.98",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "KOMBUCHA R 352973A",
+          "quantity": "1.000",
+          "unit_price": "6.48",
+          "total_price": "6.48",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "GRZANKI ZY 987700C",
+          "quantity": "1.000",
+          "unit_price": "4.28",
+          "total_price": "4.28",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "GRZANKI ZY 987698C",
+          "quantity": "1.000",
+          "unit_price": "4.28",
+          "total_price": "4.28",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "GRZANKI ZY 987700C",
+          "quantity": "1.000",
+          "unit_price": "4.28",
+          "total_price": "4.28",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "GRZANKI ZY 987698C",
+          "quantity": "1.000",
+          "unit_price": "4.28",
+          "total_price": "4.28",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "GRANOLA OR 314575C",
+          "quantity": "1.000",
+          "unit_price": "8.98",
+          "total_price": "8.98",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "NASTIONA SK 935673C",
+          "quantity": "1.000",
+          "unit_price": "10.78",
+          "total_price": "10.78",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "S26A6 BOKS 355089A",
+          "quantity": "1.000",
+          "unit_price": "20.00",
+          "total_price": "20.00",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "PEPCO",
+      "transaction_date": "2026-08-04T09:26:00+00:00",
+      "total_amount": "24.00",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "5-pak stopki dz. spo_23",
+          "quantity": "1.000",
+          "unit_price": "12.00",
+          "total_price": "12.00",
+          "category": "Clothing",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "2-PAK skarpetki y ni_22",
+          "quantity": "1.000",
+          "unit_price": "6.00",
+          "total_price": "6.00",
+          "category": "Clothing",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "3-pak maitki ribbed_98-",
+          "quantity": "1.000",
+          "unit_price": "6.00",
+          "total_price": "6.00",
+          "category": "Clothing",
+          "category_confidence": 95,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "Rossmann",
+      "transaction_date": "2026-08-04T09:38:00+00:00",
+      "total_amount": "75.77",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "VIBOVIT DINO ZELK\\BL",
+          "quantity": "1.000",
+          "unit_price": "36.99",
+          "total_price": "36.99",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "MOLLER'S OMEGA-3 \\BL",
+          "quantity": "1.000",
+          "unit_price": "37.99",
+          "total_price": "37.99",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "KP TORBA T-SHIRT \\AX",
+          "quantity": "1.000",
+          "unit_price": "0.79",
+          "total_price": "0.79",
+          "category": "Other",
+          "category_confidence": 85,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "TK Maxx",
+      "transaction_date": "2026-08-04T10:52:00+00:00",
+      "total_amount": "85.99",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "Odzież Damska",
+          "quantity": "1.000",
+          "unit_price": "15.00",
+          "total_price": "15.00",
+          "category": "Clothing",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "Damskie spodnie na co dzień",
+          "quantity": "1.000",
+          "unit_price": "21.00",
+          "total_price": "21.00",
+          "category": "Clothing",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "Spodnie damskie",
+          "quantity": "1.000",
+          "unit_price": "49.99",
+          "total_price": "49.99",
+          "category": "Clothing",
+          "category_confidence": 95,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "AUCHAN POLSKA SP.Z O.O.",
+      "transaction_date": "2026-08-04T11:34:00+00:00",
+      "total_amount": "17.37",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "OBWALZANKI",
+          "quantity": "1.000",
+          "unit_price": "6.59",
+          "total_price": "6.59",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "NASTIONA SK",
+          "quantity": "1.000",
+          "unit_price": "10.78",
+          "total_price": "10.78",
+          "category": "Groceries",
+          "category_confidence": 90,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "Biedronka",
+      "transaction_date": "2026-08-17T13:31:00+00:00",
+      "total_amount": "81.68",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "Torba T-SHIRT",
+          "quantity": "1.000",
+          "unit_price": "0.79",
+          "total_price": "0.79",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        },
+        {
+          "name": "But Plastik kaucja",
+          "quantity": "6.000",
+          "unit_price": "0.50",
+          "total_price": "3.00",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        },
+        {
+          "name": "MusliODMCocBis400g",
+          "quantity": "2.000",
+          "unit_price": "15.99",
+          "total_price": "31.98",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        },
+        {
+          "name": "JogKIDSActimel6x100g",
+          "quantity": "1.000",
+          "unit_price": "13.49",
+          "total_price": "13.49",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        },
+        {
+          "name": "JogTrusActimel6x100g",
+          "quantity": "1.000",
+          "unit_price": "13.49",
+          "total_price": "13.49",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        },
+        {
+          "name": "JajkoNiesMeltie20g",
+          "quantity": "1.000",
+          "unit_price": "3.99",
+          "total_price": "3.99",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        },
+        {
+          "name": "Woda Min N Gaz 1,5l",
+          "quantity": "6.000",
+          "unit_price": "2.49",
+          "total_price": "14.94",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        }
+      ]
+    },
+    {
+      "merchant_name": "euro sklep",
+      "transaction_date": "2026-09-13T00:00:00+00:00",
+      "total_amount": "21.48",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "MILKA",
+          "quantity": "1.000",
+          "unit_price": "7.49",
+          "total_price": "7.49",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        },
+        {
+          "name": "AGRO-FARM Jaja",
+          "quantity": "10.000",
+          "unit_price": "13.99",
+          "total_price": "13.99",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        }
+      ]
+    },
+    {
+      "merchant_name": "euro sklep",
+      "transaction_date": "2026-09-13T10:49:00+00:00",
+      "total_amount": "78.45",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "AGRO-FARM Jaja Z Chowu Sciótkowego",
+          "quantity": "10.000",
+          "unit_price": "0.00",
+          "total_price": "0.00",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        },
+        {
+          "name": "POLAŃSKI Chleb Firmowy 300g C",
+          "quantity": "1.000",
+          "unit_price": "4.39",
+          "total_price": "4.39",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        },
+        {
+          "name": "CISOWIANKA 1,5L NG K A",
+          "quantity": "1.000",
+          "unit_price": "2.99",
+          "total_price": "2.99",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        },
+        {
+          "name": "JAJKO Kinder 20g A",
+          "quantity": "1.000",
+          "unit_price": "6.49",
+          "total_price": "6.49",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        },
+        {
+          "name": "MLEKOVITA Mleko Pet 2.0% 1l C",
+          "quantity": "1.000",
+          "unit_price": "4.49",
+          "total_price": "4.49",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        },
+        {
+          "name": "POM KOK 500 KL. 59 C",
+          "quantity": "1.000",
+          "unit_price": "13.99",
+          "total_price": "13.99",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        },
+        {
+          "name": "CODZIENNY Mąka Pszenna 1kg C",
+          "quantity": "1.000",
+          "unit_price": "2.19",
+          "total_price": "2.19",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        },
+        {
+          "name": "KNORR Nudle Ser W Ziołach 61g C",
+          "quantity": "5.000",
+          "unit_price": "3.49",
+          "total_price": "17.45",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        },
+        {
+          "name": "CEBULKA DYMKA SZT POLSKA C",
+          "quantity": "1.000",
+          "unit_price": "2.99",
+          "total_price": "2.99",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        },
+        {
+          "name": "MILKA Czekolada 97g Bubbly Milk Cappucino A",
+          "quantity": "1.000",
+          "unit_price": "7.49",
+          "total_price": "7.49",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        },
+        {
+          "name": "CISOWIANKA 1,5L NG K A",
+          "quantity": "1.000",
+          "unit_price": "2.99",
+          "total_price": "2.99",
+          "category": "Groceries",
+          "category_confidence": null,
+          "is_category_manual": true
+        }
+      ]
+    },
+    {
+      "merchant_name": "Rossmann SDP SP. Z O.O.",
+      "transaction_date": "2026-09-14T11:56:00+00:00",
+      "total_amount": "14.49",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "MYSTERIUM SZAMPON\\AX",
+          "quantity": "1.000",
+          "unit_price": "14.49",
+          "total_price": "14.49",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "pepco",
+      "transaction_date": "2026-09-14T12:04:00+00:00",
+      "total_amount": "37.00",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "Szkiany kubek dynia_ONE",
+          "quantity": "1.000",
+          "unit_price": "7.00",
+          "total_price": "7.00",
+          "category": "Uncategorized",
+          "category_confidence": null,
+          "is_category_manual": false
+        },
+        {
+          "name": "Patelnia 28cm non-st_ON",
+          "quantity": "1.000",
+          "unit_price": "30.00",
+          "total_price": "30.00",
+          "category": "Uncategorized",
+          "category_confidence": null,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "Biedronka",
+      "transaction_date": "2026-09-19T11:26:00+00:00",
+      "total_amount": "117.47",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "KinchiAsia160 120g",
+          "quantity": "1.000",
+          "unit_price": "8.99",
+          "total_price": "8.99",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "Groch łuskan0,5KG",
+          "quantity": "3.000",
+          "unit_price": "1.99",
+          "total_price": "5.97",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "TykwaMaryn100g",
+          "quantity": "1.000",
+          "unit_price": "7.99",
+          "total_price": "7.99",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "Rzodkieu.Maryn350g",
+          "quantity": "1.000",
+          "unit_price": "7.99",
+          "total_price": "7.99",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "WodorNoriAsiaFl16g",
+          "quantity": "2.000",
+          "unit_price": "5.99",
+          "total_price": "11.98",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "RyzSushiAsia500g",
+          "quantity": "3.000",
+          "unit_price": "4.99",
+          "total_price": "14.97",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "OPUST",
+          "quantity": "1.000",
+          "unit_price": "-4.99",
+          "total_price": "-4.99",
+          "category": "Other",
+          "category_confidence": 85,
+          "is_category_manual": false
+        },
+        {
+          "name": "DressVinegMader250ml",
+          "quantity": "1.000",
+          "unit_price": "5.99",
+          "total_price": "5.99",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "SSojaFlavours500ml",
+          "quantity": "1.000",
+          "unit_price": "8.49",
+          "total_price": "8.49",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "MlekoSw3,2 1l",
+          "quantity": "2.000",
+          "unit_price": "3.29",
+          "total_price": "6.58",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "OPUST",
+          "quantity": "1.000",
+          "unit_price": "-0.40",
+          "total_price": "-0.40",
+          "category": "Other",
+          "category_confidence": 85,
+          "is_category_manual": false
+        },
+        {
+          "name": "Actimelkiel12x100g",
+          "quantity": "1.000",
+          "unit_price": "17.99",
+          "total_price": "17.99",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "Woda Mir N Gaz 1,5l",
+          "quantity": "12.000",
+          "unit_price": "2.49",
+          "total_price": "29.88",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "OPUST",
+          "quantity": "1.000",
+          "unit_price": "-9.96",
+          "total_price": "-9.96",
+          "category": "Other",
+          "category_confidence": 85,
+          "is_category_manual": false
+        },
+        {
+          "name": "But Plastik kaucja",
+          "quantity": "12.000",
+          "unit_price": "0.50",
+          "total_price": "6.00",
+          "category": "Other",
+          "category_confidence": 85,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "ELEDRONKA 'CODZIENNIE NISKIE CENY' 4974",
+      "transaction_date": "2026-09-19T11:28:00+00:00",
+      "total_amount": "141.66",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "Olej Wytrcny 3l",
+          "quantity": "2.000",
+          "unit_price": "16.99",
+          "total_price": "33.98",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "OPUST",
+          "quantity": "1.000",
+          "unit_price": "-10.04",
+          "total_price": "-10.04",
+          "category": "Other",
+          "category_confidence": 85,
+          "is_category_manual": false
+        },
+        {
+          "name": "KawaMielElue500g",
+          "quantity": "2.000",
+          "unit_price": "24.99",
+          "total_price": "49.98",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "OPUST",
+          "quantity": "1.000",
+          "unit_price": "-14.00",
+          "total_price": "-14.00",
+          "category": "Other",
+          "category_confidence": 85,
+          "is_category_manual": false
+        },
+        {
+          "name": "TwarógWieKlin 250g",
+          "quantity": "2.000",
+          "unit_price": "5.79",
+          "total_price": "11.58",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "OPUST",
+          "quantity": "1.000",
+          "unit_price": "-3.60",
+          "total_price": "-3.60",
+          "category": "Other",
+          "category_confidence": 85,
+          "is_category_manual": false
+        },
+        {
+          "name": "kos rodz por kg",
+          "quantity": "1.218",
+          "unit_price": "69.90",
+          "total_price": "85.14",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "OPUST",
+          "quantity": "1.000",
+          "unit_price": "-24.36",
+          "total_price": "-24.36",
+          "category": "Other",
+          "category_confidence": 85,
+          "is_category_manual": false
+        },
+        {
+          "name": "SerekAlretZiot150g",
+          "quantity": "4.000",
+          "unit_price": "6.49",
+          "total_price": "25.96",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "OPUST",
+          "quantity": "1.000",
+          "unit_price": "-12.98",
+          "total_price": "-12.98",
+          "category": "Other",
+          "category_confidence": 85,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "Biedronka",
+      "transaction_date": "2026-09-19T12:09:00+00:00",
+      "total_amount": "3.69",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "SerSmłacKurk135g",
+          "quantity": "1.000",
+          "unit_price": "3.69",
+          "total_price": "3.69",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "Primark",
+      "transaction_date": "2026-09-19T13:54:00+00:00",
+      "total_amount": "52.00",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "T-shirt dziew. bas",
+          "quantity": "1.000",
+          "unit_price": "12.00",
+          "total_price": "12.00",
+          "category": "Clothing",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "Rękawiczki dziewcz",
+          "quantity": "1.000",
+          "unit_price": "10.00",
+          "total_price": "10.00",
+          "category": "Clothing",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "Odzież wierz dzie",
+          "quantity": "1.000",
+          "unit_price": "30.00",
+          "total_price": "30.00",
+          "category": "Clothing",
+          "category_confidence": 95,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "Primark",
+      "transaction_date": "2026-09-19T14:06:00+00:00",
+      "total_amount": "47.00",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "Bluza Dziewczęca",
+          "quantity": "1.000",
+          "unit_price": "30.00",
+          "total_price": "30.00",
+          "category": "Uncategorized",
+          "category_confidence": 45,
+          "is_category_manual": false
+        },
+        {
+          "name": "Spodnie dres. Dzie",
+          "quantity": "1.000",
+          "unit_price": "17.00",
+          "total_price": "17.00",
+          "category": "Uncategorized",
+          "category_confidence": 45,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "Primark",
+      "transaction_date": "2026-09-19T14:08:00+00:00",
+      "total_amount": "93.50",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "Botki dziewczęce",
+          "quantity": "1.000",
+          "unit_price": "47.00",
+          "total_price": "47.00",
+          "category": "Uncategorized",
+          "category_confidence": 40,
+          "is_category_manual": false
+        },
+        {
+          "name": "Czapki dziewczęce",
+          "quantity": "1.000",
+          "unit_price": "22.00",
+          "total_price": "22.00",
+          "category": "Uncategorized",
+          "category_confidence": 40,
+          "is_category_manual": false
+        },
+        {
+          "name": "produkt higieniczn",
+          "quantity": "1.000",
+          "unit_price": "7.50",
+          "total_price": "7.50",
+          "category": "Health",
+          "category_confidence": 85,
+          "is_category_manual": false
+        },
+        {
+          "name": "Spodnie dres. chło",
+          "quantity": "1.000",
+          "unit_price": "17.00",
+          "total_price": "17.00",
+          "category": "Uncategorized",
+          "category_confidence": 40,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "NEW YORKER POLSKA SP.Z O.O.",
+      "transaction_date": "2026-09-19T14:50:00+00:00",
+      "total_amount": "49.90",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "Bielizna dziewczeca; dams LeniCRED",
+          "quantity": "1.000",
+          "unit_price": "24.95",
+          "total_price": "24.95",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "FB Sister sukienka midi LBlueMidiB",
+          "quantity": "1.000",
+          "unit_price": "24.95",
+          "total_price": "24.95",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "Biedronka",
+      "transaction_date": "2026-09-21T11:40:00+00:00",
+      "total_amount": "103.69",
+      "status": "manual_review",
+      "line_items": [
+        {
+          "name": "Tost pełnozia 500g",
+          "quantity": "1.000",
+          "unit_price": "2.99",
+          "total_price": "2.99",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "Ser ż gouda 400g",
+          "quantity": "2.000",
+          "unit_price": "12.59",
+          "total_price": "25.18",
+          "category": "Groceries",
+          "category_confidence": 98,
+          "is_category_manual": false
+        },
+        {
+          "name": "SchwpB kMePaVac kg",
+          "quantity": "1.930",
+          "unit_price": "15.95",
+          "total_price": "30.78",
+          "category": "Groceries",
+          "category_confidence": 90,
+          "is_category_manual": false
+        },
+        {
+          "name": "łos rodz por kg",
+          "quantity": "1.702",
+          "unit_price": "69.90",
+          "total_price": "118.97",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "MastoZPolskMlecz200g",
+          "quantity": "4.000",
+          "unit_price": "5.99",
+          "total_price": "23.96",
+          "category": "Groceries",
+          "category_confidence": 98,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "PEPCO",
+      "transaction_date": "2026-09-24T10:47:00+00:00",
+      "total_amount": "12.00",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "Szalik zimowy niem d_ON",
+          "quantity": "1.000",
+          "unit_price": "12.00",
+          "total_price": "12.00",
+          "category": "Groceries",
+          "category_confidence": 85,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "Stokrotka Sp. z o.o.",
+      "transaction_date": "2026-09-24T10:52:00+00:00",
+      "total_amount": "12.57",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "MAJONEZ VEGE 30% 41",
+          "quantity": "1.000",
+          "unit_price": "6.59",
+          "total_price": "6.59",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "SUCHARKI BRUSCHETTE",
+          "quantity": "1.000",
+          "unit_price": "3.99",
+          "total_price": "3.99",
+          "category": "Groceries",
+          "category_confidence": 90,
+          "is_category_manual": false
+        },
+        {
+          "name": "SUCHARKI BRUSCHETTE",
+          "quantity": "1.000",
+          "unit_price": "3.99",
+          "total_price": "3.99",
+          "category": "Groceries",
+          "category_confidence": 90,
+          "is_category_manual": false
+        },
+        {
+          "name": "OPUST SUCHARKI 2 ZA 5,98",
+          "quantity": "2.000",
+          "unit_price": "5.98",
+          "total_price": "-2.00",
+          "category": "Groceries",
+          "category_confidence": 85,
+          "is_category_manual": false
+        }
+      ]
+    },
+    {
+      "merchant_name": "Biedronka",
+      "transaction_date": "2026-09-24T11:08:00+00:00",
+      "total_amount": "21.88",
+      "status": "parsed",
+      "line_items": [
+        {
+          "name": "Mleko Spoż 2 1l",
+          "quantity": "1.000",
+          "unit_price": "3.89",
+          "total_price": "3.89",
+          "category": "Groceries",
+          "category_confidence": 95,
+          "is_category_manual": false
+        },
+        {
+          "name": "ActimelTruska12x100g",
+          "quantity": "1.000",
+          "unit_price": "17.99",
+          "total_price": "17.99",
+          "category": "Groceries",
+          "category_confidence": 90,
+          "is_category_manual": false
+        }
+      ]
+    }
+  ]
+}

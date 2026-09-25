@@ -54,6 +54,10 @@ The client is now at [localhost:5173](http://localhost:5173), the API at
 [localhost:8000/docs](http://localhost:8000/docs). `make down` stops everything;
 database and object-store contents persist in named volumes across restarts.
 
+To look around without photographing receipts, `make seed` creates a demo account,
+`demo@budget-agent.local` with password `demo-budget-agent`, holding two months of
+real, categorised receipts dated up to this month. Running it again resets that account.
+
 Day-to-day workflow: `make test`, `make lint`, `make typecheck` run both languages'
 checks with one command each. See [backend/README.md](backend/README.md) and
 [frontend/README.md](frontend/README.md) for running either side on the host instead

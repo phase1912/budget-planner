@@ -30,7 +30,7 @@ export const DashboardPage = observer(function DashboardPage() {
         </div>
 
         <Card className="p-12 flex flex-col items-center gap-4 text-center">
-          <div className="w-16 h-16 rounded-full bg-tone-success-bg text-tone-success-text flex items-center justify-center">
+          <div className="w-16 h-16 rounded-full bg-tone-primary-bg text-tone-primary-text flex items-center justify-center">
             <Camera size={30} strokeWidth={1.8} />
           </div>
           <div className="flex flex-col gap-1.5 max-w-[460px]">

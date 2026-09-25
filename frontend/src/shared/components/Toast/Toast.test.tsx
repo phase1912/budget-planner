@@ -61,4 +61,22 @@ describe("ToastContainer", () => {
 
     expect(mockToastStore.clearToast).toHaveBeenCalledTimes(1);
   });
+
+  it.each(["success", "error", "info"] as const)(
+    "a %s toast sits on an opaque background, so the header never shows through it",
+    (type) => {
+      mockToastStore.toast = { message: "3 receipts stored", type };
+      render(<ToastContainer />);
+
+      const toast = screen.getByRole(type === "error" ? "alert" : "status");
+      expect(toast.parentElement).toHaveClass("bg-background");
+    },
+  );
+
+  it("colours a success toast with the primary tone, the design system's success", () => {
+    mockToastStore.toast = { message: "1 receipt stored", type: "success" };
+    render(<ToastContainer />);
+
+    expect(screen.getByRole("status")).toHaveClass("bg-tone-primary-bg", "text-tone-primary-text");
+  });
 });

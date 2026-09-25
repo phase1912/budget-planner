@@ -237,7 +237,7 @@ export const ResolveStep = observer(function ResolveStep() {
                 <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-transparent">
                   <div className="flex items-center gap-3">
                     <span
-                      className={`inline-flex items-center justify-center w-6 h-6 rounded-md ${isSettled ? "bg-tone-success-bg text-tone-success-text" : "bg-tone-warning-bg text-tone-warning-text"}`}
+                      className={`inline-flex items-center justify-center w-6 h-6 rounded-md ${isSettled ? "bg-tone-primary-bg text-tone-primary-text" : "bg-tone-warning-bg text-tone-warning-text"}`}
                     >
                       {isSettled ? (
                         <svg
@@ -411,7 +411,7 @@ export const ResolveStep = observer(function ResolveStep() {
                 <Card key={matchKey} variant="surface" flush>
                   <div className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-tone-success-bg text-tone-success-text">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-tone-primary-bg text-tone-primary-text">
                         <svg
                           width="15"
                           height="15"
