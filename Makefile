@@ -8,10 +8,12 @@
 # backend/.env.example. That means it works whether the stack was started
 # with `make up` or the app processes are running on the host instead.
 #
-# A `seed` target lands with the seed script itself in F5.8, once there are
-# entities to seed.
+# `seed` recreates the demo account (demo@budget-agent.local / demo-budget-agent)
+# from real receipts in backend/scripts/seed_data/, dated so the newest falls in
+# the current month (F5.8). Run `migrate` first. `seed-export EMAIL=...`
+# rewrites that data from an account's stored receipts.
 
-.PHONY: up down migrate test lint typecheck
+.PHONY: up down migrate seed seed-export test lint typecheck
 
 up:
 	docker compose up
@@ -21,6 +23,12 @@ down:
 
 migrate:
 	cd backend && uv run alembic upgrade head
+
+seed:
+	cd backend && uv run python scripts/seed_demo_data.py
+
+seed-export:
+	cd backend && uv run python scripts/seed_demo_data.py export --email $(EMAIL)
 
 test:
 	cd backend && uv run pytest

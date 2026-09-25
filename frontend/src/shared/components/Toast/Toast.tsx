@@ -24,11 +24,13 @@ export const ToastContainer = observer(function ToastContainer() {
 
   if (!toast) return null;
 
-  let bgClass = "bg-tone-info-bg text-tone-info-text border-tone-info-border";
+  // Tone backgrounds are translucent tints, made for a card behind them. A toast
+  // floats over the header, so the tint sits on an opaque background of its own.
+  let toneClass = "bg-tone-info-bg text-tone-info-text border-tone-info-border";
   if (toast.type === "error") {
-    bgClass = "bg-tone-error-bg text-tone-error-text border-tone-error-border";
+    toneClass = "bg-tone-error-bg text-tone-error-text border-tone-error-border";
   } else if (toast.type === "success") {
-    bgClass = "bg-tone-success-bg text-tone-success-text border-tone-success-border";
+    toneClass = "bg-tone-primary-bg text-tone-primary-text border-tone-primary-border";
   }
 
   const role = toast.type === "error" ? "alert" : "status";
@@ -37,21 +39,23 @@ export const ToastContainer = observer(function ToastContainer() {
   // its outcome here, and the dialog's backdrop must not bury it.
   return (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-60 animate-in fade-in slide-in-from-top-5 duration-300">
-      <div
-        role={role}
-        aria-atomic="true"
-        className={`px-4 py-3 rounded-control border shadow-lg max-w-md w-full flex items-center justify-between gap-4 ${bgClass}`}
-      >
-        <p className="text-base font-medium">{toast.message}</p>
-        <button
-          onClick={() => {
-            toastStore.clearToast();
-          }}
-          className="opacity-70 hover:opacity-100 transition-opacity"
-          aria-label="Close"
+      <div className="max-w-md w-full rounded-control bg-background shadow-lg">
+        <div
+          role={role}
+          aria-atomic="true"
+          className={`px-4 py-3 rounded-control border flex items-center justify-between gap-4 ${toneClass}`}
         >
-          ✕
-        </button>
+          <p className="text-base font-medium">{toast.message}</p>
+          <button
+            onClick={() => {
+              toastStore.clearToast();
+            }}
+            className="opacity-70 hover:opacity-100 transition-opacity"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
       </div>
     </div>
   );

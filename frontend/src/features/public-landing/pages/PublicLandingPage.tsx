@@ -6,7 +6,7 @@ export const PublicLandingPage = () => {
   return (
     <div className="flex-grow flex flex-col items-center justify-center py-8">
       <div className="max-w-[720px] flex flex-col items-center gap-8 text-center">
-        <div className="w-[72px] h-[72px] rounded-full bg-tone-success-bg text-tone-success-text flex items-center justify-center">
+        <div className="w-[72px] h-[72px] rounded-full bg-tone-primary-bg text-tone-primary-text flex items-center justify-center">
           <Camera size={34} strokeWidth={1.7} />
         </div>
 
