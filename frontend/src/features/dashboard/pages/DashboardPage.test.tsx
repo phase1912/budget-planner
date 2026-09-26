@@ -44,6 +44,9 @@ function summary(overrides: Partial<MonthSummary> = {}): MonthSummary {
     has_receipts: true,
     excluded_count: 0,
     excluded_amount: "0",
+    is_complete: false,
+    days_elapsed: 26,
+    days_in_month: 30,
     ...overrides,
   };
 }
@@ -87,17 +90,27 @@ describe("DashboardPage", () => {
     expect(screen.getByText("Spent so far in September")).toBeInTheDocument();
     expect(screen.getByText("1,234.50")).toBeInTheDocument();
     expect(screen.getByText("PLN")).toBeInTheDocument();
-    expect(screen.getByText("15 receipts")).toBeInTheDocument();
+    expect(screen.getByText("26 of 30 days recorded · 15 receipts")).toBeInTheDocument();
+    expect(screen.getByText("Month-to-date · still running")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Next month" })).toBeDisabled();
   });
 
   it("a past month reads as spent, not spent so far, and can step forward", () => {
     Object.assign(budgetStore, { year: 2026, month: 8, canGoForward: true });
-    budgetStore.summary = summary({ month: 8, total: "80", receipt_count: 1 });
+    budgetStore.summary = summary({
+      month: 8,
+      total: "80",
+      receipt_count: 1,
+      is_complete: true,
+      days_elapsed: 31,
+      days_in_month: 31,
+    });
     renderPage();
 
     expect(screen.getByText("Spent in August")).toBeInTheDocument();
-    expect(screen.getByText("1 receipt")).toBeInTheDocument();
+    expect(screen.getByText("31 of 31 days · 1 receipt")).toBeInTheDocument();
+    expect(screen.getByText("Finalised · complete month")).toBeInTheDocument();
+    expect(screen.queryByText(/still running/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Next month" }));
     expect(budgetStore.showNextMonth).toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Previous month" }));

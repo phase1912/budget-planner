@@ -6,8 +6,9 @@ and records why no timezone conversion happens here: a receipt's
 stored), so the month it was printed in is the month it belongs to (D2).
 """
 
+import calendar
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 
 @dataclass(frozen=True, order=True)
@@ -33,3 +34,33 @@ class BudgetMonth:
         """The first instant of the next month: an exclusive bound, so no day is lost."""
         year, month = (self.year + 1, 1) if self.month == 12 else (self.year, self.month + 1)
         return datetime(year, month, 1, tzinfo=UTC)
+
+    @property
+    def days(self) -> int:
+        """How many days the month has."""
+        return calendar.monthrange(self.year, self.month)[1]
+
+    def progress(self, today: date) -> "MonthProgress":
+        """How far through this month `today` is, for the month-to-date label (BRD D4).
+
+        `today` is the user's own date, sent by their browser (ADR-0009). A month
+        that has not begun yet has no days behind it and is not complete.
+        """
+        first, last = date(self.year, self.month, 1), date(self.year, self.month, self.days)
+        if today > last:
+            return MonthProgress(is_complete=True, days_elapsed=self.days, days=self.days)
+        elapsed = (today - first).days + 1 if today >= first else 0
+        return MonthProgress(is_complete=False, days_elapsed=elapsed, days=self.days)
+
+
+@dataclass(frozen=True)
+class MonthProgress:
+    """Whether a month is over, and if not, how many of its days have passed (D4).
+
+    An incomplete month's figure is month-to-date and must say so wherever it is
+    shown; a complete one is final.
+    """
+
+    is_complete: bool
+    days_elapsed: int
+    days: int

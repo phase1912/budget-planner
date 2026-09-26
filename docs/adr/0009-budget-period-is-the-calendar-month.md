@@ -34,6 +34,10 @@ September would move to 1 October in Warsaw.
 **"Now" is the user's clock.** Which month is current, and so where the month switcher
 stops, is decided by the browser from its local date and passed to the API as an explicit
 year and month. The server never infers the user's current month from its own UTC clock.
+From F6.3 the browser also sends its date as `today`, and the server decides from it
+whether the month is still running (the month-to-date label, D4) and how many of its days
+have passed. The rule stays server-side and testable while the clock stays the user's. The
+server's own UTC date is only a fallback for a client that sends none.
 
 ## Consequences
 

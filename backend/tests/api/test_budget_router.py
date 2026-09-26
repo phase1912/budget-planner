@@ -55,7 +55,9 @@ async def _receipt(
     return receipt
 
 
-async def _month(session: AsyncSession, user: User, year: int, month: int) -> Any:
+async def _month(
+    session: AsyncSession, user: User, year: int, month: int, today: str | None = None
+) -> Any:
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
@@ -71,7 +73,10 @@ async def _month(session: AsyncSession, user: User, year: int, month: int) -> An
         base_url="http://test",
         headers={"Authorization": f"Bearer {token}"},
     ) as client:
-        response = await client.get(f"/api/v1/budget/months/{year}/{month}")
+        response = await client.get(
+            f"/api/v1/budget/months/{year}/{month}",
+            params={"today": today} if today else None,
+        )
     return response
 
 
@@ -247,3 +252,28 @@ async def test_another_users_receipts_under_review_are_not_mine_to_resolve(
     body = (await _month(db_session, me, 2026, 9)).json()
 
     assert (body["excluded_count"], Decimal(body["excluded_amount"])) == (0, Decimal("0"))
+
+
+@pytest.mark.asyncio
+async def test_the_users_today_decides_whether_a_month_is_still_running(
+    db_session: AsyncSession,
+) -> None:
+    """D4, ADR-0009: at 00:30 on 1 October in Warsaw, September is already over."""
+    user = await UserFactory.create_async()
+    await _receipt(db_session, user, datetime(2026, 9, 3, tzinfo=UTC), ["10.00"])
+
+    running = (await _month(db_session, user, 2026, 9, today="2026-09-26")).json()
+    over = (await _month(db_session, user, 2026, 9, today="2026-10-01")).json()
+
+    assert (running["is_complete"], running["days_elapsed"], running["days_in_month"]) == (
+        False,
+        26,
+        30,
+    )
+    assert (over["is_complete"], over["days_elapsed"]) == (True, 30)
+
+
+@pytest.mark.asyncio
+async def test_a_malformed_today_is_refused(db_session: AsyncSession) -> None:
+    user = await UserFactory.create_async()
+    assert (await _month(db_session, user, 2026, 9, today="yesterday")).status_code == 422

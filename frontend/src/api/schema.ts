@@ -508,8 +508,9 @@ export interface paths {
          * Get Month Summary
          * @description The caller's spend in one calendar month, and what is held out of it (BRD D1-D3).
          *
-         *     The client names the month: which month is "now" depends on the user's own
-         *     clock, which only the browser knows (ADR-0009).
+         *     The client names the month and passes its own `today`: whether a month is
+         *     still running depends on the user's clock, which only the browser knows
+         *     (ADR-0009). Without it the server's UTC date stands in.
          */
         get: operations["get_month_summary_api_v1_budget_months__year___month__get"];
         put?: never;
@@ -766,7 +767,9 @@ export interface components {
          * @description One calendar month's spend, as the month view shows it (BRD D1-D3).
          *
          *     `excluded_*` count the receipts held out of `total` because they are under
-         *     manual review, and the value of their lines.
+         *     manual review, and the value of their lines. `is_complete` false means the
+         *     figure is month-to-date and must be labelled so (D4), with `days_elapsed` of
+         *     `days_in_month` behind it.
          */
         MonthSummaryResponse: {
             /** Year */
@@ -783,6 +786,12 @@ export interface components {
             excluded_count: number;
             /** Excluded Amount */
             excluded_amount: string;
+            /** Is Complete */
+            is_complete: boolean;
+            /** Days Elapsed */
+            days_elapsed: number;
+            /** Days In Month */
+            days_in_month: number;
         };
         /**
          * PaginatedReceiptsResponse
@@ -2077,6 +2086,7 @@ export interface operations {
     get_month_summary_api_v1_budget_months__year___month__get: {
         parameters: {
             query?: {
+                today?: string | null;
                 token?: string | null;
             };
             header?: never;

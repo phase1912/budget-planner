@@ -188,7 +188,9 @@
     --tone-info-text: #93c5fd;
     --tone-info-prose: #bfdbfe;
 
-    --tone-neutral-bg: #1e293b;
+    /* A tint, not a solid: #1e293b was the surface colour itself, so neutral pills
+       vanished on it. Matches the finalised pill in docs/design/screens/dashboard-dark.html. */
+    --tone-neutral-bg: rgba(248, 250, 252, 0.08);
     --tone-neutral-text: #94a3b8;
 
     --cat-groceries: #4ade80;

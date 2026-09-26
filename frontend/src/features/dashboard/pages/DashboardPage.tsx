@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 import { useStores } from "@/stores/StoreContext";
 import { Card, ErrorState, LoadingState, Note } from "@/shared/components";
+import { MonthStatus } from "../components/MonthStatus";
 import { MonthSwitcher } from "../components/MonthSwitcher";
 import { WelcomePanel } from "../components/WelcomePanel";
 
@@ -20,8 +21,9 @@ const AMOUNT = new Intl.NumberFormat("en-US", {
  * D2 — F6.1). A user with no receipts yet sees the welcome instead.
  *
  * Receipts under manual review are left out of the figure and named beneath
- * it, with the way through to fix them (D3 — F6.2). The limit bar, the
- * month-to-date label and the category breakdown arrive with F6.6, F6.3 and F6.7.
+ * it, with the way through to fix them (D3 — F6.2). An unfinished month is
+ * labelled month-to-date, with the days so far (D4 — F6.3). The limit bar and
+ * the category breakdown arrive with F6.6 and F6.7.
  */
 export const DashboardPage = observer(function DashboardPage() {
   const { budgetStore, authStore } = useStores();
@@ -51,26 +53,31 @@ export const DashboardPage = observer(function DashboardPage() {
   // The figure's own month, not the selection: while the next month loads, the
   // old figure stays labelled as what it is.
   const figureMonth = new Date(summary.year, summary.month - 1, 1);
-  const { current } = budgetStore;
-  const figureIsCurrent = summary.year === current.year && summary.month === current.month;
   const currency = authStore.user?.currency ?? "PLN";
-  const heading = figureIsCurrent
-    ? `Spent so far in ${MONTH.format(figureMonth)}`
-    : `Spent in ${MONTH.format(figureMonth)}`;
+  // An unfinished month's figure is month-to-date and must never read as final (D4).
+  const heading = summary.is_complete
+    ? `Spent in ${MONTH.format(figureMonth)}`
+    : `Spent so far in ${MONTH.format(figureMonth)}`;
+  const days = summary.is_complete
+    ? `${String(summary.days_in_month)} of ${String(summary.days_in_month)} days`
+    : `${String(summary.days_elapsed)} of ${String(summary.days_in_month)} days recorded`;
 
   return (
     <div className="flex-grow flex flex-col items-center py-7 px-4 md:px-8">
       <div className="w-full max-w-[960px] flex flex-col gap-5">
-        <MonthSwitcher
-          label={MONTH_AND_YEAR.format(selected)}
-          canGoForward={budgetStore.canGoForward}
-          onPrevious={() => {
-            void budgetStore.showPreviousMonth();
-          }}
-          onNext={() => {
-            void budgetStore.showNextMonth();
-          }}
-        />
+        <div className="flex flex-wrap items-center gap-3.5">
+          <MonthSwitcher
+            label={MONTH_AND_YEAR.format(selected)}
+            canGoForward={budgetStore.canGoForward}
+            onPrevious={() => {
+              void budgetStore.showPreviousMonth();
+            }}
+            onNext={() => {
+              void budgetStore.showNextMonth();
+            }}
+          />
+          <MonthStatus isComplete={summary.is_complete} />
+        </div>
 
         {error && (
           <ErrorState layout="banner" title="The month could not be loaded" message={error} />
@@ -89,6 +96,7 @@ export const DashboardPage = observer(function DashboardPage() {
             <span className="text-xl font-semibold text-muted-foreground">{currency}</span>
           </p>
           <span className="tabular-nums text-md text-muted-foreground">
+            {days} ·{" "}
             {summary.receipt_count === 1
               ? "1 receipt"
               : `${String(summary.receipt_count)} receipts`}

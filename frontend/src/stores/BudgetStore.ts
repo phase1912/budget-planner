@@ -56,6 +56,16 @@ export class BudgetStore {
     return { year: today.getFullYear(), month: today.getMonth() + 1 };
   }
 
+  /**
+   * The user's date as YYYY-MM-DD, sent with every request: whether a month is
+   * still running is decided by their clock, not the server's (ADR-0009, D4).
+   */
+  get today(): string {
+    const now = this.now();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${String(now.getFullYear())}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  }
+
   /** The future has no receipts yet; the switcher stops at the current month. */
   get canGoForward(): boolean {
     return monthIndex(this) < monthIndex(this.current);
@@ -87,7 +97,7 @@ export class BudgetStore {
     this.error = null;
     try {
       const response = await apiClient.GET("/api/v1/budget/months/{year}/{month}", {
-        params: { path: { year, month } },
+        params: { path: { year, month }, query: { today: this.today } },
       });
       if (response.error) {
         throw new Error(errorMessage(response.error, "Could not load the month"));
