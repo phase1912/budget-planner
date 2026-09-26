@@ -29,13 +29,19 @@ async def get_month_summary(
     The client names the month and passes its own `today`: whether a month is
     still running depends on the user's clock, which only the browser knows
     (ADR-0009). Without it the server's UTC date stands in. A month that is over
-    is served from its snapshot, taken on this first look (ADR-0010).
+    is served from its snapshot, taken on this first look (ADR-0010). Where the
+    caller has set a monthly limit, the figure comes measured against it (D7).
     """
     now = datetime.now(UTC)
     service = BudgetService(ReceiptRepository(session), MonthlySnapshotRepository(session))
     summary = await service.month_summary(
-        BudgetMonth(year, month), today or now.date(), user_id=current_user.id, now=now
+        BudgetMonth(year, month),
+        today or now.date(),
+        user_id=current_user.id,
+        now=now,
+        limit=current_user.budget_limit,
     )
+    usage = summary.limit
     return MonthSummaryResponse(
         year=summary.month.year,
         month=summary.month.month,
@@ -48,4 +54,7 @@ async def get_month_summary(
         days_elapsed=summary.progress.days_elapsed,
         days_in_month=summary.progress.days,
         finalised_at=summary.finalised_at,
+        budget_limit=usage.limit if usage else None,
+        limit_percent=usage.percent if usage else None,
+        limit_remaining=usage.remaining if usage else None,
     )

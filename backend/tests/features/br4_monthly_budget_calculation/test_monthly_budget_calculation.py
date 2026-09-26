@@ -4,12 +4,12 @@ E6 is under way: F6.1 delivers the month total by transaction date (D1, D2),
 F6.2 the excluded-receipts notice (D3) and F6.3 the month-to-date versus
 finalised label (D4, and D5's label). Those scenarios run here against
 `BudgetService` with an in-memory repository; the SQL behind it is proven in
-tests/api/test_budget_router.py.
+tests/api/test_budget_router.py. F6.6 adds the spend as a share of the
+user's limit (D7), run the same way.
 
 D6 (F6.4, F6.5) runs against the real database instead: what it asserts is
 that the flush hook drops a stored snapshot, which no in-memory stand-in has.
-The rest assert something a later feature owns, so each stays skipped until
-then, as named in `AWAITING`.
+Every BR-4 scenario now runs, so none is skipped.
 """
 
 import asyncio
@@ -21,7 +21,6 @@ from decimal import Decimal
 from typing import Any
 
 import pytest
-from pytest import FixtureRequest
 from pytest_bdd import given, parsers, scenarios, then, when
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -43,17 +42,6 @@ from tests.factories.receipt import ReceiptFactory
 from tests.factories.user import UserFactory
 
 scenarios("monthly_budget_calculation.feature")
-
-AWAITING = {
-    "test_show_spend_against_a_userdefined_budget_limit": "the limit percentage: F6.6 (D7)",
-}
-
-
-@pytest.fixture(autouse=True)
-def skip_until_its_feature_lands(request: FixtureRequest) -> None:
-    reason = AWAITING.get(request.node.name)
-    if reason is not None:
-        pytest.skip(f"Awaiting {reason}")
 
 
 @dataclass
@@ -97,8 +85,8 @@ def outcome() -> dict[str, MonthSummary]:
 
 
 @pytest.fixture
-def clock() -> dict[str, date]:
-    """The user's today; the scenarios that care about it set it."""
+def clock() -> dict[str, Any]:
+    """The user's today and monthly limit; the scenarios that care set them."""
     return {"today": date(2026, 9, 26)}
 
 
@@ -115,11 +103,17 @@ class _InMemorySnapshots:
         return self.saved.setdefault(BudgetMonth(snapshot.year, snapshot.month), snapshot)
 
 
-def _summary(receipts: _InMemoryReceipts, month: BudgetMonth, today: date) -> MonthSummary:
+def _summary(
+    receipts: _InMemoryReceipts, month: BudgetMonth, today: date, limit: Decimal | None = None
+) -> MonthSummary:
     service = BudgetService(receipts, _InMemorySnapshots())  # type: ignore[arg-type]
     return asyncio.run(
         service.month_summary(
-            month, today, user_id=uuid.uuid4(), now=datetime.combine(today, time(12), UTC)
+            month,
+            today,
+            user_id=uuid.uuid4(),
+            now=datetime.combine(today, time(12), UTC),
+            limit=limit,
         )
     )
 
@@ -139,7 +133,7 @@ def july_receipts(receipts: _InMemoryReceipts, valid: int, flagged: int) -> None
 
 @when("the agent calculates the July 2026 budget")
 def calculate_july(
-    receipts: _InMemoryReceipts, outcome: dict[str, MonthSummary], clock: dict[str, date]
+    receipts: _InMemoryReceipts, outcome: dict[str, MonthSummary], clock: dict[str, Any]
 ) -> None:
     outcome["july"] = _summary(receipts, BudgetMonth(2026, 7), clock["today"])
 
@@ -168,7 +162,7 @@ def june_receipts(receipts: _InMemoryReceipts, count: int) -> None:
 
 @when("the user requests the June 2026 budget summary")
 def request_june(
-    receipts: _InMemoryReceipts, outcome: dict[str, MonthSummary], clock: dict[str, date]
+    receipts: _InMemoryReceipts, outcome: dict[str, MonthSummary], clock: dict[str, Any]
 ) -> None:
     outcome["summary"] = _summary(receipts, BudgetMonth(2026, 6), clock["today"])
 
@@ -184,7 +178,7 @@ def labelled_final(outcome: dict[str, MonthSummary]) -> None:
 
 
 @given("the current date is July 27, 2026")
-def july_27(clock: dict[str, date]) -> None:
+def july_27(clock: dict[str, Any]) -> None:
     clock["today"] = date(2026, 7, 27)
 
 
@@ -196,7 +190,7 @@ def july_so_far(receipts: _InMemoryReceipts) -> None:
 
 @when("the user requests the July 2026 budget summary")
 def request_july(
-    receipts: _InMemoryReceipts, outcome: dict[str, MonthSummary], clock: dict[str, date]
+    receipts: _InMemoryReceipts, outcome: dict[str, MonthSummary], clock: dict[str, Any]
 ) -> None:
     outcome["summary"] = _summary(receipts, BudgetMonth(2026, 7), clock["today"])
 
@@ -210,6 +204,34 @@ def month_to_date_total(outcome: dict[str, MonthSummary]) -> None:
 @then("clearly label it as incomplete")
 def labelled_incomplete(outcome: dict[str, MonthSummary]) -> None:
     assert outcome["summary"].progress.is_complete is False
+
+
+@given(parsers.parse("the user has set a monthly budget limit of {limit:d} PLN"))
+def limit_set(clock: dict[str, Any], limit: int) -> None:
+    clock["limit"] = Decimal(limit)
+
+
+@given(parsers.parse("month-to-date spend is {spent:d} PLN"))
+def spent_so_far(receipts: _InMemoryReceipts, clock: dict[str, Any], spent: int) -> None:
+    today = clock["today"]
+    receipts.receipts.append(
+        _Receipt(datetime(today.year, today.month, 1, tzinfo=UTC), Decimal(spent), False)
+    )
+
+
+@when("the user requests the current budget status")
+def request_current(
+    receipts: _InMemoryReceipts, outcome: dict[str, MonthSummary], clock: dict[str, Any]
+) -> None:
+    today = clock["today"]
+    month = BudgetMonth(today.year, today.month)
+    outcome["summary"] = _summary(receipts, month, today, clock.get("limit"))
+
+
+@then(parsers.parse("the agent should display the spend as {percent:d}% of the defined limit"))
+def spend_as_share(outcome: dict[str, MonthSummary], percent: int) -> None:
+    usage = outcome["summary"].limit
+    assert usage is not None and usage.percent == percent
 
 
 JUNE = BudgetMonth(2026, 6)

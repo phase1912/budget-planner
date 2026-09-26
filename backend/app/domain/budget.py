@@ -8,8 +8,10 @@ stored), so the month it was printed in is the month it belongs to (D2).
 
 import calendar
 import enum
+import math
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
 
 
 @dataclass(frozen=True, order=True)
@@ -79,6 +81,40 @@ class MonthProgress:
     is_complete: bool
     days_elapsed: int
     days: int
+
+
+@dataclass(frozen=True)
+class LimitUsage:
+    """How a month's spend stands against the user's monthly limit (BRD D7).
+
+    `percent` is rounded down, so a month still under its limit never reads
+    100%; it does not stop at 100, because over the limit is exactly what the
+    user must see. `remaining` goes negative once the limit is passed: the
+    amount over it.
+    """
+
+    limit: Decimal
+    percent: int
+    remaining: Decimal
+
+    @property
+    def is_over(self) -> bool:
+        """Whether spend has passed the limit; reaching it exactly is not over."""
+        return self.remaining < 0
+
+
+def limit_usage(total: Decimal, limit: Decimal | None) -> LimitUsage | None:
+    """The month's spend as a share of the user's limit, or None when none is set (D7).
+
+    The limit is presentation only (docs/design/screens/profile.html): a month,
+    finished or not, is measured against the limit as it stands now, and
+    changing it never rewrites a snapshot. A month made of refunds spends
+    nothing of the limit rather than a negative share.
+    """
+    if limit is None or limit <= 0:
+        return None
+    percent = math.floor(max(total, Decimal(0)) / limit * 100)
+    return LimitUsage(limit=limit, percent=percent, remaining=limit - total)
 
 
 class ReceiptOrder(enum.StrEnum):

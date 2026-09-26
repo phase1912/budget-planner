@@ -18,7 +18,7 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | `last_name` | String | User's last name |
 | `password_hash` | String | Argon2id hash |
 | `currency` | String | Default `USD`. Used as the base currency for all monetary amounts |
-| `budget_limit` | Decimal | Optional monthly budget cap |
+| `budget_limit` | Decimal | Optional monthly budget cap; more than zero when set (D7) |
 | `role` | String | `user` or `admin` (controls cross-user visibility) |
 | `created_at` | Timestamp | Standard audit field |
 | `updated_at` | Timestamp | Standard audit field |
@@ -92,6 +92,11 @@ Rules that must hold at all times. Each is a candidate for a test.
    `quantity` stay as printed, and the receipt still adds up to its printed total.
    Only a discount with no product above it stays a line of its own.
 6. An in-progress month is always labelled incomplete wherever it is displayed (D4).
+6a. Where the user has set a monthly limit, a month's spend is shown as a share of it
+   (D7): rounded down, so a month under its limit never reads 100%, and not capped, so
+   one over it reads past 100% with the amount over. The limit is presentation only:
+   every month, finished or running, is measured against it as it stands now, and it is
+   never stored in a snapshot, so changing it rewrites no finalised figure.
 7. Snapshots are derived data. Any mutation of a receipt in a snapshotted month
    recalculates it (D6, N3): the flush that changes a receipt or one of its lines drops
    the snapshot of each month it touches, and the next look rebuilds it (ADR-0010). A

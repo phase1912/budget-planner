@@ -1335,6 +1335,23 @@ epics:
           Set a limit in Preferences and watch the progress bar and percentage appear on the
           month view; push spend past the limit and confirm it reads over-100% in error tone
           rather than clamping at full, per docs/design/screens/dashboard-dark.html.
+        tasks:
+          - >
+            limit_usage in the budget domain - the share of the limit spent, rounded down and
+            uncapped, and what is left (negative when over); the month summary carries
+            budget_limit, limit_percent and limit_remaining, null when no limit is set. The
+            limit is read as it stands now for every month, never stored in a snapshot, as
+            profile.html promises that changing it rewrites no finalised month.
+          - >
+            the dashboard's figure card shows the share, what is left or how far over, and a
+            shared Meter bar - full, in the error tone and notched where the limit sat once
+            spend passes it.
+          - >
+            the profile refuses a limit of zero or less (422): spend is shown as a share of
+            it, so such a value is not a limit; the input's minimum says so too.
+          - >
+            BR-4's D7 scenario runs; with it every BR-4 scenario does, so the module's skip
+            list is gone.
       - key: F6.7
         title: Budget dashboard — composing the landing view
         labels: [backend, frontend]

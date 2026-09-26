@@ -96,3 +96,11 @@ class TestUsersRouter:
         resp = client.patch("/users/me", json={"currency": "EUR"})
         assert resp.status_code == status.HTTP_409_CONFLICT
         assert resp.json()["detail"] == "Cannot change currency once receipts exist."
+
+    @pytest.mark.parametrize("limit", ["0", "-100.00", "10.001"])
+    def test_a_limit_that_is_not_a_positive_amount_is_refused(self, limit: str) -> None:
+        """Spend is shown as a share of the limit (D7): zero or less cannot be one."""
+        _override_auth(_mock_user())
+        client = TestClient(app, raise_server_exceptions=False)
+        resp = client.patch("/users/me", json={"budget_limit": limit})
+        assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY

@@ -105,7 +105,7 @@ export const ProfilePage = observer(function ProfilePage() {
                   <Input
                     type="number"
                     step="0.01"
-                    min="0"
+                    min="0.01"
                     value={budgetLimit}
                     onChange={(e) => {
                       setBudgetLimit(e.target.value);

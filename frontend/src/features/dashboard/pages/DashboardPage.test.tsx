@@ -240,6 +240,48 @@ describe("DashboardPage", () => {
   });
 });
 
+describe("DashboardPage — the month against its limit (D7)", () => {
+  beforeEach(() => {
+    Object.assign(budgetStore, { error: null, isLoading: false, receipts: [], spend: [] });
+  });
+
+  it("reads as a share of the limit, with what is left", () => {
+    budgetStore.summary = summary({
+      total: "1800",
+      budget_limit: "3000.00",
+      limit_percent: 60,
+      limit_remaining: "1200.00",
+    });
+    renderPage();
+
+    expect(screen.getByText("60% of your 3,000.00 PLN limit")).toBeInTheDocument();
+    expect(screen.getByText("1,200.00 PLN left")).toBeInTheDocument();
+    expect(screen.queryByText(/the mark is where the limit sat/)).not.toBeInTheDocument();
+  });
+
+  it("reads past 100% in the error tone and says by how much, never clamping", () => {
+    budgetStore.summary = summary({
+      total: "3248",
+      is_complete: true,
+      budget_limit: "3000.00",
+      limit_percent: 108,
+      limit_remaining: "-248.00",
+    });
+    renderPage();
+
+    const share = screen.getByText("108% of your 3,000.00 PLN limit");
+    expect(share).toHaveClass("text-error");
+    expect(screen.getByText("Over by 248.00 PLN")).toHaveClass("text-error");
+    expect(screen.getByText(/the mark is where the limit sat/)).toBeInTheDocument();
+  });
+
+  it("says nothing of a limit the user has not set", () => {
+    budgetStore.summary = summary();
+    renderPage();
+    expect(screen.queryByText(/limit/)).not.toBeInTheDocument();
+  });
+});
+
 function receipt({
   line_items = 1,
   ...overrides
