@@ -21,7 +21,7 @@ async def get_month_summary(
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> MonthSummaryResponse:
-    """The caller's spend in one calendar month, by receipt date (BRD D1, D2).
+    """The caller's spend in one calendar month, and what is held out of it (BRD D1-D3).
 
     The client names the month: which month is "now" depends on the user's own
     clock, which only the browser knows (ADR-0009).
@@ -35,4 +35,6 @@ async def get_month_summary(
         total=summary.total,
         receipt_count=summary.receipt_count,
         has_receipts=summary.has_receipts,
+        excluded_count=summary.excluded_count,
+        excluded_amount=summary.excluded_amount,
     )

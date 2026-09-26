@@ -184,3 +184,66 @@ async def test_another_users_receipts_never_count_toward_my_month(
 async def test_a_month_that_does_not_exist_is_refused(db_session: AsyncSession) -> None:
     user = await UserFactory.create_async()
     assert (await _month(db_session, user, 2026, 13)).status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_receipts_under_review_are_named_with_their_value_not_quietly_dropped(
+    db_session: AsyncSession,
+) -> None:
+    """D3: the total leaves them out, and the summary says how many and how much."""
+    user = await UserFactory.create_async()
+    await _receipt(db_session, user, datetime(2026, 9, 3, tzinfo=UTC), ["10.00"])
+    for day, lines in ((5, ["60.00", "36.40"]), (9, ["0.00"])):
+        await _receipt(
+            db_session,
+            user,
+            datetime(2026, 9, day, tzinfo=UTC),
+            lines,
+            status=ReceiptStatus.MANUAL_REVIEW,
+        )
+
+    body = (await _month(db_session, user, 2026, 9)).json()
+
+    assert Decimal(body["total"]) == Decimal("10.00")
+    assert (body["excluded_count"], Decimal(body["excluded_amount"])) == (2, Decimal("96.40"))
+
+
+@pytest.mark.asyncio
+async def test_a_receipt_whose_date_could_not_be_read_is_reported_in_its_upload_month(
+    db_session: AsyncSession,
+) -> None:
+    """With no date it belongs to no month; placed by upload, it is never lost from view."""
+    user = await UserFactory.create_async()
+    receipt = await ReceiptFactory.create_async(
+        user_id=user.id,
+        transaction_date=None,
+        status=ReceiptStatus.MANUAL_REVIEW,
+        file_ids=[],
+    )
+    receipt.created_at = datetime(2026, 9, 12, tzinfo=UTC)
+    await db_session.flush()
+
+    september = (await _month(db_session, user, 2026, 9)).json()
+    august = (await _month(db_session, user, 2026, 8)).json()
+
+    assert september["excluded_count"] == 1
+    assert august["excluded_count"] == 0
+    assert september["has_receipts"] is True
+
+
+@pytest.mark.asyncio
+async def test_another_users_receipts_under_review_are_not_mine_to_resolve(
+    db_session: AsyncSession,
+) -> None:
+    me, someone_else = await UserFactory.create_async(), await UserFactory.create_async()
+    await _receipt(
+        db_session,
+        someone_else,
+        datetime(2026, 9, 3, tzinfo=UTC),
+        ["80.00"],
+        status=ReceiptStatus.MANUAL_REVIEW,
+    )
+
+    body = (await _month(db_session, me, 2026, 9)).json()
+
+    assert (body["excluded_count"], Decimal(body["excluded_amount"])) == (0, Decimal("0"))

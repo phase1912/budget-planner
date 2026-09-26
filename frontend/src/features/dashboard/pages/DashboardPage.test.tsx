@@ -42,6 +42,8 @@ function summary(overrides: Partial<MonthSummary> = {}): MonthSummary {
     total: "1234.5",
     receipt_count: 15,
     has_receipts: true,
+    excluded_count: 0,
+    excluded_amount: "0",
     ...overrides,
   };
 }
@@ -106,5 +108,34 @@ describe("DashboardPage", () => {
     budgetStore.error = "Server unavailable";
     renderPage();
     expect(screen.getByText("Server unavailable")).toBeInTheDocument();
+  });
+
+  it("names the receipts held out of the total and leads to them", () => {
+    budgetStore.summary = summary({ excluded_count: 2, excluded_amount: "96.4" });
+    renderPage();
+
+    expect(
+      screen.getByText(/2 receipts worth 96\.40 PLN are not in this total/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Resolve them" })).toHaveAttribute(
+      "href",
+      "/receipts?status=manual_review",
+    );
+  });
+
+  it("speaks of a single held-out receipt in the singular", () => {
+    budgetStore.summary = summary({ excluded_count: 1, excluded_amount: "201.88" });
+    renderPage();
+
+    expect(
+      screen.getByText(/1 receipt worth 201\.88 PLN is not in this total/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Resolve it" })).toBeInTheDocument();
+  });
+
+  it("says nothing about exclusions when every receipt is counted", () => {
+    budgetStore.summary = summary();
+    renderPage();
+    expect(screen.queryByRole("link", { name: /Resolve/ })).not.toBeInTheDocument();
   });
 });

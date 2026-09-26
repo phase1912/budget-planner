@@ -13,6 +13,8 @@ class MonthSummary:
     total: Decimal
     receipt_count: int
     has_receipts: bool
+    excluded_count: int
+    excluded_amount: Decimal
 
 
 class BudgetService:
@@ -27,9 +29,19 @@ class BudgetService:
         A month with no receipts is 0.00, not an error: an empty month is a fact
         worth showing. `has_receipts` says whether the user has any receipts at
         all, which is what decides between the welcome screen and the month view.
+        Receipts under manual review are left out of the total and counted in
+        `excluded_*` instead, so the figure is never quietly incomplete (D3).
         """
         total, count = await self.receipts.month_total(month.start, month.end)
-        has_receipts = count > 0 or await self.receipts.has_any()
+        excluded_count, excluded_amount = await self.receipts.month_under_review(
+            month.start, month.end
+        )
+        has_receipts = count > 0 or excluded_count > 0 or await self.receipts.has_any()
         return MonthSummary(
-            month=month, total=total, receipt_count=count, has_receipts=has_receipts
+            month=month,
+            total=total,
+            receipt_count=count,
+            has_receipts=has_receipts,
+            excluded_count=excluded_count,
+            excluded_amount=excluded_amount,
         )

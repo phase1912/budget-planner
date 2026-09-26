@@ -506,7 +506,7 @@ export interface paths {
         };
         /**
          * Get Month Summary
-         * @description The caller's spend in one calendar month, by receipt date (BRD D1, D2).
+         * @description The caller's spend in one calendar month, and what is held out of it (BRD D1-D3).
          *
          *     The client names the month: which month is "now" depends on the user's own
          *     clock, which only the browser knows (ADR-0009).
@@ -763,7 +763,10 @@ export interface components {
         };
         /**
          * MonthSummaryResponse
-         * @description One calendar month's spend, as the month view shows it (BRD D1, D2).
+         * @description One calendar month's spend, as the month view shows it (BRD D1-D3).
+         *
+         *     `excluded_*` count the receipts held out of `total` because they are under
+         *     manual review, and the value of their lines.
          */
         MonthSummaryResponse: {
             /** Year */
@@ -776,6 +779,10 @@ export interface components {
             receipt_count: number;
             /** Has Receipts */
             has_receipts: boolean;
+            /** Excluded Count */
+            excluded_count: number;
+            /** Excluded Amount */
+            excluded_amount: string;
         };
         /**
          * PaginatedReceiptsResponse

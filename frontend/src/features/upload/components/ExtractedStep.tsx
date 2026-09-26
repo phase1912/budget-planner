@@ -21,6 +21,8 @@ interface ExtractedLineItem {
   category_confidence?: number | null;
   /** Set by the backend against the configured threshold — never recomputed here (ADR-0005). */
   category_is_low_confidence?: boolean;
+  /** Taken off by an "OPUST" line printed beneath this one, already netted from the total. */
+  discount?: string | null;
 }
 
 /**
@@ -488,9 +490,14 @@ export const ExtractedStep = observer(function ExtractedStep() {
                       {item.unit_price}
                     </span>
                     <span
-                      className={`text-right font-semibold tabular-nums ${itemLowConf ? "text-tone-warning-text" : "text-foreground"}`}
+                      className={`flex flex-col items-end text-right font-semibold tabular-nums ${itemLowConf ? "text-tone-warning-text" : "text-foreground"}`}
                     >
                       {item.total_price}
+                      {item.discount && (
+                        <span className="text-sm font-medium text-tone-primary-text whitespace-nowrap">
+                          incl. −{item.discount} off
+                        </span>
+                      )}
                     </span>
                     <span>
                       <Pill

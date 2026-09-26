@@ -623,18 +623,9 @@
           "name": "RyzSushiAsia500g",
           "quantity": "3.000",
           "unit_price": "4.99",
-          "total_price": "14.97",
+          "total_price": "9.98",
           "category": "Groceries",
           "category_confidence": 95,
-          "is_category_manual": false
-        },
-        {
-          "name": "OPUST",
-          "quantity": "1.000",
-          "unit_price": "-4.99",
-          "total_price": "-4.99",
-          "category": "Other",
-          "category_confidence": 85,
           "is_category_manual": false
         },
         {
@@ -659,18 +650,9 @@
           "name": "MlekoSw3,2 1l",
           "quantity": "2.000",
           "unit_price": "3.29",
-          "total_price": "6.58",
+          "total_price": "6.18",
           "category": "Groceries",
           "category_confidence": 95,
-          "is_category_manual": false
-        },
-        {
-          "name": "OPUST",
-          "quantity": "1.000",
-          "unit_price": "-0.40",
-          "total_price": "-0.40",
-          "category": "Other",
-          "category_confidence": 85,
           "is_category_manual": false
         },
         {
@@ -686,18 +668,9 @@
           "name": "Woda Mir N Gaz 1,5l",
           "quantity": "12.000",
           "unit_price": "2.49",
-          "total_price": "29.88",
+          "total_price": "19.92",
           "category": "Groceries",
           "category_confidence": 95,
-          "is_category_manual": false
-        },
-        {
-          "name": "OPUST",
-          "quantity": "1.000",
-          "unit_price": "-9.96",
-          "total_price": "-9.96",
-          "category": "Other",
-          "category_confidence": 85,
           "is_category_manual": false
         },
         {
@@ -721,90 +694,45 @@
           "name": "Olej Wytrcny 3l",
           "quantity": "2.000",
           "unit_price": "16.99",
-          "total_price": "33.98",
+          "total_price": "23.94",
           "category": "Groceries",
           "category_confidence": 95,
-          "is_category_manual": false
-        },
-        {
-          "name": "OPUST",
-          "quantity": "1.000",
-          "unit_price": "-10.04",
-          "total_price": "-10.04",
-          "category": "Other",
-          "category_confidence": 85,
           "is_category_manual": false
         },
         {
           "name": "KawaMielElue500g",
           "quantity": "2.000",
           "unit_price": "24.99",
-          "total_price": "49.98",
+          "total_price": "35.98",
           "category": "Groceries",
           "category_confidence": 95,
-          "is_category_manual": false
-        },
-        {
-          "name": "OPUST",
-          "quantity": "1.000",
-          "unit_price": "-14.00",
-          "total_price": "-14.00",
-          "category": "Other",
-          "category_confidence": 85,
           "is_category_manual": false
         },
         {
           "name": "TwarógWieKlin 250g",
           "quantity": "2.000",
           "unit_price": "5.79",
-          "total_price": "11.58",
+          "total_price": "7.98",
           "category": "Groceries",
           "category_confidence": 95,
-          "is_category_manual": false
-        },
-        {
-          "name": "OPUST",
-          "quantity": "1.000",
-          "unit_price": "-3.60",
-          "total_price": "-3.60",
-          "category": "Other",
-          "category_confidence": 85,
           "is_category_manual": false
         },
         {
           "name": "kos rodz por kg",
           "quantity": "1.218",
           "unit_price": "69.90",
-          "total_price": "85.14",
+          "total_price": "60.78",
           "category": "Groceries",
           "category_confidence": 95,
-          "is_category_manual": false
-        },
-        {
-          "name": "OPUST",
-          "quantity": "1.000",
-          "unit_price": "-24.36",
-          "total_price": "-24.36",
-          "category": "Other",
-          "category_confidence": 85,
           "is_category_manual": false
         },
         {
           "name": "SerekAlretZiot150g",
           "quantity": "4.000",
           "unit_price": "6.49",
-          "total_price": "25.96",
+          "total_price": "12.98",
           "category": "Groceries",
           "category_confidence": 95,
-          "is_category_manual": false
-        },
-        {
-          "name": "OPUST",
-          "quantity": "1.000",
-          "unit_price": "-12.98",
-          "total_price": "-12.98",
-          "category": "Other",
-          "category_confidence": 85,
           "is_category_manual": false
         }
       ]
@@ -1055,18 +983,9 @@
           "name": "SUCHARKI BRUSCHETTE",
           "quantity": "1.000",
           "unit_price": "3.99",
-          "total_price": "3.99",
+          "total_price": "1.99",
           "category": "Groceries",
           "category_confidence": 90,
-          "is_category_manual": false
-        },
-        {
-          "name": "OPUST SUCHARKI 2 ZA 5,98",
-          "quantity": "2.000",
-          "unit_price": "5.98",
-          "total_price": "-2.00",
-          "category": "Groceries",
-          "category_confidence": 85,
           "is_category_manual": false
         }
       ]
