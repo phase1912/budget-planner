@@ -9,8 +9,9 @@ owns, so each stays skipped until then, as named in `AWAITING`.
 """
 
 import asyncio
+import uuid
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time
 from decimal import Decimal
 
 import pytest
@@ -18,6 +19,7 @@ from pytest import FixtureRequest
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from app.domain.budget import BudgetMonth
+from app.models.monthly_snapshot import MonthlySnapshot
 from app.services.budget import BudgetService, MonthSummary
 
 scenarios("monthly_budget_calculation.feature")
@@ -81,8 +83,26 @@ def clock() -> dict[str, date]:
     return {"today": date(2026, 9, 26)}
 
 
+class _InMemorySnapshots:
+    """Just enough of `MonthlySnapshotRepository` for `BudgetService`."""
+
+    def __init__(self) -> None:
+        self.saved: dict[BudgetMonth, MonthlySnapshot] = {}
+
+    async def find(self, month: BudgetMonth) -> MonthlySnapshot | None:
+        return self.saved.get(month)
+
+    async def save(self, snapshot: MonthlySnapshot) -> MonthlySnapshot:
+        return self.saved.setdefault(BudgetMonth(snapshot.year, snapshot.month), snapshot)
+
+
 def _summary(receipts: _InMemoryReceipts, month: BudgetMonth, today: date) -> MonthSummary:
-    return asyncio.run(BudgetService(receipts).month_summary(month, today))  # type: ignore[arg-type]
+    service = BudgetService(receipts, _InMemorySnapshots())  # type: ignore[arg-type]
+    return asyncio.run(
+        service.month_summary(
+            month, today, user_id=uuid.uuid4(), now=datetime.combine(today, time(12), UTC)
+        )
+    )
 
 
 @given(

@@ -1272,6 +1272,19 @@ epics:
           No screen of its own — proven through F6.3's label. Roll the clock past a month
           boundary and watch that month switch from month-to-date to finalised and stop
           changing, which only a persisted snapshot makes true.
+        tasks:
+          - >
+            ADR-0010 - the snapshot is taken on the first look at a month that is over by
+            the user's clock (no scheduler, no stored timezone), and only once the month has
+            ended in UTC+14, so a clock running ahead cannot freeze a running month.
+          - >
+            monthly_snapshots (one per user and month) and MonthlySnapshotRepository; the
+            month summary reads a finished month from it and reports finalised_at.
+          - >
+            decided with the owner to land D6's backend here rather than in F6.5 - a
+            before_flush hook drops the snapshot of every month a receipt or line change
+            touches, and receipt deletion now goes through the ORM so the hook sees it.
+            F6.5 is left with showing the change on screen without a reload.
       - key: F6.5
         title: Recalculation on receipt change
         labels: [backend, frontend]

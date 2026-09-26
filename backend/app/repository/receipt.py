@@ -81,6 +81,21 @@ class ReceiptRepository(BaseRepository[Receipt]):
         super().bypass_ownership()
         return self
 
+    async def delete(self, id: uuid.UUID) -> bool:
+        """Delete one of the current user's receipts through the ORM (BRD N2, D6).
+
+        The base class deletes with a bulk statement, which the flush hook in
+        `app.db.snapshot_invalidation` cannot see; deleting the loaded row lets it
+        drop the month's snapshot, so the month is recalculated without it.
+        Another user's receipt is not found, exactly like a missing one.
+        """
+        receipt = await self.get(id)
+        if receipt is None:
+            return False
+        await self.session.delete(receipt)
+        await self.session.flush()
+        return True
+
     async def get_with_items(self, id: uuid.UUID) -> Receipt | None:
         """Fetch a receipt including its line items."""
         stmt = select(self.model_class).where(self.model_class.id == id)

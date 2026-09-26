@@ -10,6 +10,7 @@ from app.models.category import Category
 from app.models.category_rule import CategoryRule
 from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
+from app.models.monthly_snapshot import MonthlySnapshot
 from app.models.receipt import Receipt
 from app.models.refresh_token import RefreshToken
 from app.models.upload_job import UploadJob
@@ -21,9 +22,15 @@ __all__ = [
     "CategoryRule",
     "LineItem",
     "Model",
+    "MonthlySnapshot",
     "PositionMatchOverride",
     "Receipt",
     "RefreshToken",
     "UploadJob",
     "User",
 ]
+
+# Registers the flush hook that drops a month's snapshot when one of its receipts
+# changes (F6.4). Imported here because every session touching receipts imports
+# these models first, whether it is the app's, a test's or the seed script's.
+from app.db import snapshot_invalidation  # noqa: F401

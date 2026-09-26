@@ -9,6 +9,7 @@ from app.db.session import get_db_session
 from app.domain.budget import BudgetMonth
 from app.models.user import User
 from app.repository.receipt import ReceiptRepository
+from app.repository.snapshot import MonthlySnapshotRepository
 from app.schemas.budget import MonthSummaryResponse
 from app.services.budget import BudgetService
 
@@ -23,14 +24,17 @@ async def get_month_summary(
     session: Annotated[AsyncSession, Depends(get_db_session)],
     today: Annotated[date | None, Query()] = None,
 ) -> MonthSummaryResponse:
-    """The caller's spend in one calendar month, and what is held out of it (BRD D1-D3).
+    """The caller's spend in one calendar month, and what is held out of it (BRD D1-D5).
 
     The client names the month and passes its own `today`: whether a month is
     still running depends on the user's clock, which only the browser knows
-    (ADR-0009). Without it the server's UTC date stands in.
+    (ADR-0009). Without it the server's UTC date stands in. A month that is over
+    is served from its snapshot, taken on this first look (ADR-0010).
     """
-    summary = await BudgetService(ReceiptRepository(session)).month_summary(
-        BudgetMonth(year, month), today or datetime.now(UTC).date()
+    now = datetime.now(UTC)
+    service = BudgetService(ReceiptRepository(session), MonthlySnapshotRepository(session))
+    summary = await service.month_summary(
+        BudgetMonth(year, month), today or now.date(), user_id=current_user.id, now=now
     )
     return MonthSummaryResponse(
         year=summary.month.year,
@@ -43,4 +47,5 @@ async def get_month_summary(
         is_complete=summary.progress.is_complete,
         days_elapsed=summary.progress.days_elapsed,
         days_in_month=summary.progress.days,
+        finalised_at=summary.finalised_at,
     )
