@@ -1,8 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { BrowserRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { MonthSummary } from "@/stores/BudgetStore";
+import type { CategorySpend } from "@/stores/CategoriesStore";
+import type { Receipt } from "@/stores/ReceiptStore";
 import { DashboardPage } from "./DashboardPage";
 
 const budgetStore = {
@@ -13,25 +15,54 @@ const budgetStore = {
   isLoading: false,
   error: null as string | null,
   canGoForward: false,
-  showCurrentMonth: vi.fn(),
+  isPastMonth: false,
+  receipts: [] as Receipt[],
+  spend: [] as CategorySpend[],
+  receiptsInMonth: 0,
+  open: vi.fn(),
   showPreviousMonth: vi.fn(),
   showNextMonth: vi.fn(),
 };
 
+const receiptStore = {
+  selectedReceiptId: null as string | null,
+  fetchReceiptDetail: vi.fn(),
+};
+
+// The dialogs have their own tests; here it only matters which receipt they are asked to open.
+vi.mock("@/features/receipts/components/ReceiptDetailModal", () => ({
+  ReceiptDetailModal: () => <div role="dialog" aria-label="Receipt detail" />,
+}));
+vi.mock("@/features/receipts/components/EditReceiptDialog", () => ({
+  EditReceiptDialog: () => null,
+}));
+vi.mock("@/features/receipts/components/DeleteReceiptDialog", () => ({
+  DeleteReceiptDialog: () => null,
+}));
+
 vi.mock("@/stores/StoreContext", () => ({
   useStores: () => ({
     budgetStore,
+    receiptStore,
     authStore: {
       user: { email: "test@example.com", first_name: "Anna", last_name: "Smith", currency: "PLN" },
     },
   }),
 }));
 
+function WhereAmI() {
+  const location = useLocation();
+  return <output aria-label="Location">{location.pathname + location.search}</output>;
+}
+
 function renderPage() {
   render(
-    <BrowserRouter>
-      <DashboardPage />
-    </BrowserRouter>,
+    <MemoryRouter initialEntries={["/"]}>
+      <Routes>
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="*" element={<WhereAmI />} />
+      </Routes>
+    </MemoryRouter>,
   );
 }
 
@@ -61,12 +92,17 @@ describe("DashboardPage", () => {
       error: null,
       isLoading: false,
       canGoForward: false,
+      isPastMonth: false,
+      receipts: [],
+      spend: [],
+      receiptsInMonth: 0,
     });
+    receiptStore.selectedReceiptId = null;
   });
 
-  it("opens on the current month", () => {
+  it("opens the month view, which picks the month to show", () => {
     renderPage();
-    expect(budgetStore.showCurrentMonth).toHaveBeenCalled();
+    expect(budgetStore.open).toHaveBeenCalled();
   });
 
   it("welcomes a user who has no receipts yet", () => {
@@ -151,4 +187,72 @@ describe("DashboardPage", () => {
     renderPage();
     expect(screen.queryByRole("link", { name: /Resolve/ })).not.toBeInTheDocument();
   });
+
+  it("lists a finished month's biggest receipts and opens one in place", () => {
+    Object.assign(budgetStore, { year: 2026, month: 8, isPastMonth: true });
+    budgetStore.summary = summary({ month: 8, is_complete: true });
+    budgetStore.receipts = [
+      receipt({ id: "pepco", merchant_name: "PEPCO", total_amount: "24", line_items: 3 }),
+      receipt({ id: "held", merchant_name: "Biedronka", status: "manual_review" }),
+    ];
+    budgetStore.receiptsInMonth = 7;
+    renderPage();
+
+    expect(screen.getByRole("heading", { name: "Biggest receipts" })).toBeInTheDocument();
+    expect(screen.getByText("4 Aug · 3 items")).toBeInTheDocument();
+    expect(screen.getByText("Needs your review")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "All 7" })).toHaveAttribute(
+      "href",
+      "/receipts?start=2026-08-01&end=2026-08-31",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /PEPCO/ }));
+    expect(receiptStore.fetchReceiptDetail).toHaveBeenCalledWith("pepco");
+  });
+
+  it("lists a running month's latest receipts", () => {
+    budgetStore.summary = summary();
+    renderPage();
+    expect(screen.getByRole("heading", { name: "Latest receipts" })).toBeInTheDocument();
+  });
+
+  it("shows where the month went and opens a category's items for that month", () => {
+    Object.assign(budgetStore, { year: 2026, month: 8 });
+    budgetStore.summary = summary({ month: 8 });
+    budgetStore.spend = [
+      { category_id: "groceries-id", name: "Groceries", item_count: 4, total_amount: "180.50" },
+    ];
+    renderPage();
+
+    expect(screen.getByRole("heading", { name: "Where it went" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Groceries/ }));
+
+    expect(screen.getByRole("status", { name: "Location" })).toHaveTextContent(
+      "/categories?view=all&category=groceries-id&start=2026-08-01&end=2026-08-31",
+    );
+  });
+
+  it("shows the receipt dialog over the month once one is picked", () => {
+    budgetStore.summary = summary();
+    receiptStore.selectedReceiptId = "pepco";
+    renderPage();
+    expect(screen.getByRole("dialog", { name: "Receipt detail" })).toBeInTheDocument();
+  });
 });
+
+function receipt({
+  line_items = 1,
+  ...overrides
+}: Partial<Omit<Receipt, "line_items">> & { line_items?: number }): Receipt {
+  return {
+    id: "r",
+    merchant_name: "Shop",
+    transaction_date: "2026-08-04T23:30:00Z",
+    total_amount: "10",
+    status: "parsed",
+    file_ids: [],
+    created_at: "2026-08-05T08:00:00Z",
+    line_items: Array.from({ length: line_items }, (_, i) => ({ id: String(i) })),
+    ...overrides,
+  } as Receipt;
+}

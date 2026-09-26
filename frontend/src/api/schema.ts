@@ -310,7 +310,9 @@ export interface paths {
         };
         /**
          * List Receipts
-         * @description List an account's stored receipts newest first with pagination (F3.8).
+         * @description List an account's stored receipts with pagination, newest first unless asked (F3.8).
+         *
+         *     `order=largest` is a finished month's "Biggest receipts" on the dashboard (F6.5).
          */
         get: operations["list_receipts_receipts_get"];
         put?: never;
@@ -844,6 +846,16 @@ export interface components {
              */
             line_items: components["schemas"]["LineItemResponse"][];
         };
+        /**
+         * ReceiptOrder
+         * @description How a list of receipts is ordered (docs/design/screens/dashboard*.html).
+         *
+         *     `newest` is the receipts screen and a running month's "Latest receipts";
+         *     `largest` is a finished month's "Biggest receipts", where what the money
+         *     went on matters more than when it was spent.
+         * @enum {string}
+         */
+        ReceiptOrder: "newest" | "largest";
         /**
          * ReceiptResponse
          * @description Schema for a receipt list item.
@@ -1642,6 +1654,7 @@ export interface operations {
                 start_date?: string | null;
                 end_date?: string | null;
                 q?: string | null;
+                order?: components["schemas"]["ReceiptOrder"];
                 token?: string | null;
             };
             header?: never;

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ReceiptStore } from "./ReceiptStore";
+import { ReceiptStore, changeMessage } from "./ReceiptStore";
+import type { ReceiptDetail } from "./ReceiptStore";
 import { ToastStore } from "./ToastStore";
 import { apiClient } from "../api/client";
 
@@ -7,6 +8,8 @@ import { apiClient } from "../api/client";
 vi.mock("../api/client", () => ({
   apiClient: {
     GET: vi.fn(),
+    PATCH: vi.fn(),
+    DELETE: vi.fn(),
   },
 }));
 
@@ -172,5 +175,83 @@ describe("ReceiptStore", () => {
         },
       },
     });
+  });
+
+  it("names a finished month it recalculated, and tells the month view to refetch", async () => {
+    const changed = vi.fn();
+    const successSpy = vi.spyOn(toastStore, "showSuccess");
+    const store = new ReceiptStore(toastStore, changed, () => new Date(2026, 8, 26));
+    const before = { id: "r1", transaction_date: "2026-08-04T11:26:00Z" } as ReceiptDetail;
+    store.receiptDetail = before;
+    vi.mocked(apiClient.PATCH).mockResolvedValueOnce({
+      data: { ...before, total_amount: "124.00" },
+      response: new Response(),
+    });
+    vi.mocked(apiClient.GET).mockResolvedValueOnce({
+      data: { items: [], total: 0, page: 1, size: 20, pages: 0 },
+      response: new Response(),
+    });
+
+    await store.updateReceipt("r1", {} as never);
+
+    expect(successSpy).toHaveBeenCalledWith("Receipt updated. August 2026 recalculated");
+    expect(changed).toHaveBeenCalledOnce();
+  });
+
+  it("tells the month view to refetch after a delete", async () => {
+    const changed = vi.fn();
+    const store = new ReceiptStore(toastStore, changed);
+    vi.mocked(apiClient.DELETE).mockResolvedValueOnce({ response: new Response() } as never);
+    vi.mocked(apiClient.GET).mockResolvedValueOnce({
+      data: { items: [], total: 0, page: 1, size: 20, pages: 0 },
+      response: new Response(),
+    });
+
+    await store.deleteReceipt("r1");
+
+    expect(changed).toHaveBeenCalledOnce();
+  });
+
+  it("does not refetch the month when a save fails", async () => {
+    const changed = vi.fn();
+    const store = new ReceiptStore(toastStore, changed);
+    vi.mocked(apiClient.PATCH).mockResolvedValueOnce({
+      error: { detail: "Line totals do not add up" },
+      response: new Response(),
+    } as never);
+
+    await store.updateReceipt("r1", {} as never);
+
+    expect(changed).not.toHaveBeenCalled();
+  });
+});
+
+describe("changeMessage", () => {
+  const SEPT_26 = new Date(2026, 8, 26);
+  const dated = (transaction_date: string | null, created_at = "2026-09-20T10:00:00Z") => ({
+    transaction_date,
+    created_at,
+  });
+
+  it("says nothing extra about a month still running", () => {
+    expect(changeMessage("Receipt updated", [dated("2026-09-24T10:47:00Z")], SEPT_26)).toBe(
+      "Receipt updated",
+    );
+  });
+
+  it("names both months when a receipt moves between them, in calendar order", () => {
+    expect(
+      changeMessage(
+        "Receipt updated",
+        [dated("2026-08-31T23:30:00Z"), dated("2026-07-02T09:00:00Z")],
+        SEPT_26,
+      ),
+    ).toBe("Receipt updated. July 2026 and August 2026 recalculated");
+  });
+
+  it("files an undated receipt under its upload date, like the month total", () => {
+    expect(changeMessage("Receipt deleted", [dated(null, "2026-08-20T09:00:00Z")], SEPT_26)).toBe(
+      "Receipt deleted. August 2026 recalculated",
+    );
   });
 });

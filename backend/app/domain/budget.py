@@ -7,6 +7,7 @@ stored), so the month it was printed in is the month it belongs to (D2).
 """
 
 import calendar
+import enum
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 
@@ -78,3 +79,15 @@ class MonthProgress:
     is_complete: bool
     days_elapsed: int
     days: int
+
+
+class ReceiptOrder(enum.StrEnum):
+    """How a list of receipts is ordered (docs/design/screens/dashboard*.html).
+
+    `newest` is the receipts screen and a running month's "Latest receipts";
+    `largest` is a finished month's "Biggest receipts", where what the money
+    went on matters more than when it was spent.
+    """
+
+    NEWEST = "newest"
+    LARGEST = "largest"

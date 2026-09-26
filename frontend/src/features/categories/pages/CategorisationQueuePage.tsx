@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { observer } from "mobx-react-lite";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { CheckCircle2, Search, SlidersHorizontal } from "lucide-react";
 
 import { useStores } from "@/stores/StoreContext";
@@ -16,6 +16,7 @@ import {
   Pill,
   SegmentedControl,
 } from "@/shared/components";
+import { formatPurchase } from "@/shared/purchaseDate";
 import type { ItemView, ReviewQueueItem } from "@/stores/CategoriesStore";
 import { CategorySpendList } from "../components/CategorySpendList";
 import { InlineCategoryPicker } from "../components/InlineCategoryPicker";
@@ -24,7 +25,6 @@ const AMOUNT = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
-const DATE_FORMAT = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" });
 
 const SUBTITLES: Record<ItemView, string> = {
   needs_review: "Items the agent was not confident about, oldest first.",
@@ -45,7 +45,31 @@ const EMPTY_MESSAGES: Record<ItemView, { title: string; message: string }> = {
 };
 
 function purchaseDate(item: ReviewQueueItem): string {
-  return item.transaction_date ? DATE_FORMAT.format(new Date(item.transaction_date)) : "—";
+  return item.transaction_date
+    ? formatPurchase(item.transaction_date, { day: "numeric", month: "short" })
+    : "—";
+}
+
+const VIEWS: readonly ItemView[] = ["needs_review", "corrected", "all"];
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * The selection a link asks for, e.g. the dashboard's "Where it went":
+ * `?view=all&category=…&start=YYYY-MM-DD&end=YYYY-MM-DD`. Null when the address
+ * names none, so the screen keeps whatever the user last chose.
+ */
+function selectionFrom(params: URLSearchParams) {
+  const view = VIEWS.find((v) => v === params.get("view"));
+  if (!view) return null;
+  const start = params.get("start");
+  const end = params.get("end");
+  const dated = start !== null && end !== null && DAY.test(start) && DAY.test(end);
+  return {
+    view,
+    categoryId: params.get("category"),
+    start: dated ? `${start}T00:00:00Z` : undefined,
+    end: dated ? `${end}T23:59:59Z` : undefined,
+  };
 }
 
 /**
@@ -68,9 +92,17 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
     ? { title: "No matching items", message: "Nothing in this view matches these filters." }
     : EMPTY_MESSAGES[queueView];
 
+  const [searchParams] = useSearchParams();
+  const query = searchParams.toString();
+
   useEffect(() => {
+    const requested = selectionFrom(new URLSearchParams(query));
+    if (requested) {
+      categoriesStore.showSelection(requested);
+      return;
+    }
     void categoriesStore.fetchReviewQueue();
-  }, [categoriesStore]);
+  }, [categoriesStore, query]);
 
   return (
     <div className="flex-grow flex flex-col items-center py-10 px-4 md:px-8">

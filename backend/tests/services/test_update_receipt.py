@@ -1,7 +1,7 @@
 """Correcting a stored receipt's header and line items (F3.9, BRD A9, A11, D6)."""
 
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 import pytest
@@ -225,3 +225,37 @@ async def test_a_line_item_id_not_on_the_receipt_is_rejected(db_session: AsyncSe
     # When / Then
     with pytest.raises(ValueError, match="not found"):
         await service.update_receipt(receipt.id, request)
+
+
+@pytest.mark.asyncio
+async def test_correcting_a_receipt_keeps_the_time_printed_on_it(
+    db_session: AsyncSession,
+) -> None:
+    """The dialog edits the date only; the till's time of purchase must survive a save."""
+    user = await UserFactory.create_async(email="keep-time@example.com")
+    current_user_id.set(user.id)
+    receipt = await _stored_receipt(db_session, user.id)
+    receipt.transaction_date = datetime(2026, 8, 4, 11, 26, tzinfo=UTC)
+    await db_session.flush()
+    line = receipt.line_items[0]
+
+    updated = await ReceiptService(repository=ReceiptRepository(db_session)).update_receipt(
+        receipt.id,
+        UpdateReceiptRequest(
+            merchant_name="euro sklep",
+            transaction_date=date(2026, 8, 5),
+            total_amount=line.total_price,
+            line_items=[
+                LineItemInput(
+                    id=line.id,
+                    name=line.name,
+                    quantity=line.quantity,
+                    unit_price=line.unit_price,
+                    total_price=line.total_price,
+                )
+            ],
+        ),
+    )
+
+    assert updated is not None
+    assert updated.transaction_date == datetime(2026, 8, 5, 11, 26, tzinfo=UTC)

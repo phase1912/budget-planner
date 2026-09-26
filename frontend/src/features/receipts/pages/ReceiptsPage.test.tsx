@@ -109,4 +109,28 @@ describe("ReceiptsPage", () => {
     expect(mockSetFilters).not.toHaveBeenCalled();
     expect(mockFetchReceipts).toHaveBeenCalled();
   });
+
+  it("opens on one month's receipts when the dashboard's All link asks", () => {
+    render(
+      <MemoryRouter initialEntries={["/receipts?start=2026-08-01&end=2026-08-31"]}>
+        <ReceiptsPage />
+      </MemoryRouter>,
+    );
+
+    expect(mockSetFilters).toHaveBeenCalledWith({
+      status: undefined,
+      startDate: "2026-08-01T00:00:00Z",
+      endDate: "2026-08-31T23:59:59Z",
+    });
+  });
+
+  it("ignores a date range that is not two calendar days", () => {
+    render(
+      <MemoryRouter initialEntries={["/receipts?start=yesterday&end=2026-08-31"]}>
+        <ReceiptsPage />
+      </MemoryRouter>,
+    );
+
+    expect(mockSetFilters).not.toHaveBeenCalled();
+  });
 });

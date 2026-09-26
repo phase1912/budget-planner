@@ -9,6 +9,7 @@ from sqlalchemy import ColumnElement, Select, case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager, joinedload
 
+from app.domain.budget import ReceiptOrder
 from app.domain.categories import UNCATEGORIZED, ItemView
 from app.models.category import Category
 from app.models.line_item import LineItem
@@ -313,8 +314,13 @@ class ReceiptRepository(BaseRepository[Receipt]):
         start_date: datetime | None = None,
         end_date: datetime | None = None,
         search_query: str | None = None,
+        order: ReceiptOrder = ReceiptOrder.NEWEST,
     ) -> tuple[typing.Sequence[Receipt], int]:
-        """Return a page of receipts and the total count, with optional filters."""
+        """Return a page of receipts and the total count, with optional filters.
+
+        The date range places an undated receipt by its upload date, as the
+        month total does (domain model), so a month's list and figure agree.
+        """
         from sqlalchemy import func, or_
 
         base_stmt = select(self.model_class)
@@ -323,9 +329,9 @@ class ReceiptRepository(BaseRepository[Receipt]):
         if status:
             base_stmt = base_stmt.where(self.model_class.status == status)
         if start_date:
-            base_stmt = base_stmt.where(self.model_class.transaction_date >= start_date)
+            base_stmt = base_stmt.where(_purchased() >= start_date)
         if end_date:
-            base_stmt = base_stmt.where(self.model_class.transaction_date <= end_date)
+            base_stmt = base_stmt.where(_purchased() <= end_date)
         if search_query:
             search_term = f"%{search_query}%"
             # Receipt has merchant_name, LineItem has name
@@ -340,10 +346,14 @@ class ReceiptRepository(BaseRepository[Receipt]):
         total = await self.session.scalar(count_stmt) or 0
 
         # Items query
-        stmt = base_stmt.order_by(
+        newest = (
             self.model_class.transaction_date.desc().nulls_last(),
             self.model_class.created_at.desc(),
         )
+        if order is ReceiptOrder.LARGEST:
+            stmt = base_stmt.order_by(self.model_class.total_amount.desc().nulls_last(), *newest)
+        else:
+            stmt = base_stmt.order_by(*newest)
         stmt = stmt.offset(skip).limit(limit)
 
         stmt = stmt.options(joinedload(self.model_class.line_items))

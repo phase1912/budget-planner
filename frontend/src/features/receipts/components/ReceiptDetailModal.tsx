@@ -12,6 +12,7 @@ import {
 } from "@/shared/components";
 import { RefreshCw } from "lucide-react";
 import { InlineCategoryPicker } from "@/features/categories/components/InlineCategoryPicker";
+import { formatPurchase } from "@/shared/purchaseDate";
 
 /**
  * Render an amount, or an em dash when there is nothing to render.
@@ -74,15 +75,13 @@ export const ReceiptDetailModal = observer(() => {
             </h2>
             <span className="tabular-nums text-[13px] text-muted-foreground">
               {receipt.transaction_date
-                ? new Intl.DateTimeFormat("en-GB", {
+                ? formatPurchase(receipt.transaction_date, {
                     day: "2-digit",
                     month: "long",
                     year: "numeric",
-                  }).format(new Date(receipt.transaction_date)) +
+                  }) +
                   " · " +
-                  new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" }).format(
-                    new Date(receipt.transaction_date),
-                  )
+                  formatPurchase(receipt.transaction_date, { hour: "2-digit", minute: "2-digit" })
                 : "Unknown Date"}
               {" · "}
               {receipt.file_ids.length} photos

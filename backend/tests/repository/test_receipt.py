@@ -355,3 +355,60 @@ async def test_line_items_keep_their_printed_order_after_one_is_updated(
 
     assert fetched is not None
     assert [item.name for item in fetched.line_items] == ["First (edited)", "Second", "Third"]
+
+
+@pytest.mark.asyncio
+async def test_an_undated_receipt_is_listed_in_the_month_it_was_uploaded(
+    db_session: AsyncSession,
+) -> None:
+    """The month's list agrees with the month's total, which files it the same way (D1)."""
+    import datetime
+
+    user = await UserFactory.create_async(email="undated-list@example.com")
+    current_user_id.set(user.id)
+    undated = Receipt(
+        id=uuid.uuid4(),
+        user_id=user.id,
+        merchant_name="Faded receipt",
+        status=ReceiptStatus.MANUAL_REVIEW,
+        transaction_date=None,
+        created_at=datetime.datetime(2026, 8, 20, 9, tzinfo=datetime.UTC),
+    )
+    db_session.add(undated)
+    await db_session.flush()
+
+    items, total = await ReceiptRepository(db_session).list_paginated(
+        0,
+        10,
+        start_date=datetime.datetime(2026, 8, 1, tzinfo=datetime.UTC),
+        end_date=datetime.datetime(2026, 8, 31, 23, 59, 59, tzinfo=datetime.UTC),
+    )
+
+    assert (total, [r.id for r in items]) == (1, [undated.id])
+
+
+@pytest.mark.asyncio
+async def test_a_months_biggest_receipts_come_first_when_asked(db_session: AsyncSession) -> None:
+    """A finished month's dashboard lists what the money went on, largest first (F6.5)."""
+    import datetime
+
+    from app.domain.budget import ReceiptOrder
+
+    user = await UserFactory.create_async(email="biggest@example.com")
+    current_user_id.set(user.id)
+    for day, total in [(3, "12.00"), (10, "250.00"), (20, None), (25, "80.00")]:
+        db_session.add(
+            Receipt(
+                id=uuid.uuid4(),
+                user_id=user.id,
+                merchant_name=f"Shop {day}",
+                status=ReceiptStatus.PARSED,
+                total_amount=Decimal(total) if total else None,
+                transaction_date=datetime.datetime(2026, 8, day, tzinfo=datetime.UTC),
+            )
+        )
+    await db_session.flush()
+
+    items, _ = await ReceiptRepository(db_session).list_paginated(0, 10, order=ReceiptOrder.LARGEST)
+
+    assert [r.merchant_name for r in items] == ["Shop 10", "Shop 25", "Shop 3", "Shop 20"]
