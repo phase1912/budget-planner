@@ -81,7 +81,15 @@ Rules that must hold at all times. Each is a candidate for a test.
 
 4. A monthly total is the sum of line-item totals of `parsed` receipts in that month (D1).
 5. Receipts in `manual_review` are excluded, and their count and value are reported
-   alongside the total — the number is never quietly incomplete (D3).
+   alongside the total — the number is never quietly incomplete (D3). The value is the
+   sum of their lines, since the printed total may be what could not be read. One with
+   no readable date is reported in the month it was uploaded, so it always surfaces
+   somewhere.
+5a. A negative line printed under a product ("OPUST", a discount) is not a purchase.
+   At upload it is folded into the nearest product line above it on the same photo:
+   that line's `total_price` becomes what was paid, while its `unit_price` and
+   `quantity` stay as printed, and the receipt still adds up to its printed total.
+   Only a discount with no product above it stays a line of its own.
 6. An in-progress month is always labelled incomplete wherever it is displayed (D4).
 7. Snapshots are derived data. Any mutation of a receipt in a snapshotted month
    recalculates it (D6, N3). Not yet true of deletion: the delete path erases the

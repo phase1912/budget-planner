@@ -18,6 +18,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from app.core.config import get_settings
 from app.db.session import get_session_factory
 from app.domain.categories import UNCATEGORIZED, confident_category, match_rule
+from app.domain.discounts import fold_discounts
 from app.models.category import Category
 from app.models.category_rule import CategoryRule
 from app.models.line_item import LineItem
@@ -197,6 +198,7 @@ class ReceiptService:
                         ext = await self._run_extraction(user, file_ids, content_types)
                         ext["file_ids"] = file_ids
 
+                        self._fold_discount_lines(ext)
                         await self._categorise_extraction(ext, categories, rules)
                         extraction = ext
 
@@ -256,6 +258,23 @@ class ReceiptService:
                 session.add(job)
                 await session.commit()
                 raise e
+
+    @staticmethod
+    def _fold_discount_lines(extraction: dict[str, object]) -> None:
+        """Fold "OPUST" discount lines into the products they reduce, in place.
+
+        Runs after the photos are matched and before categorisation, so the
+        categoriser never sees a negative "purchase" and the matches still point
+        at the right lines (see `app.domain.discounts`).
+        """
+        items = extraction.get("line_items")
+        if not isinstance(items, list):
+            return
+        matches = extraction.get("position_matches")
+        folded, renumbered = fold_discounts(items, matches if isinstance(matches, list) else None)
+        extraction["line_items"] = folded
+        if isinstance(matches, list):
+            extraction["position_matches"] = renumbered
 
     async def _categorise_extraction(
         self,

@@ -193,4 +193,21 @@ describe("ExtractedStep", () => {
 
     expect(mockStore.uploadStore.extractedData).toBeNull();
   });
+
+  it("shows an OPUST discount beside the line it was folded into", () => {
+    withExtraction({
+      line_items: [
+        {
+          name: "Olej 3l",
+          quantity: "2",
+          unit_price: "16.99",
+          total_price: "23.94",
+          discount: "10.04",
+        },
+      ],
+    });
+    renderComponent();
+    expect(screen.getByText("23.94")).toBeInTheDocument();
+    expect(screen.getByText("incl. −10.04 off")).toBeInTheDocument();
+  });
 });

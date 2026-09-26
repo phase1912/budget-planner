@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import type { components } from "@/api/schema";
 import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/StoreContext";
 import { DeleteReceiptDialog } from "../components/DeleteReceiptDialog";
@@ -8,12 +10,34 @@ import { DateFilterModal } from "../components/DateFilterModal";
 import { StatusFilterDropdown } from "../components/StatusFilterDropdown";
 import { Card, Input, IconTile, Pagination } from "@/shared/components";
 
+type ReceiptStatus = components["schemas"]["ReceiptStatus"];
+
+const STATUSES: readonly ReceiptStatus[] = [
+  "uploaded",
+  "parsing",
+  "parsed",
+  "manual_review",
+  "failed",
+];
+
+function isReceiptStatus(value: string | null): value is ReceiptStatus {
+  return STATUSES.some((status) => status === value);
+}
+
 export const ReceiptsPage = observer(() => {
   const { receiptStore } = useStores();
+  const [searchParams] = useSearchParams();
+  const requestedStatus = searchParams.get("status");
 
   useEffect(() => {
+    // `?status=manual_review` is how the dashboard's "Resolve them" opens this
+    // list already narrowed to the receipts held out of the month (BRD D3).
+    if (isReceiptStatus(requestedStatus)) {
+      receiptStore.setFilters({ status: requestedStatus });
+      return;
+    }
     void receiptStore.fetchReceipts(receiptStore.page, receiptStore.size);
-  }, [receiptStore]);
+  }, [receiptStore, requestedStatus]);
 
   return (
     <div className="flex-grow flex flex-col items-center py-10 px-8">

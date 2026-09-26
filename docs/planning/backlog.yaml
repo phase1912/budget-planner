@@ -1222,6 +1222,18 @@ epics:
           With a flagged receipt in the month, the month view carries the notice naming how
           many receipts and how much money sit outside the total, with a way through to fix
           them.
+        tasks:
+          - >
+            the month summary reports receipts under manual review - count and the value of
+            their lines - placed by purchase date, or upload date when none was read (D3).
+          - >
+            the dashboard notice names them and leads to /receipts?status=manual_review,
+            which opens the receipts list already filtered to them.
+          - >
+            unplanned, added at the owner's request - "OPUST" discount lines fold into the
+            product above them at upload (domain model 5a), so no negative line reaches a
+            category; the wizard shows the discount beside the product. Existing local data
+            was recalculated by hand, with no migration or script.
       - key: F6.3
         title: Month-to-date versus finalised presentation
         labels: [backend, frontend]

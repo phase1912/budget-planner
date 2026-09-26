@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { observer } from "mobx-react-lite";
+import { Link } from "react-router-dom";
 
 import { useStores } from "@/stores/StoreContext";
-import { Card, ErrorState, LoadingState } from "@/shared/components";
+import { Card, ErrorState, LoadingState, Note } from "@/shared/components";
 import { MonthSwitcher } from "../components/MonthSwitcher";
 import { WelcomePanel } from "../components/WelcomePanel";
 
@@ -18,9 +19,9 @@ const AMOUNT = new Intl.NumberFormat("en-US", {
  * receipt date, with a switcher to step back through earlier months (BRD D1,
  * D2 — F6.1). A user with no receipts yet sees the welcome instead.
  *
- * This is the first slice of the dashboard. The limit bar, the month-to-date
- * label, the excluded-receipts notice and the category breakdown arrive with
- * F6.6, F6.3, F6.2 and F6.7.
+ * Receipts under manual review are left out of the figure and named beneath
+ * it, with the way through to fix them (D3 — F6.2). The limit bar, the
+ * month-to-date label and the category breakdown arrive with F6.6, F6.3 and F6.7.
  */
 export const DashboardPage = observer(function DashboardPage() {
   const { budgetStore, authStore } = useStores();
@@ -93,6 +94,24 @@ export const DashboardPage = observer(function DashboardPage() {
               : `${String(summary.receipt_count)} receipts`}
           </span>
         </Card>
+
+        {summary.excluded_count > 0 && (
+          <Note tone="warning">
+            <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <span className="tabular-nums">
+                {summary.excluded_count === 1
+                  ? "1 receipt"
+                  : `${String(summary.excluded_count)} receipts`}{" "}
+                worth {AMOUNT.format(Number(summary.excluded_amount))} {currency}{" "}
+                {summary.excluded_count === 1 ? "is" : "are"} not in this total — the date or total
+                could not be read.
+              </span>
+              <Link to="/receipts?status=manual_review" className="shrink-0 underline">
+                {summary.excluded_count === 1 ? "Resolve it" : "Resolve them"}
+              </Link>
+            </span>
+          </Note>
+        )}
       </div>
     </div>
   );

@@ -661,3 +661,61 @@ async def test_a_rule_for_a_category_no_longer_offered_is_ignored() -> None:
 
     [item] = cast(list[dict[str, Any]], extraction["line_items"])
     assert item["category_id"] == str(groceries.id)
+
+
+@pytest.mark.asyncio
+async def test_an_opust_discount_line_is_folded_into_its_product_before_categorising() -> None:
+    """Biedronka prints "OPUST -10,04" under the oil it discounts; that is not a purchase."""
+    groceries = Category(id=uuid.uuid4(), name="Groceries")
+    seen: list[str] = []
+
+    class _Recording(_ScriptedCategoriser):
+        async def categorise_items(
+            self, items: list[ExtractedLineItem], categories: Sequence[Category]
+        ) -> list[ExtractedLineItem]:
+            seen.extend(item.name for item in items)
+            return await super().categorise_items(items, categories)
+
+    mock_parser = AsyncMock()
+    mock_extraction = MagicMock()
+    mock_extraction.model_dump.return_value = {
+        "merchant_name": "Biedronka",
+        "receipt_total": "73.92",
+        "currency": "PLN",
+        "line_items": [
+            {"name": "Olej 3l", "quantity": "2", "unit_price": "16.99", "total_price": "33.98"},
+            {"name": "OPUST", "quantity": "1", "unit_price": "-10.04", "total_price": "-10.04"},
+            {"name": "Kawa", "quantity": "2", "unit_price": "24.99", "total_price": "49.98"},
+        ],
+    }
+    mock_parser.parse.return_value = mock_extraction
+    mock_storage = AsyncMock()
+    mock_storage.download_file.return_value = b"image-data"
+    service = ReceiptService(
+        storage_port=mock_storage,
+        parser_port=mock_parser,
+        categoriser_port=_Recording({"Olej 3l": (groceries, 95), "Kawa": (groceries, 95)}),
+    )
+    user = User(id=uuid.uuid4(), email="test@test.com")
+    job = UploadJob(id=uuid.uuid4(), user_id=user.id)
+    session_factory = MagicMock()
+    session_factory.return_value.__aenter__.return_value = _session_returning(
+        job=job, categories=[groceries]
+    )
+
+    with (
+        patch("app.services.receipt.get_session_factory", return_value=session_factory),
+        patch.object(service, "store_receipt_image", new_callable=AsyncMock) as mock_store,
+    ):
+        mock_store.return_value = "file-123"
+        await service.process_upload_job_task(
+            job.id, user, [[{"content": b"test", "content_type": "image/jpeg"}]]
+        )
+
+    assert job.result_data is not None
+    lines = job.result_data["extractions"][0]["line_items"]
+    assert [(i["name"], i["total_price"], i.get("discount")) for i in lines] == [
+        ("Olej 3l", "23.94", "10.04"),
+        ("Kawa", "49.98", None),
+    ]
+    assert "OPUST" not in seen

@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ReceiptsPage } from "./ReceiptsPage";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, MemoryRouter } from "react-router-dom";
 
 // Mock ReceiptDetailModal to simplify testing
 vi.mock("../components/ReceiptDetailModal", () => ({
@@ -10,6 +10,7 @@ vi.mock("../components/ReceiptDetailModal", () => ({
 
 const mockFetchReceipts = vi.fn();
 const mockFetchReceiptDetail = vi.fn();
+const mockSetFilters = vi.fn();
 
 vi.mock("@/stores/StoreContext", () => ({
   useStores: () => ({
@@ -40,6 +41,7 @@ vi.mock("@/stores/StoreContext", () => ({
       selectedReceiptId: null,
       fetchReceipts: mockFetchReceipts,
       fetchReceiptDetail: mockFetchReceiptDetail,
+      setFilters: mockSetFilters,
     },
   }),
 }));
@@ -84,5 +86,27 @@ describe("ReceiptsPage", () => {
     if (tescoRow) fireEvent.click(tescoRow);
 
     expect(mockFetchReceiptDetail).toHaveBeenCalledWith("r1");
+  });
+
+  it("opens already narrowed to receipts under review when the dashboard asks", () => {
+    render(
+      <MemoryRouter initialEntries={["/receipts?status=manual_review"]}>
+        <ReceiptsPage />
+      </MemoryRouter>,
+    );
+
+    expect(mockSetFilters).toHaveBeenCalledWith({ status: "manual_review" });
+    expect(mockFetchReceipts).not.toHaveBeenCalled();
+  });
+
+  it("ignores a status it does not know", () => {
+    render(
+      <MemoryRouter initialEntries={["/receipts?status=bogus"]}>
+        <ReceiptsPage />
+      </MemoryRouter>,
+    );
+
+    expect(mockSetFilters).not.toHaveBeenCalled();
+    expect(mockFetchReceipts).toHaveBeenCalled();
   });
 });

@@ -261,6 +261,30 @@ class ReceiptRepository(BaseRepository[Receipt]):
         count: int = (await self.session.execute(count_stmt)).scalar_one()
         return total, count
 
+    async def month_under_review(self, start: datetime, end: datetime) -> tuple[int, Decimal]:
+        """How many of the user's receipts in `[start, end)` await review, and their value (D3).
+
+        A receipt under review may lack a readable date, so it is placed by its
+        purchase date where it has one and by its upload date otherwise: it must
+        surface in some month, or it would be excluded without anyone being told.
+        Its value is the sum of its lines, since its printed total may be the
+        very thing that could not be read.
+        """
+        in_month = self._apply_ownership(
+            select(Receipt.id).where(
+                Receipt.status == ReceiptStatus.MANUAL_REVIEW,
+                _purchased() >= start,
+                _purchased() < end,
+            )
+        )
+        count_stmt = select(func.count()).select_from(in_month.subquery())
+        value_stmt = select(func.coalesce(func.sum(LineItem.total_price), 0)).where(
+            LineItem.receipt_id.in_(in_month)
+        )
+        count: int = (await self.session.execute(count_stmt)).scalar_one()
+        value = Decimal((await self.session.execute(value_stmt)).scalar_one())
+        return count, value
+
     async def has_any(self) -> bool:
         """Whether the current user has stored a receipt yet; before that, `/` is a welcome."""
         stmt = self._apply_ownership(select(Receipt.id)).limit(1)
