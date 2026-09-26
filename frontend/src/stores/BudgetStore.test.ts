@@ -27,7 +27,7 @@ describe("BudgetStore", () => {
     await store.showCurrentMonth();
 
     expect(apiClient.GET).toHaveBeenCalledWith("/api/v1/budget/months/{year}/{month}", {
-      params: { path: { year: 2026, month: 10 } },
+      params: { path: { year: 2026, month: 10 }, query: { today: "2026-10-01" } },
     });
     expect([store.year, store.month]).toEqual([2026, 10]);
     expect(store.canGoForward).toBe(false);

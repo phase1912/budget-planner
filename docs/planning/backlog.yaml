@@ -1245,6 +1245,21 @@ epics:
         demo: >
           The current month reads "month-to-date, still running" with the days elapsed; step
           back to a finished month and the label changes to finalised.
+        tasks:
+          - >
+            BudgetMonth.progress(today) - complete once the user's today is past the month's
+            last day; otherwise the days elapsed of the month's days (D4).
+          - >
+            the month summary takes the browser's `today` (ADR-0009) and returns is_complete,
+            days_elapsed and days_in_month.
+          - >
+            the dashboard labels the month "Month-to-date · still running" or "Finalised ·
+            complete month" beside the switcher, with "N of M days recorded" under the figure,
+            per docs/design/screens/dashboard.html and dashboard-dark.html.
+          - >
+            found on the way - the dark theme's --tone-neutral-bg equalled the surface colour,
+            so every neutral pill (the finalised one included) was invisible; it is now the
+            translucent tint dashboard-dark.html draws.
       - key: F6.4
         title: Monthly snapshot generation
         labels: [backend, database]
