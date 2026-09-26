@@ -75,7 +75,8 @@ Rules that must hold at all times. Each is a candidate for a test.
    `transaction_date` is the exception in meaning, not type: it holds the time printed on
    the receipt, the shop's wall clock, stored unconverted. So a receipt belongs to the
    calendar month printed on it, and "the current month" is the user's, decided by their
-   browser (ADR-0009).
+   browser (ADR-0009). It is shown as printed too, read back in UTC rather than the
+   browser's timezone, and correcting a receipt's date keeps its printed time of day.
 
 **Aggregation**
 
@@ -84,7 +85,7 @@ Rules that must hold at all times. Each is a candidate for a test.
    alongside the total — the number is never quietly incomplete (D3). The value is the
    sum of their lines, since the printed total may be what could not be read. One with
    no readable date is reported in the month it was uploaded, so it always surfaces
-   somewhere.
+   somewhere; a month's receipts list places it the same way, so list and total agree.
 5a. A negative line printed under a product ("OPUST", a discount) is not a purchase.
    At upload it is folded into the nearest product line above it on the same photo:
    that line's `total_price` becomes what was paid, while its `unit_price` and
@@ -95,7 +96,8 @@ Rules that must hold at all times. Each is a candidate for a test.
    recalculates it (D6, N3): the flush that changes a receipt or one of its lines drops
    the snapshot of each month it touches, and the next look rebuilds it (ADR-0010). A
    month is snapshotted only once it has ended by the user's clock, and has ended
-   somewhere on Earth.
+   somewhere on Earth. The month on screen refetches after every such change, so the
+   new figure shows in the same session (F6.5).
 
 **Position matching**
 

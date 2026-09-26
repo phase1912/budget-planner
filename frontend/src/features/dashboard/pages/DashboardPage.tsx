@@ -1,9 +1,15 @@
 import { useEffect } from "react";
 import { observer } from "mobx-react-lite";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { useStores } from "@/stores/StoreContext";
+import { monthRange } from "@/stores/BudgetStore";
 import { Card, ErrorState, LoadingState, Note } from "@/shared/components";
+import { DeleteReceiptDialog } from "@/features/receipts/components/DeleteReceiptDialog";
+import { EditReceiptDialog } from "@/features/receipts/components/EditReceiptDialog";
+import { ReceiptDetailModal } from "@/features/receipts/components/ReceiptDetailModal";
+import { CategorySpendList } from "@/features/categories/components/CategorySpendList";
+import { MonthReceipts } from "../components/MonthReceipts";
 import { MonthStatus } from "../components/MonthStatus";
 import { MonthSwitcher } from "../components/MonthSwitcher";
 import { WelcomePanel } from "../components/WelcomePanel";
@@ -22,15 +28,21 @@ const AMOUNT = new Intl.NumberFormat("en-US", {
  *
  * Receipts under manual review are left out of the figure and named beneath
  * it, with the way through to fix them (D3 — F6.2). An unfinished month is
- * labelled month-to-date, with the days so far (D4 — F6.3). The limit bar and
- * the category breakdown arrive with F6.6 and F6.7.
+ * labelled month-to-date, with the days so far (D4 — F6.3).
+ *
+ * Beneath it, where the month went by category, and its receipts, which open
+ * their detail dialog here; correcting or deleting one refetches the month, so
+ * its figure moves without a reload, and the view reopens on the month it was
+ * left on (D6 — F6.5). The limit bar arrives with F6.6. The receipts column is
+ * hidden on phones, as in docs/design/screens/dashboard-mobile.html.
  */
 export const DashboardPage = observer(function DashboardPage() {
-  const { budgetStore, authStore } = useStores();
+  const { budgetStore, authStore, receiptStore } = useStores();
   const { summary, isLoading, error } = budgetStore;
+  const navigate = useNavigate();
 
   useEffect(() => {
-    void budgetStore.showCurrentMonth();
+    void budgetStore.open();
   }, [budgetStore]);
 
   if (!summary) {
@@ -120,7 +132,43 @@ export const DashboardPage = observer(function DashboardPage() {
             </span>
           </Note>
         )}
+
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+          <CategorySpendList
+            spend={budgetStore.spend}
+            hint="Highest first"
+            onSelect={(categoryId) => {
+              if (categoryId) void navigate(categoryItemsHref(summary, categoryId));
+            }}
+          />
+          <div className="hidden md:block">
+            <MonthReceipts
+              title={budgetStore.isPastMonth ? "Biggest receipts" : "Latest receipts"}
+              receipts={budgetStore.receipts}
+              total={budgetStore.receiptsInMonth}
+              allHref={`/receipts?${monthQuery(summary)}`}
+              onOpen={(id) => {
+                void receiptStore.fetchReceiptDetail(id);
+              }}
+            />
+          </div>
+        </div>
+
+        {receiptStore.selectedReceiptId && <ReceiptDetailModal />}
+        <DeleteReceiptDialog />
+        <EditReceiptDialog />
       </div>
     </div>
   );
 });
+
+/** The figure's month as `start=…&end=…`, how the receipts and categories screens take it. */
+function monthQuery(month: { year: number; month: number }): string {
+  const { start, end } = monthRange(month);
+  return `start=${start.slice(0, 10)}&end=${end.slice(0, 10)}`;
+}
+
+/** One category's items in the figure's month, on the categories screen. */
+function categoryItemsHref(month: { year: number; month: number }, categoryId: string): string {
+  return `/categories?view=all&category=${encodeURIComponent(categoryId)}&${monthQuery(month)}`;
+}

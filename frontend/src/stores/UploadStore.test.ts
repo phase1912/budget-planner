@@ -82,13 +82,15 @@ describe("UploadStore surfaces what the server refused", () => {
   function storeWith(POST: ReturnType<typeof vi.fn>) {
     const showError = vi.fn();
     const showSuccess = vi.fn();
+    const stored = vi.fn();
     const store = new UploadStore(
       { POST, GET: vi.fn() } as unknown as ApiClient,
       { showError, showSuccess } as unknown as ToastStore,
+      stored,
     );
     store.jobId = "job-1";
     store.selectedIndices = new Set([0]);
-    return { store, showError, showSuccess };
+    return { store, showError, showSuccess, stored };
   }
 
   it("shows why a commit was refused, stays on the page and can be retried", async () => {
@@ -140,6 +142,18 @@ describe("UploadStore surfaces what the server refused", () => {
     expect(store.jobId).toBeNull();
     expect(store.extractedData).toBeNull();
     expect(showSuccess).toHaveBeenCalledWith("1 receipt stored");
+  });
+
+  it("tells the month view to refetch once receipts are stored, and not when refused", async () => {
+    const stored = storeWith(vi.fn().mockResolvedValue({ data: {}, response: { status: 200 } }));
+    await stored.store.commitJob();
+    expect(stored.stored).toHaveBeenCalledOnce();
+
+    const refused = storeWith(
+      vi.fn().mockResolvedValue({ error: { detail: "No" }, response: { status: 400 } }),
+    );
+    await refused.store.commitJob();
+    expect(refused.stored).not.toHaveBeenCalled();
   });
 
   it("counts only the receipts actually stored, not skipped duplicates", () => {

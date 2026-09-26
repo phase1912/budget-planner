@@ -4,7 +4,7 @@ import io
 import logging
 import uuid
 from collections.abc import Sequence
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, time
 from decimal import Decimal
 from typing import Any, cast
 
@@ -50,6 +50,19 @@ def receipt_object_name(user_id: uuid.UUID, file_id: str) -> str:
     own prefix (BRD N2).
     """
     return f"receipts/{user_id}/{file_id}"
+
+
+def _redated(stored: datetime | None, day: date | None) -> datetime | None:
+    """Move a purchase to `day` while keeping the time printed on the receipt.
+
+    The edit dialog only carries a date, so the time of day comes from what is
+    already stored; a receipt that had no date starts at midnight. The value
+    stays the shop's wall clock labelled UTC (ADR-0009).
+    """
+    if day is None:
+        return None
+    time_of_day = stored.timetz() if stored is not None else time(tzinfo=UTC)
+    return datetime.combine(day, time_of_day)
 
 
 class ReceiptService:
@@ -585,11 +598,7 @@ class ReceiptService:
             receipt.status = ReceiptStatus.PARSED
 
         receipt.merchant_name = request_data.merchant_name
-        receipt.transaction_date = (
-            datetime.combine(request_data.transaction_date, datetime.min.time(), tzinfo=UTC)
-            if request_data.transaction_date
-            else None
-        )
+        receipt.transaction_date = _redated(receipt.transaction_date, request_data.transaction_date)
         receipt.total_amount = request_data.total_amount
 
         existing_by_id = {item.id: item for item in receipt.line_items}

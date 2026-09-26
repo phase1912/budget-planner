@@ -3,10 +3,42 @@ import type { components } from "../api/schema";
 import { apiClient } from "../api/client";
 import type { ToastStore } from "./ToastStore";
 import { errorMessage } from "../api/errors";
+import { purchaseMonth } from "@/shared/purchaseDate";
 
 export type Receipt = components["schemas"]["ReceiptResponse"];
 export type ReceiptDetail = components["schemas"]["ReceiptDetailResponse"];
 export type UpdateReceiptRequest = components["schemas"]["UpdateReceiptRequest"];
+
+type Dated = Pick<Receipt, "transaction_date" | "created_at">;
+
+const MONTH_AND_YEAR = new Intl.DateTimeFormat("en-GB", {
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+/**
+ * The toast confirming a change, naming each finished month it recalculated.
+ *
+ * A finished month's figure is a stored snapshot (D5), so saying it was
+ * recalculated is what tells the user a closed month has moved (D6). A month
+ * still running recalculates on every look and needs no mention. Each receipt
+ * is filed under its printed date, else its upload date, like the month total.
+ */
+export function changeMessage(done: string, receipts: Dated[], now: Date): string {
+  const current = now.getFullYear() * 12 + now.getMonth();
+  const closed = new Map<number, string>();
+  for (const receipt of receipts) {
+    const { year, month } = purchaseMonth(receipt.transaction_date ?? receipt.created_at);
+    const index = year * 12 + month - 1;
+    if (index < current) {
+      closed.set(index, MONTH_AND_YEAR.format(new Date(Date.UTC(year, month - 1, 1))));
+    }
+  }
+  if (closed.size === 0) return done;
+  const months = [...closed.entries()].sort(([a], [b]) => a - b).map(([, label]) => label);
+  return `${done}. ${months.join(" and ")} recalculated`;
+}
 
 export class ReceiptStore {
   receipts: Receipt[] = [];
@@ -37,10 +69,26 @@ export class ReceiptStore {
   editReceiptError: string | null = null;
 
   private toastStore: ToastStore;
+  private readonly onReceiptsChanged: () => void;
+  private readonly now: () => Date;
 
-  constructor(toastStore: ToastStore) {
+  /**
+   * `onReceiptsChanged` runs after a receipt is corrected or deleted, so views
+   * built on the receipts, such as the month figure, can fetch again (D6).
+   */
+  constructor(
+    toastStore: ToastStore,
+    onReceiptsChanged: () => void = () => undefined,
+    now: () => Date = () => new Date(),
+  ) {
     this.toastStore = toastStore;
-    makeAutoObservable(this, {}, { autoBind: true });
+    this.onReceiptsChanged = onReceiptsChanged;
+    this.now = now;
+    makeAutoObservable<this, "toastStore" | "onReceiptsChanged" | "now">(
+      this,
+      { toastStore: false, onReceiptsChanged: false, now: false },
+      { autoBind: true },
+    );
   }
 
   setFilters(filters: {
@@ -242,13 +290,16 @@ export class ReceiptStore {
         throw new Error(errorMessage(response.error, "Failed to save the receipt"));
       }
 
+      const before = this.receiptDetail;
       runInAction(() => {
         this.receiptDetail = response.data;
         this.isEditingReceipt = false;
         this.isSavingReceipt = false;
       });
 
-      this.toastStore.showSuccess("Receipt updated");
+      const touched = before ? [before, response.data] : [response.data];
+      this.toastStore.showSuccess(changeMessage("Receipt updated", touched, this.now()));
+      this.onReceiptsChanged();
       await this.fetchReceipts(this.page, this.size);
       return true;
     } catch (error) {
@@ -288,6 +339,8 @@ export class ReceiptStore {
       }
 
       const wasLastOnPage = this.receipts.length === 1 && this.page > 1;
+      const gone =
+        this.receiptDetail?.id === id ? this.receiptDetail : this.receipts.find((r) => r.id === id);
 
       runInAction(() => {
         this.pendingDeleteId = null;
@@ -295,7 +348,8 @@ export class ReceiptStore {
         if (this.selectedReceiptId === id) this.clearSelection();
       });
 
-      this.toastStore.showSuccess("Receipt deleted");
+      this.toastStore.showSuccess(changeMessage("Receipt deleted", gone ? [gone] : [], this.now()));
+      this.onReceiptsChanged();
       await this.fetchReceipts(wasLastOnPage ? this.page - 1 : this.page, this.size);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";

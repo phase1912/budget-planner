@@ -12,32 +12,38 @@ const AMOUNT = new Intl.NumberFormat("en-US", {
 
 interface CategorySpendListProps {
   spend: CategorySpend[];
-  selectedId: string | null;
+  /** The category the list is narrowed to, marked as pressed; none on the dashboard. */
+  selectedId?: string | null;
   onSelect: (categoryId: string | null) => void;
+  /** The note beside the heading; defaults to the categories screen's filter hint. */
+  hint?: string;
 }
 
 /**
  * Where the money in the current selection went, per category, highest first.
  *
- * Styled on the dashboard's "Where it went" (docs/design/screens/dashboard.html).
- * Each row filters the list below it to that category; pressing it again clears
- * the filter. Items with no category at all are shown but cannot be picked.
+ * The dashboard's "Where it went" (docs/design/screens/dashboard.html), also used
+ * on the categories screen. There each row filters the list below it to that
+ * category, and pressing it again clears the filter; on the dashboard a row opens
+ * that category's items for the month. Items with no category at all are shown
+ * but cannot be picked.
  */
 export const CategorySpendList = observer(function CategorySpendList({
   spend,
-  selectedId,
+  selectedId = null,
   onSelect,
+  hint,
 }: CategorySpendListProps) {
   if (spend.length === 0) return null;
   const largest = Math.max(...spend.map((c) => Number(c.total_amount)), 0);
   const overall = spend.reduce((sum, c) => sum + Number(c.total_amount), 0);
 
   return (
-    <Card className="flex flex-col gap-3 px-4.5 py-4 md:px-6">
+    <Card className="flex flex-col gap-3 px-4.5 py-4 md:px-6 md:py-5.5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-        <h2 className="m-0 text-lg font-bold">Where it went</h2>
+        <h2 className="m-0 text-[16px] font-bold">Where it went</h2>
         <span className="text-base text-muted-foreground">
-          {selectedId ? "Showing one category" : "Highest first · pick one to filter"}
+          {hint ?? (selectedId ? "Showing one category" : "Highest first · pick one to filter")}
         </span>
       </div>
       <ul className="m-0 p-0 list-none flex flex-col gap-0.5">
@@ -55,7 +61,7 @@ export const CategorySpendList = observer(function CategorySpendList({
                 onClick={() => {
                   onSelect(selected ? null : category.category_id);
                 }}
-                className={`grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 rounded-chip px-2.5 py-2 text-left transition-colors md:grid-cols-[180px_minmax(0,1fr)_100px_44px] ${
+                className={`grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 rounded-chip px-2.5 py-2 text-left transition-colors md:grid-cols-[132px_minmax(0,1fr)_104px_52px] md:gap-x-3.5 ${
                   selected ? "bg-tone-primary-bg" : "hover:bg-muted disabled:hover:bg-transparent"
                 } cursor-pointer disabled:cursor-default`}
               >

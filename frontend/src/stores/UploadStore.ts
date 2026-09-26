@@ -40,11 +40,18 @@ export class UploadStore {
 
   isCommitting = false;
   private readonly toastStore: ToastStore | undefined;
+  private readonly onReceiptsStored: () => void;
 
-  constructor(api: ApiClient, toastStore?: ToastStore) {
+  /** `onReceiptsStored` runs once receipts are committed, so the month figure can refetch (D6). */
+  constructor(
+    api: ApiClient,
+    toastStore?: ToastStore,
+    onReceiptsStored: () => void = () => undefined,
+  ) {
     this.api = api;
     this.toastStore = toastStore;
-    makeAutoObservable(this);
+    this.onReceiptsStored = onReceiptsStored;
+    makeAutoObservable<this, "onReceiptsStored">(this, { onReceiptsStored: false });
   }
 
   /**
@@ -504,6 +511,7 @@ export class UploadStore {
       this.toastStore?.showSuccess(
         stored === 1 ? "1 receipt stored" : `${String(stored)} receipts stored`,
       );
+      this.onReceiptsStored();
       return true;
     } catch (err) {
       return this.report(err, "Failed to store the receipts");

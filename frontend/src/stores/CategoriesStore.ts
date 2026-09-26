@@ -229,6 +229,26 @@ export class CategoriesStore {
     void this.fetchReviewQueue();
   }
 
+  /**
+   * Open one selection at once, from a link rather than the filters: the
+   * dashboard's "Where it went" opens a category's items for its month this way.
+   * Fetches once, instead of once per filter changed.
+   */
+  showSelection(selection: {
+    view: ItemView;
+    categoryId: string | null;
+    start: string | undefined;
+    end: string | undefined;
+  }): void {
+    this.queueView = selection.view;
+    this.queueCategoryId = selection.categoryId;
+    this.queueStartDate = selection.start;
+    this.queueEndDate = selection.end;
+    this.queueSearch = "";
+    this.queuePage = 1;
+    void this.fetchReviewQueue();
+  }
+
   /** Show another page of the current view. */
   setQueuePage(page: number): void {
     this.queuePage = page;

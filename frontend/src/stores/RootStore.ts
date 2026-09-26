@@ -1,3 +1,5 @@
+import { reaction } from "mobx";
+
 import { ThemeStore } from "@/stores/ThemeStore";
 import { AuthStore } from "@/stores/AuthStore";
 import { ToastStore } from "@/stores/ToastStore";
@@ -30,9 +32,18 @@ export class RootStore {
     this.toastStore = new ToastStore();
     this.authStore = new AuthStore(apiClient);
     this.profileStore = new ProfileStore(apiClient, this.authStore, this.toastStore);
-    this.uploadStore = new UploadStore(apiClient, this.toastStore);
-    this.receiptStore = new ReceiptStore(this.toastStore);
-    this.categoriesStore = new CategoriesStore();
     this.budgetStore = new BudgetStore();
+    // Any receipt change may have recalculated the month on screen (BRD D6, F6.5).
+    const refreshMonth = () => void this.budgetStore.refresh();
+    this.uploadStore = new UploadStore(apiClient, this.toastStore, refreshMonth);
+    this.receiptStore = new ReceiptStore(this.toastStore, refreshMonth);
+    this.categoriesStore = new CategoriesStore();
+    // The month view remembers where it was left; a new account starts afresh.
+    reaction(
+      () => this.authStore.user?.id,
+      () => {
+        this.budgetStore.reset();
+      },
+    );
   }
 }

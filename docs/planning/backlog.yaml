@@ -1296,6 +1296,33 @@ epics:
         demo: >
           Edit the total of a receipt in a finalised month from the receipt detail dialog and
           watch that month's figure move without a reload.
+        tasks:
+          - >
+            ReceiptStore and UploadStore take an "a receipt changed" callback that RootStore
+            points at BudgetStore.refresh(), so a correction, deletion or upload refetches
+            the month on screen; the toast names each finished month it recalculated.
+          - >
+            the dashboard reopens on the month it was left on rather than always on the
+            current one, and forgets it when a different user signs in.
+          - >
+            unplanned, added at the owner's request - the two columns under the figure in
+            docs/design/screens/dashboard.html, taken from F6.7 so the receipt dialog opens
+            on the dashboard itself and the demo above is literal. "Where it went" reuses
+            CategorySpendList over the line-items endpoint, a row opening that category's
+            items for the month on the categories screen. The receipts column lists six
+            from the receipts endpoint: the newest of a running month, the biggest of a
+            finished one as dashboard-dark.html shows (order=largest), with "All N" opening
+            the receipts list narrowed to the month; phones omit it, as the mobile design
+            does.
+          - >
+            unplanned, added at the owner's request - correcting a receipt no longer resets
+            its time of purchase to midnight, and purchase times are shown in UTC, as
+            printed, instead of shifted into the browser's timezone (ADR-0009).
+          - >
+            the receipts list's date filter places an undated receipt by its upload date,
+            as the month total does, so a month's list and figure agree.
+          - >
+            BR-4's D6 scenario runs against the real database, through the flush hook.
       - key: F6.6
         title: Budget limit and percentage of target
         labels: [backend, frontend]
@@ -1316,8 +1343,10 @@ epics:
         intent: >
           What turns F6.1's month figure into the landing view: the category breakdown beside
           it and the latest-receipts column next to that, each opening into the screens that
-          own them. Kept as its own feature because it composes three epics' data — E6's
-          totals, E5's categories, E3's receipts — and needs the endpoint that returns them
+          own them. Both are already on screen from F6.5, fetched as three requests over the
+          existing endpoints. Kept as its own feature because it composes three epics'
+          data — E6's totals, E5's categories, E3's receipts — and needs the endpoint that
+          returns them
           together rather than three round trips. The figure, the limit bar, the excluded
           notice and month switching are already there from F6.1, F6.2, F6.3 and F6.6; this
           finishes docs/design/screens/dashboard.html rather than starting it.

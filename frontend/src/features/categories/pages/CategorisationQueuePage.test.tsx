@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, MemoryRouter } from "react-router-dom";
 
 import type { CategorySpend, ItemView, ReviewQueueItem } from "@/stores/CategoriesStore";
 import { CategorisationQueuePage } from "./CategorisationQueuePage";
@@ -49,6 +49,7 @@ const mockStore = {
     needsReviewCount: 0,
     setQueueView: vi.fn(),
     setQueueSearch: vi.fn(),
+    showSelection: vi.fn(),
     isLoading: false,
     assignableBuiltIns: [],
     customCategories: [],
@@ -230,5 +231,33 @@ describe("CategorisationQueuePage", () => {
       (span) => span.style.width !== "",
     );
     expect(bar).toHaveStyle({ width: "0%" });
+  });
+
+  it("opens on the selection a link asks for, such as one category in one month", () => {
+    vi.clearAllMocks();
+    render(
+      <MemoryRouter
+        initialEntries={[
+          "/categories?view=all&category=groceries-id&start=2026-08-01&end=2026-08-31",
+        ]}
+      >
+        <CategorisationQueuePage />
+      </MemoryRouter>,
+    );
+
+    expect(mockStore.categoriesStore.showSelection).toHaveBeenCalledWith({
+      view: "all",
+      categoryId: "groceries-id",
+      start: "2026-08-01T00:00:00Z",
+      end: "2026-08-31T23:59:59Z",
+    });
+    expect(mockFetchReviewQueue).not.toHaveBeenCalled();
+  });
+
+  it("keeps the user's own filters when the address names no selection", () => {
+    vi.clearAllMocks();
+    renderPage();
+    expect(mockStore.categoriesStore.showSelection).not.toHaveBeenCalled();
+    expect(mockFetchReviewQueue).toHaveBeenCalled();
   });
 });

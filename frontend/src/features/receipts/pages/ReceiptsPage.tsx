@@ -9,6 +9,7 @@ import { ReceiptDetailModal } from "../components/ReceiptDetailModal";
 import { DateFilterModal } from "../components/DateFilterModal";
 import { StatusFilterDropdown } from "../components/StatusFilterDropdown";
 import { Card, Input, IconTile, Pagination } from "@/shared/components";
+import { formatPurchase } from "@/shared/purchaseDate";
 
 type ReceiptStatus = components["schemas"]["ReceiptStatus"];
 
@@ -24,10 +25,14 @@ function isReceiptStatus(value: string | null): value is ReceiptStatus {
   return STATUSES.some((status) => status === value);
 }
 
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
 export const ReceiptsPage = observer(() => {
   const { receiptStore } = useStores();
   const [searchParams] = useSearchParams();
   const requestedStatus = searchParams.get("status");
+  const requestedStart = searchParams.get("start");
+  const requestedEnd = searchParams.get("end");
 
   useEffect(() => {
     // `?status=manual_review` is how the dashboard's "Resolve them" opens this
@@ -36,8 +41,17 @@ export const ReceiptsPage = observer(() => {
       receiptStore.setFilters({ status: requestedStatus });
       return;
     }
+    // `?start=…&end=…` is the dashboard's "All N": every receipt of one month.
+    if (requestedStart && requestedEnd && DAY.test(requestedStart) && DAY.test(requestedEnd)) {
+      receiptStore.setFilters({
+        status: undefined,
+        startDate: `${requestedStart}T00:00:00Z`,
+        endDate: `${requestedEnd}T23:59:59Z`,
+      });
+      return;
+    }
     void receiptStore.fetchReceipts(receiptStore.page, receiptStore.size);
-  }, [receiptStore, requestedStatus]);
+  }, [receiptStore, requestedStatus, requestedStart, requestedEnd]);
 
   return (
     <div className="flex-grow flex flex-col items-center py-10 px-8">
@@ -191,15 +205,15 @@ export const ReceiptsPage = observer(() => {
                   </span>
                   <span className="tabular-nums text-muted-foreground text-[13px]">
                     {receipt.transaction_date
-                      ? new Intl.DateTimeFormat("en-GB", {
+                      ? formatPurchase(receipt.transaction_date, {
                           day: "numeric",
                           month: "short",
-                        }).format(new Date(receipt.transaction_date)) +
+                        }) +
                         ", " +
-                        new Intl.DateTimeFormat("en-GB", {
+                        formatPurchase(receipt.transaction_date, {
                           hour: "2-digit",
                           minute: "2-digit",
-                        }).format(new Date(receipt.transaction_date))
+                        })
                       : "Unknown"}
                   </span>
                   <span className="tabular-nums text-muted-foreground text-right text-[13px]">

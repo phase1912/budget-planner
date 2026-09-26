@@ -119,7 +119,13 @@ That is why it is enforced in one place (ADR-0010): a `before_flush` hook drops 
 snapshot of every month a pending receipt or line change touches, and the next read
 rebuilds it. Only bulk SQL escapes the hook, which is why receipt deletion goes through
 the ORM. What F10.3 still owns is the rest of deletion's reach: statistics, once E7
-exists, and moving the figures on screen within the same session.
+exists.
+
+On the client the same rule has one owner too (F6.5): `ReceiptStore` and `UploadStore`
+take an "a receipt changed" callback, which `RootStore` points at
+`BudgetStore.refresh()`. Whatever screen a receipt is corrected, deleted or stored
+from, including the dashboard's own receipts column, the month view fetches its figure,
+its spend by category and its receipts again, and it reopens on the month it was left on.
 
 ## Security posture
 

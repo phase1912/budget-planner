@@ -15,6 +15,7 @@ from app.api.dependencies import get_current_user, get_storage_service
 from app.api.errors import UploadLimitExceededError
 from app.core.config import get_settings
 from app.db.session import get_db_session
+from app.domain.budget import ReceiptOrder
 from app.domain.categories import ItemView
 from app.models.receipt import ReceiptStatus
 from app.models.upload_job import JobStatus, UploadJob
@@ -381,8 +382,12 @@ async def list_receipts(
     start_date: datetime | None = None,
     end_date: datetime | None = None,
     q: str | None = None,
+    order: ReceiptOrder = ReceiptOrder.NEWEST,
 ) -> PaginatedReceiptsResponse:
-    """List an account's stored receipts newest first with pagination (F3.8)."""
+    """List an account's stored receipts with pagination, newest first unless asked (F3.8).
+
+    `order=largest` is a finished month's "Biggest receipts" on the dashboard (F6.5).
+    """
     if page < 1:
         page = 1
     if size < 1:
@@ -396,6 +401,7 @@ async def list_receipts(
         start_date=start_date,
         end_date=end_date,
         search_query=q,
+        order=order,
     )
     pages = (total + size - 1) // size if size else 0
 
