@@ -4,11 +4,13 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useStores } from "@/stores/StoreContext";
 import { monthRange } from "@/stores/BudgetStore";
+import type { MonthSummary } from "@/stores/BudgetStore";
 import { Card, ErrorState, LoadingState, Note } from "@/shared/components";
 import { DeleteReceiptDialog } from "@/features/receipts/components/DeleteReceiptDialog";
 import { EditReceiptDialog } from "@/features/receipts/components/EditReceiptDialog";
 import { ReceiptDetailModal } from "@/features/receipts/components/ReceiptDetailModal";
 import { CategorySpendList } from "@/features/categories/components/CategorySpendList";
+import { LimitStatus } from "../components/LimitStatus";
 import { MonthReceipts } from "../components/MonthReceipts";
 import { MonthStatus } from "../components/MonthStatus";
 import { MonthSwitcher } from "../components/MonthSwitcher";
@@ -33,7 +35,8 @@ const AMOUNT = new Intl.NumberFormat("en-US", {
  * Beneath it, where the month went by category, and its receipts, which open
  * their detail dialog here; correcting or deleting one refetches the month, so
  * its figure moves without a reload, and the view reopens on the month it was
- * left on (D6 — F6.5). The limit bar arrives with F6.6. The receipts column is
+ * left on (D6 — F6.5). Where the user has set a monthly limit, the figure reads
+ * as a share of it, past 100% when over (D7 — F6.6). The receipts column is
  * hidden on phones, as in docs/design/screens/dashboard-mobile.html.
  */
 export const DashboardPage = observer(function DashboardPage() {
@@ -70,9 +73,19 @@ export const DashboardPage = observer(function DashboardPage() {
   const heading = summary.is_complete
     ? `Spent in ${MONTH.format(figureMonth)}`
     : `Spent so far in ${MONTH.format(figureMonth)}`;
+  const limit = limitOf(summary);
+  const overLimit = limit !== null && Number(limit.remaining) < 0;
   const days = summary.is_complete
     ? `${String(summary.days_in_month)} of ${String(summary.days_in_month)} days`
     : `${String(summary.days_elapsed)} of ${String(summary.days_in_month)} days recorded`;
+
+  const meta = (
+    <span className="tabular-nums text-md text-muted-foreground">
+      {days} ·{" "}
+      {summary.receipt_count === 1 ? "1 receipt" : `${String(summary.receipt_count)} receipts`}
+      {overLimit && " · the mark is where the limit sat"}
+    </span>
+  );
 
   return (
     <div className="flex-grow flex flex-col items-center py-7 px-4 md:px-8">
@@ -107,12 +120,13 @@ export const DashboardPage = observer(function DashboardPage() {
             </span>
             <span className="text-xl font-semibold text-muted-foreground">{currency}</span>
           </p>
-          <span className="tabular-nums text-md text-muted-foreground">
-            {days} ·{" "}
-            {summary.receipt_count === 1
-              ? "1 receipt"
-              : `${String(summary.receipt_count)} receipts`}
-          </span>
+          {limit ? (
+            <LimitStatus {...limit} currency={currency}>
+              {meta}
+            </LimitStatus>
+          ) : (
+            meta
+          )}
         </Card>
 
         {summary.excluded_count > 0 && (
@@ -171,4 +185,11 @@ function monthQuery(month: { year: number; month: number }): string {
 /** One category's items in the figure's month, on the categories screen. */
 function categoryItemsHref(month: { year: number; month: number }, categoryId: string): string {
   return `/categories?view=all&category=${encodeURIComponent(categoryId)}&${monthQuery(month)}`;
+}
+
+/** The month measured against the user's limit, or null when they have not set one (D7). */
+function limitOf(summary: MonthSummary) {
+  const { budget_limit, limit_percent, limit_remaining } = summary;
+  if (budget_limit == null || limit_percent == null || limit_remaining == null) return null;
+  return { limit: budget_limit, percent: limit_percent, remaining: limit_remaining };
 }

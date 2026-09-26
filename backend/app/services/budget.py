@@ -1,9 +1,9 @@
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime
 from decimal import Decimal
 
-from app.domain.budget import BudgetMonth, MonthProgress, may_finalise
+from app.domain.budget import BudgetMonth, LimitUsage, MonthProgress, limit_usage, may_finalise
 from app.models.monthly_snapshot import MonthlySnapshot
 from app.repository.receipt import ReceiptRepository
 from app.repository.snapshot import MonthlySnapshotRepository
@@ -14,7 +14,8 @@ class MonthSummary:
     """What one month of spending adds up to (BRD D1-D5).
 
     `finalised_at` is when the snapshot being shown was taken, or None when the
-    figure was computed live because the month is still running.
+    figure was computed live because the month is still running. `limit` is the
+    spend against the user's monthly limit, None when they have not set one (D7).
     """
 
     month: BudgetMonth
@@ -25,6 +26,7 @@ class MonthSummary:
     excluded_amount: Decimal
     progress: MonthProgress
     finalised_at: datetime | None = None
+    limit: LimitUsage | None = None
 
 
 class BudgetService:
@@ -35,7 +37,13 @@ class BudgetService:
         self.snapshots = snapshots
 
     async def month_summary(
-        self, month: BudgetMonth, today: date, *, user_id: uuid.UUID, now: datetime
+        self,
+        month: BudgetMonth,
+        today: date,
+        *,
+        user_id: uuid.UUID,
+        now: datetime,
+        limit: Decimal | None = None,
     ) -> MonthSummary:
         """Sum the month's line items by transaction date, not upload date (D1, D2).
 
@@ -49,7 +57,17 @@ class BudgetService:
         A month that is over is read from its snapshot, taken on the first look
         after it ended (D5, ADR-0010); `now` guards that against a browser clock
         running ahead, which must not freeze a month still in progress.
+
+        `limit` is the user's monthly limit as it stands now; the figure is
+        measured against it (D7), never stored with it.
         """
+        summary = await self._figure(month, today, user_id=user_id, now=now)
+        return replace(summary, limit=limit_usage(summary.total, limit))
+
+    async def _figure(
+        self, month: BudgetMonth, today: date, *, user_id: uuid.UUID, now: datetime
+    ) -> MonthSummary:
+        """The month's figure: from its snapshot once over, else from its receipts."""
         progress = month.progress(today)
         if not (progress.is_complete and may_finalise(month, now)):
             return await self._live(month, progress)
