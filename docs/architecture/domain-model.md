@@ -28,7 +28,7 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | **Category** | A spending classification. Either a system default or user-defined. | User (nullable for defaults) |
 | **PositionMatch** | A decision that two line items are, or are not, the same physical purchase. | Receipt |
 | **PositionMatchOverride** | A user correction flipping a same-item/two-items decision. Kept as labelled data (B7). | User |
-| **MonthlySnapshot** | A finalised monthly total. A cache of derived data. | User |
+| **MonthlySnapshot** | A finalised month: total, receipt count, and the count and value held out for review. A cache of derived data, taken on the first look after the month ends (ADR-0010). | User |
 | **Goal** | A financial or lifestyle objective the user declared. | User |
 | **Recommendation** | Generated advice tied to a goal, with projected impact and user feedback. | User |
 
@@ -92,9 +92,10 @@ Rules that must hold at all times. Each is a candidate for a test.
    Only a discount with no product above it stays a line of its own.
 6. An in-progress month is always labelled incomplete wherever it is displayed (D4).
 7. Snapshots are derived data. Any mutation of a receipt in a snapshotted month
-   recalculates it (D6, N3). Not yet true of deletion: the delete path erases the
-   receipt but recalculates nothing, because no budget or statistics exist to
-   recalculate. Closing that gap is F10.3.
+   recalculates it (D6, N3): the flush that changes a receipt or one of its lines drops
+   the snapshot of each month it touches, and the next look rebuilds it (ADR-0010). A
+   month is snapshotted only once it has ended by the user's clock, and has ended
+   somewhere on Earth.
 
 **Position matching**
 

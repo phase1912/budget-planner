@@ -115,9 +115,11 @@ Editing, adding or deleting a receipt in a closed month recalculates and rewrite
 (D6, N3). Any code path that mutates a receipt must trigger recalculation; this is the
 easiest invariant in the system to break silently.
 
-Deletion does not do this yet. `DELETE /receipts/{id}` erases the receipt, its items and
-its photos, but recalculates nothing — there are no budgets or statistics to recalculate
-until E6 and E7 exist. F10.3 is where the two meet, and N3 stays unsatisfied until then.
+That is why it is enforced in one place (ADR-0010): a `before_flush` hook drops the
+snapshot of every month a pending receipt or line change touches, and the next read
+rebuilds it. Only bulk SQL escapes the hook, which is why receipt deletion goes through
+the ORM. What F10.3 still owns is the rest of deletion's reach: statistics, once E7
+exists, and moving the figures on screen within the same session.
 
 ## Security posture
 
