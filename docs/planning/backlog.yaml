@@ -1498,6 +1498,27 @@ epics:
           Turn on comparison against the previous period and read the change column — Dining
           up 29.5%, Groceries down 8.6% — with the running month compared against the same
           number of days.
+        tasks:
+          - >
+            DateRange.previous() - like for like: a period from a 1st meets the same days of
+            as many months before (1-27 July meets 1-27 June, a month's last day meets the
+            other's, a missing day falls back to the month's last); any other period meets
+            as many days right before it. stops_mid_month flags the running-month case.
+          - >
+            compare_categories in the statistics domain - change and change percent per
+            category, one decimal place; a new category has no percent instead of dividing by
+            zero, and one spent on only before stays listed at zero, down 100%, after the
+            ranked ones.
+          - >
+            GET /api/v1/statistics/categories?compare=true adds previous_total, change and
+            change_percent to each row and a comparison block with the previous period.
+          - >
+            the screen's "Compare with …" switch, the previous-period and Change columns
+            (down in the primary tone, up in the error tone, "new", "no change"), and the
+            note that a running month is compared against the same days. On a phone the
+            change sits under the amount and the previous column is dropped.
+          - >
+            BR-5's E3 scenario runs.
       - key: F7.4
         title: Empty-period handling
         labels: [backend, frontend]

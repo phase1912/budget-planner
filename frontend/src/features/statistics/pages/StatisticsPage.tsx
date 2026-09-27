@@ -19,25 +19,29 @@ import {
 } from "@/shared/components";
 import type { Preset } from "@/stores/StatisticsStore";
 import { useStores } from "@/stores/StoreContext";
-import { periodLabel } from "../periodLabel";
+import { Change } from "../components/Change";
+import { likeForLikeNote, periodLabel } from "../periodLabel";
 
 const AMOUNT = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
 /**
- * Statistics (docs/design/screens/statistics.html), first slice: every category's
- * total, share of the period's spend and item count, biggest first (BRD E1, E4 —
- * F7.1), over this month so far, a preset, or any run of days the user picks
- * (E2 — F7.2). Comparing, the chart and export arrive with F7.3-F7.6. Items on receipts under review are named
- * above the table rather than silently left out (D3).
+ * Statistics (docs/design/screens/statistics.html): every category's total, share
+ * of the period's spend and item count, biggest first (BRD E1, E4 — F7.1), over
+ * this month so far, a preset, or any run of days the user picks (E2 — F7.2),
+ * optionally against the previous like-for-like period (E3 — F7.3). Items on
+ * receipts under review are named above the table rather than silently left out
+ * (D3). The empty state, the chart and export arrive with F7.4-F7.6.
  */
 export const StatisticsPage = observer(function StatisticsPage() {
   const { statisticsStore, authStore } = useStores();
-  const { statistics, isLoading, error, start, end, preset } = statisticsStore;
+  const { statistics, isLoading, error, start, end, preset, compare } = statisticsStore;
   const [picking, setPicking] = useState(false);
   const currency = authStore.user?.currency ?? "PLN";
   const period = periodLabel(start, end);
+  const comparison = statistics?.comparison ?? null;
+  const previous = comparison ? periodLabel(comparison.start, comparison.end) : null;
 
   useEffect(() => {
     void statisticsStore.load();
@@ -86,7 +90,22 @@ export const StatisticsPage = observer(function StatisticsPage() {
               if (from && to) void statisticsStore.chooseRange(from, to);
             }}
           />
+          <label className="flex min-h-11 cursor-pointer items-center gap-2.25 text-md font-semibold md:ml-auto md:min-h-0">
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-primary"
+              checked={compare}
+              onChange={(e) => {
+                void statisticsStore.setCompare(e.target.checked);
+              }}
+            />
+            Compare with {previous ?? "the previous period"}
+          </label>
         </Card>
+
+        {comparison?.stops_mid_month && (
+          <Note tone="info">{likeForLikeNote({ start, end }, comparison)}</Note>
+        )}
 
         {error && (
           <ErrorState layout="banner" title="The statistics could not be loaded" message={error} />
@@ -138,6 +157,14 @@ export const StatisticsPage = observer(function StatisticsPage() {
                       </TableHead>
                       <TableHead className="text-right">Share</TableHead>
                       <TableHead className="hidden text-right md:table-cell">Items</TableHead>
+                      {previous && (
+                        <>
+                          <TableHead className="hidden text-right md:table-cell">
+                            {previous}
+                          </TableHead>
+                          <TableHead className="hidden text-right md:table-cell">Change</TableHead>
+                        </>
+                      )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -168,6 +195,15 @@ export const StatisticsPage = observer(function StatisticsPage() {
                           </TableCell>
                           <TableCell className="text-right font-semibold tabular-nums">
                             {AMOUNT.format(Number(category.total))}
+                            {/* A phone has no change column; the change goes under the amount. */}
+                            {category.change != null && (
+                              <span className="block text-base font-normal md:hidden">
+                                <Change
+                                  change={category.change}
+                                  percent={category.change_percent}
+                                />
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell className="text-right tabular-nums text-muted-foreground">
                             {Number(category.share).toFixed(1)}%
@@ -175,6 +211,19 @@ export const StatisticsPage = observer(function StatisticsPage() {
                           <TableCell className="hidden text-right tabular-nums text-muted-foreground md:table-cell">
                             {category.item_count}
                           </TableCell>
+                          {category.change != null && (
+                            <>
+                              <TableCell className="hidden text-right tabular-nums text-muted-foreground md:table-cell">
+                                {AMOUNT.format(Number(category.previous_total))}
+                              </TableCell>
+                              <TableCell className="hidden text-right md:table-cell">
+                                <Change
+                                  change={category.change}
+                                  percent={category.change_percent}
+                                />
+                              </TableCell>
+                            </>
+                          )}
                         </TableRow>
                       );
                     })}

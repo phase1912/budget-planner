@@ -9,12 +9,14 @@ const statisticsStore = {
   start: "2026-07-01",
   end: "2026-07-27",
   preset: "this_month",
+  compare: false,
   statistics: null as CategoryStatistics | null,
   isLoading: false,
   error: null as string | null,
   load: vi.fn(),
   choosePreset: vi.fn(),
   chooseRange: vi.fn(),
+  setCompare: vi.fn(),
 };
 
 vi.mock("@/stores/StoreContext", () => ({
@@ -54,7 +56,12 @@ function july(overrides: Partial<CategoryStatistics> = {}): CategoryStatistics {
 describe("StatisticsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.assign(statisticsStore, { statistics: null, error: null, isLoading: false });
+    Object.assign(statisticsStore, {
+      statistics: null,
+      error: null,
+      isLoading: false,
+      compare: false,
+    });
   });
 
   it("loads the period's statistics when opened", () => {
@@ -121,5 +128,44 @@ describe("StatisticsPage", () => {
     fireEvent.click(within(picker).getByRole("button", { name: "Apply filter" }));
 
     expect(statisticsStore.chooseRange).toHaveBeenCalledWith("2026-07-10", "2026-07-24");
+  });
+
+  it("turns the comparison on from the period bar", () => {
+    statisticsStore.statistics = july();
+    renderPage();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Compare with the previous period" }));
+    expect(statisticsStore.setCompare).toHaveBeenCalledWith(true);
+  });
+
+  it("adds the previous period and each change, and says a running month is like for like", () => {
+    statisticsStore.compare = true;
+    statisticsStore.statistics = july({
+      categories: [
+        {
+          category_id: "groceries-id",
+          name: "Groceries",
+          total: "742.60",
+          share: "65.8",
+          item_count: 68,
+          previous_total: "812.40",
+          change: "-69.80",
+          change_percent: "-8.6",
+        },
+      ],
+      comparison: {
+        start: "2026-06-01",
+        end: "2026-06-27",
+        total: "812.40",
+        item_count: 70,
+        stops_mid_month: true,
+      },
+    });
+    renderPage();
+
+    expect(screen.getByRole("checkbox", { name: "Compare with 1 – 27 Jun 2026" })).toBeChecked();
+    expect(screen.getByText(/July is still running/)).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "1 – 27 Jun 2026" })).toBeInTheDocument();
+    // In its own column and, for a phone, under the amount.
+    expect(screen.getAllByText("−69.80 · −8.6%")).toHaveLength(2);
   });
 });

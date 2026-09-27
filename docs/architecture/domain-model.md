@@ -115,6 +115,14 @@ Rules that must hold at all times. Each is a candidate for a test.
    spend to one decimal place and its item count — a "transaction" here is a line
    item, since one receipt spreads across categories — ranked by spend, ties by name
    (E4). A period whose spend is zero or less gives every share as 0.
+10. A period is compared like for like (E3, D4). One starting on a 1st meets the same
+   days of as many months before — 1-27 July meets 1-27 June, August meets July, a
+   month's last day meets the other month's last day, a day the shorter month lacks
+   falls back to its last — and the screen says so when the period stops mid-month.
+   Any other period meets as many days immediately before it. Each category's change
+   is its total less the previous one, and as a percentage of the previous total to
+   one decimal place; a category new this period has no percentage (never a division
+   by zero), and one spent on only before stays listed at zero, down 100%.
 
 **Position matching**
 

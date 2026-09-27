@@ -141,7 +141,9 @@ filter, and the month view builds its own with `DateRange.of_month`.
 Statistics (E7) read the same items over any run of days:
 `GET /api/v1/statistics/categories?start=&end=` goes through `StatisticsService`, which
 takes the per-category spend from the receipts repository and leaves the ranking and
-the shares to `app/domain/statistics.py`, so the rule lives in one pure function. Every
+the shares to `app/domain/statistics.py`, so the rule lives in one pure function. With
+`compare=true` the service counts `DateRange.previous()` the same way and
+`compare_categories` adds each category's change (F7.3). Every
 one of these period queries filters one user's receipts by
 `coalesce(transaction_date, created_at)`; the `ix_receipts_user_purchased` expression
 index and `ix_line_items_receipt_id` exist for exactly that (F7.1).

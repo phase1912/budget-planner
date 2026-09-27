@@ -25,7 +25,9 @@ GROCERIES = uuid.UUID("00000000-0000-0000-0000-000000000001")
 DINING = uuid.UUID("00000000-0000-0000-0000-000000000002")
 
 
-async def _statistics(session: AsyncSession, user: User, start: str, end: str) -> Response:
+async def _statistics(
+    session: AsyncSession, user: User, start: str, end: str, *, compare: bool = False
+) -> Response:
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
@@ -42,7 +44,8 @@ async def _statistics(session: AsyncSession, user: User, start: str, end: str) -
         headers={"Authorization": f"Bearer {token}"},
     ) as client:
         return await client.get(
-            "/api/v1/statistics/categories", params={"start": start, "end": end}
+            "/api/v1/statistics/categories",
+            params={"start": start, "end": end, "compare": str(compare).lower()},
         )
 
 
@@ -175,3 +178,44 @@ async def test_a_list_given_only_one_end_of_a_period_is_refused(db_session: Asyn
 
     assert (receipts.status_code, items.status_code) == (422, 422)
     assert receipts.json()["code"] == "invalid_period"
+
+
+@pytest.mark.asyncio
+async def test_a_running_month_is_compared_with_the_same_days_of_the_month_before(
+    db_session: AsyncSession,
+) -> None:
+    """E3, D4: 1-27 July against 1-27 June, never the whole of June."""
+    user = await UserFactory.create_async()
+    await _bought(db_session, user, datetime(2026, 7, 5, tzinfo=UTC), [("60.00", GROCERIES)])
+    await _bought(db_session, user, datetime(2026, 6, 5, tzinfo=UTC), [("80.00", GROCERIES)])
+    await _bought(db_session, user, datetime(2026, 6, 10, tzinfo=UTC), [("25.00", DINING)])
+    await _bought(db_session, user, datetime(2026, 6, 28, tzinfo=UTC), [("500.00", GROCERIES)])
+
+    body = (await _statistics(db_session, user, "2026-07-01", "2026-07-27", compare=True)).json()
+
+    assert body["comparison"] == {
+        "start": "2026-06-01",
+        "end": "2026-06-27",
+        "total": "105.00",
+        "item_count": 2,
+        "stops_mid_month": True,
+    }
+    rows = [
+        (c["name"], c["total"], c["previous_total"], c["change"], c["change_percent"])
+        for c in body["categories"]
+    ]
+    assert rows == [
+        ("Groceries", "60.00", "80.00", "-20.00", "-25.0"),
+        ("Dining", "0", "25.00", "-25.00", "-100.0"),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_without_asking_there_is_no_comparison(db_session: AsyncSession) -> None:
+    user = await UserFactory.create_async()
+    await _bought(db_session, user, datetime(2026, 7, 5, tzinfo=UTC), [("60.00", GROCERIES)])
+
+    body = (await _statistics(db_session, user, "2026-07-01", "2026-07-27")).json()
+
+    assert body["comparison"] is None
+    assert body["categories"][0]["change"] is None
