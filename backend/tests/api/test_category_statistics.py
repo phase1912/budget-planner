@@ -26,7 +26,13 @@ DINING = uuid.UUID("00000000-0000-0000-0000-000000000002")
 
 
 async def _statistics(
-    session: AsyncSession, user: User, start: str, end: str, *, compare: bool = False
+    session: AsyncSession,
+    user: User,
+    start: str,
+    end: str,
+    *,
+    compare: bool = False,
+    chart: bool = False,
 ) -> Response:
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield session
@@ -45,7 +51,12 @@ async def _statistics(
     ) as client:
         return await client.get(
             "/api/v1/statistics/categories",
-            params={"start": start, "end": end, "compare": str(compare).lower()},
+            params={
+                "start": start,
+                "end": end,
+                "compare": str(compare).lower(),
+                "chart": str(chart).lower(),
+            },
         )
 
 
@@ -257,3 +268,33 @@ async def test_a_period_whose_only_receipt_awaits_review_is_not_an_empty_one(
 
     assert (body["receipt_count"], body["categories"], body["excluded_count"]) == (1, [], 1)
     assert Decimal(body["total"]) == 0
+
+
+@pytest.mark.asyncio
+async def test_the_figures_come_as_a_chart_ready_to_draw_when_asked(
+    db_session: AsyncSession,
+) -> None:
+    """E6: heights and the scale are worked out on the server, not in the browser."""
+    user = await UserFactory.create_async()
+    await _bought(db_session, user, datetime(2026, 7, 5, tzinfo=UTC), [("150.00", GROCERIES)])
+    await _bought(db_session, user, datetime(2026, 6, 5, tzinfo=UTC), [("75.00", GROCERIES)])
+
+    body = (
+        await _statistics(db_session, user, "2026-07-01", "2026-07-31", compare=True, chart=True)
+    ).json()
+
+    assert body["chart"] == {
+        "scale_max": "150",
+        "ticks": ["0", "50", "100", "150"],
+        "groups": [
+            {
+                "category_id": str(GROCERIES),
+                "name": "Groceries",
+                "current": {"value": "150.00", "height": "100.0"},
+                "previous": {"value": "75.00", "height": "50.0"},
+            }
+        ],
+        "hidden": 0,
+    }
+    without = (await _statistics(db_session, user, "2026-07-01", "2026-07-31")).json()
+    assert without["chart"] is None

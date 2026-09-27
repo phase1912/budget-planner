@@ -7,13 +7,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import get_current_user
 from app.api.periods import required_period
 from app.db.session import get_db_session
+from app.domain.charts import Bar, Chart
 from app.domain.periods import DateRange
 from app.domain.statistics import CategoryStanding
 from app.models.user import User
 from app.repository.receipt import ReceiptRepository
 from app.schemas.statistics import (
+    BarGroupResponse,
+    BarResponse,
     CategoryStandingResponse,
     CategoryStatisticsResponse,
+    ChartResponse,
     ComparisonResponse,
 )
 from app.services.statistics import StatisticsService
@@ -29,18 +33,20 @@ async def get_category_statistics(
     compare: Annotated[
         bool, Query(description="Also measure each category against the previous period")
     ] = False,
+    chart: Annotated[bool, Query(description="Also return the figures as a chart")] = False,
 ) -> CategoryStatisticsResponse:
-    """The caller's spend per category between two dates, ranked highest first (BRD E1-E4).
+    """The caller's spend per category between two dates, ranked highest first (BRD E1-E6).
 
     `start` and `end` are both included, as everywhere (app/api/periods.py).
     With `compare`, each category also carries its change against the previous
-    like-for-like period (E3). Only the caller's own receipts are read (N2). A
-    period ending before it starts is refused with 422 rather than answered as
-    an empty one; a period holding no receipts says so with `receipt_count` 0 and
-    no totals, rather than a report of zeroes (E5).
+    like-for-like period (E3); with `chart`, the figures come as a chart ready
+    to draw (E6). Only the caller's own receipts are read (N2). A period ending
+    before it starts is refused with 422 rather than answered as an empty one; a
+    period holding no receipts says so with `receipt_count` 0 and no totals,
+    rather than a report of zeroes (E5).
     """
     stats = await StatisticsService(ReceiptRepository(session)).category_statistics(
-        period, compare=compare
+        period, compare=compare, chart=chart
     )
     comparison = stats.comparison
     if comparison is None:
@@ -75,6 +81,29 @@ async def get_category_statistics(
         )
         if comparison
         else None,
+        chart=_chart(stats.chart) if stats.chart else None,
+    )
+
+
+def _chart(chart: Chart) -> ChartResponse:
+    """The chart as the API shows it."""
+
+    def bar(b: Bar) -> BarResponse:
+        return BarResponse(value=b.value, height=b.height)
+
+    return ChartResponse(
+        scale_max=chart.scale_max,
+        ticks=chart.ticks,
+        groups=[
+            BarGroupResponse(
+                category_id=g.category_id,
+                name=g.name,
+                current=bar(g.current),
+                previous=bar(g.previous) if g.previous else None,
+            )
+            for g in chart.groups
+        ],
+        hidden=chart.hidden,
     )
 
 

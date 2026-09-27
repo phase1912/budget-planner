@@ -27,7 +27,7 @@ describe("StatisticsStore", () => {
     await store.load();
 
     expect(apiClient.GET).toHaveBeenCalledWith("/api/v1/statistics/categories", {
-      params: { query: { start: "2026-07-01", end: "2026-07-27", compare: false } },
+      params: { query: { start: "2026-07-01", end: "2026-07-27", compare: false, chart: true } },
     });
     expect(store.statistics?.total).toBe("100.00");
   });
@@ -62,7 +62,7 @@ describe("StatisticsStore", () => {
 
     expect([store.preset, store.start, store.end]).toEqual(["custom", "2026-07-10", "2026-07-24"]);
     expect(apiClient.GET).toHaveBeenLastCalledWith("/api/v1/statistics/categories", {
-      params: { query: { start: "2026-07-10", end: "2026-07-24", compare: false } },
+      params: { query: { start: "2026-07-10", end: "2026-07-24", compare: false, chart: true } },
     });
   });
 

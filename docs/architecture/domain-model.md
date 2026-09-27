@@ -127,6 +127,11 @@ Rules that must hold at all times. Each is a candidate for a test.
    no data, not a spend of zero (E5): it is answered with a receipt count of 0 and no
    totals, and shown as "No receipts in …", never as a table of zeroes. A period whose
    receipts are all under review is not empty: they are named, as invariant 5 says.
+12. The statistics chart is worked out on the server (E6): a round scale whose steps
+   are 1, 2, 2.5 or 5 times a power of ten, and each bar's height as a share of it, so
+   the client draws what it is given and re-derives nothing. It draws the eight biggest
+   categories in ranking order and counts the rest, which stay in the table; a bar for
+   a period of refunds is drawn at zero rather than below the axis.
 
 **Position matching**
 
