@@ -561,11 +561,13 @@ export interface paths {
         };
         /**
          * Get Category Statistics
-         * @description The caller's spend per category between two dates, ranked highest first (BRD E1, E2, E4).
+         * @description The caller's spend per category between two dates, ranked highest first (BRD E1-E4).
          *
          *     `start` and `end` are both included, as everywhere (app/api/periods.py).
-         *     Only the caller's own receipts are read (N2). A period ending before it
-         *     starts is refused with 422 rather than answered as an empty one.
+         *     With `compare`, each category also carries its change against the previous
+         *     like-for-like period (E3). Only the caller's own receipts are read (N2). A
+         *     period ending before it starts is refused with 422 rather than answered as
+         *     an empty one.
          */
         get: operations["get_category_statistics_api_v1_statistics_categories_get"];
         put?: never;
@@ -653,6 +655,11 @@ export interface components {
          *
          *     `category_id` is null for items with no category at all. `share` is the
          *     percentage of the period's spend, to one decimal place.
+         *
+         *     With a comparison (E3), `previous_total` is what the category cost in the
+         *     previous period and `change` the difference; `change_percent` is that as a
+         *     percentage of the previous total, null when the category is new there. All
+         *     three are null without a comparison.
          */
         CategoryStandingResponse: {
             /** Category Id */
@@ -665,6 +672,12 @@ export interface components {
             share: string;
             /** Item Count */
             item_count: number;
+            /** Previous Total */
+            previous_total?: string | null;
+            /** Change */
+            change?: string | null;
+            /** Change Percent */
+            change_percent?: string | null;
         };
         /**
          * CategoryStatisticsResponse
@@ -672,7 +685,8 @@ export interface components {
          *
          *     `start` and `end` are both included. `total` and `item_count` cover the
          *     counted items; `excluded_*` count the items on receipts under manual review,
-         *     left out of every figure here (D3).
+         *     left out of every figure here (D3). `comparison` is present only when asked for;
+         *     categories spent on only in the previous period are then listed too, at zero.
          */
         CategoryStatisticsResponse: {
             /**
@@ -695,6 +709,7 @@ export interface components {
             excluded_count: number;
             /** Excluded Amount */
             excluded_amount: string;
+            comparison?: components["schemas"]["ComparisonResponse"] | null;
         };
         /**
          * CategoryUpdate
@@ -711,6 +726,32 @@ export interface components {
         CommitJobRequest: {
             /** Indices To Store */
             indices_to_store: number[];
+        };
+        /**
+         * ComparisonResponse
+         * @description The previous period the statistics are measured against (BRD E3).
+         *
+         *     `stops_mid_month` is true when the requested period ends partway through a
+         *     month, so the previous one stops on the same day rather than taking the
+         *     whole month (D4): the screen says so.
+         */
+        ComparisonResponse: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Total */
+            total: string;
+            /** Item Count */
+            item_count: number;
+            /** Stops Mid Month */
+            stops_mid_month: boolean;
         };
         /**
          * EditLineItemRequest
@@ -2305,6 +2346,8 @@ export interface operations {
     get_category_statistics_api_v1_statistics_categories_get: {
         parameters: {
             query: {
+                /** @description Also measure each category against the previous period */
+                compare?: boolean;
                 /** @description First day of the period, included */
                 start: string;
                 /** @description Last day of the period, included */

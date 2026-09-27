@@ -1,10 +1,11 @@
 """Runs BR-5's Gherkin scenarios (F0.6.2).
 
-E7 is under way: F7.1 delivers the ranked category breakdown (E1, E4) and F7.2
-any run of days (E2), run here against `StatisticsService` with an in-memory
-repository; the SQL behind it is proven in tests/api/test_category_statistics.py.
-The other scenarios assert something a later feature owns, so each stays
-skipped until then, as named in `AWAITING`.
+E7 is under way: F7.1 delivers the ranked category breakdown (E1, E4), F7.2
+any run of days (E2) and F7.3 the comparison of two periods (E3), run here
+against `StatisticsService` with an in-memory repository; the SQL behind it is
+proven in tests/api/test_category_statistics.py. The remaining scenario asserts
+something a later feature owns, so it stays skipped until then, as named in
+`AWAITING`.
 """
 
 import asyncio
@@ -25,7 +26,6 @@ from app.services.statistics import CategoryStatistics, StatisticsService
 scenarios("category_statistics.feature")
 
 AWAITING = {
-    "test_compare_spending_across_two_months": "period comparison: F7.3 (E3)",
     "test_request_statistics_for_a_period_with_no_data": "the no-data answer: F7.4 (E5)",
 }
 
@@ -142,3 +142,35 @@ def only_those_days(outcome: dict[str, CategoryStatistics]) -> None:
     """The 10th and the 24th count; the 9th and the 25th, either side, do not."""
     rows = {c.name: c.total for c in outcome["range"].categories}
     assert rows == {"Groceries": Decimal("60.00"), "Dining": Decimal("40.00")}
+
+
+@given("the user has categorized receipts for both June 2026 and July 2026")
+def june_and_july(receipts: _InMemoryReceipts) -> None:
+    for month, day, category, amount in [
+        (6, 4, "Groceries", "812.40"),
+        (6, 12, "Dining", "298.00"),
+        (7, 3, "Groceries", "742.60"),
+        (7, 15, "Dining", "386.00"),
+    ]:
+        receipts.items.append(
+            _Item(datetime(2026, month, day, 12, tzinfo=UTC), category, Decimal(amount))
+        )
+
+
+@when("the user requests a comparison between June and July 2026")
+def compare_june_july(receipts: _InMemoryReceipts, outcome: dict[str, CategoryStatistics]) -> None:
+    service = StatisticsService(receipts)  # type: ignore[arg-type]
+    july = DateRange(date(2026, 7, 1), date(2026, 7, 31))
+    outcome["compared"] = asyncio.run(service.category_statistics(july, compare=True))
+
+
+@then("the agent should return the absolute and percentage change in spend for each category")
+def change_per_category(outcome: dict[str, CategoryStatistics]) -> None:
+    comparison = outcome["compared"].comparison
+    assert comparison is not None
+    assert (comparison.period.start, comparison.period.end) == (date(2026, 6, 1), date(2026, 6, 30))
+    changes = {c.standing.name: (c.change, c.change_percent) for c in comparison.changes}
+    assert changes == {
+        "Groceries": (Decimal("-69.80"), Decimal("-8.6")),
+        "Dining": (Decimal("88.00"), Decimal("29.5")),
+    }

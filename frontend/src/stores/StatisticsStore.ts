@@ -26,6 +26,8 @@ export class StatisticsStore {
   start: string;
   end: string;
   preset: Preset = "this_month";
+  /** Whether each category is also measured against the previous period (E3). */
+  compare = false;
   statistics: CategoryStatistics | null = null;
   isLoading = false;
   error: string | null = null;
@@ -41,6 +43,12 @@ export class StatisticsStore {
       { request: false, now: false },
       { autoBind: true },
     );
+  }
+
+  /** Turn the comparison with the previous like-for-like period on or off (BRD E3). */
+  setCompare(on: boolean): Promise<void> {
+    this.compare = on;
+    return this.load();
   }
 
   /** Switch to a quick period and fetch it; "custom" keeps the days until a range is picked. */
@@ -76,7 +84,7 @@ export class StatisticsStore {
     this.error = null;
     try {
       const response = await apiClient.GET("/api/v1/statistics/categories", {
-        params: { query: { start: this.start, end: this.end } },
+        params: { query: { start: this.start, end: this.end, compare: this.compare } },
       });
       if (response.error) {
         throw new Error(errorMessage(response.error, "Could not load the statistics"));
