@@ -1,10 +1,10 @@
 """Runs BR-5's Gherkin scenarios (F0.6.2).
 
-E7 is under way: F7.1 delivers the ranked category breakdown (E1, E4), run here
-against `StatisticsService` with an in-memory repository; the SQL behind it is
-proven in tests/api/test_category_statistics.py. The other scenarios assert
-something a later feature owns, so each stays skipped until then, as named in
-`AWAITING`.
+E7 is under way: F7.1 delivers the ranked category breakdown (E1, E4) and F7.2
+any run of days (E2), run here against `StatisticsService` with an in-memory
+repository; the SQL behind it is proven in tests/api/test_category_statistics.py.
+The other scenarios assert something a later feature owns, so each stays
+skipped until then, as named in `AWAITING`.
 """
 
 import asyncio
@@ -18,7 +18,7 @@ from pytest import FixtureRequest
 from pytest_bdd import given, scenarios, then, when
 
 from app.domain.categories import ItemView
-from app.domain.statistics import StatisticsPeriod
+from app.domain.periods import DateRange
 from app.repository.receipt import CategorySpend, ItemSpend
 from app.services.statistics import CategoryStatistics, StatisticsService
 
@@ -27,7 +27,6 @@ scenarios("category_statistics.feature")
 AWAITING = {
     "test_compare_spending_across_two_months": "period comparison: F7.3 (E3)",
     "test_request_statistics_for_a_period_with_no_data": "the no-data answer: F7.4 (E5)",
-    "test_request_a_custom_date_range": "arbitrary date ranges: F7.2 (E2)",
 }
 
 
@@ -52,21 +51,17 @@ class _InMemoryReceipts:
         self.items: list[_Item] = []
         self.ids: dict[str, uuid.UUID] = {}
 
-    async def spend_by_category(
-        self, view: ItemView, *, start_date: datetime, end_date: datetime
-    ) -> list[CategorySpend]:
+    async def spend_by_category(self, view: ItemView, *, period: DateRange) -> list[CategorySpend]:
         totals: dict[str, list[Decimal]] = {}
         for item in self.items:
-            if start_date <= item.bought <= end_date:
+            if period.lower <= item.bought < period.upper:
                 totals.setdefault(item.category, []).append(item.total)
         return [
             CategorySpend(self.ids.setdefault(name, uuid.uuid4()), name, len(t), sum(t, Decimal(0)))
             for name, t in totals.items()
         ]
 
-    async def item_spend(
-        self, view: ItemView, *, start_date: datetime, end_date: datetime
-    ) -> ItemSpend:
+    async def item_spend(self, view: ItemView, *, period: DateRange) -> ItemSpend:
         return ItemSpend(Decimal(0), 0, Decimal(0))
 
 
@@ -97,7 +92,7 @@ def july_receipts(receipts: _InMemoryReceipts) -> None:
 @when("the user requests category statistics for July 2026")
 def request_july(receipts: _InMemoryReceipts, outcome: dict[str, CategoryStatistics]) -> None:
     service = StatisticsService(receipts)  # type: ignore[arg-type]
-    july = StatisticsPeriod(date(2026, 7, 1), date(2026, 7, 31))
+    july = DateRange(date(2026, 7, 1), date(2026, 7, 31))
     outcome["july"] = asyncio.run(service.category_statistics(july))
 
 
@@ -117,3 +112,33 @@ def totals_shares_and_counts(outcome: dict[str, CategoryStatistics]) -> None:
 def ranked_highest_first(outcome: dict[str, CategoryStatistics]) -> None:
     totals = [c.total for c in outcome["july"].categories]
     assert totals == sorted(totals, reverse=True)
+
+
+@given("the user has receipts spanning multiple months")
+def several_months(receipts: _InMemoryReceipts) -> None:
+    for month, day, category, amount in [
+        (6, 28, "Groceries", "90.00"),
+        (7, 9, "Groceries", "40.00"),
+        (7, 10, "Dining", "25.00"),
+        (7, 17, "Groceries", "60.00"),
+        (7, 24, "Dining", "15.00"),
+        (7, 25, "Groceries", "70.00"),
+        (8, 3, "Dining", "80.00"),
+    ]:
+        receipts.items.append(
+            _Item(datetime(2026, month, day, 18, tzinfo=UTC), category, Decimal(amount))
+        )
+
+
+@when("the user requests statistics from July 10, 2026 to July 24, 2026")
+def request_mid_july(receipts: _InMemoryReceipts, outcome: dict[str, CategoryStatistics]) -> None:
+    service = StatisticsService(receipts)  # type: ignore[arg-type]
+    days = DateRange(date(2026, 7, 10), date(2026, 7, 24))
+    outcome["range"] = asyncio.run(service.category_statistics(days))
+
+
+@then("the agent should return category totals limited to that date range")
+def only_those_days(outcome: dict[str, CategoryStatistics]) -> None:
+    """The 10th and the 24th count; the 9th and the 25th, either side, do not."""
+    rows = {c.name: c.total for c in outcome["range"].categories}
+    assert rows == {"Groceries": Decimal("60.00"), "Dining": Decimal("40.00")}

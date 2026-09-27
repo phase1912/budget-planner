@@ -119,8 +119,8 @@ describe("ReceiptsPage", () => {
 
     expect(mockSetFilters).toHaveBeenCalledWith({
       status: undefined,
-      startDate: "2026-08-01T00:00:00Z",
-      endDate: "2026-08-31T23:59:59Z",
+      startDate: "2026-08-01",
+      endDate: "2026-08-31",
     });
   });
 

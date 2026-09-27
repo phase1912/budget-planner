@@ -1,11 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { CalendarDays } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { CategoryDot } from "@/features/categories/components/CategoryDot";
 import {
   Card,
+  DateRangeFilter,
   ErrorState,
   LoadingState,
   Note,
@@ -15,7 +15,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  SegmentedControl,
 } from "@/shared/components";
+import type { Preset } from "@/stores/StatisticsStore";
 import { useStores } from "@/stores/StoreContext";
 import { periodLabel } from "../periodLabel";
 
@@ -26,13 +28,14 @@ const AMOUNT = new Intl.NumberFormat("en-US", {
 /**
  * Statistics (docs/design/screens/statistics.html), first slice: every category's
  * total, share of the period's spend and item count, biggest first (BRD E1, E4 —
- * F7.1). The period is this month so far; picking another, comparing, the chart
- * and export arrive with F7.2-F7.6. Items on receipts under review are named
+ * F7.1), over this month so far, a preset, or any run of days the user picks
+ * (E2 — F7.2). Comparing, the chart and export arrive with F7.3-F7.6. Items on receipts under review are named
  * above the table rather than silently left out (D3).
  */
 export const StatisticsPage = observer(function StatisticsPage() {
   const { statisticsStore, authStore } = useStores();
-  const { statistics, isLoading, error, start, end } = statisticsStore;
+  const { statistics, isLoading, error, start, end, preset } = statisticsStore;
+  const [picking, setPicking] = useState(false);
   const currency = authStore.user?.currency ?? "PLN";
   const period = periodLabel(start, end);
 
@@ -52,12 +55,37 @@ export const StatisticsPage = observer(function StatisticsPage() {
           </p>
         </header>
 
-        <Card variant="surface" className="flex flex-wrap items-center gap-3 px-4.5 py-3.5">
-          <span className="text-md font-semibold">This month</span>
-          <span className="inline-flex items-center gap-2 tabular-nums text-md text-muted-foreground">
-            <CalendarDays size={15} aria-hidden="true" />
-            {period}
-          </span>
+        <Card
+          variant="surface"
+          className="flex flex-col gap-3 px-3.5 py-3.5 md:flex-row md:items-center md:px-4.5"
+        >
+          <SegmentedControl<Preset>
+            label="Period"
+            size="sm"
+            fill
+            value={preset}
+            onChange={(chosen) => {
+              if (chosen === "custom") setPicking(true);
+              else void statisticsStore.choosePreset(chosen);
+            }}
+            options={[
+              { value: "this_month", label: "This month" },
+              { value: "last_month", label: "Last month" },
+              { value: "last_3_months", label: "Last 3 months", shortLabel: "3 months" },
+              { value: "custom", label: "Custom" },
+            ]}
+          />
+          <DateRangeFilter
+            start={start}
+            end={end}
+            label={period}
+            allowAll={false}
+            isOpen={picking}
+            onOpenChange={setPicking}
+            onApply={(from, to) => {
+              if (from && to) void statisticsStore.chooseRange(from, to);
+            }}
+          />
         </Card>
 
         {error && (

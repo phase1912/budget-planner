@@ -133,7 +133,7 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
         </div>
 
         <div className="flex flex-col gap-3">
-          <div className="hidden md:grid grid-cols-[minmax(0,1fr)_70px_90px_90px_32px] gap-3 text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground">
+          <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_70px_90px_90px_32px] gap-3 text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground">
             <span>Item</span>
             <span className="text-right">Qty</span>
             <span className="text-right">Unit</span>

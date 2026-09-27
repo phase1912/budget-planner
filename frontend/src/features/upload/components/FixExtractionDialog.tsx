@@ -96,7 +96,7 @@ export const FixExtractionDialog = observer(function FixExtractionDialog() {
       </ModalHeader>
 
       <ModalBody className="flex flex-col gap-3">
-        <div className="hidden md:grid grid-cols-[minmax(0,1fr)_80px_110px_110px] gap-3 text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground">
+        <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_80px_110px_110px] gap-3 text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground">
           <span>Item</span>
           <span className="text-right">Qty</span>
           <span className="text-right">Unit</span>

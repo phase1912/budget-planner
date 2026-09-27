@@ -425,7 +425,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                 </div>
               )}
 
-              <div className="hidden md:grid grid-cols-[minmax(0,1fr)_48px_84px_92px_148px] items-center gap-3 px-5 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">
+              <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_48px_84px_92px_148px] items-center gap-3 px-5 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">
                 <span>Item</span>
                 <span className="text-right">Qty</span>
                 <span className="text-right">Unit</span>

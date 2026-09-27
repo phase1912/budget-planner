@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, UploadFile
@@ -13,10 +12,12 @@ from app.adapters.vision_agent import VisionAgentAdapter
 from app.agent.core import Agent
 from app.api.dependencies import get_current_user, get_storage_service
 from app.api.errors import UploadLimitExceededError
+from app.api.periods import optional_period
 from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.domain.budget import ReceiptOrder
 from app.domain.categories import ItemView
+from app.domain.periods import DateRange
 from app.models.receipt import ReceiptStatus
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
@@ -325,31 +326,28 @@ async def resolve_position_match(
 async def list_line_items(
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
+    period: Annotated[DateRange | None, Depends(optional_period)],
     view: ItemView = ItemView.NEEDS_REVIEW,
     q: str | None = None,
-    start_date: datetime | None = None,
-    end_date: datetime | None = None,
     category_id: uuid.UUID | None = None,
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> LineItemListResponse:
-    """One page of the caller's line items, with what the whole selection costs (C3, C4, D1)."""
+    """One page of the caller's line items, with what the whole selection costs (C3, C4, D1).
+
+    `start` and `end` narrow it to a run of days, both included (app/api/periods.py).
+    """
     repo = ReceiptRepository(session)
     items, total = await repo.list_items(
         view,
         search=q,
-        start_date=start_date,
-        end_date=end_date,
+        period=period,
         category_id=category_id,
         skip=(page - 1) * size,
         limit=size,
     )
-    spend = await repo.item_spend(
-        view, search=q, start_date=start_date, end_date=end_date, category_id=category_id
-    )
-    by_category = await repo.spend_by_category(
-        view, search=q, start_date=start_date, end_date=end_date
-    )
+    spend = await repo.item_spend(view, search=q, period=period, category_id=category_id)
+    by_category = await repo.spend_by_category(view, search=q, period=period)
     return LineItemListResponse(
         items=[ReviewQueueItemResponse.model_validate(item) for item in items],
         total=total,
@@ -376,17 +374,17 @@ async def list_line_items(
 async def list_receipts(
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
+    period: Annotated[DateRange | None, Depends(optional_period)],
     page: int = 1,
     size: int = 20,
     status: ReceiptStatus | None = None,
-    start_date: datetime | None = None,
-    end_date: datetime | None = None,
     q: str | None = None,
     order: ReceiptOrder = ReceiptOrder.NEWEST,
 ) -> PaginatedReceiptsResponse:
     """List an account's stored receipts with pagination, newest first unless asked (F3.8).
 
     `order=largest` is a finished month's "Biggest receipts" on the dashboard (F6.5).
+    `start` and `end` narrow it to a run of days, both included (app/api/periods.py).
     """
     if page < 1:
         page = 1
@@ -398,8 +396,7 @@ async def list_receipts(
         skip=(page - 1) * size,
         limit=size,
         status=status,
-        start_date=start_date,
-        end_date=end_date,
+        period=period,
         search_query=q,
         order=order,
     )

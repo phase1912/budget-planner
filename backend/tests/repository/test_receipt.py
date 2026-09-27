@@ -5,6 +5,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.context import current_user_id
+from app.domain.periods import DateRange
 from app.models.line_item import LineItem
 from app.models.receipt import Receipt, ReceiptStatus
 from app.repository.receipt import ReceiptRepository
@@ -304,8 +305,7 @@ async def test_list_paginated_filters(db_session: AsyncSession) -> None:
     items, total = await repo.list_paginated(
         0,
         10,
-        start_date=datetime.datetime(2025, 1, 1, tzinfo=datetime.UTC),
-        end_date=datetime.datetime(2025, 12, 31, tzinfo=datetime.UTC),
+        period=DateRange(datetime.date(2025, 1, 1), datetime.date(2025, 12, 31)),
     )
     assert total == 1
     assert items[0].id == r1.id
@@ -380,8 +380,7 @@ async def test_an_undated_receipt_is_listed_in_the_month_it_was_uploaded(
     items, total = await ReceiptRepository(db_session).list_paginated(
         0,
         10,
-        start_date=datetime.datetime(2026, 8, 1, tzinfo=datetime.UTC),
-        end_date=datetime.datetime(2026, 8, 31, 23, 59, 59, tzinfo=datetime.UTC),
+        period=DateRange(datetime.date(2026, 8, 1), datetime.date(2026, 8, 31)),
     )
 
     assert (total, [r.id for r in items]) == (1, [undated.id])

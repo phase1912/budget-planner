@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -8,10 +8,13 @@ import { StatisticsPage } from "./StatisticsPage";
 const statisticsStore = {
   start: "2026-07-01",
   end: "2026-07-27",
+  preset: "this_month",
   statistics: null as CategoryStatistics | null,
   isLoading: false,
   error: null as string | null,
   load: vi.fn(),
+  choosePreset: vi.fn(),
+  chooseRange: vi.fn(),
 };
 
 vi.mock("@/stores/StoreContext", () => ({
@@ -96,5 +99,27 @@ describe("StatisticsPage", () => {
     statisticsStore.error = "Server unavailable";
     renderPage();
     expect(screen.getByText("Server unavailable")).toBeInTheDocument();
+  });
+
+  it("switches to a preset period", () => {
+    statisticsStore.statistics = july();
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Last month" }));
+    expect(statisticsStore.choosePreset).toHaveBeenCalledWith("last_month");
+  });
+
+  it("opens the range picker on Custom and shows the chosen days", () => {
+    statisticsStore.statistics = july();
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Custom" }));
+
+    const picker = screen.getByRole("dialog");
+    expect(within(picker).getByLabelText("From")).toHaveValue("2026-07-01");
+    expect(within(picker).getByLabelText("To")).toHaveValue("2026-07-27");
+    fireEvent.change(within(picker).getByLabelText("From"), { target: { value: "2026-07-10" } });
+    fireEvent.change(within(picker).getByLabelText("To"), { target: { value: "2026-07-24" } });
+    fireEvent.click(within(picker).getByRole("button", { name: "Apply filter" }));
+
+    expect(statisticsStore.chooseRange).toHaveBeenCalledWith("2026-07-10", "2026-07-24");
   });
 });

@@ -133,6 +133,11 @@ The landing view gets all three in one round trip (F6.7):
 the month's receipts (E3), all bounded by the same month. Which receipts it lists is
 the server's call: the newest of a running month, the biggest of a finished one.
 
+Every endpoint that filters by date takes `start` and `end` as plain dates, both
+included, parsed once by `app/api/periods.py` into a `DateRange`
+(`app/domain/periods.py`, ADR-0012); the repository applies it through one `_within`
+filter, and the month view builds its own with `DateRange.of_month`.
+
 Statistics (E7) read the same items over any run of days:
 `GET /api/v1/statistics/categories?start=&end=` goes through `StatisticsService`, which
 takes the per-category spend from the receipts repository and leaves the ranking and

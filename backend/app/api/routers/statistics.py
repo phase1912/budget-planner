@@ -1,13 +1,12 @@
-from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
-from app.api.errors import InvalidPeriodError
+from app.api.periods import required_period
 from app.db.session import get_db_session
-from app.domain.statistics import StatisticsPeriod
+from app.domain.periods import DateRange
 from app.models.user import User
 from app.repository.receipt import ReceiptRepository
 from app.schemas.statistics import CategoryStandingResponse, CategoryStatisticsResponse
@@ -18,20 +17,16 @@ router = APIRouter(prefix="/api/v1/statistics", tags=["statistics"])
 
 @router.get("/categories", response_model=CategoryStatisticsResponse)
 async def get_category_statistics(
-    start: Annotated[date, Query(description="First day of the period, included")],
-    end: Annotated[date, Query(description="Last day of the period, included")],
+    period: Annotated[DateRange, Depends(required_period)],
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> CategoryStatisticsResponse:
-    """The caller's spend per category between two dates, ranked highest first (BRD E1, E4).
+    """The caller's spend per category between two dates, ranked highest first (BRD E1, E2, E4).
 
+    `start` and `end` are both included, as everywhere (app/api/periods.py).
     Only the caller's own receipts are read (N2). A period ending before it
     starts is refused with 422 rather than answered as an empty one.
     """
-    try:
-        period = StatisticsPeriod(start, end)
-    except ValueError as error:
-        raise InvalidPeriodError(str(error)) from error
     stats = await StatisticsService(ReceiptRepository(session)).category_statistics(period)
     return CategoryStatisticsResponse(
         start=stats.period.start,

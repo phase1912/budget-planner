@@ -291,6 +291,8 @@ export interface paths {
         /**
          * List Line Items
          * @description One page of the caller's line items, with what the whole selection costs (C3, C4, D1).
+         *
+         *     `start` and `end` narrow it to a run of days, both included (app/api/periods.py).
          */
         get: operations["list_line_items_receipts_line_items_get"];
         put?: never;
@@ -313,6 +315,7 @@ export interface paths {
          * @description List an account's stored receipts with pagination, newest first unless asked (F3.8).
          *
          *     `order=largest` is a finished month's "Biggest receipts" on the dashboard (F6.5).
+         *     `start` and `end` narrow it to a run of days, both included (app/api/periods.py).
          */
         get: operations["list_receipts_receipts_get"];
         put?: never;
@@ -558,8 +561,9 @@ export interface paths {
         };
         /**
          * Get Category Statistics
-         * @description The caller's spend per category between two dates, ranked highest first (BRD E1, E4).
+         * @description The caller's spend per category between two dates, ranked highest first (BRD E1, E2, E4).
          *
+         *     `start` and `end` are both included, as everywhere (app/api/periods.py).
          *     Only the caller's own receipts are read (N2). A period ending before it
          *     starts is refused with 422 rather than answered as an empty one.
          */
@@ -1736,12 +1740,14 @@ export interface operations {
             query?: {
                 view?: components["schemas"]["ItemView"];
                 q?: string | null;
-                start_date?: string | null;
-                end_date?: string | null;
                 category_id?: string | null;
                 page?: number;
                 size?: number;
                 token?: string | null;
+                /** @description First day of the period, included */
+                start?: string | null;
+                /** @description Last day of the period, included */
+                end?: string | null;
             };
             header?: never;
             path?: never;
@@ -1775,11 +1781,13 @@ export interface operations {
                 page?: number;
                 size?: number;
                 status?: components["schemas"]["ReceiptStatus"] | null;
-                start_date?: string | null;
-                end_date?: string | null;
                 q?: string | null;
                 order?: components["schemas"]["ReceiptOrder"];
                 token?: string | null;
+                /** @description First day of the period, included */
+                start?: string | null;
+                /** @description Last day of the period, included */
+                end?: string | null;
             };
             header?: never;
             path?: never;

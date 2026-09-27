@@ -2,7 +2,7 @@
 
 import uuid
 from collections.abc import AsyncGenerator
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import jwt
 import pytest
@@ -15,6 +15,7 @@ from app.core.config import get_settings
 from app.core.context import current_user_id
 from app.db.session import get_db_session
 from app.domain.categories import UNCATEGORIZED, ItemView
+from app.domain.periods import DateRange
 from app.main import create_app
 from app.models.category import Category
 from app.models.line_item import LineItem
@@ -220,8 +221,7 @@ async def test_the_date_filter_uses_the_purchase_date_or_upload_date_when_unread
 
     in_july, total = await ReceiptRepository(db_session).list_items(
         ItemView.ALL,
-        start_date=datetime(2026, 7, 1, tzinfo=UTC),
-        end_date=datetime(2026, 7, 31, 23, 59, 59, tzinfo=UTC),
+        period=DateRange(date(2026, 7, 1), date(2026, 7, 31)),
     )
 
     assert [i.id for i in in_july] == [july.id, undated.id]

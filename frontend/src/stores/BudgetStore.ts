@@ -19,16 +19,13 @@ function fromIndex(index: number): YearMonth {
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/**
- * The month as the receipts list's date filter, first to last second. Purchase
- * times are stored labelled UTC (ADR-0009), so the bounds are too.
- */
+/** The month as a date filter: its first and last day, both included (BRD E2). */
 export function monthRange({ year, month }: YearMonth): { start: string; end: string } {
   const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
   const prefix = `${String(year)}-${pad(month)}`;
   return {
-    start: `${prefix}-01T00:00:00Z`,
-    end: `${prefix}-${pad(lastDay)}T23:59:59Z`,
+    start: `${prefix}-01`,
+    end: `${prefix}-${pad(lastDay)}`,
   };
 }
 

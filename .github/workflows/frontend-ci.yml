@@ -52,6 +52,10 @@ jobs:
       - name: eslint
         run: npm run lint
 
+      # Fixed widths and pixel grid columns a 375px phone cannot hold (F7.2).
+      - name: phone layout guard
+        run: npm run lint:responsive
+
       - name: prettier --check
         run: npm run format
 

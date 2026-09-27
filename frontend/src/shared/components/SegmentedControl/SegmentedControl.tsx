@@ -33,7 +33,13 @@ export function SegmentedControl<T extends string>({
   size = "default",
   fill = false,
 }: SegmentedControlProps<T>): React.ReactElement {
-  const optionSize = size === "sm" ? "px-3.25 py-1.75 text-md" : "px-4 py-2.25 text-lg";
+  const baseSize = size === "sm" ? "px-3.25 py-1.75 text-md" : "px-4 py-2.25 text-lg";
+  // Filling a phone's width, four options only fit with tighter padding and type.
+  const fillSize =
+    size === "sm"
+      ? "px-1.5 py-1.75 text-base md:px-3.25 md:text-md"
+      : "px-1.5 py-2.25 text-base md:px-4 md:text-lg";
+  const optionSize = fill ? fillSize : baseSize;
   return (
     <div
       role="group"

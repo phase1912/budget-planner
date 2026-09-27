@@ -28,6 +28,7 @@ from sqlalchemy.pool import NullPool
 
 from app.core.context import current_user_id
 from app.domain.budget import BudgetMonth
+from app.domain.periods import DateRange
 from app.models.line_item import LineItem
 from app.models.monthly_snapshot import MonthlySnapshot
 from app.models.receipt import ReceiptStatus
@@ -57,17 +58,19 @@ class _InMemoryReceipts:
     def __init__(self) -> None:
         self.receipts: list[_Receipt] = []
 
-    def _in(self, start: datetime, end: datetime, under_review: bool) -> list[_Receipt]:
+    def _in(self, period: DateRange, under_review: bool) -> list[_Receipt]:
         return [
-            r for r in self.receipts if start <= r.bought < end and r.under_review is under_review
+            r
+            for r in self.receipts
+            if period.lower <= r.bought < period.upper and r.under_review is under_review
         ]
 
-    async def month_total(self, start: datetime, end: datetime) -> tuple[Decimal, int]:
-        counted = self._in(start, end, under_review=False)
+    async def month_total(self, period: DateRange) -> tuple[Decimal, int]:
+        counted = self._in(period, under_review=False)
         return sum((r.total for r in counted), Decimal(0)), len(counted)
 
-    async def month_under_review(self, start: datetime, end: datetime) -> tuple[int, Decimal]:
-        held = self._in(start, end, under_review=True)
+    async def month_under_review(self, period: DateRange) -> tuple[int, Decimal]:
+        held = self._in(period, under_review=True)
         return len(held), sum((r.total for r in held), Decimal(0))
 
     async def has_any(self) -> bool:

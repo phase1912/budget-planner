@@ -120,8 +120,8 @@ async def test_a_category_and_a_period_narrow_the_items_and_their_total(
         db_session,
         user,
         category_id=str(clothing.id),
-        start_date="2026-09-01T00:00:00Z",
-        end_date="2026-09-30T23:59:59Z",
+        start="2026-09-01",
+        end="2026-09-30",
     )
 
     assert {i["name"] for i in body["items"]} == {
@@ -170,8 +170,8 @@ async def test_the_breakdown_keeps_every_category_while_one_is_picked(
         db_session,
         user,
         category_id=str(groceries.id),
-        start_date="2026-09-01T00:00:00Z",
-        end_date="2026-09-30T23:59:59Z",
+        start="2026-09-01",
+        end="2026-09-30",
     )
 
     assert _breakdown(body) == [
