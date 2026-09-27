@@ -1459,6 +1459,32 @@ epics:
         demo: >
           Ask for 10–24 July specifically and watch the totals narrow to those fifteen days,
           then switch to a preset and back.
+        tasks:
+          - >
+            ADR-0012 - one DateRange (app/domain/periods.py): whole days, both ends included,
+            bounded from midnight on the first day to midnight after the last, exclusive, so
+            a purchase at 23:59:59.5 stays in its day. The repository filters through one
+            _within(period); month totals, the dashboard and statistics all use it, and the
+            month total now files an undated receipt by upload date like everything else.
+          - >
+            every date-filtering endpoint takes start and end as plain dates, parsed once by
+            app/api/periods.py - /receipts and /receipts/line-items move off start_date and
+            end_date timestamps; a backwards range or a single end is 422 invalid_period.
+          - >
+            the frontend sends plain dates everywhere (DateRangeFilter, the receipts and
+            categorisation stores, the dashboard's links) and never builds a time of day.
+          - >
+            the Statistics screen's presets - This month (so far), Last month (whole), Last 3
+            months (this month so far and the two before) and Custom, which opens the date
+            picker; the period button shows the days and opens it too. They fit a phone.
+          - >
+            BR-5's E2 scenario runs.
+          - >
+            unplanned, added at the owner's request - a phone-layout guard in frontend CI:
+            npm run lint:responsive (frontend/scripts/check-responsive.mjs) fails on a fixed
+            width over 200px or pixel grid columns over 200px without a md:/lg: prefix, the
+            pattern behind the broken Receipts list, receipt dialog and upload steps; the
+            desktop-only table headers now say md:grid-cols to match.
       - key: F7.3
         title: Period-over-period comparison
         labels: [backend, frontend]

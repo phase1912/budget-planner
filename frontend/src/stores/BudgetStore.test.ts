@@ -176,10 +176,10 @@ describe("BudgetStore", () => {
 
 describe("monthRange", () => {
   it("ends on the month's own last day, leap years and December included", () => {
-    expect(monthRange({ year: 2028, month: 2 }).end).toBe("2028-02-29T23:59:59Z");
+    expect(monthRange({ year: 2028, month: 2 }).end).toBe("2028-02-29");
     expect(monthRange({ year: 2026, month: 12 })).toEqual({
-      start: "2026-12-01T00:00:00Z",
-      end: "2026-12-31T23:59:59Z",
+      start: "2026-12-01",
+      end: "2026-12-31",
     });
   });
 });

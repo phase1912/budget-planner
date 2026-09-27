@@ -124,15 +124,15 @@ describe("ReceiptStore", () => {
 
     store.setFilters({
       status: "uploaded",
-      startDate: "2025-01-01T00:00:00Z",
-      endDate: "2025-12-31T23:59:59Z",
+      startDate: "2025-01-01",
+      endDate: "2025-12-31",
       searchQuery: "apple",
     });
 
     // Should fetch with new filters
     expect(store.page).toBe(1);
     expect(store.statusFilter).toBe("uploaded");
-    expect(store.startDateFilter).toBe("2025-01-01T00:00:00Z");
+    expect(store.startDateFilter).toBe("2025-01-01");
     expect(store.searchQuery).toBe("apple");
 
     // Wait for the async fetch to be called
@@ -144,8 +144,8 @@ describe("ReceiptStore", () => {
           page: 1,
           size: 20,
           status: "uploaded",
-          start_date: "2025-01-01T00:00:00Z",
-          end_date: "2025-12-31T23:59:59Z",
+          start: "2025-01-01",
+          end: "2025-12-31",
           q: "apple",
         },
       },

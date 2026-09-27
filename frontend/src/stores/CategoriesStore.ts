@@ -154,8 +154,8 @@ export class CategoriesStore {
           query: {
             view: this.queueView,
             q: this.queueSearch.trim() || undefined,
-            start_date: this.queueStartDate,
-            end_date: this.queueEndDate,
+            start: this.queueStartDate,
+            end: this.queueEndDate,
             category_id: this.queueCategoryId ?? undefined,
             page: this.queuePage,
             size: this.queueSize,
@@ -214,7 +214,7 @@ export class CategoriesStore {
     }, SEARCH_DEBOUNCE_MS);
   }
 
-  /** Narrow the current view to a purchase-date range (UTC bounds), from page 1. */
+  /** Narrow the current view to a run of days, both ends included (YYYY-MM-DD), from page 1. */
   setQueueDates(start: string | undefined, end: string | undefined): void {
     this.queueStartDate = start;
     this.queueEndDate = end;

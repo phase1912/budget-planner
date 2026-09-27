@@ -127,7 +127,7 @@ export const ReceiptDetailModal = observer(() => {
             Re-run categorisation
           </Button>
         </div>
-        <div className="hidden md:grid grid-cols-[minmax(0,1fr)_36px_70px_86px_156px] items-center gap-[12px] pb-1 border-b border-border">
+        <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_36px_70px_86px_156px] items-center gap-[12px] pb-1 border-b border-border">
           <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
             Item
           </span>

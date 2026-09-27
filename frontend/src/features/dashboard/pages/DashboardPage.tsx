@@ -226,7 +226,7 @@ export const DashboardPage = observer(function DashboardPage() {
 /** The figure's month as `start=…&end=…`, how the receipts and categories screens take it. */
 function monthQuery(month: { year: number; month: number }): string {
   const { start, end } = monthRange(month);
-  return `start=${start.slice(0, 10)}&end=${end.slice(0, 10)}`;
+  return `start=${start}&end=${end}`;
 }
 
 /** One category's items in the figure's month, on the categories screen. */

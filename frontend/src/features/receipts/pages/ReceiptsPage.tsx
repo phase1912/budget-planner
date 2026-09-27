@@ -46,8 +46,8 @@ export const ReceiptsPage = observer(() => {
     if (requestedStart && requestedEnd && DAY.test(requestedStart) && DAY.test(requestedEnd)) {
       receiptStore.setFilters({
         status: undefined,
-        startDate: `${requestedStart}T00:00:00Z`,
-        endDate: `${requestedEnd}T23:59:59Z`,
+        startDate: requestedStart,
+        endDate: requestedEnd,
       });
       return;
     }
@@ -123,7 +123,7 @@ export const ReceiptsPage = observer(() => {
         </div>
 
         <Card flush>
-          <div className="hidden md:grid grid-cols-[minmax(0,1fr)_120px_92px_120px_170px_28px] items-center gap-4 px-[18px] py-[12px] bg-surface border-b border-border">
+          <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_120px_92px_120px_170px_28px] items-center gap-4 px-[18px] py-[12px] bg-surface border-b border-border">
             <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
               Merchant
             </span>

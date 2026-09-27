@@ -6,21 +6,42 @@ import { Input } from "../Input/Input";
 import { Modal, ModalBody, ModalFooter, ModalHeader } from "../Modal/Modal";
 
 export interface DateRangeFilterProps {
-  /** Current bounds as ISO timestamps (UTC), or undefined for "all dates". */
+  /** Current bounds as days (YYYY-MM-DD), both included, or undefined for "all dates". */
   start: string | undefined;
   end: string | undefined;
   onApply: (start: string | undefined, end: string | undefined) => void;
+  /** The button's text; defaults to "All dates" or "Filtered dates". */
+  label?: string;
+  /** Whether "All dates" is on offer; a screen that always needs a period turns it off. */
+  allowAll?: boolean;
+  /** Open the picker from outside, e.g. a "Custom" preset; uncontrolled when omitted. */
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 /**
  * A "dates" button that opens a picker for one day, one month or a range.
  *
- * Bounds are whole UTC days, since the BRD's month boundaries are UTC (CLAUDE.md).
- * The owner of the filter state decides what to do with them.
+ * Bounds are whole days, both included — the one date-range rule the API applies
+ * everywhere (backend app/domain/periods.py, BRD E2). The owner of the filter
+ * state decides what to do with them.
  */
-export function DateRangeFilter({ start, end, onApply }: DateRangeFilterProps) {
+export function DateRangeFilter({
+  start,
+  end,
+  onApply,
+  label,
+  allowAll = true,
+  isOpen: openFromOutside,
+  onOpenChange,
+}: DateRangeFilterProps) {
   const id = useId();
-  const [isOpen, setIsOpen] = useState(false);
+  const [openHere, setOpenHere] = useState(false);
+  const isOpen = openFromOutside ?? openHere;
+  const setIsOpen = (open: boolean) => {
+    setOpenHere(open);
+    onOpenChange?.(open);
+  };
 
   const [mode, setMode] = useState<"all" | "date" | "month" | "range">("all");
   const [singleDate, setSingleDate] = useState("");
@@ -28,14 +49,22 @@ export function DateRangeFilter({ start, end, onApply }: DateRangeFilterProps) {
   const [rangeStart, setRangeStart] = useState("");
   const [rangeEnd, setRangeEnd] = useState("");
 
-  const handleOpen = () => {
+  // Seeded from the current bounds each time the picker opens, however it opens.
+  const [seededFor, setSeededFor] = useState(false);
+  if (isOpen && !seededFor) {
+    setSeededFor(true);
     if (start && end) {
       setMode("range");
-      setRangeStart(start.split("T")[0] ?? "");
-      setRangeEnd(end.split("T")[0] ?? "");
+      setRangeStart(start);
+      setRangeEnd(end);
     } else {
-      setMode("all");
+      setMode(allowAll ? "all" : "range");
     }
+  } else if (!isOpen && seededFor) {
+    setSeededFor(false);
+  }
+
+  const handleOpen = () => {
     setIsOpen(true);
   };
 
@@ -43,17 +72,14 @@ export function DateRangeFilter({ start, end, onApply }: DateRangeFilterProps) {
     if (mode === "all") {
       onApply(undefined, undefined);
     } else if (mode === "date" && singleDate) {
-      onApply(`${singleDate}T00:00:00Z`, `${singleDate}T23:59:59Z`);
+      onApply(singleDate, singleDate);
     } else if (mode === "month" && singleMonth) {
       const year = parseInt(singleMonth.split("-")[0] ?? "2000", 10);
       const month = parseInt(singleMonth.split("-")[1] ?? "1", 10);
       const lastDay = new Date(year, month, 0).getDate();
-      onApply(
-        `${singleMonth}-01T00:00:00Z`,
-        `${singleMonth}-${String(lastDay).padStart(2, "0")}T23:59:59Z`,
-      );
+      onApply(`${singleMonth}-01`, `${singleMonth}-${String(lastDay).padStart(2, "0")}`);
     } else if (mode === "range" && rangeStart && rangeEnd) {
-      onApply(`${rangeStart}T00:00:00Z`, `${rangeEnd}T23:59:59Z`);
+      onApply(rangeStart, rangeEnd);
     }
     setIsOpen(false);
   };
@@ -62,13 +88,20 @@ export function DateRangeFilter({ start, end, onApply }: DateRangeFilterProps) {
 
   return (
     <>
-      <Button variant={isFilterActive ? "primary" : "secondary"} size="sm" onClick={handleOpen}>
+      {/* With a label the button shows the chosen period rather than flagging a filter. */}
+      <Button
+        variant={isFilterActive && !label ? "primary" : "secondary"}
+        size="sm"
+        onClick={handleOpen}
+      >
         <CalendarDays
           size={15}
           aria-hidden="true"
-          className={isFilterActive ? "text-primary-foreground mr-1" : "text-muted-foreground mr-1"}
+          className={
+            isFilterActive && !label ? "text-primary-foreground mr-1" : "text-muted-foreground mr-1"
+          }
         />
-        {isFilterActive ? "Filtered dates" : "All dates"}
+        {label ?? (isFilterActive ? "Filtered dates" : "All dates")}
       </Button>
 
       <Modal
@@ -94,7 +127,7 @@ export function DateRangeFilter({ start, end, onApply }: DateRangeFilterProps) {
                 setMode(e.target.value as "all" | "date" | "month" | "range");
               }}
             >
-              <option value="all">All dates</option>
+              {allowAll && <option value="all">All dates</option>}
               <option value="date">Specific date</option>
               <option value="month">Specific month</option>
               <option value="range">Date range</option>

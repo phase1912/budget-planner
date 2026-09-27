@@ -80,15 +80,15 @@ describe("CategoriesStore review queue paging", () => {
     expect(store.queuePage).toBe(1);
 
     store.setQueuePage(2);
-    store.setQueueDates("2026-07-01T00:00:00Z", "2026-07-31T23:59:59Z");
+    store.setQueueDates("2026-07-01", "2026-07-31");
     expect(store.queuePage).toBe(1);
     await vi.waitFor(() => {
       expect(apiClient.GET).toHaveBeenLastCalledWith("/receipts/line-items", {
         params: {
           query: expect.objectContaining({
             view: "all",
-            start_date: "2026-07-01T00:00:00Z",
-            end_date: "2026-07-31T23:59:59Z",
+            start: "2026-07-01",
+            end: "2026-07-31",
             page: 1,
           }) as unknown,
         },

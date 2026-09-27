@@ -170,8 +170,8 @@ describe("CategorisationQueuePage", () => {
     fireEvent.click(screen.getByRole("button", { name: /Apply filter/i }));
 
     expect(mockStore.categoriesStore.setQueueDates).toHaveBeenCalledWith(
-      "2026-07-01T00:00:00Z",
-      "2026-07-31T23:59:59Z",
+      "2026-07-01",
+      "2026-07-31",
     );
   });
 
@@ -248,8 +248,8 @@ describe("CategorisationQueuePage", () => {
     expect(mockStore.categoriesStore.showSelection).toHaveBeenCalledWith({
       view: "all",
       categoryId: "groceries-id",
-      start: "2026-08-01T00:00:00Z",
-      end: "2026-08-31T23:59:59Z",
+      start: "2026-08-01",
+      end: "2026-08-31",
     });
     expect(mockFetchReviewQueue).not.toHaveBeenCalled();
   });

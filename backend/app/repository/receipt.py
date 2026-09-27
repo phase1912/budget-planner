@@ -5,12 +5,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import ColumnElement, Select, case, func, or_, select
+from sqlalchemy import ColumnElement, Select, and_, case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager, joinedload
 
 from app.domain.budget import ReceiptOrder
 from app.domain.categories import UNCATEGORIZED, ItemView
+from app.domain.periods import DateRange
 from app.models.category import Category
 from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
@@ -50,6 +51,15 @@ def _escape_like(term: str) -> str:
 def _purchased() -> ColumnElement[datetime]:
     """When a receipt's items were bought: its printed date, else when it was uploaded."""
     return func.coalesce(Receipt.transaction_date, Receipt.created_at)
+
+
+def _within(period: DateRange) -> ColumnElement[bool]:
+    """Receipts filed under a day of `period`, both end days included (BRD E2).
+
+    The upper bound is exclusive midnight after the last day, so nothing late
+    on that day falls out and nothing from the next day falls in.
+    """
+    return and_(_purchased() >= period.lower, _purchased() < period.upper)
 
 
 @dataclass(frozen=True)
@@ -111,8 +121,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         view: ItemView,
         *,
         search: str | None,
-        start_date: datetime | None,
-        end_date: datetime | None,
+        period: DateRange | None,
         category_id: uuid.UUID | None,
     ) -> Select[tuple[LineItem]]:
         """The current user's line items matching the categorisation screen's filters.
@@ -131,10 +140,8 @@ class ReceiptRepository(BaseRepository[Receipt]):
             stmt = stmt.where(LineItem.is_category_manual.is_(True))
         if search:
             stmt = stmt.where(LineItem.name.ilike(f"%{_escape_like(search)}%", escape="\\"))
-        if start_date:
-            stmt = stmt.where(_purchased() >= start_date)
-        if end_date:
-            stmt = stmt.where(_purchased() <= end_date)
+        if period:
+            stmt = stmt.where(_within(period))
         if category_id:
             stmt = stmt.where(LineItem.category_id == category_id)
         filtered: Select[tuple[LineItem]] = self._apply_ownership(stmt)
@@ -145,8 +152,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         view: ItemView,
         *,
         search: str | None = None,
-        start_date: datetime | None = None,
-        end_date: datetime | None = None,
+        period: DateRange | None = None,
         category_id: uuid.UUID | None = None,
         skip: int = 0,
         limit: int = 20,
@@ -162,8 +168,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         stmt = self._filtered_items(
             view,
             search=search,
-            start_date=start_date,
-            end_date=end_date,
+            period=period,
             category_id=category_id,
         )
         total: int = (
@@ -182,8 +187,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         view: ItemView,
         *,
         search: str | None = None,
-        start_date: datetime | None = None,
-        end_date: datetime | None = None,
+        period: DateRange | None = None,
         category_id: uuid.UUID | None = None,
     ) -> ItemSpend:
         """What the matching items cost, and what was held out because it is unreliable.
@@ -195,8 +199,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         matching = self._filtered_items(
             view,
             search=search,
-            start_date=start_date,
-            end_date=end_date,
+            period=period,
             category_id=category_id,
         ).subquery()
         counted = Receipt.status == ReceiptStatus.PARSED
@@ -217,17 +220,16 @@ class ReceiptRepository(BaseRepository[Receipt]):
         view: ItemView,
         *,
         search: str | None = None,
-        start_date: datetime | None = None,
-        end_date: datetime | None = None,
+        period: DateRange | None = None,
     ) -> list[CategorySpend]:
         """The matching items' spend per category, highest first, counted like `item_spend`.
 
         Ignores any category filter on purpose: it is the list the user picks a
         category from, so it must keep showing the other categories.
         """
-        matching = self._filtered_items(
-            view, search=search, start_date=start_date, end_date=end_date, category_id=None
-        ).where(Receipt.status == ReceiptStatus.PARSED)
+        matching = self._filtered_items(view, search=search, period=period, category_id=None).where(
+            Receipt.status == ReceiptStatus.PARSED
+        )
         stmt = (
             matching.with_only_columns(
                 Category.id,
@@ -255,18 +257,18 @@ class ReceiptRepository(BaseRepository[Receipt]):
         count: int = (await self.session.execute(stmt)).scalar_one()
         return count
 
-    async def month_total(self, start: datetime, end: datetime) -> tuple[Decimal, int]:
-        """The current user's spend in `[start, end)` and how many receipts it covers (D1, D2).
+    async def month_total(self, period: DateRange) -> tuple[Decimal, int]:
+        """The current user's spend over `period` and how many receipts it covers (D1, D2).
 
         Sums line-item totals, not printed receipt totals, and only over `parsed`
         receipts: one under manual review has an unreliable total and is held
-        out (domain model invariants 4 and 5). Filters on the transaction date,
-        never the upload date, so a back-dated receipt lands in its own month.
+        out (domain model invariants 4 and 5). Files a receipt by its printed
+        date, so a back-dated one lands in its own month, and by its upload date
+        only when it has none — the rule every other figure uses too.
         """
         in_month = select(Receipt.id).where(
             Receipt.status == ReceiptStatus.PARSED,
-            Receipt.transaction_date >= start,
-            Receipt.transaction_date < end,
+            _within(period),
         )
         in_month = self._apply_ownership(in_month)
         total_stmt = select(func.coalesce(func.sum(LineItem.total_price), 0)).where(
@@ -277,8 +279,8 @@ class ReceiptRepository(BaseRepository[Receipt]):
         count: int = (await self.session.execute(count_stmt)).scalar_one()
         return total, count
 
-    async def month_under_review(self, start: datetime, end: datetime) -> tuple[int, Decimal]:
-        """How many of the user's receipts in `[start, end)` await review, and their value (D3).
+    async def month_under_review(self, period: DateRange) -> tuple[int, Decimal]:
+        """How many of the user's receipts over `period` await review, and their value (D3).
 
         A receipt under review may lack a readable date, so it is placed by its
         purchase date where it has one and by its upload date otherwise: it must
@@ -289,8 +291,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         in_month = self._apply_ownership(
             select(Receipt.id).where(
                 Receipt.status == ReceiptStatus.MANUAL_REVIEW,
-                _purchased() >= start,
-                _purchased() < end,
+                _within(period),
             )
         )
         count_stmt = select(func.count()).select_from(in_month.subquery())
@@ -311,8 +312,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         skip: int,
         limit: int,
         status: ReceiptStatus | None = None,
-        start_date: datetime | None = None,
-        end_date: datetime | None = None,
+        period: DateRange | None = None,
         search_query: str | None = None,
         order: ReceiptOrder = ReceiptOrder.NEWEST,
     ) -> tuple[typing.Sequence[Receipt], int]:
@@ -328,10 +328,8 @@ class ReceiptRepository(BaseRepository[Receipt]):
 
         if status:
             base_stmt = base_stmt.where(self.model_class.status == status)
-        if start_date:
-            base_stmt = base_stmt.where(_purchased() >= start_date)
-        if end_date:
-            base_stmt = base_stmt.where(_purchased() <= end_date)
+        if period:
+            base_stmt = base_stmt.where(_within(period))
         if search_query:
             search_term = f"%{search_query}%"
             # Receipt has merchant_name, LineItem has name

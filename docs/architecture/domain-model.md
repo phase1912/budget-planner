@@ -103,7 +103,12 @@ Rules that must hold at all times. Each is a candidate for a test.
    month is snapshotted only once it has ended by the user's clock, and has ended
    somewhere on Earth. The month on screen refetches after every such change, so the
    new figure shows in the same session (F6.5).
-8. Category statistics cover a period of whole days, both ends included, placed by
+8. Every date filter is a run of whole days, both ends included (E2, ADR-0012): the
+   receipts list, the categorisation screen, the month view and the statistics all
+   read "10 to 24 July" as the same fifteen days, bounded from midnight on the first
+   day to midnight after the last, exclusive. A range ending before it starts is
+   refused, never answered as empty.
+9. Category statistics cover such a period, placed by
    the same date a month total uses and counting the same items: those on `parsed`
    receipts, with items on receipts under review named beside the figures, never
    silently dropped (E1, D3). Each category gets its total, its share of the period's

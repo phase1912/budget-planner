@@ -4,6 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from app.domain.budget import BudgetMonth, LimitUsage, MonthProgress, limit_usage, may_finalise
+from app.domain.periods import DateRange
 from app.models.monthly_snapshot import MonthlySnapshot
 from app.repository.receipt import ReceiptRepository
 from app.repository.snapshot import MonthlySnapshotRepository
@@ -101,10 +102,9 @@ class BudgetService:
 
     async def _live(self, month: BudgetMonth, progress: MonthProgress) -> MonthSummary:
         """The month computed from its receipts as they stand now."""
-        total, count = await self.receipts.month_total(month.start, month.end)
-        excluded_count, excluded_amount = await self.receipts.month_under_review(
-            month.start, month.end
-        )
+        days = DateRange.of_month(month)
+        total, count = await self.receipts.month_total(days)
+        excluded_count, excluded_amount = await self.receipts.month_under_review(days)
         has_receipts = count > 0 or excluded_count > 0 or await self.receipts.has_any()
         return MonthSummary(
             month=month,

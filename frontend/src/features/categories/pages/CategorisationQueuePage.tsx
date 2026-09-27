@@ -68,8 +68,8 @@ function selectionFrom(params: URLSearchParams) {
   return {
     view,
     categoryId: params.get("category"),
-    start: dated ? `${start}T00:00:00Z` : undefined,
-    end: dated ? `${end}T23:59:59Z` : undefined,
+    start: dated ? start : undefined,
+    end: dated ? end : undefined,
   };
 }
 

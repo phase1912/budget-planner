@@ -141,3 +141,37 @@ async def test_a_period_ending_before_it_starts_is_refused(db_session: AsyncSess
 
     assert response.status_code == 422
     assert response.json()["code"] == "invalid_period"
+
+
+@pytest.mark.asyncio
+async def test_a_purchase_in_the_last_second_of_the_last_day_is_still_inside(
+    db_session: AsyncSession,
+) -> None:
+    """E2: the end day is included whole — up to midnight, not up to 23:59:59."""
+    user = await UserFactory.create_async()
+    late = datetime(2026, 7, 24, 23, 59, 59, 500000, tzinfo=UTC)
+    await _bought(db_session, user, late, [("4.00", DINING)])
+
+    body = (await _statistics(db_session, user, "2026-07-10", "2026-07-24")).json()
+
+    assert _rows(body) == [("Dining", "4.00", "100.0", 1)]
+
+
+@pytest.mark.asyncio
+async def test_a_list_given_only_one_end_of_a_period_is_refused(db_session: AsyncSession) -> None:
+    """A half-given range is a mistake, not "from then on": the same rule as statistics."""
+    user = await UserFactory.create_async()
+
+    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
+        yield db_session
+
+    app = create_app()
+    app.dependency_overrides[get_current_user] = lambda: user
+    app.dependency_overrides[get_db_session] = override_get_db
+    current_user_id.set(user.id)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        receipts = await client.get("/receipts", params={"start": "2026-07-10"})
+        items = await client.get("/receipts/line-items", params={"end": "2026-07-10"})
+
+    assert (receipts.status_code, items.status_code) == (422, 422)
+    assert receipts.json()["code"] == "invalid_period"

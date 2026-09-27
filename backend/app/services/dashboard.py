@@ -1,11 +1,12 @@
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from decimal import Decimal
 
 from app.domain.budget import BudgetMonth, ReceiptOrder
 from app.domain.categories import ItemView
+from app.domain.periods import DateRange
 from app.models.receipt import Receipt
 from app.repository.receipt import CategorySpend, ReceiptRepository
 from app.services.budget import BudgetService, MonthSummary
@@ -56,13 +57,10 @@ class DashboardService:
         summary = await self.budget.month_summary(
             month, today, user_id=user_id, now=now, limit=limit
         )
-        # The receipts list's date filter is inclusive at both ends.
-        last_second = month.end - timedelta(seconds=1)
+        days = DateRange.of_month(month)
         order = ReceiptOrder.LARGEST if summary.progress.is_complete else ReceiptOrder.NEWEST
         receipts, receipts_in_month = await self.receipts.list_paginated(
-            0, LISTED_RECEIPTS, start_date=month.start, end_date=last_second, order=order
+            0, LISTED_RECEIPTS, period=days, order=order
         )
-        categories = await self.receipts.spend_by_category(
-            ItemView.ALL, start_date=month.start, end_date=last_second
-        )
+        categories = await self.receipts.spend_by_category(ItemView.ALL, period=days)
         return MonthDashboard(summary, categories, receipts, receipts_in_month)
