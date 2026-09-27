@@ -133,6 +133,14 @@ The landing view gets all three in one round trip (F6.7):
 the month's receipts (E3), all bounded by the same month. Which receipts it lists is
 the server's call: the newest of a running month, the biggest of a finished one.
 
+Statistics (E7) read the same items over any run of days:
+`GET /api/v1/statistics/categories?start=&end=` goes through `StatisticsService`, which
+takes the per-category spend from the receipts repository and leaves the ranking and
+the shares to `app/domain/statistics.py`, so the rule lives in one pure function. Every
+one of these period queries filters one user's receipts by
+`coalesce(transaction_date, created_at)`; the `ix_receipts_user_purchased` expression
+index and `ix_line_items_receipt_id` exist for exactly that (F7.1).
+
 ## Security posture
 
 - Receipt images and extracted financial fields are encrypted at rest (N1).

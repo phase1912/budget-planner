@@ -51,7 +51,7 @@ Sorted by the flow they belong to, not by file name.
 | `upload-3-resolve.html` | `/upload/resolve` | F4.7 | A10, A14, B2–B4, B7 |
 | `categorisation.html` | `/categories` | F5.3 · F5.4 | C3, C4, C5 |
 | `categories.html` | `/categories/manage` | F5.1 · F5.6 | C1, C2, C6, C7 |
-| `statistics.html` | `/statistics` | F7.7 | E1–E4, E6 |
+| `statistics.html` | `/statistics` | F7.1–F7.6 | E1–E6, N6 |
 | `goals.html` | `/goals` | F8.10 | F1–F9 |
 | `dashboard-mobile.html` · `upload-mobile.html` | — | F9.6.2 | — |
 

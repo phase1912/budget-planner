@@ -103,6 +103,13 @@ Rules that must hold at all times. Each is a candidate for a test.
    month is snapshotted only once it has ended by the user's clock, and has ended
    somewhere on Earth. The month on screen refetches after every such change, so the
    new figure shows in the same session (F6.5).
+8. Category statistics cover a period of whole days, both ends included, placed by
+   the same date a month total uses and counting the same items: those on `parsed`
+   receipts, with items on receipts under review named beside the figures, never
+   silently dropped (E1, D3). Each category gets its total, its share of the period's
+   spend to one decimal place and its item count — a "transaction" here is a line
+   item, since one receipt spreads across categories — ranked by spend, ties by name
+   (E4). A period whose spend is zero or less gives every share as 0.
 
 **Position matching**
 

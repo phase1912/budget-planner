@@ -10,6 +10,7 @@ import { apiClient } from "@/api/client";
 import { CategoriesStore } from "@/stores/CategoriesStore";
 import { ReceiptStore } from "@/stores/ReceiptStore";
 import { BudgetStore } from "@/stores/BudgetStore";
+import { StatisticsStore } from "@/stores/StatisticsStore";
 
 /**
  * Single instantiation point for every MobX store in the client (F9.2.1). Feature
@@ -26,6 +27,7 @@ export class RootStore {
   readonly receiptStore: ReceiptStore;
   readonly categoriesStore: CategoriesStore;
   readonly budgetStore: BudgetStore;
+  readonly statisticsStore: StatisticsStore;
 
   constructor() {
     this.themeStore = new ThemeStore();
@@ -38,11 +40,14 @@ export class RootStore {
     this.uploadStore = new UploadStore(apiClient, this.toastStore, refreshMonth);
     this.receiptStore = new ReceiptStore(this.toastStore, refreshMonth);
     this.categoriesStore = new CategoriesStore();
-    // The month view remembers where it was left; a new account starts afresh.
+    this.statisticsStore = new StatisticsStore();
+    // The month view remembers where it was left; a new account starts afresh,
+    // and never sees the previous one's figures while its own load.
     reaction(
       () => this.authStore.user?.id,
       () => {
         this.budgetStore.reset();
+        this.statisticsStore.reset();
       },
     );
   }

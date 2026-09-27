@@ -21,7 +21,7 @@ def test_editorconfig_covers_python_and_typescript() -> None:
 
 def test_license_file_exists() -> None:
     license_text = (REPO_ROOT / "LICENSE").read_text()
-    assert "MIT License" in license_text
+    assert "PolyForm Strict License" in license_text
 
 
 def test_contributing_states_branch_naming_and_commit_conventions() -> None:

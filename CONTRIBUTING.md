@@ -4,6 +4,15 @@ This project is worked ticket-first: every behavioural change is attached to a G
 issue, implemented on its own branch, and lands through a pull request. A one-line typo
 fix does not need this; anything that changes behaviour does.
 
+## Licensing of contributions
+
+The project is source-available under the PolyForm Strict License 1.0.0 (see
+[`LICENSE`](LICENSE) and [ADR 0011](docs/adr/0011-source-available-under-polyform-strict.md)),
+and its author intends to offer it commercially. Outside contributions are therefore
+accepted only by prior agreement: open an issue first. By submitting a contribution you
+agree that the author may license it, together with the rest of the project, under any
+terms, including commercial ones.
+
 ## Finding or writing the ticket
 
 The plan lives in [`docs/planning/backlog.yaml`](docs/planning/backlog.yaml) — GitHub

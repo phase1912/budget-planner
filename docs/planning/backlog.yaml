@@ -1424,6 +1424,29 @@ epics:
         demo: >
           Open Statistics on a seeded account and read the table: every category with its
           total, its share and its item count, biggest first.
+        tasks:
+          - >
+            the engine - StatisticsPeriod (whole days, both ends included) and rank_categories
+            in app/domain/statistics.py: total, share to one decimal place and item count per
+            category, highest spend first, ties by name, no division by zero on a period of
+            refunds. StatisticsService feeds it the receipts repository's per-category spend,
+            counted like the month total, with items under review named beside it (D3).
+          - >
+            GET /api/v1/statistics/categories?start=&end= - a period ending before it starts
+            is refused with 422 invalid_period. The endpoint already takes any range; F7.2
+            adds the presets, the picker and the edge cases on screen.
+          - >
+            the database part - an expression index on receipts (user_id,
+            coalesce(transaction_date, created_at)) and one on line_items.receipt_id: every
+            month total, list and statistic filters by exactly that, and neither existed.
+          - >
+            the Statistics screen at /statistics, replacing the placeholder: this month so
+            far, the ranked table with each category leading to its items for the period,
+            and the held-out items named above it. On a phone the item count moves under the
+            category name. The chart, comparison, empty state and export stay with F7.2-F7.6.
+          - >
+            BR-5's E1/E4 scenario runs; the other three stay skipped, each naming the
+            feature that brings it.
       - key: F7.2
         title: Arbitrary date-range support
         labels: [backend, frontend]

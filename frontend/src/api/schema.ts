@@ -549,6 +549,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/statistics/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Category Statistics
+         * @description The caller's spend per category between two dates, ranked highest first (BRD E1, E4).
+         *
+         *     Only the caller's own receipts are read (N2). A period ending before it
+         *     starts is refused with 422 rather than answered as an empty one.
+         */
+        get: operations["get_category_statistics_api_v1_statistics_categories_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -619,6 +642,55 @@ export interface components {
             item_count: number;
             /** Total Amount */
             total_amount: string;
+        };
+        /**
+         * CategoryStandingResponse
+         * @description One category's row in the ranked breakdown (BRD E1).
+         *
+         *     `category_id` is null for items with no category at all. `share` is the
+         *     percentage of the period's spend, to one decimal place.
+         */
+        CategoryStandingResponse: {
+            /** Category Id */
+            category_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Total */
+            total: string;
+            /** Share */
+            share: string;
+            /** Item Count */
+            item_count: number;
+        };
+        /**
+         * CategoryStatisticsResponse
+         * @description A period's spend by category, highest first (BRD E1, E4).
+         *
+         *     `start` and `end` are both included. `total` and `item_count` cover the
+         *     counted items; `excluded_*` count the items on receipts under manual review,
+         *     left out of every figure here (D3).
+         */
+        CategoryStatisticsResponse: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Total */
+            total: string;
+            /** Item Count */
+            item_count: number;
+            /** Categories */
+            categories: components["schemas"]["CategoryStandingResponse"][];
+            /** Excluded Count */
+            excluded_count: number;
+            /** Excluded Amount */
+            excluded_amount: string;
         };
         /**
          * CategoryUpdate
@@ -2209,6 +2281,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MonthDashboardResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_category_statistics_api_v1_statistics_categories_get: {
+        parameters: {
+            query: {
+                /** @description First day of the period, included */
+                start: string;
+                /** @description Last day of the period, included */
+                end: string;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryStatisticsResponse"];
                 };
             };
             /** @description Validation Error */
