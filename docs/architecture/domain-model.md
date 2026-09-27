@@ -123,6 +123,10 @@ Rules that must hold at all times. Each is a candidate for a test.
    is its total less the previous one, and as a percentage of the previous total to
    one decimal place; a category new this period has no percentage (never a division
    by zero), and one spent on only before stays listed at zero, down 100%.
+11. A period holding no receipts at all — of any status, filed by the same date — has
+   no data, not a spend of zero (E5): it is answered with a receipt count of 0 and no
+   totals, and shown as "No receipts in …", never as a table of zeroes. A period whose
+   receipts are all under review is not empty: they are named, as invariant 5 says.
 
 **Position matching**
 

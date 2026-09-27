@@ -302,6 +302,15 @@ class ReceiptRepository(BaseRepository[Receipt]):
         value = Decimal((await self.session.execute(value_stmt)).scalar_one())
         return count, value
 
+    async def count_in(self, period: DateRange) -> int:
+        """How many of the user's receipts, of any status, are filed under `period` (E5).
+
+        What tells an empty period from one whose spend happens to be zero: a
+        receipt under review or still being read counts here, though not in a total.
+        """
+        stmt = self._apply_ownership(select(func.count(Receipt.id)).where(_within(period)))
+        return int((await self.session.execute(stmt)).scalar_one())
+
     async def has_any(self) -> bool:
         """Whether the current user has stored a receipt yet; before that, `/` is a welcome."""
         stmt = self._apply_ownership(select(Receipt.id)).limit(1)

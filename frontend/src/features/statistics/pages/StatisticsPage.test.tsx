@@ -35,6 +35,7 @@ function july(overrides: Partial<CategoryStatistics> = {}): CategoryStatistics {
   return {
     start: "2026-07-01",
     end: "2026-07-27",
+    receipt_count: 20,
     total: "1128.60",
     item_count: 82,
     categories: [
@@ -96,10 +97,56 @@ describe("StatisticsPage", () => {
     );
   });
 
-  it("says plainly when nothing was spent in the period", () => {
-    statisticsStore.statistics = july({ categories: [], total: "0", item_count: 0 });
+  it("says a period holds no receipts instead of showing a table of zeroes (E5)", () => {
+    Object.assign(statisticsStore, { start: "2025-03-01", end: "2025-03-31" });
+    statisticsStore.statistics = july({
+      start: "2025-03-01",
+      end: "2025-03-31",
+      receipt_count: 0,
+      total: null,
+      item_count: null,
+      categories: [],
+    });
     renderPage();
-    expect(screen.getByText("Nothing was spent in 1 – 27 Jul 2026.")).toBeInTheDocument();
+
+    expect(screen.getByText("No receipts in March 2025")).toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Pick another period" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    Object.assign(statisticsStore, { start: "2026-07-01", end: "2026-07-27" });
+  });
+
+  it("says when the only receipts in a period are waiting for review", () => {
+    statisticsStore.statistics = july({
+      categories: [],
+      total: "0",
+      item_count: 0,
+      excluded_count: 1,
+      excluded_amount: "30",
+    });
+    renderPage();
+    expect(
+      screen.getByText("Nothing is counted in 1 – 27 Jul 2026 until those receipts are reviewed."),
+    ).toBeInTheDocument();
+  });
+
+  it("says there is nothing to compare against when the previous period is empty", () => {
+    statisticsStore.compare = true;
+    statisticsStore.statistics = july({
+      comparison: {
+        start: "2026-06-01",
+        end: "2026-06-27",
+        receipt_count: 0,
+        total: null,
+        item_count: null,
+        stops_mid_month: true,
+      },
+    });
+    renderPage();
+    expect(
+      screen.getByText("No receipts in 1 – 27 Jun 2026, so every category is new against it."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/still running/)).not.toBeInTheDocument();
   });
 
   it("says why the statistics could not be loaded", () => {
@@ -155,6 +202,7 @@ describe("StatisticsPage", () => {
       comparison: {
         start: "2026-06-01",
         end: "2026-06-27",
+        receipt_count: 18,
         total: "812.40",
         item_count: 70,
         stops_mid_month: true,

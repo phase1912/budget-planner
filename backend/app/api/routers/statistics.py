@@ -36,7 +36,8 @@ async def get_category_statistics(
     With `compare`, each category also carries its change against the previous
     like-for-like period (E3). Only the caller's own receipts are read (N2). A
     period ending before it starts is refused with 422 rather than answered as
-    an empty one.
+    an empty one; a period holding no receipts says so with `receipt_count` 0 and
+    no totals, rather than a report of zeroes (E5).
     """
     stats = await StatisticsService(ReceiptRepository(session)).category_statistics(
         period, compare=compare
@@ -54,19 +55,22 @@ async def get_category_statistics(
             )
             for c in comparison.changes
         ]
+    found = stats.receipt_count > 0
     return CategoryStatisticsResponse(
         start=stats.period.start,
         end=stats.period.end,
-        total=stats.total,
-        item_count=stats.item_count,
+        receipt_count=stats.receipt_count,
+        total=stats.total if found else None,
+        item_count=stats.item_count if found else None,
         categories=rows,
         excluded_count=stats.excluded_count,
         excluded_amount=stats.excluded_amount,
         comparison=ComparisonResponse(
             start=comparison.period.start,
             end=comparison.period.end,
-            total=comparison.total,
-            item_count=comparison.item_count,
+            receipt_count=comparison.receipt_count,
+            total=comparison.total if comparison.receipt_count else None,
+            item_count=comparison.item_count if comparison.receipt_count else None,
             stops_mid_month=comparison.stops_mid_month,
         )
         if comparison

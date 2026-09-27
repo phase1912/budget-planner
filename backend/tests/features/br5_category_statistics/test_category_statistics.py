@@ -1,11 +1,10 @@
 """Runs BR-5's Gherkin scenarios (F0.6.2).
 
-E7 is under way: F7.1 delivers the ranked category breakdown (E1, E4), F7.2
-any run of days (E2) and F7.3 the comparison of two periods (E3), run here
-against `StatisticsService` with an in-memory repository; the SQL behind it is
-proven in tests/api/test_category_statistics.py. The remaining scenario asserts
-something a later feature owns, so it stays skipped until then, as named in
-`AWAITING`.
+E7 delivers them all: the ranked category breakdown (E1, E4 — F7.1), any run
+of days (E2 — F7.2), the comparison of two periods (E3 — F7.3) and the explicit
+"no receipts" answer (E5 — F7.4). They run here against `StatisticsService`
+with an in-memory repository; the SQL behind it is proven in
+tests/api/test_category_statistics.py.
 """
 
 import asyncio
@@ -15,7 +14,6 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 
 import pytest
-from pytest import FixtureRequest
 from pytest_bdd import given, scenarios, then, when
 
 from app.domain.categories import ItemView
@@ -24,17 +22,6 @@ from app.repository.receipt import CategorySpend, ItemSpend
 from app.services.statistics import CategoryStatistics, StatisticsService
 
 scenarios("category_statistics.feature")
-
-AWAITING = {
-    "test_request_statistics_for_a_period_with_no_data": "the no-data answer: F7.4 (E5)",
-}
-
-
-@pytest.fixture(autouse=True)
-def skip_until_its_feature_lands(request: FixtureRequest) -> None:
-    reason = AWAITING.get(request.node.name)
-    if reason is not None:
-        pytest.skip(f"Awaiting {reason}")
 
 
 @dataclass
@@ -60,6 +47,10 @@ class _InMemoryReceipts:
             CategorySpend(self.ids.setdefault(name, uuid.uuid4()), name, len(t), sum(t, Decimal(0)))
             for name, t in totals.items()
         ]
+
+    async def count_in(self, period: DateRange) -> int:
+        # One receipt per item is enough here: only zero versus some matters.
+        return sum(1 for item in self.items if period.lower <= item.bought < period.upper)
 
     async def item_spend(self, view: ItemView, *, period: DateRange) -> ItemSpend:
         return ItemSpend(Decimal(0), 0, Decimal(0))
@@ -174,3 +165,23 @@ def change_per_category(outcome: dict[str, CategoryStatistics]) -> None:
         "Groceries": (Decimal("-69.80"), Decimal("-8.6")),
         "Dining": (Decimal("88.00"), Decimal("29.5")),
     }
+
+
+@given("the user has no receipts dated in March 2025")
+def nothing_in_march(receipts: _InMemoryReceipts) -> None:
+    # Receipts either side of March, so only the month itself is empty.
+    receipts.items.append(_Item(datetime(2025, 2, 28, 20, tzinfo=UTC), "Groceries", Decimal(9)))
+    receipts.items.append(_Item(datetime(2025, 4, 1, 8, tzinfo=UTC), "Groceries", Decimal(9)))
+
+
+@when("the user requests category statistics for March 2025")
+def request_march(receipts: _InMemoryReceipts, outcome: dict[str, CategoryStatistics]) -> None:
+    service = StatisticsService(receipts)  # type: ignore[arg-type]
+    march = DateRange(date(2025, 3, 1), date(2025, 3, 31))
+    outcome["march"] = asyncio.run(service.category_statistics(march))
+
+
+@then("the agent should inform the user that no receipts were found for that period")
+def no_receipts_found(outcome: dict[str, CategoryStatistics]) -> None:
+    march = outcome["march"]
+    assert (march.receipt_count, march.categories) == (0, [])

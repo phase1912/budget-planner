@@ -32,13 +32,15 @@ class ComparisonResponse(BaseModel):
 
     `stops_mid_month` is true when the requested period ends partway through a
     month, so the previous one stops on the same day rather than taking the
-    whole month (D4): the screen says so.
+    whole month (D4): the screen says so. With no receipts in that period,
+    `receipt_count` is 0 and `total` and `item_count` are null (E5).
     """
 
     start: date
     end: date
-    total: Decimal
-    item_count: int
+    receipt_count: int
+    total: Decimal | None
+    item_count: int | None
     stops_mid_month: bool
 
 
@@ -49,12 +51,17 @@ class CategoryStatisticsResponse(BaseModel):
     counted items; `excluded_*` count the items on receipts under manual review,
     left out of every figure here (D3). `comparison` is present only when asked for;
     categories spent on only in the previous period are then listed too, at zero.
+
+    `receipt_count` counts every receipt filed under the period, of any status.
+    When it is 0 the period has no data: `total` and `item_count` are null rather
+    than zeroes that would read like a real, empty spend (E5).
     """
 
     start: date
     end: date
-    total: Decimal
-    item_count: int
+    receipt_count: int
+    total: Decimal | None
+    item_count: int | None
     categories: list[CategoryStandingResponse]
     excluded_count: int
     excluded_amount: Decimal

@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
+import { CalendarX } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { Link } from "react-router-dom";
 
 import { CategoryDot } from "@/features/categories/components/CategoryDot";
 import {
+  Button,
   Card,
   DateRangeFilter,
+  EmptyState,
   ErrorState,
   LoadingState,
   Note,
@@ -20,7 +23,7 @@ import {
 import type { Preset } from "@/stores/StatisticsStore";
 import { useStores } from "@/stores/StoreContext";
 import { Change } from "../components/Change";
-import { likeForLikeNote, periodLabel } from "../periodLabel";
+import { likeForLikeNote, periodLabel, periodName } from "../periodLabel";
 
 const AMOUNT = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
@@ -32,7 +35,8 @@ const AMOUNT = new Intl.NumberFormat("en-US", {
  * this month so far, a preset, or any run of days the user picks (E2 — F7.2),
  * optionally against the previous like-for-like period (E3 — F7.3). Items on
  * receipts under review are named above the table rather than silently left out
- * (D3). The empty state, the chart and export arrive with F7.4-F7.6.
+ * (D3). A period holding no receipts says so rather than showing a table of
+ * zeroes (E5 — F7.4). The chart and export arrive with F7.5 and F7.6.
  */
 export const StatisticsPage = observer(function StatisticsPage() {
   const { statisticsStore, authStore } = useStores();
@@ -103,8 +107,19 @@ export const StatisticsPage = observer(function StatisticsPage() {
           </label>
         </Card>
 
-        {comparison?.stops_mid_month && (
-          <Note tone="info">{likeForLikeNote({ start, end }, comparison)}</Note>
+        {statistics && statistics.receipt_count > 0 && comparison && (
+          <>
+            {comparison.receipt_count === 0 ? (
+              <Note tone="info">
+                No receipts in {periodName(comparison.start, comparison.end)}, so every category is
+                new against it.
+              </Note>
+            ) : (
+              comparison.stops_mid_month && (
+                <Note tone="info">{likeForLikeNote({ start, end }, comparison)}</Note>
+              )
+            )}
+          </>
         )}
 
         {error && (
@@ -113,6 +128,27 @@ export const StatisticsPage = observer(function StatisticsPage() {
 
         {!statistics ? (
           !error && <LoadingState title="Adding up your categories…" />
+        ) : statistics.receipt_count === 0 ? (
+          // No receipts is not a spend of zero: no table of zeroes (BRD E5, states.html).
+          <Card variant="surface" className="px-5 py-10">
+            <EmptyState
+              icon={CalendarX}
+              title={`No receipts in ${periodName(start, end)}`}
+              message="Nothing was recorded for that period. This is not a zero — there is simply nothing to total."
+              action={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="min-h-11 md:min-h-0"
+                  onClick={() => {
+                    setPicking(true);
+                  }}
+                >
+                  Pick another period
+                </Button>
+              }
+            />
+          </Card>
         ) : (
           <>
             {statistics.excluded_count > 0 && (
@@ -139,8 +175,9 @@ export const StatisticsPage = observer(function StatisticsPage() {
               className={`transition-opacity ${isLoading ? "opacity-60" : ""}`}
             >
               {statistics.categories.length === 0 ? (
+                // Receipts exist but all are held out for review, named in the note above.
                 <p className="m-0 p-5 text-md text-muted-foreground">
-                  Nothing was spent in {period}.
+                  Nothing is counted in {period} until those receipts are reviewed.
                 </p>
               ) : (
                 <Table>
