@@ -47,9 +47,10 @@ export const UploadPage = observer(function UploadPage() {
   }
 
   return (
-    <Container size="narrow" className="py-9">
-      <Stack className="gap-6">
-        <div className="flex items-center">
+    <Container size="narrow" gutter={false} className="py-4 md:py-9">
+      <Stack className="gap-4 md:gap-6">
+        {/* A phone's header already says "New receipt" (upload-mobile.html). */}
+        <div className="hidden items-center md:flex">
           <span className="inline-flex items-center gap-2.5">
             <span className="inline-flex items-center justify-center w-[28px] h-[28px] border border-transparent rounded-pill bg-primary text-primary-foreground text-[13px] font-bold">
               1
@@ -73,18 +74,20 @@ export const UploadPage = observer(function UploadPage() {
         </div>
 
         <div>
-          <h1 className="m-0 text-[30px] font-bold tracking-tight">Add the photos</h1>
+          <h1 className="m-0 text-[22px] font-bold tracking-tight md:text-[30px]">
+            Add the photos
+          </h1>
           <p className="m-0 text-[15px] text-muted-foreground mt-1">
             JPEG, PNG, HEIC or a PDF scan. Up to 10 photos and 50&nbsp;MB per receipt.
           </p>
         </div>
 
         <div
-          className="inline-flex gap-1 border border-border rounded-control bg-muted p-1 self-start"
+          className="flex w-full gap-1 border border-border rounded-control bg-muted p-1 md:inline-flex md:w-auto md:self-start"
           role="tablist"
         >
           <button
-            className={`inline-flex items-center gap-2 border-none rounded-[9px] px-4 py-[9px] text-sm cursor-pointer transition-colors ${
+            className={`inline-flex flex-1 items-center justify-center gap-2 border-none rounded-[9px] px-4 py-[9px] text-sm cursor-pointer transition-colors md:flex-none ${
               uploadStore.mode === "single"
                 ? "bg-background text-foreground shadow-raised"
                 : "bg-transparent text-muted-foreground hover:text-foreground"
@@ -112,7 +115,7 @@ export const UploadPage = observer(function UploadPage() {
             One receipt
           </button>
           <button
-            className={`inline-flex items-center gap-2 border-none rounded-[9px] px-4 py-[9px] text-sm cursor-pointer transition-colors ${
+            className={`inline-flex flex-1 items-center justify-center gap-2 border-none rounded-[9px] px-4 py-[9px] text-sm cursor-pointer transition-colors md:flex-none ${
               uploadStore.mode === "multiple"
                 ? "bg-background text-foreground shadow-raised"
                 : "bg-transparent text-muted-foreground hover:text-foreground"
@@ -137,7 +140,7 @@ export const UploadPage = observer(function UploadPage() {
               <polyline points="2 17 12 22 22 17" />
               <polyline points="2 12 17 22 12" />
             </svg>
-            Several receipts
+            Several<span className="hidden md:inline"> receipts</span>
           </button>
         </div>
 
@@ -262,14 +265,21 @@ export const UploadPage = observer(function UploadPage() {
         </Stack>
 
         {uploadStore.totalFilesCount > 0 && (
-          <div className="flex items-center justify-between gap-4 border-t border-border pt-5">
+          <div className="flex flex-col gap-3 border-t border-border pt-5 md:flex-row md:items-center md:justify-between md:gap-4">
             <span className="text-[13px] text-muted-foreground">
               {uploadStore.lines.length} receipt{uploadStore.lines.length === 1 ? "" : "s"} &middot;{" "}
               {uploadStore.totalFilesCount} photos &middot; {uploadStore.allLinesTotalSizeMB}
               &nbsp;MB total
             </span>
-            <div className="flex items-center gap-3">
-              <Button variant="ghost">Cancel</Button>
+            <div className="flex flex-col-reverse gap-2 md:flex-row md:items-center md:gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  uploadStore.startOver();
+                }}
+              >
+                Cancel
+              </Button>
               <Button
                 variant="primary"
                 onClick={handleUploadClick}

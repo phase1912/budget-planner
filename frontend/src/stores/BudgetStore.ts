@@ -9,9 +9,6 @@ import type { Receipt } from "./ReceiptStore";
 
 export type MonthSummary = components["schemas"]["MonthSummaryResponse"];
 
-/** How many of the month's receipts the landing view lists (docs/design/screens/dashboard.html). */
-export const LISTED_RECEIPTS = 6;
-
 function monthIndex({ year, month }: YearMonth): number {
   return year * 12 + (month - 1);
 }
@@ -50,7 +47,7 @@ export class BudgetStore {
   year: number;
   month: number;
   summary: MonthSummary | null = null;
-  /** The month's receipts on show: the latest of a running month, the biggest of a finished one. */
+  /** The month's receipts column: the newest of a running month, the biggest of a finished one. */
   receipts: Receipt[] = [];
   /** The month's spend per category, highest first, counted like its total (D1). */
   spend: CategorySpend[] = [];
@@ -92,17 +89,9 @@ export class BudgetStore {
     return `${String(now.getFullYear())}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
   }
 
-  /**
-   * Whether the month on show is over by the user's calendar, so its receipts
-   * are listed biggest first (docs/design/screens/dashboard-dark.html).
-   */
-  get isPastMonth(): boolean {
-    return monthIndex(this) < monthIndex(this.current);
-  }
-
   /** The future has no receipts yet; the switcher stops at the current month. */
   get canGoForward(): boolean {
-    return this.isPastMonth;
+    return monthIndex(this) < monthIndex(this.current);
   }
 
   /** Show the user's current month. */
@@ -158,9 +147,9 @@ export class BudgetStore {
   }
 
   /**
-   * Load one month's figure, its spend by category and its receipts. A
-   * response that arrives after a newer request was made is dropped, so
-   * clicking through months quickly never shows a stale total.
+   * Load one month's figure, its spend by category and its receipts, in one
+   * request (F6.7). A response that arrives after a newer request was made is
+   * dropped, so clicking through months quickly never shows a stale total.
    */
   async showMonth({ year, month }: YearMonth): Promise<void> {
     const request = ++this.request;
@@ -168,43 +157,20 @@ export class BudgetStore {
     this.month = month;
     this.isLoading = true;
     this.error = null;
-    const bounds = monthRange({ year, month });
-    const range = { start_date: bounds.start, end_date: bounds.end };
     try {
-      const [summary, receipts, items] = await Promise.all([
-        apiClient.GET("/api/v1/budget/months/{year}/{month}", {
-          params: { path: { year, month }, query: { today: this.today } },
-        }),
-        apiClient.GET("/receipts", {
-          params: {
-            query: {
-              page: 1,
-              size: LISTED_RECEIPTS,
-              order: this.isPastMonth ? "largest" : "newest",
-              ...range,
-            },
-          },
-        }),
-        // Only the per-category breakdown is wanted, not the items themselves.
-        apiClient.GET("/receipts/line-items", {
-          params: { query: { view: "all", page: 1, size: 1, ...range } },
-        }),
-      ]);
-      if (summary.error) {
-        throw new Error(errorMessage(summary.error, "Could not load the month"));
-      }
-      if (receipts.error) {
-        throw new Error(errorMessage(receipts.error, "Could not load the month's receipts"));
-      }
-      if (items.error) {
-        throw new Error(errorMessage(items.error, "Could not load where the month went"));
+      const response = await apiClient.GET("/api/v1/budget/months/{year}/{month}/dashboard", {
+        params: { path: { year, month }, query: { today: this.today } },
+      });
+      if (response.error) {
+        throw new Error(errorMessage(response.error, "Could not load the month"));
       }
       if (request !== this.request) return;
+      const { summary, receipts, categories, receipts_in_month } = response.data;
       runInAction(() => {
-        this.summary = summary.data;
-        this.receipts = receipts.data.items;
-        this.spend = items.data.categories;
-        this.receiptsInMonth = receipts.data.total;
+        this.summary = summary;
+        this.receipts = receipts;
+        this.spend = categories;
+        this.receiptsInMonth = receipts_in_month;
         this.isLoading = false;
       });
     } catch (error) {

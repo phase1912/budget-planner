@@ -96,8 +96,14 @@ export const FixExtractionDialog = observer(function FixExtractionDialog() {
       </ModalHeader>
 
       <ModalBody className="flex flex-col gap-3">
-        <div className="grid grid-cols-[minmax(0,1fr)_80px_110px_110px] gap-3 text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground">
+        <div className="hidden md:grid grid-cols-[minmax(0,1fr)_80px_110px_110px] gap-3 text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground">
           <span>Item</span>
+          <span className="text-right">Qty</span>
+          <span className="text-right">Unit</span>
+          <span className="text-right">Total</span>
+        </div>
+        {/* A phone lays each line over two rows; this names the amounts in the second. */}
+        <div className="grid grid-cols-3 gap-2 text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground md:hidden">
           <span className="text-right">Qty</span>
           <span className="text-right">Unit</span>
           <span className="text-right">Total</span>
@@ -106,9 +112,10 @@ export const FixExtractionDialog = observer(function FixExtractionDialog() {
         {items.map((item, row) => (
           <div
             key={row}
-            className="grid grid-cols-[minmax(0,1fr)_80px_110px_110px] gap-3 items-center"
+            className="grid grid-cols-3 gap-2 items-center border-b border-border pb-3 md:grid-cols-[minmax(0,1fr)_80px_110px_110px] md:gap-3 md:border-0 md:pb-0"
           >
             <Input
+              containerClassName="col-span-3 md:col-span-1"
               aria-label={`Name of line ${(row + 1).toString()}`}
               value={item.name}
               onChange={(e) => {
@@ -144,10 +151,10 @@ export const FixExtractionDialog = observer(function FixExtractionDialog() {
       </ModalBody>
 
       <ModalFooter>
-        <span className="text-[13px] text-muted-foreground">
+        <span className="hidden text-[13px] text-muted-foreground md:inline">
           Nothing is stored until you finish the last step.
         </span>
-        <div className="flex items-center gap-[10px]">
+        <div className="flex w-full items-center gap-[10px] md:w-auto [&>*]:flex-1 md:[&>*]:flex-none">
           <Button variant="ghost" onClick={close}>
             Cancel
           </Button>

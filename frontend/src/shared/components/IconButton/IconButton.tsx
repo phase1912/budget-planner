@@ -4,20 +4,24 @@ export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
   /** Required: an icon alone says nothing to a screen reader. */
   "aria-label": string;
   tone?: "default" | "danger";
+  /** Outlined, as `.btn-icon--bordered`: a standalone target rather than one in a group. */
+  bordered?: boolean;
 }
 
 /** A square button holding only an icon (docs/design/design.css, `.btn-icon`). */
 export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ className, tone = "default", type = "button", ...props }, ref) => {
+  ({ className, tone = "default", bordered = false, type = "button", ...props }, ref) => {
     const toneClasses =
       tone === "danger"
         ? "bg-tone-error-bg text-tone-error-text hover:opacity-80"
-        : "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground";
+        : bordered
+          ? "bg-background text-foreground hover:bg-muted"
+          : "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground";
     return (
       <button
         ref={ref}
         type={type}
-        className={`inline-flex items-center justify-center p-2 border border-transparent rounded-chip cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${toneClasses} ${className ?? ""}`}
+        className={`inline-flex items-center justify-center p-2 border ${bordered ? "border-border" : "border-transparent"} rounded-chip cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${toneClasses} ${className ?? ""}`}
         {...props}
       />
     );

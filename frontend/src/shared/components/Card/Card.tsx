@@ -36,7 +36,7 @@ CardHeader.displayName = "CardHeader";
 
 export const CardBody = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={`px-6 py-5.5 ${className ?? ""}`} {...props} />
+    <div ref={ref} className={`px-4 py-4 md:px-6 md:py-5.5 ${className ?? ""}`} {...props} />
   ),
 );
 CardBody.displayName = "CardBody";

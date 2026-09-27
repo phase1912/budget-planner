@@ -23,7 +23,9 @@ interface LimitStatusProps {
  * docs/design/screens/dashboard.html and, over the limit, dashboard-dark.html.
  *
  * Over the limit the figure is not clamped at 100%: it reads in the error tone,
- * says by how much, and the full bar is notched where the limit sat.
+ * says by how much, and the full bar is notched where the limit sat. A phone
+ * puts the bar first and drops the currency and "your … limit" from the text
+ * (dashboard-mobile.html).
  */
 export function LimitStatus({ limit, percent, remaining, currency, children }: LimitStatusProps) {
   const left = Number(remaining);
@@ -31,21 +33,35 @@ export function LimitStatus({ limit, percent, remaining, currency, children }: L
   const tone = over ? "text-error" : "text-primary";
   // Past the limit the bar is the whole spend, so the limit sits limit/spend along it.
   const mark = over ? (Number(limit) / (Number(limit) - left)) * 100 : undefined;
+  const wide = (text: string) => <span className="hidden md:inline">{text}</span>;
   return (
-    <div className="mt-1.5 flex flex-col gap-1.75">
+    <div className="flex flex-col gap-1.75 md:mt-1.5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
-        <span className={`tabular-nums text-md font-semibold ${tone}`}>
-          {percent}% of your {AMOUNT.format(Number(limit))} {currency} limit
+        <span className={`tabular-nums text-base font-semibold md:text-md ${tone}`}>
+          {percent}% of {wide("your ")}
+          {AMOUNT.format(Number(limit))}
+          {wide(` ${currency} limit`)}
         </span>
         <span
-          className={`tabular-nums text-md ${over ? "font-semibold text-error" : "text-muted-foreground"}`}
+          className={`tabular-nums text-base md:text-md ${over ? "font-semibold text-error" : "text-muted-foreground"}`}
         >
-          {over
-            ? `Over by ${AMOUNT.format(-left)} ${currency}`
-            : `${AMOUNT.format(left)} ${currency} left`}
+          {over ? (
+            <>
+              Over by {AMOUNT.format(-left)}
+              {wide(` ${currency}`)}
+            </>
+          ) : (
+            <>
+              {AMOUNT.format(left)}
+              {wide(` ${currency}`)} left
+            </>
+          )}
         </span>
       </div>
-      <Meter value={over ? 100 : percent} tone={over ? "error" : "primary"} mark={mark} />
+      {/* A phone draws the bar above the figures (dashboard-mobile.html). */}
+      <div className="-order-1 md:order-none">
+        <Meter value={over ? 100 : percent} tone={over ? "error" : "primary"} mark={mark} />
+      </div>
       {children}
     </div>
   );

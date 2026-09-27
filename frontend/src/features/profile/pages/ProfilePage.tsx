@@ -43,10 +43,10 @@ export const ProfilePage = observer(function ProfilePage() {
   const isCurrencyLocked = receiptCount > 0;
 
   return (
-    <div className="max-w-3xl mx-auto flex flex-col gap-6 py-10 px-8">
+    <div className="w-full max-w-3xl mx-auto flex flex-col gap-4 py-4 md:gap-6 md:py-10 md:px-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-foreground">Preferences</h1>
-        <p className="text-xl text-muted-foreground">
+        <h1 className="text-[24px] font-bold text-foreground md:text-3xl">Preferences</h1>
+        <p className="text-lg text-muted-foreground md:text-xl">
           Account-level settings that every figure in the product is expressed in.
         </p>
       </div>
@@ -111,6 +111,7 @@ export const ProfilePage = observer(function ProfilePage() {
                       setBudgetLimit(e.target.value);
                     }}
                     aria-label="Monthly budget limit"
+                    containerClassName="w-full"
                     className="pr-12 w-full"
                   />
                   <span className="absolute right-3 text-lg text-muted-foreground pointer-events-none">
@@ -141,7 +142,7 @@ export const ProfilePage = observer(function ProfilePage() {
                 <span className="font-semibold text-lg text-foreground">Email</span>
                 <span className="text-md text-muted-foreground">{authStore.user?.email}</span>
               </div>
-              <Button type="button" variant="secondary" disabled>
+              <Button type="button" variant="secondary" disabled className="w-full md:w-auto">
                 Change
               </Button>
             </div>
@@ -158,6 +159,7 @@ export const ProfilePage = observer(function ProfilePage() {
               <Button
                 type="button"
                 variant="danger"
+                className="w-full md:w-auto"
                 onClick={() => {
                   void authStore.logout();
                 }}
@@ -168,7 +170,7 @@ export const ProfilePage = observer(function ProfilePage() {
           </CardBody>
         </Card>
 
-        <div className="flex items-center justify-end gap-3">
+        <div className="flex flex-col-reverse gap-2 md:flex-row md:items-center md:justify-end md:gap-3">
           <Button
             type="button"
             variant="ghost"

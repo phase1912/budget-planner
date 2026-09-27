@@ -8,6 +8,13 @@ export interface ModalProps extends React.HTMLAttributes<HTMLDivElement> {
   onClose: () => void;
 }
 
+/**
+ * A dialog over the page, trapping focus until closed (Escape or the backdrop).
+ *
+ * A centred card at every size. On a phone it takes the full width but for a
+ * small margin, so a dialog is never squeezed narrower than its content allows;
+ * a caller sets its tablet and desktop width with `md:` classes.
+ */
 export const Modal = ({ isOpen, onClose, children, className, ...props }: ModalProps) => {
   const dialogRef = React.useRef<HTMLDivElement>(null);
 
@@ -57,7 +64,7 @@ export const Modal = ({ isOpen, onClose, children, className, ...props }: ModalP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[4px] p-10">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[4px] p-3 md:p-10">
       <div
         data-testid="backdrop"
         className="absolute inset-0"
@@ -68,7 +75,7 @@ export const Modal = ({ isOpen, onClose, children, className, ...props }: ModalP
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className={`relative z-10 flex flex-col overflow-hidden max-h-full border border-border rounded-card bg-background shadow-modal ${className ?? ""}`}
+        className={`relative z-10 flex w-full flex-col overflow-hidden max-h-full border border-border rounded-card bg-background shadow-modal ${className ?? ""}`}
         role="dialog"
         aria-modal="true"
         {...props}
@@ -82,20 +89,23 @@ Modal.displayName = "Modal";
 
 export const ModalHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={`flex items-start justify-between gap-4 border-b border-border bg-surface px-6 py-5 ${className ?? ""}`}
+    className={`flex items-start justify-between gap-4 border-b border-border bg-surface px-4 py-4 md:px-6 md:py-5 ${className ?? ""}`}
     {...props}
   />
 );
 ModalHeader.displayName = "ModalHeader";
 
 export const ModalBody = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={`flex-grow overflow-y-auto px-6 py-5 ${className ?? ""}`} {...props} />
+  <div
+    className={`flex-grow overflow-y-auto px-4 py-4 md:px-6 md:py-5 ${className ?? ""}`}
+    {...props}
+  />
 );
 ModalBody.displayName = "ModalBody";
 
 export const ModalFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={`flex items-center justify-between gap-5 border-t border-border bg-surface px-6 py-[18px] ${className ?? ""}`}
+    className={`flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface px-4 py-3.5 md:flex-nowrap md:gap-5 md:px-6 md:py-[18px] ${className ?? ""}`}
     {...props}
   />
 );

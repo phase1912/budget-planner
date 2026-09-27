@@ -1,33 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { apiClient } from "@/api/client";
-import { BudgetStore, LISTED_RECEIPTS, monthRange } from "./BudgetStore";
+import { BudgetStore, monthRange } from "./BudgetStore";
 
 vi.mock("@/api/client", () => ({ apiClient: { GET: vi.fn() } }));
 
+const GROCERIES = { category_id: "g", name: "Groceries", item_count: 3, total_amount: "42.00" };
+
+/** The dashboard endpoint's answer for one month, whose figure is `total`. */
 function month(year: number, monthNumber: number, total = "0") {
   return {
-    data: { year, month: monthNumber, total, receipt_count: 0, has_receipts: true },
+    data: {
+      summary: { year, month: monthNumber, total, receipt_count: 0, has_receipts: true },
+      categories: [GROCERIES],
+      receipts: [],
+      receipts_in_month: 4,
+    },
     response: new Response(),
   };
 }
 
-const NO_RECEIPTS = {
-  data: { items: [], total: 0, page: 1, size: 6, pages: 0 },
-  response: new Response(),
-};
-
-const GROCERIES = { category_id: "g", name: "Groceries", item_count: 3, total_amount: "42.00" };
-const NO_ITEMS = {
-  data: { items: [], total: 0, page: 1, size: 1, pages: 0, categories: [GROCERIES] },
-  response: new Response(),
-};
-
-/** Answer the month figure with `answer` and the latest-receipts list with nothing. */
+/** Answer each month's request with `answer`. */
 function figure(answer: (year: number, month: number) => unknown) {
-  vi.mocked(apiClient.GET).mockImplementation(((url: string, init: unknown) => {
-    if (url === "/receipts") return Promise.resolve(NO_RECEIPTS);
-    if (url === "/receipts/line-items") return Promise.resolve(NO_ITEMS);
+  vi.mocked(apiClient.GET).mockImplementation(((_url: string, init: unknown) => {
     const { year, month } = (init as { params: { path: { year: number; month: number } } }).params
       .path;
     return answer(year, month);
@@ -36,13 +31,11 @@ function figure(answer: (year: number, month: number) => unknown) {
 
 function monthsAsked(): [number, number][] {
   const calls = vi.mocked(apiClient.GET).mock.calls as unknown as [string, unknown][];
-  return calls
-    .filter(([url]) => url.startsWith("/api/v1/budget"))
-    .map(([, init]) => {
-      const { year, month } = (init as { params: { path: { year: number; month: number } } }).params
-        .path;
-      return [year, month];
-    });
+  return calls.map(([, init]) => {
+    const { year, month } = (init as { params: { path: { year: number; month: number } } }).params
+      .path;
+    return [year, month];
+  });
 }
 
 /** 00:30 on 1 October in the user's own timezone: already October for them. */
@@ -59,7 +52,7 @@ describe("BudgetStore", () => {
 
     await store.showCurrentMonth();
 
-    expect(apiClient.GET).toHaveBeenCalledWith("/api/v1/budget/months/{year}/{month}", {
+    expect(apiClient.GET).toHaveBeenCalledWith("/api/v1/budget/months/{year}/{month}/dashboard", {
       params: { path: { year: 2026, month: 10 }, query: { today: "2026-10-01" } },
     });
     expect([store.year, store.month]).toEqual([2026, 10]);
@@ -115,40 +108,18 @@ describe("BudgetStore", () => {
     expect(store.isLoading).toBe(false);
   });
 
-  it("lists a finished month's biggest receipts and where it went, within its own bounds", async () => {
-    figure((y, m) => Promise.resolve(month(y, m)));
+  it("loads the figure, where it went and the receipts column in one request", async () => {
+    figure((y, m) => Promise.resolve(month(y, m, "12.00")));
     const store = new BudgetStore(() => new Date(2026, 8, 10));
 
     await store.showMonth({ year: 2026, month: 2 });
 
-    const february = { start_date: "2026-02-01T00:00:00Z", end_date: "2026-02-28T23:59:59Z" };
-    expect(apiClient.GET).toHaveBeenCalledWith("/receipts", {
-      params: { query: { page: 1, size: LISTED_RECEIPTS, order: "largest", ...february } },
-    });
-    expect(apiClient.GET).toHaveBeenCalledWith("/receipts/line-items", {
-      params: { query: { view: "all", page: 1, size: 1, ...february } },
-    });
-    expect(store.spend).toEqual([GROCERIES]);
-  });
-
-  it("lists the running month's newest receipts", async () => {
-    figure((y, m) => Promise.resolve(month(y, m)));
-    const store = new BudgetStore(() => new Date(2026, 8, 10));
-
-    await store.showCurrentMonth();
-
-    expect(store.isPastMonth).toBe(false);
-    expect(apiClient.GET).toHaveBeenCalledWith("/receipts", {
-      params: {
-        query: {
-          page: 1,
-          size: LISTED_RECEIPTS,
-          order: "newest",
-          start_date: "2026-09-01T00:00:00Z",
-          end_date: "2026-09-30T23:59:59Z",
-        },
-      },
-    });
+    expect(apiClient.GET).toHaveBeenCalledOnce();
+    expect([store.summary?.total, store.spend, store.receiptsInMonth]).toEqual([
+      "12.00",
+      [GROCERIES],
+      4,
+    ]);
   });
 
   it("opens on the current month first, then on the month it was left on", async () => {

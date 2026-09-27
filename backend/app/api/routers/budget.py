@@ -10,8 +10,10 @@ from app.domain.budget import BudgetMonth
 from app.models.user import User
 from app.repository.receipt import ReceiptRepository
 from app.repository.snapshot import MonthlySnapshotRepository
-from app.schemas.budget import MonthSummaryResponse
-from app.services.budget import BudgetService
+from app.schemas.budget import MonthDashboardResponse, MonthSummaryResponse
+from app.schemas.receipt import CategorySpendResponse, ReceiptResponse
+from app.services.budget import BudgetService, MonthSummary
+from app.services.dashboard import DashboardService
 
 router = APIRouter(prefix="/api/v1/budget", tags=["budget"])
 
@@ -41,6 +43,53 @@ async def get_month_summary(
         now=now,
         limit=current_user.budget_limit,
     )
+    return _month_response(summary)
+
+
+@router.get("/months/{year}/{month}/dashboard", response_model=MonthDashboardResponse)
+async def get_month_dashboard(
+    year: Annotated[int, Path(ge=1970, le=9999)],
+    month: Annotated[int, Path(ge=1, le=12)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    today: Annotated[date | None, Query()] = None,
+) -> MonthDashboardResponse:
+    """The landing view for one month in one round trip (F6.7, BRD D1, D4, D7).
+
+    The month's figure as `/months/{year}/{month}` gives it, where it went by
+    category, and its receipts column: the newest of a running month, the
+    biggest of a finished one. `today` is the user's own date, as there.
+    """
+    now = datetime.now(UTC)
+    receipts = ReceiptRepository(session)
+    service = DashboardService(
+        BudgetService(receipts, MonthlySnapshotRepository(session)), receipts
+    )
+    dashboard = await service.month(
+        BudgetMonth(year, month),
+        today or now.date(),
+        user_id=current_user.id,
+        now=now,
+        limit=current_user.budget_limit,
+    )
+    return MonthDashboardResponse(
+        summary=_month_response(dashboard.summary),
+        categories=[
+            CategorySpendResponse(
+                category_id=c.category_id,
+                name=c.name,
+                item_count=c.item_count,
+                total_amount=c.total,
+            )
+            for c in dashboard.categories
+        ],
+        receipts=[ReceiptResponse.model_validate(r) for r in dashboard.receipts],
+        receipts_in_month=dashboard.receipts_in_month,
+    )
+
+
+def _month_response(summary: MonthSummary) -> MonthSummaryResponse:
+    """The month as the API shows it, from the service's figure."""
     usage = summary.limit
     return MonthSummaryResponse(
         year=summary.month.year,

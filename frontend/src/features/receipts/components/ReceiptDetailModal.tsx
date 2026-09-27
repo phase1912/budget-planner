@@ -38,7 +38,7 @@ export const ReceiptDetailModal = observer(() => {
 
   if (receiptStore.isLoadingDetail) {
     return (
-      <Modal isOpen={true} onClose={handleClose} className="w-[660px]">
+      <Modal isOpen={true} onClose={handleClose} className="md:w-[660px]">
         <div className="p-6 text-center text-muted-foreground">Loading...</div>
       </Modal>
     );
@@ -49,7 +49,7 @@ export const ReceiptDetailModal = observer(() => {
   }
 
   return (
-    <Modal isOpen={true} onClose={handleClose} className="w-[660px]">
+    <Modal isOpen={true} onClose={handleClose} className="md:w-[660px]">
       <ModalHeader>
         <div className="flex items-center gap-[13px]">
           <IconTile tone="success" size="lg">
@@ -70,7 +70,7 @@ export const ReceiptDetailModal = observer(() => {
             </svg>
           </IconTile>
           <div className="flex flex-col gap-[3px]">
-            <h2 className="m-0 text-[19px] font-bold">
+            <h2 className="m-0 text-[17px] font-bold md:text-[19px]">
               {receipt.merchant_name ?? "Unknown Merchant"}
             </h2>
             <span className="tabular-nums text-[13px] text-muted-foreground">
@@ -89,7 +89,7 @@ export const ReceiptDetailModal = observer(() => {
           </div>
         </div>
         <button
-          className="inline-flex items-center justify-center w-[34px] h-[34px] rounded-chip text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+          className="inline-flex shrink-0 items-center justify-center w-11 h-11 md:w-[34px] md:h-[34px] rounded-chip text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
           onClick={handleClose}
           aria-label="Close"
         >
@@ -127,7 +127,7 @@ export const ReceiptDetailModal = observer(() => {
             Re-run categorisation
           </Button>
         </div>
-        <div className="grid grid-cols-[minmax(0,1fr)_36px_70px_86px_156px] items-center gap-[12px] pb-1 border-b border-border">
+        <div className="hidden md:grid grid-cols-[minmax(0,1fr)_36px_70px_86px_156px] items-center gap-[12px] pb-1 border-b border-border">
           <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
             Item
           </span>
@@ -148,19 +148,23 @@ export const ReceiptDetailModal = observer(() => {
         {receipt.line_items.map((item) => (
           <div
             key={item.id}
-            className="grid grid-cols-[minmax(0,1fr)_36px_70px_86px_156px] items-center gap-[12px] py-[11px] border-b border-border min-h-[44px] last:border-0"
+            className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 gap-y-1.5 py-3 border-b border-border min-h-[44px] last:border-0 md:grid-cols-[minmax(0,1fr)_36px_70px_86px_156px] md:items-center md:gap-[12px] md:py-[11px]"
           >
             <span className="text-[13px] font-medium">{item.name}</span>
-            <span className="tabular-nums text-muted-foreground text-right text-[13px]">
+            <span className="hidden md:block tabular-nums text-muted-foreground text-right text-[13px]">
               {formatAmount(item.quantity, 0)}
             </span>
-            <span className="tabular-nums text-muted-foreground text-right text-[13px]">
+            <span className="hidden md:block tabular-nums text-muted-foreground text-right text-[13px]">
               {formatAmount(item.unit_price, 2)}
             </span>
             <span className="tabular-nums text-right text-[14px] font-semibold">
               {formatAmount(item.total_price, 2)}
             </span>
-            <span>
+            {/* A phone has no room for the columns: quantity and price go under the name. */}
+            <span className="col-span-2 tabular-nums text-[12px] text-muted-foreground md:hidden">
+              {formatAmount(item.quantity, 0)} × {formatAmount(item.unit_price, 2)}
+            </span>
+            <span className="col-span-2 md:col-span-1">
               <InlineCategoryPicker
                 itemId={item.id}
                 itemName={item.name}
@@ -187,7 +191,7 @@ export const ReceiptDetailModal = observer(() => {
                   key={fileId}
                   fileId={fileId}
                   alt={`Original photo of the receipt from ${receipt.merchant_name ?? "this merchant"}`}
-                  className="w-[132px] h-[176px] object-cover rounded-md border border-border"
+                  className="w-[calc(50%-6px)] h-[176px] object-cover rounded-md border border-border md:w-[132px]"
                 />
               ))
             )}
@@ -202,7 +206,7 @@ export const ReceiptDetailModal = observer(() => {
             {receipt.total_amount ? Number(receipt.total_amount).toFixed(2) : "—"}
           </span>
         </div>
-        <div className="flex items-center gap-[10px]">
+        <div className="flex w-full items-center gap-[10px] md:w-auto [&>*]:flex-1 md:[&>*]:flex-none">
           <Button
             variant="danger"
             size="sm"
@@ -248,7 +252,14 @@ export const ReceiptDetailModal = observer(() => {
               <circle cx="9" cy="9" r="2" />
               <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
             </svg>
-            {showPhotos ? "Hide photos" : "Original photos"}
+            {showPhotos ? (
+              "Hide photos"
+            ) : (
+              <>
+                <span className="hidden md:inline">Original photos</span>
+                <span className="md:hidden">Photos</span>
+              </>
+            )}
           </Button>
           <Button
             variant="primary"

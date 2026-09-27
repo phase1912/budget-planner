@@ -98,7 +98,11 @@ Things drawn to look complete that nobody has actually decided:
 - **The full nav on every screen.** In reality each item appears as its epic lands — F1.1
   ships with Dashboard and Profile and nothing else.
 - **Categories under Receipts on mobile.** Five nav items plus upload do not fit a bottom
-  bar at 390px. Confirm before F9.4 fixes the shell.
+  bar at 390px. Confirmed and built with F6.7: the Receipts tab lights on the categories
+  screens too, and on a phone both screens open with a "Receipts | Categories" switch.
+- **Phone layouts without a screen of their own.** Only the dashboard and upload have a
+  390px artboard. The receipts list, the categories screens and the dialogs follow their
+  lead (F6.7): cards instead of tables, dialogs centred at nearly the full width.
 
 ## When the frontend catches up
 

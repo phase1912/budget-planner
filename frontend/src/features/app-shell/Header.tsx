@@ -1,6 +1,6 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
-import { Moon, Sun, LogOut, Upload, Settings } from "lucide-react";
+import { ArrowLeft, Moon, Sun, LogOut, Upload, Settings } from "lucide-react";
 import { useStores } from "@/stores/StoreContext";
 import { Button } from "@/shared/components";
 import { Navigation } from "./Navigation";
@@ -9,6 +9,7 @@ import { useState, useRef, useEffect } from "react";
 export const Header = observer(() => {
   const { themeStore, authStore } = useStores();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -37,22 +38,44 @@ export const Header = observer(() => {
     };
   }, []);
 
+  // On a phone the upload flow is a focused task: a way back and its name, no more
+  // (docs/design/screens/upload-mobile.html).
+  const uploading = authStore.isAuthenticated && pathname.startsWith("/upload");
+
   return (
-    <header className="flex-shrink-0 border-b border-border bg-surface px-8 py-3.5 flex items-center justify-between">
-      <div className="flex items-center gap-7">
+    <header className="flex-shrink-0 border-b border-border bg-surface px-4 py-3 md:px-8 md:py-3.5 flex items-center justify-between">
+      {uploading && (
+        <div className="flex items-center gap-2 md:hidden">
+          <Link
+            to="/"
+            aria-label="Back"
+            className="-ml-2 inline-flex h-11 w-11 items-center justify-center rounded-chip text-foreground hover:bg-muted"
+          >
+            <ArrowLeft size={20} aria-hidden="true" />
+          </Link>
+          <h1 className="m-0 text-[17px] font-bold">New receipt</h1>
+        </div>
+      )}
+      <div className={`items-center gap-7 ${uploading ? "hidden md:flex" : "flex"}`}>
         <Link
           to="/"
-          className="text-[20px] font-bold bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent"
+          className="text-[17px] md:text-[20px] font-bold bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent"
         >
           Budget Agent
         </Link>
-        {authStore.isAuthenticated && <Navigation />}
+        {/* A phone navigates from the bottom bar instead (BottomNavigation). */}
+        {authStore.isAuthenticated && (
+          <div className="hidden md:block">
+            <Navigation />
+          </div>
+        )}
       </div>
-      <div className="flex items-center gap-2.5">
+      <div className={`items-center gap-2.5 ${uploading ? "hidden md:flex" : "flex"}`}>
         {authStore.isAuthenticated ? (
           <>
-            <Link to="/upload" className="contents">
-              <Button size="compact" className="hidden sm:flex">
+            {/* A phone uploads from the bottom bar's centre button. */}
+            <Link to="/upload" className="hidden md:contents">
+              <Button size="compact">
                 <Upload size={16} className="mr-2" />
                 Upload
               </Button>
@@ -64,7 +87,7 @@ export const Header = observer(() => {
                 themeStore.toggleTheme();
               }}
               aria-label="Toggle theme"
-              className="px-2"
+              className="h-11 w-11 justify-center px-2 md:h-auto md:w-auto"
             >
               {themeStore.theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             </Button>
@@ -73,7 +96,7 @@ export const Header = observer(() => {
                 onClick={() => {
                   setMenuOpen(!menuOpen);
                 }}
-                className={`inline-flex items-center justify-center border rounded-full bg-surface p-[5px] cursor-pointer transition-colors ${menuOpen ? "border-primary" : "border-border"}`}
+                className={`inline-flex h-11 w-11 items-center justify-center border rounded-full bg-surface p-[5px] cursor-pointer md:h-auto md:w-auto transition-colors ${menuOpen ? "border-primary" : "border-border"}`}
                 aria-label="Account menu"
               >
                 <span className="inline-flex items-center justify-center w-[30px] h-[30px] rounded-full bg-primary/10 text-primary text-[13px] font-semibold">
@@ -118,7 +141,7 @@ export const Header = observer(() => {
                 themeStore.toggleTheme();
               }}
               aria-label="Toggle theme"
-              className="px-2"
+              className="h-11 w-11 justify-center px-2 md:h-auto md:w-auto"
             >
               {themeStore.theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             </Button>

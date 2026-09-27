@@ -28,4 +28,23 @@ describe("SegmentedControl", () => {
     fireEvent.click(screen.getByRole("button", { name: "All items" }));
     expect(onChange).toHaveBeenCalledWith("b");
   });
+
+  it("keeps the full label and count as the name when a phone shows a short one", () => {
+    render(
+      <SegmentedControl
+        label="Which items to show"
+        value="review"
+        onChange={vi.fn()}
+        options={[
+          { value: "review", label: "Needs review", shortLabel: "To review", badge: 7 },
+          { value: "all", label: "All items" },
+        ]}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Needs review 7" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "All items" })).toBeInTheDocument();
+  });
 });

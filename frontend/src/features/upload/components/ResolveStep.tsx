@@ -143,7 +143,7 @@ export const ResolveStep = observer(function ResolveStep() {
   });
 
   return (
-    <Container size="narrow" className="py-9 pb-8">
+    <Container size="narrow" gutter={false} className="py-4 pb-8 md:py-9">
       <Stack className="gap-6">
         <div className="flex items-center">
           <span className="inline-flex items-center gap-2.5">
@@ -194,16 +194,16 @@ export const ResolveStep = observer(function ResolveStep() {
           </span>
         </div>
 
-        <div className="flex items-end justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col gap-1">
-            <h1 className="m-0 text-[30px] font-bold tracking-tight">
+            <h1 className="m-0 text-[22px] font-bold tracking-tight md:text-[30px]">
               Your call on {conflictsCount} things
             </h1>
             <p className="m-0 text-[15px] text-muted-foreground mt-1">
               Nothing is stored until this list is empty.
             </p>
           </div>
-          <div className="flex flex-col items-end gap-[7px] w-[240px]">
+          <div className="flex w-full flex-col items-start gap-[7px] md:w-[240px] md:items-end">
             <span className="text-[13px] font-semibold text-muted-foreground">
               {settledCount} of {conflictsCount} settled
             </span>
