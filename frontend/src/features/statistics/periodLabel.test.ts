@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { likeForLikeNote, periodLabel } from "./periodLabel";
+import { likeForLikeNote, periodLabel, periodName } from "./periodLabel";
 
 describe("periodLabel", () => {
   it("names the month once for days within it", () => {
@@ -34,5 +34,16 @@ describe("likeForLikeNote", () => {
     ).toBe(
       "1 Jul – 27 Sept 2026 stops partway through a month, so it is compared against 1 Apr – 27 Jun 2026 rather than whole months.",
     );
+  });
+});
+
+describe("periodName", () => {
+  it("names one whole month by its month, as the E5 panel does", () => {
+    expect(periodName("2025-03-01", "2025-03-31")).toBe("March 2025");
+    expect(periodName("2028-02-01", "2028-02-29")).toBe("February 2028");
+  });
+
+  it("names anything else by its days", () => {
+    expect(periodName("2025-03-01", "2025-03-30")).toBe("1 – 30 Mar 2025");
   });
 });

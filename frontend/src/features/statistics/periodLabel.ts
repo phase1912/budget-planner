@@ -52,3 +52,21 @@ export function likeForLikeNote(
     `compared against ${periodLabel(previous.start, previous.end)} rather than whole months.`
   );
 }
+
+const MONTH_YEAR = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" });
+
+/**
+ * A period as a phrase to name it by: "March 2025" for one whole calendar month,
+ * as the E5 panel in docs/design/screens/states.html reads, else its days.
+ */
+export function periodName(start: string, end: string): string {
+  const from = localDay(start);
+  const to = localDay(end);
+  const lastDay = new Date(to.getFullYear(), to.getMonth() + 1, 0).getDate();
+  const wholeMonth =
+    from.getDate() === 1 &&
+    to.getDate() === lastDay &&
+    from.getFullYear() === to.getFullYear() &&
+    from.getMonth() === to.getMonth();
+  return wholeMonth ? MONTH_YEAR.format(from) : periodLabel(start, end);
+}

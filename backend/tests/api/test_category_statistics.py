@@ -132,8 +132,9 @@ async def test_another_users_spending_never_appears(db_session: AsyncSession) ->
 
     body = (await _statistics(db_session, owner, "2026-07-01", "2026-07-31")).json()
 
-    assert body["categories"] == []
-    assert (Decimal(body["total"]), body["item_count"]) == (Decimal(0), 0)
+    # The owner has no receipts in July: no data, rather than a report of zeroes (E5).
+    assert (body["receipt_count"], body["categories"]) == (0, [])
+    assert (body["total"], body["item_count"]) == (None, None)
 
 
 @pytest.mark.asyncio
@@ -196,6 +197,7 @@ async def test_a_running_month_is_compared_with_the_same_days_of_the_month_befor
     assert body["comparison"] == {
         "start": "2026-06-01",
         "end": "2026-06-27",
+        "receipt_count": 2,
         "total": "105.00",
         "item_count": 2,
         "stops_mid_month": True,
@@ -219,3 +221,39 @@ async def test_without_asking_there_is_no_comparison(db_session: AsyncSession) -
 
     assert body["comparison"] is None
     assert body["categories"][0]["change"] is None
+
+
+@pytest.mark.asyncio
+async def test_a_period_with_no_receipts_says_so_instead_of_reporting_zeroes(
+    db_session: AsyncSession,
+) -> None:
+    """E5: March 2025, before the first receipt, has nothing to total."""
+    user = await UserFactory.create_async()
+    await _bought(db_session, user, datetime(2026, 7, 3, tzinfo=UTC), [("10.00", DINING)])
+
+    body = (await _statistics(db_session, user, "2025-03-01", "2025-03-31", compare=True)).json()
+
+    assert (body["receipt_count"], body["total"], body["item_count"]) == (0, None, None)
+    assert body["categories"] == []
+    assert body["comparison"]["receipt_count"] == 0
+    assert body["comparison"]["total"] is None
+
+
+@pytest.mark.asyncio
+async def test_a_period_whose_only_receipt_awaits_review_is_not_an_empty_one(
+    db_session: AsyncSession,
+) -> None:
+    """A receipt under review is data, held out and named (D3), not "no receipts" (E5)."""
+    user = await UserFactory.create_async()
+    await _bought(
+        db_session,
+        user,
+        datetime(2026, 7, 3, tzinfo=UTC),
+        [("30.00", DINING)],
+        status=ReceiptStatus.MANUAL_REVIEW,
+    )
+
+    body = (await _statistics(db_session, user, "2026-07-01", "2026-07-31")).json()
+
+    assert (body["receipt_count"], body["categories"], body["excluded_count"]) == (1, [], 1)
+    assert Decimal(body["total"]) == 0

@@ -19,10 +19,12 @@ class Comparison:
 
     `period` is chosen like for like (`DateRange.previous`); `stops_mid_month`
     says the current period ends partway through a month, so the comparison
-    stops on the same day rather than taking whole months (D4).
+    stops on the same day rather than taking whole months (D4). `receipt_count`
+    zero means the previous period holds no receipts at all (E5).
     """
 
     period: DateRange
+    receipt_count: int
     total: Decimal
     item_count: int
     changes: list[CategoryChange]
@@ -37,9 +39,13 @@ class CategoryStatistics:
     on receipts still under manual review, left out of every figure but named,
     so the statistics are never quietly incomplete (D3). `comparison` is present
     only when one was asked for (E3).
+
+    `receipt_count` is every receipt filed under the period, whatever its status:
+    zero means there is nothing to report, not a spend of zero (E5).
     """
 
     period: DateRange
+    receipt_count: int
     total: Decimal
     item_count: int
     categories: list[CategoryStanding]
@@ -73,6 +79,7 @@ class StatisticsService:
             earlier = await self._totals(before)
             comparison = Comparison(
                 period=before,
+                receipt_count=await self.receipts.count_in(before),
                 total=sum((t.total for t in earlier), Decimal(0)),
                 item_count=sum(t.item_count for t in earlier),
                 changes=compare_categories(categories, earlier),
@@ -80,6 +87,7 @@ class StatisticsService:
             )
         return CategoryStatistics(
             period=period,
+            receipt_count=await self.receipts.count_in(period),
             total=sum((c.total for c in categories), Decimal(0)),
             item_count=sum(c.item_count for c in categories),
             categories=categories,

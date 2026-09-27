@@ -1530,6 +1530,24 @@ epics:
         demo: >
           Pick a period before your first receipt and read "no receipts in that period" —
           not a table of zeroes, per the E5 panel in docs/design/screens/states.html.
+        tasks:
+          - >
+            ReceiptRepository.count_in(period) - receipts of any status filed under the
+            period; the statistics response carries it as receipt_count, and with 0 its total
+            and item_count are null rather than zeroes. The comparison block does the same
+            for the previous period.
+          - >
+            the Statistics screen shows the E5 panel of docs/design/screens/states.html for an
+            empty period ("No receipts in March 2025", "Pick another period" opening the
+            picker), says so when the period compared against is empty, and tells a period
+            whose receipts all await review apart from an empty one.
+          - >
+            BR-5's E5 scenario runs; with it every BR-5 scenario does, so the module's skip
+            list is gone.
+          - >
+            unplanned, found while checking the screen at tablet width - the header ran 7px
+            past a 768px screen on every page; its Upload button keeps only its icon until
+            lg, so every page now fits at 375, 768, 1024 and 1280.
       - key: F7.5
         title: Chart-ready output and the comparison chart
         labels: [backend, frontend]

@@ -73,11 +73,12 @@ export const Header = observer(() => {
       <div className={`items-center gap-2.5 ${uploading ? "hidden md:flex" : "flex"}`}>
         {authStore.isAuthenticated ? (
           <>
-            {/* A phone uploads from the bottom bar's centre button. */}
+            {/* A phone uploads from the bottom bar's centre button; a tablet has room for
+                the icon only, next to five links. */}
             <Link to="/upload" className="hidden md:contents">
-              <Button size="compact">
-                <Upload size={16} className="mr-2" />
-                Upload
+              <Button size="compact" aria-label="Upload">
+                <Upload size={16} className="lg:mr-2" aria-hidden="true" />
+                <span className="hidden lg:inline">Upload</span>
               </Button>
             </Link>
             <Button

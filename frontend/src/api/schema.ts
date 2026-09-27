@@ -567,7 +567,8 @@ export interface paths {
          *     With `compare`, each category also carries its change against the previous
          *     like-for-like period (E3). Only the caller's own receipts are read (N2). A
          *     period ending before it starts is refused with 422 rather than answered as
-         *     an empty one.
+         *     an empty one; a period holding no receipts says so with `receipt_count` 0 and
+         *     no totals, rather than a report of zeroes (E5).
          */
         get: operations["get_category_statistics_api_v1_statistics_categories_get"];
         put?: never;
@@ -687,6 +688,10 @@ export interface components {
          *     counted items; `excluded_*` count the items on receipts under manual review,
          *     left out of every figure here (D3). `comparison` is present only when asked for;
          *     categories spent on only in the previous period are then listed too, at zero.
+         *
+         *     `receipt_count` counts every receipt filed under the period, of any status.
+         *     When it is 0 the period has no data: `total` and `item_count` are null rather
+         *     than zeroes that would read like a real, empty spend (E5).
          */
         CategoryStatisticsResponse: {
             /**
@@ -699,10 +704,12 @@ export interface components {
              * Format: date
              */
             end: string;
+            /** Receipt Count */
+            receipt_count: number;
             /** Total */
-            total: string;
+            total: string | null;
             /** Item Count */
-            item_count: number;
+            item_count: number | null;
             /** Categories */
             categories: components["schemas"]["CategoryStandingResponse"][];
             /** Excluded Count */
@@ -733,7 +740,8 @@ export interface components {
          *
          *     `stops_mid_month` is true when the requested period ends partway through a
          *     month, so the previous one stops on the same day rather than taking the
-         *     whole month (D4): the screen says so.
+         *     whole month (D4): the screen says so. With no receipts in that period,
+         *     `receipt_count` is 0 and `total` and `item_count` are null (E5).
          */
         ComparisonResponse: {
             /**
@@ -746,10 +754,12 @@ export interface components {
              * Format: date
              */
             end: string;
+            /** Receipt Count */
+            receipt_count: number;
             /** Total */
-            total: string;
+            total: string | null;
             /** Item Count */
-            item_count: number;
+            item_count: number | null;
             /** Stops Mid Month */
             stops_mid_month: boolean;
         };
