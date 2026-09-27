@@ -50,6 +50,17 @@ vi.mock("@/stores/StoreContext", () => ({
   }),
 }));
 
+/**
+ * Matches the element whose whole text is `text`, even when parts of it are
+ * spans shown only on a phone or only on a wider screen: jsdom applies no CSS,
+ * so both are in the text.
+ */
+function wholeText(text: string) {
+  return (_: string, element: Element | null) =>
+    element?.textContent === text &&
+    !Array.from(element.children).some((child) => child.textContent === text);
+}
+
 function WhereAmI() {
   const location = useLocation();
   return <output aria-label="Location">{location.pathname + location.search}</output>;
@@ -123,10 +134,10 @@ describe("DashboardPage", () => {
     renderPage();
 
     expect(screen.getByRole("heading", { name: "September 2026" })).toBeInTheDocument();
-    expect(screen.getByText("Spent so far in September")).toBeInTheDocument();
+    expect(screen.getByText(wholeText("Spent so far in September"))).toBeInTheDocument();
     expect(screen.getByText("1,234.50")).toBeInTheDocument();
     expect(screen.getByText("PLN")).toBeInTheDocument();
-    expect(screen.getByText("26 of 30 days recorded · 15 receipts")).toBeInTheDocument();
+    expect(screen.getByText(wholeText("26 of 30 days recorded · 15 receipts"))).toBeInTheDocument();
     expect(screen.getByText("Month-to-date · still running")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Next month" })).toBeDisabled();
   });
@@ -143,8 +154,8 @@ describe("DashboardPage", () => {
     });
     renderPage();
 
-    expect(screen.getByText("Spent in August")).toBeInTheDocument();
-    expect(screen.getByText("31 of 31 days · 1 receipt")).toBeInTheDocument();
+    expect(screen.getByText(wholeText("Spent in August"))).toBeInTheDocument();
+    expect(screen.getByText(wholeText("31 of 31 days · 1 receipt"))).toBeInTheDocument();
     expect(screen.getByText("Finalised · complete month")).toBeInTheDocument();
     expect(screen.queryByText(/still running/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Next month" }));
@@ -224,12 +235,41 @@ describe("DashboardPage", () => {
     ];
     renderPage();
 
-    expect(screen.getByRole("heading", { name: "Where it went" })).toBeInTheDocument();
+    // The desktop breakdown and the phone's top five, one of them hidden by CSS.
+    expect(screen.getAllByRole("heading", { name: "Where it went" })).toHaveLength(2);
+    expect(screen.getByRole("link", { name: /Groceries/ })).toHaveAttribute(
+      "href",
+      "/categories?view=all&category=groceries-id&start=2026-08-01&end=2026-08-31",
+    );
     fireEvent.click(screen.getByRole("button", { name: /Groceries/ }));
 
     expect(screen.getByRole("status", { name: "Location" })).toHaveTextContent(
       "/categories?view=all&category=groceries-id&start=2026-08-01&end=2026-08-31",
     );
+  });
+
+  it("leads on to the full statistics", () => {
+    budgetStore.summary = summary();
+    budgetStore.spend = [
+      { category_id: "groceries-id", name: "Groceries", item_count: 4, total_amount: "180.50" },
+    ];
+    renderPage();
+    expect(screen.getByRole("link", { name: /Full statistics/ })).toHaveAttribute(
+      "href",
+      "/statistics",
+    );
+    expect(screen.getByRole("link", { name: "All statistics" })).toHaveAttribute(
+      "href",
+      "/statistics",
+    );
+  });
+
+  it("gives a phone the held-out receipts as one line leading to them", () => {
+    budgetStore.summary = summary({ excluded_count: 2, excluded_amount: "96.4" });
+    renderPage();
+    expect(
+      screen.getByRole("link", { name: /2 receipts worth 96\.40 PLN sits? outside this total/ }),
+    ).toHaveAttribute("href", "/receipts?status=manual_review");
   });
 
   it("shows the receipt dialog over the month once one is picked", () => {
@@ -254,8 +294,8 @@ describe("DashboardPage — the month against its limit (D7)", () => {
     });
     renderPage();
 
-    expect(screen.getByText("60% of your 3,000.00 PLN limit")).toBeInTheDocument();
-    expect(screen.getByText("1,200.00 PLN left")).toBeInTheDocument();
+    expect(screen.getByText(wholeText("60% of your 3,000.00 PLN limit"))).toBeInTheDocument();
+    expect(screen.getByText(wholeText("1,200.00 PLN left"))).toBeInTheDocument();
     expect(screen.queryByText(/the mark is where the limit sat/)).not.toBeInTheDocument();
   });
 
@@ -269,9 +309,9 @@ describe("DashboardPage — the month against its limit (D7)", () => {
     });
     renderPage();
 
-    const share = screen.getByText("108% of your 3,000.00 PLN limit");
+    const share = screen.getByText(wholeText("108% of your 3,000.00 PLN limit"));
     expect(share).toHaveClass("text-error");
-    expect(screen.getByText("Over by 248.00 PLN")).toHaveClass("text-error");
+    expect(screen.getByText(wholeText("Over by 248.00 PLN"))).toHaveClass("text-error");
     expect(screen.getByText(/the mark is where the limit sat/)).toBeInTheDocument();
   });
 

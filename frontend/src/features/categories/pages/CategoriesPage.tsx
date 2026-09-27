@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Plus } from "lucide-react";
 
+import { SectionTabs } from "@/features/app-shell/SectionTabs";
 import { useStores } from "@/stores/StoreContext";
 import { Button, Card } from "@/shared/components";
 import type { Category } from "@/stores/CategoriesStore";
@@ -37,11 +38,12 @@ export const CategoriesPage = observer(function CategoriesPage() {
   const showYours = customCategories.length > 0;
 
   return (
-    <div className="flex-grow flex flex-col items-center py-10 px-4 md:px-8">
-      <div className="w-full max-w-[760px] flex flex-col gap-5.5">
+    <div className="flex-grow flex flex-col items-center py-4 md:py-10 md:px-8">
+      <div className="w-full max-w-[760px] flex flex-col gap-4 md:gap-5.5">
+        <SectionTabs />
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-col gap-1">
-            <h1 className="m-0 text-[28px] font-bold tracking-[-0.02em] text-foreground">
+            <h1 className="m-0 text-[24px] md:text-[28px] font-bold tracking-[-0.02em] text-foreground">
               The taxonomy
             </h1>
             <p className="m-0 text-lg text-muted-foreground">

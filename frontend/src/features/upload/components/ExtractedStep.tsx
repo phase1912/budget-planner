@@ -104,7 +104,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
   const totalItems = extractions.reduce((acc, data) => acc + (data.line_items?.length ?? 0), 0);
 
   return (
-    <Container size="narrow" className="py-9 pb-8">
+    <Container size="narrow" gutter={false} className="py-4 pb-8 md:py-9">
       <Stack className="gap-6">
         <div className="flex items-center">
           <button
@@ -425,7 +425,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                 </div>
               )}
 
-              <div className="grid grid-cols-[minmax(0,1fr)_48px_84px_92px_148px] items-center gap-3 px-5 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">
+              <div className="hidden md:grid grid-cols-[minmax(0,1fr)_48px_84px_92px_148px] items-center gap-3 px-5 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">
                 <span>Item</span>
                 <span className="text-right">Qty</span>
                 <span className="text-right">Unit</span>
@@ -465,7 +465,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                 return (
                   <div
                     key={idx}
-                    className="grid grid-cols-[minmax(0,1fr)_48px_84px_92px_148px] items-center gap-3 px-5 py-3 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors text-[13px]"
+                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 px-4 py-3 md:grid-cols-[minmax(0,1fr)_48px_84px_92px_148px] md:gap-3 md:px-5 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors text-[13px]"
                   >
                     <div className="flex items-center gap-2 overflow-hidden">
                       {showProvenance && (
@@ -480,12 +480,12 @@ export const ExtractedStep = observer(function ExtractedStep() {
                       </span>
                     </div>
                     <span
-                      className={`text-right tabular-nums ${itemLowConf ? "text-tone-warning-text" : "text-muted-foreground"}`}
+                      className={`hidden md:block text-right tabular-nums ${itemLowConf ? "text-tone-warning-text" : "text-muted-foreground"}`}
                     >
                       {item.quantity}
                     </span>
                     <span
-                      className={`text-right tabular-nums ${itemLowConf ? "text-tone-warning-text" : "text-muted-foreground"}`}
+                      className={`hidden md:block text-right tabular-nums ${itemLowConf ? "text-tone-warning-text" : "text-muted-foreground"}`}
                     >
                       {item.unit_price}
                     </span>
@@ -499,7 +499,13 @@ export const ExtractedStep = observer(function ExtractedStep() {
                         </span>
                       )}
                     </span>
-                    <span>
+                    {/* A phone has no room for the columns: quantity and price go under the name. */}
+                    <span
+                      className={`md:hidden text-[12px] tabular-nums ${itemLowConf ? "text-tone-warning-text" : "text-muted-foreground"}`}
+                    >
+                      {item.quantity} × {item.unit_price}
+                    </span>
+                    <span className="justify-self-end md:justify-self-auto">
                       <Pill
                         size="sm"
                         tone={categoryTone(item)}

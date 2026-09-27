@@ -9,6 +9,7 @@ import { ReceiptDetailModal } from "../components/ReceiptDetailModal";
 import { DateFilterModal } from "../components/DateFilterModal";
 import { StatusFilterDropdown } from "../components/StatusFilterDropdown";
 import { Card, Input, IconTile, Pagination } from "@/shared/components";
+import { SectionTabs } from "@/features/app-shell/SectionTabs";
 import { formatPurchase } from "@/shared/purchaseDate";
 
 type ReceiptStatus = components["schemas"]["ReceiptStatus"];
@@ -54,11 +55,12 @@ export const ReceiptsPage = observer(() => {
   }, [receiptStore, requestedStatus, requestedStart, requestedEnd]);
 
   return (
-    <div className="flex-grow flex flex-col items-center py-10 px-8">
-      <div className="w-full max-w-[960px] flex flex-col gap-7">
-        <div className="flex items-end justify-between gap-6">
+    <div className="flex-grow flex flex-col items-center py-4 md:py-10 md:px-8">
+      <div className="w-full max-w-[960px] flex flex-col gap-4 md:gap-7">
+        <SectionTabs />
+        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
           <div className="flex flex-col gap-1">
-            <h1 className="m-0 text-[28px] font-bold tracking-[-0.02em] text-foreground">
+            <h1 className="m-0 text-[24px] md:text-[28px] font-bold tracking-[-0.02em] text-foreground">
               Receipts
             </h1>
             <p className="m-0 text-[15px] text-muted-foreground tabular-nums">
@@ -87,12 +89,12 @@ export const ReceiptsPage = observer(() => {
           </a>
         </div>
 
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
           <div className="flex items-center gap-[10px]">
             <DateFilterModal />
             <StatusFilterDropdown />
           </div>
-          <div className="relative w-[250px]">
+          <div className="relative w-full md:w-[250px]">
             <svg
               className="absolute left-3 top-[11px] text-muted-foreground pointer-events-none"
               width="16"
@@ -121,7 +123,7 @@ export const ReceiptsPage = observer(() => {
         </div>
 
         <Card flush>
-          <div className="grid grid-cols-[minmax(0,1fr)_120px_92px_120px_170px_28px] items-center gap-4 px-[18px] py-[12px] bg-surface border-b border-border">
+          <div className="hidden md:grid grid-cols-[minmax(0,1fr)_120px_92px_120px_170px_28px] items-center gap-4 px-[18px] py-[12px] bg-surface border-b border-border">
             <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
               Merchant
             </span>
@@ -157,12 +159,12 @@ export const ReceiptsPage = observer(() => {
               return (
                 <button
                   key={receipt.id}
-                  className={`grid grid-cols-[minmax(0,1fr)_120px_92px_120px_170px_28px] items-center gap-4 px-[18px] py-[14px] w-full text-left border-b border-border last:border-0 cursor-pointer transition-colors ${rowBg}`}
+                  className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 px-4 py-3 w-full text-left border-b border-border last:border-0 cursor-pointer transition-colors md:grid-cols-[minmax(0,1fr)_120px_92px_120px_170px_28px] md:gap-4 md:px-[18px] md:py-[14px] ${rowBg}`}
                   onClick={() => {
                     void receiptStore.fetchReceiptDetail(receipt.id);
                   }}
                 >
-                  <span className="flex items-center gap-[11px] text-[14px] font-semibold text-foreground">
+                  <span className="flex min-w-0 items-center gap-[11px] text-[14px] font-semibold text-foreground">
                     <IconTile
                       tone={
                         isParsed ? "success" : isFailed ? "error" : isReview ? "warning" : "default"
@@ -203,7 +205,7 @@ export const ReceiptsPage = observer(() => {
                     </IconTile>
                     {receipt.merchant_name ?? "Unknown Merchant"}
                   </span>
-                  <span className="tabular-nums text-muted-foreground text-[13px]">
+                  <span className="order-2 pl-[41px] tabular-nums text-muted-foreground text-[12px] md:order-none md:pl-0 md:text-[13px]">
                     {receipt.transaction_date
                       ? formatPurchase(receipt.transaction_date, {
                           day: "numeric",
@@ -215,14 +217,21 @@ export const ReceiptsPage = observer(() => {
                           minute: "2-digit",
                         })
                       : "Unknown"}
+                    {/* A phone has no items column; the count joins the date. */}
+                    <span className="md:hidden">
+                      {" · "}
+                      {receipt.line_items.length === 1
+                        ? "1 item"
+                        : `${String(receipt.line_items.length)} items`}
+                    </span>
                   </span>
-                  <span className="tabular-nums text-muted-foreground text-right text-[13px]">
+                  <span className="hidden md:block tabular-nums text-muted-foreground text-right text-[13px]">
                     {receipt.line_items.length}
                   </span>
-                  <span className="tabular-nums text-right text-[14px] font-semibold text-foreground">
+                  <span className="order-1 tabular-nums text-right text-[14px] font-semibold text-foreground md:order-none">
                     {receipt.total_amount ? Number(receipt.total_amount).toFixed(2) : "—"}
                   </span>
-                  <span>
+                  <span className="order-3 justify-self-end md:order-none md:justify-self-auto">
                     <span
                       className={`inline-flex items-center gap-[6px] rounded-full px-[11px] py-[5px] text-[12px] font-semibold whitespace-nowrap ${
                         isParsed
@@ -298,7 +307,7 @@ export const ReceiptsPage = observer(() => {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="text-muted-foreground"
+                    className="hidden text-muted-foreground md:block"
                   >
                     <path d="m9 18 6-6-6-6" />
                   </svg>

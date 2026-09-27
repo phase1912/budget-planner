@@ -16,6 +16,7 @@ import {
   Pill,
   SegmentedControl,
 } from "@/shared/components";
+import { SectionTabs } from "@/features/app-shell/SectionTabs";
 import { formatPurchase } from "@/shared/purchaseDate";
 import type { ItemView, ReviewQueueItem } from "@/stores/CategoriesStore";
 import { CategorySpendList } from "../components/CategorySpendList";
@@ -105,11 +106,12 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
   }, [categoriesStore, query]);
 
   return (
-    <div className="flex-grow flex flex-col items-center py-10 px-4 md:px-8">
-      <div className="w-full max-w-[1000px] flex flex-col gap-6">
+    <div className="flex-grow flex flex-col items-center py-4 md:py-10 md:px-8">
+      <div className="w-full max-w-[1000px] flex flex-col gap-4 md:gap-6">
+        <SectionTabs />
         <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col gap-1">
-            <h1 className="m-0 text-[28px] font-bold tracking-[-0.02em] text-foreground">
+            <h1 className="m-0 text-[24px] md:text-[28px] font-bold tracking-[-0.02em] text-foreground">
               Categories
             </h1>
             <p className="m-0 text-lg text-muted-foreground">{SUBTITLES[queueView]}</p>
@@ -127,6 +129,7 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
           <SegmentedControl<ItemView>
             label="Which items to show"
             size="sm"
+            fill
             value={queueView}
             onChange={(view) => {
               categoriesStore.setQueueView(view);
@@ -135,10 +138,11 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
               {
                 value: "needs_review",
                 label: "Needs review",
+                shortLabel: "To review",
                 badge: categoriesStore.needsReviewCount,
               },
-              { value: "corrected", label: "Corrected by you" },
-              { value: "all", label: "All items" },
+              { value: "corrected", label: "Corrected by you", shortLabel: "Corrected" },
+              { value: "all", label: "All items", shortLabel: "All" },
             ]}
           />
           <div className="flex items-center gap-2.5">

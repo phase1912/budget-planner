@@ -1370,6 +1370,38 @@ epics:
         demo: >
           Open the root route on a seeded account: spend, limit, breakdown and recent receipts
           on one screen. Click a receipt to open its dialog, click through to full statistics.
+        tasks:
+          - >
+            one round trip - GET /api/v1/budget/months/{year}/{month}/dashboard returns the
+            month's summary, its spend by category and its receipts column, composed by
+            DashboardService from BudgetService and the receipts repository over one set of
+            month bounds; the server picks newest or biggest receipts by whether the month
+            is over. BudgetStore makes that one request instead of F6.5's three.
+          - >
+            "Full statistics" beside the month switcher, and "All" on the phone's "Where it
+            went", lead to /statistics, still a placeholder until E7.
+          - >
+            the phone's dashboard per docs/design/screens/dashboard-mobile.html - the month
+            centred between bordered 44px arrows with a short status beneath, the shorter
+            figure card with the limit bar above its figures, the held-out receipts as one
+            tappable line, and the top five categories without bars.
+          - >
+            unplanned, added at the owner's request - the phone's app shell from the same
+            screen: the header keeps only the brand, theme and account, and a bottom bar
+            carries Home, Receipts, a round upload button, Stats and Goals. Categories is
+            reached from Receipts, whose tab it lights, as docs/design/README.md proposed;
+            the upload flow goes without the bar, as upload-mobile.html does.
+          - >
+            unplanned, added at the owner's request - the rest of the app on a phone. Receipts
+            lists receipts as cards; Receipts and Categories (queue and taxonomy) open with a
+            "Receipts | Categories" switch so Categories is plain to see under the Receipts
+            tab; the queue's view switch fits the width with short labels. The shared Modal
+            stays centred but takes nearly the full width on a phone, so the receipt, edit
+            and fix-extraction dialogs stack their line items instead of squeezing columns.
+            Preferences loses its doubled padding and gets full-width fields and buttons. The upload flow
+            gets upload-mobile.html's "New receipt" header, a full-width mode switch and
+            full-width actions, and loses the doubled side padding; its Cancel now starts
+            over.
 
   - key: E7
     title: Statistics, Comparison & Export

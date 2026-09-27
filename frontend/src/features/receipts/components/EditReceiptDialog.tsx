@@ -114,7 +114,7 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
       </ModalHeader>
 
       <ModalBody className="flex flex-col gap-5">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Input
             label="Merchant"
             value={merchantName}
@@ -133,8 +133,16 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
         </div>
 
         <div className="flex flex-col gap-3">
-          <div className="grid grid-cols-[minmax(0,1fr)_70px_90px_90px_32px] gap-3 text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground">
+          <div className="hidden md:grid grid-cols-[minmax(0,1fr)_70px_90px_90px_32px] gap-3 text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground">
             <span>Item</span>
+            <span className="text-right">Qty</span>
+            <span className="text-right">Unit</span>
+            <span className="text-right">Total</span>
+            <span />
+          </div>
+
+          {/* A phone lays each line over two rows; this names the amounts in the second. */}
+          <div className="grid grid-cols-[repeat(3,minmax(0,1fr))_32px] gap-2 text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground md:hidden">
             <span className="text-right">Qty</span>
             <span className="text-right">Unit</span>
             <span className="text-right">Total</span>
@@ -144,9 +152,11 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
           {items.map((item, row) => (
             <div
               key={row}
-              className="grid grid-cols-[minmax(0,1fr)_70px_90px_90px_32px] gap-3 items-center"
+              className="grid grid-cols-[repeat(3,minmax(0,1fr))_32px] gap-2 items-center border-b border-border pb-3 md:grid-cols-[minmax(0,1fr)_70px_90px_90px_32px] md:gap-3 md:border-0 md:pb-0"
             >
+              {/* A phone gives the name its own row, the three amounts the next. */}
               <Input
+                containerClassName="col-span-3 md:col-span-1"
                 aria-label={`Name of line ${(row + 1).toString()}`}
                 value={item.name}
                 onChange={(e) => {
@@ -155,8 +165,10 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
               />
               <Input
                 aria-label={`Quantity of line ${(row + 1).toString()}`}
+                placeholder="Qty"
                 type="number"
                 step="0.001"
+                containerClassName="order-2 md:order-none"
                 className="text-right tabular-nums"
                 value={item.quantity}
                 onChange={(e) => {
@@ -165,8 +177,10 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
               />
               <Input
                 aria-label={`Unit price of line ${(row + 1).toString()}`}
+                placeholder="Unit"
                 type="number"
                 step="0.01"
+                containerClassName="order-2 md:order-none"
                 className="text-right tabular-nums"
                 value={item.unit_price}
                 onChange={(e) => {
@@ -175,8 +189,10 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
               />
               <Input
                 aria-label={`Total price of line ${(row + 1).toString()}`}
+                placeholder="Total"
                 type="number"
                 step="0.01"
+                containerClassName="order-2 md:order-none"
                 className="text-right tabular-nums"
                 value={item.total_price}
                 onChange={(e) => {
@@ -186,7 +202,7 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
               <button
                 type="button"
                 aria-label={`Remove line ${(row + 1).toString()}`}
-                className="inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:bg-muted hover:text-tone-error-text transition-colors"
+                className="order-1 inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground md:order-none hover:bg-muted hover:text-tone-error-text transition-colors"
                 onClick={() => {
                   removeItem(row);
                 }}
@@ -213,7 +229,7 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
           </Button>
         </div>
 
-        <div className="flex items-center justify-between border-t border-border pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
           <div className="flex items-center gap-2">
             <span className="text-[13px] font-medium text-muted-foreground">Total</span>
             <Input
@@ -242,10 +258,10 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
       </ModalBody>
 
       <ModalFooter>
-        <span className="text-[13px] text-muted-foreground">
+        <span className="hidden text-[13px] text-muted-foreground md:inline">
           Saving corrects the stored receipt immediately.
         </span>
-        <div className="flex items-center gap-[10px]">
+        <div className="flex w-full items-center gap-[10px] md:w-auto [&>*]:flex-1 md:[&>*]:flex-none">
           <Button variant="ghost" onClick={close}>
             Cancel
           </Button>

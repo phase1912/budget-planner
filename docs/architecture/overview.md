@@ -127,6 +127,12 @@ take an "a receipt changed" callback, which `RootStore` points at
 from, including the dashboard's own receipts column, the month view fetches its figure,
 its spend by category and its receipts again, and it reopens on the month it was left on.
 
+The landing view gets all three in one round trip (F6.7):
+`GET /api/v1/budget/months/{year}/{month}/dashboard`, where `DashboardService` composes
+`BudgetService`'s figure (E6) with the receipts repository's spend by category (E5) and
+the month's receipts (E3), all bounded by the same month. Which receipts it lists is
+the server's call: the newest of a running month, the biggest of a finished one.
+
 ## Security posture
 
 - Receipt images and extracted financial fields are encrypted at rest (N1).

@@ -525,6 +525,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/budget/months/{year}/{month}/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Month Dashboard
+         * @description The landing view for one month in one round trip (F6.7, BRD D1, D4, D7).
+         *
+         *     The month's figure as `/months/{year}/{month}` gives it, where it went by
+         *     category, and its receipts column: the newest of a running month, the
+         *     biggest of a finished one. `today` is the user's own date, as there.
+         */
+        get: operations["get_month_dashboard_api_v1_budget_months__year___month__dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -765,6 +789,24 @@ export interface components {
         MessageResponse: {
             /** Message */
             message: string;
+        };
+        /**
+         * MonthDashboardResponse
+         * @description Everything the landing view shows for one month, in one response (F6.7).
+         *
+         *     `summary` is the month's figure (D1-D7); `categories` where it went, highest
+         *     first, counted like the figure; `receipts` the receipts column, the newest of
+         *     a running month or the biggest of a finished one; `receipts_in_month` how many
+         *     receipts the month holds in all, for "All N".
+         */
+        MonthDashboardResponse: {
+            summary: components["schemas"]["MonthSummaryResponse"];
+            /** Categories */
+            categories: components["schemas"]["CategorySpendResponse"][];
+            /** Receipts */
+            receipts: components["schemas"]["ReceiptResponse"][];
+            /** Receipts In Month */
+            receipts_in_month: number;
         };
         /**
          * MonthSummaryResponse
@@ -2132,6 +2174,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MonthSummaryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_month_dashboard_api_v1_budget_months__year___month__dashboard_get: {
+        parameters: {
+            query?: {
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                year: number;
+                month: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthDashboardResponse"];
                 };
             };
             /** @description Validation Error */
