@@ -102,3 +102,17 @@ Vite · Claude API for extraction, categorisation and advice. Rationale in
 
 E0 and E1 are decomposed into tasks. The rest carry features and are broken down as they are
 picked up — see the [working agreement](docs/planning/working-agreement.md) for why.
+
+## License
+
+Source-available under the [PolyForm Strict License 1.0.0](LICENSE), not open source. You
+may read the code and run it for any noncommercial purpose — personal study, research,
+evaluation, or use by an educational institution. You may not modify it, distribute it or
+build on it, and you may not use it commercially.
+
+Commercial use, or any use the license does not cover, needs the author's permission:
+open an issue or contact [@phase1912](https://github.com/phase1912) on GitHub.
+
+Versions published before this change were released under the MIT License, and copies
+taken under it keep those terms. See [ADR 0011](docs/adr/0011-source-available-under-polyform-strict.md).
+

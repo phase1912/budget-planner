@@ -94,6 +94,14 @@ class DomainError(AppError):
     title = "Domain Rule Violation"
 
 
+class InvalidPeriodError(AppError):
+    """Raised for a statistics period that ends before it starts (BRD E2)."""
+
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    code = "invalid_period"
+    title = "Invalid Period"
+
+
 class UnsupportedFileFormatError(AppError):
     """Raised when an uploaded file is not a supported format (BRD A2)."""
 

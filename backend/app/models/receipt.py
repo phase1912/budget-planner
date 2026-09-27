@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, text
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -29,6 +29,15 @@ class Receipt(Model):
     """One purchase transaction, from one or more photos."""
 
     __tablename__ = "receipts"
+    # Every month total, list and statistic filters one user's receipts by the
+    # date they are filed under: printed date, else upload date (F7.1).
+    __table_args__ = (
+        Index(
+            "ix_receipts_user_purchased",
+            "user_id",
+            text("coalesce(transaction_date, created_at)"),
+        ),
+    )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False

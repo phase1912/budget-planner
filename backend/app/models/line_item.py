@@ -18,7 +18,7 @@ class LineItem(Model):
     __tablename__ = "line_items"
 
     receipt_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("receipts.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("receipts.id", ondelete="CASCADE"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     quantity: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)

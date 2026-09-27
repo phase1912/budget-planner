@@ -13,6 +13,7 @@ import { UploadPage } from "@/features/upload/pages/UploadPage";
 import { ReceiptsPage } from "@/features/receipts/pages/ReceiptsPage";
 import { CategoriesPage } from "@/features/categories/pages/CategoriesPage";
 import { CategorisationQueuePage } from "@/features/categories/pages/CategorisationQueuePage";
+import { StatisticsPage } from "@/features/statistics/pages/StatisticsPage";
 
 export const App = observer(function App() {
   const { authStore } = useStores();
@@ -37,7 +38,7 @@ export const App = observer(function App() {
             <Route path="/categories/manage" element={<CategoriesPage />} />
             <Route path="/categories" element={<CategorisationQueuePage />} />
             {/* Placeholders for upcoming features (prevents 404s on navigation) */}
-            <Route path="/statistics" element={<DashboardPage />} />
+            <Route path="/statistics" element={<StatisticsPage />} />
             <Route path="/goals" element={<DashboardPage />} />
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/profile" element={<ProfilePage />} />

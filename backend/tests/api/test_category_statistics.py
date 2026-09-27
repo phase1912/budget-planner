@@ -1,0 +1,143 @@
+"""Category statistics over a period, against a real database (F7.1, BRD E1, E4, N2)."""
+
+import uuid
+from collections.abc import AsyncGenerator
+from datetime import UTC, datetime
+from decimal import Decimal
+from typing import Any
+
+import jwt
+import pytest
+from httpx import ASGITransport, AsyncClient, Response
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.dependencies import get_current_user
+from app.core.config import get_settings
+from app.core.context import current_user_id
+from app.db.session import get_db_session
+from app.main import create_app
+from app.models.receipt import ReceiptStatus
+from app.models.user import User
+from tests.api.test_budget_router import _receipt
+from tests.factories.user import UserFactory
+
+GROCERIES = uuid.UUID("00000000-0000-0000-0000-000000000001")
+DINING = uuid.UUID("00000000-0000-0000-0000-000000000002")
+
+
+async def _statistics(session: AsyncSession, user: User, start: str, end: str) -> Response:
+    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
+        yield session
+
+    app = create_app()
+    app.dependency_overrides[get_current_user] = lambda: user
+    app.dependency_overrides[get_db_session] = override_get_db
+    token = jwt.encode(
+        {"sub": str(user.id)}, get_settings().jwt_secret_key.get_secret_value(), algorithm="HS256"
+    )
+    current_user_id.set(user.id)
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        headers={"Authorization": f"Bearer {token}"},
+    ) as client:
+        return await client.get(
+            "/api/v1/statistics/categories", params={"start": start, "end": end}
+        )
+
+
+async def _bought(
+    session: AsyncSession,
+    user: User,
+    when: datetime | None,
+    lines: list[tuple[str, uuid.UUID]],
+    **kwargs: Any,
+) -> None:
+    receipt = await _receipt(session, user, when, [a for a, _ in lines], **kwargs)  # type: ignore[arg-type]
+    for line, (_, category) in zip(receipt.line_items, lines, strict=True):
+        line.category_id = category
+    await session.flush()
+
+
+def _rows(body: dict[str, Any]) -> list[tuple[str, str, str, int]]:
+    return [(c["name"], c["total"], c["share"], c["item_count"]) for c in body["categories"]]
+
+
+@pytest.mark.asyncio
+async def test_each_category_comes_with_its_total_share_and_items_biggest_first(
+    db_session: AsyncSession,
+) -> None:
+    """E1, E4: a July with more spent on groceries than dining ranks groceries first."""
+    user = await UserFactory.create_async()
+    await _bought(
+        db_session,
+        user,
+        datetime(2026, 7, 3, tzinfo=UTC),
+        [("30.00", DINING), ("45.00", GROCERIES)],
+    )
+    await _bought(db_session, user, datetime(2026, 7, 20, tzinfo=UTC), [("25.00", GROCERIES)])
+
+    response = await _statistics(db_session, user, "2026-07-01", "2026-07-31")
+
+    assert response.status_code == 200, response.json()
+    body = response.json()
+    assert _rows(body) == [("Groceries", "70.00", "70.0", 2), ("Dining", "30.00", "30.0", 1)]
+    assert (body["total"], body["item_count"]) == ("100.00", 3)
+
+
+@pytest.mark.asyncio
+async def test_both_ends_of_the_period_are_included_and_nothing_beyond(
+    db_session: AsyncSession,
+) -> None:
+    user = await UserFactory.create_async()
+    await _bought(db_session, user, datetime(2026, 7, 10, 0, 0, tzinfo=UTC), [("1.00", DINING)])
+    await _bought(db_session, user, datetime(2026, 7, 24, 23, 59, tzinfo=UTC), [("2.00", DINING)])
+    await _bought(db_session, user, datetime(2026, 7, 9, 23, 59, tzinfo=UTC), [("40.00", DINING)])
+    await _bought(db_session, user, datetime(2026, 7, 25, 0, 0, tzinfo=UTC), [("80.00", DINING)])
+
+    body = (await _statistics(db_session, user, "2026-07-10", "2026-07-24")).json()
+
+    assert _rows(body) == [("Dining", "3.00", "100.0", 2)]
+
+
+@pytest.mark.asyncio
+async def test_receipts_under_review_are_left_out_but_named(db_session: AsyncSession) -> None:
+    """D3: the figures never quietly miss what could not be read."""
+    user = await UserFactory.create_async()
+    await _bought(db_session, user, datetime(2026, 7, 3, tzinfo=UTC), [("10.00", GROCERIES)])
+    await _bought(
+        db_session,
+        user,
+        None,
+        [("99.00", GROCERIES)],
+        status=ReceiptStatus.MANUAL_REVIEW,
+        uploaded=datetime(2026, 7, 15, tzinfo=UTC),
+    )
+
+    body = (await _statistics(db_session, user, "2026-07-01", "2026-07-31")).json()
+
+    assert _rows(body) == [("Groceries", "10.00", "100.0", 1)]
+    assert (body["excluded_count"], Decimal(body["excluded_amount"])) == (1, Decimal("99.00"))
+
+
+@pytest.mark.asyncio
+async def test_another_users_spending_never_appears(db_session: AsyncSession) -> None:
+    """BRD N2."""
+    owner = await UserFactory.create_async()
+    stranger = await UserFactory.create_async()
+    await _bought(db_session, stranger, datetime(2026, 7, 3, tzinfo=UTC), [("500.00", DINING)])
+
+    body = (await _statistics(db_session, owner, "2026-07-01", "2026-07-31")).json()
+
+    assert body["categories"] == []
+    assert (Decimal(body["total"]), body["item_count"]) == (Decimal(0), 0)
+
+
+@pytest.mark.asyncio
+async def test_a_period_ending_before_it_starts_is_refused(db_session: AsyncSession) -> None:
+    user = await UserFactory.create_async()
+
+    response = await _statistics(db_session, user, "2026-07-24", "2026-07-10")
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "invalid_period"
