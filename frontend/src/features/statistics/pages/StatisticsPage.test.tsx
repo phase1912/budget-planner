@@ -213,7 +213,8 @@ describe("StatisticsPage", () => {
     expect(screen.getByRole("checkbox", { name: "Compare with 1 – 27 Jun 2026" })).toBeChecked();
     expect(screen.getByText(/July is still running/)).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "1 – 27 Jun 2026" })).toBeInTheDocument();
-    // In its own column and, for a phone, under the amount.
-    expect(screen.getAllByText("−69.80 · −8.6%")).toHaveLength(2);
+    // In full in its own column; for a phone, just the percentage under the amount.
+    expect(screen.getByText("−69.80 · −8.6%")).toBeInTheDocument();
+    expect(screen.getByText("−8.6%")).toBeInTheDocument();
   });
 });

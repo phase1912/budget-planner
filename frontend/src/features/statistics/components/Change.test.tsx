@@ -23,4 +23,9 @@ describe("Change", () => {
     render(<Change change="0" percent="0" />);
     expect(screen.getByText("no change")).toBeInTheDocument();
   });
+
+  it("keeps only the percentage in its compact form, on one line", () => {
+    render(<Change change="280.57" percent="161.2" compact />);
+    expect(screen.getByText("+161.2%")).toHaveClass("whitespace-nowrap");
+  });
 });

@@ -66,3 +66,37 @@ class CategoryStatisticsResponse(BaseModel):
     excluded_count: int
     excluded_amount: Decimal
     comparison: ComparisonResponse | None = None
+    chart: "ChartResponse | None" = None
+
+
+class BarResponse(BaseModel):
+    """One bar: the spend it stands for and its height as a percentage of `scale_max`."""
+
+    value: Decimal
+    height: Decimal
+
+
+class BarGroupResponse(BaseModel):
+    """One category's bars side by side; `previous` is null without a comparison."""
+
+    category_id: uuid.UUID | None
+    name: str | None
+    current: BarResponse
+    previous: BarResponse | None
+
+
+class ChartResponse(BaseModel):
+    """A grouped bar chart of spend per category, ready to draw as given (BRD E6).
+
+    `scale_max` is the round top of the value axis and `ticks` its gridlines,
+    from 0 up; every bar's `height` is already a percentage of `scale_max`. The
+    groups follow the ranking; `hidden` counts the categories left to the table.
+    """
+
+    scale_max: Decimal
+    ticks: list[Decimal]
+    groups: list[BarGroupResponse]
+    hidden: int
+
+
+CategoryStatisticsResponse.model_rebuild()

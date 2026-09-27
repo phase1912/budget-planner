@@ -16,6 +16,8 @@ interface ChangeProps {
   change: string;
   /** The change as a percentage of the previous total; null when the category is new. */
   percent: string | null | undefined;
+  /** Only the percentage (or "new"), for a phone's narrow amount cell. */
+  compact?: boolean;
 }
 
 /**
@@ -24,19 +26,20 @@ interface ChangeProps {
  *
  * Spending less reads in the primary tone and spending more in the error tone,
  * since it is spending being measured. A category new this period has no
- * percentage to show and says "new" instead.
+ * percentage to show and says "new" instead. The compact form, for a phone,
+ * keeps only the percentage; the amount stays in the table.
  */
-export function Change({ change, percent }: ChangeProps) {
+export function Change({ change, percent, compact = false }: ChangeProps) {
   const amount = Number(change);
   if (amount === 0) return <span className="text-muted-foreground">no change</span>;
   const up = amount > 0;
   const Arrow = up ? TrendingUp : TrendingDown;
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-semibold tabular-nums ${up ? "text-error" : "text-primary"}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap font-semibold tabular-nums ${up ? "text-error" : "text-primary"}`}
     >
       <Arrow size={14} aria-hidden="true" className="shrink-0" />
-      {AMOUNT.format(amount).replace("-", "−")} ·{" "}
+      {!compact && `${AMOUNT.format(amount).replace("-", "−")} · `}
       {percent == null ? "new" : `${PERCENT.format(Number(percent)).replace("-", "−")}%`}
     </span>
   );

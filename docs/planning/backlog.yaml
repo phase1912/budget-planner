@@ -1559,6 +1559,27 @@ epics:
         demo: >
           The chart above the table shows both periods side by side per category, and moves
           when the range changes.
+        tasks:
+          - >
+            app/domain/charts.py - nice_scale picks a round axis top and ticks (steps of 1, 2,
+            2.5 or 5 times a power of ten); build_chart turns the ranked breakdown, with the
+            comparison when there is one, into bar groups whose heights are already a share of
+            that scale. Eight categories are drawn, the rest counted and left to the table.
+          - >
+            GET /api/v1/statistics/categories?chart=true returns that chart; the Statistics
+            screen always asks for it.
+          - >
+            the chart above the table, per the dataviz skill - 24px columns with 4px rounded
+            ends from one baseline, recessive gridlines at the server's ticks, a legend for
+            the two periods, a hover tooltip, each group described for screen readers, the
+            table below as the text view. On a phone, horizontal bars per category.
+          - >
+            the previous period's grey is muted-foreground, not the design's border-strong:
+            the palette validator measured border-strong at 1.45:1 against the surface;
+            statistics.html is changed to match (ADR 0004).
+          - >
+            found while checking the phone - F7.3's change under the amount wrapped over three
+            lines; a phone now shows only the percentage, on one line.
       - key: F7.6
         title: Data export
         labels: [backend, frontend]

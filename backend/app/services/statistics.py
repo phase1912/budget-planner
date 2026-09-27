@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from app.domain.categories import ItemView
+from app.domain.charts import Chart, build_chart
 from app.domain.periods import DateRange
 from app.domain.statistics import (
     CategoryChange,
@@ -52,6 +53,7 @@ class CategoryStatistics:
     excluded_count: int
     excluded_amount: Decimal
     comparison: Comparison | None = None
+    chart: Chart | None = None
 
 
 class StatisticsService:
@@ -61,14 +63,15 @@ class StatisticsService:
         self.receipts = receipts
 
     async def category_statistics(
-        self, period: DateRange, *, compare: bool = False
+        self, period: DateRange, *, compare: bool = False, chart: bool = False
     ) -> CategoryStatistics:
         """Total spend, share and item count per category for `period`, biggest first (E1, E4).
 
         Counts the same items the month total does: those on parsed receipts,
         placed by their printed date or, with none, their upload date (D1-D3).
         With `compare`, the previous like-for-like period is counted the same way
-        and each category's change against it is added (E3).
+        and each category's change against it is added (E3). With `chart`, the
+        figures also come as a chart the client can draw as given (E6).
         """
         totals = await self._totals(period)
         held_out = await self.receipts.item_spend(ItemView.ALL, period=period)
@@ -94,6 +97,9 @@ class StatisticsService:
             excluded_count=held_out.excluded_count,
             excluded_amount=held_out.excluded_amount,
             comparison=comparison,
+            chart=build_chart(categories, comparison.changes if comparison else None)
+            if chart
+            else None,
         )
 
     async def _totals(self, period: DateRange) -> list[CategoryTotal]:

@@ -8,7 +8,10 @@
     .bar-group { display: flex; flex-direction: column; align-items: center; gap: 10px; flex-grow: 1; }
     .bar-pair { display: flex; align-items: flex-end; gap: 6px; height: 170px; }
     .bar { width: 26px; border-radius: 5px 5px 0 0; }
-    .bar--before { background: var(--color-border-strong); }
+    /* The previous period recedes but must stay visible: border-strong measured 1.45:1
+       against the surface, so it uses muted-foreground, which clears 3:1 in both themes
+       (F7.5, checked with the dataviz palette validator). */
+    .bar--before { background: var(--color-muted-foreground); }
     .bar--after { background: var(--color-primary); }
     .stats-table { width: 100%; border-collapse: collapse; }
     .stats-table th,
@@ -90,7 +93,7 @@
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
           <h2 class="section-title">Category by category</h2>
           <div style="display: flex; align-items: center; gap: 16px;">
-            <span class="meta" style="display: inline-flex; align-items: center; gap: 7px;"><span class="dot dot--lg" style="background: var(--color-border-strong);"></span>1&ndash;27 June</span>
+            <span class="meta" style="display: inline-flex; align-items: center; gap: 7px;"><span class="dot dot--lg" style="background: var(--color-muted-foreground);"></span>1&ndash;27 June</span>
             <span class="meta" style="display: inline-flex; align-items: center; gap: 7px;"><span class="dot dot--lg" style="background: var(--color-primary);"></span>1&ndash;27 July</span>
           </div>
         </div>

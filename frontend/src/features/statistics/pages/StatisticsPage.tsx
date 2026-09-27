@@ -22,6 +22,7 @@ import {
 } from "@/shared/components";
 import type { Preset } from "@/stores/StatisticsStore";
 import { useStores } from "@/stores/StoreContext";
+import { CategoryChart } from "../components/CategoryChart";
 import { Change } from "../components/Change";
 import { likeForLikeNote, periodLabel, periodName } from "../periodLabel";
 
@@ -36,7 +37,8 @@ const AMOUNT = new Intl.NumberFormat("en-US", {
  * optionally against the previous like-for-like period (E3 — F7.3). Items on
  * receipts under review are named above the table rather than silently left out
  * (D3). A period holding no receipts says so rather than showing a table of
- * zeroes (E5 — F7.4). The chart and export arrive with F7.5 and F7.6.
+ * zeroes (E5 — F7.4). Above the table, the same figures as a chart, both periods
+ * side by side when compared (E6 — F7.5). Export arrives with F7.6.
  */
 export const StatisticsPage = observer(function StatisticsPage() {
   const { statisticsStore, authStore } = useStores();
@@ -169,6 +171,12 @@ export const StatisticsPage = observer(function StatisticsPage() {
               </Note>
             )}
 
+            {statistics.chart && statistics.categories.length > 0 && (
+              <div className={`transition-opacity ${isLoading ? "opacity-60" : ""}`}>
+                <CategoryChart chart={statistics.chart} current={period} previous={previous} />
+              </div>
+            )}
+
             <Card
               flush
               aria-busy={isLoading}
@@ -238,6 +246,7 @@ export const StatisticsPage = observer(function StatisticsPage() {
                                 <Change
                                   change={category.change}
                                   percent={category.change_percent}
+                                  compact
                                 />
                               </span>
                             )}

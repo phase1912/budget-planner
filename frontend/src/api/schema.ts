@@ -561,14 +561,15 @@ export interface paths {
         };
         /**
          * Get Category Statistics
-         * @description The caller's spend per category between two dates, ranked highest first (BRD E1-E4).
+         * @description The caller's spend per category between two dates, ranked highest first (BRD E1-E6).
          *
          *     `start` and `end` are both included, as everywhere (app/api/periods.py).
          *     With `compare`, each category also carries its change against the previous
-         *     like-for-like period (E3). Only the caller's own receipts are read (N2). A
-         *     period ending before it starts is refused with 422 rather than answered as
-         *     an empty one; a period holding no receipts says so with `receipt_count` 0 and
-         *     no totals, rather than a report of zeroes (E5).
+         *     like-for-like period (E3); with `chart`, the figures come as a chart ready
+         *     to draw (E6). Only the caller's own receipts are read (N2). A period ending
+         *     before it starts is refused with 422 rather than answered as an empty one; a
+         *     period holding no receipts says so with `receipt_count` 0 and no totals,
+         *     rather than a report of zeroes (E5).
          */
         get: operations["get_category_statistics_api_v1_statistics_categories_get"];
         put?: never;
@@ -593,6 +594,28 @@ export interface components {
             access_token: string;
             /** Refresh Token */
             refresh_token: string;
+        };
+        /**
+         * BarGroupResponse
+         * @description One category's bars side by side; `previous` is null without a comparison.
+         */
+        BarGroupResponse: {
+            /** Category Id */
+            category_id: string | null;
+            /** Name */
+            name: string | null;
+            current: components["schemas"]["BarResponse"];
+            previous: components["schemas"]["BarResponse"] | null;
+        };
+        /**
+         * BarResponse
+         * @description One bar: the spend it stands for and its height as a percentage of `scale_max`.
+         */
+        BarResponse: {
+            /** Value */
+            value: string;
+            /** Height */
+            height: string;
         };
         /** Body_upload_receipt_receipts_upload_post */
         Body_upload_receipt_receipts_upload_post: {
@@ -717,6 +740,7 @@ export interface components {
             /** Excluded Amount */
             excluded_amount: string;
             comparison?: components["schemas"]["ComparisonResponse"] | null;
+            chart?: components["schemas"]["ChartResponse"] | null;
         };
         /**
          * CategoryUpdate
@@ -725,6 +749,24 @@ export interface components {
         CategoryUpdate: {
             /** Name */
             name: string;
+        };
+        /**
+         * ChartResponse
+         * @description A grouped bar chart of spend per category, ready to draw as given (BRD E6).
+         *
+         *     `scale_max` is the round top of the value axis and `ticks` its gridlines,
+         *     from 0 up; every bar's `height` is already a percentage of `scale_max`. The
+         *     groups follow the ranking; `hidden` counts the categories left to the table.
+         */
+        ChartResponse: {
+            /** Scale Max */
+            scale_max: string;
+            /** Ticks */
+            ticks: string[];
+            /** Groups */
+            groups: components["schemas"]["BarGroupResponse"][];
+            /** Hidden */
+            hidden: number;
         };
         /**
          * CommitJobRequest
@@ -2358,6 +2400,8 @@ export interface operations {
             query: {
                 /** @description Also measure each category against the previous period */
                 compare?: boolean;
+                /** @description Also return the figures as a chart */
+                chart?: boolean;
                 /** @description First day of the period, included */
                 start: string;
                 /** @description Last day of the period, included */

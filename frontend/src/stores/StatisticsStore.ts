@@ -84,7 +84,7 @@ export class StatisticsStore {
     this.error = null;
     try {
       const response = await apiClient.GET("/api/v1/statistics/categories", {
-        params: { query: { start: this.start, end: this.end, compare: this.compare } },
+        params: { query: { start: this.start, end: this.end, compare: this.compare, chart: true } },
       });
       if (response.error) {
         throw new Error(errorMessage(response.error, "Could not load the statistics"));
