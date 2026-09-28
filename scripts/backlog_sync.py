@@ -184,7 +184,7 @@ def feature_body(feature: dict, epic: dict, epic_number: int | None,
     demo = clean(feature.get("demo"))
     if demo:
         lines += ["", "### Demonstrated by", demo]
-    tasks = feature.get("tasks") or []
+    tasks = (feature.get("tasks") or []) if epic.get("groomed") else []
     if tasks:
         lines += ["", "### Tasks"]
         for index, task in enumerate(tasks, start=1):
@@ -289,7 +289,7 @@ def render_markdown(data: dict) -> str:
             demo = clean(feature.get("demo"))
             if demo:
                 lines += [f"**Demonstrated by:** {demo}", ""]
-            tasks = feature.get("tasks") or []
+            tasks = (feature.get("tasks") or []) if epic.get("groomed") else []
             if tasks:
                 for index, task in enumerate(tasks, start=1):
                     blocked = task.get("depends_on")
@@ -377,7 +377,7 @@ def backlog_keys(data: dict) -> set[str]:
         keys.add(epic["key"])
         for feature in epic["features"]:
             keys.add(feature["key"])
-            for i, task in enumerate(feature.get("tasks") or [], start=1):
+            for i, task in enumerate((feature.get("tasks") or []) if epic.get("groomed") else [], start=1):
                 keys.add(task_key(feature["key"], i, task))
     return keys
 
@@ -433,7 +433,7 @@ def sync(data: dict, dry_run: bool) -> None:
             if f_number:
                 feature_numbers[feature["key"]] = f_number
 
-            for i, task in enumerate(feature.get("tasks") or [], start=1):
+            for i, task in enumerate((feature.get("tasks") or []) if epic.get("groomed") else [], start=1):
                 key = task_key(feature["key"], i, task)
                 t_number = upsert(repo, key, f"[{key}] {task['title']}",
                                   task_body(task, key, feature,
@@ -463,7 +463,7 @@ def sync(data: dict, dry_run: bool) -> None:
             f_number = feature_numbers[feature["key"]]
             gh_api(f"repos/{repo}/issues/{f_number}", "PATCH",
                    {"body": feature_body(feature, epic, number, task_numbers, numbers)})
-            for i, task in enumerate(feature.get("tasks") or [], start=1):
+            for i, task in enumerate((feature.get("tasks") or []) if epic.get("groomed") else [], start=1):
                 if not task.get("depends_on"):
                     continue
                 key = task_key(feature["key"], i, task)

@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-15 epics · 101 features · 88 tasks written so far.
+15 epics · 103 features · 182 tasks written so far.
 
 11 epics are phase 1 — the BRD scope, delivered before launch. 4 are phase 2: commercial scope that is planned but deliberately not started until phase 1 is complete.
 
@@ -12,12 +12,12 @@
 | E0 | Foundation & Delivery Platform | — | 10 | yes | 1 |
 | E1 | Identity & Account | BR-7, N2 | 4 | yes | 1 |
 | E2 | Receipt Ingestion & Storage | BR-1 | 5 | yes | 1 |
-| E3 | Receipt Parsing & Extraction | BR-1 | 7 | no | 1 |
-| E4 | Multi-Photo Position Matching | BR-2 | 7 | yes | 1 |
+| E3 | Receipt Parsing & Extraction | BR-1 | 8 | no | 1 |
+| E4 | Multi-Photo Position Matching | BR-2 | 8 | yes | 1 |
 | E5 | Spend Categorization | BR-3 | 7 | no | 1 |
 | E6 | Monthly Budget Calculation | BR-4 | 7 | no | 1 |
 | E7 | Statistics, Comparison & Export | BR-5 | 6 | no | 1 |
-| E8 | Goals & AI Optimization Advice | BR-6 | 9 | no | 1 |
+| E8 | Goals & AI Optimization Advice | BR-6 | 9 | yes | 1 |
 | E9 | Web Client Foundation | — | 6 | yes | 1 |
 | E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 7 | no | 1 |
 | E11 | Alternative Receipt Intake | — | 6 | no | 2 |
@@ -74,7 +74,7 @@ The persistence layer is established with async sessions, migration tooling and 
 A developer can bring up the full stack — API, client, PostgreSQL and S3-compatible object storage — locally with one command.
 
 - **F0.4.1** Docker Compose stack with PostgreSQL and MinIO — Compose file with pinned images, named volumes, health checks, and a bootstrap step creating the receipts bucket. MinIO stands in for production object storage. Lives at the repository root, not under infra/, so `docker compose up` works from a fresh clone with no extra flags.
-- **F0.4.2** Task runner targets for the common workflows — up, down, migrate, test, lint, typecheck. Both languages behind the same interface so nobody memorises two toolchains. A `seed` target lands with the seed script itself in F5.8, once there are entities to seed.
+- **F0.4.2** Task runner targets for the common workflows — up, down, migrate, test, lint, typecheck. Both languages behind the same interface so nobody memorises two toolchains. The `seed` target landed with the seed script itself in F5.8.
 - **F0.4.4** Quickstart section in the README — Clone-to-running instructions, prerequisites with versions, and how to obtain and configure the Claude API key.
 
 ### F0.5 — Continuous integration
@@ -319,6 +319,14 @@ What "Receipts" in the navigation means: the endpoint listing an account's store
 
 **Demonstrated by:** Open Receipts, page through them, and click one to read its line items. Sign in as a second account and confirm the first account's receipts are absent and its receipt URL returns 404 rather than 403 (BRD N2).
 
+### F3.9 — Correct a stored receipt
+
+*Requirements: A11, D6* · *Blocked by: F3.8*
+
+Edit the merchant, date, total and line items of a receipt that is already stored, from the detail dialog the "Edit" button already sits in. A11 marks a receipt "requires manual review ... until resolved" and D6 assumes a receipt can be edited after the fact, but nothing in the product can currently change a stored receipt: there is no PATCH endpoint and the button has no handler. Groomed late because F6.5 was written assuming this capability rather than building it.
+
+**Demonstrated by:** Open a stored receipt whose total the parser misread, correct it from the detail dialog, and see the list row and the receipt itself both show the new figure.
+
 ---
 
 ## E4 — Multi-Photo Position Matching
@@ -400,6 +408,17 @@ The third step of the wizard, and the endpoint behind it: a batch of decisions i
 
 - **F4.7.1** Resolve gate API — Create a central queue endpoint for outstanding decisions and block saving the batch until all are settled.
 - **F4.7.2** Step 3 UI implementation — Implement the third step of the wizard showing the queue and disabling "Store receipts" until empty.
+
+### F4.8 — Receipt list search and filtering
+
+*Requirements: —* · *Blocked by: F3.8*
+
+Filter the receipt list by processing status, by a specific date, month, or a custom date range (including past dates), and search by merchant or item name. Brings the UI elements in the receipts.html header to life.
+
+**Demonstrated by:** Open Receipts, filter by a past month and see only those receipts. Search for a specific merchant and confirm the list restricts to matching receipts.
+
+- **F4.8.1** API and database filtering logic — Add query parameters for date, status, and search to the list_receipts endpoint and implement the SQLAlchemy query logic in ReceiptRepository.
+- **F4.8.2** Frontend store and filter controls — Implement date, status, and search input controls. Connect them to the receipt store to trigger API re-fetches when changed.
 
 ---
 
@@ -525,7 +544,7 @@ Where a monthly limit is set, express current spend as a percentage of it, inclu
 
 *Requirements: D1, D4, D7* · *Blocked by: F6.6, F5.2, F3.8*
 
-What turns F6.1's month figure into the landing view: the category breakdown beside it and the latest-receipts column next to that, each opening into the screens that own them. Kept as its own feature because it composes three epics' data — E6's totals, E5's categories, E3's receipts — and needs the endpoint that returns them together rather than three round trips. The figure, the limit bar, the excluded notice and month switching are already there from F6.1, F6.2, F6.3 and F6.6; this finishes docs/design/screens/dashboard.html rather than starting it.
+What turns F6.1's month figure into the landing view: the category breakdown beside it and the latest-receipts column next to that, each opening into the screens that own them. Both are already on screen from F6.5, fetched as three requests over the existing endpoints. Kept as its own feature because it composes three epics' data — E6's totals, E5's categories, E3's receipts — and needs the endpoint that returns them together rather than three round trips. The figure, the limit bar, the excluded notice and month switching are already there from F6.1, F6.2, F6.3 and F6.6; this finishes docs/design/screens/dashboard.html rather than starting it.
 
 **Demonstrated by:** Open the root route on a seeded account: spend, limit, breakdown and recent receipts on one screen. Click a receipt to open its dialog, click through to full statistics.
 
@@ -601,6 +620,11 @@ Model both financial goals (savings target, category reduction, overall ceiling)
 
 **Demonstrated by:** Set "stay under 3 000 PLN a month" and "lose weight" as goals, see them both on the Goals screen, and edit one.
 
+- **F8.1.1** Goal database model and migration — Implement the Goal SQLAlchemy model containing type (financial vs lifestyle), target amounts, category references, and text descriptions. Write an Alembic migration to add the goals table with a user_id foreign key, enforcing per-user isolation.
+- **F8.1.2** Goal API endpoints (CRUD) — Create GET, POST, PATCH, DELETE /api/v1/goals endpoints. Enforce cross-user isolation so users can only access their own goals. Include cross-user access tests in the suite per F1.3.3.
+- **F8.1.3** Goals frontend store and API integration — Generate the OpenAPI client. Implement GoalsStore using MobX to fetch, create, edit, and delete goals, following the observable-vs-derived conventions.
+- **F8.1.4** Goals screen UI — Build the Goals screen at /goals implementing docs/design/screens/goals.html. Include the "New goal" dialog and the list of active goals as cards with edit actions.
+
 ### F8.2 — Lifestyle goal to spending mapping
 
 *Requirements: F9* · *Blocked by: F8.1, F5.1*
@@ -608,6 +632,10 @@ Model both financial goals (savings target, category reduction, overall ceiling)
 Translate a non-financial goal into the relevant categories and recurring items before any advice is generated, since the rest of the pipeline reasons over spend. The goal card shows what it decided to watch, and lets you correct it.
 
 **Demonstrated by:** The "lose weight" card lists the spending lines it maps to — sweets, snacks, sugary drinks, alcohol — and you can adjust that list rather than guess at it.
+
+- **F8.2.1** Goal mapping AI port and prompt — Create a prompt and Claude API adapter that translates a lifestyle goal text into a list of spending categories and matching keywords/items.
+- **F8.2.2** Map goals on creation/update — Call the mapping port when a lifestyle goal is created or updated, and save the mapped categories/items to the database as part of the goal record.
+- **F8.2.3** Display and edit goal mappings in UI — Update the goal card to show the spending lines it maps to. Allow the user to edit the mapped categories and items.
 
 ### F8.3 — Spend analysis for advice
 
@@ -617,6 +645,9 @@ Identify highest-spend categories, largest recent increases, and recurring posit
 
 **Demonstrated by:** No screen of its own — it is the input F8.4 cites. Proven when a recommendation names "9 of your 14 Fresh Market receipts", a claim only this analysis can supply.
 
+- **F8.3.1** Statistics extraction for goal analysis — Create a service that collects relevant category totals, recent increases (period over period), and frequent line items matching a goal's targets.
+- **F8.3.2** Context builder for advice generation — Format the extracted historical data into a structured prompt context to be fed into the advice generation AI.
+
 ### F8.4 — Recommendation generation and the advice feed
 
 *Requirements: F3* · *Blocked by: F8.3*
@@ -624,6 +655,10 @@ Identify highest-spend categories, largest recent increases, and recurring posit
 Produce specific, actionable recommendations naming a category or an individual recurring item. Constraint 11.3 rules out generic financial tips, so genericness is a defect to be tested for, not a style preference. Ships with the advice feed that carries them.
 
 **Demonstrated by:** Ask for advice on a seeded account and read a recommendation naming an actual item you actually buy — not "consider reducing discretionary spending".
+
+- **F8.4.1** Advice generation prompt and AI port — Write a prompt enforcing non-generic, specific recommendations based on the spend analysis context. Implement the AI adapter to call Claude.
+- **F8.4.2** Recommendation endpoints — Add an endpoint to trigger advice generation for a goal and another to list generated recommendations. Store generated recommendations in the database.
+- **F8.4.3** Advice feed UI — Build the advice feed section below goals in docs/design/screens/goals.html to display the generated recommendations.
 
 ### F8.5 — Projected impact quantification
 
@@ -633,6 +668,9 @@ Every recommendation states its expected effect on the goal, computed from the u
 
 **Demonstrated by:** Each advice card carries its figure — "−61.20 PLN a month", "−64% of sweet purchases" — and the arithmetic can be checked against the receipts behind it.
 
+- **F8.5.1** Compute projected impact mathematically — Ensure the backend calculates projected impact strictly from historical data rather than trusting AI hallucinated numbers, and includes this in the recommendation payload.
+- **F8.5.2** Display impact figures on advice cards — Render the calculated impact values on the recommendation cards in the advice feed.
+
 ### F8.6 — Insufficient-data guard
 
 *Requirements: F5* · *Blocked by: F8.4*
@@ -640,6 +678,9 @@ Every recommendation states its expected effect on the goal, computed from the u
 Below a configured minimum of history, say more data is needed instead of emitting a low-confidence recommendation.
 
 **Demonstrated by:** Ask for advice on a fresh account with three receipts and read that more history is needed, per the F5 panel in docs/design/screens/states.html — no invented advice.
+
+- **F8.6.1** Enforce minimum data threshold in advice generation — Check if the user has sufficient history (e.g., minimum number of receipts or months) before generating advice. Return an explicit insufficient-data status if not.
+- **F8.6.2** Insufficient data UI state — Show the "more history needed" state panel (F5 panel from states.html) when the backend indicates insufficient data.
 
 ### F8.7 — On-track progress reporting
 
@@ -649,6 +690,9 @@ When pace meets the goal, report positive progress and explicitly suppress unnec
 
 **Demonstrated by:** With spend on pace to finish under the ceiling, the feed leads with "nothing to cut this month" and the projected finish, and offers no savings advice for that goal.
 
+- **F8.7.1** Detect on-track status during generation — Evaluate the spending pace against the goal before generating advice. If on pace, skip generating cuts and output an "on track" message.
+- **F8.7.2** Render on-track status in UI — Display the positive progress card ("nothing to cut this month") when the user is on track, suppressing normal advice cards.
+
 ### F8.8 — Proactive at-risk warnings
 
 *Requirements: F7* · *Blocked by: F8.7*
@@ -657,6 +701,9 @@ Detect mid-month that projected spend will miss the goal and surface a warning w
 
 **Demonstrated by:** Push mid-month spend onto a pace that overshoots the ceiling and find the warning waiting without having asked for it, with at least one way to correct course.
 
+- **F8.8.1** Background task for proactive evaluation — Implement a scheduled background job to evaluate goals mid-month and generate at-risk warnings if projected spend overshoots.
+- **F8.8.2** Display at-risk warnings in dashboard and goals — Fetch and prominently display proactive warnings in the dashboard and goals screens.
+
 ### F8.9 — Recommendation feedback loop
 
 *Requirements: F8* · *Blocked by: F8.4*
@@ -664,6 +711,10 @@ Detect mid-month that projected spend will miss the goal and surface a warning w
 Capture "not followed" and "not helpful" feedback and deprioritise similar recommendations in later generations, through controls on the advice itself.
 
 **Demonstrated by:** Mark a Dining recommendation "not for me", ask for advice again, and find similar Dining suggestions demoted and the dismissed one shown as such with an undo.
+
+- **F8.9.1** Recommendation feedback endpoints — Add endpoints to submit feedback (not helpful, not followed) for a recommendation and save it to the DB.
+- **F8.9.2** Feed feedback into advice context — Include dismissed/unhelpful recommendation history in the prompt context to ensure Claude avoids suggesting similar cuts.
+- **F8.9.3** Feedback UI controls — Add feedback action buttons to advice cards and handle the UI state (e.g. graying out dismissed cards with an undo option).
 
 ---
 

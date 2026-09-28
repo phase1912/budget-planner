@@ -1622,7 +1622,7 @@ epics:
     title: Goals & AI Optimization Advice
     br: [BR-6]
     phase: 1
-    groomed: false
+    groomed: true
     summary: >
       The product's differentiator: a user states a financial or lifestyle goal and receives
       specific, evidence-based, quantified recommendations tied to their own purchase history,
@@ -1641,6 +1641,28 @@ epics:
         demo: >
           Set "stay under 3 000 PLN a month" and "lose weight" as goals, see them both on the
           Goals screen, and edit one.
+        tasks:
+          - key: F8.1.1
+            title: Goal database model and migration
+            labels: [database, backend]
+            detail: >
+              Implement the Goal SQLAlchemy model containing type (financial vs lifestyle), target amounts, category references, and text descriptions. Write an Alembic migration to add the goals table with a user_id foreign key, enforcing per-user isolation.
+          - key: F8.1.2
+            title: Goal API endpoints (CRUD)
+            labels: [backend]
+            detail: >
+              Create GET, POST, PATCH, DELETE /api/v1/goals endpoints. Enforce cross-user isolation so users can only access their own goals. Include cross-user access tests in the suite per F1.3.3.
+          - key: F8.1.3
+            title: Goals frontend store and API integration
+            labels: [frontend]
+            detail: >
+              Generate the OpenAPI client. Implement GoalsStore using MobX to fetch, create, edit, and delete goals, following the observable-vs-derived conventions.
+          - key: F8.1.4
+            title: Goals screen UI
+            labels: [frontend]
+            detail: >
+              Build the Goals screen at /goals implementing docs/design/screens/goals.html. Include the "New goal" dialog and the list of active goals as cards with edit actions.
+
       - key: F8.2
         title: Lifestyle goal to spending mapping
         labels: [ai, backend, frontend]
@@ -1653,6 +1675,23 @@ epics:
         demo: >
           The "lose weight" card lists the spending lines it maps to — sweets, snacks, sugary
           drinks, alcohol — and you can adjust that list rather than guess at it.
+        tasks:
+          - key: F8.2.1
+            title: Goal mapping AI port and prompt
+            labels: [ai, backend]
+            detail: >
+              Create a prompt and Claude API adapter that translates a lifestyle goal text into a list of spending categories and matching keywords/items.
+          - key: F8.2.2
+            title: Map goals on creation/update
+            labels: [backend]
+            detail: >
+              Call the mapping port when a lifestyle goal is created or updated, and save the mapped categories/items to the database as part of the goal record.
+          - key: F8.2.3
+            title: Display and edit goal mappings in UI
+            labels: [frontend]
+            detail: >
+              Update the goal card to show the spending lines it maps to. Allow the user to edit the mapped categories and items.
+
       - key: F8.3
         title: Spend analysis for advice
         labels: [backend]
@@ -1664,6 +1703,18 @@ epics:
         demo: >
           No screen of its own — it is the input F8.4 cites. Proven when a recommendation
           names "9 of your 14 Fresh Market receipts", a claim only this analysis can supply.
+        tasks:
+          - key: F8.3.1
+            title: Statistics extraction for goal analysis
+            labels: [backend]
+            detail: >
+              Create a service that collects relevant category totals, recent increases (period over period), and frequent line items matching a goal's targets.
+          - key: F8.3.2
+            title: Context builder for advice generation
+            labels: [backend]
+            detail: >
+              Format the extracted historical data into a structured prompt context to be fed into the advice generation AI.
+
       - key: F8.4
         title: Recommendation generation and the advice feed
         labels: [ai, backend, frontend]
@@ -1677,6 +1728,23 @@ epics:
         demo: >
           Ask for advice on a seeded account and read a recommendation naming an actual item
           you actually buy — not "consider reducing discretionary spending".
+        tasks:
+          - key: F8.4.1
+            title: Advice generation prompt and AI port
+            labels: [ai, backend]
+            detail: >
+              Write a prompt enforcing non-generic, specific recommendations based on the spend analysis context. Implement the AI adapter to call Claude.
+          - key: F8.4.2
+            title: Recommendation endpoints
+            labels: [backend]
+            detail: >
+              Add an endpoint to trigger advice generation for a goal and another to list generated recommendations. Store generated recommendations in the database.
+          - key: F8.4.3
+            title: Advice feed UI
+            labels: [frontend]
+            detail: >
+              Build the advice feed section below goals in docs/design/screens/goals.html to display the generated recommendations.
+
       - key: F8.5
         title: Projected impact quantification
         labels: [backend, frontend]
@@ -1688,6 +1756,18 @@ epics:
         demo: >
           Each advice card carries its figure — "−61.20 PLN a month", "−64% of sweet
           purchases" — and the arithmetic can be checked against the receipts behind it.
+        tasks:
+          - key: F8.5.1
+            title: Compute projected impact mathematically
+            labels: [backend]
+            detail: >
+              Ensure the backend calculates projected impact strictly from historical data rather than trusting AI hallucinated numbers, and includes this in the recommendation payload.
+          - key: F8.5.2
+            title: Display impact figures on advice cards
+            labels: [frontend]
+            detail: >
+              Render the calculated impact values on the recommendation cards in the advice feed.
+
       - key: F8.6
         title: Insufficient-data guard
         labels: [backend, frontend]
@@ -1699,6 +1779,18 @@ epics:
         demo: >
           Ask for advice on a fresh account with three receipts and read that more history is
           needed, per the F5 panel in docs/design/screens/states.html — no invented advice.
+        tasks:
+          - key: F8.6.1
+            title: Enforce minimum data threshold in advice generation
+            labels: [backend]
+            detail: >
+              Check if the user has sufficient history (e.g., minimum number of receipts or months) before generating advice. Return an explicit insufficient-data status if not.
+          - key: F8.6.2
+            title: Insufficient data UI state
+            labels: [frontend]
+            detail: >
+              Show the "more history needed" state panel (F5 panel from states.html) when the backend indicates insufficient data.
+
       - key: F8.7
         title: On-track progress reporting
         labels: [backend, frontend]
@@ -1710,6 +1802,18 @@ epics:
         demo: >
           With spend on pace to finish under the ceiling, the feed leads with "nothing to cut
           this month" and the projected finish, and offers no savings advice for that goal.
+        tasks:
+          - key: F8.7.1
+            title: Detect on-track status during generation
+            labels: [backend]
+            detail: >
+              Evaluate the spending pace against the goal before generating advice. If on pace, skip generating cuts and output an "on track" message.
+          - key: F8.7.2
+            title: Render on-track status in UI
+            labels: [frontend]
+            detail: >
+              Display the positive progress card ("nothing to cut this month") when the user is on track, suppressing normal advice cards.
+
       - key: F8.8
         title: Proactive at-risk warnings
         labels: [backend, frontend]
@@ -1722,6 +1826,18 @@ epics:
         demo: >
           Push mid-month spend onto a pace that overshoots the ceiling and find the warning
           waiting without having asked for it, with at least one way to correct course.
+        tasks:
+          - key: F8.8.1
+            title: Background task for proactive evaluation
+            labels: [backend]
+            detail: >
+              Implement a scheduled background job to evaluate goals mid-month and generate at-risk warnings if projected spend overshoots.
+          - key: F8.8.2
+            title: Display at-risk warnings in dashboard and goals
+            labels: [frontend]
+            detail: >
+              Fetch and prominently display proactive warnings in the dashboard and goals screens.
+
       - key: F8.9
         title: Recommendation feedback loop
         labels: [backend, ai, frontend]
@@ -1733,6 +1849,23 @@ epics:
         demo: >
           Mark a Dining recommendation "not for me", ask for advice again, and find similar
           Dining suggestions demoted and the dismissed one shown as such with an undo.
+        tasks:
+          - key: F8.9.1
+            title: Recommendation feedback endpoints
+            labels: [backend]
+            detail: >
+              Add endpoints to submit feedback (not helpful, not followed) for a recommendation and save it to the DB.
+          - key: F8.9.2
+            title: Feed feedback into advice context
+            labels: [ai, backend]
+            detail: >
+              Include dismissed/unhelpful recommendation history in the prompt context to ensure Claude avoids suggesting similar cuts.
+          - key: F8.9.3
+            title: Feedback UI controls
+            labels: [frontend]
+            detail: >
+              Add feedback action buttons to advice cards and handle the UI state (e.g. graying out dismissed cards with an undo option).
+
   # F8.10 "Goals and advice interface" was retired here. It was the worst case of the pattern:
   # nine features would have shipped before anything about goals could be seen at all. The
   # screen is now built up by the features it belongs to — F8.1 the goal cards, F8.2 the
