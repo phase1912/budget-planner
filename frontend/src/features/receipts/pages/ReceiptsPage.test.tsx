@@ -11,9 +11,11 @@ vi.mock("../components/ReceiptDetailModal", () => ({
 const mockFetchReceipts = vi.fn();
 const mockFetchReceiptDetail = vi.fn();
 const mockSetFilters = vi.fn();
+const mockStartExport = vi.fn();
 
 vi.mock("@/stores/StoreContext", () => ({
   useStores: () => ({
+    exportStore: { busy: {}, start: mockStartExport },
     receiptStore: {
       receipts: [
         {
@@ -132,5 +134,19 @@ describe("ReceiptsPage", () => {
     );
 
     expect(mockSetFilters).not.toHaveBeenCalled();
+  });
+
+  it("exports the list as filtered on screen, in the format picked", () => {
+    render(
+      <MemoryRouter>
+        <ReceiptsPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Export this list" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: /CSV/ }));
+
+    expect(mockStartExport).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "receipts", format: "csv", compare: false }),
+    );
   });
 });

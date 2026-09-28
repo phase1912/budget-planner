@@ -29,6 +29,7 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | **PositionMatch** | A decision that two line items are, or are not, the same physical purchase. | Receipt |
 | **PositionMatchOverride** | A user correction flipping a same-item/two-items decision. Kept as labelled data (B7). | User |
 | **MonthlySnapshot** | A finalised month: total, receipt count, and the count and value held out for review. A cache of derived data, taken on the first look after the month ends (ADR-0010). | User |
+| **ExportJob** | One export of the user's receipts or statistics as CSV or JSON, written in the background: the filters it was asked with, its status, and where the finished file is stored (N6). | User |
 | **Goal** | A financial or lifestyle objective the user declared. | User |
 | **Recommendation** | Generated advice tied to a goal, with projected impact and user feedback. | User |
 
@@ -132,6 +133,12 @@ Rules that must hold at all times. Each is a candidate for a test.
    the client draws what it is given and re-derives nothing. It draws the eight biggest
    categories in ranking order and counts the rest, which stay in the table; a bar for
    a period of refunds is drawn at zero rather than below the axis.
+13. An export holds what the screen it was asked from shows (N6): the receipts list
+   under its filters — CSV one row per line item, JSON receipts with their items as the
+   list API returns them — or the statistics for the period, compared if the screen
+   is, the JSON being exactly the statistics API's answer. It reads only its owner's
+   data and is stored under their prefix; a spreadsheet cell that would run as a
+   formula (a leading =, +, - or @) is written as text.
 
 **Position matching**
 

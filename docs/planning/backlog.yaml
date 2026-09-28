@@ -1591,6 +1591,27 @@ epics:
         demo: >
           Export from Statistics and from Receipts, and open the file — the figures match what
           the screen showed.
+        tasks:
+          - >
+            ExportJob (export_jobs, migration 1e0496d719c2) - kind, format, the screen's
+            filters, status, stored file and error; kinds, formats and statuses kept as text
+            so adding one needs no enum migration.
+          - >
+            app/services/export.py - run_export writes the file in the background with its
+            own session and storage client, like receipt processing: receipts page by page
+            under the list's filters (CSV one row per item, JSON nested as the list API
+            returns), or the statistics for the period (JSON exactly the statistics API's
+            answer, CSV its rows, comparison columns when compared). Formula-starting cells
+            are written as text. The statistics response mapping moved from the router into
+            the service so the endpoint and the export share it.
+          - >
+            POST /api/v1/exports (202), GET /api/v1/exports/{id} and
+            GET /api/v1/exports/{id}/file (409 until ready); another user's export is 404
+            (N2); a missing or backwards period is 422 as everywhere.
+          - >
+            ExportStore follows the job and saves the file; an ExportMenu (CSV or JSON)
+            replaces Receipts' placeholder "Export this list" link and sits in the Statistics
+            header, each exporting what that screen shows. Full width and 44px on a phone.
 
   # F7.7 "Statistics and charts interface" was retired here. Its screen is now built up by the
   # features whose numbers it displays — F7.1 puts the ranked table on screen, F7.2 the range

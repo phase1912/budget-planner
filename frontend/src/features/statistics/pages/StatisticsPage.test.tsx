@@ -19,8 +19,14 @@ const statisticsStore = {
   setCompare: vi.fn(),
 };
 
+const exportStore = { busy: {} as Record<string, boolean>, start: vi.fn() };
+
 vi.mock("@/stores/StoreContext", () => ({
-  useStores: () => ({ statisticsStore, authStore: { user: { currency: "PLN" } } }),
+  useStores: () => ({
+    statisticsStore,
+    exportStore,
+    authStore: { user: { currency: "PLN" } },
+  }),
 }));
 
 function renderPage() {

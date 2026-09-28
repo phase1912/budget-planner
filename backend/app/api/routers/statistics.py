@@ -1,4 +1,3 @@
-from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
@@ -7,20 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import get_current_user
 from app.api.periods import required_period
 from app.db.session import get_db_session
-from app.domain.charts import Bar, Chart
 from app.domain.periods import DateRange
-from app.domain.statistics import CategoryStanding
 from app.models.user import User
 from app.repository.receipt import ReceiptRepository
-from app.schemas.statistics import (
-    BarGroupResponse,
-    BarResponse,
-    CategoryStandingResponse,
-    CategoryStatisticsResponse,
-    ChartResponse,
-    ComparisonResponse,
-)
-from app.services.statistics import StatisticsService
+from app.schemas.statistics import CategoryStatisticsResponse
+from app.services.statistics import StatisticsService, statistics_response
 
 router = APIRouter(prefix="/api/v1/statistics", tags=["statistics"])
 
@@ -48,72 +38,4 @@ async def get_category_statistics(
     stats = await StatisticsService(ReceiptRepository(session)).category_statistics(
         period, compare=compare, chart=chart
     )
-    comparison = stats.comparison
-    if comparison is None:
-        rows = [_row(c) for c in stats.categories]
-    else:
-        rows = [
-            _row(
-                c.standing,
-                previous_total=c.previous_total,
-                change=c.change,
-                change_percent=c.change_percent,
-            )
-            for c in comparison.changes
-        ]
-    found = stats.receipt_count > 0
-    return CategoryStatisticsResponse(
-        start=stats.period.start,
-        end=stats.period.end,
-        receipt_count=stats.receipt_count,
-        total=stats.total if found else None,
-        item_count=stats.item_count if found else None,
-        categories=rows,
-        excluded_count=stats.excluded_count,
-        excluded_amount=stats.excluded_amount,
-        comparison=ComparisonResponse(
-            start=comparison.period.start,
-            end=comparison.period.end,
-            receipt_count=comparison.receipt_count,
-            total=comparison.total if comparison.receipt_count else None,
-            item_count=comparison.item_count if comparison.receipt_count else None,
-            stops_mid_month=comparison.stops_mid_month,
-        )
-        if comparison
-        else None,
-        chart=_chart(stats.chart) if stats.chart else None,
-    )
-
-
-def _chart(chart: Chart) -> ChartResponse:
-    """The chart as the API shows it."""
-
-    def bar(b: Bar) -> BarResponse:
-        return BarResponse(value=b.value, height=b.height)
-
-    return ChartResponse(
-        scale_max=chart.scale_max,
-        ticks=chart.ticks,
-        groups=[
-            BarGroupResponse(
-                category_id=g.category_id,
-                name=g.name,
-                current=bar(g.current),
-                previous=bar(g.previous) if g.previous else None,
-            )
-            for g in chart.groups
-        ],
-        hidden=chart.hidden,
-    )
-
-
-def _row(standing: CategoryStanding, **change: Decimal | None) -> CategoryStandingResponse:
-    """One category as the API shows it, with its change when there is one."""
-    return CategoryStandingResponse(
-        category_id=standing.category_id,
-        name=standing.name,
-        total=standing.total,
-        share=standing.share,
-        item_count=standing.item_count,
-        **change,
-    )
+    return statistics_response(stats)
