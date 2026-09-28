@@ -4,6 +4,7 @@ import { observer } from "mobx-react-lite";
 import { Link } from "react-router-dom";
 
 import { CategoryDot } from "@/features/categories/components/CategoryDot";
+import { ExportMenu } from "@/features/exports/components/ExportMenu";
 import {
   Button,
   Card,
@@ -38,10 +39,11 @@ const AMOUNT = new Intl.NumberFormat("en-US", {
  * receipts under review are named above the table rather than silently left out
  * (D3). A period holding no receipts says so rather than showing a table of
  * zeroes (E5 — F7.4). Above the table, the same figures as a chart, both periods
- * side by side when compared (E6 — F7.5). Export arrives with F7.6.
+ * side by side when compared (E6 — F7.5), and exported as CSV or JSON with the
+ * same figures (N6 — F7.6).
  */
 export const StatisticsPage = observer(function StatisticsPage() {
-  const { statisticsStore, authStore } = useStores();
+  const { statisticsStore, authStore, exportStore } = useStores();
   const { statistics, isLoading, error, start, end, preset, compare } = statisticsStore;
   const [picking, setPicking] = useState(false);
   const currency = authStore.user?.currency ?? "PLN";
@@ -56,13 +58,23 @@ export const StatisticsPage = observer(function StatisticsPage() {
   return (
     <div className="flex-grow flex flex-col items-center py-4 md:py-10 md:px-8">
       <div className="w-full max-w-[1000px] flex flex-col gap-4 md:gap-5">
-        <header className="flex flex-col gap-1">
-          <h1 className="m-0 text-[24px] font-bold tracking-[-0.02em] md:text-[28px]">
-            Statistics
-          </h1>
-          <p className="m-0 text-lg text-muted-foreground">
-            Category totals over any stretch of days, not just whole months.
-          </p>
+        <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-1">
+            <h1 className="m-0 text-[24px] font-bold tracking-[-0.02em] md:text-[28px]">
+              Statistics
+            </h1>
+            <p className="m-0 text-lg text-muted-foreground">
+              Category totals over any stretch of days, not just whole months.
+            </p>
+          </div>
+          <ExportMenu
+            label="Export"
+            busy={Boolean(exportStore.busy.statistics)}
+            onExport={(format) => {
+              // The file holds this period's figures, compared if the screen is (BRD N6).
+              void exportStore.start({ kind: "statistics", format, start, end, compare });
+            }}
+          />
         </header>
 
         <Card

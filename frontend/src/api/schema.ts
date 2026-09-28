@@ -580,6 +580,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Export
+         * @description Start exporting the caller's receipts or statistics as CSV or JSON (BRD N6).
+         *
+         *     Answers at once with the job; the file is written in the background, so a
+         *     long history never holds the request open. Poll the job until it is ready.
+         */
+        post: operations["start_export_api_v1_exports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exports/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Export
+         * @description How the caller's export is going; another user's reads as not found (N2).
+         */
+        get: operations["get_export_api_v1_exports__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exports/{job_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Export
+         * @description The finished file, as an attachment under its export's name (BRD N6).
+         *
+         *     Refused with 409 until the export is ready; another user's reads as not found.
+         */
+        get: operations["download_export_api_v1_exports__job_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -828,6 +893,73 @@ export interface components {
             /** Total Price */
             total_price?: string | null;
         };
+        /**
+         * ExportFormat
+         * @description The file format asked for (BRD N6: CSV or JSON).
+         * @enum {string}
+         */
+        ExportFormat: "csv" | "json";
+        /**
+         * ExportJobResponse
+         * @description An export's progress; once `status` is `ready`, its file can be downloaded.
+         */
+        ExportJobResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["ExportKind"];
+            format: components["schemas"]["ExportFormat"];
+            status: components["schemas"]["ExportStatus"];
+            /** Filename */
+            filename: string;
+            /** Error */
+            error: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Completed At */
+            completed_at: string | null;
+        };
+        /**
+         * ExportKind
+         * @description What an export holds: the receipts list, or the statistics table (BRD N6).
+         * @enum {string}
+         */
+        ExportKind: "receipts" | "statistics";
+        /**
+         * ExportRequest
+         * @description What to export, in which format, filtered as the screen it came from (BRD N6).
+         *
+         *     For `receipts`: the list's filters — `start`/`end` (both included), `status`
+         *     and the search `q` — all optional. For `statistics`: the period, which is
+         *     required, and whether it is compared with the previous one.
+         */
+        ExportRequest: {
+            kind: components["schemas"]["ExportKind"];
+            format: components["schemas"]["ExportFormat"];
+            /** Start */
+            start?: string | null;
+            /** End */
+            end?: string | null;
+            status?: components["schemas"]["ReceiptStatus"] | null;
+            /** Q */
+            q?: string | null;
+            /**
+             * Compare
+             * @default false
+             */
+            compare: boolean;
+        };
+        /**
+         * ExportStatus
+         * @description Where an export stands: waiting, being written, ready to download, or failed.
+         * @enum {string}
+         */
+        ExportStatus: "pending" | "running" | "ready" | "failed";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -2421,6 +2553,107 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CategoryStatisticsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_export_api_v1_exports_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportJobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_export_api_v1_exports__job_id__get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportJobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_export_api_v1_exports__job_id__file_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

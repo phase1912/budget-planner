@@ -149,6 +149,17 @@ one of these period queries filters one user's receipts by
 `coalesce(transaction_date, created_at)`; the `ix_receipts_user_purchased` expression
 index and `ix_line_items_receipt_id` exist for exactly that (F7.1).
 
+## Export
+
+Exports (N6, F7.6) run as background jobs, like receipt processing: `POST
+/api/v1/exports` records an `ExportJob` with the screen's filters and answers 202 at
+once; `app/services/export.py`'s `run_export` then opens its own session and storage
+client, reads the owner's data page by page, writes the CSV or JSON to object storage
+under `exports/{user_id}/`, and marks the job ready or failed. The client polls
+`GET /api/v1/exports/{id}` and downloads `GET /api/v1/exports/{id}/file` once ready. The
+statistics JSON is built by the same `statistics_response` the statistics endpoint
+returns, so a file and the screen cannot disagree.
+
 ## Security posture
 
 - Receipt images and extracted financial fields are encrypted at rest (N1).

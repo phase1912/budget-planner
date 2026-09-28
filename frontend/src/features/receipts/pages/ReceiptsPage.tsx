@@ -10,6 +10,7 @@ import { DateFilterModal } from "../components/DateFilterModal";
 import { StatusFilterDropdown } from "../components/StatusFilterDropdown";
 import { Card, Input, IconTile, Pagination } from "@/shared/components";
 import { SectionTabs } from "@/features/app-shell/SectionTabs";
+import { ExportMenu } from "@/features/exports/components/ExportMenu";
 import { formatPurchase } from "@/shared/purchaseDate";
 
 type ReceiptStatus = components["schemas"]["ReceiptStatus"];
@@ -29,7 +30,7 @@ function isReceiptStatus(value: string | null): value is ReceiptStatus {
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 export const ReceiptsPage = observer(() => {
-  const { receiptStore } = useStores();
+  const { receiptStore, exportStore } = useStores();
   const [searchParams] = useSearchParams();
   const requestedStatus = searchParams.get("status");
   const requestedStart = searchParams.get("start");
@@ -67,26 +68,22 @@ export const ReceiptsPage = observer(() => {
               {String(receiptStore.total)} stored &middot; newest first
             </p>
           </div>
-          <a
-            href="/statistics"
-            className="inline-flex items-center gap-[7px] text-[14px] font-semibold text-primary hover:text-primary-hover"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Export this list
-          </a>
+          <ExportMenu
+            label="Export this list"
+            busy={Boolean(exportStore.busy.receipts)}
+            onExport={(format) => {
+              // The file holds the list as filtered on screen (BRD N6).
+              void exportStore.start({
+                kind: "receipts",
+                format,
+                start: receiptStore.startDateFilter ?? null,
+                end: receiptStore.endDateFilter ?? null,
+                status: receiptStore.statusFilter ?? null,
+                q: receiptStore.searchQuery ?? null,
+                compare: false,
+              });
+            }}
+          />
         </div>
 
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
