@@ -17,6 +17,12 @@ export interface ModalProps extends React.HTMLAttributes<HTMLDivElement> {
  */
 export const Modal = ({ isOpen, onClose, children, className, ...props }: ModalProps) => {
   const dialogRef = React.useRef<HTMLDivElement>(null);
+  // Callers pass a fresh arrow every render. Were `onClose` a dependency below, each
+  // keystroke in a field would re-run the effect and pull focus back onto the dialog.
+  const onCloseRef = React.useRef(onClose);
+  React.useLayoutEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -28,7 +34,7 @@ export const Modal = ({ isOpen, onClose, children, className, ...props }: ModalP
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== "Tab") return;
@@ -59,7 +65,7 @@ export const Modal = ({ isOpen, onClose, children, className, ...props }: ModalP
       document.removeEventListener("keydown", handleKeyDown);
       previouslyFocused?.focus();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
