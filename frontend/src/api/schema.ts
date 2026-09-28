@@ -645,6 +645,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/goals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Goals
+         * @description The caller's goals, newest first (BRD F1).
+         */
+        get: operations["list_goals_api_v1_goals_get"];
+        put?: never;
+        /**
+         * Create Goal
+         * @description State a goal (BRD F1); a malformed one is refused with 422 and the reason.
+         */
+        post: operations["create_goal_api_v1_goals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/{goal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Goal
+         * @description Drop a goal; another user's is not found (N2).
+         */
+        delete: operations["delete_goal_api_v1_goals__goal_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Goal
+         * @description Change a goal; another user's is not found (N2), a broken result is 422.
+         */
+        patch: operations["update_goal_api_v1_goals__goal_id__patch"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -960,6 +1008,95 @@ export interface components {
          * @enum {string}
          */
         ExportStatus: "pending" | "running" | "ready" | "failed";
+        /**
+         * FinancialKind
+         * @description The three money targets BRD F1 names; a lifestyle goal has none.
+         *
+         *     `spending_ceiling` keeps a month's spend under `target_amount`; `savings_target`
+         *     puts `target_amount` aside; `category_reduction` keeps one category, the goal's
+         *     `category_id`, under `target_amount` a month.
+         * @enum {string}
+         */
+        FinancialKind: "spending_ceiling" | "savings_target" | "category_reduction";
+        /**
+         * GoalCreate
+         * @description A new goal as the user states it (BRD F1).
+         *
+         *     Whether its fields fit together — a money goal's kind, amount and category,
+         *     or a lifestyle goal's lack of them — is checked by `app.domain.goals`.
+         */
+        GoalCreate: {
+            type: components["schemas"]["GoalType"];
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            financial_kind?: components["schemas"]["FinancialKind"] | null;
+            /** Target Amount */
+            target_amount?: number | string | null;
+            /** Category Id */
+            category_id?: string | null;
+        };
+        /**
+         * GoalRead
+         * @description A goal as the Goals screen shows it; `mapped_*` are filled by F8.2 (F9).
+         */
+        GoalRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            type: components["schemas"]["GoalType"];
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            financial_kind: components["schemas"]["FinancialKind"] | null;
+            /** Target Amount */
+            target_amount: string | null;
+            /** Category Id */
+            category_id: string | null;
+            /** Mapped Category Ids */
+            mapped_category_ids: string[];
+            /** Mapped Item Names */
+            mapped_item_names: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * GoalType
+         * @description The distinction BRD F9 depends on: a money target, or a way of living (F1).
+         * @enum {string}
+         */
+        GoalType: "financial" | "lifestyle";
+        /**
+         * GoalUpdate
+         * @description A change to a goal: only the fields sent change (BRD F1).
+         *
+         *     `name` cannot be cleared. `description`, `target_amount` and `category_id` can
+         *     be sent as null to clear them; the result must still be a well formed goal. A
+         *     goal's type is fixed once made.
+         */
+        GoalUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            financial_kind?: components["schemas"]["FinancialKind"] | null;
+            /** Target Amount */
+            target_amount?: number | string | null;
+            /** Category Id */
+            category_id?: string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -2654,6 +2791,140 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_goals_api_v1_goals_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_goal_api_v1_goals_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_goal_api_v1_goals__goal_id__delete: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_goal_api_v1_goals__goal_id__patch: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalRead"];
                 };
             };
             /** @description Validation Error */

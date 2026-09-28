@@ -1,3 +1,4 @@
+import * as React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "./Modal";
@@ -89,5 +90,32 @@ describe("Modal focus management", () => {
 
     expect(trigger).toHaveFocus();
     trigger.remove();
+  });
+
+  it("keeps focus in a field while its owner re-renders on every keystroke", () => {
+    function Typing() {
+      const [text, setText] = React.useState("");
+      // A fresh onClose each render, as every caller writes it.
+      return (
+        <Modal isOpen onClose={() => undefined}>
+          <input
+            aria-label="Name"
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+            }}
+          />
+        </Modal>
+      );
+    }
+    render(<Typing />);
+    const field = screen.getByLabelText("Name");
+    field.focus();
+
+    fireEvent.change(field, { target: { value: "S" } });
+    fireEvent.change(field, { target: { value: "St" } });
+
+    expect(field).toHaveFocus();
+    expect(field).toHaveValue("St");
   });
 });
