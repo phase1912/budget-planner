@@ -5,11 +5,21 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-from app.domain.goals import FinancialKind, GoalType
+from app.domain.goals import (
+    WATCHED_ITEM_MAX_LENGTH,
+    WATCHED_LINES_MAX,
+    FinancialKind,
+    GoalType,
+)
 
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
 Description = Annotated[str, StringConstraints(strip_whitespace=True, max_length=1000)]
 Amount = Annotated[Decimal, Field(max_digits=12, decimal_places=2)]
+ItemName = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=WATCHED_ITEM_MAX_LENGTH)
+]
+WatchedCategories = Annotated[list[uuid.UUID], Field(max_length=WATCHED_LINES_MAX)]
+WatchedItems = Annotated[list[ItemName], Field(max_length=WATCHED_LINES_MAX)]
 
 
 class GoalCreate(BaseModel):
@@ -32,7 +42,8 @@ class GoalUpdate(BaseModel):
 
     `name` cannot be cleared. `description`, `target_amount` and `category_id` can
     be sent as null to clear them; the result must still be a well formed goal. A
-    goal's type is fixed once made.
+    goal's type is fixed once made. Sending `mapped_*` is the user correcting what
+    a lifestyle goal watches (F8.2); an empty list clears it, null is refused.
     """
 
     name: Name | None = None
@@ -40,6 +51,8 @@ class GoalUpdate(BaseModel):
     financial_kind: FinancialKind | None = None
     target_amount: Amount | None = None
     category_id: uuid.UUID | None = None
+    mapped_category_ids: WatchedCategories | None = None
+    mapped_item_names: WatchedItems | None = None
 
 
 class GoalRead(BaseModel):

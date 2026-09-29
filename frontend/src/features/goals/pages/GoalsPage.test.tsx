@@ -26,6 +26,8 @@ const eatBetter: Goal = {
   name: "Eat better",
   target_amount: null,
   description: "Fewer snacks",
+  mapped_category_ids: ["c1"],
+  mapped_item_names: ["sweets"],
 };
 const groceries = {
   id: "c1",
@@ -215,5 +217,50 @@ describe("GoalsPage", () => {
     await waitFor(() => {
       expect(goalsStore.remove).toHaveBeenCalledWith("g1");
     });
+  });
+
+  it("shows what a lifestyle goal watches, and adjusting it opens the goal", () => {
+    runInAction(() => {
+      goalsStore.goals = [eatBetter];
+    });
+    render(<GoalsPage />);
+    expect(screen.getByText("Groceries")).toBeInTheDocument();
+    expect(screen.getByText("sweets")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Adjust what Eat better watches" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("sends the user's correction of what a lifestyle goal watches", async () => {
+    runInAction(() => {
+      goalsStore.goals = [eatBetter];
+    });
+    render(<GoalsPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Edit Eat better" }));
+    fireEvent.click(screen.getByRole("button", { name: "Groceries", pressed: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Stop watching sweets" }));
+    const add = screen.getByLabelText("Add an item");
+    fireEvent.change(add, { target: { value: " Beer " } });
+    fireEvent.keyDown(add, { key: "Enter" });
+    expect(goalsStore.update).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() => {
+      expect(goalsStore.update).toHaveBeenCalledWith(
+        "g2",
+        expect.objectContaining({ mapped_category_ids: [], mapped_item_names: ["beer"] }),
+      );
+    });
+  });
+
+  it("leaves what a goal watches to the server when the user did not correct it", async () => {
+    runInAction(() => {
+      goalsStore.goals = [eatBetter];
+    });
+    render(<GoalsPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Edit Eat better" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() => {
+      expect(goalsStore.update).toHaveBeenCalled();
+    });
+    expect(goalsStore.update.mock.lastCall?.[1]).not.toHaveProperty("mapped_item_names");
   });
 });

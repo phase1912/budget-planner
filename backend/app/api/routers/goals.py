@@ -5,10 +5,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.adapters.goal_mapping_agent import GoalMappingAdapter
+from app.agent.factory import agent_from_settings
 from app.api.dependencies import get_current_user
 from app.db.session import get_db_session
 from app.models.goal import Goal
 from app.models.user import User
+from app.ports.goal_mapping import GoalMapperPort
 from app.repository.category import CategoryRepository
 from app.repository.goal import GoalRepository
 from app.schemas.goal import GoalCreate, GoalRead, GoalUpdate
@@ -17,9 +20,17 @@ from app.services.goal import GoalService
 router = APIRouter(prefix="/api/v1/goals", tags=["goals"])
 
 
-def get_goal_service(session: Annotated[AsyncSession, Depends(get_db_session)]) -> GoalService:
+def get_goal_mapper() -> GoalMapperPort:
+    """Provide the goal mapper port; tests override this to stay off the network."""
+    return GoalMappingAdapter(agent_from_settings())
+
+
+def get_goal_service(
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    mapper: Annotated[GoalMapperPort, Depends(get_goal_mapper)],
+) -> GoalService:
     """The goal service bound to the request's session."""
-    return GoalService(GoalRepository(session), CategoryRepository(session))
+    return GoalService(GoalRepository(session), CategoryRepository(session), mapper)
 
 
 Service = Annotated[GoalService, Depends(get_goal_service)]

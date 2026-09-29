@@ -9,7 +9,7 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from app.adapters.categorisation_agent import ItemCategoriserAdapter
 from app.adapters.vision_agent import VisionAgentAdapter
-from app.agent.core import Agent
+from app.agent.factory import agent_from_settings
 from app.api.dependencies import get_current_user, get_storage_service
 from app.api.errors import UploadLimitExceededError
 from app.api.periods import optional_period
@@ -52,22 +52,9 @@ from app.services.storage import ObjectNotFoundError
 router = APIRouter(prefix="/receipts", tags=["receipts"])
 
 
-def _build_agent() -> Agent:
-    """The LLM client every AI port is backed by, configured from settings."""
-    settings = get_settings()
-    api_key = settings.llm_api_key.get_secret_value() if settings.llm_api_key else None
-    return Agent(
-        model=settings.llm_model,
-        api_key=api_key,
-        api_base=settings.llm_api_base,
-        disable_reasoning=settings.llm_disable_reasoning,
-        disable_json_schema=settings.llm_disable_json_schema,
-    )
-
-
 def get_item_categoriser() -> ItemCategoriserPort:
     """Provide the categoriser port; tests override this to stay off the network."""
-    return ItemCategoriserAdapter(_build_agent())
+    return ItemCategoriserAdapter(agent_from_settings())
 
 
 def get_receipt_service(
@@ -75,7 +62,7 @@ def get_receipt_service(
 ) -> ReceiptService:
     """Provide a ReceiptService with storage and vision parser wired up."""
     settings = get_settings()
-    agent = _build_agent()
+    agent = agent_from_settings()
     return ReceiptService(
         storage_port,
         parser_port=VisionAgentAdapter(agent),

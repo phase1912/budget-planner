@@ -2,7 +2,7 @@ import enum
 import uuid
 from decimal import Decimal
 
-from sqlalchemy import Enum, ForeignKey, Numeric, String, Text
+from sqlalchemy import Boolean, Enum, ForeignKey, Numeric, String, Text, false
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import Uuid
@@ -28,8 +28,9 @@ class Goal(Model):
     A financial goal has a `financial_kind` and a `target_amount`, plus a
     `category_id` when it cuts one category; a lifestyle goal has neither, only its
     words, which F8.2 translates into the spending lines it watches
-    (`mapped_category_ids`, `mapped_item_names`, F9). The rules that keep these
-    consistent live in `app.domain.goals`.
+    (`mapped_category_ids`, `mapped_item_names`, F9). Once the user corrects that
+    list, `mapping_set_by_user` keeps later automatic passes off it. The rules that
+    keep these consistent live in `app.domain.goals`.
     """
 
     __tablename__ = "goals"
@@ -53,4 +54,7 @@ class Goal(Model):
     )
     mapped_item_names: Mapped[list[str]] = mapped_column(
         ARRAY(String(120)), server_default="{}", nullable=False
+    )
+    mapping_set_by_user: Mapped[bool] = mapped_column(
+        Boolean, server_default=false(), nullable=False
     )

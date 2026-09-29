@@ -173,6 +173,12 @@ Rules that must hold at all times. Each is a candidate for a test.
     when its kind is a category reduction. That category must be one the user can see.
     A lifestyle goal has no kind, amount or category: it is read through what is bought.
     Creating and editing a goal pass the same check (`app/domain/goals.py`).
+14c. A lifestyle goal is projected onto spending when it is stated, and again when its
+    name or description changes: the model chooses categories and item names it watches
+    (F9, F8.2), from the categories the user can see only. A money goal never watches
+    anything. Once the user corrects that list it is theirs, and no automatic pass
+    overwrites it — the same rule as a manual category (13). A failed or slow model
+    leaves the list empty, never the goal unsaved.
 
 **Advice**
 

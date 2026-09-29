@@ -38,9 +38,10 @@ above.
 | **Agent** | Provider-agnostic LLM capabilities (wrapped via `litellm`) | Connect to the database or define HTTP routes |
 | **Port** | Protocol describing an external dependency | Reference a concrete vendor SDK |
 
-Services depend on ports, not implementations. `ReceiptParser`, `ItemCategoriser` and
-`AdviceGenerator` are protocols; the Claude-backed or Agent-backed classes implementing them are wired
-in by FastAPI `Depends`. This is what allows the BDD acceptance suite to run the real
+Services depend on ports, not implementations. `ReceiptParser`, `ItemCategoriser`,
+`GoalMapper` and `AdviceGenerator` are protocols; the Agent-backed classes implementing them
+are wired in by FastAPI `Depends` (`get_item_categoriser`, `get_goal_mapper`), all built on one
+LLM client from `app/agent/factory.py`. This is what allows the BDD acceptance suite to run the real
 business logic against stub implementations with no network access.
 
 ### Errors crossing the API boundary

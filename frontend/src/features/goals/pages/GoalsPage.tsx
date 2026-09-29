@@ -75,7 +75,7 @@ export const GoalsPage = observer(function GoalsPage() {
                 <GoalCard
                   goal={goal}
                   currency={currency}
-                  categoryName={categoryName(goal.category_id)}
+                  categoryName={categoryName}
                   onEdit={() => {
                     setEditing(goal);
                   }}

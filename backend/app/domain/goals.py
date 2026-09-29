@@ -6,8 +6,15 @@ goal in a state creating it would have refused.
 
 import enum
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass
 from decimal import Decimal
+
+WATCHED_ITEM_MAX_LENGTH = 120
+"""The longest spending line a lifestyle goal can watch, as the column stores it."""
+
+WATCHED_LINES_MAX = 20
+"""How many categories, and how many item names, one lifestyle goal can watch."""
 
 
 class GoalType(enum.StrEnum):
@@ -42,6 +49,7 @@ class GoalShape:
     financial_kind: FinancialKind | None
     target_amount: Decimal | None
     category_id: uuid.UUID | None
+    watches_spending: bool = False
 
 
 def check_goal(goal: GoalShape) -> None:
@@ -49,7 +57,8 @@ def check_goal(goal: GoalShape) -> None:
 
     A financial goal names its kind and a positive amount, and a category exactly
     when it cuts one. A lifestyle goal has none of these: it is read through the
-    things bought, not a sum, and keeping the two apart is what F9 relies on.
+    things bought, not a sum, and keeping the two apart is what F9 relies on. Only
+    a lifestyle goal watches spending lines; a money goal already knows what it limits.
 
     Raises InvalidGoal with a message fit to show.
     """
@@ -59,6 +68,8 @@ def check_goal(goal: GoalShape) -> None:
         return
     if goal.financial_kind is None:
         raise InvalidGoal("Say what kind of money goal this is.")
+    if goal.watches_spending:
+        raise InvalidGoal("Only a lifestyle goal watches spending lines.")
     if goal.target_amount is None or goal.target_amount <= 0:
         raise InvalidGoal("A money goal needs an amount above zero.")
     cuts_a_category = goal.financial_kind is FinancialKind.CATEGORY_REDUCTION
@@ -66,3 +77,18 @@ def check_goal(goal: GoalShape) -> None:
         raise InvalidGoal("Pick the category to cut.")
     if not cuts_a_category and goal.category_id is not None:
         raise InvalidGoal("Only a goal cutting one category names a category.")
+
+
+def clean_item_names(names: Iterable[str]) -> list[str]:
+    """The item names a lifestyle goal watches, tidied for storage (BRD F9 — F8.2).
+
+    Trimmed, lower-cased, cut to the column's length, blanks and repeats dropped,
+    order kept, at most WATCHED_LINES_MAX. Used on the model's answer, which is
+    never trusted to be tidy, and on the user's own list alike.
+    """
+    cleaned: list[str] = []
+    for name in names:
+        item = name.strip().lower()[:WATCHED_ITEM_MAX_LENGTH].strip()
+        if item and item not in cleaned:
+            cleaned.append(item)
+    return cleaned[:WATCHED_LINES_MAX]

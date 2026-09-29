@@ -21,3 +21,4 @@ class GoalFactory(ModelFactory[Goal]):
     category_id = None
     mapped_category_ids = Use(lambda: list[uuid.UUID]())
     mapped_item_names = Use(lambda: list[str]())
+    mapping_set_by_user = False
