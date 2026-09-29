@@ -15,16 +15,19 @@ function borderClass(error: string | undefined, tone: SelectProps["tone"]): stri
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, label, error, tone = "default", id, ...props }, ref) => {
+    // A label is tied to its field even when the caller gives no id.
+    const generatedId = React.useId();
+    const selectId = id ?? generatedId;
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={id} className="text-base font-medium text-muted-foreground">
+          <label htmlFor={selectId} className="text-base font-medium text-muted-foreground">
             {label}
           </label>
         )}
         <select
           ref={ref}
-          id={id}
+          id={selectId}
           className={`px-3 py-2.75 text-lg font-normal border rounded-control bg-background transition-shadow appearance-none
             focus:outline-none focus:border-primary focus:shadow-[var(--ring-primary)]
             disabled:bg-muted disabled:text-muted-foreground

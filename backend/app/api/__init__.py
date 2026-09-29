@@ -12,6 +12,7 @@ from app.api.health import router as health_router
 from app.api.routers.budget import router as budget_router
 from app.api.routers.categories import router as categories_router
 from app.api.routers.exports import router as exports_router
+from app.api.routers.goals import router as goals_router
 from app.api.routers.receipts import router as receipts_router
 from app.api.routers.statistics import router as statistics_router
 from app.api.routers.users import router as users_router
@@ -25,6 +26,7 @@ ROUTERS: list[APIRouter] = [
     budget_router,
     statistics_router,
     exports_router,
+    goals_router,
 ]
 
 

@@ -12,6 +12,7 @@ import { ReceiptStore } from "@/stores/ReceiptStore";
 import { BudgetStore } from "@/stores/BudgetStore";
 import { StatisticsStore } from "@/stores/StatisticsStore";
 import { ExportStore } from "@/stores/ExportStore";
+import { GoalsStore } from "@/stores/GoalsStore";
 
 /**
  * Single instantiation point for every MobX store in the client (F9.2.1). Feature
@@ -30,6 +31,7 @@ export class RootStore {
   readonly budgetStore: BudgetStore;
   readonly statisticsStore: StatisticsStore;
   readonly exportStore: ExportStore;
+  readonly goalsStore: GoalsStore;
 
   constructor() {
     this.themeStore = new ThemeStore();
@@ -44,6 +46,7 @@ export class RootStore {
     this.categoriesStore = new CategoriesStore();
     this.statisticsStore = new StatisticsStore();
     this.exportStore = new ExportStore(this.toastStore);
+    this.goalsStore = new GoalsStore(this.toastStore);
     // The month view remembers where it was left; a new account starts afresh,
     // and never sees the previous one's figures while its own load.
     reaction(
@@ -51,6 +54,7 @@ export class RootStore {
       () => {
         this.budgetStore.reset();
         this.statisticsStore.reset();
+        this.goalsStore.reset();
       },
     );
   }

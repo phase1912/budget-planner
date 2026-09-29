@@ -102,6 +102,14 @@ class InvalidPeriodError(AppError):
     title = "Invalid Period"
 
 
+class InvalidGoalError(AppError):
+    """Raised for a goal whose fields do not fit its type (BRD F1)."""
+
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    code = "invalid_goal"
+    title = "Invalid Goal"
+
+
 class UnsupportedFileFormatError(AppError):
     """Raised when an uploaded file is not a supported format (BRD A2)."""
 

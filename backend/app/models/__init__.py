@@ -9,6 +9,7 @@ from app.models.base import Base, Model
 from app.models.category import Category
 from app.models.category_rule import CategoryRule
 from app.models.export_job import ExportJob
+from app.models.goal import Goal
 from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
 from app.models.monthly_snapshot import MonthlySnapshot
@@ -22,6 +23,7 @@ __all__ = [
     "Category",
     "CategoryRule",
     "ExportJob",
+    "Goal",
     "LineItem",
     "Model",
     "MonthlySnapshot",

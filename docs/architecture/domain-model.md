@@ -30,7 +30,7 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | **PositionMatchOverride** | A user correction flipping a same-item/two-items decision. Kept as labelled data (B7). | User |
 | **MonthlySnapshot** | A finalised month: total, receipt count, and the count and value held out for review. A cache of derived data, taken on the first look after the month ends (ADR-0010). | User |
 | **ExportJob** | One export of the user's receipts or statistics as CSV or JSON, written in the background: the filters it was asked with, its status, and where the finished file is stored (N6). | User |
-| **Goal** | A financial or lifestyle objective the user declared. | User |
+| **Goal** | A financial or lifestyle objective the user declared. A financial goal is one of three kinds: a monthly spending ceiling, a savings target, or a cap on one category (F1). | User |
 | **Recommendation** | Generated advice tied to a goal, with projected impact and user feedback. | User |
 
 Relationships: a User has many Receipts; a Receipt has many LineItems; a LineItem has one
@@ -165,6 +165,14 @@ Rules that must hold at all times. Each is a candidate for a test.
     user's own moves its items, amounts unchanged, to a category the user chooses, never
     the deleted one. Its correction rules follow, unless the target is Uncategorized, in
     which case they are dropped (C7).
+
+**Goals**
+
+14b. A goal is financial or lifestyle, fixed once made; F9 depends on the split (F1).
+    A financial goal names its kind and an amount above zero, and a category exactly
+    when its kind is a category reduction. That category must be one the user can see.
+    A lifestyle goal has no kind, amount or category: it is read through what is bought.
+    Creating and editing a goal pass the same check (`app/domain/goals.py`).
 
 **Advice**
 
