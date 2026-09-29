@@ -71,6 +71,21 @@ class ItemSpend:
     excluded_amount: Decimal
 
 
+def _purchase_key() -> ColumnElement[str]:
+    """One product however its name was cased or padded on different receipts."""
+    return func.lower(func.trim(LineItem.name))
+
+
+@dataclass(frozen=True)
+class Purchase:
+    """One product across receipts: `key` identifies it, `name` is how one receipt spelt it."""
+
+    key: str
+    name: str
+    receipt_count: int
+    total: Decimal
+
+
 @dataclass(frozen=True)
 class CategorySpend:
     """One category's share of a set of line items; `category_id` is None for none at all."""
@@ -244,6 +259,89 @@ class ReceiptRepository(BaseRepository[Receipt]):
             CategorySpend(category_id, name, int(count), Decimal(amount))
             for category_id, name, count, amount in (await self.session.execute(stmt)).all()
         ]
+
+    async def recurring_purchases(
+        self,
+        period: DateRange,
+        *,
+        category_ids: Sequence[uuid.UUID] = (),
+        keywords: Sequence[str] = (),
+        min_receipts: int,
+        limit: int,
+    ) -> list[Purchase]:
+        """Products bought on at least `min_receipts` receipts in `period` (BRD F2).
+
+        Counts items on parsed receipts only, like the month's total. Narrowed to
+        items in any of `category_ids` or whose name contains any of `keywords`,
+        ignoring case; with neither, every item counts. One product is one name,
+        ignoring case and surrounding spaces. Most receipts first, then most spent.
+        """
+        key = _purchase_key()
+        receipts = func.count(func.distinct(LineItem.receipt_id))
+        spent = func.coalesce(func.sum(LineItem.total_price), 0)
+        matching = self._filtered_items(
+            ItemView.ALL, search=None, period=period, category_id=None
+        ).where(Receipt.status == ReceiptStatus.PARSED)
+        narrowed = [LineItem.category_id.in_(category_ids)] if category_ids else []
+        narrowed += [
+            LineItem.name.ilike(f"%{_escape_like(keyword)}%", escape="\\") for keyword in keywords
+        ]
+        if narrowed:
+            matching = matching.where(or_(*narrowed))
+        stmt = (
+            matching.with_only_columns(key, func.min(LineItem.name), receipts, spent)
+            .group_by(key)
+            .having(receipts >= min_receipts)
+            .order_by(receipts.desc(), spent.desc(), key)
+            .limit(limit)
+        )
+        return [
+            Purchase(key, name, int(count), Decimal(total))
+            for key, name, count, total in (await self.session.execute(stmt)).all()
+        ]
+
+    async def purchase_merchants(
+        self, period: DateRange, keys: Sequence[str]
+    ) -> list[tuple[str, str, int]]:
+        """For each product in `keys`, how many parsed receipts from each shop carry it.
+
+        Rows of (product key, merchant, receipts), from receipts in `period` that
+        name a shop; the product keys are those `recurring_purchases` returns.
+        """
+        if not keys:
+            return []
+        key = _purchase_key()
+        stmt = (
+            self._filtered_items(ItemView.ALL, search=None, period=period, category_id=None)
+            .where(
+                Receipt.status == ReceiptStatus.PARSED,
+                Receipt.merchant_name.is_not(None),
+                key.in_(keys),
+            )
+            .with_only_columns(
+                key, Receipt.merchant_name, func.count(func.distinct(LineItem.receipt_id))
+            )
+            .group_by(key, Receipt.merchant_name)
+        )
+        return [
+            (row_key, merchant, int(count))
+            for row_key, merchant, count in (await self.session.execute(stmt)).all()
+        ]
+
+    async def receipts_by_merchant(self, period: DateRange) -> dict[str, int]:
+        """How many of the current user's parsed receipts in `period` came from each shop."""
+        stmt = self._apply_ownership(
+            select(Receipt.merchant_name, func.count(Receipt.id))
+            .where(
+                Receipt.status == ReceiptStatus.PARSED,
+                Receipt.merchant_name.is_not(None),
+                _within(period),
+            )
+            .group_by(Receipt.merchant_name)
+        )
+        return {
+            merchant: int(count) for merchant, count in (await self.session.execute(stmt)).all()
+        }
 
     async def count_needs_review(self) -> int:
         """How many of the current user's items wait in the review queue (BRD C3)."""

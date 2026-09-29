@@ -184,6 +184,16 @@ Rules that must hold at all times. Each is a candidate for a test.
 
 15. Recommendations cite the user's actual purchase history. Generic financial tips are a
     defect, not a fallback (F3, constraint 11.3).
+15a. The evidence advice cites is gathered from the owner's parsed receipts only, over
+    the running month and the two before it (`app/domain/goal_analysis.py`, F2). It
+    names the highest-spend categories and the largest increases by amount against the
+    like-for-like period before. It also names the purchases that recur, meaning they
+    appear on at least two receipts. Receipts are counted, not lines, and each purchase
+    names the shop whose receipts carry it most ("9 of your 14 Fresh Market receipts").
+    Those purchases are narrowed to what the goal concerns: a lifestyle goal's watched
+    categories and keywords (a keyword matches any name containing it), a category
+    reduction's one category, or all spending for a ceiling or savings target. A
+    lifestyle goal watching nothing has no purchases to cite.
 16. Every recommendation quantifies its projected impact, computed from real history
     rather than asserted by the model (F4).
 17. Below the minimum history threshold, the system says more data is needed and produces
