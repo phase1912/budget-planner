@@ -1,4 +1,4 @@
-import { Heart, Pencil, Target } from "lucide-react";
+import { Heart, Pencil, Plus, Target } from "lucide-react";
 
 import { Card, IconButton, IconTile, Pill } from "@/shared/components";
 import type { Goal } from "@/stores/GoalsStore";
@@ -13,8 +13,8 @@ const SET_ON = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long",
 interface GoalCardProps {
   goal: Goal;
   currency: string;
-  /** The category a category-reduction goal cuts, by name, when known. */
-  categoryName: string | null;
+  /** A category's name by id, when known: the one a reduction cuts, the ones a goal watches. */
+  categoryName: (id: string | null | undefined) => string | null;
   onEdit: () => void;
 }
 
@@ -34,12 +34,16 @@ function target(goal: Goal, currency: string, categoryName: string | null): stri
 /**
  * One goal as docs/design/screens/goals.html shows it (BRD F1 — F8.1): what it is,
  * when it was set, and what it asks for. A lifestyle goal is read through the
- * things bought, so it lists the spending lines it watches once F8.2 maps them.
- * Progress and advice arrive with later E8 features.
+ * things bought, so it lists the categories and items it watches (F8.2), with a
+ * way to adjust them. Progress and advice arrive with later E8 features.
  */
 export function GoalCard({ goal, currency, categoryName, onEdit }: GoalCardProps) {
   const lifestyle = goal.type === "lifestyle";
   const Icon = lifestyle ? Heart : Target;
+  const watched = [
+    ...goal.mapped_category_ids.map((id) => categoryName(id)).filter((n): n is string => !!n),
+    ...goal.mapped_item_names,
+  ];
   return (
     <Card className="flex flex-col gap-4 px-4 py-4 md:px-5.5 md:py-5">
       <div className="flex items-start justify-between gap-3">
@@ -65,27 +69,36 @@ export function GoalCard({ goal, currency, categoryName, onEdit }: GoalCardProps
 
       {lifestyle ? (
         <div className="flex flex-col gap-2.5">
-          <p className="m-0 text-md text-muted-foreground">
-            {goal.description ?? "Not a money target, so it is read through the things you buy."}
-          </p>
-          {goal.mapped_item_names.length > 0 ? (
-            <ul className="m-0 flex list-none flex-wrap gap-1.75 p-0">
-              {goal.mapped_item_names.map((name) => (
-                <li key={name}>
-                  <Pill>{name}</Pill>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="m-0 text-base text-muted-foreground">
-              The spending lines it watches are worked out when advice arrives.
-            </p>
+          {goal.description && (
+            <p className="m-0 text-md text-muted-foreground">{goal.description}</p>
           )}
+          <p className="m-0 text-md text-muted-foreground">
+            Not a money target, so it is read through the things you buy.{" "}
+            {watched.length > 0 ? "These are the lines it watches:" : "Nothing is watched yet."}
+          </p>
+          <ul className="m-0 flex list-none flex-wrap items-center gap-1.75 p-0">
+            {watched.map((line) => (
+              <li key={line}>
+                <Pill>{line}</Pill>
+              </li>
+            ))}
+            <li>
+              <button
+                type="button"
+                aria-label={`Adjust what ${goal.name} watches`}
+                onClick={onEdit}
+                className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-pill border border-dashed border-border-strong bg-background px-2.75 text-base text-muted-foreground transition-colors hover:text-foreground md:min-h-0 md:py-1"
+              >
+                <Plus size={12} aria-hidden="true" />
+                Adjust
+              </button>
+            </li>
+          </ul>
         </div>
       ) : (
         <div className="flex flex-col gap-1">
           <p className="m-0 text-lg font-semibold tabular-nums">
-            {target(goal, currency, categoryName)}
+            {target(goal, currency, categoryName(goal.category_id))}
           </p>
           {goal.description && (
             <p className="m-0 text-md text-muted-foreground">{goal.description}</p>

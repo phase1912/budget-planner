@@ -1,6 +1,6 @@
-"""Stating, changing and dropping goals over HTTP (F8.1, BRD F1, N2)."""
+"""Stating, changing and dropping goals over HTTP (F8.1, F8.2, BRD F1, F9, N2)."""
 
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Sequence
 from typing import Any
 
 import jwt
@@ -9,11 +9,15 @@ from httpx import ASGITransport, AsyncClient, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
+from app.api.routers.goals import get_goal_mapper
 from app.core.config import get_settings
 from app.core.context import current_user_id
 from app.db.session import get_db_session
+from app.domain.goals import GoalType
 from app.main import create_app
+from app.models.category import Category
 from app.models.user import User
+from app.ports.goal_mapping import GoalMappingResult
 from tests.factories.category import CategoryFactory
 from tests.factories.goal import GoalFactory
 from tests.factories.user import UserFactory
@@ -26,8 +30,33 @@ CEILING = {
 }
 
 
+class StubGoalMapper:
+    """Stands in for the model: watches "Snacks" when offered, and "sweets".
+
+    Honours the port's contract — only offered categories come back, never raises —
+    and records each goal it was asked about, so a test can tell whether it ran.
+    """
+
+    def __init__(self) -> None:
+        self.asked: list[str] = []
+
+    async def map_goal(
+        self, name: str, description: str | None, categories: Sequence[Category]
+    ) -> GoalMappingResult:
+        self.asked.append(name)
+        return GoalMappingResult(
+            mapped_category_ids=[c.id for c in categories if c.name == "Snacks"],
+            mapped_item_names=["sweets"],
+        )
+
+
 async def _call(
-    session: AsyncSession, user: User, method: str, path: str, body: Any = None
+    session: AsyncSession,
+    user: User,
+    method: str,
+    path: str,
+    body: Any = None,
+    mapper: StubGoalMapper | None = None,
 ) -> Response:
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield session
@@ -35,6 +64,7 @@ async def _call(
     app = create_app()
     app.dependency_overrides[get_current_user] = lambda: user
     app.dependency_overrides[get_db_session] = override_get_db
+    app.dependency_overrides[get_goal_mapper] = lambda: mapper or StubGoalMapper()
     token = jwt.encode(
         {"sub": str(user.id)}, get_settings().jwt_secret_key.get_secret_value(), algorithm="HS256"
     )
@@ -155,3 +185,142 @@ async def test_another_users_goals_are_isolated(db_session: AsyncSession) -> Non
 
     assert listed.json() == []
     assert (patched.status_code, dropped.status_code) == (404, 404)
+
+
+LOSE_WEIGHT = {"type": "lifestyle", "name": "Lose weight", "description": "Fewer snacks"}
+
+
+@pytest.mark.asyncio
+async def test_a_lifestyle_goal_is_stated_with_the_spending_lines_it_watches(
+    db_session: AsyncSession,
+) -> None:
+    """BRD F9: the goal is projected onto spending before any advice is built."""
+    user = await UserFactory.create_async()
+    snacks = await CategoryFactory.create_async(name="Snacks", user_id=user.id)
+    mapper = StubGoalMapper()
+
+    stated = await _call(db_session, user, "POST", "", LOSE_WEIGHT, mapper)
+
+    assert stated.json()["mapped_category_ids"] == [str(snacks.id)]
+    assert stated.json()["mapped_item_names"] == ["sweets"]
+    assert mapper.asked == ["Lose weight"]
+
+
+@pytest.mark.asyncio
+async def test_a_money_goal_is_never_sent_to_the_mapper(db_session: AsyncSession) -> None:
+    user = await UserFactory.create_async()
+    mapper = StubGoalMapper()
+
+    stated = await _call(db_session, user, "POST", "", CEILING, mapper)
+
+    assert (stated.json()["mapped_item_names"], mapper.asked) == ([], [])
+
+
+@pytest.mark.asyncio
+async def test_rewording_a_lifestyle_goal_maps_it_again_but_saving_it_unchanged_does_not(
+    db_session: AsyncSession,
+) -> None:
+    user = await UserFactory.create_async()
+    goal = await GoalFactory.create_async(
+        user_id=user.id,
+        type=GoalType.LIFESTYLE,
+        financial_kind=None,
+        target_amount=None,
+        name="Lose weight",
+    )
+    mapper = StubGoalMapper()
+
+    await _call(db_session, user, "PATCH", f"/{goal.id}", {"name": "Lose weight"}, mapper)
+    reworded = await _call(
+        db_session, user, "PATCH", f"/{goal.id}", {"description": "No sugar"}, mapper
+    )
+
+    assert mapper.asked == ["Lose weight"]
+    assert reworded.json()["mapped_item_names"] == ["sweets"]
+
+
+@pytest.mark.asyncio
+async def test_the_users_correction_of_what_a_goal_watches_survives_a_rewording(
+    db_session: AsyncSession,
+) -> None:
+    """The user's list is theirs: no automatic pass overwrites it (cf. BRD C4)."""
+    user = await UserFactory.create_async()
+    goal = await GoalFactory.create_async(
+        user_id=user.id, type=GoalType.LIFESTYLE, financial_kind=None, target_amount=None
+    )
+    mapper = StubGoalMapper()
+
+    corrected = await _call(
+        db_session,
+        user,
+        "PATCH",
+        f"/{goal.id}",
+        {"mapped_item_names": [" Beer ", "beer", "Crisps"]},
+        mapper,
+    )
+    reworded = await _call(
+        db_session, user, "PATCH", f"/{goal.id}", {"description": "Drink less"}, mapper
+    )
+
+    assert corrected.json()["mapped_item_names"] == ["beer", "crisps"]
+    assert reworded.json()["mapped_item_names"] == ["beer", "crisps"]
+    assert mapper.asked == []
+
+
+@pytest.mark.parametrize(
+    ("body", "detail"),
+    [
+        ({"mapped_item_names": None}, "Send an empty list to stop watching every item."),
+        ({"mapped_category_ids": None}, "Send an empty list to stop watching every category."),
+        ({"mapped_category_ids": "THEIRS"}, "That category is not one of yours."),
+    ],
+)
+@pytest.mark.asyncio
+async def test_a_correction_that_would_break_a_lifestyle_goal_is_refused(
+    db_session: AsyncSession, body: dict[str, Any], detail: str
+) -> None:
+    """Including another user's custom category, which is not theirs to watch (N2)."""
+    user = await UserFactory.create_async()
+    stranger = await UserFactory.create_async()
+    theirs = await CategoryFactory.create_async(name="Their secret", user_id=stranger.id)
+    goal = await GoalFactory.create_async(
+        user_id=user.id, type=GoalType.LIFESTYLE, financial_kind=None, target_amount=None
+    )
+    if body.get("mapped_category_ids") == "THEIRS":
+        body = {"mapped_category_ids": [str(theirs.id)]}
+
+    response = await _call(db_session, user, "PATCH", f"/{goal.id}", body)
+
+    assert (response.status_code, response.json()["detail"]) == (422, detail)
+
+
+@pytest.mark.asyncio
+async def test_a_money_goal_cannot_be_given_spending_lines_to_watch(
+    db_session: AsyncSession,
+) -> None:
+    """Keeping the two goal types apart is what BRD F9 relies on."""
+    user = await UserFactory.create_async()
+    goal = await GoalFactory.create_async(user_id=user.id)
+
+    response = await _call(
+        db_session, user, "PATCH", f"/{goal.id}", {"mapped_item_names": ["beer"]}
+    )
+
+    assert (response.status_code, response.json()["detail"]) == (
+        422,
+        "Only a lifestyle goal watches spending lines.",
+    )
+
+
+@pytest.mark.asyncio
+async def test_an_overlong_item_name_is_refused(db_session: AsyncSession) -> None:
+    user = await UserFactory.create_async()
+    goal = await GoalFactory.create_async(
+        user_id=user.id, type=GoalType.LIFESTYLE, financial_kind=None, target_amount=None
+    )
+
+    response = await _call(
+        db_session, user, "PATCH", f"/{goal.id}", {"mapped_item_names": ["x" * 121]}
+    )
+
+    assert response.status_code == 422

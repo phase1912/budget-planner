@@ -1084,7 +1084,8 @@ export interface components {
          *
          *     `name` cannot be cleared. `description`, `target_amount` and `category_id` can
          *     be sent as null to clear them; the result must still be a well formed goal. A
-         *     goal's type is fixed once made.
+         *     goal's type is fixed once made. Sending `mapped_*` is the user correcting what
+         *     a lifestyle goal watches (F8.2); an empty list clears it, null is refused.
          */
         GoalUpdate: {
             /** Name */
@@ -1096,6 +1097,10 @@ export interface components {
             target_amount?: number | string | null;
             /** Category Id */
             category_id?: string | null;
+            /** Mapped Category Ids */
+            mapped_category_ids?: string[] | null;
+            /** Mapped Item Names */
+            mapped_item_names?: string[] | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
