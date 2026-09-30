@@ -14,6 +14,7 @@ from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
 from app.models.monthly_snapshot import MonthlySnapshot
 from app.models.receipt import Receipt
+from app.models.recommendation import Recommendation
 from app.models.refresh_token import RefreshToken
 from app.models.upload_job import UploadJob
 from app.models.user import User
@@ -29,6 +30,7 @@ __all__ = [
     "MonthlySnapshot",
     "PositionMatchOverride",
     "Receipt",
+    "Recommendation",
     "RefreshToken",
     "UploadJob",
     "User",

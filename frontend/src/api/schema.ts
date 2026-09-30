@@ -693,10 +693,58 @@ export interface paths {
         patch: operations["update_goal_api_v1_goals__goal_id__patch"];
         trace?: never;
     };
+    "/api/v1/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Recommendations
+         * @description Every goal's current advice for the Goals screen, in one request (BRD F3).
+         */
+        get: operations["list_recommendations_api_v1_recommendations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/{goal_id}/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Advise On Goal
+         * @description Fresh advice on one goal, replacing its earlier advice (BRD F2, F3).
+         *
+         *     Another user's goal is not found (N2); a model that gives no answer is 503.
+         */
+        post: operations["advise_on_goal_api_v1_goals__goal_id__recommendations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AdviceTarget
+         * @description What a recommendation is about: a whole category, or one recurring purchase.
+         * @enum {string}
+         */
+        AdviceTarget: "category" | "item";
         /**
          * AuthResponse
          * @description Response containing the authenticated user and their access token.
@@ -1388,6 +1436,34 @@ export interface components {
          * @enum {string}
          */
         ReceiptStatus: "uploaded" | "parsing" | "parsed" | "manual_review" | "failed";
+        /**
+         * RecommendationRead
+         * @description One recommendation as its goal's card shows it, with the goal it serves (BRD F3).
+         */
+        RecommendationRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Goal Id
+             * Format: uuid
+             */
+            goal_id: string;
+            target_kind: components["schemas"]["AdviceTarget"];
+            /** Target Name */
+            target_name: string;
+            /** Action */
+            action: string;
+            /** Rationale */
+            rationale: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /**
          * RefreshRequest
          * @description Payload for refreshing an access token (F1.2.3).
@@ -2930,6 +3006,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GoalRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_recommendations_api_v1_recommendations_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    advise_on_goal_api_v1_goals__goal_id__recommendations_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationRead"][];
                 };
             };
             /** @description Validation Error */

@@ -2,7 +2,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 
 import type { components } from "@/api/schema";
 import { apiClient } from "@/api/client";
-import { errorMessage } from "@/api/errors";
+import { errorMessage, settle } from "@/api/errors";
 import type { ToastStore } from "./ToastStore";
 
 export type Goal = components["schemas"]["GoalRead"];
@@ -37,7 +37,7 @@ export class GoalsStore {
   async load(): Promise<void> {
     this.isLoading = true;
     this.loadError = null;
-    const response = await apiClient.GET("/api/v1/goals");
+    const response = await settle(() => apiClient.GET("/api/v1/goals"));
     runInAction(() => {
       this.isLoading = false;
       if (response.error) {
@@ -78,9 +78,9 @@ export class GoalsStore {
   async remove(id: string): Promise<boolean> {
     this.isSaving = true;
     this.saveError = null;
-    const response = await apiClient.DELETE("/api/v1/goals/{goal_id}", {
-      params: { path: { goal_id: id } },
-    });
+    const response = await settle(() =>
+      apiClient.DELETE("/api/v1/goals/{goal_id}", { params: { path: { goal_id: id } } }),
+    );
     return runInAction(() => {
       this.isSaving = false;
       if (response.error) {
@@ -114,7 +114,7 @@ export class GoalsStore {
   ): Promise<boolean> {
     this.isSaving = true;
     this.saveError = null;
-    const response = await send();
+    const response = await settle(send);
     return runInAction(() => {
       this.isSaving = false;
       if (response.error || !response.data) {

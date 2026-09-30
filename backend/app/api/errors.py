@@ -138,6 +138,18 @@ class CategoriserUnavailableError(AppError):
     title = "Categoriser Unavailable"
 
 
+class AdviceUnavailableError(AppError):
+    """The advice model gave no answer, so the goal's advice was left as it was (BRD F3).
+
+    Distinct from an answer with nothing specific in it: the user should try
+    again later rather than read it as "your receipts support no advice".
+    """
+
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = "advice_unavailable"
+    title = "Advice Unavailable"
+
+
 _HTTP_STATUS_PROBLEMS: dict[int, tuple[str, str]] = {
     status.HTTP_400_BAD_REQUEST: ("bad_request", "Bad Request"),
     status.HTTP_401_UNAUTHORIZED: ("unauthorized", "Unauthorized"),

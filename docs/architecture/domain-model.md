@@ -31,7 +31,7 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | **MonthlySnapshot** | A finalised month: total, receipt count, and the count and value held out for review. A cache of derived data, taken on the first look after the month ends (ADR-0010). | User |
 | **ExportJob** | One export of the user's receipts or statistics as CSV or JSON, written in the background: the filters it was asked with, its status, and where the finished file is stored (N6). | User |
 | **Goal** | A financial or lifestyle objective the user declared. A financial goal is one of three kinds: a monthly spending ceiling, a savings target, or a cap on one category (F1). | User |
-| **Recommendation** | Generated advice tied to a goal, with projected impact and user feedback. | User |
+| **Recommendation** | Advice on one goal: the category or recurring purchase it targets, what to do and why. Asking again replaces the goal's advice. Projected impact (F8.5) and feedback (F8.9) come later. | User |
 
 Relationships: a User has many Receipts; a Receipt has many LineItems; a LineItem has one
 Category; a Goal produces many Recommendations; a User has many IdentityLinks; a User has many PositionMatchOverrides.
@@ -194,6 +194,12 @@ Rules that must hold at all times. Each is a candidate for a test.
     categories and keywords (a keyword matches any name containing it), a category
     reduction's one category, or all spending for a ceiling or savings target. A
     lifestyle goal watching nothing has no purchases to cite.
+15b. A recommendation is kept only when its target is a category or recurring purchase
+    the analysis names (`app/domain/advice.py`, F3). The model's wording is not
+    trusted to be specific: a target outside the evidence is generic by definition and
+    is dropped, so a goal may end up with no advice rather than generic advice. A
+    model that gives no answer leaves the goal's earlier advice in place and is
+    reported as unavailable, never as "no advice".
 16. Every recommendation quantifies its projected impact, computed from real history
     rather than asserted by the model (F4).
 17. Below the minimum history threshold, the system says more data is needed and produces
