@@ -19,3 +19,24 @@ export function errorMessage(error: unknown, fallback: string): string {
 
   return fallback;
 }
+
+/** What a request that never reached an answer reports, read like any server error. */
+export const UNREACHABLE = {
+  detail: "The server could not be reached. Try again in a moment.",
+} as const;
+
+/**
+ * Send a request that never throws: a network failure, or a response the browser
+ * refused to read (a server error without CORS headers), comes back as `error`
+ * like any other failure. openapi-fetch throws in those cases, which would
+ * otherwise escape the store and leave the screen silently unchanged.
+ */
+export async function settle<T extends { error?: unknown }>(
+  send: () => Promise<T>,
+): Promise<T | { data?: undefined; error: typeof UNREACHABLE }> {
+  try {
+    return await send();
+  } catch {
+    return { error: UNREACHABLE };
+  }
+}

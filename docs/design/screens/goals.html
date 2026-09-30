@@ -6,16 +6,18 @@
   <link rel="stylesheet" href="../design.css">
   <style>
     .goal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-    .advice { display: flex; flex-direction: column; gap: 14px; padding: 20px 22px; }
-    .advice__lede { display: flex; gap: 15px; }
     .advice__actions { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid var(--color-muted); padding-top: 14px; }
     .impact { display: flex; flex-direction: column; gap: 2px; }
     .impact__value { font-size: 15px; font-weight: 700; color: var(--color-primary); }
+    .goal-advice { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--color-border); padding-top: 16px; }
+    .goal-advice__head { display: flex; align-items: center; gap: 8px; }
+    .goal-advice__foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .advice-item { display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--color-border); border-radius: var(--radius-control); background: var(--color-surface); padding: 10px 14px; }
   </style>
 </head>
 <body>
 
-<div class="screen" style="height: 1100px;">
+<div class="screen" style="height: 1040px;">
 
   <header class="app-header">
     <div class="app-header__inner">
@@ -48,7 +50,7 @@
       <div class="page-head">
         <div class="titles">
           <h1 class="page-title">Goals</h1>
-          <p class="page-sub" style="font-size: 14px;">Say what you are aiming at and the advice below is built from your own receipts.</p>
+          <p class="page-sub" style="font-size: 14px;">Say what you are aiming at, and each goal gets advice built from your own receipts.</p>
         </div>
         <button class="btn btn--primary" style="padding: 11px 16px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
@@ -56,7 +58,7 @@
         </button>
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start;">
 
         <section class="card card__body" style="display: flex; flex-direction: column; gap: 16px;">
           <div class="goal-head">
@@ -85,6 +87,36 @@
               <span style="position: absolute; left: 68.9%; top: -3px; width: 2px; height: 16px; border-radius: 1px; background: var(--color-foreground);"></span>
             </span>
             <span class="num meta">The marker is where the month is heading &mdash; 934 PLN below the ceiling.</span>
+          </div>
+          <!-- A goal's advice lives in its card, where it is asked for (F8.4). On track,
+               so progress is reported instead of an invented cut (BRD F6). -->
+          <div class="goal-advice">
+            <div class="goal-advice__head">
+              <span class="icon-tile icon-tile--accent" style="width: 26px; height: 26px; border-radius: 8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></span>
+              <h3 class="section-title" style="font-size: 13px;">Advice from your receipts</h3>
+            </div>
+            <div class="advice-item" style="border-color: var(--tone-primary-border); background: var(--tone-primary-bg); flex-direction: row; gap: 10px;">
+              <span style="color: var(--color-primary); padding-top: 2px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 13px; font-weight: 600;">Nothing to cut this month</span>
+                <p class="prose" style="font-size: 13px;">At this pace July finishes near <strong class="num">2 066&#8239;PLN</strong>, comfortably under your 3 000 ceiling.</p>
+              </div>
+            </div>
+            <!-- Feedback is remembered and similar advice deprioritised (BRD F8). -->
+            <div class="advice-item" style="opacity: 0.72;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                <span style="font-size: 13px; font-weight: 600;">Skip one dinner out a month</span>
+                <span class="pill pill--sm" style="font-size: 11px;">You said this was not for you</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="meta">Why? &#9662;</span>
+                <button class="btn btn--ghost btn--sm" style="font-size: 12px; text-decoration: underline;">Undo</button>
+              </div>
+            </div>
+            <div class="goal-advice__foot">
+              <button class="btn btn--secondary btn--sm" style="font-size: 12px; padding: 7px 12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg> Refresh advice</button>
+              <span class="meta">Updated 3 days ago</span>
+            </div>
           </div>
         </section>
 
@@ -117,80 +149,45 @@
               </button>
             </div>
           </div>
-        </section>
-
-      </div>
-
-      <div style="display: flex; align-items: baseline; justify-content: space-between; margin-top: 4px;">
-        <h2 class="section-title section-title--lg">Advice from your receipts</h2>
-        <span class="num meta" style="font-size: 13px;">Built from 4 months &middot; 412 items</span>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 14px;">
-
-        <article class="card" style="border-color: var(--tone-primary-border); background: var(--tone-primary-bg); padding: 20px 22px; display: flex; gap: 15px;">
-          <span class="icon-tile icon-tile--success">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-          </span>
-          <div style="display: flex; flex-direction: column; gap: 5px;">
-            <h3 class="section-title" style="font-size: 15px;">Nothing to cut this month</h3>
-            <p class="prose" style="color: var(--color-foreground); opacity: 0.75;">At the pace of the last 27 days July finishes near <strong class="num">2 066&#8239;PLN</strong>, comfortably under your 3 000 ceiling. No changes recommended &mdash; the advice below is about your weight goal instead.</p>
-          </div>
-        </article>
-
-        <!-- Advice names a specific recurring item and quantifies the effect (BRD F3, F4). -->
-        <article class="card advice">
-          <div class="advice__lede">
-            <span class="icon-tile icon-tile--accent">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-            </span>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-              <h3 class="section-title" style="font-size: 15px;">Stop buying the chocolate-chip cookies</h3>
-              <p class="prose">&ldquo;Cookies Choco 300g&rdquo; shows up on <strong class="num" style="color: var(--color-foreground);">9 of your 14 Fresh Market receipts</strong> since April &mdash; the single most repeated sweet item in your basket, at 6.80&#8239;PLN each.</p>
+          <!-- Advice names a specific recurring item and quantifies the effect (BRD F3, F4);
+               why opens on demand so the card stays readable. -->
+          <div class="goal-advice">
+            <div class="goal-advice__head">
+              <span class="icon-tile icon-tile--accent" style="width: 26px; height: 26px; border-radius: 8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></span>
+              <h3 class="section-title" style="font-size: 13px;">Advice from your receipts</h3>
             </div>
-          </div>
-          <div class="advice__actions">
-            <div style="display: flex; align-items: center; gap: 22px;">
-              <span class="impact">
-                <span class="field__label" style="font-size: 11px;">If you drop it</span>
-                <span class="impact__value num">&minus;61.20 PLN / month</span>
-              </span>
-              <span class="impact">
-                <span class="field__label" style="font-size: 11px;">Sweet purchases</span>
-                <span class="impact__value num">&minus;64%</span>
-              </span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <button class="btn btn--secondary btn--sm" style="font-size: 12px; padding: 7px 12px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>
-                Useful
-              </button>
-              <button class="btn btn--secondary btn--sm" style="font-size: 12px; padding: 7px 12px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/></svg>
-                Not for me
-              </button>
-            </div>
-          </div>
-        </article>
-
-        <!-- Feedback is remembered and similar advice deprioritised (BRD F8). -->
-        <article class="card advice" style="opacity: 0.72;">
-          <div class="advice__lede">
-            <span class="icon-tile">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-            </span>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <h3 class="section-title" style="font-size: 15px;">Dining grew fastest &mdash; up 29.5% on June</h3>
-                <span class="pill pill--sm" style="font-size: 11px;">You said this was not for you</span>
+            <div class="advice-item">
+              <span style="font-size: 13px; font-weight: 600;">Stop buying the chocolate-chip cookies</span>
+              <span class="meta" style="color: var(--color-foreground);">Why? &#9652;</span>
+              <p class="prose" style="font-size: 13px;">&ldquo;Cookies Choco 300g&rdquo; shows up on <strong class="num" style="color: var(--color-foreground);">9 of your 14 Fresh Market receipts</strong> since April &mdash; the single most repeated sweet item in your basket, at 6.80&#8239;PLN each.</p>
+              <span class="pill pill--sm" style="align-self: flex-start; font-size: 11px;">Cookies Choco 300g</span>
+              <div class="advice__actions" style="padding-top: 10px; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 18px;">
+                  <span class="impact">
+                    <span class="field__label" style="font-size: 11px;">If you drop it</span>
+                    <span class="impact__value num">&minus;61.20 PLN / month</span>
+                  </span>
+                  <span class="impact">
+                    <span class="field__label" style="font-size: 11px;">Sweet purchases</span>
+                    <span class="impact__value num">&minus;64%</span>
+                  </span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <button class="btn btn--secondary btn--sm" style="font-size: 12px; padding: 6px 10px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg> Useful</button>
+                  <button class="btn btn--secondary btn--sm" style="font-size: 12px; padding: 6px 10px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/></svg> Not for me</button>
+                </div>
               </div>
-              <p class="prose">Two dinners above 60&#8239;PLN account for most of the rise. Skipping one a month would return about 62&#8239;PLN &mdash; deprioritised, and similar suggestions will come up less often.</p>
+            </div>
+            <div class="advice-item">
+              <span style="font-size: 13px; font-weight: 600;">Swap the 1.5&#8239;L cola for sparkling water</span>
+              <span class="meta">Why? &#9662;</span>
+            </div>
+            <div class="goal-advice__foot">
+              <button class="btn btn--secondary btn--sm" style="font-size: 12px; padding: 7px 12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg> Refresh advice</button>
+              <span class="meta">Updated 2 minutes ago</span>
             </div>
           </div>
-          <div class="advice__actions" style="justify-content: flex-end;">
-            <button class="btn btn--ghost btn--sm" style="font-size: 12px; text-decoration: underline;">Undo</button>
-          </div>
-        </article>
+        </section>
 
       </div>
 

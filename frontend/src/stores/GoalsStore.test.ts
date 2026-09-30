@@ -100,4 +100,16 @@ describe("GoalsStore", () => {
     expect(store.goals).toEqual([]);
     expect(store.saveError).toBeNull();
   });
+
+  it("says the server could not be reached instead of failing silently", async () => {
+    vi.mocked(apiClient.GET).mockRejectedValue(new TypeError("Failed to fetch"));
+    vi.mocked(apiClient.POST).mockRejectedValue(new TypeError("Failed to fetch"));
+
+    await store.load();
+    const saved = await store.create({ type: "lifestyle", name: "Eat better" });
+
+    expect(store.loadError).toBe("The server could not be reached. Try again in a moment.");
+    expect(store.saveError).toBe("The server could not be reached. Try again in a moment.");
+    expect(saved).toBe(false);
+  });
 });

@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { observable, runInAction } from "mobx";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { AdviceOutcome, Recommendation } from "@/stores/AdviceStore";
 import type { Goal, GoalCreate, GoalUpdate } from "@/stores/GoalsStore";
 import { GoalsPage } from "./GoalsPage";
 
@@ -53,6 +54,30 @@ const goalsStore = observable(
   },
   { load: false, create: false, update: false, remove: false, clearSaveError: false },
 );
+const adviceStore = observable(
+  {
+    recommendations: [] as Recommendation[],
+    isLoading: false,
+    loadError: null as string | null,
+    advisingGoalId: null as string | null,
+    outcomes: new Map<string, AdviceOutcome>(),
+    forGoal(goalId: string): Recommendation[] {
+      return this.recommendations.filter((r) => r.goal_id === goalId);
+    },
+    load: vi.fn(),
+    advise: vi.fn<(goalId: string) => Promise<void>>(),
+  },
+  { load: false, advise: false },
+);
+const cookies: Recommendation = {
+  id: "r1",
+  goal_id: "g2",
+  target_kind: "item",
+  target_name: "Cookies Choco 300g",
+  action: "Stop buying the chocolate-chip cookies",
+  rationale: "On 9 of the 14 receipts from Fresh Market.",
+  created_at: "2026-09-30T10:00:00Z",
+};
 const categoriesStore = {
   categories: [groceries],
   assignableBuiltIns: [groceries],
@@ -63,6 +88,7 @@ const categoriesStore = {
 vi.mock("@/stores/StoreContext", () => ({
   useStores: () => ({
     goalsStore,
+    adviceStore,
     categoriesStore,
     authStore: { user: { currency: "PLN" } },
   }),
@@ -81,6 +107,10 @@ describe("GoalsPage", () => {
       goalsStore.goals = [];
       goalsStore.loadError = null;
       goalsStore.saveError = null;
+      adviceStore.recommendations = [];
+      adviceStore.advisingGoalId = null;
+      adviceStore.outcomes.clear();
+      adviceStore.loadError = null;
     });
     goalsStore.create.mockResolvedValue(true);
     goalsStore.update.mockResolvedValue(true);
@@ -262,5 +292,63 @@ describe("GoalsPage", () => {
       expect(goalsStore.update).toHaveBeenCalled();
     });
     expect(goalsStore.update.mock.lastCall?.[1]).not.toHaveProperty("mapped_item_names");
+  });
+
+  it("shows each goal's advice in its own card, the reason on demand", () => {
+    runInAction(() => {
+      goalsStore.goals = [ceiling, eatBetter];
+      adviceStore.recommendations = [cookies];
+    });
+    render(<GoalsPage />);
+    expect(adviceStore.load).toHaveBeenCalled();
+    const eating = within(screen.getByRole("region", { name: "Advice on Eat better" }));
+    const ceilingAdvice = within(screen.getByRole("region", { name: "Advice on Monthly ceiling" }));
+    expect(eating.getByText("Stop buying the chocolate-chip cookies")).toBeInTheDocument();
+    expect(eating.getByText("On 9 of the 14 receipts from Fresh Market.")).not.toBeVisible();
+    fireEvent.click(eating.getByText("Why?"));
+    expect(eating.getByText("On 9 of the 14 receipts from Fresh Market.")).toBeVisible();
+    expect(ceilingAdvice.queryByText("Stop buying the chocolate-chip cookies")).toBeNull();
+  });
+
+  it("asks for advice on one goal from its card, and offers a refresh once it has some", () => {
+    runInAction(() => {
+      goalsStore.goals = [ceiling, eatBetter];
+      adviceStore.recommendations = [cookies];
+    });
+    render(<GoalsPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Get advice on Monthly ceiling" }));
+    expect(adviceStore.advise).toHaveBeenCalledWith("g1");
+    expect(
+      screen.getByRole("button", { name: "Refresh advice on Eat better" }),
+    ).toBeInTheDocument();
+  });
+
+  it("holds every advice button while one goal's advice is worked out", () => {
+    runInAction(() => {
+      goalsStore.goals = [ceiling, eatBetter];
+      adviceStore.advisingGoalId = "g2";
+    });
+    render(<GoalsPage />);
+    expect(screen.getByRole("button", { name: "Get advice on Monthly ceiling" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Get advice on Eat better" })).toHaveTextContent(
+      "Working it out…",
+    );
+    const eating = within(screen.getByRole("region", { name: "Advice on Eat better" }));
+    expect(eating.getByText("Reading your receipts…")).toBeInTheDocument();
+  });
+
+  it("says in the goal's own card why it got no advice", () => {
+    runInAction(() => {
+      goalsStore.goals = [ceiling, eatBetter];
+      adviceStore.outcomes.set("g2", {
+        kind: "failed",
+        message: "Advice could not be worked out just now.",
+      });
+    });
+    render(<GoalsPage />);
+    const eating = within(screen.getByRole("region", { name: "Advice on Eat better" }));
+    const ceilingAdvice = within(screen.getByRole("region", { name: "Advice on Monthly ceiling" }));
+    expect(eating.getByText("Advice could not be worked out just now.")).toBeInTheDocument();
+    expect(ceilingAdvice.queryByText("Advice could not be worked out just now.")).toBeNull();
   });
 });

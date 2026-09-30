@@ -2,20 +2,20 @@ import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Plus, Target } from "lucide-react";
 
-import { Button, Card, EmptyState, ErrorState, LoadingState } from "@/shared/components";
+import { Button, Card, EmptyState, ErrorState, LoadingState, Note } from "@/shared/components";
 import type { Goal } from "@/stores/GoalsStore";
 import { useStores } from "@/stores/StoreContext";
+import { GoalAdvice } from "../components/GoalAdvice";
 import { GoalCard } from "../components/GoalCard";
 import { GoalDialog } from "../components/GoalDialog";
 
 /**
  * Goals (docs/design/screens/goals.html), first slice: the goals the user has
  * stated, money and lifestyle alike, each editable, and a way to state another
- * (BRD F1 — F8.1). Progress, the lines a lifestyle goal watches and the advice
- * feed below arrive with F8.2 onwards.
+ * (BRD F1 — F8.1), each with its own advice built from the user's receipts (F8.4).
  */
 export const GoalsPage = observer(function GoalsPage() {
-  const { goalsStore, categoriesStore, authStore } = useStores();
+  const { goalsStore, categoriesStore, authStore, adviceStore } = useStores();
   const { goals, isLoading, loadError } = goalsStore;
   const currency = authStore.user?.currency ?? "PLN";
   // null: closed; "new": stating a goal; a goal: editing it.
@@ -23,8 +23,9 @@ export const GoalsPage = observer(function GoalsPage() {
 
   useEffect(() => {
     void goalsStore.load();
+    void adviceStore.load();
     categoriesStore.ensureCategories();
-  }, [goalsStore, categoriesStore]);
+  }, [goalsStore, adviceStore, categoriesStore]);
 
   const categoryName = (id: string | null | undefined) =>
     categoriesStore.categories.find((c) => c.id === id)?.name ?? null;
@@ -48,11 +49,15 @@ export const GoalsPage = observer(function GoalsPage() {
           <div className="flex flex-col gap-1">
             <h1 className="m-0 text-[24px] font-bold tracking-[-0.02em] md:text-[28px]">Goals</h1>
             <p className="m-0 text-lg text-muted-foreground">
-              Say what you are aiming at and the advice below is built from your own receipts.
+              Say what you are aiming at, and each goal gets advice built from your own receipts.
             </p>
           </div>
           {goals.length > 0 && newGoal}
         </header>
+
+        {adviceStore.loadError && goals.length > 0 && (
+          <Note tone="error">Your advice could not be loaded. {adviceStore.loadError}</Note>
+        )}
 
         {loadError ? (
           <ErrorState layout="banner" title="Your goals could not be loaded" message={loadError} />
@@ -79,7 +84,9 @@ export const GoalsPage = observer(function GoalsPage() {
                   onEdit={() => {
                     setEditing(goal);
                   }}
-                />
+                >
+                  <GoalAdvice goal={goal} />
+                </GoalCard>
               </li>
             ))}
           </ul>

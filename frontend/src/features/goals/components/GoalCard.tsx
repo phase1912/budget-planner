@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Heart, Pencil, Plus, Target } from "lucide-react";
 
 import { Card, IconButton, IconTile, Pill } from "@/shared/components";
@@ -16,6 +17,8 @@ interface GoalCardProps {
   /** A category's name by id, when known: the one a reduction cuts, the ones a goal watches. */
   categoryName: (id: string | null | undefined) => string | null;
   onEdit: () => void;
+  /** What follows the goal itself at the foot of the card: its advice (F8.4). */
+  children?: ReactNode;
 }
 
 /** What a money goal asks for, in words: "Stay under 3,000.00 PLN a month". */
@@ -35,9 +38,10 @@ function target(goal: Goal, currency: string, categoryName: string | null): stri
  * One goal as docs/design/screens/goals.html shows it (BRD F1 — F8.1): what it is,
  * when it was set, and what it asks for. A lifestyle goal is read through the
  * things bought, so it lists the categories and items it watches (F8.2), with a
- * way to adjust them. Progress and advice arrive with later E8 features.
+ * way to adjust them. Its advice (F8.4) sits at the foot of the card, where it is
+ * asked for; progress arrives with later E8 features.
  */
-export function GoalCard({ goal, currency, categoryName, onEdit }: GoalCardProps) {
+export function GoalCard({ goal, currency, categoryName, onEdit, children }: GoalCardProps) {
   const lifestyle = goal.type === "lifestyle";
   const Icon = lifestyle ? Heart : Target;
   const watched = [
@@ -105,6 +109,7 @@ export function GoalCard({ goal, currency, categoryName, onEdit }: GoalCardProps
           )}
         </div>
       )}
+      {children}
     </Card>
   );
 }
