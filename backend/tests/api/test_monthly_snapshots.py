@@ -156,9 +156,12 @@ async def test_a_browser_clock_running_ahead_cannot_freeze_the_current_month(
     """The label follows the browser, but nothing is stored until the month has really ended."""
     user = await UserFactory.create_async()
     current = datetime.now(UTC)
-    await _receipt(db_session, user, current, ["10.00"])
+    # Target a month safely in the future so the server's real clock never thinks it has ended
+    future_year = current.year + 1
+    future_date = datetime(future_year, current.month, 15, tzinfo=UTC)
+    await _receipt(db_session, user, future_date, ["10.00"])
 
-    body = (await _month(db_session, user, current.year, current.month, today="9999-12-31")).json()
+    body = (await _month(db_session, user, future_year, current.month, today="9999-12-31")).json()
 
     assert body["is_complete"] is True
     assert body["finalised_at"] is None
