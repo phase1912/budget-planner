@@ -30,6 +30,7 @@ async def test_the_model_is_given_the_evidence_in_the_users_currency(agent: Asyn
                 target_name="Cookies Choco 300g",
                 action="Stop buying them",
                 rationale="9 of 14 Fresh Market receipts",
+                reduction_percent=100,
             )
         ]
     )
@@ -45,6 +46,7 @@ async def test_the_model_is_given_the_evidence_in_the_users_currency(agent: Asyn
             "Cookies Choco 300g",
             "Stop buying them",
             "9 of 14 Fresh Market receipts",
+            100,
         )
     ]
 

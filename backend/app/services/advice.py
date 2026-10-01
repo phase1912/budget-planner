@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from datetime import date
 
 from app.api.errors import AdviceUnavailableError, NotFoundError
-from app.domain.advice import keep_specific
+from app.domain.advice import keep_specific, project_impact
 from app.models.recommendation import Recommendation
 from app.ports.advice_generation import AdviceGeneratorPort, AdviceUnavailable
 from app.repository.goal import GoalRepository
@@ -37,9 +37,12 @@ class AdviceService:
 
         Only proposals naming a category or purchase the analysis found are kept
         (`keep_specific`, constraint 11.3); none may survive, and then the goal
-        has no advice rather than generic advice. Raises NotFoundError for a goal
-        that is not the user's (N2), and AdviceUnavailableError, leaving the
-        earlier advice in place, when the model gives no answer.
+        has no advice rather than generic advice. What each is worth comes from
+        the same history, never from the model (`project_impact`, F4).
+
+        Raises NotFoundError for a goal that is not the user's (N2), and
+        AdviceUnavailableError, leaving the earlier advice in place, when the
+        model gives no answer.
         """
         goal = await self.goals.get(goal_id)
         if goal is None:
@@ -51,16 +54,21 @@ class AdviceService:
             raise AdviceUnavailableError(
                 "Advice could not be worked out just now. Try again in a moment."
             ) from error
-        fresh = [
-            Recommendation(
-                user_id=goal.user_id,
-                goal_id=goal.id,
-                target_kind=advice.target_kind,
-                target_name=advice.target_name,
-                action=advice.action,
-                rationale=advice.rationale,
+        fresh = []
+        for advice in keep_specific(proposed, analysis):
+            impact = project_impact(advice, analysis)
+            fresh.append(
+                Recommendation(
+                    user_id=goal.user_id,
+                    goal_id=goal.id,
+                    target_kind=advice.target_kind,
+                    target_name=advice.target_name,
+                    action=advice.action,
+                    rationale=advice.rationale,
+                    reduction_percent=advice.reduction_percent,
+                    monthly_saving=impact.monthly_saving,
+                    purchases_avoided=impact.purchases_avoided,
+                )
             )
-            for advice in keep_specific(proposed, analysis)
-        ]
         await self.recommendations.replace_for_goal(goal.id, fresh)
         return fresh

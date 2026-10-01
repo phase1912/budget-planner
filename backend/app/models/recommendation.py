@@ -1,6 +1,7 @@
 import uuid
+from decimal import Decimal
 
-from sqlalchemy import Enum, ForeignKey, String, Text
+from sqlalchemy import Enum, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.domain.advice import ACTION_MAX_LENGTH, TARGET_MAX_LENGTH, AdviceTarget
@@ -12,7 +13,9 @@ class Recommendation(Model):
 
     `target_kind` and `target_name` say which category or recurring purchase it is
     about; `action` is what to do and `rationale` why, with the figures behind it.
-    Asking for advice on a goal again replaces its recommendations.
+    `monthly_saving` and `purchases_avoided` are what following it is worth, worked
+    out from the receipts (`app.domain.advice.project_impact`, F8.5). Asking for
+    advice on a goal again replaces its recommendations.
     """
 
     __tablename__ = "recommendations"
@@ -36,3 +39,6 @@ class Recommendation(Model):
     target_name: Mapped[str] = mapped_column(String(TARGET_MAX_LENGTH), nullable=False)
     action: Mapped[str] = mapped_column(String(ACTION_MAX_LENGTH), nullable=False)
     rationale: Mapped[str] = mapped_column(Text, nullable=False)
+    reduction_percent: Mapped[int] = mapped_column(Integer, nullable=False)
+    monthly_saving: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    purchases_avoided: Mapped[Decimal | None] = mapped_column(Numeric(8, 1), nullable=True)

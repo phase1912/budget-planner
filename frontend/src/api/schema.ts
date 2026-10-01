@@ -1439,6 +1439,9 @@ export interface components {
         /**
          * RecommendationRead
          * @description One recommendation as its goal's card shows it, with the goal it serves (BRD F3).
+         *
+         *     `monthly_saving` (in the user's currency) and `purchases_avoided` (per month,
+         *     for a recurring purchase only) are computed from the receipts (F4).
          */
         RecommendationRead: {
             /**
@@ -1458,6 +1461,12 @@ export interface components {
             action: string;
             /** Rationale */
             rationale: string;
+            /** Reduction Percent */
+            reduction_percent: number;
+            /** Monthly Saving */
+            monthly_saving: string;
+            /** Purchases Avoided */
+            purchases_avoided: string | null;
             /**
              * Created At
              * Format: date-time

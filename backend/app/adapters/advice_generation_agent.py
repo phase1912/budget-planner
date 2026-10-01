@@ -25,6 +25,9 @@ Rules:
   no recommendations at all.
 - Write amounts in the currency the evidence uses. At most three recommendations,
   the most effective first.
+- Say what share of the spending on the target the action removes: 100 to stop
+  buying it, 50 to halve it. Never state what it saves; the app works that out
+  from the receipts.
 """
 
 
@@ -39,6 +42,9 @@ class _Recommendation(BaseModel):
         description="What to do, in one short sentence, e.g. 'Stop buying Cola 0.5'."
     )
     rationale: str = Field(description="Why, citing figures from the evidence.")
+    reduction_percent: int = Field(
+        ge=1, le=100, description="Share of the spending on the target the action removes."
+    )
 
 
 class _AdviceResponse(BaseModel):
@@ -74,6 +80,6 @@ class AdviceGenerationAdapter(AdviceGeneratorPort):
             logger.exception("Advice generation failed")
             raise AdviceUnavailable from error
         return [
-            Advice(r.target_kind, r.target_name, r.action, r.rationale)
+            Advice(r.target_kind, r.target_name, r.action, r.rationale, r.reduction_percent)
             for r in answer.recommendations
         ]

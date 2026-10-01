@@ -76,6 +76,9 @@ const cookies: Recommendation = {
   target_name: "Cookies Choco 300g",
   action: "Stop buying the chocolate-chip cookies",
   rationale: "On 9 of the 14 receipts from Fresh Market.",
+  reduction_percent: 100,
+  monthly_saving: "20.47",
+  purchases_avoided: "3.0",
   created_at: "2026-09-30T10:00:00Z",
 };
 const categoriesStore = {
@@ -304,6 +307,7 @@ describe("GoalsPage", () => {
     const eating = within(screen.getByRole("region", { name: "Advice on Eat better" }));
     const ceilingAdvice = within(screen.getByRole("region", { name: "Advice on Monthly ceiling" }));
     expect(eating.getByText("Stop buying the chocolate-chip cookies")).toBeInTheDocument();
+    expect(eating.getByText("−20.47 PLN a month · 3 fewer purchases")).toBeVisible();
     expect(eating.getByText("On 9 of the 14 receipts from Fresh Market.")).not.toBeVisible();
     fireEvent.click(eating.getByText("Why?"));
     expect(eating.getByText("On 9 of the 14 receipts from Fresh Market.")).toBeVisible();
