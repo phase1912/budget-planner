@@ -4,18 +4,20 @@ import { observer } from "mobx-react-lite";
 import { Button, IconTile, Note, Pill } from "@/shared/components";
 import type { Goal } from "@/stores/GoalsStore";
 import { useStores } from "@/stores/StoreContext";
+import { impactOf } from "../adviceImpact";
 import { timeAgo } from "../timeAgo";
 
 /**
- * The advice on one goal, inside the goal's card (BRD F3 — F8.4).
+ * The advice on one goal, inside the goal's card (BRD F3, F4 — F8.4, F8.5).
  *
- * Each recommendation leads with what to do; why — the figures from the user's
- * own receipts — opens on demand, so a card with three pieces of advice stays
+ * Each recommendation leads with what to do and what that saves; why — the
+ * figures from the user's own receipts — opens on demand, so a card with three pieces of advice stays
  * readable. Asking, the wait, and an ask that found nothing or failed all show
  * here, where the button was pressed.
  */
 export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal }) {
-  const { adviceStore } = useStores();
+  const { adviceStore, authStore } = useStores();
+  const currency = authStore.user?.currency ?? "PLN";
   const advice = adviceStore.forGoal(goal.id);
   const outcome = adviceStore.outcomes.get(goal.id);
   const advising = adviceStore.advisingGoalId === goal.id;
@@ -51,6 +53,9 @@ export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal })
                 className="flex flex-col gap-0.5 rounded-control border border-border bg-surface px-3.5 py-2.5"
               >
                 <p className="m-0 text-md font-semibold">{item.action}</p>
+                <p className="m-0 text-base font-semibold text-tone-primary-text tabular-nums">
+                  {impactOf(item, currency)}
+                </p>
                 <details className="group">
                   <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-1 text-base font-medium text-muted-foreground transition-colors hover:text-foreground md:min-h-0 md:py-0.5 [&::-webkit-details-marker]:hidden">
                     Why?

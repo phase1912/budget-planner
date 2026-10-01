@@ -2,7 +2,7 @@
 
 from collections.abc import AsyncGenerator
 from datetime import UTC, datetime
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 import jwt
@@ -15,8 +15,8 @@ from app.api.routers.recommendations import get_advice_generator
 from app.core.config import get_settings
 from app.core.context import current_user_id
 from app.db.session import get_db_session
-from app.domain.advice import Advice, AdviceTarget
-from app.domain.goal_analysis import GoalAnalysis
+from app.domain.advice import AVERAGE_MONTH_DAYS, Advice, AdviceTarget
+from app.domain.goal_analysis import GoalAnalysis, analysis_window
 from app.domain.goals import GoalType
 from app.main import create_app
 from app.models.receipt import ReceiptStatus
@@ -27,9 +27,9 @@ from tests.factories.line_item import LineItemFactory
 from tests.factories.receipt import ReceiptFactory
 from tests.factories.user import UserFactory
 
-COOKIES = Advice(AdviceTarget.ITEM, "Cookies Choco 300g", "Stop buying them", "9 of 14")
+COOKIES = Advice(AdviceTarget.ITEM, "Cookies Choco 300g", "Stop buying them", "9 of 14", 100)
 GENERIC = Advice(
-    AdviceTarget.CATEGORY, "Discretionary spending", "Consider reducing it", "It adds up"
+    AdviceTarget.CATEGORY, "Discretionary spending", "Consider reducing it", "It adds up", 20
 )
 
 
@@ -140,7 +140,7 @@ async def test_generic_advice_is_never_kept(db_session: AsyncSession) -> None:
 @pytest.mark.asyncio
 async def test_asking_again_replaces_a_goals_advice(db_session: AsyncSession) -> None:
     user, goal = await _cookie_eater()
-    halve = Advice(AdviceTarget.ITEM, "Cookies Choco 300g", "Halve them", "9 of 14")
+    halve = Advice(AdviceTarget.ITEM, "Cookies Choco 300g", "Halve them", "9 of 14", 50)
 
     await _call(
         db_session,
@@ -189,3 +189,31 @@ async def test_another_users_goals_and_advice_are_isolated(db_session: AsyncSess
     feed = await _call(db_session, stranger, "GET", "/recommendations")
 
     assert (theirs.status_code, feed.json()) == (404, [])
+
+
+@pytest.mark.asyncio
+async def test_each_piece_of_advice_carries_what_it_saves_worked_out_from_the_receipts(
+    db_session: AsyncSession,
+) -> None:
+    """BRD F4: the figure comes from the receipts, so it can be checked against them."""
+    user, goal = await _cookie_eater()
+    halve = Advice(AdviceTarget.ITEM, "Cookies Choco 300g", "Halve them", "9 of 14", 50)
+
+    [advice] = (
+        await _call(
+            db_session,
+            user,
+            "POST",
+            f"/goals/{goal.id}/recommendations",
+            StubAdviceGenerator([halve]),
+        )
+    ).json()
+
+    window = analysis_window(datetime.now(UTC).date())
+    months = Decimal(window.days) / AVERAGE_MONTH_DAYS
+    expected = (Decimal("13.60") / months / 2).quantize(Decimal("0.01"), ROUND_HALF_UP)
+    assert advice["reduction_percent"] == 50
+    assert Decimal(advice["monthly_saving"]) == expected
+    assert Decimal(advice["purchases_avoided"]) == (Decimal(2) / months / 2).quantize(
+        Decimal("0.1"), ROUND_HALF_UP
+    )

@@ -5,7 +5,14 @@ from dataclasses import replace
 from datetime import date
 from decimal import Decimal
 
-from app.domain.advice import ADVICE_MAX, Advice, AdviceTarget, keep_specific
+from app.domain.advice import (
+    ADVICE_MAX,
+    Advice,
+    AdviceTarget,
+    ProjectedImpact,
+    keep_specific,
+    project_impact,
+)
 from app.domain.goal_analysis import GoalAnalysis, GoalBrief, RecurringItem, scope_of
 from app.domain.goals import GoalType
 from app.domain.periods import DateRange
@@ -37,8 +44,10 @@ ANALYSIS = GoalAnalysis(
 )
 
 
-def _advice(kind: AdviceTarget, target: str, action: str = "Stop buying it") -> Advice:
-    return Advice(kind, target, action, "Seen on 9 of 14 receipts.")
+def _advice(
+    kind: AdviceTarget, target: str, action: str = "Stop buying it", percent: int = 100
+) -> Advice:
+    return Advice(kind, target, action, "Seen on 9 of 14 receipts.", percent)
 
 
 def test_advice_naming_a_purchase_or_category_from_the_receipts_is_kept() -> None:
@@ -84,3 +93,39 @@ def test_no_more_than_the_limit_is_kept() -> None:
     kept = keep_specific([_advice(AdviceTarget.ITEM, n) for n in names], analysis)
 
     assert [a.target_name for a in kept] == names[:ADVICE_MAX]
+
+
+def test_advice_removing_nothing_is_dropped_and_more_than_everything_is_capped() -> None:
+    proposed = [
+        _advice(AdviceTarget.CATEGORY, "Dining", percent=0),
+        _advice(AdviceTarget.ITEM, "Cookies Choco 300g", percent=150),
+    ]
+
+    assert [a.reduction_percent for a in keep_specific(proposed, ANALYSIS)] == [100]
+
+
+# ANALYSIS covers 1 July to 29 September 2026: 91 days, 2.9897 average months.
+
+
+def test_stopping_a_recurring_purchase_saves_its_monthly_spend_and_its_purchases() -> None:
+    """61.20 over the window and 9 receipts: 20.47 a month, 3.0 purchases a month."""
+    impact = project_impact(_advice(AdviceTarget.ITEM, "Cookies Choco 300g"), ANALYSIS)
+
+    assert impact == ProjectedImpact(Decimal("20.47"), Decimal("3.0"))
+
+
+def test_halving_saves_half_and_a_category_has_no_purchase_count() -> None:
+    impact = project_impact(_advice(AdviceTarget.CATEGORY, "dining", percent=50), ANALYSIS)
+
+    assert impact == ProjectedImpact(Decimal("50.17"), None)
+
+
+def test_a_target_refunded_more_than_it_cost_saves_nothing() -> None:
+    refunded = replace(
+        ANALYSIS,
+        highest_spend=[CategoryStanding(uuid.uuid4(), "Dining", Decimal(-40), Decimal(0), 1)],
+    )
+
+    impact = project_impact(_advice(AdviceTarget.CATEGORY, "Dining"), refunded)
+
+    assert impact.monthly_saving == Decimal("0.00")

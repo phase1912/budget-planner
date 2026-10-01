@@ -201,7 +201,13 @@ Rules that must hold at all times. Each is a candidate for a test.
     model that gives no answer leaves the goal's earlier advice in place and is
     reported as unavailable, never as "no advice".
 16. Every recommendation quantifies its projected impact, computed from real history
-    rather than asserted by the model (F4).
+    rather than asserted by the model (F4). The model only says what share of the
+    spending on its target the action removes (100% to stop, 50% to halve). The
+    monthly saving is that share of the target's spend in the analysis window, divided
+    by the window's length in average months (`app/domain/advice.py`,
+    `project_impact`). For a recurring purchase, the purchases avoided a month are
+    worked out the same way from the receipts that carried it. The model is told never
+    to state a saving.
 17. Below the minimum history threshold, the system says more data is needed and produces
     no recommendation (F5).
 18. When spend is on track, report progress and suggest nothing (F6).

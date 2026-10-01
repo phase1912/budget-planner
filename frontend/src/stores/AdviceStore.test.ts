@@ -14,6 +14,9 @@ function advice(id: string, goalId: string): Recommendation {
     target_name: "Cookies Choco 300g",
     action: `Advice ${id}`,
     rationale: "On 9 of the 14 receipts from Fresh Market.",
+    reduction_percent: 100,
+    monthly_saving: "20.47",
+    purchases_avoided: "3.0",
     created_at: "2026-09-30T10:00:00Z",
   };
 }
