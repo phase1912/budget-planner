@@ -143,6 +143,9 @@ describe("AdviceStore", () => {
       ok([
         {
           goal_id: "g1",
+          goal_name: "Stay under",
+          at_risk: false,
+          warning_dismissed: false,
           spent: "100.00",
           projected: "300.00",
           target: "3000.00",
@@ -160,5 +163,29 @@ describe("AdviceStore", () => {
 
     expect(store.progress.get("g1")?.on_track).toBe(true);
     expect(store.outcomes.has("g1")).toBe(false);
+  });
+
+  it("keeps a set-aside warning away and lists only goals at risk", async () => {
+    const row = (goalId: string, atRisk: boolean) => ({
+      goal_id: goalId,
+      goal_name: goalId,
+      spent: "900.00",
+      projected: "1200.00",
+      target: "1000.00",
+      margin: "-200.00",
+      on_track: false,
+      at_risk: atRisk,
+      warning_dismissed: false,
+      day: 20,
+      days_in_month: 31,
+    });
+    vi.mocked(apiClient.GET).mockResolvedValue(ok([row("g1", true), row("g2", false)]));
+    await store.loadProgress();
+    expect(store.warnings.map((w) => w.goal_id)).toEqual(["g1"]);
+
+    vi.mocked(apiClient.POST).mockResolvedValue({ response: new Response() });
+    await store.dismissWarning("g1");
+
+    expect(store.warnings).toEqual([]);
   });
 });

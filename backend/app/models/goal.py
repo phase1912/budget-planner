@@ -1,8 +1,9 @@
 import enum
 import uuid
+from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Enum, ForeignKey, Numeric, String, Text, false
+from sqlalchemy import Boolean, Date, Enum, ForeignKey, Numeric, String, Text, false
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import Uuid
@@ -58,3 +59,5 @@ class Goal(Model):
     mapping_set_by_user: Mapped[bool] = mapped_column(
         Boolean, server_default=false(), nullable=False
     )
+    # The 1st of the month the user dismissed this goal's at-risk warning for (F8.8).
+    warning_dismissed_for: Mapped[date | None] = mapped_column(Date, nullable=True)

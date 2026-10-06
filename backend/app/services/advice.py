@@ -1,6 +1,9 @@
+import logging
 import uuid
 from collections.abc import Sequence
 from datetime import date
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import AdviceUnavailableError, InsufficientDataError, NotFoundError
 from app.domain.advice import AdviceReadiness, assess_readiness, keep_specific, project_impact
@@ -11,10 +14,14 @@ from app.domain.periods import DateRange
 from app.models.goal import Goal
 from app.models.recommendation import Recommendation
 from app.ports.advice_generation import AdviceGeneratorPort, AdviceUnavailable
+from app.repository.category import CategoryRepository
 from app.repository.goal import GoalRepository
 from app.repository.receipt import ReceiptRepository
 from app.repository.recommendation import RecommendationRepository
 from app.services.goal_analysis import GoalAnalysisService
+from app.services.statistics import StatisticsService
+
+logger = logging.getLogger(__name__)
 
 
 class AdviceService:
@@ -83,6 +90,43 @@ class AdviceService:
                 paced.append((goal, goal_pace))
         return paced
 
+    async def dismiss_warning(self, goal_id: uuid.UUID, as_of: date) -> None:
+        """Set a goal's at-risk warning aside until the month `as_of` falls in ends (F7).
+
+        Raises NotFoundError for a goal that is not the user's (N2).
+        """
+        goal = await self.goals.get(goal_id)
+        if goal is None:
+            raise NotFoundError("Goal not found")
+        goal.warning_dismissed_for = as_of.replace(day=1)
+        await self.goals.session.flush()
+
+    async def prepare_for_goals_at_risk(self, as_of: date, currency: str) -> int:
+        """Have cut advice waiting on every goal heading over its cap (BRD F7 — F8.8).
+
+        Runs unasked, in the background. A goal at risk that has no advice from
+        this month gets some, so the warning arrives with a way to correct course;
+        advice the user already has this month, asked for or not, is left alone,
+        which also keeps the model to one call per goal per month. Returns how
+        many goals were given advice.
+        """
+        month_start = as_of.replace(day=1)
+        prepared = 0
+        for goal, goal_pace in await self.progress(as_of):
+            if not goal_pace.at_risk:
+                continue
+            if await self.recommendations.has_advice_since(goal.id, month_start):
+                continue
+            try:
+                fresh = await self.advise(goal.id, as_of=as_of, currency=currency)
+            except InsufficientDataError:
+                return prepared  # the user's history, not this goal: no other goal will do better
+            except AdviceUnavailableError:
+                logger.warning("No advice could be prepared for goal %s", goal.id)
+                continue
+            prepared += 1 if fresh else 0
+        return prepared
+
     async def advise(
         self, goal_id: uuid.UUID, *, as_of: date, currency: str
     ) -> Sequence[Recommendation]:
@@ -147,4 +191,27 @@ def _not_enough(readiness: AdviceReadiness) -> str:
         f"Advice needs about a month of shopping and at least {readiness.required_receipts} "
         f"receipts behind it; you have {readiness.receipts} {receipts} over "
         f"{readiness.history_days} {days}. Keep uploading and it turns on by itself."
+    )
+
+
+def build_advice_service(
+    session: AsyncSession,
+    generator: AdviceGeneratorPort,
+    *,
+    required_receipts: int,
+    required_days: int,
+) -> AdviceService:
+    """An AdviceService on `session`, for a request or for the background job alike."""
+    receipts = ReceiptRepository(session)
+    analysis = GoalAnalysisService(
+        StatisticsService(receipts), receipts, CategoryRepository(session)
+    )
+    return AdviceService(
+        GoalRepository(session),
+        analysis,
+        generator,
+        RecommendationRepository(session),
+        receipts,
+        required_receipts=required_receipts,
+        required_days=required_days,
     )

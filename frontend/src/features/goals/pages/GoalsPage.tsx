@@ -5,6 +5,7 @@ import { Plus, Target } from "lucide-react";
 import { Button, Card, EmptyState, ErrorState, LoadingState, Note } from "@/shared/components";
 import type { Goal } from "@/stores/GoalsStore";
 import { useStores } from "@/stores/StoreContext";
+import { AtRiskWarnings } from "../components/AtRiskWarnings";
 import { GoalAdvice } from "../components/GoalAdvice";
 import { GoalCard } from "../components/GoalCard";
 import { GoalDialog } from "../components/GoalDialog";
@@ -54,6 +55,8 @@ export const GoalsPage = observer(function GoalsPage() {
           </div>
           {goals.length > 0 && newGoal}
         </header>
+
+        <AtRiskWarnings />
 
         {adviceStore.loadError && goals.length > 0 && (
           <Note tone="error">Your advice could not be loaded. {adviceStore.loadError}</Note>

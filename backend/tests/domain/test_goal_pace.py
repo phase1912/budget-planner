@@ -34,3 +34,12 @@ def test_on_the_last_day_the_projection_is_the_spend_itself() -> None:
 
 def test_finishing_exactly_on_the_cap_counts_as_on_track() -> None:
     assert pace(Decimal("1500"), Decimal("3000"), date(2026, 9, 15)).on_track
+
+
+def test_heading_over_in_the_first_week_is_off_track_but_not_yet_a_warning() -> None:
+    """BRD F7 warns mid-month; one big shop on the 3rd is not a trend."""
+    early = pace(Decimal("400"), Decimal("1000"), date(2026, 10, 3))
+    later = pace(Decimal("400"), Decimal("1000"), date(2026, 10, 8))
+
+    assert (early.on_track, early.at_risk) == (False, False)
+    assert (later.on_track, later.at_risk) == (False, True)
