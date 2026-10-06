@@ -5,6 +5,7 @@ import { apiClient } from "@/api/client";
 import { errorMessage, settle } from "@/api/errors";
 
 export type Recommendation = components["schemas"]["RecommendationRead"];
+export type AdviceReadiness = components["schemas"]["AdviceReadinessRead"];
 
 /** Why the last ask for advice on a goal produced none. */
 export interface AdviceOutcome {
@@ -19,7 +20,8 @@ export interface AdviceOutcome {
  * because each ask is a call to the model, and one ask runs at a time. Fresh
  * advice replaces that goal's earlier advice, as it does on the server. An ask
  * that finds nothing specific, or fails, is remembered for its goal until the
- * next ask, so the card can say why it has no new advice.
+ * next ask, so the card can say why it has no new advice. Until there is enough
+ * history (BRD F5), `readiness` says how far there is to go instead.
  */
 export class AdviceStore {
   recommendations: Recommendation[] = [];
@@ -29,6 +31,8 @@ export class AdviceStore {
   advisingGoalId: string | null = null;
   /** Why the last ask produced no advice, by goal id. */
   outcomes = new Map<string, AdviceOutcome>();
+  /** Whether there is enough history for advice yet (BRD F5); null until known. */
+  readiness: AdviceReadiness | null = null;
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
@@ -39,11 +43,14 @@ export class AdviceStore {
     return this.recommendations.filter((r) => r.goal_id === goalId);
   }
 
-  /** Fetch every current recommendation on the user's goals, newest first. */
+  /** Fetch every current recommendation on the user's goals, and whether advice can be had. */
   async load(): Promise<void> {
     this.isLoading = true;
     this.loadError = null;
-    const response = await settle(() => apiClient.GET("/api/v1/recommendations"));
+    const [response] = await Promise.all([
+      settle(() => apiClient.GET("/api/v1/recommendations")),
+      this.loadReadiness(),
+    ]);
     runInAction(() => {
       this.isLoading = false;
       if (response.error) {
@@ -66,6 +73,11 @@ export class AdviceStore {
     runInAction(() => {
       this.advisingGoalId = null;
       if (response.error) {
+        // Too little history: the readiness panel says so, with how far there is to go.
+        if ((response.error as { code?: unknown }).code === "insufficient_data") {
+          void this.loadReadiness();
+          return;
+        }
         this.outcomes.set(goalId, {
           kind: "failed",
           message: errorMessage(response.error, "Advice could not be worked out"),
@@ -85,6 +97,14 @@ export class AdviceStore {
     });
   }
 
+  /** Find out whether there is enough history for advice yet; unknown stays null. */
+  async loadReadiness(): Promise<void> {
+    const response = await settle(() => apiClient.GET("/api/v1/advice/readiness"));
+    runInAction(() => {
+      if (!response.error) this.readiness = response.data;
+    });
+  }
+
   /** Forget everything: a different user is signing in. */
   reset(): void {
     this.recommendations = [];
@@ -92,5 +112,6 @@ export class AdviceStore {
     this.loadError = null;
     this.advisingGoalId = null;
     this.outcomes.clear();
+    this.readiness = null;
   }
 }

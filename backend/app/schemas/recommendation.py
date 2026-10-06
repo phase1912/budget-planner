@@ -26,3 +26,17 @@ class RecommendationRead(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AdviceReadinessRead(BaseModel):
+    """Whether advice can be asked for yet, and how far the history has to go (BRD F5).
+
+    `progress` is a whole percentage of the slower of the two minimums, for a meter.
+    """
+
+    ready: bool
+    receipts: int
+    required_receipts: int
+    history_days: int
+    required_days: int
+    progress: int

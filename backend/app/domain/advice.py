@@ -8,6 +8,7 @@ worth is computed here from that same history, never taken from the model (F8.5)
 
 import enum
 from dataclasses import dataclass
+from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 
 from app.domain.goal_analysis import GoalAnalysis
@@ -132,3 +133,48 @@ def project_impact(advice: Advice, analysis: GoalAnalysis) -> ProjectedImpact:
         if avoided is not None
         else None,
     )
+
+
+@dataclass(frozen=True)
+class AdviceReadiness:
+    """Whether there is enough history behind advice yet, and how close it is (BRD F5).
+
+    Advice needs both `required_receipts` parsed receipts and `required_days` of
+    history since the first of them: a pile of receipts uploaded in one afternoon is
+    not a pattern, and neither is a month with two receipts in it.
+    """
+
+    receipts: int
+    required_receipts: int
+    history_days: int
+    required_days: int
+
+    @property
+    def ready(self) -> bool:
+        """Both minimums are met."""
+        return self.receipts >= self.required_receipts and self.history_days >= self.required_days
+
+    @property
+    def progress(self) -> int:
+        """How far along the slower of the two minimums is, as a whole percentage, 0-100."""
+        receipts = self.receipts / self.required_receipts
+        days = self.history_days / self.required_days
+        return int(min(receipts, days, 1.0) * 100)
+
+
+def assess_readiness(
+    receipts: int,
+    first_purchase: date | None,
+    as_of: date,
+    *,
+    required_receipts: int,
+    required_days: int,
+) -> AdviceReadiness:
+    """How much history the user has for advice, against the configured minimums (F5).
+
+    `receipts` counts parsed receipts only, the ones that also count toward the
+    month; `first_purchase` is the earliest of them. History is the days from it
+    to `as_of`; with no receipt at all there is none.
+    """
+    days = max((as_of - first_purchase).days, 0) if first_purchase else 0
+    return AdviceReadiness(receipts, required_receipts, days, required_days)

@@ -733,6 +733,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/advice/readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Advice Readiness
+         * @description Whether the caller has enough history for advice yet, and how close (BRD F5).
+         */
+        get: operations["advice_readiness_api_v1_advice_readiness_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/goals/{goal_id}/recommendations": {
         parameters: {
             query?: never;
@@ -746,7 +766,8 @@ export interface paths {
          * Advise On Goal
          * @description Fresh advice on one goal, replacing its earlier advice (BRD F2, F3).
          *
-         *     Another user's goal is not found (N2); a model that gives no answer is 503.
+         *     Another user's goal is not found (N2); too little history is 422 with the code
+         *     `insufficient_data` (F5); a model that gives no answer is 503.
          */
         post: operations["advise_on_goal_api_v1_goals__goal_id__recommendations_post"];
         delete?: never;
@@ -770,6 +791,26 @@ export interface components {
             extraction_index: number;
             /** Amount */
             amount: number | string;
+        };
+        /**
+         * AdviceReadinessRead
+         * @description Whether advice can be asked for yet, and how far the history has to go (BRD F5).
+         *
+         *     `progress` is a whole percentage of the slower of the two minimums, for a meter.
+         */
+        AdviceReadinessRead: {
+            /** Ready */
+            ready: boolean;
+            /** Receipts */
+            receipts: number;
+            /** Required Receipts */
+            required_receipts: number;
+            /** History Days */
+            history_days: number;
+            /** Required Days */
+            required_days: number;
+            /** Progress */
+            progress: number;
         };
         /**
          * AdviceTarget
@@ -3115,6 +3156,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecommendationRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    advice_readiness_api_v1_advice_readiness_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdviceReadinessRead"];
                 };
             };
             /** @description Validation Error */

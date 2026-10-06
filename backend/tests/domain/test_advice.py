@@ -10,6 +10,7 @@ from app.domain.advice import (
     Advice,
     AdviceTarget,
     ProjectedImpact,
+    assess_readiness,
     keep_specific,
     project_impact,
 )
@@ -129,3 +130,29 @@ def test_a_target_refunded_more_than_it_cost_saves_nothing() -> None:
     impact = project_impact(_advice(AdviceTarget.CATEGORY, "Dining"), refunded)
 
     assert impact.monthly_saving == Decimal("0.00")
+
+
+def test_advice_needs_both_enough_receipts_and_a_month_of_history() -> None:
+    """BRD F5: a pile of receipts from one afternoon is not a pattern, nor is a sparse month."""
+    today = date(2026, 10, 7)
+
+    def ready(receipts: int, first: date | None) -> bool:
+        return assess_readiness(receipts, first, today, required_receipts=4, required_days=30).ready
+
+    assert ready(4, date(2026, 9, 7))
+    assert not ready(20, date(2026, 10, 7))
+    assert not ready(3, date(2026, 6, 1))
+    assert not ready(0, None)
+
+
+def test_readiness_progress_follows_the_slower_minimum() -> None:
+    today = date(2026, 10, 7)
+
+    receipts_short = assess_readiness(
+        1, date(2026, 8, 1), today, required_receipts=4, required_days=30
+    )
+    days_short = assess_readiness(
+        10, date(2026, 9, 28), today, required_receipts=4, required_days=30
+    )
+
+    assert (receipts_short.progress, days_short.progress) == (25, 30)

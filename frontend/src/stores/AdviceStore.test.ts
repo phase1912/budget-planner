@@ -35,10 +35,12 @@ describe("AdviceStore", () => {
     store = new AdviceStore();
   });
 
-  it("loads every goal's advice in one request and hands each goal its own", async () => {
+  it("loads every goal's advice in one request, with whether advice can be had", async () => {
     vi.mocked(apiClient.GET).mockResolvedValue(ok([advice("1", "g1"), advice("2", "g2")]));
     await store.load();
-    expect(apiClient.GET).toHaveBeenCalledTimes(1);
+    expect(apiClient.GET).toHaveBeenCalledTimes(2);
+    expect(apiClient.GET).toHaveBeenCalledWith("/api/v1/recommendations");
+    expect(apiClient.GET).toHaveBeenCalledWith("/api/v1/advice/readiness");
     expect(store.forGoal("g2").map((r) => r.id)).toEqual(["2"]);
   });
 
@@ -97,5 +99,41 @@ describe("AdviceStore", () => {
     store.reset();
     expect(store.recommendations).toEqual([]);
     expect(store.outcomes.size).toBe(0);
+  });
+
+  it("reads too little history as how far there is to go, not as a failure", async () => {
+    const readiness = {
+      ready: false,
+      receipts: 3,
+      required_receipts: 4,
+      history_days: 0,
+      required_days: 30,
+      progress: 0,
+    };
+    vi.mocked(apiClient.POST).mockResolvedValue({
+      error: { code: "insufficient_data", detail: "Advice needs about a month" },
+      response: new Response(),
+    });
+    vi.mocked(apiClient.GET).mockResolvedValue(ok(readiness));
+
+    await store.advise("g1");
+    await vi.waitFor(() => {
+      expect(store.readiness).toEqual(readiness);
+    });
+
+    expect(store.outcomes.has("g1")).toBe(false);
+  });
+
+  it("forgets the previous user's readiness too", () => {
+    store.readiness = {
+      ready: true,
+      receipts: 9,
+      required_receipts: 4,
+      history_days: 40,
+      required_days: 30,
+      progress: 100,
+    };
+    store.reset();
+    expect(store.readiness).toBeNull();
   });
 });

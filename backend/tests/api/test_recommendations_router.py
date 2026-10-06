@@ -1,7 +1,7 @@
 """Asking for advice on a goal, and the advice feed, over HTTP (F8.4, BRD F3, N2)."""
 
 from collections.abc import AsyncGenerator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
@@ -77,21 +77,24 @@ async def _call(
         return await client.request(method, f"/api/v1{path}")
 
 
-async def _cookie_eater(**user: Any) -> tuple[User, Any]:
-    """A user whose receipts show the cookies twice, with a goal watching them."""
-    owner = await UserFactory.create_async(**user)
-    today = datetime.now(UTC)
-    for _ in range(2):
-        receipt = await ReceiptFactory.create_async(
-            user_id=owner.id,
-            merchant_name="Fresh Market",
-            transaction_date=today,
-            status=ReceiptStatus.PARSED,
-        )
-        await LineItemFactory.create_async(
-            receipt=receipt, name="Cookies Choco 300g", total_price=Decimal("6.80")
-        )
-    goal = await GoalFactory.create_async(
+async def _shop(
+    owner: User,
+    item: str,
+    *,
+    days_ago: int = 0,
+    status: ReceiptStatus = ReceiptStatus.PARSED,
+) -> None:
+    receipt = await ReceiptFactory.create_async(
+        user_id=owner.id,
+        merchant_name="Fresh Market",
+        transaction_date=datetime.now(UTC) - timedelta(days=days_ago),
+        status=status,
+    )
+    await LineItemFactory.create_async(receipt=receipt, name=item, total_price=Decimal("6.80"))
+
+
+async def _lose_weight(owner: User) -> Any:
+    return await GoalFactory.create_async(
         user_id=owner.id,
         type=GoalType.LIFESTYLE,
         financial_kind=None,
@@ -99,7 +102,16 @@ async def _cookie_eater(**user: Any) -> tuple[User, Any]:
         name="Lose weight",
         mapped_item_names=["cookies"],
     )
-    return owner, goal
+
+
+async def _cookie_eater(**user: Any) -> tuple[User, Any]:
+    """A user with enough history for advice (F5) whose receipts show the cookies twice."""
+    owner = await UserFactory.create_async(**user)
+    for _ in range(2):
+        await _shop(owner, "Cookies Choco 300g")
+    for _ in range(3):
+        await _shop(owner, "Bread", days_ago=40)
+    return owner, await _lose_weight(owner)
 
 
 @pytest.mark.asyncio
@@ -217,3 +229,67 @@ async def test_each_piece_of_advice_carries_what_it_saves_worked_out_from_the_re
     assert Decimal(advice["purchases_avoided"]) == (Decimal(2) / months / 2).quantize(
         Decimal("0.1"), ROUND_HALF_UP
     )
+
+
+@pytest.mark.asyncio
+async def test_a_fresh_account_is_told_more_history_is_needed_and_no_model_is_asked(
+    db_session: AsyncSession,
+) -> None:
+    """BRD F5, the demo: three receipts from today are not a pattern."""
+    owner = await UserFactory.create_async()
+    for _ in range(3):
+        await _shop(owner, "Cookies Choco 300g")
+    goal = await _lose_weight(owner)
+    generator = StubAdviceGenerator([COOKIES])
+
+    advised = await _call(db_session, owner, "POST", f"/goals/{goal.id}/recommendations", generator)
+    readiness = await _call(db_session, owner, "GET", "/advice/readiness")
+
+    assert (advised.status_code, advised.json()["code"]) == (422, "insufficient_data")
+    assert "you have 3 receipts over 0 days" in advised.json()["detail"]
+    assert generator.asked == []
+    assert readiness.json() == {
+        "ready": False,
+        "receipts": 3,
+        "required_receipts": 4,
+        "history_days": 0,
+        "required_days": 30,
+        "progress": 0,
+    }
+
+
+@pytest.mark.asyncio
+async def test_receipts_held_out_for_review_are_no_history_for_advice(
+    db_session: AsyncSession,
+) -> None:
+    """A receipt that does not count toward the month does not count toward advice (D3)."""
+    owner = await UserFactory.create_async()
+    await _shop(owner, "Cookies Choco 300g")
+    for _ in range(4):
+        await _shop(owner, "Bread", days_ago=40, status=ReceiptStatus.MANUAL_REVIEW)
+
+    readiness = (await _call(db_session, owner, "GET", "/advice/readiness")).json()
+
+    assert (readiness["ready"], readiness["receipts"], readiness["history_days"]) == (False, 1, 0)
+
+
+@pytest.mark.asyncio
+async def test_another_users_receipts_are_no_history_for_advice(db_session: AsyncSession) -> None:
+    """BRD N2: a stranger's month of shopping does not unlock my advice."""
+    await _cookie_eater()
+    owner = await UserFactory.create_async()
+
+    readiness = (await _call(db_session, owner, "GET", "/advice/readiness")).json()
+
+    assert (readiness["ready"], readiness["receipts"]) == (False, 0)
+
+
+@pytest.mark.asyncio
+async def test_a_month_of_history_with_enough_receipts_makes_advice_ready(
+    db_session: AsyncSession,
+) -> None:
+    owner, _ = await _cookie_eater()
+
+    readiness = (await _call(db_session, owner, "GET", "/advice/readiness")).json()
+
+    assert (readiness["ready"], readiness["receipts"], readiness["progress"]) == (True, 5, 100)

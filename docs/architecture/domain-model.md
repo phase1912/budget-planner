@@ -221,7 +221,12 @@ Rules that must hold at all times. Each is a candidate for a test.
     worked out the same way from the receipts that carried it. The model is told never
     to state a saving.
 17. Below the minimum history threshold, the system says more data is needed and produces
-    no recommendation (F5).
+    no recommendation (F5). The threshold has two parts and both must be met: at least
+    `min_receipts_for_advice` parsed receipts (4 by default), and at least
+    `min_history_days_for_advice` days (30, BRD F5's "one full month") from the first of
+    them to today. Receipts held out for review or still being read count toward
+    neither. The check runs before any model is asked; until it passes, the goal's card
+    shows how far there is to go instead of a button to ask (`app/domain/advice.py`).
 18. When spend is on track, report progress and suggest nothing (F6).
 
 **Identity**
