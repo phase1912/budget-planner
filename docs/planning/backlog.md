@@ -3,33 +3,35 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-15 epics · 103 features · 182 tasks written so far.
+17 epics · 111 features · 198 tasks written so far.
 
-11 epics are phase 1 — the BRD scope, delivered before launch. 4 are phase 2: commercial scope that is planned but deliberately not started until phase 1 is complete.
+14 epics are in the diploma project's scope; 3 are planned but out of it.
 
-| Epic | Title | BRD | Features | Groomed | Phase |
-|---|---|---|---|---|---|
-| E0 | Foundation & Delivery Platform | — | 10 | yes | 1 |
-| E1 | Identity & Account | BR-7, N2 | 4 | yes | 1 |
-| E2 | Receipt Ingestion & Storage | BR-1 | 5 | yes | 1 |
-| E3 | Receipt Parsing & Extraction | BR-1 | 8 | no | 1 |
-| E4 | Multi-Photo Position Matching | BR-2 | 8 | yes | 1 |
-| E5 | Spend Categorization | BR-3 | 7 | no | 1 |
-| E6 | Monthly Budget Calculation | BR-4 | 7 | no | 1 |
-| E7 | Statistics, Comparison & Export | BR-5 | 6 | no | 1 |
-| E8 | Goals & AI Optimization Advice | BR-6 | 9 | yes | 1 |
-| E9 | Web Client Foundation | — | 6 | yes | 1 |
-| E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 7 | no | 1 |
-| E11 | Alternative Receipt Intake | — | 6 | no | 2 |
-| E12 | Household & Shared Budgets | — | 7 | no | 2 |
-| E13 | Aggregated Purchase Analytics | — | 7 | no | 2 |
-| E14 | B2B Export & Accounting Integrations | — | 6 | no | 2 |
+| Epic | Title | BRD | Features | Groomed | Phase | Scope |
+|---|---|---|---|---|---|---|
+| E0 | Foundation & Delivery Platform | — | 10 | yes | 1 | Diploma |
+| E1 | Identity & Account | BR-7, N2 | 4 | yes | 1 | Diploma |
+| E2 | Receipt Ingestion & Storage | BR-1 | 5 | yes | 1 | Diploma |
+| E3 | Receipt Parsing & Extraction | BR-1 | 8 | no | 1 | Diploma |
+| E4 | Multi-Photo Position Matching | BR-2 | 8 | yes | 1 | Diploma |
+| E5 | Spend Categorization | BR-3 | 7 | no | 1 | Diploma |
+| E6 | Monthly Budget Calculation | BR-4 | 7 | no | 1 | Diploma |
+| E7 | Statistics, Comparison & Export | BR-5 | 6 | no | 1 | Diploma |
+| E8 | Goals & AI Optimization Advice | BR-6 | 9 | yes | 1 | Diploma |
+| E9 | Web Client Foundation | — | 6 | yes | 1 | Diploma |
+| E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 7 | no | 1 | Out of scope |
+| E11 | Alternative Receipt Intake | — | 6 | no | 2 | Diploma |
+| E12 | Household & Shared Budgets | — | 7 | no | 2 | Diploma |
+| E13 | Aggregated Purchase Analytics | — | 7 | no | 2 | Out of scope |
+| E14 | B2B Export & Accounting Integrations | — | 6 | no | 2 | Out of scope |
+| E15 | Receipt Accuracy & Trust | — | 4 | yes | 2 | Diploma |
+| E16 | Personal Price History | — | 4 | yes | 2 | Diploma |
 
 ---
 
 ## E0 — Foundation & Delivery Platform
 
-**BRD sections:** — · **Phase:** 1
+**BRD sections:** — · **Phase:** 1 · **Scope:** Diploma
 
 Everything required before a single business requirement can be implemented: repository layout, both runtimes, the database and migration baseline, the local development environment, CI, and a BDD harness that executes the BRD's Gherkin scenarios directly.
 
@@ -135,7 +137,7 @@ Every existing BRD scenario opens with "Given the user is logged in", but the BR
 
 ## E1 — Identity & Account
 
-**BRD sections:** BR-7, N2 · **Phase:** 1
+**BRD sections:** BR-7, N2 · **Phase:** 1 · **Scope:** Diploma
 
 Every BRD scenario begins with "Given the user is logged in", and N2 forbids one user's data from reaching another. This epic establishes authentication, session handling, the user profile fields from the BRD data model, and the scoping guarantee that all later epics depend on. Full stack, and paired feature by feature rather than layer by layer: the login and registration screens ship inside F1.1 with the endpoints they post to, and token storage, transparent refresh and the protected route table ship inside F1.2 with the session model they depend on. E9 owns only the frontend groundwork that has no domain dependency.
 
@@ -198,7 +200,7 @@ A user can set the account currency and an optional monthly budget limit, which 
 
 ## E2 — Receipt Ingestion & Storage
 
-**BRD sections:** BR-1 · **Phase:** 1
+**BRD sections:** BR-1 · **Phase:** 1 · **Scope:** Diploma
 
 Accepting receipt photos: format validation, the two upload modes with their photo-count and size limits, durable encrypted storage of the originals, and asynchronous processing status. Covers BRD A1 through A8 and the storage half of A12. The upload screen is built here rather than parked in a trailing interface feature: F2.1 puts it on screen, and F2.2, F2.3 and F2.5 each extend it as they land, so every feature in this epic can be exercised by using the product.
 
@@ -259,7 +261,7 @@ Upload returns immediately with a tracking handle while parsing proceeds in the 
 
 ## E3 — Receipt Parsing & Extraction
 
-**BRD sections:** BR-1 · **Phase:** 1
+**BRD sections:** BR-1 · **Phase:** 1 · **Scope:** Diploma
 
 Turning a validated photo into a structured receipt: field extraction, confidence handling, manual-review flagging, duplicate detection and persistence with provenance. Covers BRD A9 through A15. This is where photographing a receipt starts paying off, so F3.1 puts step 2 of the upload wizard on screen and every later feature in the epic extends it. Nothing here ships as extraction that only a test can see.
 
@@ -331,7 +333,7 @@ Edit the merchant, date, total and line items of a receipt that is already store
 
 ## E4 — Multi-Photo Position Matching
 
-**BRD sections:** BR-2 · **Phase:** 1
+**BRD sections:** BR-2 · **Phase:** 1 · **Scope:** Diploma
 
 Recognising that a line item appearing on two overlapping photos of one long receipt is the same purchase, so it is counted once — while never collapsing genuinely repeated purchases made on different receipts. Covers BRD B1 through B9.
 
@@ -424,7 +426,7 @@ Filter the receipt list by processing status, by a specific date, month, or a cu
 
 ## E5 — Spend Categorization
 
-**BRD sections:** BR-3 · **Phase:** 1
+**BRD sections:** BR-3 · **Phase:** 1 · **Scope:** Diploma
 
 Classifying every line item into a spending category, with a confidence-gated fallback, user correction that the system learns from, and user-defined categories. Covers BRD C1 through C7.
 
@@ -488,7 +490,7 @@ A demo user with a handful of categorised receipts spanning two months, plus the
 
 ## E6 — Monthly Budget Calculation
 
-**BRD sections:** BR-4 · **Phase:** 1
+**BRD sections:** BR-4 · **Phase:** 1 · **Scope:** Diploma
 
 Aggregating receipts into monthly totals by transaction date, distinguishing a month-to-date figure from a finalised one, excluding flagged receipts transparently, and recalculating when history changes. Covers BRD D1 through D7.
 
@@ -552,7 +554,7 @@ What turns F6.1's month figure into the landing view: the category breakdown bes
 
 ## E7 — Statistics, Comparison & Export
 
-**BRD sections:** BR-5 · **Phase:** 1
+**BRD sections:** BR-5 · **Phase:** 1 · **Scope:** Diploma
 
 Category-level insight over arbitrary date ranges, period-over-period comparison, honest empty states, chart-ready output, and data export. Covers BRD E1 through E6 and N6.
 
@@ -608,7 +610,7 @@ CSV and JSON export of the user's receipts, line items and statistics, generated
 
 ## E8 — Goals & AI Optimization Advice
 
-**BRD sections:** BR-6 · **Phase:** 1
+**BRD sections:** BR-6 · **Phase:** 1 · **Scope:** Diploma
 
 The product's differentiator: a user states a financial or lifestyle goal and receives specific, evidence-based, quantified recommendations tied to their own purchase history, with proactive warnings and a feedback loop. Covers BRD F1 through F9.
 
@@ -720,7 +722,7 @@ Capture "not followed" and "not helpful" feedback and deprioritise similar recom
 
 ## E9 — Web Client Foundation
 
-**BRD sections:** — · **Phase:** 1
+**BRD sections:** — · **Phase:** 1 · **Scope:** Diploma
 
 The React and MobX groundwork every feature screen builds on. Deliberately separated so that state, API access and layout conventions are decided once rather than reinvented in each feature epic. Scope rule: only what has no domain dependency belongs here. Screens for a capability ship inside that capability's own epic — this epic is the shared floor they stand on, not "the frontend half" of the product. Built before E1 despite its number, because nothing in it waits on an endpoint; see `depends_on` for the real order.
 
@@ -796,7 +798,7 @@ One documented treatment for each, so the honest empty states E5 and F5 require 
 
 ## E10 — Security, Privacy & Observability
 
-**BRD sections:** N1, N2, N3, N5 · **Phase:** 1
+**BRD sections:** N1, N2, N3, N5 · **Phase:** 1 · **Scope:** Out of scope
 
 The cross-cutting non-functional requirements from BRD section 8 and the constraints in section 11, given their own epic so they are scheduled work rather than assumed work.
 
@@ -860,7 +862,7 @@ A user can export everything held about them and delete their account with all r
 
 ## E11 — Alternative Receipt Intake
 
-**BRD sections:** — · **Phase:** 2
+**BRD sections:** — · **Phase:** 2 · **Scope:** Diploma
 
 BRD section 10 assumes every receipt arrives as a photograph. That assumption is the product's largest retention risk: photographing receipts is effort the user has to repeat every week, and repeated effort is what stops budgeting apps being opened after the second week. This epic adds intake that costs the user nothing — e-receipts arriving by email, the fiscal QR code printed on the receipt, and national e-receipt services — behind the same ingestion pipeline, so the channel changes only how a receipt arrives and nothing downstream of it.
 
@@ -904,7 +906,7 @@ The user can see their forwarding address, which channels are connected, and wha
 
 ## E12 — Household & Shared Budgets
 
-**BRD sections:** — · **Phase:** 2
+**BRD sections:** — · **Phase:** 2 · **Scope:** Diploma
 
 BRD section 4.2 places shared budgets out of scope and section 14 leaves the question open. Commercially they are what makes the product stick: a household that has agreed a shared budget does not churn the way one person tracking their own spending does. This is not a feature bolted on top — it replaces the single-owner model that N2, every repository and every access-control test are built around, which is why it needs a recorded decision before any schema changes.
 
@@ -954,7 +956,7 @@ Creating a household, managing members, choosing what is shared, and reading the
 
 ## E13 — Aggregated Purchase Analytics
 
-**BRD sections:** — · **Phase:** 2
+**BRD sections:** — · **Phase:** 2 · **Scope:** Out of scope
 
 The item-level data BO-2 produces is something bank and card feeds structurally cannot supply: what was actually bought, not which shop was paid. Aggregated across many users and anonymised, that is a saleable market signal. This epic is written with its constraints first because the failure mode is legal rather than technical: no aggregate is produced without explicit consent, no figure is published for a cohort small enough to identify someone, and no raw personal purchase data leaves the system in any form.
 
@@ -1004,7 +1006,7 @@ A user can see what their data contributes, and withdrawing consent or deleting 
 
 ## E14 — B2B Export & Accounting Integrations
 
-**BRD sections:** — · **Phase:** 2
+**BRD sections:** — · **Phase:** 2 · **Scope:** Out of scope
 
 Willingness to pay for structured receipt data is far higher among small businesses and the accountants who serve them than among individuals tracking groceries, and the sale needs no consumer marketing budget. F7.6 already exports CSV and JSON; this epic is about an export a bookkeeper's software ingests without a human reshaping it, the business fields such an export requires, and the extraction pipeline itself sold as an API.
 
@@ -1043,4 +1045,108 @@ Counting what each account consumes — receipts parsed, API calls made, images 
 *Requirements: —*
 
 Export configuration, API key management and current usage against plan limits.
+
+---
+
+## E15 — Receipt Accuracy & Trust
+
+**BRD sections:** — · **Phase:** 2 · **Scope:** Diploma
+
+Reading a receipt is right on clean paper and wrong on a long, faded one with a dozen discounts: the best readers manage 70-85% there, and the apps on the market either hide the error or leave the user to find it. A receipt that does not add up and does not say why is the fastest way to lose a user's trust, and an untrusted figure makes every piece of advice built on it worthless. This epic makes every disagreement visible, explained and fixable in one step, marks the lines the reader doubted, remembers what the user corrected, and measures how often reading goes wrong.
+
+### F15.1 — Explained totals mismatch and the missed-discount fix
+
+*Requirements: —* · *Blocked by: F3.4, F3.9*
+
+A receipt whose lines disagree with its printed total says by how much and why, wherever it is shown. Lines above the total usually mean a discount the reader missed, offered as one line of exactly that amount; lines below it mean a line is missing or misread. A grosz of rounding is not a disagreement. Nothing is added without the user's say.
+
+**Demonstrated by:** Upload a Biedronka receipt whose OPUST lines were not read; the card says the lines come to 38.24 more than the 188.02 printed and offers a -38.24 discount; one click and the receipt adds up and counts toward the month.
+
+- **F15.1.1** Missed discount added to an extracted receipt — Endpoint that appends one discount line to an extraction, filed under the receipt's dominant category, and re-checks its arithmetic; the same category for a discount typed into a stored receipt. One grosz of tolerance shared by upload and edit.
+- **F15.1.2** Mismatch note in the upload wizard, the receipt view and the edit dialog — One shared note that names both figures and the gap, offers the discount when the lines are above the total and a way to fix the receipt when they are below.
+
+### F15.2 — Doubtful lines marked
+
+*Requirements: A10* · *Blocked by: F3.3, F15.1*
+
+The lines the reader was unsure of are marked where the user looks at the receipt, with the photo beside them, so checking a receipt means checking three lines, not thirty.
+
+**Demonstrated by:** Open a receipt read from a faded photo; two lines carry a "check this" mark, and the filter "doubtful only" shows just those two next to the photo.
+
+- **F15.2.1** Keep each line's read confidence with the stored receipt — Persist the per-line extraction confidence on line items and return it with the receipt detail, so the mark survives storing the receipt.
+- **F15.2.2** Doubtful-line marks and filter — Mark low-confidence lines in the upload wizard and the receipt view, with a filter showing only those and the receipt photo beside them.
+
+### F15.3 — Corrections that stick
+
+*Requirements: —* · *Blocked by: F15.1, F5.5*
+
+A line name the user corrected on a receipt from one shop is corrected the same way on the next receipt from that shop, so the same misreading is fixed once, not every week.
+
+**Demonstrated by:** Correct "MastoZPolskMlecz200g" to "Masło 200g" on one Biedronka receipt; the next Biedronka receipt reads "Masło 200g" and says it was corrected from what was printed.
+
+- **F15.3.1** Per-shop correction memory applied at extraction — Record name corrections per user and merchant and apply them to later extractions from that merchant, keeping what was read alongside what is shown.
+- **F15.3.2** Corrected-line indicator with undo — Show that a line was corrected from memory and let the user undo it for that line or forget the correction.
+
+### F15.4 — Reading accuracy report
+
+*Requirements: —* · *Blocked by: F15.2*
+
+How often reading needs correcting, by shop and over time, measured from what users actually changed. It shows whether the trust work is working, and gives the diploma defence a number rather than a claim.
+
+**Demonstrated by:** Open the accuracy panel and read that 4 of the last 20 receipts needed a correction, all from one shop, and that the share fell after corrections began to stick.
+
+- **F15.4.1** Accuracy figures from corrections — Count receipts and lines changed after reading, per merchant and per month, from the stored corrections and mismatch fixes.
+- **F15.4.2** Accuracy panel — A panel in Preferences showing the share of receipts corrected, the shops behind them and the trend.
+
+---
+
+## E16 — Personal Price History
+
+**BRD sections:** — · **Phase:** 2 · **Scope:** Diploma
+
+Every receipt holds unit prices, and no app on the market uses them for the person who paid: banks never see a price, and receipt scanners stop at totals per category. The user's own receipts are enough to show how the price of what they buy is moving and where they pay less for the same thing, and those are the most concrete savings advice can name. This is personal, from one user's receipts only; aggregating across users is E13 and stays out of scope.
+
+### F16.1 — One product across receipts
+
+*Requirements: —* · *Blocked by: F3.5, F5.2*
+
+The same product printed differently on different receipts and shops ("Jogurt Natural 330ml", "JOG NAT 330ML") is one product for that user, with a way to merge or split what was matched wrongly. Price history means nothing without it.
+
+**Demonstrated by:** Open the products list and see one "Jogurt naturalny 330 ml" bought 9 times across two shops; merge in a line the matcher missed and split one it got wrong.
+
+- **F16.1.1** Product model and matcher — A per-user product entity, line items linked to it, and a matcher that normalises names, sizes and units, behind a port so a model can help with ambiguous names.
+- **F16.1.2** Products list with merge and split — A products screen listing what the user buys, with merge and split of wrongly matched lines.
+
+### F16.2 — Price history of a product
+
+*Requirements: —* · *Blocked by: F16.1*
+
+The unit price of a product the user buys, over time and per shop, with how much it has risen or fallen, computed per kilogram or litre where the receipt gives a weight.
+
+**Demonstrated by:** Open "Jogurt naturalny 330 ml" and read that it went from 4.99 to 5.49 at Biedronka since June, +10%, on a chart of every purchase.
+
+- **F16.2.1** Unit price series per product — Endpoint returning each purchase's unit price, normalised by weight or volume where known, and the change over a period, from the user's own receipts only (N2).
+- **F16.2.2** Product page with the price chart — A product page charting unit price per purchase, coloured by shop, with the change stated in words.
+
+### F16.3 — Where it costs less
+
+*Requirements: —* · *Blocked by: F16.2*
+
+For products bought in more than one shop, which shop the user paid less in recently and by how much, only from their own receipts and only when both prices are recent enough to compare.
+
+**Demonstrated by:** The products list says "cheaper at Lidl" next to five products, with the difference per unit, and none for a product last bought at Lidl a year ago.
+
+- **F16.3.1** Shop comparison per product — Compare the latest unit prices per shop within a freshness window and report the cheaper shop and the difference.
+- **F16.3.2** Cheaper-shop marks — Mark products with a cheaper shop in the products list and on the product page.
+
+### F16.4 — Price signals in advice
+
+*Requirements: F2, F4* · *Blocked by: F16.3, F8.5*
+
+Price rises and cheaper shops become evidence advice can cite, so a recommendation can say "buy it at Lidl" with a saving computed from the user's own prices, not asserted.
+
+**Demonstrated by:** Ask for advice on a spending ceiling and read "Buy Jogurt naturalny at Lidl: 0.80 less each, about 7 PLN a month at your rate".
+
+- **F16.4.1** Price evidence in goal analysis — Add price rises and cheaper shops for the goal's products to the analysis the advice model reads.
+- **F16.4.2** Saving from a shop switch — Compute the monthly saving of buying a product in the cheaper shop from the price gap and the user's purchase rate, the same way projected impact is computed for F8.5.
 

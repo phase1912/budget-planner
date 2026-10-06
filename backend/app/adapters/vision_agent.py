@@ -16,6 +16,13 @@ from app.agent.core import Agent
 from app.agent.types import ImageContent, Message
 from app.schemas.extraction import ExtractedReceipt
 
+EXTRACTION_MAX_TOKENS = 8192
+"""Room for a long receipt several times over (one runs to about 1,500 tokens).
+
+A small local model at temperature 0 can fall into repeating one line over and over
+until it hits its limit; this bounds that to minutes instead of the default 32k.
+"""
+
 RECEIPT_EXTRACTION_PROMPT = """\
 You are a receipt parser. You will be given one or more photos of a single \
 receipt (the same physical receipt may be photographed in overlapping shots).
@@ -127,4 +134,6 @@ class VisionAgentAdapter:
             Message(role="user", content=content_parts),
         ]
 
-        return await self._agent.run_structured(messages, schema=ExtractedReceipt)
+        return await self._agent.run_structured(
+            messages, schema=ExtractedReceipt, max_tokens=EXTRACTION_MAX_TOKENS
+        )

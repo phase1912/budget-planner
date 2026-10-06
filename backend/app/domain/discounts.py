@@ -1,18 +1,18 @@
 """Discount lines, as Polish receipts print them: a negative line under the item it reduces.
 
-Biedronka, Stokrotka and others print "OPUST -10,04" as a line of its own
-directly beneath the discounted product. Read literally, it is a purchase with a
-negative price that the categoriser files under Other, which makes the product
-look dearer than it was and drives Other below zero. Folded into the line above,
-the product carries what was actually paid for it, and the receipt still adds up
-to its printed total.
+Biedronka, Stokrotka and others print "Rabat -10,04" or "OPUST -10,04" as a line of
+its own directly beneath the discounted product. It stays a line of its own, so the
+receipt reads as printed and its lines add up to what was paid. It takes the
+category of the product it reduces: filed under Other it would make that product's
+category look dearer than it was and drive Other below zero.
 """
 
+from collections.abc import Iterable
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
 
-def _amount(value: Any) -> Decimal | None:
+def printed_amount(value: Any) -> Decimal | None:
     """A printed amount as a number, or None if it is not one ("7,49", "-4.99")."""
     try:
         amount = Decimal(str(value).strip().replace(" ", "").replace(",", "."))
@@ -21,53 +21,58 @@ def _amount(value: Any) -> Decimal | None:
     return amount if amount.is_finite() else None
 
 
-def _can_take_discount(line: Any, discount: dict[str, Any]) -> bool:
-    """A product line printed on the same photo as the discount, so it can be the one reduced."""
-    return (
-        isinstance(line, dict)
-        and (_amount(line.get("total_price")) or Decimal(0)) > 0
-        and line.get("file_id") == discount.get("file_id")
-    )
+def _is_discount(line: Any) -> bool:
+    return isinstance(line, dict) and (printed_amount(line.get("total_price")) or Decimal(0)) < 0
 
 
-def fold_discounts(
-    items: list[Any], matches: list[Any] | None = None
-) -> tuple[list[Any], list[Any]]:
-    """Merge each negative line into the nearest product line above it on the same photo.
+def _is_product(line: Any) -> bool:
+    return isinstance(line, dict) and (printed_amount(line.get("total_price")) or Decimal(0)) > 0
 
-    Works on the raw extraction dicts the upload job stores and returns new ones,
-    leaving those given untouched. The receiving line's `total_price` becomes the net
-    amount paid and `discount` records what was taken off, for the wizard to show;
-    its unit price and quantity stay as printed. A negative line with no product
-    above it is kept: dropping it would change the receipt's total.
 
-    `matches` are the cross-photo position matches, which point at lines by index
-    (BRD B2-B4). They are returned renumbered for the shorter list, and a match on a
-    folded discount line is dropped: each copy of a discount printed on two photos
-    has already folded into its own photo's copy of the product.
+def discounted_products(items: list[Any]) -> dict[int, int]:
+    """For each discount line, the index of the product it reduces.
+
+    That is the nearest product line above it printed on the same photo; a discount
+    with none above it reduces nothing in particular and is left out.
     """
-    folded: list[Any] = []
-    new_index: dict[int, int] = {}
-    for old_index, original in enumerate(items):
-        item = dict(original) if isinstance(original, dict) else original
-        total = _amount(item.get("total_price")) if isinstance(item, dict) else None
-        target = (
-            next((line for line in reversed(folded) if _can_take_discount(line, item)), None)
-            if total is not None and total < 0
-            else None
-        )
-        if target is None or total is None:
-            new_index[old_index] = len(folded)
-            folded.append(item)
+    targets: dict[int, int] = {}
+    for index, line in enumerate(items):
+        if not _is_discount(line):
             continue
-        net = (_amount(target.get("total_price")) or Decimal(0)) + total
-        discount = (_amount(target.get("discount")) or Decimal(0)) - total
-        target["total_price"] = str(net.quantize(Decimal("0.01")))
-        target["discount"] = str(discount.quantize(Decimal("0.01")))
+        for above in range(index - 1, -1, -1):
+            candidate = items[above]
+            if _is_product(candidate) and candidate.get("file_id") == line.get("file_id"):
+                targets[index] = above
+                break
+    return targets
 
-    renumbered = []
-    for match in matches or []:
-        a, b = match.get("item_a_index"), match.get("item_b_index")
-        if a in new_index and b in new_index:
-            renumbered.append({**match, "item_a_index": new_index[a], "item_b_index": new_index[b]})
-    return folded, renumbered
+
+def file_discounts_with_products(items: list[Any]) -> list[Any]:
+    """The lines with each discount given its product's category, in new dicts.
+
+    Lines stay as and where they were, so the receipt still adds up to its printed
+    total and cross-photo matches still point at the right lines (BRD B2-B4).
+    """
+    filed = [dict(line) if isinstance(line, dict) else line for line in items]
+    for discount, product in discounted_products(items).items():
+        filed[discount]["category_id"] = filed[product].get("category_id")
+        filed[discount]["category_confidence"] = filed[product].get("category_confidence")
+    return filed
+
+
+WHOLE_RECEIPT_DISCOUNT = "Rabat"
+"""The name given to a discount the user adds because the reader missed it."""
+
+
+def dominant_category[C](lines: Iterable[tuple[C | None, Decimal]]) -> C | None:
+    """The category the most was spent on, for a discount on the receipt as a whole.
+
+    A discount the reader missed cannot be traced to one product, so it is filed
+    where most of the money went rather than left for the user to categorise.
+    `lines` are (category, total) pairs; uncategorised and negative lines don't count.
+    """
+    spent: dict[C, Decimal] = {}
+    for category, total in lines:
+        if category is not None and total > 0:
+            spent[category] = spent.get(category, Decimal(0)) + total
+    return max(spent, key=lambda c: spent[c]) if spent else None

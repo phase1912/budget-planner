@@ -5,7 +5,7 @@ import { ResolveTotalForm } from "./ResolveTotalForm";
 import { useStores } from "@/stores/StoreContext";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
 import { Button } from "@/shared/components/Button/Button";
-import { SecureImage, Note, IconTile, Pill } from "@/shared/components";
+import { SecureImage, Note, IconTile, Pill, TotalsGapNote } from "@/shared/components";
 import type { PillProps } from "@/shared/components";
 import { Card, CardHeader, CardFooter } from "@/shared/components/Card/Card";
 
@@ -304,6 +304,19 @@ export const ExtractedStep = observer(function ExtractedStep() {
                   />
                 </div>
               </CardHeader>
+
+              {matchesTotal === false && data.computed_total && data.receipt_total && (
+                <TotalsGapNote
+                  className="rounded-none border-x-0 border-t-0 px-5 py-3.5"
+                  linesSum={Number(data.computed_total)}
+                  printedTotal={Number(data.receipt_total.replace(",", "."))}
+                  busy={uploadStore.isAddingDiscount}
+                  onAddDiscount={(amount) => void uploadStore.addDiscount(index, amount)}
+                  onFix={() => {
+                    uploadStore.startEditingExtraction(index);
+                  }}
+                />
+              )}
 
               {isNotReceipt && (
                 <Note

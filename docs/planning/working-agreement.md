@@ -48,7 +48,8 @@ retired and their screens sit with the endpoints they expose.
 
 ### Every feature says how it is demonstrated
 
-Each phase-1 feature in `backlog.yaml` carries a `demo:` line, which `sync` renders into the
+Each feature in `backlog.yaml` carries a `demo:` line (except foundation in E0 and E9, and
+E11 and E12, which gain theirs when they are groomed), which `sync` renders into the
 issue as **Demonstrated by**. It answers one question: *when this lands, what do I do in the
 product to see it?*
 
@@ -85,18 +86,28 @@ matches issues on that key — deriving it from list position means deleting a t
 re-points the issues below it and orphans the last one. Never reuse a retired key. When a task
 does leave the plan, `sync` reports its issue as an orphan; close or re-key it by hand.
 
-## Phases: what ships, and what is only planned
+## Diploma scope: what is built, and what is only planned
 
-Epics carry `phase: 1` or `phase: 2`. Phase 1 is the BRD scope and is the only work that
-counts as delivery. Phase 2 is commercial scope written down deliberately early — not to be
-worked on, but so that phase-1 decisions are made knowing what is meant to come after, since
-the expensive mistakes here are the ones that need unpicking later (who owns a receipt, how a
-receipt arrives, what a line item records).
+Every epic carries `scope: diploma` or `scope: out-of-scope`, and that alone decides what is
+worked on. The diploma project is the base already delivered, E8 to the end, and the epics
+the competitor analysis chose as what the product does better than the apps already on the
+market: E11 (receipts without photographing them), E12 (household budgets), E15 (receipt
+accuracy and trust) and E16 (personal price history). E10, E13 and E14 stay planned in the
+open but out of scope.
 
-Everything under a phase-2 epic is labelled `post-mvp` on sync, so the board filters down to
-phase 1. Nothing from phase 2 is picked up while phase-1 epics remain open; promoting one
-means changing its `phase` in the YAML and re-syncing, which makes the decision a commit
-rather than a mood.
+The rule for choosing: when a feature the analysis asks for already sits in a planned epic,
+that epic is moved into scope rather than a new one written. A new epic is written only where
+that is simpler, and the old one is then left out of scope.
+
+On sync every epic, feature and task is labelled `diploma` or `out-of-scope`, and the board's
+**Scope** field is set the same way: group a board view by Scope to see the two apart. Moving
+an epic in or out means changing its `scope` in the YAML and re-syncing, which makes the
+decision a commit rather than a mood.
+
+`phase:` stays as a record of where an epic came from — 1 for the BRD, 2 for scope beyond
+it — but no longer decides what ships. Phase 2 epics were written down early so that phase-1
+decisions were made knowing what might come after (who owns a receipt, how a receipt arrives,
+what a line item records).
 
 ## The cycle
 

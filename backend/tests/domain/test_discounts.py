@@ -1,86 +1,89 @@
-"""Discount lines fold into the item they reduce (Polish "OPUST" lines)."""
+"""Discount lines stay lines of their own, filed with the product they reduce ("Rabat", "OPUST")."""
 
+from decimal import Decimal
 from typing import Any
 
-from app.domain.discounts import fold_discounts
+from app.domain.discounts import (
+    discounted_products,
+    dominant_category,
+    file_discounts_with_products,
+)
+from app.domain.receipt_totals import lines_match_total
+
+GROCERIES = "c-groceries"
+DRINKS = "c-drinks"
 
 
 def _line(name: str, total: str, **extra: Any) -> dict[str, Any]:
     return {"name": name, "quantity": "1", "unit_price": total, "total_price": total, **extra}
 
 
-def test_a_discount_reduces_the_item_printed_above_it() -> None:
-    items = [_line("Olej 3l", "33.98"), _line("OPUST", "-10.04"), _line("Kawa", "49.98")]
-
-    folded, _ = fold_discounts(items)
-
-    assert [(i["name"], i["total_price"], i.get("discount")) for i in folded] == [
-        ("Olej 3l", "23.94", "10.04"),
-        ("Kawa", "49.98", None),
-    ]
-    assert folded[0]["unit_price"] == "33.98"
-
-
-def test_the_receipt_still_adds_up_to_the_same_total() -> None:
+def test_a_discount_stays_its_own_line_and_takes_its_products_category() -> None:
     items = [
-        _line("A", "8.99"),
-        _line("OPUST", "-4.99"),
-        _line("B", "6.58"),
-        _line("OPUST", "-0.40"),
+        _line("Olej 3l", "33.98", category_id=GROCERIES, category_confidence=95),
+        _line("Rabat", "-10.04", category_id="c-other", category_confidence=40),
+        _line("Woda", "2.49", category_id=DRINKS, category_confidence=90),
     ]
 
-    folded, _ = fold_discounts(items)
+    filed = file_discounts_with_products(items)
 
-    assert sum(float(i["total_price"]) for i in folded) == sum(
-        float(i["total_price"]) for i in items
-    )
-
-
-def test_comma_decimals_and_repeated_discounts_on_one_item_are_handled() -> None:
-    items = [_line("Woda", "29,88"), _line("OPUST", "-9,96"), _line("OPUST 2", "-1,00")]
-
-    [water], _ = fold_discounts(items)
-
-    assert (water["total_price"], water["discount"]) == ("18.92", "10.96")
+    assert [(i["name"], i["total_price"], i["category_id"]) for i in filed] == [
+        ("Olej 3l", "33.98", GROCERIES),
+        ("Rabat", "-10.04", GROCERIES),
+        ("Woda", "2.49", DRINKS),
+    ]
+    assert filed[1]["category_confidence"] == 95
+    assert items[1]["category_id"] == "c-other"
 
 
-def test_a_discount_with_no_product_above_it_is_kept_rather_than_lost() -> None:
-    items = [_line("OPUST", "-2.00"), _line("Chleb", "4.50")]
+def test_the_lines_add_up_to_what_was_paid_with_the_discount_counted() -> None:
+    items = [_line("A", "8.99"), _line("OPUST", "-4.99"), _line("B", "6.58")]
 
-    assert fold_discounts(items)[0] == items
+    paid = sum(Decimal(i["total_price"]) for i in file_discounts_with_products(items))
 
-
-def test_unreadable_and_zero_lines_pass_through() -> None:
-    items = [_line("A", "5.00"), _line("UNKNOWN", "0.00"), _line("B", "abc"), "not a line"]
-
-    assert fold_discounts(items)[0] == items
+    assert paid == Decimal("10.58")
 
 
-def test_a_discount_never_crosses_into_another_photos_item() -> None:
+def test_several_discounts_under_one_product_all_reduce_it() -> None:
+    items = [_line("Woda", "29,88"), _line("OPUST", "-9,96"), _line("Rabat", "-1,00")]
+
+    assert discounted_products(items) == {1: 0, 2: 0}
+
+
+def test_a_discount_with_no_product_above_it_is_kept_as_it_is() -> None:
+    items = [_line("Rabat", "-2.00", category_id=None), _line("Chleb", "4.50")]
+
+    assert discounted_products(items) == {}
+    assert file_discounts_with_products(items) == items
+
+
+def test_a_discount_never_reaches_into_another_photos_product() -> None:
     items = [_line("Olej", "33.98", file_id="p1"), _line("OPUST", "-10.04", file_id="p2")]
 
-    assert fold_discounts(items)[0] == items
+    assert discounted_products(items) == {}
 
 
-def test_position_matches_are_renumbered_and_those_on_discount_lines_dropped() -> None:
-    """Both photos show "Kawa" and its discount; each copy folds into its own photo's Kawa."""
-    items = [
-        _line("Kawa", "49.98", file_id="p1"),
-        _line("OPUST", "-14.00", file_id="p1"),
-        _line("Kawa", "49.98", file_id="p2"),
-        _line("OPUST", "-14.00", file_id="p2"),
-        _line("Chleb", "4.50", file_id="p2"),
+def test_unreadable_and_zero_lines_are_neither_discounts_nor_products() -> None:
+    items = [_line("A", "5.00"), _line("ZERO", "0.00"), _line("B", "abc"), "not a line"]
+
+    assert file_discounts_with_products(items) == items
+
+
+def test_a_grosz_of_rounding_still_matches_but_more_does_not() -> None:
+    assert lines_match_total(Decimal("188.03"), Decimal("188.02"))
+    assert lines_match_total(Decimal("188.01"), Decimal("188.02"))
+    assert not lines_match_total(Decimal("188.04"), Decimal("188.02"))
+    assert not lines_match_total(Decimal("226.26"), Decimal("188.02"))
+
+
+def test_a_whole_receipt_discount_goes_to_the_category_with_most_spend() -> None:
+    lines = [
+        ("dairy", Decimal("17.97")),
+        ("bakery", Decimal("20.00")),
+        ("dairy", Decimal("16.47")),
+        (None, Decimal("50.00")),
+        ("bakery", Decimal("-5.00")),
     ]
-    matches = [
-        {"item_a_index": 0, "item_b_index": 2, "result": "same"},
-        {"item_a_index": 1, "item_b_index": 3, "result": "same"},
-    ]
 
-    folded, renumbered = fold_discounts(items, matches)
-
-    assert [(i["name"], i["total_price"]) for i in folded] == [
-        ("Kawa", "35.98"),
-        ("Kawa", "35.98"),
-        ("Chleb", "4.50"),
-    ]
-    assert renumbered == [{"item_a_index": 0, "item_b_index": 1, "result": "same"}]
+    assert dominant_category(lines) == "dairy"
+    assert dominant_category([(None, Decimal("3.00"))]) is None

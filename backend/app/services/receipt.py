@@ -18,7 +18,13 @@ from sqlalchemy.orm.attributes import flag_modified
 from app.core.config import get_settings
 from app.db.session import get_session_factory
 from app.domain.categories import UNCATEGORIZED, confident_category, match_rule
-from app.domain.discounts import fold_discounts
+from app.domain.discounts import (
+    WHOLE_RECEIPT_DISCOUNT,
+    dominant_category,
+    file_discounts_with_products,
+    printed_amount,
+)
+from app.domain.receipt_totals import lines_match_total
 from app.models.category import Category
 from app.models.category_rule import CategoryRule
 from app.models.line_item import LineItem
@@ -33,6 +39,7 @@ from app.repository.category import CategoryRepository
 from app.repository.receipt import ReceiptRepository
 from app.schemas.extraction import ExtractedLineItem, ExtractedReceipt
 from app.schemas.receipt import (
+    AddDiscountRequest,
     EditLineItemRequest,
     ResolvePositionMatchRequest,
     UpdateReceiptRequest,
@@ -211,8 +218,8 @@ class ReceiptService:
                         ext = await self._run_extraction(user, file_ids, content_types)
                         ext["file_ids"] = file_ids
 
-                        self._fold_discount_lines(ext)
                         await self._categorise_extraction(ext, categories, rules)
+                        self._file_discount_lines(ext)
                         extraction = ext
 
                     return extraction
@@ -273,21 +280,15 @@ class ReceiptService:
                 raise e
 
     @staticmethod
-    def _fold_discount_lines(extraction: dict[str, object]) -> None:
-        """Fold "OPUST" discount lines into the products they reduce, in place.
+    def _file_discount_lines(extraction: dict[str, object]) -> None:
+        """Give each "Rabat"/"OPUST" line the category of the product it reduces, in place.
 
-        Runs after the photos are matched and before categorisation, so the
-        categoriser never sees a negative "purchase" and the matches still point
-        at the right lines (see `app.domain.discounts`).
+        Runs after categorisation, so it overrides whatever the categoriser made of
+        a negative line (see `app.domain.discounts`). The lines stay separate.
         """
         items = extraction.get("line_items")
-        if not isinstance(items, list):
-            return
-        matches = extraction.get("position_matches")
-        folded, renumbered = fold_discounts(items, matches if isinstance(matches, list) else None)
-        extraction["line_items"] = folded
-        if isinstance(matches, list):
-            extraction["position_matches"] = renumbered
+        if isinstance(items, list):
+            extraction["line_items"] = file_discounts_with_products(items)
 
     async def _categorise_extraction(
         self,
@@ -514,20 +515,9 @@ class ReceiptService:
 
         Raises ValueError when the job, the extraction or the item is unknown.
         """
-        assert self.repository is not None
-        job = await self.repository.get_upload_job(job_id, user_id)
-        if not job:
-            raise ValueError("Job not found")
-
-        if not job.result_data or "extractions" not in job.result_data:
-            raise ValueError("Job has no extractions")
-
-        extractions = job.result_data["extractions"]
-        ext_idx = request_data.extraction_index
-        if ext_idx < 0 or ext_idx >= len(extractions):
-            raise ValueError("Invalid extraction index")
-
-        extraction = extractions[ext_idx]
+        job, extractions, extraction = await self._extraction(
+            job_id, user_id, request_data.extraction_index
+        )
         items = extraction.get("line_items", [])
         item_idx = request_data.item_index
         if item_idx < 0 or item_idx >= len(items):
@@ -541,18 +531,81 @@ class ReceiptService:
 
         items[item_idx] = {**items[item_idx], **changes}
         extraction["line_items"] = items
+        return self._recheck(job, extractions, request_data.extraction_index, extraction)
 
+    async def add_extracted_discount(
+        self, job_id: uuid.UUID, user_id: uuid.UUID, request_data: AddDiscountRequest
+    ) -> UploadJobStatusResponse:
+        """Add a discount the reader missed to an extracted receipt (BRD A9, A11).
+
+        The line goes last, named WHOLE_RECEIPT_DISCOUNT, and is filed under the
+        receipt's dominant category: it reduces the bill, not one product. The
+        arithmetic is re-checked, so a receipt it reconciles passes the commit gate.
+
+        Raises ValueError when the job or the extraction is unknown.
+        """
+        job, extractions, extraction = await self._extraction(
+            job_id, user_id, request_data.extraction_index
+        )
+        items = list(extraction.get("line_items", []))
+        by_category = {str(i.get("category_id")): i for i in items if i.get("category_id")}
+        category = dominant_category(
+            (
+                str(i["category_id"]) if i.get("category_id") else None,
+                printed_amount(i.get("total_price")) or Decimal(0),
+            )
+            for i in items
+        )
+        amount = str(request_data.amount)
+        items.append(
+            {
+                "name": WHOLE_RECEIPT_DISCOUNT,
+                "quantity": "1",
+                "unit_price": amount,
+                "total_price": amount,
+                "confidence": 100,
+                "file_id": items[-1].get("file_id") if items else None,
+                "category_id": category,
+                "category_name": by_category[category].get("category_name") if category else None,
+                "category_confidence": 100 if category else None,
+            }
+        )
+        extraction["line_items"] = items
+        return self._recheck(job, extractions, request_data.extraction_index, extraction)
+
+    async def _extraction(
+        self, job_id: uuid.UUID, user_id: uuid.UUID, index: int
+    ) -> tuple[UploadJob, list[dict[str, Any]], dict[str, Any]]:
+        """The user's upload job, its extractions and the one at `index`; ValueError if none."""
+        assert self.repository is not None
+        job = await self.repository.get_upload_job(job_id, user_id)
+        if not job:
+            raise ValueError("Job not found")
+        if not job.result_data or "extractions" not in job.result_data:
+            raise ValueError("Job has no extractions")
+        extractions = job.result_data["extractions"]
+        if index < 0 or index >= len(extractions):
+            raise ValueError("Invalid extraction index")
+        return job, extractions, extractions[index]
+
+    @staticmethod
+    def _recheck(
+        job: UploadJob,
+        extractions: list[dict[str, Any]],
+        index: int,
+        extraction: dict[str, Any],
+    ) -> UploadJobStatusResponse:
+        """Store a changed extraction with its arithmetic recomputed, and answer with the job."""
         # Round-tripping through the schema re-runs normalise_amount on what the
-        # user typed and recomputes the totals the commit gate reads.
-        parsed = ExtractedReceipt(**extraction)
-        updated = parsed.model_dump()
+        # user typed and recomputes the totals the commit gate reads. JSON mode,
+        # because the column is JSON: a category id must go back as text, not a UUID.
+        updated = ExtractedReceipt(**extraction).model_dump(mode="json")
         updated["is_duplicate"] = extraction.get("is_duplicate")
         updated["duplicate_resolved"] = extraction.get("duplicate_resolved")
-
-        extractions[ext_idx] = updated
+        extractions[index] = updated
+        assert job.result_data is not None
         job.result_data["extractions"] = extractions
         flag_modified(job, "result_data")
-
         return UploadJobStatusResponse(
             job_id=job.id,
             file_ids=job.file_ids,
@@ -576,9 +629,9 @@ class ReceiptService:
         — the repository's ownership filter makes the two indistinguishable on
         purpose (BRD N2).
 
-        Raises DomainError when the line totals do not sum to `total_amount`,
-        the same invariant the upload wizard's commit gate enforces (BRD A9):
-        a stored receipt must never disagree with its own line items.
+        A receipt whose lines add up to `total_amount`, within a grosz, counts
+        toward the month again (`parsed`); one that still disagrees is kept but
+        held out as `manual_review`, the same rule as at upload (BRD A9, A11, D3).
         """
         assert self.repository is not None
 
@@ -590,12 +643,11 @@ class ReceiptService:
 
         from app.models.receipt import ReceiptStatus
 
-        if computed != request_data.total_amount:
-            # The sum does not match, but we let the user store it anyway as NEEDS_REVIEW.
-            receipt.status = ReceiptStatus.MANUAL_REVIEW
-        else:
-            # If they fixed the sums, it's valid again.
-            receipt.status = ReceiptStatus.PARSED
+        receipt.status = (
+            ReceiptStatus.PARSED
+            if lines_match_total(computed, request_data.total_amount)
+            else ReceiptStatus.MANUAL_REVIEW
+        )
 
         receipt.merchant_name = request_data.merchant_name
         receipt.transaction_date = _redated(receipt.transaction_date, request_data.transaction_date)
@@ -608,6 +660,7 @@ class ReceiptService:
             raise ValueError(f"Line item(s) not found on this receipt: {unknown_ids}")
 
         updated_items: list[LineItem] = []
+        new_items: list[LineItem] = []
         for line in request_data.line_items:
             if line.id is not None:
                 existing = existing_by_id[line.id]
@@ -617,14 +670,21 @@ class ReceiptService:
                 existing.total_price = line.total_price
                 updated_items.append(existing)
             else:
-                updated_items.append(
-                    LineItem(
-                        name=line.name,
-                        quantity=line.quantity,
-                        unit_price=line.unit_price,
-                        total_price=line.total_price,
-                    )
+                added = LineItem(
+                    name=line.name,
+                    quantity=line.quantity,
+                    unit_price=line.unit_price,
+                    total_price=line.total_price,
                 )
+                new_items.append(added)
+                updated_items.append(added)
+
+        # A discount typed in by the user reduces the bill, not one product: file
+        # it where most of the money went rather than leave it to categorise.
+        category = dominant_category((i.category_id, i.total_price) for i in updated_items)
+        for item in new_items:
+            if item.total_price < 0 and item.category_id is None:
+                item.category_id = category
 
         # Reassigning the collection is what lets delete-orphan drop any
         # existing line the caller did not resend.

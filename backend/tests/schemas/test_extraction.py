@@ -124,3 +124,35 @@ def test_receipt_no_manual_review_when_both_present() -> None:
         receipt_total="10.00",
     )
     assert receipt.requires_manual_review is False
+
+
+def _biedronka(*lines: tuple[str, str], total: str) -> ExtractedReceipt:
+    return ExtractedReceipt(
+        merchant_name="Biedronka",
+        transaction_date="2026-10-05",
+        currency="PLN",
+        line_items=[
+            ExtractedLineItem(name=name, quantity="1", unit_price=price, total_price=price)
+            for name, price in lines
+        ],
+        receipt_total=total,
+    )
+
+
+def test_a_discount_line_brings_the_lines_down_to_what_was_paid() -> None:
+    """The case that held a real receipt out of the month: discounts read, total agrees."""
+    receipt = _biedronka(("Masło 200g", "17,97"), ("Rabat", "-6,00"), total="11,97")
+
+    assert receipt.items_sum_matches_total is True
+
+
+def test_a_minus_printed_after_the_amount_still_counts_as_a_discount() -> None:
+    receipt = _biedronka(("Masło 200g", "17,97A"), ("OPUST", "6,00-"), total="11,97")
+
+    assert receipt.line_items[1].total_price == "-6,00"
+    assert receipt.items_sum_matches_total is True
+
+
+def test_a_grosz_of_rounding_is_not_a_mismatch_but_more_is() -> None:
+    assert _biedronka(("Łosoś kg", "118.97"), total="118.98").items_sum_matches_total is True
+    assert _biedronka(("Łosoś kg", "118.97"), total="119.00").items_sum_matches_total is False

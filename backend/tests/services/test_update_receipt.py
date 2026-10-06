@@ -14,6 +14,7 @@ from app.models.receipt import Receipt, ReceiptStatus
 from app.repository.receipt import ReceiptRepository
 from app.schemas.receipt import LineItemInput, UpdateReceiptRequest
 from app.services.receipt import ReceiptService
+from tests.factories.category import CategoryFactory
 from tests.factories.user import UserFactory
 
 
@@ -142,7 +143,9 @@ async def test_dropping_a_line_item_deletes_it(db_session: AsyncSession) -> None
 
 
 @pytest.mark.asyncio
-async def test_a_total_that_does_not_match_the_lines_is_refused(db_session: AsyncSession) -> None:
+async def test_a_total_that_does_not_match_the_lines_is_held_out_for_review(
+    db_session: AsyncSession,
+) -> None:
     # Given
     user = await UserFactory.create_async(email="mismatch@example.com")
     current_user_id.set(user.id)
@@ -169,6 +172,52 @@ async def test_a_total_that_does_not_match_the_lines_is_refused(db_session: Asyn
     updated = await service.update_receipt(receipt.id, request)
     assert updated is not None
     assert updated.status == ReceiptStatus.MANUAL_REVIEW
+
+
+@pytest.mark.asyncio
+async def test_adding_the_missing_discount_brings_the_receipt_into_the_month(
+    db_session: AsyncSession,
+) -> None:
+    """The fix a user makes by hand: a "Rabat" line, and a grosz of rounding forgiven.
+
+    The discount is filed where the money went, so it never waits in the category queue.
+    """
+    user = await UserFactory.create_async(email="rabat@example.com")
+    current_user_id.set(user.id)
+    receipt = await _stored_receipt(db_session, user.id)
+    existing = receipt.line_items[0]
+    sweets = await CategoryFactory.create_async(name="Sweets", user_id=user.id)
+    existing.category_id = sweets.id
+    paid = existing.total_price - Decimal("2.00") + Decimal("0.01")
+
+    service = ReceiptService(repository=ReceiptRepository(db_session))
+    request = UpdateReceiptRequest(
+        merchant_name="Biedronka",
+        transaction_date=None,
+        total_amount=paid,
+        line_items=[
+            LineItemInput(
+                id=existing.id,
+                name=existing.name,
+                quantity=existing.quantity,
+                unit_price=existing.unit_price,
+                total_price=existing.total_price,
+            ),
+            LineItemInput(
+                name="Rabat",
+                quantity=Decimal("1"),
+                unit_price=Decimal("-2.00"),
+                total_price=Decimal("-2.00"),
+            ),
+        ],
+    )
+
+    updated = await service.update_receipt(receipt.id, request)
+
+    assert updated is not None
+    assert updated.status == ReceiptStatus.PARSED
+    discount = min(updated.line_items, key=lambda item: item.total_price)
+    assert (discount.total_price, discount.category_id) == (Decimal("-2.00"), sweets.id)
 
 
 @pytest.mark.asyncio

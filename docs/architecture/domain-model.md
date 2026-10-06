@@ -87,11 +87,23 @@ Rules that must hold at all times. Each is a candidate for a test.
    sum of their lines, since the printed total may be what could not be read. One with
    no readable date is reported in the month it was uploaded, so it always surfaces
    somewhere; a month's receipts list places it the same way, so list and total agree.
-5a. A negative line printed under a product ("OPUST", a discount) is not a purchase.
-   At upload it is folded into the nearest product line above it on the same photo:
-   that line's `total_price` becomes what was paid, while its `unit_price` and
-   `quantity` stay as printed, and the receipt still adds up to its printed total.
-   Only a discount with no product above it stays a line of its own.
+5a. A discount printed under a product ("Rabat", "OPUST" and the like) is read as a line
+   of its own with a negative total, where it was printed, so a receipt's lines add up
+   to what was actually paid. It takes the category of the nearest product above it on
+   the same photo (`app/domain/discounts.py`). Otherwise that category would read
+   dearer than it was and Other would go below zero. A discount with no product above
+   it keeps whatever category it was given. Subtotals, the sum of discounts, VAT tables
+   and payment lines are not lines.
+5b. A receipt's lines agree with its printed total when they differ by at most one
+   grosz (0.01, `app/domain/receipt_totals.py`). Weighed goods and per-line rounding
+   leave that much, and it is no reason to hold a receipt out of the month. Anything
+   more is a misread line, and the receipt waits in `manual_review` until it is
+   corrected (A9, A11). The receipt says why wherever it is shown. When its lines come
+   to more than was paid, the reader most likely missed a discount: the user is
+   offered that exact amount as one "Rabat" line, and adding it is their call, never
+   automatic. That line is filed under the receipt's dominant category, the one most
+   was spent on, because it reduces the bill rather than one product. When the lines
+   come to less, a line is missing or misread, and only the user can correct it.
 6. An in-progress month is always labelled incomplete wherever it is displayed (D4).
 6a. Where the user has set a monthly limit, a month's spend is shown as a share of it
    (D7): rounded down, so a month under its limit never reads 100%, and not capped, so
