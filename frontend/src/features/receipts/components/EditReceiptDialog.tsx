@@ -1,6 +1,15 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
-import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader } from "@/shared/components";
+import {
+  Button,
+  Input,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  TotalsGapNote,
+} from "@/shared/components";
+import { totalsGap } from "@/shared/receiptTotals";
 import { useStores } from "@/stores/StoreContext";
 import type { ReceiptDetail } from "@/stores/ReceiptStore";
 
@@ -30,9 +39,9 @@ function sum(items: DraftLineItem[]): number {
  * Correct a stored receipt's merchant, date, total and line items (F3.9, BRD A9, A11).
  *
  * Sends the receipt's entire desired state on save, matching what the backend
- * expects: it is not a per-field patch. The backend refuses a total that does
- * not match the line items, the same rule the upload wizard enforces before a
- * receipt is first stored — so a mismatch here surfaces the same way.
+ * expects: it is not a per-field patch. A total the lines do not match keeps the
+ * receipt out of the month, and the note says why and offers the missed discount,
+ * the same way the upload wizard does.
  */
 export const EditReceiptDialog = observer(function EditReceiptDialog() {
   const { receiptStore } = useStores();
@@ -74,15 +83,22 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
     ]);
   };
 
+  const addDiscount = (amount: number) => {
+    const off = (-amount).toFixed(2);
+    setItems((current) => [
+      ...current,
+      { id: null, name: "Rabat", quantity: "1", unit_price: off, total_price: off },
+    ]);
+  };
+
   const removeItem = (row: number) => {
     setItems((current) => current.filter((_, i) => i !== row));
   };
 
   const computed = sum(items);
   const printed = Number(totalAmount) || 0;
-  // A cent of float slop from typed input is not a real mismatch; the backend
-  // compares as Decimal and is the actual gate — this is only a preview.
-  const matches = Math.abs(computed - printed) < 0.005;
+  // The server is the real gate; this preview applies the same grosz of tolerance.
+  const matches = totalsGap(computed, printed).kind === "match";
 
   const save = async () => {
     const ok = await receiptStore.updateReceipt(receipt.id, {
@@ -243,14 +259,11 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
               }}
             />
           </div>
-          <span
-            className={`text-[13px] font-semibold ${matches ? "text-primary" : "text-tone-error-text"}`}
-          >
-            {matches
-              ? "Lines match the total"
-              : `Lines add up to ${computed.toFixed(2)}, not ${printed.toFixed(2)}`}
-          </span>
+          {matches && (
+            <span className="text-[13px] font-semibold text-primary">Lines match the total</span>
+          )}
         </div>
+        <TotalsGapNote linesSum={computed} printedTotal={printed} onAddDiscount={addDiscount} />
 
         {receiptStore.editReceiptError && (
           <span className="text-[13px] text-tone-error-text">{receiptStore.editReceiptError}</span>

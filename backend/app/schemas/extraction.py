@@ -31,6 +31,7 @@ from pydantic import (
 from app.core.config import get_settings
 from app.domain.categories import is_low_confidence
 from app.domain.position_matching import MatchResult
+from app.domain.receipt_totals import lines_match_total
 
 _TRAILING_LETTERS = re.compile(r"(?<=\d)\s*[A-Za-z]+\.?$")
 
@@ -44,10 +45,15 @@ def normalise_amount(value: str) -> str:
     ``Decimal``, and the conversions downstream swallow that and substitute
     zero, so an entire receipt is stored priced at nothing.
 
+    A discount's minus sign is kept and put in front, however it was printed:
+    "- 4,99", or "10,04-" as some tills print it, both become a negative amount.
+
     Returns "" when nothing numeric is left, which callers already treat as a
     missing value rather than as zero.
     """
-    stripped = _TRAILING_LETTERS.sub("", value).strip()
+    stripped = "".join(_TRAILING_LETTERS.sub("", value).split())
+    if stripped.endswith("-") and not stripped.startswith("-"):
+        stripped = "-" + stripped[:-1]
     return stripped if any(char.isdigit() for char in stripped) else ""
 
 
@@ -223,7 +229,11 @@ class ExtractedReceipt(BaseModel):
 
     @model_validator(mode="after")
     def validate_arithmetic(self) -> ExtractedReceipt:
-        """Validate whether the printed total matches the sum of line items (BRD A9)."""
+        """Validate whether the printed total matches the sum of line items (BRD A9).
+
+        Discount lines count with their minus sign, and a grosz of rounding is
+        forgiven (`lines_match_total`).
+        """
         self.requires_manual_review = not self.receipt_total or not self.transaction_date
 
         if not self.line_items:
@@ -254,7 +264,7 @@ class ExtractedReceipt(BaseModel):
                 return self
 
             printed_total = Decimal(self.receipt_total.replace(",", "."))
-            self.items_sum_matches_total = computed_total_dec == printed_total
+            self.items_sum_matches_total = lines_match_total(computed_total_dec, printed_total)
         except InvalidOperation:
             self.items_sum_matches_total = None
 

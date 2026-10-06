@@ -40,11 +40,18 @@
 # F5.7, F7.7 and F8.10 were all retired for exactly that reason, and the retired
 # keys are listed at the point in the file where each used to sit.
 #
-# `phase:` separates what the product must do from what the business would like it
-# to do later. Phase 1 is the BRD scope and is what ships. Phase 2 is commercial
-# scope: planned in the open so the phase-1 design does not accidentally rule it
-# out, but not started until phase 1 is complete. Everything under a phase-2 epic
-# is labelled `post-mvp` in GitHub, so the board can be read as phase 1 alone.
+# `scope:` decides what is built. `diploma` epics are the diploma project: the base
+# already delivered, E8 to the end, and the epics the competitor analysis chose as
+# what the product does better than the apps already on the market (see "Diploma
+# scope" in docs/planning/working-agreement.md).
+# `out-of-scope` epics stay planned in the open but are not worked on. Every issue is
+# labelled with its epic's scope, and the board's Scope field splits it the same way.
+# When a feature the analysis asks for already sits in a planned epic, that epic is
+# moved into scope rather than a new one written; a new epic is written only where
+# that is simpler, and the old one is then left out of scope.
+#
+# `phase:` records where an epic came from: 1 for the BRD, 2 for scope beyond it.
+# It no longer decides what ships; `scope:` does.
 
 project:
   name: AI Budget Agent
@@ -63,7 +70,8 @@ labels:
   - {name: security,   color: "000000", description: "Security, privacy, access control"}
   - {name: testing,    color: "BFDADC", description: "Test harness and acceptance coverage"}
   - {name: needs-grooming, color: "E99695", description: "Not yet decomposed into tasks"}
-  - {name: post-mvp,   color: "D4C5F9", description: "Phase 2 — commercial scope, after the BRD scope ships"}
+  - {name: diploma,      color: "0E8A16", description: "In the diploma project's scope"}
+  - {name: out-of-scope, color: "D4C5F9", description: "Planned, but not part of the diploma project"}
 
 epics:
 
@@ -71,6 +79,7 @@ epics:
     title: Foundation & Delivery Platform
     br: []
     phase: 1
+    scope: diploma
     groomed: true
     summary: >
       Everything required before a single business requirement can be implemented:
@@ -378,6 +387,7 @@ epics:
     title: Identity & Account
     br: [BR-7, N2]
     phase: 1
+    scope: diploma
     groomed: true
     summary: >
       Every BRD scenario begins with "Given the user is logged in", and N2 forbids one user's
@@ -576,6 +586,7 @@ epics:
     title: Receipt Ingestion & Storage
     br: [BR-1]
     phase: 1
+    scope: diploma
     groomed: true
     summary: >
       Accepting receipt photos: format validation, the two upload modes with their photo-count
@@ -722,6 +733,7 @@ epics:
     title: Receipt Parsing & Extraction
     br: [BR-1]
     phase: 1
+    scope: diploma
     groomed: false
     summary: >
       Turning a validated photo into a structured receipt: field extraction, confidence
@@ -850,6 +862,7 @@ epics:
     title: Multi-Photo Position Matching
     br: [BR-2]
     phase: 1
+    scope: diploma
     groomed: true
     summary: >
       Recognising that a line item appearing on two overlapping photos of one long receipt is
@@ -1040,6 +1053,7 @@ epics:
     title: Spend Categorization
     br: [BR-3]
     phase: 1
+    scope: diploma
     groomed: false
     summary: >
       Classifying every line item into a spending category, with a confidence-gated fallback,
@@ -1170,6 +1184,7 @@ epics:
     title: Monthly Budget Calculation
     br: [BR-4]
     phase: 1
+    scope: diploma
     groomed: false
     summary: >
       Aggregating receipts into monthly totals by transaction date, distinguishing a
@@ -1407,6 +1422,7 @@ epics:
     title: Statistics, Comparison & Export
     br: [BR-5]
     phase: 1
+    scope: diploma
     groomed: false
     summary: >
       Category-level insight over arbitrary date ranges, period-over-period comparison, honest
@@ -1622,6 +1638,7 @@ epics:
     title: Goals & AI Optimization Advice
     br: [BR-6]
     phase: 1
+    scope: diploma
     groomed: true
     summary: >
       The product's differentiator: a user states a financial or lifestyle goal and receives
@@ -1877,6 +1894,7 @@ epics:
     title: Web Client Foundation
     br: []
     phase: 1
+    scope: diploma
     groomed: true
     summary: >
       The React and MobX groundwork every feature screen builds on. Deliberately separated so
@@ -2097,6 +2115,7 @@ epics:
     title: Security, Privacy & Observability
     br: [N1, N2, N3, N5]
     phase: 1
+    scope: out-of-scope
     groomed: false
     summary: >
       The cross-cutting non-functional requirements from BRD section 8 and the constraints in
@@ -2174,16 +2193,17 @@ epics:
           confirm sign-in fails and the stored images are gone.
 
   # ---------------------------------------------------------------- phase 2
-  # Everything below is commercial scope, deferred until the BRD scope ships.
-  # It is written down now for one reason: three of these epics change decisions
-  # made in phase 1 (who owns a receipt, how a receipt arrives, what is recorded
-  # about a line item), and a phase-1 design that ignores them is expensive to
-  # undo later. Planning them is not a commitment to build them.
+  # Everything below goes beyond the BRD. It was written down early because three of
+  # these epics change decisions made in phase 1 (who owns a receipt, how a receipt
+  # arrives, what is recorded about a line item). The competitor analysis for the
+  # diploma project moved E11 and E12 into scope and added E15 and E16; E13 and E14
+  # stay planned but out of it.
 
   - key: E11
     title: Alternative Receipt Intake
     br: []
     phase: 2
+    scope: diploma
     groomed: false
     summary: >
       BRD section 10 assumes every receipt arrives as a photograph. That assumption is the
@@ -2244,6 +2264,7 @@ epics:
     title: Household & Shared Budgets
     br: []
     phase: 2
+    scope: diploma
     groomed: false
     summary: >
       BRD section 4.2 places shared budgets out of scope and section 14 leaves the question open.
@@ -2305,6 +2326,7 @@ epics:
     title: Aggregated Purchase Analytics
     br: []
     phase: 2
+    scope: out-of-scope
     groomed: false
     summary: >
       The item-level data BO-2 produces is something bank and card feeds structurally cannot
@@ -2367,6 +2389,7 @@ epics:
     title: B2B Export & Accounting Integrations
     br: []
     phase: 2
+    scope: out-of-scope
     groomed: false
     summary: >
       Willingness to pay for structured receipt data is far higher among small businesses and the
@@ -2413,3 +2436,236 @@ epics:
         labels: [frontend]
         intent: >
           Export configuration, API key management and current usage against plan limits.
+
+  # ------------------------------------------------------- diploma: better than the market
+  # Written from the competitor analysis: what no app on the Polish, Ukrainian or
+  # global market does, or does well enough, and no planned epic already covered.
+
+  - key: E15
+    title: Receipt Accuracy & Trust
+    br: []
+    phase: 2
+    scope: diploma
+    groomed: true
+    summary: >
+      Reading a receipt is right on clean paper and wrong on a long, faded one with a dozen
+      discounts: the best readers manage 70-85% there, and the apps on the market either hide
+      the error or leave the user to find it. A receipt that does not add up and does not say
+      why is the fastest way to lose a user's trust, and an untrusted figure makes every piece
+      of advice built on it worthless. This epic makes every disagreement visible, explained
+      and fixable in one step, marks the lines the reader doubted, remembers what the user
+      corrected, and measures how often reading goes wrong.
+    features:
+      - key: F15.1
+        title: Explained totals mismatch and the missed-discount fix
+        labels: [backend, frontend]
+        requirements: []
+        depends_on: [F3.4, F3.9]
+        intent: >
+          A receipt whose lines disagree with its printed total says by how much and why, wherever
+          it is shown. Lines above the total usually mean a discount the reader missed, offered as
+          one line of exactly that amount; lines below it mean a line is missing or misread. A grosz
+          of rounding is not a disagreement. Nothing is added without the user's say.
+        demo: >
+          Upload a Biedronka receipt whose OPUST lines were not read; the card says the lines come
+          to 38.24 more than the 188.02 printed and offers a -38.24 discount; one click and the
+          receipt adds up and counts toward the month.
+        tasks:
+          - key: F15.1.1
+            title: Missed discount added to an extracted receipt
+            labels: [backend]
+            detail: >
+              Endpoint that appends one discount line to an extraction, filed under the receipt's
+              dominant category, and re-checks its arithmetic; the same category for a discount
+              typed into a stored receipt. One grosz of tolerance shared by upload and edit.
+          - key: F15.1.2
+            title: Mismatch note in the upload wizard, the receipt view and the edit dialog
+            labels: [frontend]
+            detail: >
+              One shared note that names both figures and the gap, offers the discount when the
+              lines are above the total and a way to fix the receipt when they are below.
+      - key: F15.2
+        title: Doubtful lines marked
+        labels: [backend, frontend]
+        requirements: [A10]
+        depends_on: [F3.3, F15.1]
+        intent: >
+          The lines the reader was unsure of are marked where the user looks at the receipt, with
+          the photo beside them, so checking a receipt means checking three lines, not thirty.
+        demo: >
+          Open a receipt read from a faded photo; two lines carry a "check this" mark, and the
+          filter "doubtful only" shows just those two next to the photo.
+        tasks:
+          - key: F15.2.1
+            title: Keep each line's read confidence with the stored receipt
+            labels: [backend, database]
+            detail: >
+              Persist the per-line extraction confidence on line items and return it with the
+              receipt detail, so the mark survives storing the receipt.
+          - key: F15.2.2
+            title: Doubtful-line marks and filter
+            labels: [frontend]
+            detail: >
+              Mark low-confidence lines in the upload wizard and the receipt view, with a filter
+              showing only those and the receipt photo beside them.
+      - key: F15.3
+        title: Corrections that stick
+        labels: [backend, frontend]
+        requirements: []
+        depends_on: [F15.1, F5.5]
+        intent: >
+          A line name the user corrected on a receipt from one shop is corrected the same way on
+          the next receipt from that shop, so the same misreading is fixed once, not every week.
+        demo: >
+          Correct "MastoZPolskMlecz200g" to "Masło 200g" on one Biedronka receipt; the next
+          Biedronka receipt reads "Masło 200g" and says it was corrected from what was printed.
+        tasks:
+          - key: F15.3.1
+            title: Per-shop correction memory applied at extraction
+            labels: [backend, database]
+            detail: >
+              Record name corrections per user and merchant and apply them to later extractions
+              from that merchant, keeping what was read alongside what is shown.
+          - key: F15.3.2
+            title: Corrected-line indicator with undo
+            labels: [frontend]
+            detail: >
+              Show that a line was corrected from memory and let the user undo it for that line or
+              forget the correction.
+      - key: F15.4
+        title: Reading accuracy report
+        labels: [backend, frontend]
+        requirements: []
+        depends_on: [F15.2]
+        intent: >
+          How often reading needs correcting, by shop and over time, measured from what users
+          actually changed. It shows whether the trust work is working, and gives the diploma
+          defence a number rather than a claim.
+        demo: >
+          Open the accuracy panel and read that 4 of the last 20 receipts needed a correction,
+          all from one shop, and that the share fell after corrections began to stick.
+        tasks:
+          - key: F15.4.1
+            title: Accuracy figures from corrections
+            labels: [backend]
+            detail: >
+              Count receipts and lines changed after reading, per merchant and per month, from the
+              stored corrections and mismatch fixes.
+          - key: F15.4.2
+            title: Accuracy panel
+            labels: [frontend]
+            detail: >
+              A panel in Preferences showing the share of receipts corrected, the shops behind
+              them and the trend.
+
+  - key: E16
+    title: Personal Price History
+    br: []
+    phase: 2
+    scope: diploma
+    groomed: true
+    summary: >
+      Every receipt holds unit prices, and no app on the market uses them for the person who
+      paid: banks never see a price, and receipt scanners stop at totals per category. The
+      user's own receipts are enough to show how the price of what they buy is moving and
+      where they pay less for the same thing, and those are the most concrete savings advice
+      can name. This is personal, from one user's receipts only; aggregating across users is
+      E13 and stays out of scope.
+    features:
+      - key: F16.1
+        title: One product across receipts
+        labels: [backend, frontend]
+        requirements: []
+        depends_on: [F3.5, F5.2]
+        intent: >
+          The same product printed differently on different receipts and shops ("Jogurt Natural
+          330ml", "JOG NAT 330ML") is one product for that user, with a way to merge or split
+          what was matched wrongly. Price history means nothing without it.
+        demo: >
+          Open the products list and see one "Jogurt naturalny 330 ml" bought 9 times across two
+          shops; merge in a line the matcher missed and split one it got wrong.
+        tasks:
+          - key: F16.1.1
+            title: Product model and matcher
+            labels: [backend, database, ai]
+            detail: >
+              A per-user product entity, line items linked to it, and a matcher that normalises
+              names, sizes and units, behind a port so a model can help with ambiguous names.
+          - key: F16.1.2
+            title: Products list with merge and split
+            labels: [frontend]
+            detail: >
+              A products screen listing what the user buys, with merge and split of wrongly
+              matched lines.
+      - key: F16.2
+        title: Price history of a product
+        labels: [backend, frontend]
+        requirements: []
+        depends_on: [F16.1]
+        intent: >
+          The unit price of a product the user buys, over time and per shop, with how much it has
+          risen or fallen, computed per kilogram or litre where the receipt gives a weight.
+        demo: >
+          Open "Jogurt naturalny 330 ml" and read that it went from 4.99 to 5.49 at Biedronka since
+          June, +10%, on a chart of every purchase.
+        tasks:
+          - key: F16.2.1
+            title: Unit price series per product
+            labels: [backend]
+            detail: >
+              Endpoint returning each purchase's unit price, normalised by weight or volume where
+              known, and the change over a period, from the user's own receipts only (N2).
+          - key: F16.2.2
+            title: Product page with the price chart
+            labels: [frontend]
+            detail: >
+              A product page charting unit price per purchase, coloured by shop, with the change
+              stated in words.
+      - key: F16.3
+        title: Where it costs less
+        labels: [backend, frontend]
+        requirements: []
+        depends_on: [F16.2]
+        intent: >
+          For products bought in more than one shop, which shop the user paid less in recently
+          and by how much, only from their own receipts and only when both prices are recent
+          enough to compare.
+        demo: >
+          The products list says "cheaper at Lidl" next to five products, with the difference per
+          unit, and none for a product last bought at Lidl a year ago.
+        tasks:
+          - key: F16.3.1
+            title: Shop comparison per product
+            labels: [backend]
+            detail: >
+              Compare the latest unit prices per shop within a freshness window and report the
+              cheaper shop and the difference.
+          - key: F16.3.2
+            title: Cheaper-shop marks
+            labels: [frontend]
+            detail: >
+              Mark products with a cheaper shop in the products list and on the product page.
+      - key: F16.4
+        title: Price signals in advice
+        labels: [backend, ai]
+        requirements: [F2, F4]
+        depends_on: [F16.3, F8.5]
+        intent: >
+          Price rises and cheaper shops become evidence advice can cite, so a recommendation can
+          say "buy it at Lidl" with a saving computed from the user's own prices, not asserted.
+        demo: >
+          Ask for advice on a spending ceiling and read "Buy Jogurt naturalny at Lidl: 0.80 less
+          each, about 7 PLN a month at your rate".
+        tasks:
+          - key: F16.4.1
+            title: Price evidence in goal analysis
+            labels: [backend]
+            detail: >
+              Add price rises and cheaper shops for the goal's products to the analysis the
+              advice model reads.
+          - key: F16.4.2
+            title: Saving from a shop switch
+            labels: [backend]
+            detail: >
+              Compute the monthly saving of buying a product in the cheaper shop from the price gap
+              and the user's purchase rate, the same way projected impact is computed for F8.5.

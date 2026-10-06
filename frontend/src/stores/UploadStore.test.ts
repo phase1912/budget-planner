@@ -194,3 +194,27 @@ describe("totalNeedsDecision", () => {
     expect(totalNeedsDecision({ receipt_total: "5.00" })).toBe(false);
   });
 });
+
+describe("UploadStore.addDiscount", () => {
+  it("adds the missed discount as a negative amount and takes the rechecked receipt", async () => {
+    const post = vi.fn();
+    const store = new UploadStore({ POST: post, GET: vi.fn() } as unknown as ApiClient);
+    const rechecked = { extractions: [{ items_sum_matches_total: true }] };
+    post.mockResolvedValue({ data: { extracted_data: rechecked }, error: undefined });
+    store.jobId = "job-1";
+
+    const [first, second] = await Promise.all([
+      store.addDiscount(0, 38.24),
+      store.addDiscount(0, 38.24),
+    ]);
+
+    expect([first, second]).toEqual([true, false]);
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(post).toHaveBeenCalledWith("/receipts/upload/{job_id}/discount", {
+      params: { path: { job_id: "job-1" } },
+      body: { extraction_index: 0, amount: "-38.24" },
+    });
+    expect(store.extractedData).toEqual(rechecked);
+    expect(store.isAddingDiscount).toBe(false);
+  });
+});

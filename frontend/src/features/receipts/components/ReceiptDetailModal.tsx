@@ -9,6 +9,7 @@ import {
   Button,
   IconTile,
   SecureImage,
+  TotalsGapNote,
 } from "@/shared/components";
 import { RefreshCw } from "lucide-react";
 import { InlineCategoryPicker } from "@/features/categories/components/InlineCategoryPicker";
@@ -110,6 +111,16 @@ export const ReceiptDetailModal = observer(() => {
       </ModalHeader>
 
       <ModalBody>
+        {receipt.status === "manual_review" && receipt.total_amount && (
+          <TotalsGapNote
+            className="mb-3"
+            linesSum={receipt.line_items.reduce((sum, item) => sum + Number(item.total_price), 0)}
+            printedTotal={Number(receipt.total_amount)}
+            onFix={() => {
+              receiptStore.startEditingReceipt();
+            }}
+          />
+        )}
         <div className="flex justify-end pb-2">
           <Button
             variant="ghost"

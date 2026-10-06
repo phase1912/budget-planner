@@ -28,6 +28,7 @@ from app.repository.category import CategoryRepository
 from app.repository.receipt import ReceiptRepository
 from app.schemas.extraction import ExtractedReceipt
 from app.schemas.receipt import (
+    AddDiscountRequest,
     CategorySpendResponse,
     CommitJobRequest,
     EditLineItemRequest,
@@ -518,6 +519,27 @@ async def edit_line_item(
     receipt_service = ReceiptService(repository=ReceiptRepository(session))
     try:
         response = await receipt_service.edit_extracted_line_item(
+            job_id, current_user.id, request_data
+        )
+        await session.commit()
+        return response
+    except ValueError as e:
+        if "not found" in str(e).lower():
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.post("/upload/{job_id}/discount", response_model=UploadJobStatusResponse)
+async def add_discount(
+    job_id: uuid.UUID,
+    request_data: AddDiscountRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> UploadJobStatusResponse:
+    """Add a discount the reader missed, so the receipt adds up to its total (BRD A9)."""
+    receipt_service = ReceiptService(repository=ReceiptRepository(session))
+    try:
+        response = await receipt_service.add_extracted_discount(
             job_id, current_user.id, request_data
         )
         await session.commit()

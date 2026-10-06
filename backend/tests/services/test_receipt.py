@@ -664,17 +664,10 @@ async def test_a_rule_for_a_category_no_longer_offered_is_ignored() -> None:
 
 
 @pytest.mark.asyncio
-async def test_an_opust_discount_line_is_folded_into_its_product_before_categorising() -> None:
-    """Biedronka prints "OPUST -10,04" under the oil it discounts; that is not a purchase."""
+async def test_an_opust_discount_stays_a_line_filed_with_the_product_it_reduces() -> None:
+    """Biedronka prints "OPUST -10,04" under the oil it discounts: kept as printed, so
+    the lines add up to what was paid, and filed under the oil's category, not Other."""
     groceries = Category(id=uuid.uuid4(), name="Groceries")
-    seen: list[str] = []
-
-    class _Recording(_ScriptedCategoriser):
-        async def categorise_items(
-            self, items: list[ExtractedLineItem], categories: Sequence[Category]
-        ) -> list[ExtractedLineItem]:
-            seen.extend(item.name for item in items)
-            return await super().categorise_items(items, categories)
 
     mock_parser = AsyncMock()
     mock_extraction = MagicMock()
@@ -694,7 +687,9 @@ async def test_an_opust_discount_line_is_folded_into_its_product_before_categori
     service = ReceiptService(
         storage_port=mock_storage,
         parser_port=mock_parser,
-        categoriser_port=_Recording({"Olej 3l": (groceries, 95), "Kawa": (groceries, 95)}),
+        categoriser_port=_ScriptedCategoriser(
+            {"Olej 3l": (groceries, 95), "Kawa": (groceries, 95)}
+        ),
     )
     user = User(id=uuid.uuid4(), email="test@test.com")
     job = UploadJob(id=uuid.uuid4(), user_id=user.id)
@@ -714,8 +709,8 @@ async def test_an_opust_discount_line_is_folded_into_its_product_before_categori
 
     assert job.result_data is not None
     lines = job.result_data["extractions"][0]["line_items"]
-    assert [(i["name"], i["total_price"], i.get("discount")) for i in lines] == [
-        ("Olej 3l", "23.94", "10.04"),
-        ("Kawa", "49.98", None),
+    assert [(i["name"], i["total_price"], i["category_id"]) for i in lines] == [
+        ("Olej 3l", "33.98", str(groceries.id)),
+        ("OPUST", "-10.04", str(groceries.id)),
+        ("Kawa", "49.98", str(groceries.id)),
     ]
-    assert "OPUST" not in seen

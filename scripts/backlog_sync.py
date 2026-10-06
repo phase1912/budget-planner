@@ -34,7 +34,9 @@ ROOT = Path(__file__).resolve().parent.parent
 BACKLOG = ROOT / "docs" / "planning" / "backlog.yaml"
 MARKDOWN = ROOT / "docs" / "planning" / "backlog.md"
 MARKER = re.compile(r"<!-- backlog-key: (?P<key>[^ ]+) -->")
-POST_MVP_LABEL = "post-mvp"
+SCOPES = {"diploma": "Diploma", "out-of-scope": "Out of scope"}
+"""Epic scope -> the option it takes in the board's Scope field; the key is also the label."""
+SCOPE_FIELD = "Scope"
 
 
 # --------------------------------------------------------------------------- gh
@@ -113,25 +115,39 @@ def requirement_line(refs: list[str] | None) -> str:
 
 
 def phase_of(epic: dict) -> int:
-    """Delivery phase an epic belongs to, defaulting to the diploma scope.
+    """Where an epic's requirement came from: 1 for the BRD, 2 for scope beyond it.
 
-    Phase 1 is what the product must do to satisfy the BRD; phase 2 is commercial
-    scope deliberately deferred until phase 1 ships. Everything under a phase-2 epic
-    inherits the phase, because scope is an epic-level decision, not a per-task one.
+    Informational only since the diploma split: what gets built is `scope_of`.
     """
     return int(epic.get("phase", 1))
 
 
 def phase_line(epic: dict) -> str:
-    phase = phase_of(epic)
-    if phase == 1:
-        return "- **Phase:** 1 — BRD scope, delivered before launch"
-    return (f"- **Phase:** {phase} — post-MVP commercial scope, not started until phase 1 "
-            f"is complete")
+    if phase_of(epic) == 1:
+        return "- **Phase:** 1 — BRD scope"
+    return f"- **Phase:** {phase_of(epic)} — beyond the BRD"
 
 
-def phase_labels(epic: dict) -> list[str]:
-    return [POST_MVP_LABEL] if phase_of(epic) > 1 else []
+def scope_of(epic: dict) -> str:
+    """Whether an epic is built for the diploma project or left out of it.
+
+    Scope is an epic-level decision: its features and tasks inherit it. Every epic
+    must state one, so nothing lands on the board without an answer.
+    """
+    scope = epic.get("scope")
+    if scope not in SCOPES:
+        raise SystemExit(f"{epic['key']}: scope must be one of {sorted(SCOPES)}, got {scope!r}")
+    return str(scope)
+
+
+def scope_line(epic: dict) -> str:
+    if scope_of(epic) == "diploma":
+        return "- **Scope:** diploma project"
+    return "- **Scope:** out of scope for the diploma project"
+
+
+def scope_labels(epic: dict) -> list[str]:
+    return [scope_of(epic)]
 
 
 # ------------------------------------------------------------------ issue bodies
@@ -144,6 +160,7 @@ def epic_body(epic: dict, feature_numbers: dict[str, int]) -> str:
         "",
         f"- **BRD sections:** {requirement_line(epic.get('br'))}",
         phase_line(epic),
+        scope_line(epic),
         f"- **Grooming:** {'decomposed into tasks' if epic.get('groomed') else 'features only — tasks are written when this epic is picked up'}",
         "",
         clean(epic.get("summary")),
@@ -172,6 +189,7 @@ def feature_body(feature: dict, epic: dict, epic_number: int | None,
         f"- **Epic:** {f'#{epic_number}' if epic_number else ''} {epic['key']} {epic['title']}",
         f"- **BRD requirements:** {requirement_line(feature.get('requirements'))}",
         phase_line(epic),
+        scope_line(epic),
     ]
     blocked = depends_line(feature.get("depends_on"), numbers or {})
     if blocked:
@@ -212,6 +230,7 @@ def task_body(task: dict, key: str, feature: dict, feature_number: int | None,
         f"- **Feature:** {f'#{feature_number}' if feature_number else ''} {feature['key']} {feature['title']}",
         f"- **BRD requirements:** {requirement_line(feature.get('requirements'))}",
         phase_line(epic),
+        scope_line(epic),
     ]
     blocked = depends_line(task.get("depends_on"), numbers or {})
     if blocked:
@@ -244,22 +263,21 @@ def render_markdown(data: dict) -> str:
     ]
     total_features = sum(len(e["features"]) for e in data["epics"])
     total_tasks = sum(len(f.get("tasks") or []) for e in data["epics"] for f in e["features"])
-    phase_two = [e for e in data["epics"] if phase_of(e) > 1]
+    diploma = [e for e in data["epics"] if scope_of(e) == "diploma"]
     lines += [
         f"{len(data['epics'])} epics · {total_features} features · {total_tasks} tasks written so far.",
         "",
-        f"{len(data['epics']) - len(phase_two)} epics are phase 1 — the BRD scope, delivered "
-        f"before launch. {len(phase_two)} are phase 2: commercial scope that is planned but "
-        f"deliberately not started until phase 1 is complete.",
+        f"{len(diploma)} epics are in the diploma project's scope; "
+        f"{len(data['epics']) - len(diploma)} are planned but out of it.",
         "",
-        "| Epic | Title | BRD | Features | Groomed | Phase |",
-        "|---|---|---|---|---|---|",
+        "| Epic | Title | BRD | Features | Groomed | Phase | Scope |",
+        "|---|---|---|---|---|---|---|",
     ]
     for epic in data["epics"]:
         lines.append(
             f"| {epic['key']} | {epic['title']} | {requirement_line(epic.get('br'))} "
             f"| {len(epic['features'])} | {'yes' if epic.get('groomed') else 'no'} "
-            f"| {phase_of(epic)} |"
+            f"| {phase_of(epic)} | {SCOPES[scope_of(epic)]} |"
         )
     lines.append("")
 
@@ -270,7 +288,7 @@ def render_markdown(data: dict) -> str:
             f"## {epic['key']} — {epic['title']}",
             "",
             f"**BRD sections:** {requirement_line(epic.get('br'))} · "
-            f"**Phase:** {phase_of(epic)}",
+            f"**Phase:** {phase_of(epic)} · **Scope:** {SCOPES[scope_of(epic)]}",
             "",
             clean(epic.get("summary")),
             "",
@@ -420,7 +438,7 @@ def sync(data: dict, dry_run: bool) -> None:
         number = upsert(repo, epic["key"], f"[{epic['key']}] {epic['title']}",
                         epic_body(epic, feature_numbers),
                         ["epic"] + ([] if epic.get("groomed") else ["needs-grooming"])
-                        + phase_labels(epic),
+                        + scope_labels(epic),
                         milestone, index, dry_run)
         if number:
             epic_numbers[epic["key"]] = number
@@ -428,7 +446,7 @@ def sync(data: dict, dry_run: bool) -> None:
         for feature in epic["features"]:
             f_number = upsert(repo, feature["key"], f"[{feature['key']}] {feature['title']}",
                               feature_body(feature, epic, epic_numbers.get(epic["key"]), task_numbers),
-                              ["feature"] + list(feature.get("labels") or []) + phase_labels(epic),
+                              ["feature"] + list(feature.get("labels") or []) + scope_labels(epic),
                               milestone, index, dry_run)
             if f_number:
                 feature_numbers[feature["key"]] = f_number
@@ -439,7 +457,7 @@ def sync(data: dict, dry_run: bool) -> None:
                                   task_body(task, key, feature,
                                             feature_numbers.get(feature["key"]), epic),
                                   ["task"] + list(task.get("labels") or feature.get("labels") or [])
-                                  + phase_labels(epic),
+                                  + scope_labels(epic),
                                   milestone, index, dry_run)
                 if t_number:
                     task_numbers[key] = t_number
@@ -520,18 +538,83 @@ def project(data: dict) -> None:
     ensure_status_columns(board["id"])
     issues = [i for i in gh_paginate(f"repos/{repo}/issues?state=all&per_page=100")
               if "pull_request" not in i and MARKER.search(i.get("body") or "")]
-    print(f"Adding {len(issues)} issues to the board...")
+    scope_field = ensure_scope_field(board["id"])
+    print(f"Adding {len(issues)} issues to the board, each with its {SCOPE_FIELD}...")
     for issue in issues:
-        gh("api", "graphql", "-f", f"projectId={board['id']}", "-f", f"contentId={issue['node_id']}",
-           "-f", """query=
+        added = gh("api", "graphql", "-f", f"projectId={board['id']}",
+                   "-f", f"contentId={issue['node_id']}", "-f", """query=
             mutation($projectId: ID!, $contentId: ID!) {
               addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
                 item { id }
               }
             }""")
+        labels = {label["name"] for label in issue.get("labels") or []}
+        scope = next((key for key in SCOPES if key in labels), None)
+        if scope:
+            item_id = added["data"]["addProjectV2ItemById"]["item"]["id"]
+            set_single_select(board["id"], item_id, scope_field["id"],
+                              scope_field["options"][SCOPES[scope]])
 
     set_default_status(board["id"])
     print(f"Board ready: https://github.com/users/{owner}/projects/{board['number']}")
+
+
+def ensure_scope_field(project_id: str) -> dict:
+    """The board's Scope field, created with its options if absent (the diploma split).
+
+    Grouping a board view by it splits the work into what the diploma project builds
+    and what it leaves out. Returns the field id and its option ids by option name.
+    Existing options are never rewritten: replacing them would clear every item's value.
+    """
+    def fetch() -> dict | None:
+        nodes = gh("api", "graphql", "-f", f"projectId={project_id}", "-f", """query=
+            query($projectId: ID!) {
+              node(id: $projectId) {
+                ... on ProjectV2 {
+                  fields(first: 30) {
+                    nodes { ... on ProjectV2SingleSelectField { id name options { id name } } }
+                  }
+                }
+              }
+            }""")["data"]["node"]["fields"]["nodes"]
+        return next((f for f in nodes if f.get("name") == SCOPE_FIELD), None)
+
+    field = fetch()
+    if field is None:
+        options = ", ".join(
+            f'{{name: "{name}", color: {color}, description: "{description}"}}'
+            for name, color, description in [
+                (SCOPES["diploma"], "GREEN", "Built for the diploma project"),
+                (SCOPES["out-of-scope"], "GRAY", "Planned, not part of the diploma project"),
+            ]
+        )
+        gh("api", "graphql", "-f", f"projectId={project_id}", "-f", f"""query=
+            mutation($projectId: ID!) {{
+              createProjectV2Field(input: {{
+                projectId: $projectId, dataType: SINGLE_SELECT, name: "{SCOPE_FIELD}",
+                singleSelectOptions: [{options}]
+              }}) {{ projectV2Field {{ ... on ProjectV2SingleSelectField {{ id }} }} }}
+            }}""")
+        print(f"  created the {SCOPE_FIELD} field")
+        field = fetch()
+    assert field is not None
+    missing = set(SCOPES.values()) - {o["name"] for o in field["options"]}
+    if missing:
+        raise SystemExit(f"The board's {SCOPE_FIELD} field lacks options {sorted(missing)}; "
+                         f"add them by hand rather than let a sync clear every item's value")
+    return {"id": field["id"], "options": {o["name"]: o["id"] for o in field["options"]}}
+
+
+def set_single_select(project_id: str, item_id: str, field_id: str, option_id: str) -> None:
+    """Set one board item's single-select field, e.g. its Status or Scope."""
+    gh("api", "graphql", "-f", f"projectId={project_id}", "-f", f"itemId={item_id}",
+       "-f", f"fieldId={field_id}", "-f", f"optionId={option_id}", "-f", """query=
+        mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+          updateProjectV2ItemFieldValue(input: {
+            projectId: $projectId, itemId: $itemId, fieldId: $fieldId,
+            value: {singleSelectOptionId: $optionId}
+          }) { projectV2Item { id } }
+        }""")
 
 
 def ensure_board_layout(project_id: str) -> None:

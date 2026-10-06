@@ -72,6 +72,16 @@ class ResolveTotalRequest(BaseModel):
         return str(amount.quantize(Decimal("0.01")))
 
 
+class AddDiscountRequest(BaseModel):
+    """A discount the reader missed, added by the user to make a receipt add up (BRD A9).
+
+    `amount` is negative: what came off the bill, e.g. -38.24.
+    """
+
+    extraction_index: int
+    amount: Decimal = Field(lt=0, max_digits=12, decimal_places=2)
+
+
 class EditLineItemRequest(BaseModel):
     """Correct one line item the parser misread, before anything is stored (BRD A9, A11).
 

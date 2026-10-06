@@ -394,6 +394,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/receipts/upload/{job_id}/discount": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Discount
+         * @description Add a discount the reader missed, so the receipt adds up to its total (BRD A9).
+         */
+        post: operations["add_discount_receipts_upload__job_id__discount_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts/upload/{job_id}/commit": {
         parameters: {
             query?: never;
@@ -739,6 +759,18 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AddDiscountRequest
+         * @description A discount the reader missed, added by the user to make a receipt add up (BRD A9).
+         *
+         *     `amount` is negative: what came off the bill, e.g. -38.24.
+         */
+        AddDiscountRequest: {
+            /** Extraction Index */
+            extraction_index: number;
+            /** Amount */
+            amount: number | string;
+        };
         /**
          * AdviceTarget
          * @description What a recommendation is about: a whole category, or one recurring purchase.
@@ -2419,6 +2451,43 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EditLineItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadJobStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_discount_receipts_upload__job_id__discount_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddDiscountRequest"];
             };
         };
         responses: {

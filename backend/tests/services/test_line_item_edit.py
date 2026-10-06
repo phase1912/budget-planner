@@ -5,6 +5,7 @@ user would be stuck looking at a red footer with no way out (BRD A9, A11).
 """
 
 import uuid
+from typing import cast
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -128,3 +129,32 @@ async def test_an_item_index_the_receipt_does_not_have_is_rejected(
             user_id,
             EditLineItemRequest(extraction_index=0, item_index=9, total_price="1,00"),
         )
+
+
+@pytest.mark.asyncio
+async def test_correcting_a_categorised_line_is_stored_not_just_answered(
+    db_session: AsyncSession,
+) -> None:
+    """A category id must go back into the job's JSON as text, or saving it fails."""
+    user = await UserFactory.create_async()
+    categorised = {
+        **EXTRACTION,
+        "line_items": [
+            {**line, "category_id": str(uuid.uuid4()), "category_confidence": 95}
+            for line in cast(list[dict[str, str]], EXTRACTION["line_items"])
+        ],
+    }
+    job = await UploadJobFactory.create_async(
+        user_id=user.id,
+        status=JobStatus.COMPLETED,
+        file_ids=[],
+        result_data={"extractions": [categorised]},
+    )
+    service = ReceiptService(repository=ReceiptRepository(db_session))
+
+    await service.edit_extracted_line_item(
+        job.id,
+        user.id,
+        EditLineItemRequest(extraction_index=0, item_index=1, total_price="13,99"),
+    )
+    await db_session.flush()

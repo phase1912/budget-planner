@@ -39,6 +39,8 @@ export class UploadStore {
   currentStep: 1 | 2 | 3 = 1;
 
   isCommitting = false;
+  /** A missed discount is being added; holds the button so one click adds one. */
+  isAddingDiscount = false;
   private readonly toastStore: ToastStore | undefined;
   private readonly onReceiptsStored: () => void;
 
@@ -485,6 +487,34 @@ export class UploadStore {
       return true;
     } catch (err) {
       return this.report(err, "Failed to update the line");
+    }
+  }
+
+  /**
+   * Add the discount the reader missed, as one "Rabat" line, so the receipt adds up
+   * to what was paid (BRD A9). `amount` is what came off, as a positive number.
+   */
+  async addDiscount(extractionIndex: number, amount: number): Promise<boolean> {
+    if (!this.jobId || this.isAddingDiscount) return false;
+    this.isAddingDiscount = true;
+    try {
+      const res = await this.api.POST("/receipts/upload/{job_id}/discount", {
+        params: { path: { job_id: this.jobId } },
+        body: { extraction_index: extractionIndex, amount: (-amount).toFixed(2) },
+      });
+      if (res.error) throw new Error(errorMessage(res.error, "Failed to add the discount"));
+      runInAction(() => {
+        if (res.data.extracted_data) {
+          this.extractedData = res.data.extracted_data;
+        }
+      });
+      return true;
+    } catch (err) {
+      return this.report(err, "Failed to add the discount");
+    } finally {
+      runInAction(() => {
+        this.isAddingDiscount = false;
+      });
     }
   }
 

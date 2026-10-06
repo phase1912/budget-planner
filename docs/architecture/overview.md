@@ -59,7 +59,7 @@ same RFC 7807 problem+json shape, carrying a stable `code` the client can branch
 The most involved flow in the system, and the one where the BRD's constraints bite.
 
 ```
-upload ──► validate (ReceiptService) ──► store image ──► parse ──► match positions ──► fold discounts ──► categorise ──► persist
+upload ──► validate (ReceiptService) ──► store image ──► parse ──► match positions ──► categorise ──► file discounts ──► persist
            (A1, A2)                      (A12, N1)       (A9-A11)    (B1-B9)            (5a)               (C1-C3)       (A12-A15)
 ```
 
