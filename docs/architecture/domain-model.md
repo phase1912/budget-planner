@@ -227,7 +227,13 @@ Rules that must hold at all times. Each is a candidate for a test.
     them to today. Receipts held out for review or still being read count toward
     neither. The check runs before any model is asked; until it passes, the goal's card
     shows how far there is to go instead of a button to ask (`app/domain/advice.py`).
-18. When spend is on track, report progress and suggest nothing (F6).
+18. When spend is on track, report progress and suggest nothing (F6). On track applies
+    to goals that cap a month's spend, a spending ceiling or a category reduction: this
+    month's spend so far, counted like the month view, carried forward at the same daily
+    rate to the month's end, finishes at or under the cap (`app/domain/goal_pace.py`).
+    Such a goal gets no advice and loses the cut advice it had, without the model being
+    asked. Its status is worked out live on every look and never stored, so it cannot
+    say "on track" after the month has turned. The same pace is what F7 calls at risk.
 
 **Identity**
 

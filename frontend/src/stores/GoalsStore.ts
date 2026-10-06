@@ -27,10 +27,20 @@ export class GoalsStore {
   saveError: string | null = null;
 
   private readonly toastStore: ToastStore;
+  private readonly onGoalsChanged: () => void;
 
-  constructor(toastStore: ToastStore) {
+  /**
+   * `onGoalsChanged` runs after a goal is added, changed or removed: what depends on
+   * a goal's target (its pace this month, F8.7) has to be worked out again.
+   */
+  constructor(toastStore: ToastStore, onGoalsChanged: () => void = () => undefined) {
     this.toastStore = toastStore;
-    makeAutoObservable<this, "toastStore">(this, { toastStore: false }, { autoBind: true });
+    this.onGoalsChanged = onGoalsChanged;
+    makeAutoObservable<this, "toastStore" | "onGoalsChanged">(
+      this,
+      { toastStore: false, onGoalsChanged: false },
+      { autoBind: true },
+    );
   }
 
   /** Fetch the user's goals, newest first. */
@@ -89,6 +99,7 @@ export class GoalsStore {
       }
       this.goals = this.goals.filter((g) => g.id !== id);
       this.toastStore.showSuccess("Goal removed");
+      this.onGoalsChanged();
       return true;
     });
   }
@@ -123,6 +134,7 @@ export class GoalsStore {
       }
       apply(response.data);
       this.toastStore.showSuccess(done);
+      this.onGoalsChanged();
       return true;
     });
   }

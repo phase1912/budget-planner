@@ -2,7 +2,7 @@ import { ChevronDown, Lightbulb, Loader2, RefreshCw } from "lucide-react";
 import { observer } from "mobx-react-lite";
 
 import { Button, IconTile, Meter, Note, Pill } from "@/shared/components";
-import type { AdviceReadiness } from "@/stores/AdviceStore";
+import type { AdviceReadiness, GoalProgress } from "@/stores/AdviceStore";
 import type { Goal } from "@/stores/GoalsStore";
 import { useStores } from "@/stores/StoreContext";
 import { impactOf } from "../adviceImpact";
@@ -15,7 +15,8 @@ import { timeAgo } from "../timeAgo";
  * figures from the user's own receipts — opens on demand, so a card with three
  * pieces of advice stays readable. Asking, the wait, and an ask that found nothing
  * or failed all show here, where the button was pressed. Until there is enough
- * history (BRD F5), the block says how far there is to go instead of offering to ask.
+ * history (BRD F5), the block says how far there is to go instead of offering to ask;
+ * while a monthly money goal is on track, it says there is nothing to cut (F6).
  */
 export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal }) {
   const { adviceStore, authStore } = useStores();
@@ -25,6 +26,7 @@ export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal })
   const advising = adviceStore.advisingGoalId === goal.id;
   const readiness = adviceStore.readiness;
   const waiting = readiness !== null && !readiness.ready && advice.length === 0;
+  const pace = adviceStore.progress.get(goal.id);
   const verb = advice.length > 0 ? "Refresh advice" : "Get advice";
 
   return (
@@ -41,6 +43,8 @@ export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal })
 
       {waiting ? (
         <NotEnoughHistory readiness={readiness} />
+      ) : pace?.on_track ? (
+        <NothingToCut pace={pace} currency={currency} />
       ) : (
         <>
           <div aria-live="polite" className="flex flex-col gap-2.5">
@@ -150,5 +154,44 @@ function NotEnoughHistory({ readiness }: { readiness: AdviceReadiness }) {
         </span>
       </div>
     </div>
+  );
+}
+
+const MONTH = new Intl.DateTimeFormat("en-GB", { month: "long" });
+const MONEY = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+const EARLY_DAYS = 7;
+
+/**
+ * A monthly money goal on pace to finish under its cap (BRD F6): progress, not cuts.
+ * The figures are worked out live from this month's receipts, so the card never
+ * says "on track" after the month has turned.
+ */
+function NothingToCut({ pace, currency }: { pace: GoalProgress; currency: string }) {
+  const month = MONTH.format(new Date());
+  const money = (amount: number | string) => `${MONEY.format(Number(amount))} ${currency}`;
+  const left = Number(pace.target) - Number(pace.spent);
+  return (
+    <Note tone="success">
+      <div className="flex flex-col gap-1.5">
+        <span className="font-semibold">Nothing to cut this month</span>
+        <span>
+          Spent so far: <strong>{money(pace.spent)}</strong> of {money(pace.target)}
+          {left > 0 && ` · ${money(left)} left`}.
+        </span>
+        <span>
+          Estimate: if you keep spending at the same daily rate, {month} would end at about{" "}
+          <strong>{money(pace.projected)}</strong>, {money(pace.margin)} under your limit. It is a
+          forecast, not a promise: one big shop can change it.
+        </span>
+        {pace.day <= EARLY_DAYS && (
+          <span className="opacity-80">
+            It is only day {pace.day} of {pace.days_in_month}, so the estimate is still rough.
+          </span>
+        )}
+      </div>
+    </Note>
   );
 }

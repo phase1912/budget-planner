@@ -6,6 +6,7 @@ import { errorMessage, settle } from "@/api/errors";
 
 export type Recommendation = components["schemas"]["RecommendationRead"];
 export type AdviceReadiness = components["schemas"]["AdviceReadinessRead"];
+export type GoalProgress = components["schemas"]["GoalProgressRead"];
 
 /** Why the last ask for advice on a goal produced none. */
 export interface AdviceOutcome {
@@ -21,7 +22,9 @@ export interface AdviceOutcome {
  * advice replaces that goal's earlier advice, as it does on the server. An ask
  * that finds nothing specific, or fails, is remembered for its goal until the
  * next ask, so the card can say why it has no new advice. Until there is enough
- * history (BRD F5), `readiness` says how far there is to go instead.
+ * history (BRD F5), `readiness` says how far there is to go instead. A monthly
+ * money goal heading under its cap has nothing to cut (F6): `progress` says so,
+ * worked out live rather than stored, so it is never stale.
  */
 export class AdviceStore {
   recommendations: Recommendation[] = [];
@@ -33,6 +36,8 @@ export class AdviceStore {
   outcomes = new Map<string, AdviceOutcome>();
   /** Whether there is enough history for advice yet (BRD F5); null until known. */
   readiness: AdviceReadiness | null = null;
+  /** Where each monthly money goal's month is heading, by goal id (BRD F6). */
+  progress = new Map<string, GoalProgress>();
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
@@ -50,6 +55,7 @@ export class AdviceStore {
     const [response] = await Promise.all([
       settle(() => apiClient.GET("/api/v1/recommendations")),
       this.loadReadiness(),
+      this.loadProgress(),
     ]);
     runInAction(() => {
       this.isLoading = false;
@@ -88,11 +94,22 @@ export class AdviceStore {
         ...response.data,
         ...this.recommendations.filter((r) => r.goal_id !== goalId),
       ];
-      if (response.data.length === 0) {
+      // A goal on track gets no advice by design (F6); its card says so from `progress`.
+      if (response.data.length === 0 && !this.progress.get(goalId)?.on_track) {
         this.outcomes.set(goalId, {
           kind: "nothing_specific",
           message: "Your receipts show nothing specific to act on for this goal yet.",
         });
+      }
+    });
+  }
+
+  /** Find out where each monthly money goal's month is heading; on failure, keep what was known. */
+  async loadProgress(): Promise<void> {
+    const response = await settle(() => apiClient.GET("/api/v1/goals/progress"));
+    runInAction(() => {
+      if (!response.error) {
+        this.progress = new Map(response.data.map((row) => [row.goal_id, row]));
       }
     });
   }
@@ -113,5 +130,6 @@ export class AdviceStore {
     this.advisingGoalId = null;
     this.outcomes.clear();
     this.readiness = null;
+    this.progress.clear();
   }
 }
