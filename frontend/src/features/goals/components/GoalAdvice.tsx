@@ -1,8 +1,8 @@
-import { ChevronDown, Lightbulb, Loader2, RefreshCw } from "lucide-react";
+import { ChevronDown, Lightbulb, Loader2, RefreshCw, Undo2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 
 import { Button, IconTile, Meter, Note, Pill } from "@/shared/components";
-import type { AdviceReadiness, GoalProgress } from "@/stores/AdviceStore";
+import type { AdviceReadiness, Feedback, GoalProgress, Recommendation } from "@/stores/AdviceStore";
 import type { Goal } from "@/stores/GoalsStore";
 import { useStores } from "@/stores/StoreContext";
 import { impactOf } from "../adviceImpact";
@@ -16,7 +16,8 @@ import { timeAgo } from "../timeAgo";
  * pieces of advice stays readable. Asking, the wait, and an ask that found nothing
  * or failed all show here, where the button was pressed. Until there is enough
  * history (BRD F5), the block says how far there is to go instead of offering to ask;
- * while a monthly money goal is on track, it says there is nothing to cut (F6).
+ * while a monthly money goal is on track, it says there is nothing to cut (F6). Each
+ * piece of advice can be marked won't-follow or not helpful (F8.9).
  */
 export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal }) {
   const { adviceStore, authStore } = useStores();
@@ -28,6 +29,7 @@ export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal })
   const waiting = readiness !== null && !readiness.ready && advice.length === 0;
   const pace = adviceStore.progress.get(goal.id);
   const verb = advice.length > 0 ? "Refresh advice" : "Get advice";
+  const latest = advice.find((item) => !item.feedback) ?? advice[0];
 
   return (
     <section
@@ -62,9 +64,13 @@ export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal })
                 {advice.map((item) => (
                   <li
                     key={item.id}
-                    className="flex flex-col gap-0.5 rounded-control border border-border bg-surface px-3.5 py-2.5"
+                    className={`flex flex-col gap-0.5 rounded-control border border-border px-3.5 py-2.5 ${item.feedback ? "bg-muted" : "bg-surface"}`}
                   >
-                    <p className="m-0 text-md font-semibold">{item.action}</p>
+                    <p
+                      className={`m-0 text-md font-semibold ${item.feedback ? "text-muted-foreground line-through" : ""}`}
+                    >
+                      {item.action}
+                    </p>
                     <p className="m-0 text-base font-semibold text-tone-primary-text tabular-nums">
                       {impactOf(item, currency)}
                     </p>
@@ -82,6 +88,7 @@ export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal })
                         <Pill size="sm">{item.target_name}</Pill>
                       </div>
                     </details>
+                    <FeedbackControls item={item} />
                   </li>
                 ))}
               </ol>
@@ -115,15 +122,68 @@ export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal })
               )}
               {advising ? "Working it out…" : verb}
             </Button>
-            {advice[0] && (
+            {latest && (
               <span className="text-base text-muted-foreground">
-                Updated {timeAgo(advice[0].created_at)}
+                Updated {timeAgo(latest.created_at)}
               </span>
             )}
           </div>
         </>
       )}
     </section>
+  );
+});
+
+const FEEDBACK_LABEL: Record<Feedback, string> = {
+  not_followed: "You won't follow this",
+  not_helpful: "You found this not helpful",
+};
+
+/**
+ * The user's say on one piece of advice (BRD F8 — F8.9): won't follow it, or not helpful.
+ * Marked advice stays on the card, struck through with an undo, and the next ask for
+ * advice is told not to repeat it.
+ */
+const FeedbackControls = observer(function FeedbackControls({ item }: { item: Recommendation }) {
+  const { adviceStore } = useStores();
+  if (item.feedback) {
+    return (
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-base text-muted-foreground">{FEEDBACK_LABEL[item.feedback]}</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="min-h-11 md:min-h-0"
+          aria-label={`Undo: ${item.action}`}
+          onClick={() => void adviceStore.updateFeedback(item.id, null)}
+        >
+          <Undo2 size={14} aria-hidden="true" />
+          Undo
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex gap-2">
+      <Button
+        variant="secondary"
+        size="sm"
+        className="min-h-11 flex-1 md:min-h-0 md:flex-none"
+        aria-label={`Won't follow: ${item.action}`}
+        onClick={() => void adviceStore.updateFeedback(item.id, "not_followed")}
+      >
+        Won&apos;t follow
+      </Button>
+      <Button
+        variant="secondary"
+        size="sm"
+        className="min-h-11 flex-1 md:min-h-0 md:flex-none"
+        aria-label={`Not helpful: ${item.action}`}
+        onClick={() => void adviceStore.updateFeedback(item.id, "not_helpful")}
+      >
+        Not helpful
+      </Button>
+    </div>
   );
 });
 

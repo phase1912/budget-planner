@@ -59,6 +59,7 @@ async def _call(
     method: str,
     path: str,
     generator: StubAdviceGenerator | None = None,
+    json: Any = None,
 ) -> Response:
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield session
@@ -76,7 +77,7 @@ async def _call(
         base_url="http://test",
         headers={"Authorization": f"Bearer {token}"},
     ) as client:
-        return await client.request(method, f"/api/v1{path}")
+        return await client.request(method, f"/api/v1{path}", json=json)
 
 
 async def _shop(
@@ -420,3 +421,76 @@ async def test_another_users_warning_cannot_be_set_aside(db_session: AsyncSessio
     response = await _call(db_session, owner, "POST", f"/goals/{goal.id}/warning/dismiss")
 
     assert response.status_code == 404
+
+
+async def _advise(session: AsyncSession, user: User, goal: Any, *proposals: Advice) -> Response:
+    generator = StubAdviceGenerator(list(proposals))
+    return await _call(session, user, "POST", f"/goals/{goal.id}/recommendations", generator)
+
+
+@pytest.mark.asyncio
+async def test_advice_marked_wont_follow_survives_a_refresh_and_is_not_offered_first(
+    db_session: AsyncSession,
+) -> None:
+    """The F8.9 demo: turned-down advice keeps its mark, and the model is told about it."""
+    user, goal = await _cookie_eater()
+    first = (await _advise(db_session, user, goal, COOKIES)).json()[0]
+
+    marked = await _call(
+        db_session,
+        user,
+        "PATCH",
+        f"/recommendations/{first['id']}/feedback",
+        json={"feedback": "not_followed"},
+    )
+    generator = StubAdviceGenerator([COOKIES])
+    advised = await _call(db_session, user, "POST", f"/goals/{goal.id}/recommendations", generator)
+
+    assert (marked.status_code, marked.json()["feedback"]) == (200, "not_followed")
+    assert [(r["id"] == first["id"], r["feedback"]) for r in advised.json()] == [
+        (False, None),
+        (True, "not_followed"),
+    ]
+    turned_down = generator.asked[0][0].dismissed_recommendations
+    assert [(d.target_name, d.action) for d in turned_down] == [
+        ("Cookies Choco 300g", "Stop buying them")
+    ]
+
+
+@pytest.mark.asyncio
+async def test_undoing_a_mark_lets_the_next_refresh_replace_that_advice(
+    db_session: AsyncSession,
+) -> None:
+    user, goal = await _cookie_eater()
+    first = (await _advise(db_session, user, goal, COOKIES)).json()[0]
+    path = f"/recommendations/{first['id']}/feedback"
+    await _call(db_session, user, "PATCH", path, json={"feedback": "not_helpful"})
+
+    undone = await _call(db_session, user, "PATCH", path, json={"feedback": None})
+    halve = Advice(AdviceTarget.ITEM, "Cookies Choco 300g", "Halve them", "9 of 14", 50)
+    await _advise(db_session, user, goal, halve)
+    feed = await _call(db_session, user, "GET", "/recommendations")
+
+    assert undone.json()["feedback"] is None
+    assert [r["action"] for r in feed.json()] == ["Halve them"]
+
+
+@pytest.mark.asyncio
+async def test_another_users_advice_cannot_be_marked(db_session: AsyncSession) -> None:
+    """N2: someone else's recommendation is as good as missing."""
+    owner, goal = await _cookie_eater()
+    theirs = (await _advise(db_session, owner, goal, COOKIES)).json()[0]
+    stranger = await UserFactory.create_async()
+
+    response = await _call(
+        db_session,
+        stranger,
+        "PATCH",
+        f"/recommendations/{theirs['id']}/feedback",
+        json={"feedback": "not_helpful"},
+    )
+
+    assert response.status_code == 404
+    current_user_id.set(owner.id)
+    feed = await _call(db_session, owner, "GET", "/recommendations")
+    assert feed.json()[0]["feedback"] is None

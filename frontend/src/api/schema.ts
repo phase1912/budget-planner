@@ -821,6 +821,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/recommendations/{recommendation_id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Recommendation Feedback
+         * @description Mark one recommendation won't-follow or not helpful, or undo the mark (F8.9).
+         *
+         *     A marked recommendation stays on its goal and steers later advice away from it;
+         *     one that is not the user's is a 404 (N2).
+         */
+        patch: operations["update_recommendation_feedback_api_v1_recommendations__recommendation_id__feedback_patch"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1174,6 +1197,12 @@ export interface components {
          * @enum {string}
          */
         ExportStatus: "pending" | "running" | "ready" | "failed";
+        /**
+         * FeedbackState
+         * @description Why the user turned a recommendation down (F8.9).
+         * @enum {string}
+         */
+        FeedbackState: "not_helpful" | "not_followed";
         /**
          * FinancialKind
          * @description The three money targets BRD F1 names; a lifestyle goal has none.
@@ -1592,6 +1621,13 @@ export interface components {
          */
         ReceiptStatus: "uploaded" | "parsing" | "parsed" | "manual_review" | "failed";
         /**
+         * RecommendationFeedbackUpdate
+         * @description The user's mark on one recommendation; null undoes it (F8.9).
+         */
+        RecommendationFeedbackUpdate: {
+            feedback: components["schemas"]["FeedbackState"] | null;
+        };
+        /**
          * RecommendationRead
          * @description One recommendation as its goal's card shows it, with the goal it serves (BRD F3).
          *
@@ -1622,6 +1658,7 @@ export interface components {
             monthly_saving: string;
             /** Purchases Avoided */
             purchases_avoided: string | null;
+            feedback: components["schemas"]["FeedbackState"] | null;
             /**
              * Created At
              * Format: date-time
@@ -3364,6 +3401,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecommendationRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_recommendation_feedback_api_v1_recommendations__recommendation_id__feedback_patch: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                recommendation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecommendationFeedbackUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationRead"];
                 };
             };
             /** @description Validation Error */

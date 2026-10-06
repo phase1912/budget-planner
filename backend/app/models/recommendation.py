@@ -5,6 +5,7 @@ from sqlalchemy import Enum, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.domain.advice import ACTION_MAX_LENGTH, TARGET_MAX_LENGTH, AdviceTarget
+from app.domain.goal_analysis import FeedbackState
 from app.models.base import Model
 
 
@@ -42,3 +43,13 @@ class Recommendation(Model):
     reduction_percent: Mapped[int] = mapped_column(Integer, nullable=False)
     monthly_saving: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     purchases_avoided: Mapped[Decimal | None] = mapped_column(Numeric(8, 1), nullable=True)
+    feedback: Mapped[FeedbackState | None] = mapped_column(
+        Enum(
+            FeedbackState,
+            name="feedback_state",
+            native_enum=False,
+            length=16,
+            values_callable=lambda members: [m.value for m in members],
+        ),
+        nullable=True,
+    )

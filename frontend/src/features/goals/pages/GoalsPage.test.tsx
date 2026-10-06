@@ -78,8 +78,9 @@ const adviceStore = observable(
     loadProgress: vi.fn(),
     dismissWarning: vi.fn<(goalId: string) => Promise<void>>(),
     advise: vi.fn<(goalId: string) => Promise<void>>(),
+    updateFeedback: vi.fn<(id: string, feedback: Recommendation["feedback"]) => Promise<void>>(),
   },
-  { load: false, loadProgress: false, dismissWarning: false, advise: false },
+  { load: false, loadProgress: false, dismissWarning: false, advise: false, updateFeedback: false },
 );
 const cookies: Recommendation = {
   id: "r1",
@@ -91,6 +92,7 @@ const cookies: Recommendation = {
   reduction_percent: 100,
   monthly_saving: "20.47",
   purchases_avoided: "3.0",
+  feedback: null,
   created_at: "2026-09-30T10:00:00Z",
 };
 const categoriesStore = {
@@ -466,5 +468,28 @@ describe("GoalsPage", () => {
     });
     render(<GoalsPage />);
     expect(screen.queryByRole("list", { name: "Goals at risk" })).toBeNull();
+  });
+
+  it("lets the user turn a piece of advice down, and shows it struck through with an undo", () => {
+    runInAction(() => {
+      goalsStore.goals = [eatBetter];
+      adviceStore.recommendations = [cookies];
+    });
+    const { rerender } = render(<GoalsPage />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Won't follow: Stop buying the chocolate-chip cookies" }),
+    );
+    expect(adviceStore.updateFeedback).toHaveBeenCalledWith(cookies.id, "not_followed");
+
+    runInAction(() => {
+      adviceStore.recommendations = [{ ...cookies, feedback: "not_followed" }];
+    });
+    rerender(<GoalsPage />);
+    expect(screen.getByText("You won't follow this")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Not helpful:/ })).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Undo: Stop buying the chocolate-chip cookies" }),
+    );
+    expect(adviceStore.updateFeedback).toHaveBeenCalledWith(cookies.id, null);
   });
 });

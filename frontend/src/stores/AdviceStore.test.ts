@@ -4,7 +4,7 @@ import { apiClient } from "@/api/client";
 import { AdviceStore } from "./AdviceStore";
 import type { Recommendation } from "./AdviceStore";
 
-vi.mock("@/api/client", () => ({ apiClient: { GET: vi.fn(), POST: vi.fn() } }));
+vi.mock("@/api/client", () => ({ apiClient: { GET: vi.fn(), POST: vi.fn(), PATCH: vi.fn() } }));
 
 function advice(id: string, goalId: string): Recommendation {
   return {
@@ -17,6 +17,7 @@ function advice(id: string, goalId: string): Recommendation {
     reduction_percent: 100,
     monthly_saving: "20.47",
     purchases_avoided: "3.0",
+    feedback: null,
     created_at: "2026-09-30T10:00:00Z",
   };
 }
@@ -187,5 +188,31 @@ describe("AdviceStore", () => {
     await store.dismissWarning("g1");
 
     expect(store.warnings).toEqual([]);
+  });
+
+  it("marks advice at once and puts it back when the server refuses", async () => {
+    store.recommendations = [advice("1", "g1")];
+    vi.mocked(apiClient.PATCH).mockRejectedValueOnce(new TypeError("Failed to fetch"));
+
+    const marking = store.updateFeedback("1", "not_helpful");
+    expect(store.forGoal("g1")[0]?.feedback).toBe("not_helpful");
+    await marking;
+    expect(store.forGoal("g1")[0]?.feedback).toBeNull();
+
+    vi.mocked(apiClient.PATCH).mockResolvedValueOnce(ok(advice("1", "g1")));
+    await store.updateFeedback("1", "not_followed");
+    expect(store.forGoal("g1")[0]?.feedback).toBe("not_followed");
+  });
+
+  it("counts turned-down advice as no new answer, but keeps it on the card", async () => {
+    store.recommendations = [];
+    vi.mocked(apiClient.POST).mockResolvedValueOnce(
+      ok([{ ...advice("1", "g1"), feedback: "not_followed" as const }]),
+    );
+
+    await store.advise("g1");
+
+    expect(store.outcomes.get("g1")?.kind).toBe("nothing_specific");
+    expect(store.forGoal("g1").map((r) => r.feedback)).toEqual(["not_followed"]);
   });
 });

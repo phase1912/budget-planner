@@ -5,9 +5,10 @@ that is written down for the advice model. Every figure here comes from the user
 own receipts, so a recommendation can cite it rather than invent it (F3, 11.3).
 """
 
+import enum
 import uuid
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -109,6 +110,25 @@ class RecurringItem:
     merchant_receipt_total: int
 
 
+class FeedbackState(enum.StrEnum):
+    """Why the user turned a recommendation down (F8.9)."""
+
+    NOT_HELPFUL = "not_helpful"
+    NOT_FOLLOWED = "not_followed"
+
+
+@dataclass(frozen=True)
+class DismissedRecommendation:
+    """Earlier advice the user marked won't-follow or not helpful (F8.9).
+
+    Shown to the model so it does not propose the same thing again.
+    """
+
+    target_name: str
+    action: str
+    feedback: FeedbackState
+
+
 @dataclass(frozen=True)
 class GoalAnalysis:
     """Everything advice on one goal may cite, over one window of history (BRD F2).
@@ -129,6 +149,7 @@ class GoalAnalysis:
     largest_increases: list[CategoryChange]
     goal_categories: list[CategoryStanding]
     recurring_items: list[RecurringItem]
+    dismissed_recommendations: list[DismissedRecommendation] = field(default_factory=list)
 
 
 def render_advice_context(analysis: GoalAnalysis, currency: str) -> str:
@@ -187,6 +208,15 @@ def render_advice_context(analysis: GoalAnalysis, currency: str) -> str:
     lines += [_recurring(item, money) for item in analysis.recurring_items] or [
         "- no purchase recurs in this period"
     ]
+
+    if analysis.dismissed_recommendations:
+        lines += [
+            "",
+            "## Advice the user turned down",
+            "Do not propose these again, nor a near copy of them on the same target:",
+        ]
+        lines += [_dismissed(d) for d in analysis.dismissed_recommendations]
+
     return "\n".join(lines)
 
 
@@ -225,3 +255,8 @@ def _recurring(item: RecurringItem, money: Callable[[Decimal], str]) -> str:
 
 def _day(day: date) -> str:
     return f"{day.day} {day:%B %Y}"
+
+
+def _dismissed(advice: DismissedRecommendation) -> str:
+    reason = "won't follow" if advice.feedback is FeedbackState.NOT_FOLLOWED else "not helpful"
+    return f"- {advice.target_name}: {advice.action} ({reason})"

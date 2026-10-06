@@ -25,9 +25,15 @@ class RecommendationRepository(BaseRepository[Recommendation]):
     async def replace_for_goal(
         self, goal_id: uuid.UUID, recommendations: Sequence[Recommendation]
     ) -> None:
-        """Drop the goal's earlier recommendations and keep these instead."""
+        """Drop the goal's earlier recommendations and keep these instead.
+
+        Ones the user marked with feedback stay (F8.9): they are what keeps the
+        next advice from repeating them, and the card still shows them with an undo.
+        """
         stale = self._apply_ownership(
-            delete(Recommendation).where(Recommendation.goal_id == goal_id)
+            delete(Recommendation).where(
+                Recommendation.goal_id == goal_id, Recommendation.feedback.is_(None)
+            )
         )
         await self.session.execute(stale)
         self.session.add_all(recommendations)
@@ -44,3 +50,12 @@ class RecommendationRepository(BaseRepository[Recommendation]):
             )
         )
         return bool((await self.session.execute(stmt)).scalar())
+
+    async def list_dismissed_for_goal(self, goal_id: uuid.UUID) -> Sequence[Recommendation]:
+        """The goal's recommendations the user marked won't-follow or not helpful (F8.9)."""
+        stmt = self._apply_ownership(
+            select(Recommendation)
+            .where(Recommendation.goal_id == goal_id, Recommendation.feedback.is_not(None))
+            .order_by(Recommendation.created_at.desc())
+        )
+        return (await self.session.execute(stmt)).scalars().all()

@@ -14,6 +14,7 @@ function advice(saving: string, avoided: string | null): Recommendation {
     reduction_percent: 100,
     monthly_saving: saving,
     purchases_avoided: avoided,
+    feedback: null,
     created_at: "2026-10-01T10:00:00Z",
   };
 }

@@ -6,8 +6,15 @@ from datetime import date
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import AdviceUnavailableError, InsufficientDataError, NotFoundError
-from app.domain.advice import AdviceReadiness, assess_readiness, keep_specific, project_impact
+from app.domain.advice import (
+    AdviceReadiness,
+    assess_readiness,
+    demote_dismissed,
+    keep_specific,
+    project_impact,
+)
 from app.domain.categories import ItemView
+from app.domain.goal_analysis import DismissedRecommendation, FeedbackState
 from app.domain.goal_pace import PACED_KINDS, GoalPace, pace
 from app.domain.goals import FinancialKind
 from app.domain.periods import DateRange
@@ -127,6 +134,24 @@ class AdviceService:
             prepared += 1 if fresh else 0
         return prepared
 
+    async def update_feedback(
+        self, recommendation_id: uuid.UUID, feedback: FeedbackState | None
+    ) -> Recommendation:
+        """Record that the user won't follow, or did not find helpful, one recommendation (F8.9).
+
+        Advice marked this way survives the goal's later refreshes, so the user still
+        sees it with an undo and the next ask is told not to repeat it. `None` undoes
+        the mark, and the advice is replaced on the next refresh like any other.
+
+        Raises NotFoundError for a recommendation that is not the user's (N2).
+        """
+        recommendation = await self.recommendations.get(recommendation_id)
+        if recommendation is None:
+            raise NotFoundError("Recommendation not found")
+        recommendation.feedback = feedback
+        await self.recommendations.session.flush()
+        return recommendation
+
     async def advise(
         self, goal_id: uuid.UUID, *, as_of: date, currency: str
     ) -> Sequence[Recommendation]:
@@ -139,6 +164,10 @@ class AdviceService:
 
         A monthly money goal heading under its cap gets no advice at all, and loses
         what it had: there is nothing to cut (F6), and the card says so from `pace`.
+
+        Advice the user marked (F8.9) is never replaced: the model is told not to
+        repeat it, fresh advice on the same target is ranked last, and the marked
+        advice is returned after the fresh so the card keeps showing it.
 
         Raises NotFoundError for a goal that is not the user's (N2);
         InsufficientDataError, before any model is asked, when there is not yet
@@ -155,8 +184,14 @@ class AdviceService:
         if goal_pace is not None and goal_pace.on_track:
             # Nothing to cut (F6): earlier cut advice would now be wrong, so it goes too.
             await self.recommendations.replace_for_goal(goal.id, [])
-            return []
-        analysis = await self.analysis.analyse(goal, as_of)
+            return await self.recommendations.list_dismissed_for_goal(goal.id)
+        marked = await self.recommendations.list_dismissed_for_goal(goal.id)
+        dismissed = [
+            DismissedRecommendation(target_name=r.target_name, action=r.action, feedback=r.feedback)
+            for r in marked
+            if r.feedback is not None
+        ]
+        analysis = await self.analysis.analyse(goal, as_of, dismissed=dismissed)
 
         try:
             proposed = await self.generator.propose(analysis, currency)
@@ -165,7 +200,7 @@ class AdviceService:
                 "Advice could not be worked out just now. Try again in a moment."
             ) from error
         fresh = []
-        for advice in keep_specific(proposed, analysis):
+        for advice in demote_dismissed(keep_specific(proposed, analysis), dismissed):
             impact = project_impact(advice, analysis)
             fresh.append(
                 Recommendation(
@@ -181,7 +216,7 @@ class AdviceService:
                 )
             )
         await self.recommendations.replace_for_goal(goal.id, fresh)
-        return fresh
+        return [*fresh, *marked]
 
 
 def _not_enough(readiness: AdviceReadiness) -> str:
