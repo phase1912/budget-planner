@@ -2,7 +2,7 @@ import typing
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import ColumnElement, Select, and_, case, func, or_, select
@@ -408,6 +408,20 @@ class ReceiptRepository(BaseRepository[Receipt]):
         """
         stmt = self._apply_ownership(select(func.count(Receipt.id)).where(_within(period)))
         return int((await self.session.execute(stmt)).scalar_one())
+
+    async def history_extent(self) -> tuple[int, date | None]:
+        """How many parsed receipts the user has, and the purchase date of the first.
+
+        Parsed only: a receipt held out of the month for review, or one still being
+        read, is no evidence advice can stand on (BRD F5, D3).
+        """
+        stmt = self._apply_ownership(
+            select(func.count(Receipt.id), func.min(_purchased())).where(
+                Receipt.status == ReceiptStatus.PARSED
+            )
+        )
+        count, first = (await self.session.execute(stmt)).one()
+        return int(count), first.date() if first else None
 
     async def has_any(self) -> bool:
         """Whether the current user has stored a receipt yet; before that, `/` is a welcome."""

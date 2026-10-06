@@ -130,6 +130,22 @@ class Settings(BaseSettings):
             "False for hosted providers, which do not accept the parameter."
         ),
     )
+    min_receipts_for_advice: int = Field(
+        default=4,
+        ge=1,
+        description=(
+            "Parsed receipts a user needs before advice is generated; below it the "
+            "user is told more history is needed (BRD F5)."
+        ),
+    )
+    min_history_days_for_advice: int = Field(
+        default=30,
+        ge=1,
+        description=(
+            "Days of history, from the first parsed receipt, a user needs before "
+            "advice is generated: BRD F5's 'one full month' (BRD F5)."
+        ),
+    )
     ocr_confidence_threshold: float = Field(
         default=0.80,
         ge=0.0,

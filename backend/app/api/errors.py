@@ -97,7 +97,7 @@ class DomainError(AppError):
 class InvalidPeriodError(AppError):
     """Raised for a statistics period that ends before it starts (BRD E2)."""
 
-    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
     code = "invalid_period"
     title = "Invalid Period"
 
@@ -105,9 +105,17 @@ class InvalidPeriodError(AppError):
 class InvalidGoalError(AppError):
     """Raised for a goal whose fields do not fit its type (BRD F1)."""
 
-    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
     code = "invalid_goal"
     title = "Invalid Goal"
+
+
+class InsufficientDataError(AppError):
+    """Raised when there is not enough history to generate reliable advice (BRD F5)."""
+
+    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
+    code = "insufficient_data"
+    title = "Insufficient Data"
 
 
 class UnsupportedFileFormatError(AppError):

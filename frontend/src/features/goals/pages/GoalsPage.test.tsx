@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { observable, runInAction } from "mobx";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { AdviceOutcome, Recommendation } from "@/stores/AdviceStore";
+import type { AdviceOutcome, AdviceReadiness, Recommendation } from "@/stores/AdviceStore";
 import type { Goal, GoalCreate, GoalUpdate } from "@/stores/GoalsStore";
 import { GoalsPage } from "./GoalsPage";
 
@@ -61,6 +61,7 @@ const adviceStore = observable(
     loadError: null as string | null,
     advisingGoalId: null as string | null,
     outcomes: new Map<string, AdviceOutcome>(),
+    readiness: null as AdviceReadiness | null,
     forGoal(goalId: string): Recommendation[] {
       return this.recommendations.filter((r) => r.goal_id === goalId);
     },
@@ -113,6 +114,7 @@ describe("GoalsPage", () => {
       adviceStore.recommendations = [];
       adviceStore.advisingGoalId = null;
       adviceStore.outcomes.clear();
+      adviceStore.readiness = null;
       adviceStore.loadError = null;
     });
     goalsStore.create.mockResolvedValue(true);
@@ -354,5 +356,24 @@ describe("GoalsPage", () => {
     const ceilingAdvice = within(screen.getByRole("region", { name: "Advice on Monthly ceiling" }));
     expect(eating.getByText("Advice could not be worked out just now.")).toBeInTheDocument();
     expect(ceilingAdvice.queryByText("Advice could not be worked out just now.")).toBeNull();
+  });
+
+  it("says how far there is to go instead of offering advice on too little history", () => {
+    runInAction(() => {
+      goalsStore.goals = [eatBetter];
+      adviceStore.readiness = {
+        ready: false,
+        receipts: 3,
+        required_receipts: 4,
+        history_days: 12,
+        required_days: 30,
+        progress: 40,
+      };
+    });
+    render(<GoalsPage />);
+    const eating = within(screen.getByRole("region", { name: "Advice on Eat better" }));
+    expect(eating.getByText("3 receipts is not a pattern yet")).toBeInTheDocument();
+    expect(eating.getByText("3 of 4 receipts · 12 of 30 days")).toBeInTheDocument();
+    expect(eating.queryByRole("button", { name: /advice/ })).toBeNull();
   });
 });
