@@ -11,10 +11,18 @@ from app.domain.advice import (
     AdviceTarget,
     ProjectedImpact,
     assess_readiness,
+    demote_dismissed,
     keep_specific,
     project_impact,
 )
-from app.domain.goal_analysis import GoalAnalysis, GoalBrief, RecurringItem, scope_of
+from app.domain.goal_analysis import (
+    DismissedRecommendation,
+    FeedbackState,
+    GoalAnalysis,
+    GoalBrief,
+    RecurringItem,
+    scope_of,
+)
 from app.domain.goals import GoalType
 from app.domain.periods import DateRange
 from app.domain.statistics import CategoryStanding
@@ -156,3 +164,14 @@ def test_readiness_progress_follows_the_slower_minimum() -> None:
     )
 
     assert (receipts_short.progress, days_short.progress) == (25, 30)
+
+
+def test_fresh_advice_on_a_target_the_user_turned_down_is_ranked_last_not_dropped() -> None:
+    """F8.9: a cut the user won't make goes to the back; other cuts lead."""
+    dining = _advice(AdviceTarget.CATEGORY, "Dining", "Cap dining at 200 PLN")
+    cookies = _advice(AdviceTarget.ITEM, "Cookies Choco 300g")
+    turned_down = DismissedRecommendation("dining", "Skip lunch out", FeedbackState.NOT_FOLLOWED)
+
+    ranked = demote_dismissed([dining, cookies], [turned_down])
+
+    assert [a.target_name for a in ranked] == ["Cookies Choco 300g", "Dining"]

@@ -5,6 +5,7 @@ from app.domain.goal_analysis import (
     RECURRING_MIN_RECEIPTS,
     TOP_CATEGORIES,
     TOP_INCREASES,
+    DismissedRecommendation,
     GoalAnalysis,
     GoalBrief,
     GoalScope,
@@ -37,7 +38,9 @@ class GoalAnalysisService:
         self.receipts = receipts
         self.categories = categories
 
-    async def analyse(self, goal: Goal, as_of: date) -> GoalAnalysis:
+    async def analyse(
+        self, goal: Goal, as_of: date, dismissed: list[DismissedRecommendation] | None = None
+    ) -> GoalAnalysis:
         """What stands out in the spending `goal` concerns, over the history to `as_of`.
 
         The highest-spend categories and the largest increases cover all spending,
@@ -62,6 +65,7 @@ class GoalAnalysisService:
             largest_increases=largest_increases(comparison.changes, TOP_INCREASES),
             goal_categories=[c for c in stats.categories if c.category_id in scope.category_ids],
             recurring_items=await self._recurring(scope, window),
+            dismissed_recommendations=dismissed or [],
         )
 
     async def _brief(self, goal: Goal) -> GoalBrief:

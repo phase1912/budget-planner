@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 
-from app.domain.goal_analysis import GoalAnalysis
+from app.domain.goal_analysis import DismissedRecommendation, GoalAnalysis
 
 ADVICE_MAX = 3
 """How many recommendations one request for advice keeps."""
@@ -178,3 +178,16 @@ def assess_readiness(
     """
     days = max((as_of - first_purchase).days, 0) if first_purchase else 0
     return AdviceReadiness(receipts, required_receipts, days, required_days)
+
+
+def demote_dismissed(
+    advice: list[Advice], dismissed: list[DismissedRecommendation]
+) -> list[Advice]:
+    """Rank fresh advice on a target the user already turned down last (F8.9).
+
+    The model is told not to repeat turned-down advice, but that is a request, not
+    a guarantee; this makes it hold regardless. Nothing is dropped: cutting the same
+    category another way may still be the right call. Order is otherwise kept.
+    """
+    turned_down = {d.target_name.casefold() for d in dismissed}
+    return sorted(advice, key=lambda a: a.target_name.casefold() in turned_down)

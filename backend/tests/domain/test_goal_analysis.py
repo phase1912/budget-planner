@@ -7,6 +7,8 @@ from decimal import Decimal
 from typing import Any
 
 from app.domain.goal_analysis import (
+    DismissedRecommendation,
+    FeedbackState,
     GoalAnalysis,
     GoalBrief,
     RecurringItem,
@@ -154,3 +156,18 @@ def test_the_context_states_a_money_goals_target_in_the_users_currency() -> None
     context = render_advice_context(_analysis(goal), "EUR")
 
     assert "Target: keep Dining under 400.00 EUR a month" in context
+
+
+def test_the_context_lists_advice_the_user_turned_down_so_it_is_not_repeated() -> None:
+    turned_down = DismissedRecommendation("Dining", "Skip lunch out", FeedbackState.NOT_HELPFUL)
+
+    context = render_advice_context(
+        _analysis(_goal(), dismissed_recommendations=[turned_down]), "PLN"
+    )
+
+    assert "## Advice the user turned down" in context
+    assert "- Dining: Skip lunch out (not helpful)" in context
+
+
+def test_the_context_leaves_out_the_turned_down_section_when_there_is_none() -> None:
+    assert "turned down" not in render_advice_context(_analysis(_goal()), "PLN")

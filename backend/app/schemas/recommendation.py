@@ -5,6 +5,7 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict
 
 from app.domain.advice import AdviceTarget
+from app.domain.goal_analysis import FeedbackState
 
 
 class RecommendationRead(BaseModel):
@@ -23,6 +24,7 @@ class RecommendationRead(BaseModel):
     reduction_percent: int
     monthly_saving: Decimal
     purchases_avoided: Decimal | None
+    feedback: FeedbackState | None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -63,3 +65,9 @@ class GoalProgressRead(BaseModel):
     warning_dismissed: bool
     day: int
     days_in_month: int
+
+
+class RecommendationFeedbackUpdate(BaseModel):
+    """The user's mark on one recommendation; null undoes it (F8.9)."""
+
+    feedback: FeedbackState | None

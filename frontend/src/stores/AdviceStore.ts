@@ -7,6 +7,7 @@ import { errorMessage, settle } from "@/api/errors";
 export type Recommendation = components["schemas"]["RecommendationRead"];
 export type AdviceReadiness = components["schemas"]["AdviceReadinessRead"];
 export type GoalProgress = components["schemas"]["GoalProgressRead"];
+export type Feedback = NonNullable<Recommendation["feedback"]>;
 
 /** Why the last ask for advice on a goal produced none. */
 export interface AdviceOutcome {
@@ -101,7 +102,9 @@ export class AdviceStore {
         ...this.recommendations.filter((r) => r.goal_id !== goalId),
       ];
       // A goal on track gets no advice by design (F6); its card says so from `progress`.
-      if (response.data.length === 0 && !this.progress.get(goalId)?.on_track) {
+      // Advice the user turned down comes back too (F8.9); it is not an answer to this ask.
+      const fresh = response.data.filter((r) => !r.feedback);
+      if (fresh.length === 0 && !this.progress.get(goalId)?.on_track) {
         this.outcomes.set(goalId, {
           kind: "nothing_specific",
           message: "Your receipts show nothing specific to act on for this goal yet.",
@@ -139,6 +142,30 @@ export class AdviceStore {
     runInAction(() => {
       if (!response.error) this.readiness = response.data;
     });
+  }
+
+  /**
+   * Mark one piece of advice won't-follow or not helpful, or undo the mark with null
+   * (F8.9). The card changes at once; if the server refuses, it goes back.
+   */
+  async updateFeedback(recommendationId: string, feedback: Feedback | null): Promise<void> {
+    const item = this.recommendations.find((r) => r.id === recommendationId);
+    if (!item) return;
+    const previous = item.feedback;
+    runInAction(() => {
+      item.feedback = feedback;
+    });
+    const response = await settle(() =>
+      apiClient.PATCH("/api/v1/recommendations/{recommendation_id}/feedback", {
+        params: { path: { recommendation_id: recommendationId } },
+        body: { feedback },
+      }),
+    );
+    if (response.error) {
+      runInAction(() => {
+        item.feedback = previous;
+      });
+    }
   }
 
   /** Forget everything: a different user is signing in. */

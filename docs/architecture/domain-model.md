@@ -31,7 +31,7 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | **MonthlySnapshot** | A finalised month: total, receipt count, and the count and value held out for review. A cache of derived data, taken on the first look after the month ends (ADR-0010). | User |
 | **ExportJob** | One export of the user's receipts or statistics as CSV or JSON, written in the background: the filters it was asked with, its status, and where the finished file is stored (N6). | User |
 | **Goal** | A financial or lifestyle objective the user declared. A financial goal is one of three kinds: a monthly spending ceiling, a savings target, or a cap on one category (F1). | User |
-| **Recommendation** | Advice on one goal: the category or recurring purchase it targets, what to do and why. Asking again replaces the goal's advice. Projected impact (F8.5) and feedback (F8.9) come later. | User |
+| **Recommendation** | Advice on one goal: the category or recurring purchase it targets, what to do and why. Asking again replaces the goal's advice, except advice the user marked won't-follow or not helpful (F8.9), which stays. Carries its projected impact (F8.5). | User |
 
 Relationships: a User has many Receipts; a Receipt has many LineItems; a LineItem has one
 Category; a Goal produces many Recommendations; a User has many IdentityLinks; a User has many PositionMatchOverrides.
@@ -241,6 +241,12 @@ Rules that must hold at all times. Each is a candidate for a test.
     at risk advice to cut back if it has none from this month, so the warning arrives
     with a way to correct course; advice already given this month, asked for or not, is
     left alone. The user may set a goal's warning aside, which holds until the month ends.
+18b. The user may mark a recommendation won't-follow or not helpful, and undo the mark
+    (F8.9). A marked recommendation survives later refreshes of its goal's advice and
+    stays visible, struck through. Every later ask is told what was turned down and not
+    to repeat it; since that is only a request to the model, fresh advice on a target
+    the user turned down is also ranked after the rest (`demote_dismissed`), never
+    dropped. Undoing a mark makes the advice ordinary again, replaced on the next ask.
 
 **Identity**
 

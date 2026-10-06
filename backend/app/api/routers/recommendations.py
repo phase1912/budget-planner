@@ -17,6 +17,7 @@ from app.ports.advice_generation import AdviceGeneratorPort
 from app.schemas.recommendation import (
     AdviceReadinessRead,
     GoalProgressRead,
+    RecommendationFeedbackUpdate,
     RecommendationRead,
 )
 from app.services.advice import AdviceService, build_advice_service
@@ -120,3 +121,21 @@ async def advise_on_goal(
     return await service.advise(
         goal_id, as_of=datetime.now(UTC).date(), currency=current_user.currency
     )
+
+
+@router.patch(
+    "/recommendations/{recommendation_id}/feedback",
+    response_model=RecommendationRead,
+)
+async def update_recommendation_feedback(
+    recommendation_id: uuid.UUID,
+    payload: RecommendationFeedbackUpdate,
+    current_user: CurrentUser,
+    service: Service,
+) -> Recommendation:
+    """Mark one recommendation won't-follow or not helpful, or undo the mark (F8.9).
+
+    A marked recommendation stays on its goal and steers later advice away from it;
+    one that is not the user's is a 404 (N2).
+    """
+    return await service.update_feedback(recommendation_id, payload.feedback)
