@@ -38,9 +38,10 @@ describe("AdviceStore", () => {
   it("loads every goal's advice in one request, with whether advice can be had", async () => {
     vi.mocked(apiClient.GET).mockResolvedValue(ok([advice("1", "g1"), advice("2", "g2")]));
     await store.load();
-    expect(apiClient.GET).toHaveBeenCalledTimes(2);
+    expect(apiClient.GET).toHaveBeenCalledTimes(3);
     expect(apiClient.GET).toHaveBeenCalledWith("/api/v1/recommendations");
     expect(apiClient.GET).toHaveBeenCalledWith("/api/v1/advice/readiness");
+    expect(apiClient.GET).toHaveBeenCalledWith("/api/v1/goals/progress");
     expect(store.forGoal("g2").map((r) => r.id)).toEqual(["2"]);
   });
 
@@ -135,5 +136,29 @@ describe("AdviceStore", () => {
     };
     store.reset();
     expect(store.readiness).toBeNull();
+  });
+
+  it("does not call a goal on track short of advice when it gets none", async () => {
+    vi.mocked(apiClient.GET).mockResolvedValue(
+      ok([
+        {
+          goal_id: "g1",
+          spent: "100.00",
+          projected: "300.00",
+          target: "3000.00",
+          margin: "2700.00",
+          on_track: true,
+          day: 10,
+          days_in_month: 31,
+        },
+      ]),
+    );
+    await store.loadProgress();
+    vi.mocked(apiClient.POST).mockResolvedValue(ok([]));
+
+    await store.advise("g1");
+
+    expect(store.progress.get("g1")?.on_track).toBe(true);
+    expect(store.outcomes.has("g1")).toBe(false);
   });
 });

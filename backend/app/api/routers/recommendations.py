@@ -18,7 +18,11 @@ from app.repository.category import CategoryRepository
 from app.repository.goal import GoalRepository
 from app.repository.receipt import ReceiptRepository
 from app.repository.recommendation import RecommendationRepository
-from app.schemas.recommendation import AdviceReadinessRead, RecommendationRead
+from app.schemas.recommendation import (
+    AdviceReadinessRead,
+    GoalProgressRead,
+    RecommendationRead,
+)
 from app.services.advice import AdviceService
 from app.services.goal_analysis import GoalAnalysisService
 from app.services.statistics import StatisticsService
@@ -76,6 +80,24 @@ async def advice_readiness(current_user: CurrentUser, service: Service) -> Advic
         required_days=readiness.required_days,
         progress=readiness.progress,
     )
+
+
+@router.get("/goals/progress", response_model=list[GoalProgressRead])
+async def goal_progress(current_user: CurrentUser, service: Service) -> list[GoalProgressRead]:
+    """Where each of the caller's monthly money goals is heading this month (BRD F6)."""
+    return [
+        GoalProgressRead(
+            goal_id=goal.id,
+            spent=goal_pace.spent,
+            projected=goal_pace.projected,
+            target=goal_pace.target,
+            margin=goal_pace.margin,
+            on_track=goal_pace.on_track,
+            day=goal_pace.day,
+            days_in_month=goal_pace.days_in_month,
+        )
+        for goal, goal_pace in await service.progress(datetime.now(UTC).date())
+    ]
 
 
 @router.post(

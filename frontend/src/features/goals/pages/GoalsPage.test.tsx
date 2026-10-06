@@ -2,7 +2,12 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { observable, runInAction } from "mobx";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { AdviceOutcome, AdviceReadiness, Recommendation } from "@/stores/AdviceStore";
+import type {
+  AdviceOutcome,
+  AdviceReadiness,
+  GoalProgress,
+  Recommendation,
+} from "@/stores/AdviceStore";
 import type { Goal, GoalCreate, GoalUpdate } from "@/stores/GoalsStore";
 import { GoalsPage } from "./GoalsPage";
 
@@ -62,6 +67,7 @@ const adviceStore = observable(
     advisingGoalId: null as string | null,
     outcomes: new Map<string, AdviceOutcome>(),
     readiness: null as AdviceReadiness | null,
+    progress: new Map<string, GoalProgress>(),
     forGoal(goalId: string): Recommendation[] {
       return this.recommendations.filter((r) => r.goal_id === goalId);
     },
@@ -115,6 +121,7 @@ describe("GoalsPage", () => {
       adviceStore.advisingGoalId = null;
       adviceStore.outcomes.clear();
       adviceStore.readiness = null;
+      adviceStore.progress.clear();
       adviceStore.loadError = null;
     });
     goalsStore.create.mockResolvedValue(true);
@@ -375,5 +382,31 @@ describe("GoalsPage", () => {
     expect(eating.getByText("3 receipts is not a pattern yet")).toBeInTheDocument();
     expect(eating.getByText("3 of 4 receipts · 12 of 30 days")).toBeInTheDocument();
     expect(eating.queryByRole("button", { name: /advice/ })).toBeNull();
+  });
+
+  it("says there is nothing to cut for a goal on track, and offers no advice for it", () => {
+    runInAction(() => {
+      goalsStore.goals = [ceiling];
+      adviceStore.recommendations = [{ ...cookies, goal_id: "g1" }];
+      adviceStore.progress.set("g1", {
+        goal_id: "g1",
+        spent: "1800.00",
+        projected: "2066.67",
+        target: "3000.00",
+        margin: "933.33",
+        on_track: true,
+        day: 27,
+        days_in_month: 31,
+      });
+    });
+    render(<GoalsPage />);
+    const card = within(screen.getByRole("region", { name: "Advice on Monthly ceiling" }));
+    expect(card.getByText("Nothing to cut this month")).toBeInTheDocument();
+    expect(card.getByText("2,066.67 PLN")).toBeInTheDocument();
+    expect(card.getByText(/1,200.00 PLN left/)).toBeInTheDocument();
+    expect(card.getByText(/a forecast, not a promise/)).toBeInTheDocument();
+    expect(card.queryByText("Stop buying the chocolate-chip cookies")).toBeNull();
+    expect(card.queryByRole("button", { name: /advice/ })).toBeNull();
+    expect(card.queryByText(/rough guess/)).toBeNull();
   });
 });

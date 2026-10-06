@@ -1,5 +1,6 @@
 """Asking for advice on a goal, and the advice feed, over HTTP (F8.4, BRD F3, N2)."""
 
+import calendar
 from collections.abc import AsyncGenerator
 from datetime import UTC, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
@@ -17,11 +18,12 @@ from app.core.context import current_user_id
 from app.db.session import get_db_session
 from app.domain.advice import AVERAGE_MONTH_DAYS, Advice, AdviceTarget
 from app.domain.goal_analysis import GoalAnalysis, analysis_window
-from app.domain.goals import GoalType
+from app.domain.goals import FinancialKind, GoalType
 from app.main import create_app
 from app.models.receipt import ReceiptStatus
 from app.models.user import User
 from app.ports.advice_generation import AdviceUnavailable
+from tests.factories.category import CategoryFactory
 from tests.factories.goal import GoalFactory
 from tests.factories.line_item import LineItemFactory
 from tests.factories.receipt import ReceiptFactory
@@ -293,3 +295,102 @@ async def test_a_month_of_history_with_enough_receipts_makes_advice_ready(
     readiness = (await _call(db_session, owner, "GET", "/advice/readiness")).json()
 
     assert (readiness["ready"], readiness["receipts"], readiness["progress"]) == (True, 5, 100)
+
+
+async def _ceiling(owner: User, target: str) -> Any:
+    return await GoalFactory.create_async(
+        user_id=owner.id, name="Stay under", target_amount=Decimal(target)
+    )
+
+
+def _expected_projection(spent: Decimal) -> Decimal:
+    today = datetime.now(UTC).date()
+    days = calendar.monthrange(today.year, today.month)[1]
+    return (spent / today.day * days).quantize(Decimal("0.01"), ROUND_HALF_UP)
+
+
+@pytest.mark.asyncio
+async def test_a_ceiling_on_track_gets_nothing_to_cut_and_no_model_is_asked(
+    db_session: AsyncSession,
+) -> None:
+    """BRD F6, the demo: on pace to finish under the ceiling, no savings advice."""
+    owner, cookies_goal = await _cookie_eater()
+    goal = await _ceiling(owner, "100000")
+    path = f"/goals/{goal.id}/recommendations"
+    generator = StubAdviceGenerator([COOKIES])
+
+    advised = await _call(db_session, owner, "POST", path, generator)
+    progress = (await _call(db_session, owner, "GET", "/goals/progress")).json()
+
+    assert (advised.status_code, advised.json(), generator.asked) == (201, [], [])
+    [row] = progress
+    assert (row["goal_id"], row["on_track"]) == (str(goal.id), True)
+    assert Decimal(row["spent"]) == Decimal("13.60")
+    assert Decimal(row["projected"]) == _expected_projection(Decimal("13.60"))
+    assert str(cookies_goal.id) not in {r["goal_id"] for r in progress}
+
+
+@pytest.mark.asyncio
+async def test_a_ceiling_on_track_loses_the_cut_advice_it_had(db_session: AsyncSession) -> None:
+    """Advice to cut, given when the month looked worse, is wrong once it is on track."""
+    owner, _ = await _cookie_eater()
+    goal = await _ceiling(owner, "1")
+    path = f"/goals/{goal.id}/recommendations"
+    await _call(db_session, owner, "POST", path, StubAdviceGenerator([COOKIES]))
+    goal.target_amount = Decimal("100000")
+    await db_session.flush()
+
+    await _call(db_session, owner, "POST", path, StubAdviceGenerator([COOKIES]))
+    feed = await _call(db_session, owner, "GET", "/recommendations")
+
+    assert [r["goal_id"] for r in feed.json()] == []
+
+
+@pytest.mark.asyncio
+async def test_a_ceiling_heading_over_gets_advice_and_says_so(db_session: AsyncSession) -> None:
+    owner, _ = await _cookie_eater()
+    goal = await _ceiling(owner, "1")
+    generator = StubAdviceGenerator([COOKIES])
+
+    advised = await _call(db_session, owner, "POST", f"/goals/{goal.id}/recommendations", generator)
+    [row] = (await _call(db_session, owner, "GET", "/goals/progress")).json()
+
+    assert (advised.status_code, len(generator.asked)) == (201, 1)
+    assert (row["on_track"], Decimal(row["margin"]) < 0) == (False, True)
+
+
+@pytest.mark.asyncio
+async def test_a_category_cut_is_paced_on_its_category_alone(db_session: AsyncSession) -> None:
+    owner, _ = await _cookie_eater()
+    sweets = await CategoryFactory.create_async(name="Sweets", user_id=owner.id)
+    receipt = await ReceiptFactory.create_async(
+        user_id=owner.id,
+        merchant_name="Fresh Market",
+        transaction_date=datetime.now(UTC),
+        status=ReceiptStatus.PARSED,
+    )
+    await LineItemFactory.create_async(
+        receipt=receipt, name="Chocolate", total_price=Decimal("4.00"), category=sweets
+    )
+    await GoalFactory.create_async(
+        user_id=owner.id,
+        financial_kind=FinancialKind.CATEGORY_REDUCTION,
+        category_id=sweets.id,
+        target_amount=Decimal("100"),
+    )
+
+    [row] = (await _call(db_session, owner, "GET", "/goals/progress")).json()
+
+    assert Decimal(row["spent"]) == Decimal("4.00")
+
+
+@pytest.mark.asyncio
+async def test_another_users_goals_have_no_progress_in_mine(db_session: AsyncSession) -> None:
+    """BRD N2."""
+    stranger, _ = await _cookie_eater()
+    await _ceiling(stranger, "100")
+    owner = await UserFactory.create_async()
+
+    progress = await _call(db_session, owner, "GET", "/goals/progress")
+
+    assert progress.json() == []

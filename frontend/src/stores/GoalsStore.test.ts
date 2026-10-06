@@ -112,4 +112,21 @@ describe("GoalsStore", () => {
     expect(store.saveError).toBe("The server could not be reached. Try again in a moment.");
     expect(saved).toBe(false);
   });
+
+  it("says the goals changed after an add, an edit and a removal, and not after a refusal", async () => {
+    const changed = vi.fn();
+    const watched = new GoalsStore(toast as unknown as ToastStore, changed);
+    vi.mocked(apiClient.POST)
+      .mockResolvedValueOnce(ok(goal("1", "Ceiling")))
+      .mockResolvedValueOnce(refused("A money goal needs an amount above zero."));
+    vi.mocked(apiClient.PATCH).mockResolvedValue(ok(goal("1", "Lower ceiling")));
+    vi.mocked(apiClient.DELETE).mockResolvedValue({ response: new Response() } as never);
+
+    await watched.create({ type: "financial", name: "Ceiling" });
+    await watched.create({ type: "financial", name: "Zero" });
+    await watched.update("1", { target_amount: "1000" });
+    await watched.remove("1");
+
+    expect(changed).toHaveBeenCalledTimes(3);
+  });
 });

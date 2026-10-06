@@ -48,8 +48,9 @@ export class RootStore {
     this.categoriesStore = new CategoriesStore();
     this.statisticsStore = new StatisticsStore();
     this.exportStore = new ExportStore(this.toastStore);
-    this.goalsStore = new GoalsStore(this.toastStore);
     this.adviceStore = new AdviceStore();
+    // A goal's new target changes where its month is heading (F8.7): ask again.
+    this.goalsStore = new GoalsStore(this.toastStore, () => void this.adviceStore.loadProgress());
     // The month view remembers where it was left; a new account starts afresh,
     // and never sees the previous one's figures while its own load.
     reaction(

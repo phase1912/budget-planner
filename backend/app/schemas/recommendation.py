@@ -40,3 +40,21 @@ class AdviceReadinessRead(BaseModel):
     history_days: int
     required_days: int
     progress: int
+
+
+class GoalProgressRead(BaseModel):
+    """Where a monthly money goal's month is heading, worked out live (BRD F6).
+
+    `spent` so far this month, `projected` to the month's end at the same daily
+    rate, against the monthly `target`; `margin` is how far under it the month is
+    heading, negative when over. `day` of `days_in_month` is what the projection rests on.
+    """
+
+    goal_id: uuid.UUID
+    spent: Decimal
+    projected: Decimal
+    target: Decimal
+    margin: Decimal
+    on_track: bool
+    day: int
+    days_in_month: int
