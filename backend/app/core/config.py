@@ -146,6 +146,14 @@ class Settings(BaseSettings):
             "advice is generated: BRD F5's 'one full month' (BRD F5)."
         ),
     )
+    proactive_advice_interval_minutes: int = Field(
+        default=360,
+        ge=0,
+        description=(
+            "How often the background pass prepares advice for goals heading over their "
+            "cap (BRD F7); 0 turns it off."
+        ),
+    )
     ocr_confidence_threshold: float = Field(
         default=0.80,
         ge=0.0,

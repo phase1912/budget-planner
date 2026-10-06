@@ -762,11 +762,36 @@ export interface paths {
         };
         /**
          * Goal Progress
-         * @description Where each of the caller's monthly money goals is heading this month (BRD F6).
+         * @description Where each of the caller's monthly money goals is heading this month (BRD F6, F7).
+         *
+         *     This is also how an at-risk warning reaches the user: worked out on every
+         *     look, so it is never stale, and waiting for them without their asking.
          */
         get: operations["goal_progress_api_v1_goals_progress_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/{goal_id}/warning/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dismiss Warning
+         * @description Set a goal's at-risk warning aside until next month (BRD F7).
+         *
+         *     Another user's goal is not found (N2).
+         */
+        post: operations["dismiss_warning_api_v1_goals__goal_id__warning_dismiss_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1185,6 +1210,8 @@ export interface components {
          *     `spent` so far this month, `projected` to the month's end at the same daily
          *     rate, against the monthly `target`; `margin` is how far under it the month is
          *     heading, negative when over. `day` of `days_in_month` is what the projection rests on.
+         *     `at_risk` means heading over the cap past the first week (F7); `warning_dismissed`
+         *     means the user set this month's warning aside.
          */
         GoalProgressRead: {
             /**
@@ -1192,6 +1219,8 @@ export interface components {
              * Format: uuid
              */
             goal_id: string;
+            /** Goal Name */
+            goal_name: string;
             /** Spent */
             spent: string;
             /** Projected */
@@ -1202,6 +1231,10 @@ export interface components {
             margin: string;
             /** On Track */
             on_track: boolean;
+            /** At Risk */
+            at_risk: boolean;
+            /** Warning Dismissed */
+            warning_dismissed: boolean;
             /** Day */
             day: number;
             /** Days In Month */
@@ -3268,6 +3301,37 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["GoalProgressRead"][];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dismiss_warning_api_v1_goals__goal_id__warning_dismiss_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

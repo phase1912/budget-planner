@@ -1,7 +1,8 @@
 import uuid
 from collections.abc import Sequence
+from datetime import UTC, date, datetime, time
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.recommendation import Recommendation
@@ -31,3 +32,15 @@ class RecommendationRepository(BaseRepository[Recommendation]):
         await self.session.execute(stale)
         self.session.add_all(recommendations)
         await self.session.flush()
+
+    async def has_advice_since(self, goal_id: uuid.UUID, since: date) -> bool:
+        """Whether the goal has advice given on or after `since`, whoever asked for it."""
+        stmt = self._apply_ownership(
+            select(
+                exists().where(
+                    Recommendation.goal_id == goal_id,
+                    Recommendation.created_at >= datetime.combine(since, time(), tzinfo=UTC),
+                )
+            )
+        )
+        return bool((await self.session.execute(stmt)).scalar())

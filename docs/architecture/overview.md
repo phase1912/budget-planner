@@ -150,6 +150,17 @@ one of these period queries filters one user's receipts by
 `coalesce(transaction_date, created_at)`; the `ix_receipts_user_purchased` expression
 index and `ix_line_items_receipt_id` exist for exactly that (F7.1).
 
+## Proactive advice
+
+Advice for goals at risk (BRD F7, F8.8) is prepared by a scheduled pass inside the API
+process, started and stopped by `create_app()`'s lifespan (`app/services/proactive_advice.py`,
+every `proactive_advice_interval_minutes`, 0 to turn it off). For each user, in their own
+session and ownership context, a monthly money goal heading over its cap with no advice
+from this month gets some through the same `AdviceService.advise` a request uses. The
+warning itself is not stored: `GET /api/v1/goals/progress` works it out from the month's
+pace on every look, and only the user's "not now" is kept, on the goal, for the month.
+There is no endpoint that triggers the pass; nothing outside the process can.
+
 ## Export
 
 Exports (N6, F7.6) run as background jobs, like receipt processing: `POST

@@ -14,18 +14,12 @@ from app.db.session import get_db_session
 from app.models.recommendation import Recommendation
 from app.models.user import User
 from app.ports.advice_generation import AdviceGeneratorPort
-from app.repository.category import CategoryRepository
-from app.repository.goal import GoalRepository
-from app.repository.receipt import ReceiptRepository
-from app.repository.recommendation import RecommendationRepository
 from app.schemas.recommendation import (
     AdviceReadinessRead,
     GoalProgressRead,
     RecommendationRead,
 )
-from app.services.advice import AdviceService
-from app.services.goal_analysis import GoalAnalysisService
-from app.services.statistics import StatisticsService
+from app.services.advice import AdviceService, build_advice_service
 
 router = APIRouter(prefix="/api/v1", tags=["advice"])
 
@@ -40,17 +34,10 @@ def get_advice_service(
     generator: Annotated[AdviceGeneratorPort, Depends(get_advice_generator)],
 ) -> AdviceService:
     """The advice service bound to the request's session."""
-    receipts = ReceiptRepository(session)
-    analysis = GoalAnalysisService(
-        StatisticsService(receipts), receipts, CategoryRepository(session)
-    )
     settings = get_settings()
-    return AdviceService(
-        GoalRepository(session),
-        analysis,
+    return build_advice_service(
+        session,
         generator,
-        RecommendationRepository(session),
-        receipts,
         required_receipts=settings.min_receipts_for_advice,
         required_days=settings.min_history_days_for_advice,
     )
@@ -84,20 +71,37 @@ async def advice_readiness(current_user: CurrentUser, service: Service) -> Advic
 
 @router.get("/goals/progress", response_model=list[GoalProgressRead])
 async def goal_progress(current_user: CurrentUser, service: Service) -> list[GoalProgressRead]:
-    """Where each of the caller's monthly money goals is heading this month (BRD F6)."""
+    """Where each of the caller's monthly money goals is heading this month (BRD F6, F7).
+
+    This is also how an at-risk warning reaches the user: worked out on every
+    look, so it is never stale, and waiting for them without their asking.
+    """
+    today = datetime.now(UTC).date()
     return [
         GoalProgressRead(
             goal_id=goal.id,
+            goal_name=goal.name,
             spent=goal_pace.spent,
             projected=goal_pace.projected,
             target=goal_pace.target,
             margin=goal_pace.margin,
             on_track=goal_pace.on_track,
+            at_risk=goal_pace.at_risk,
+            warning_dismissed=goal.warning_dismissed_for == today.replace(day=1),
             day=goal_pace.day,
             days_in_month=goal_pace.days_in_month,
         )
-        for goal, goal_pace in await service.progress(datetime.now(UTC).date())
+        for goal, goal_pace in await service.progress(today)
     ]
+
+
+@router.post("/goals/{goal_id}/warning/dismiss", status_code=status.HTTP_204_NO_CONTENT)
+async def dismiss_warning(goal_id: uuid.UUID, current_user: CurrentUser, service: Service) -> None:
+    """Set a goal's at-risk warning aside until next month (BRD F7).
+
+    Another user's goal is not found (N2).
+    """
+    await service.dismiss_warning(goal_id, datetime.now(UTC).date())
 
 
 @router.post(

@@ -11,6 +11,7 @@ import { DeleteReceiptDialog } from "@/features/receipts/components/DeleteReceip
 import { EditReceiptDialog } from "@/features/receipts/components/EditReceiptDialog";
 import { ReceiptDetailModal } from "@/features/receipts/components/ReceiptDetailModal";
 import { CategorySpendList } from "@/features/categories/components/CategorySpendList";
+import { AtRiskWarnings } from "@/features/goals/components/AtRiskWarnings";
 import { LimitStatus } from "../components/LimitStatus";
 import { MonthReceipts } from "../components/MonthReceipts";
 import { MonthStatus } from "../components/MonthStatus";
@@ -132,6 +133,8 @@ export const DashboardPage = observer(function DashboardPage() {
             <ArrowRight size={16} aria-hidden="true" />
           </Link>
         </div>
+
+        <AtRiskWarnings linkToGoals />
 
         {error && (
           <ErrorState layout="banner" title="The month could not be loaded" message={error} />

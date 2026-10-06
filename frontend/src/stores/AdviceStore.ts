@@ -24,7 +24,8 @@ export interface AdviceOutcome {
  * next ask, so the card can say why it has no new advice. Until there is enough
  * history (BRD F5), `readiness` says how far there is to go instead. A monthly
  * money goal heading under its cap has nothing to cut (F6): `progress` says so,
- * worked out live rather than stored, so it is never stale.
+ * worked out live rather than stored, so it is never stale; heading over it, past
+ * the first week, is a warning (F7) until the user sets it aside for the month.
  */
 export class AdviceStore {
   recommendations: Recommendation[] = [];
@@ -41,6 +42,11 @@ export class AdviceStore {
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
+  }
+
+  /** Goals heading over their cap this month that the user has not set aside (BRD F7). */
+  get warnings(): GoalProgress[] {
+    return [...this.progress.values()].filter((p) => p.at_risk && !p.warning_dismissed);
   }
 
   /** One goal's current advice, newest first. */
@@ -101,6 +107,19 @@ export class AdviceStore {
           message: "Your receipts show nothing specific to act on for this goal yet.",
         });
       }
+    });
+  }
+
+  /** Set a goal's at-risk warning aside until next month; it stays if the server refuses. */
+  async dismissWarning(goalId: string): Promise<void> {
+    const response = await settle(() =>
+      apiClient.POST("/api/v1/goals/{goal_id}/warning/dismiss", {
+        params: { path: { goal_id: goalId } },
+      }),
+    );
+    runInAction(() => {
+      const pace = this.progress.get(goalId);
+      if (!response.error && pace) this.progress.set(goalId, { ...pace, warning_dismissed: true });
     });
   }
 

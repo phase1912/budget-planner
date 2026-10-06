@@ -233,7 +233,14 @@ Rules that must hold at all times. Each is a candidate for a test.
     rate to the month's end, finishes at or under the cap (`app/domain/goal_pace.py`).
     Such a goal gets no advice and loses the cut advice it had, without the model being
     asked. Its status is worked out live on every look and never stored, so it cannot
-    say "on track" after the month has turned. The same pace is what F7 calls at risk.
+    say "on track" after the month has turned.
+18a. A monthly money goal is at risk when the same pace heads over its cap after the first
+    week of the month (F7); earlier, one big shop is most of the evidence. At risk is
+    worked out live, never stored, and shown on the dashboard and Goals without being
+    asked for, with how far over the month is heading. A background pass gives each goal
+    at risk advice to cut back if it has none from this month, so the warning arrives
+    with a way to correct course; advice already given this month, asked for or not, is
+    left alone. The user may set a goal's warning aside, which holds until the month ends.
 
 **Identity**
 

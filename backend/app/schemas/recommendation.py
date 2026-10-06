@@ -48,13 +48,18 @@ class GoalProgressRead(BaseModel):
     `spent` so far this month, `projected` to the month's end at the same daily
     rate, against the monthly `target`; `margin` is how far under it the month is
     heading, negative when over. `day` of `days_in_month` is what the projection rests on.
+    `at_risk` means heading over the cap past the first week (F7); `warning_dismissed`
+    means the user set this month's warning aside.
     """
 
     goal_id: uuid.UUID
+    goal_name: str
     spent: Decimal
     projected: Decimal
     target: Decimal
     margin: Decimal
     on_track: bool
+    at_risk: bool
+    warning_dismissed: bool
     day: int
     days_in_month: int

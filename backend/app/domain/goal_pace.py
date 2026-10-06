@@ -18,6 +18,9 @@ PACED_KINDS = frozenset({FinancialKind.SPENDING_CEILING, FinancialKind.CATEGORY_
 
 CENTS = Decimal("0.01")
 
+EARLY_DAYS = 7
+"""Up to this day of the month the pace rests on too few days to warn about (F7)."""
+
 
 @dataclass(frozen=True)
 class GoalPace:
@@ -39,6 +42,15 @@ class GoalPace:
     def on_track(self) -> bool:
         """The month is heading to finish at or under the cap (F6)."""
         return self.projected <= self.target
+
+    @property
+    def at_risk(self) -> bool:
+        """Heading over the cap, with enough of the month gone to say so (F7).
+
+        In the first EARLY_DAYS days one big shop is most of the evidence, and a
+        warning built on it would cry wolf; after that, off track is at risk.
+        """
+        return not self.on_track and self.day > EARLY_DAYS
 
     @property
     def margin(self) -> Decimal:

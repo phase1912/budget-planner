@@ -394,3 +394,29 @@ async def test_another_users_goals_have_no_progress_in_mine(db_session: AsyncSes
     progress = await _call(db_session, owner, "GET", "/goals/progress")
 
     assert progress.json() == []
+
+
+@pytest.mark.asyncio
+async def test_a_warning_set_aside_stays_aside_for_the_month(db_session: AsyncSession) -> None:
+    """BRD F7: "not now" holds until next month, when the warning may return."""
+    owner, _ = await _cookie_eater()
+    goal = await _ceiling(owner, "1")
+
+    dismissed = await _call(db_session, owner, "POST", f"/goals/{goal.id}/warning/dismiss")
+    [row] = (await _call(db_session, owner, "GET", "/goals/progress")).json()
+
+    assert dismissed.status_code == 204
+    assert (row["goal_name"], row["warning_dismissed"]) == ("Stay under", True)
+    assert row["at_risk"] == (row["day"] > 7)
+
+
+@pytest.mark.asyncio
+async def test_another_users_warning_cannot_be_set_aside(db_session: AsyncSession) -> None:
+    """BRD N2."""
+    stranger, _ = await _cookie_eater()
+    goal = await _ceiling(stranger, "1")
+    owner = await UserFactory.create_async()
+
+    response = await _call(db_session, owner, "POST", f"/goals/{goal.id}/warning/dismiss")
+
+    assert response.status_code == 404

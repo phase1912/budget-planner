@@ -71,10 +71,15 @@ const adviceStore = observable(
     forGoal(goalId: string): Recommendation[] {
       return this.recommendations.filter((r) => r.goal_id === goalId);
     },
+    get warnings(): GoalProgress[] {
+      return [...this.progress.values()].filter((p) => p.at_risk && !p.warning_dismissed);
+    },
     load: vi.fn(),
+    loadProgress: vi.fn(),
+    dismissWarning: vi.fn<(goalId: string) => Promise<void>>(),
     advise: vi.fn<(goalId: string) => Promise<void>>(),
   },
-  { load: false, advise: false },
+  { load: false, loadProgress: false, dismissWarning: false, advise: false },
 );
 const cookies: Recommendation = {
   id: "r1",
@@ -390,6 +395,9 @@ describe("GoalsPage", () => {
       adviceStore.recommendations = [{ ...cookies, goal_id: "g1" }];
       adviceStore.progress.set("g1", {
         goal_id: "g1",
+        goal_name: "Monthly ceiling",
+        at_risk: false,
+        warning_dismissed: false,
         spent: "1800.00",
         projected: "2066.67",
         target: "3000.00",
@@ -408,5 +416,55 @@ describe("GoalsPage", () => {
     expect(card.queryByText("Stop buying the chocolate-chip cookies")).toBeNull();
     expect(card.queryByRole("button", { name: /advice/ })).toBeNull();
     expect(card.queryByText(/rough guess/)).toBeNull();
+  });
+
+  it("warns about a goal heading over its limit, and sets the warning aside on request", () => {
+    runInAction(() => {
+      goalsStore.goals = [ceiling];
+      adviceStore.progress.set("g1", {
+        goal_id: "g1",
+        goal_name: "Monthly ceiling",
+        spent: "2400.00",
+        projected: "3100.00",
+        target: "3000.00",
+        margin: "-100.00",
+        on_track: false,
+        at_risk: true,
+        warning_dismissed: false,
+        day: 24,
+        days_in_month: 31,
+      });
+    });
+    render(<GoalsPage />);
+    const warnings = within(screen.getByRole("list", { name: "Goals at risk" }));
+    expect(warnings.getByText("Monthly ceiling is heading over its limit")).toBeInTheDocument();
+    expect(warnings.getByText(/100.00 PLN over your limit/)).toBeInTheDocument();
+    fireEvent.click(
+      warnings.getByRole("button", {
+        name: "Set aside the warning for Monthly ceiling until next month",
+      }),
+    );
+    expect(adviceStore.dismissWarning).toHaveBeenCalledWith("g1");
+  });
+
+  it("does not warn about a goal whose warning was set aside", () => {
+    runInAction(() => {
+      goalsStore.goals = [ceiling];
+      adviceStore.progress.set("g1", {
+        goal_id: "g1",
+        goal_name: "Monthly ceiling",
+        spent: "2400.00",
+        projected: "3100.00",
+        target: "3000.00",
+        margin: "-100.00",
+        on_track: false,
+        at_risk: true,
+        warning_dismissed: true,
+        day: 24,
+        days_in_month: 31,
+      });
+    });
+    render(<GoalsPage />);
+    expect(screen.queryByRole("list", { name: "Goals at risk" })).toBeNull();
   });
 });
