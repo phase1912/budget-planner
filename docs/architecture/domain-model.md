@@ -104,6 +104,19 @@ Rules that must hold at all times. Each is a candidate for a test.
    automatic. That line is filed under the receipt's dominant category, the one most
    was spent on, because it reduces the bill rather than one product. When the lines
    come to less, a line is missing or misread, and only the user can correct it.
+5c. Before a disagreeing receipt reaches the user, the app tries to make it agree
+   itself (`app/domain/receipt_reconciliation.py`, `ReceiptService._reconcile_total`).
+   The total read is the amount paid ("DO ZAPŁATY"), deposits on returnable packaging
+   (kaucja, Poland since October 2025) are lines of their own, and a deposit handed back
+   is a negative line. Rules come first, each applied only if it closes the gap exactly:
+   the goods subtotal taken instead of the amount paid while the deposit is a line; a
+   discount read without its minus; a deposit or footer subtotal listed twice (never two
+   equal products — those are two purchases); one line whose total is not its quantity
+   times its price. Then the model reads the photos again, up to twice, told how far off
+   the last reading was; a new reading is kept only if its lines agree with the same
+   total, so the model can never "fix" a receipt by rewriting what was paid. Only what
+   still disagrees is shown to the user, marked as already tried (`total_reconciled_by`
+   = `unresolved`), with 5b's offer.
 6. An in-progress month is always labelled incomplete wherever it is displayed (D4).
 6a. Where the user has set a monthly limit, a month's spend is shown as a share of it
    (D7): rounded down, so a month under its limit never reads 100%, and not capped, so

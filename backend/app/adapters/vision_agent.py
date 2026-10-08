@@ -13,6 +13,7 @@ changes in a way that could alter results (BRD A15).
 from __future__ import annotations
 
 import base64
+from decimal import Decimal
 
 from app.agent.core import Agent
 from app.agent.types import ImageContent, Message
@@ -35,7 +36,9 @@ Extract the following into the JSON schema provided:
 - transaction_time: in HH:MM format (24-hour)
 - currency: ISO 4217 code (e.g. PLN, USD, EUR)
 - line_items: every purchased item with name, quantity, unit_price, total_price
-- receipt_total: the printed total from the footer
+- receipt_total: the amount actually paid. When the footer prints both a goods \
+  subtotal ("SUMA PLN") and an amount to pay ("DO ZAPŁATY", "RAZEM DO ZAPŁATY", \
+  "Total due"), take the amount to pay
 - items_sum_matches_total: true if the sum of line item totals equals the \
   receipt total, false if they differ, null if either side is missing
 
@@ -61,10 +64,40 @@ IMPORTANT:
    than repeating the VAT letter.
 3. If quantity or unit price is not explicitly printed for an item, infer them (e.g., quantity "1",
    unit_price same as total_price). DO NOT skip line items just because these details are implicit.
-4. NEVER invent an amount you cannot read. If a price is unreadable, cut off or hidden, return an
+4. Discount lines ("OPUST", "Rabat", "Upust") are line items of their own with a NEGATIVE
+   total_price, exactly as printed under the product they reduce.
+5. Returnable-packaging deposits ("kaucja", "OPAKOWANIA ZWROTNE", e.g. "But Plastik kaucja
+   6 x 0,50 = 3,00") are line items too, with a positive total; a deposit handed back
+   ("zwrot kaucji") is a line with a negative total. Together with the products they make
+   up the amount to pay. List each deposit once: a section heading ("OPAKOWANIA ZWROTNE
+   WYDANIA") or a section sum ("OPAKOWANIA ZWROTNE SUMA") is not a line of its own.
+   Likewise "SUMA PLN", "PTU" and "DO ZAPŁATY" are totals, never line items.
+6. NEVER invent an amount you cannot read. If a price is unreadable, cut off or hidden, return an
    empty string for it. "0" means the receipt actually printed a zero, and nothing else. Guessing
    zero silently understates what the user spent, which is worse than admitting the line is
    unreadable.
+"""
+
+
+RECHECK_PROMPT = """\
+You read this receipt before, and the line items you found do not add up to its total.
+
+Your previous reading (JSON):
+{reading}
+
+The lines sum to {lines_sum}; the amount to pay you read is {printed_total}; the \
+difference is {gap}.
+
+Look at the photos again, line by line, and find what was misread. Common causes:
+- a discount line ("OPUST", "Rabat") missed, or read without its minus sign;
+- a line read twice, or one skipped where the photos overlap;
+- a misread digit in a price, or a total that is not quantity x unit price;
+- a deposit ("kaucja", "OPAKOWANIA ZWROTNE") missing from the lines, or the goods \
+  subtotal ("SUMA PLN") taken instead of the amount to pay ("DO ZAPŁATY").
+
+Do not change the amount to pay unless you misread it; fix the lines. Return the \
+complete corrected reading in the same JSON schema, following the same rules as before:
+
 """
 
 
@@ -86,6 +119,35 @@ class VisionAgentAdapter:
         Builds a multi-modal message with all images and the extraction prompt,
         then asks the Agent for a ``ExtractedReceipt``-shaped JSON response.
         """
+        return await self._read(RECEIPT_EXTRACTION_PROMPT, images, mime_types)
+
+    async def recheck(
+        self,
+        images: list[bytes],
+        *,
+        mime_types: list[str],
+        reading: ExtractedReceipt,
+    ) -> ExtractedReceipt:
+        """Read the receipt again, told what the first reading got and how far off it is (A9).
+
+        Implements ``ReceiptRecheckerPort``. The full extraction rules are repeated, so
+        the answer is a complete reading in the same shape, not a patch.
+        """
+        lines_sum = Decimal(reading.computed_total or "0")
+        printed = Decimal((reading.receipt_total or "0").replace(",", "."))
+        prompt = RECHECK_PROMPT.format(
+            reading=reading.model_dump_json(
+                include={"merchant_name", "line_items", "receipt_total"}, indent=1
+            ),
+            lines_sum=f"{lines_sum:.2f}",
+            printed_total=f"{printed:.2f}",
+            gap=f"{lines_sum - printed:+.2f}",
+        )
+        return await self._read(prompt + RECEIPT_EXTRACTION_PROMPT, images, mime_types)
+
+    async def _read(
+        self, prompt: str, images: list[bytes], mime_types: list[str] | None
+    ) -> ExtractedReceipt:
         resolved_types = mime_types or ["image/jpeg"] * len(images)
 
         import io
@@ -126,9 +188,7 @@ class VisionAgentAdapter:
                 processed_images.append(img_bytes)
                 processed_types.append(mime)
 
-        content_parts: list[dict[str, object]] = [
-            {"type": "text", "text": RECEIPT_EXTRACTION_PROMPT}
-        ]
+        content_parts: list[dict[str, object]] = [{"type": "text", "text": prompt}]
         for img_bytes, mime in zip(processed_images, processed_types, strict=True):
             content_parts.append(_content_part(img_bytes, mime))
 

@@ -64,9 +64,11 @@ def get_receipt_service(
     """Provide a ReceiptService with storage and vision parser wired up."""
     settings = get_settings()
     agent = agent_from_settings()
+    reader = VisionAgentAdapter(agent)
     return ReceiptService(
         storage_port,
-        parser_port=VisionAgentAdapter(agent),
+        parser_port=reader,
+        rechecker_port=reader,
         categoriser_port=ItemCategoriserAdapter(agent),
         max_concurrency=settings.llm_max_concurrency,
         job_timeout_seconds=settings.upload_job_timeout_seconds,

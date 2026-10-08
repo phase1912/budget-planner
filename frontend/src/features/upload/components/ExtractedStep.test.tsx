@@ -210,4 +210,38 @@ describe("ExtractedStep", () => {
     expect(screen.getByText("23.94")).toBeInTheDocument();
     expect(screen.getByText("incl. −10.04 off")).toBeInTheDocument();
   });
+
+  it("asks nothing about storing a receipt when it is the only one", () => {
+    renderComponent();
+    expect(screen.queryByRole("checkbox")).toBeNull();
+  });
+
+  it("lets one of several receipts be left out, and says so in words", () => {
+    runInAction(() => {
+      const [first] = (mockStore.uploadStore.extractedData as { extractions: object[] })
+        .extractions;
+      mockStore.uploadStore.extractedData = {
+        extractions: [first, { ...first, merchant_name: "Second Store" }],
+      };
+      mockStore.uploadStore.selectedIndices = new Set([0, 1]);
+    });
+    renderComponent();
+
+    const boxes = screen.getAllByRole("checkbox", { name: "Save this receipt" });
+    expect(boxes).toHaveLength(2);
+    const [, second] = boxes;
+    if (!second) throw new Error("expected two receipts");
+    fireEvent.click(second);
+    expect(screen.getByRole("checkbox", { name: "Leave this receipt out" })).not.toBeChecked();
+  });
+
+  it("says the app already tried before asking about a gap it could not close", () => {
+    withExtraction({
+      items_sum_matches_total: false,
+      computed_total: "153.00",
+      total_reconciled_by: "unresolved",
+    });
+    renderComponent();
+    expect(screen.getByText(/We read this receipt again and still could not/)).toBeInTheDocument();
+  });
 });

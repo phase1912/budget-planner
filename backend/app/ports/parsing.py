@@ -16,7 +16,7 @@ from typing import Protocol
 
 from app.schemas.extraction import ExtractedReceipt
 
-CURRENT_PARSER_VERSION = "3"
+CURRENT_PARSER_VERSION = "4"
 
 
 class ReceiptParserPort(Protocol):
@@ -45,5 +45,27 @@ class ReceiptParserPort(Protocol):
             ``AgentError`` (or a subclass) when the LLM call fails entirely.
             A low-confidence or missing field is **not** an error — it is
             expressed in the schema's confidence fields and ``None`` values.
+        """
+        ...
+
+
+class ReceiptRecheckerPort(Protocol):
+    """Look at a receipt again when its lines do not add up to its total (BRD A9).
+
+    Separate from ``ReceiptParserPort`` (ISP): only the reconciliation step needs it,
+    and a parser stub need not pretend to.
+    """
+
+    async def recheck(
+        self,
+        images: list[bytes],
+        *,
+        mime_types: list[str],
+        reading: ExtractedReceipt,
+    ) -> ExtractedReceipt:
+        """Read the receipt again, told what the first reading got and how far off it is.
+
+        Returns a complete new reading; the caller decides whether to trust it.
+        Raises ``AgentError`` when the model call fails, like ``parse``.
         """
         ...
