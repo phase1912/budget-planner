@@ -7,7 +7,7 @@ from pydantic import AliasPath, BaseModel, ConfigDict, Field, computed_field, fi
 
 from app.core.config import get_settings
 from app.domain.categories import is_low_confidence
-from app.models.receipt import ReceiptStatus
+from app.models.receipt import ReceiptChannel, ReceiptStatus
 from app.models.upload_job import JobStatus
 
 
@@ -237,6 +237,8 @@ class ReceiptResponse(BaseModel):
     transaction_date: datetime | None
     total_amount: Decimal | None
     status: str
+    channel: ReceiptChannel
+    source_reference: str | None = None
     file_ids: list[str]
     created_at: datetime
     line_items: list[LineItemResponse] = []

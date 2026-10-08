@@ -1,6 +1,5 @@
 import asyncio
 import copy
-import io
 import logging
 import uuid
 from collections.abc import Sequence
@@ -9,12 +8,11 @@ from decimal import Decimal
 from typing import Any, cast
 
 import filetype  # type: ignore[import-untyped]
-import pillow_heif
-from PIL import Image
 from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm.attributes import flag_modified
 
+from app.adapters.photo_ingestion import PhotoIngestionAdapter
 from app.core.config import get_settings
 from app.db.session import get_session_factory
 from app.domain.categories import UNCATEGORIZED, confident_category, match_rule
@@ -33,8 +31,9 @@ from app.models.receipt import Receipt
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.ports.categorisation import ItemCategoriserPort
+from app.ports.ingestion import UploadedFile
 from app.ports.parsing import ReceiptParserPort
-from app.ports.storage import StoragePort
+from app.ports.storage import StoragePort, receipt_object_name
 from app.repository.category import CategoryRepository
 from app.repository.receipt import ReceiptRepository
 from app.schemas.extraction import ExtractedLineItem, ExtractedReceipt
@@ -47,16 +46,6 @@ from app.schemas.receipt import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-def receipt_object_name(user_id: uuid.UUID, file_id: str) -> str:
-    """Build the object-storage key for one receipt image.
-
-    The owning user's id is part of the key, which is what makes cross-user
-    access impossible to express: a caller can only ever name keys under its
-    own prefix (BRD N2).
-    """
-    return f"receipts/{user_id}/{file_id}"
 
 
 def _redated(stored: datetime | None, day: date | None) -> datetime | None:
@@ -114,38 +103,6 @@ class ReceiptService:
                 "The other files on this line are fine."
             )
 
-    async def store_receipt_image(self, user: User, content: bytes, content_type: str) -> str:
-        """Uploads a receipt image to object storage, tagged with owner ID."""
-        if not self.storage_port:
-            raise RuntimeError("Storage port not configured.")
-
-        # Convert HEIC to JPEG so browsers can render it natively via presigned URLs
-        if (
-            content_type.lower() in ("image/heic", "image/heif")
-            or content.startswith(b"\x00\x00\x00\x1cftypheic")
-            or content.startswith(b"\x00\x00\x00\x18ftypheic")
-        ):
-            pillow_heif.register_heif_opener()  # type: ignore[attr-defined]
-            try:
-                img: Image.Image = Image.open(io.BytesIO(content))
-                if img.mode not in ("RGB", "L"):
-                    img = img.convert("RGB")
-                out = io.BytesIO()
-                img.save(out, format="JPEG")
-                content = out.getvalue()
-                content_type = "image/jpeg"
-            except Exception as e:
-                import logging
-
-                logging.error(f"HEIC conversion failed in store_receipt_image: {e}")
-
-        file_id = str(uuid.uuid4())
-        object_name = receipt_object_name(user.id, file_id)
-        metadata = {"owner_id": str(user.id)}
-
-        await self.storage_port.upload_file(object_name, content, content_type, metadata)
-        return file_id
-
     async def get_presigned_url_for_image(self, user: User, file_id: str) -> str:
         """Generates a presigned URL for a receipt image, ensuring ownership."""
         if not self.storage_port:
@@ -201,27 +158,18 @@ class ReceiptService:
                 categories = await category_repository.list_available(user.id)
                 rules = await category_repository.list_rules(user.id)
 
+                if self.storage_port is None:
+                    raise RuntimeError("Storage port not configured.")
+                photos = PhotoIngestionAdapter(self.storage_port, self.parser_port)
+
                 async def process_single_receipt(
                     files_data: list[dict[str, str | bytes]],
                 ) -> dict[str, object]:
-                    file_ids: list[str] = []
-                    content_types: list[str] = []
-                    for file_data in files_data:
-                        content = file_data["content"]
-                        content_type = file_data["content_type"]
-                        file_id = await self.store_receipt_image(user, content, content_type)  # type: ignore[arg-type]
-                        file_ids.append(file_id)
-                        content_types.append(str(content_type))
-
-                    extraction: dict[str, object] = {"file_ids": file_ids}
-                    if self.parser_port and self.storage_port:
-                        ext = await self._run_extraction(user, file_ids, content_types)
-                        ext["file_ids"] = file_ids
-
-                        await self._categorise_extraction(ext, categories, rules)
-                        self._file_discount_lines(ext)
-                        extraction = ext
-
+                    uploads = cast(list[UploadedFile], files_data)
+                    extraction = (await photos.ingest(user, uploads)).extraction
+                    if self.parser_port:
+                        await self._categorise_extraction(extraction, categories, rules)
+                        self._file_discount_lines(extraction)
                     return extraction
 
                 semaphore = asyncio.Semaphore(self.max_concurrency)
@@ -360,104 +308,6 @@ class ReceiptService:
             elif uncategorized is not None:
                 raw["category_id"] = str(uncategorized.id)
                 raw["category_name"] = uncategorized.name
-
-    async def _run_extraction(
-        self, user: User, file_ids: list[str], content_types: list[str]
-    ) -> dict[str, object]:
-        """Download stored images and send them to the vision parser.
-
-        Returns the extraction result as a plain dict suitable for JSON
-        storage in ``UploadJob.result_data``.
-        """
-        assert self.storage_port is not None
-        assert self.parser_port is not None
-
-        merged_extraction: dict[str, Any] | None = None
-        all_line_items: list[dict[str, Any]] = []
-        parsed_headers: dict[str, dict[str, Any]] = {}
-
-        for file_id, ct in zip(file_ids, content_types, strict=True):
-            object_name = receipt_object_name(user.id, file_id)
-            image_bytes = await self.storage_port.download_file(object_name)
-
-            try:
-                result = await self.parser_port.parse([image_bytes], mime_types=[ct])
-                result_dict = result.model_dump()
-                parsed_headers[file_id] = result_dict
-
-                for item in result_dict.get("line_items", []):
-                    item["file_id"] = file_id
-                    all_line_items.append(item)
-
-                if merged_extraction is None:
-                    merged_extraction = result_dict
-                else:
-                    for field in [
-                        "merchant_name",
-                        "transaction_date",
-                        "transaction_time",
-                        "receipt_total",
-                    ]:
-                        conf_field = f"{field}_confidence"
-                        if result_dict.get(conf_field, 0) > merged_extraction.get(conf_field, 0):
-                            merged_extraction[field] = result_dict.get(field)
-                            merged_extraction[conf_field] = result_dict.get(conf_field)
-            except Exception:
-                logger.exception(
-                    "Vision extraction failed for user %s, file_id %s", user.id, file_id
-                )
-                return {"error": "extraction_failed"}
-
-        if merged_extraction is None:
-            return {"error": "extraction_failed"}
-
-        merged_extraction["line_items"] = all_line_items
-
-        try:
-            final_result = ExtractedReceipt(**merged_extraction)
-
-            from app.domain.position_matching import (
-                ComparisonNotPossible,
-                MatchResult,
-                are_photos_from_same_receipt,
-                match_positions,
-            )
-            from app.schemas.extraction import PositionMatch
-
-            matches = []
-            items = final_result.line_items
-            for i, a in enumerate(items):
-                for j in range(i + 1, len(items)):
-                    b = items[j]
-
-                    if a.file_id and b.file_id and a.file_id != b.file_id and a.name == b.name:
-                        header_a = parsed_headers.get(a.file_id, {})
-                        header_b = parsed_headers.get(b.file_id, {})
-
-                        if not are_photos_from_same_receipt(header_a, header_b):
-                            continue
-
-                        try:
-                            res = match_positions(a, b, same_receipt=True)
-                            matches.append(
-                                PositionMatch(item_a_index=i, item_b_index=j, result=res)
-                            )
-                        except ComparisonNotPossible as e:
-                            matches.append(
-                                PositionMatch(
-                                    item_a_index=i,
-                                    item_b_index=j,
-                                    result=MatchResult.NOT_POSSIBLE,
-                                    reason=str(e),
-                                )
-                            )
-
-            final_result.position_matches = matches
-
-            return final_result.model_dump()
-        except Exception:
-            logger.exception("Merged extraction validation failed for user %s", user.id)
-            return {"error": "extraction_failed"}
 
     async def delete_receipt(self, receipt_id: uuid.UUID) -> bool:
         """Permanently delete a receipt, its line items and its stored photos.

@@ -13,7 +13,7 @@ from pytest_bdd import given, parsers, scenarios, then, when
 from app.api.dependencies import get_current_user
 from app.core.config import get_settings
 from app.main import create_app
-from app.models.receipt import Receipt
+from app.models.receipt import Receipt, ReceiptChannel
 from app.models.user import User
 
 scenarios("receipt_viewing.feature")
@@ -75,6 +75,7 @@ def user_has_receipts(state: dict[str, Any], count: int) -> None:
             merchant_name=f"Merchant {i}",
             transaction_date=now - timedelta(days=i),
             total_amount=10.0 + i,
+            channel=ReceiptChannel.PHOTO,
             status="parsed",
             file_ids=["file-1"],
             line_items=[],
@@ -127,6 +128,7 @@ def other_user_receipt(state: dict[str, Any]) -> None:
         merchant_name="Secret Store",
         transaction_date=datetime.now(UTC),
         total_amount=100.0,
+        channel=ReceiptChannel.PHOTO,
         status="parsed",
         file_ids=["file-2"],
         line_items=[],

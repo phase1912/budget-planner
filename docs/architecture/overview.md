@@ -44,6 +44,14 @@ are wired in by FastAPI `Depends` (`get_item_categoriser`, `get_goal_mapper`,
 `get_advice_generator`), all built on one LLM client from `app/agent/factory.py`. This is what allows the BDD acceptance suite to run the real
 business logic against stub implementations with no network access.
 
+How a receipt arrives is a port of its own, `ReceiptIngestionPort` (`app/ports/ingestion.py`,
+F11.1): one adapter per intake channel turns what that channel receives into one extraction,
+and categorisation, review and budgeting run on it unchanged. Photo upload is the only
+channel so far (`app/adapters/photo_ingestion.py`); every receipt records its `channel` and
+an optional `source_reference`. The photo adapter writes each image under
+`receipts/{user_id}/` (`receipt_object_name`, in `app/ports/storage.py`), the prefix that
+makes another user's photo impossible to name (N2).
+
 ### Errors crossing the API boundary
 
 A service or repository that needs to fail the request raises an `app.errors.AppError`
