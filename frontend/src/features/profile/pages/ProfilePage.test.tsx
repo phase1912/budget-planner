@@ -16,10 +16,12 @@ describe("ProfilePage", () => {
       last_name: "User",
       currency: "USD",
       budget_limit: "1000",
+      forwarding_address: "receipts-test@example.com",
     };
 
     // Stub api client on profileStore
     vi.spyOn(rootStore.profileStore, "updateProfile").mockResolvedValue(true);
+    vi.spyOn(rootStore.profileStore, "loadProfile").mockResolvedValue();
   });
 
   it("renders with user preferences", () => {

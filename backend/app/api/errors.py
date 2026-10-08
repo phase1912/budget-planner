@@ -134,6 +134,14 @@ class UploadLimitExceededError(AppError):
     title = "Upload Limit Exceeded"
 
 
+class MessageTooLargeError(AppError):
+    """Raised for an inbound email larger than receipt intake accepts (F11.2)."""
+
+    status_code = status.HTTP_413_CONTENT_TOO_LARGE
+    code = "message_too_large"
+    title = "Message Too Large"
+
+
 class CategoriserUnavailableError(AppError):
     """The categoriser gave no answer at all, so nothing was changed (BRD C3).
 

@@ -16,6 +16,11 @@ class UserRepository:
         stmt = select(User).where(User.email == email)
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
+    async def get_by_forwarding_token(self, token: str) -> User | None:
+        """The user whose forwarding address carries `token` (F11.2)."""
+        stmt = select(User).where(User.forwarding_token == token)
+        return (await self.session.execute(stmt)).scalar_one_or_none()
+
     def add(self, user: User) -> None:
         self.session.add(user)
 

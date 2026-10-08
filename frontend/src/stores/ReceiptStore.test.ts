@@ -114,6 +114,20 @@ describe("ReceiptStore", () => {
     expect(store.receiptDetail).toBeNull();
   });
 
+  it("asks only for receipts from one source once a source is chosen", async () => {
+    vi.mocked(apiClient.GET).mockResolvedValue({
+      data: { items: [], total: 0, page: 1, size: 20, pages: 0 },
+      response: new Response(),
+    });
+
+    store.setFilters({ channel: "email" });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(apiClient.GET).toHaveBeenCalledWith("/receipts", {
+      params: { query: { page: 1, size: 20, channel: "email" } },
+    });
+  });
+
   it("updates filters and fetches receipts on page 1", async () => {
     vi.mocked(apiClient.GET).mockResolvedValue({
       data: { items: [], total: 0, page: 1, size: 20, pages: 0 },

@@ -33,3 +33,13 @@ async def update_me(
     """Partially update user profile (F1.4.1)."""
     updated_user = await service.update_profile(current_user, request)
     return updated_user  # type: ignore[return-value]
+
+
+@router.post("/me/forwarding-address/regenerate", response_model=UserResponse)
+async def regenerate_forwarding_address(
+    current_user: Annotated[User, Depends(get_current_user)],
+    service: Annotated[UserService, Depends(get_user_service)],
+) -> UserResponse:
+    """Replace the user's receipt forwarding address; the old one stops working (F11.2)."""
+    updated_user = await service.regenerate_forwarding_address(current_user)
+    return updated_user  # type: ignore[return-value]

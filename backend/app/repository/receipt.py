@@ -15,7 +15,7 @@ from app.domain.periods import DateRange
 from app.models.category import Category
 from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
-from app.models.receipt import Receipt, ReceiptStatus
+from app.models.receipt import Receipt, ReceiptChannel, ReceiptStatus
 from app.models.upload_job import UploadJob
 from app.repository.base import BaseRepository
 
@@ -436,6 +436,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         period: DateRange | None = None,
         search_query: str | None = None,
         order: ReceiptOrder = ReceiptOrder.NEWEST,
+        channel: ReceiptChannel | None = None,
     ) -> tuple[typing.Sequence[Receipt], int]:
         """Return a page of receipts and the total count, with optional filters.
 
@@ -449,6 +450,8 @@ class ReceiptRepository(BaseRepository[Receipt]):
 
         if status:
             base_stmt = base_stmt.where(self.model_class.status == status)
+        if channel:
+            base_stmt = base_stmt.where(self.model_class.channel == channel)
         if period:
             base_stmt = base_stmt.where(_within(period))
         if search_query:
@@ -493,6 +496,29 @@ class ReceiptRepository(BaseRepository[Receipt]):
                 return result.scalar() is not None
         except ProgrammingError:
             return False
+
+    async def has_source_reference(
+        self, user_id: uuid.UUID, channel: ReceiptChannel, source_reference: str
+    ) -> bool:
+        """Whether the user already has the receipt that arrived as `source_reference`.
+
+        A relay that delivers one message twice must not make two receipts (F11.2).
+        """
+        stmt = select(Receipt.id).where(
+            Receipt.user_id == user_id,
+            Receipt.channel == channel,
+            Receipt.source_reference == source_reference,
+        )
+        return (await self.session.execute(stmt.limit(1))).first() is not None
+
+    async def count_from_channel_since(
+        self, user_id: uuid.UUID, channel: ReceiptChannel, since: datetime
+    ) -> int:
+        """How many of the user's receipts arrived through `channel` since `since`."""
+        stmt = select(func.count()).where(
+            Receipt.user_id == user_id, Receipt.channel == channel, Receipt.created_at >= since
+        )
+        return int(await self.session.scalar(stmt) or 0)
 
     async def has_duplicate(
         self,
@@ -540,6 +566,8 @@ class ReceiptRepository(BaseRepository[Receipt]):
         file_ids: list[str],
         extraction: dict[str, typing.Any],
         parser_version: str,
+        channel: ReceiptChannel = ReceiptChannel.PHOTO,
+        source_reference: str | None = None,
     ) -> Receipt:
         """Instantiate and save a Receipt and its LineItems from a parser extraction."""
         import contextlib
@@ -585,6 +613,8 @@ class ReceiptRepository(BaseRepository[Receipt]):
             status=receipt_status,
             file_ids=file_ids,
             parser_version=parser_version,
+            channel=channel,
+            source_reference=source_reference,
         )
 
         items_data = extraction.get("line_items", [])

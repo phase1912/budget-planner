@@ -31,8 +31,8 @@ from app.models.receipt import Receipt
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.ports.categorisation import ItemCategoriserPort
-from app.ports.ingestion import UploadedFile
-from app.ports.parsing import ReceiptParserPort
+from app.ports.ingestion import ReceiptIngestionPort, UploadedFile
+from app.ports.parsing import CURRENT_PARSER_VERSION, ReceiptParserPort
 from app.ports.storage import StoragePort, receipt_object_name
 from app.repository.category import CategoryRepository
 from app.repository.receipt import ReceiptRepository
@@ -226,6 +226,50 @@ class ReceiptService:
                 session.add(job)
                 await session.commit()
                 raise e
+
+    async def store_from_channel[PayloadT](
+        self,
+        user: User,
+        ingestion: ReceiptIngestionPort[PayloadT],
+        payload: PayloadT,
+        source_reference: str | None,
+    ) -> None:
+        """Background task: read a receipt that arrived without the upload wizard, and keep it.
+
+        Used by intake channels with no one at a screen to confirm what was read
+        (F11.2): the receipt is categorised like an upload, with the user's
+        rules, and stored straight away; anything uncertain lands in review.
+        A `source_reference` already stored for this channel is skipped, so a
+        message delivered twice is one receipt.
+        """
+        session_factory = get_session_factory()
+        async with session_factory() as session:
+            receipts = ReceiptRepository(session).bypass_ownership()
+            if source_reference and await receipts.has_source_reference(
+                user.id, ingestion.channel, source_reference
+            ):
+                return
+            result = await ingestion.ingest(user, payload)
+            extraction = result.extraction
+            if "error" in extraction:
+                extraction["requires_manual_review"] = True
+            else:
+                category_repository = CategoryRepository(session)
+                await self._categorise_extraction(
+                    extraction,
+                    await category_repository.list_available(user.id),
+                    await category_repository.list_rules(user.id),
+                )
+                self._file_discount_lines(extraction)
+            receipts.create_from_extraction(
+                user_id=user.id,
+                file_ids=result.file_ids,
+                extraction=extraction,
+                parser_version=CURRENT_PARSER_VERSION,
+                channel=ingestion.channel,
+                source_reference=source_reference,
+            )
+            await session.commit()
 
     @staticmethod
     def _file_discount_lines(extraction: dict[str, object]) -> None:

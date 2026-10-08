@@ -3,6 +3,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import DomainError
+from app.domain.email_intake import new_forwarding_token
 from app.models.user import User
 from app.repository.receipt import ReceiptRepository
 from app.repository.user import UserRepository
@@ -31,6 +32,17 @@ class UserService:
                 raise DomainError("Cannot change currency once receipts exist.")
 
         self.repository.update(user, data)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
+    async def regenerate_forwarding_address(self, user: User) -> User:
+        """Give the user a new forwarding address; the old one stops working at once (F11.2).
+
+        For when the address has leaked and spam reaches it. Mail already accepted
+        is not affected.
+        """
+        user.forwarding_token = new_forwarding_token()
         await self.session.commit()
         await self.session.refresh(user)
         return user

@@ -12,6 +12,8 @@ changes in a way that could alter results (BRD A15).
 
 from __future__ import annotations
 
+import base64
+
 from app.agent.core import Agent
 from app.agent.types import ImageContent, Message
 from app.schemas.extraction import ExtractedReceipt
@@ -128,7 +130,7 @@ class VisionAgentAdapter:
             {"type": "text", "text": RECEIPT_EXTRACTION_PROMPT}
         ]
         for img_bytes, mime in zip(processed_images, processed_types, strict=True):
-            content_parts.append(ImageContent(data=img_bytes, media_type=mime).to_content_part())
+            content_parts.append(_content_part(img_bytes, mime))
 
         messages = [
             Message(role="user", content=content_parts),
@@ -137,3 +139,18 @@ class VisionAgentAdapter:
         return await self._agent.run_structured(
             messages, schema=ExtractedReceipt, max_tokens=EXTRACTION_MAX_TOKENS
         )
+
+
+def _content_part(data: bytes, mime: str) -> dict[str, object]:
+    """One input of the extraction request: an image, a PDF, or a receipt's text.
+
+    Text and PDF come from emailed receipts (F11.2). A PDF goes in LiteLLM's
+    provider-neutral `file` part, which models that read documents accept and
+    others refuse with an error the caller already treats as a failed read.
+    """
+    if mime == "text/plain":
+        return {"type": "text", "text": data.decode("utf-8", errors="replace")}
+    if mime == "application/pdf":
+        encoded = base64.b64encode(data).decode("ascii")
+        return {"type": "file", "file": {"file_data": f"data:{mime};base64,{encoded}"}}
+    return ImageContent(data=data, media_type=mime).to_content_part()
