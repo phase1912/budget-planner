@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-17 epics · 111 features · 198 tasks written so far.
+17 epics · 111 features · 208 tasks written so far.
 
 14 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -20,7 +20,7 @@
 | E8 | Goals & AI Optimization Advice | BR-6 | 9 | yes | 1 | Diploma |
 | E9 | Web Client Foundation | — | 6 | yes | 1 | Diploma |
 | E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 7 | no | 1 | Out of scope |
-| E11 | Alternative Receipt Intake | — | 6 | no | 2 | Diploma |
+| E11 | Alternative Receipt Intake | — | 6 | yes | 2 | Diploma |
 | E12 | Household & Shared Budgets | — | 7 | no | 2 | Diploma |
 | E13 | Aggregated Purchase Analytics | — | 7 | no | 2 | Out of scope |
 | E14 | B2B Export & Accounting Integrations | — | 6 | no | 2 | Out of scope |
@@ -872,11 +872,18 @@ BRD section 10 assumes every receipt arrives as a photograph. That assumption is
 
 One ingestion port with an adapter per channel, so adding a channel does not touch parsing, categorisation or budget calculation. Every receipt records the channel it arrived through and the source reference, because a support question about a wrong figure starts with where the data came from.
 
+- **F11.1.1** Extend Receipt model with channel metadata — Add `channel` (enum: photo, email, qr, api) and `source_reference` (string) to the Receipt model and schema. Create an Alembic migration.
+- **F11.1.2** Define Receipt Ingestion Port — Create a `ReceiptIngestionPort` protocol that all channels must implement. It should standardize how raw receipt data is passed to the parsing and categorization pipeline.
+- **F11.1.3** Refactor photo upload to use Ingestion Port — Extract the existing photo upload logic into an adapter that implements the new `ReceiptIngestionPort`. Ensure existing tests pass.
+
 ### F11.2 — Email receipt ingestion
 
 *Requirements: —*
 
 A per-user forwarding address that accepts electronic receipts, extracting items from HTML bodies and PDF attachments. Sender verification matters here: an intake address is a public endpoint that writes to a user's financial record.
+
+- **F11.2.1** Configure email ingestion webhook — Set up a webhook endpoint to receive incoming emails from an email provider, and verify the sender against the user's registered addresses.
+- **F11.2.2** Implement email parsing and adapter — Implement logic to extract attachments or HTML content and build an adapter implementing `ReceiptIngestionPort` for the email channel.
 
 ### F11.3 — Fiscal QR code intake
 
@@ -884,11 +891,15 @@ A per-user forwarding address that accepts electronic receipts, extracting items
 
 Scanning the QR code printed on a fiscal receipt retrieves the itemised record from the fiscal service directly, producing exact item data with no extraction error and no confidence threshold to tune.
 
+- **F11.3.1** Implement fiscal service client and adapter — Create a client to fetch itemized data from the fiscal service using QR code content, and adapt it using `ReceiptIngestionPort`.
+
 ### F11.4 — National e-receipt service integration
 
 *Requirements: —*
 
 A feasibility spike followed by integration with the target market's e-receipt system (e-Paragon in Poland). The spike answers a question that affects the whole product: if receipts in this market become structured by law, extraction from photographs becomes the fallback path rather than the primary one. Produces an ADR before any code.
+
+- **F11.4.1** Spike e-receipt system integration — Research integration feasibility with national e-receipt services. Produce an ADR with findings and architectural decisions.
 
 ### F11.5 — Cross-channel duplicate detection
 
@@ -896,11 +907,16 @@ A feasibility spike followed by integration with the target market's e-receipt s
 
 One purchase that arrives twice through two channels is one receipt. BRD A14 compares merchant, date and total, which cannot tell a second channel's copy apart from a second visit to the same shop on the same day.
 
+- **F11.5.1** Enhance duplicate detection with channel data — Update the duplicate detection algorithm to incorporate `channel` and `source_reference` to distinguish between cross-channel duplicates and same-day repeat purchases.
+
 ### F11.6 — Intake settings interface
 
 *Requirements: —*
 
 The user can see their forwarding address, which channels are connected, and what arrived through each of them.
+
+- **F11.6.1** Build intake settings endpoint — Provide an endpoint returning the user's active intake channels and forwarding email address.
+- **F11.6.2** Create intake settings UI — Build a settings page that displays active channels and provides instructions for connecting them.
 
 ---
 

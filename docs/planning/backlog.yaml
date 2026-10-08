@@ -2204,7 +2204,7 @@ epics:
     br: []
     phase: 2
     scope: diploma
-    groomed: false
+    groomed: true
     summary: >
       BRD section 10 assumes every receipt arrives as a photograph. That assumption is the
       product's largest retention risk: photographing receipts is effort the user has to repeat
@@ -2223,6 +2223,25 @@ epics:
           parsing, categorisation or budget calculation. Every receipt records the channel it
           arrived through and the source reference, because a support question about a wrong
           figure starts with where the data came from.
+        tasks:
+          - key: F11.1.1
+            title: Extend Receipt model with channel metadata
+            labels: [backend]
+            detail: >
+              Add `channel` (enum: photo, email, qr, api) and `source_reference` (string) to the 
+              Receipt model and schema. Create an Alembic migration.
+          - key: F11.1.2
+            title: Define Receipt Ingestion Port
+            labels: [backend]
+            detail: >
+              Create a `ReceiptIngestionPort` protocol that all channels must implement. It should
+              standardize how raw receipt data is passed to the parsing and categorization pipeline.
+          - key: F11.1.3
+            title: Refactor photo upload to use Ingestion Port
+            labels: [backend]
+            detail: >
+              Extract the existing photo upload logic into an adapter that implements the new 
+              `ReceiptIngestionPort`. Ensure existing tests pass.
       - key: F11.2
         title: Email receipt ingestion
         labels: [backend, infra]
@@ -2230,6 +2249,19 @@ epics:
           A per-user forwarding address that accepts electronic receipts, extracting items from
           HTML bodies and PDF attachments. Sender verification matters here: an intake address is
           a public endpoint that writes to a user's financial record.
+        tasks:
+          - key: F11.2.1
+            title: Configure email ingestion webhook
+            labels: [backend, infra]
+            detail: >
+              Set up a webhook endpoint to receive incoming emails from an email provider, and
+              verify the sender against the user's registered addresses.
+          - key: F11.2.2
+            title: Implement email parsing and adapter
+            labels: [backend]
+            detail: >
+              Implement logic to extract attachments or HTML content and build an adapter 
+              implementing `ReceiptIngestionPort` for the email channel.
       - key: F11.3
         title: Fiscal QR code intake
         labels: [backend]
@@ -2237,6 +2269,13 @@ epics:
           Scanning the QR code printed on a fiscal receipt retrieves the itemised record from the
           fiscal service directly, producing exact item data with no extraction error and no
           confidence threshold to tune.
+        tasks:
+          - key: F11.3.1
+            title: Implement fiscal service client and adapter
+            labels: [backend]
+            detail: >
+              Create a client to fetch itemized data from the fiscal service using QR code content,
+              and adapt it using `ReceiptIngestionPort`.
       - key: F11.4
         title: National e-receipt service integration
         labels: [backend]
@@ -2245,6 +2284,13 @@ epics:
           (e-Paragon in Poland). The spike answers a question that affects the whole product: if
           receipts in this market become structured by law, extraction from photographs becomes
           the fallback path rather than the primary one. Produces an ADR before any code.
+        tasks:
+          - key: F11.4.1
+            title: Spike e-receipt system integration
+            labels: [backend]
+            detail: >
+              Research integration feasibility with national e-receipt services. Produce an ADR
+              with findings and architectural decisions.
       - key: F11.5
         title: Cross-channel duplicate detection
         labels: [backend]
@@ -2253,12 +2299,30 @@ epics:
           One purchase that arrives twice through two channels is one receipt. BRD A14 compares
           merchant, date and total, which cannot tell a second channel's copy apart from a second
           visit to the same shop on the same day.
+        tasks:
+          - key: F11.5.1
+            title: Enhance duplicate detection with channel data
+            labels: [backend]
+            detail: >
+              Update the duplicate detection algorithm to incorporate `channel` and `source_reference`
+              to distinguish between cross-channel duplicates and same-day repeat purchases.
       - key: F11.6
         title: Intake settings interface
         labels: [frontend]
         intent: >
           The user can see their forwarding address, which channels are connected, and what
           arrived through each of them.
+        tasks:
+          - key: F11.6.1
+            title: Build intake settings endpoint
+            labels: [backend]
+            detail: >
+              Provide an endpoint returning the user's active intake channels and forwarding email address.
+          - key: F11.6.2
+            title: Create intake settings UI
+            labels: [frontend]
+            detail: >
+              Build a settings page that displays active channels and provides instructions for connecting them.
 
   - key: E12
     title: Household & Shared Budgets
