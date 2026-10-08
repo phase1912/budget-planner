@@ -343,14 +343,70 @@ epics:
               them as required reading before structural or business-rule changes.
 
       - key: F0.9
-        title: Cloud deployment infrastructure (AWS)
+        title: Cloud deployment on Google Cloud, deployed on every merge
         labels: [infra]
+        depends_on: [F0.5, F0.7]
         intent: >
-          The application can be deployed to AWS from infrastructure-as-code rather than
-          by hand. Targets AWS per ADR-0002. Not yet groomed into tasks: compute target
-          (ECS/Fargate/EC2/App Runner), state backend, and which environments exist
-          beyond local are real design decisions, made when this feature is picked up
-          rather than guessed at while establishing repository layout.
+          The application runs in the cloud from infrastructure-as-code, not by hand, and every
+          merge to main deploys itself. Targets Google Cloud (ADR-0014, which replaces the AWS
+          decision in ADR-0002) at the smallest sizes that run it reliably: one production
+          environment, a scale-to-zero backend, Postgres on a free-tier VM, and free static
+          hosting, about $1-4 a month. Staging is deliberately absent while the author is the
+          only user.
+        demo: >
+          No screen of its own: merge a visible change to main, watch the Deploy workflow go
+          green, and open the production URL on a phone to see it live — sign in, upload a
+          receipt photo and find it read, and forward an e-receipt to the appspotmail address
+          shown in Profile.
+        tasks:
+          - key: F0.9.1
+            title: Decide the Google Cloud deployment
+            labels: [infra]
+            detail: >
+              ADR-0014: Cloud Run for the backend, Postgres on an e2-micro VM, Cloud Storage
+              as the backend's service account (no keys), Firebase Hosting, Vertex AI Gemini, App Engine for
+              inbound mail, Secret Manager, Workload Identity Federation for CI. Records costs,
+              limits and risks; marks ADR-0002 superseded; updates environments.md, secrets.md
+              and configuration.md.
+          - key: F0.9.2
+            title: Production backend image and cloud settings
+            labels: [infra, backend]
+            detail: >
+              A production Dockerfile (no reload, non-root, listens on $PORT); the Anthropic key
+              stops being required now that every model goes through the llm_* settings
+              (ADR-0006); Vertex AI project and location become settings passed to the agent; a
+              Cloud Storage adapter behind StoragePort reaches the photo bucket keylessly, since
+              the organisation forbids service account keys.
+          - key: F0.9.3
+            title: Terraform for the production environment
+            labels: [infra]
+            detail: >
+              One root module under infra/terraform with state in GCS: APIs, network, the
+              database VM with its data disk and daily snapshots, the photo bucket, Artifact Registry, secrets, the Cloud Run service and migrations job, App
+              Engine, service accounts with least privilege, GitHub Workload Identity
+              Federation and a billing budget with alerts.
+          - key: F0.9.4
+            title: Inbound mail relay on App Engine
+            labels: [infra, backend]
+            detail: >
+              The production counterpart of infra/dev/mail-relay: receives
+              *@<project>.appspotmail.com and posts each raw message to the intake webhook with
+              the shared secret (ADR-0013).
+          - key: F0.9.5
+            title: Deploy on every merge to main
+            labels: [infra]
+            detail: >
+              A Deploy workflow that runs after CI passes on main: build and push the backend
+              image, run migrations as a Cloud Run job, deploy the service, build and publish
+              the frontend to Firebase Hosting, redeploy the mail relay when it changed, and
+              smoke-test the health endpoint. Terraform gets fmt and validate checks in CI.
+          - key: F0.9.6
+            title: First deployment and its runbook
+            labels: [infra]
+            detail: >
+              Apply the infrastructure, run the first deploy, check the demo end to end
+              (including presigned photo URLs signed through IAM) and write the runbook:
+              bootstrap, apply, restoring the database from a snapshot, and stopping costs.
 
       - key: F0.10
         title: Identity, access and NFR acceptance criteria in the BRD

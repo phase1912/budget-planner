@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-17 epics · 110 features · 213 tasks written so far.
+17 epics · 110 features · 219 tasks written so far.
 
 14 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -119,11 +119,20 @@ A written reference for the system's shape and its business rules, kept current 
 
 - **F0.8.1** Write docs/architecture/overview.md and domain-model.md — overview.md: component boundaries, layering (router/service/repository/port), the ingestion pipeline's three requirement-driven properties (async processing, manual_review as a state, same-receipt-only matching), security posture, and explicit non-goals from BRD section 4.2. domain-model.md: entities, the receipt lifecycle, and a numbered list of invariants traced to BRD requirement IDs, plus a table of the BRD's open questions and which epics they block. Both documents carry an explicit instruction to be updated in the same commit as any change that invalidates them, and CLAUDE.md and the task skill reference them as required reading before structural or business-rule changes.
 
-### F0.9 — Cloud deployment infrastructure (AWS)
+### F0.9 — Cloud deployment on Google Cloud, deployed on every merge
 
-*Requirements: —*
+*Requirements: —* · *Blocked by: F0.5, F0.7*
 
-The application can be deployed to AWS from infrastructure-as-code rather than by hand. Targets AWS per ADR-0002. Not yet groomed into tasks: compute target (ECS/Fargate/EC2/App Runner), state backend, and which environments exist beyond local are real design decisions, made when this feature is picked up rather than guessed at while establishing repository layout.
+The application runs in the cloud from infrastructure-as-code, not by hand, and every merge to main deploys itself. Targets Google Cloud (ADR-0014, which replaces the AWS decision in ADR-0002) at the smallest sizes that run it reliably: one production environment, a scale-to-zero backend, Postgres on a free-tier VM, and free static hosting, about $1-4 a month. Staging is deliberately absent while the author is the only user.
+
+**Demonstrated by:** No screen of its own: merge a visible change to main, watch the Deploy workflow go green, and open the production URL on a phone to see it live — sign in, upload a receipt photo and find it read, and forward an e-receipt to the appspotmail address shown in Profile.
+
+- **F0.9.1** Decide the Google Cloud deployment — ADR-0014: Cloud Run for the backend, Postgres on an e2-micro VM, Cloud Storage as the backend's service account (no keys), Firebase Hosting, Vertex AI Gemini, App Engine for inbound mail, Secret Manager, Workload Identity Federation for CI. Records costs, limits and risks; marks ADR-0002 superseded; updates environments.md, secrets.md and configuration.md.
+- **F0.9.2** Production backend image and cloud settings — A production Dockerfile (no reload, non-root, listens on $PORT); the Anthropic key stops being required now that every model goes through the llm_* settings (ADR-0006); Vertex AI project and location become settings passed to the agent; a Cloud Storage adapter behind StoragePort reaches the photo bucket keylessly, since the organisation forbids service account keys.
+- **F0.9.3** Terraform for the production environment — One root module under infra/terraform with state in GCS: APIs, network, the database VM with its data disk and daily snapshots, the photo bucket, Artifact Registry, secrets, the Cloud Run service and migrations job, App Engine, service accounts with least privilege, GitHub Workload Identity Federation and a billing budget with alerts.
+- **F0.9.4** Inbound mail relay on App Engine — The production counterpart of infra/dev/mail-relay: receives *@<project>.appspotmail.com and posts each raw message to the intake webhook with the shared secret (ADR-0013).
+- **F0.9.5** Deploy on every merge to main — A Deploy workflow that runs after CI passes on main: build and push the backend image, run migrations as a Cloud Run job, deploy the service, build and publish the frontend to Firebase Hosting, redeploy the mail relay when it changed, and smoke-test the health endpoint. Terraform gets fmt and validate checks in CI.
+- **F0.9.6** First deployment and its runbook — Apply the infrastructure, run the first deploy, check the demo end to end (including presigned photo URLs signed through IAM) and write the runbook: bootstrap, apply, restoring the database from a snapshot, and stopping costs.
 
 ### F0.10 — Identity, access and NFR acceptance criteria in the BRD
 

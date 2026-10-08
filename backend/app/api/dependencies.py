@@ -8,6 +8,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.adapters.gcs_storage import GcsStorageService
 from app.api.errors import AuthenticationError
 from app.core.config import get_settings
 from app.db.session import get_db_session
@@ -60,7 +61,12 @@ async def get_current_user(
 
 
 async def get_storage_service() -> AsyncGenerator[StoragePort, None]:
-    """Dependency providing a StoragePort implementation."""
+    """The configured StoragePort: S3-compatible, or Cloud Storage (ADR-0014)."""
     settings = get_settings()
-    async with S3StorageService(settings) as service:
+    service: S3StorageService | GcsStorageService = (
+        GcsStorageService(settings)
+        if settings.storage_backend == "gcs"
+        else S3StorageService(settings)
+    )
+    async with service:
         yield service

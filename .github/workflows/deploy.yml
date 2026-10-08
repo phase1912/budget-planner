@@ -1,0 +1,154 @@
+name: Deploy
+
+# Deploys production on every merge to main (F0.9.5, ADR-0014). main only receives code
+# whose PR passed the required CI checks, so this does not re-run them; it ships only
+# the parts that changed. A manual run (workflow_dispatch) ships everything — used for
+# the first deploy and to redeploy on demand.
+#
+# Signs in to Google Cloud through Workload Identity Federation: there is no key in
+# GitHub. The repository variables it reads are printed by `terraform output
+# github_variables` (infra/terraform/README.md).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  REGION: ${{ vars.GCP_REGION }}
+  IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/backend/backend:${{ github.sha }}
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.backend == 'true' }}
+      frontend: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.frontend == 'true' }}
+      mail_relay: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.mail_relay == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - "backend/**"
+            frontend:
+              - "frontend/**"
+            mail_relay:
+              - "infra/mail-relay-appengine/**"
+
+  backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build and push the image
+        run: |
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          docker build -f backend/Dockerfile.prod -t "$IMAGE" backend
+          docker push "$IMAGE"
+
+      # Migrations run before the new revision serves, from the same image, so code
+      # never meets a schema older than it expects.
+      - name: Migrate the database
+        run: |
+          gcloud run jobs update migrate --region "$REGION" --image "$IMAGE" --quiet
+          gcloud run jobs execute migrate --region "$REGION" --wait --quiet
+
+      - name: Deploy the service
+        run: gcloud run deploy backend --region "$REGION" --image "$IMAGE" --quiet
+
+  frontend:
+    needs: [changes, backend]
+    # Ships after the backend when both changed, so the new UI never calls an old API.
+    if: ${{ !failure() && !cancelled() && needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ vars.BACKEND_URL }}
+      - name: Publish to Firebase Hosting
+        run: |
+          jq --arg site "$SITE" '.hosting.site = $site' firebase.json > firebase.deploy.json
+          mv firebase.deploy.json firebase.json
+          npx --yes firebase-tools@14 deploy --only hosting --project "$PROJECT_ID" --non-interactive
+        env:
+          SITE: ${{ vars.FIREBASE_SITE_ID }}
+
+  mail-relay:
+    needs: [changes, backend]
+    if: ${{ !failure() && !cancelled() && needs.changes.outputs.mail_relay == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/mail-relay-appengine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+
+      # env.yaml carries the webhook URL and the shared secret; it exists only on the
+      # runner for the length of this job and is never committed.
+      - name: Write the relay's settings
+        run: |
+          SECRET=$(gcloud secrets versions access latest --secret=inbound-email-secret)
+          echo "::add-mask::$SECRET"
+          {
+            echo "env_variables:"
+            echo "  INBOUND_WEBHOOK_URL: \"$BACKEND_URL/api/v1/webhooks/inbound-email\""
+            echo "  INBOUND_EMAIL_SECRET: \"$SECRET\""
+          } > env.yaml
+        env:
+          BACKEND_URL: ${{ vars.BACKEND_URL }}
+
+      - run: gcloud app deploy app.yaml --project "$PROJECT_ID" --quiet
+
+  smoke-test:
+    needs: [backend, frontend, mail-relay]
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      # /health also checks the database, so a green run means the API can reach Postgres.
+      - name: The API answers and reaches the database
+        run: |
+          for _ in 1 2 3 4 5 6; do
+            if curl -fsS --max-time 30 "$BACKEND_URL/health"; then exit 0; fi
+            sleep 10
+          done
+          exit 1
+        env:
+          BACKEND_URL: ${{ vars.BACKEND_URL }}

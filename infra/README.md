@@ -7,8 +7,5 @@ lives at the repository root so `docker compose up` works from a fresh clone; se
 | Directory | Contents |
 |---|---|
 | [`dev/mail-relay/`](dev/mail-relay/) | Local stand-in for the inbound mail receiver: SMTP on `localhost:2525`, started by `docker compose up` (F11.2, [ADR-0013](../docs/adr/0013-inbound-email-through-app-engine.md)) |
-| [`terraform/`](terraform/) | Cloud deployment IaC, targeting AWS ([ADR-0002](../docs/adr/0002-cloud-provider-aws.md)) |
-
-Not yet populated — tracked by [F0.4](../docs/planning/backlog.yaml) (local development
-environment), [F0.7](../docs/planning/backlog.yaml) (configuration, secrets and
-environments), and [F0.9](../docs/planning/backlog.yaml) (cloud deployment infrastructure).
+| [`terraform/`](terraform/) | Production on Google Cloud ([ADR-0014](../docs/adr/0014-google-cloud-deployment.md)): how to bootstrap, apply, restore and stop costs is in its README |
+| [`mail-relay-appengine/`](mail-relay-appengine/) | Inbound mail relay deployed to App Engine by the Deploy workflow ([ADR-0013](../docs/adr/0013-inbound-email-through-app-engine.md)) |

@@ -1,6 +1,6 @@
 # ADR-0002 — Target cloud provider: AWS
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0014](0014-google-cloud-deployment.md) (2026-10-08)
 - **Date:** 2026-08-18
 
 ## Context

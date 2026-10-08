@@ -55,6 +55,8 @@ class Agent:
             ``response_format`` and relies on the prompt plus its own parsing.
             Set this for providers whose constrained decoding is broken (see
             ``Settings.llm_disable_json_schema``).
+        vertex_project, vertex_location: Where ``vertex_ai/`` models run; the
+            credentials come from the runtime's service account (ADR-0014).
     """
 
     def __init__(
@@ -65,8 +67,12 @@ class Agent:
         default_temperature: float = 0.0,
         disable_reasoning: bool = False,
         disable_json_schema: bool = False,
+        vertex_project: str | None = None,
+        vertex_location: str | None = None,
     ) -> None:
         self.model = model
+        self.vertex_project = vertex_project
+        self.vertex_location = vertex_location
         self.api_key = api_key
         self.api_base = api_base
         self.default_temperature = default_temperature
@@ -85,6 +91,10 @@ class Agent:
             kwargs["api_key"] = self.api_key
         if self.api_base is not None:
             kwargs["api_base"] = self.api_base
+        if self.vertex_project is not None:
+            kwargs["vertex_project"] = self.vertex_project
+        if self.vertex_location is not None:
+            kwargs["vertex_location"] = self.vertex_location
         if self.disable_reasoning:
             kwargs["extra_body"] = {"reasoning_effort": "none"}
         return kwargs

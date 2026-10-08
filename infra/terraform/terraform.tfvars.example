@@ -1,0 +1,5 @@
+# Copy to terraform.tfvars (gitignored) and fill in.
+project_id      = "project-09a590a3-af55-42f3-998"
+billing_account = "XXXXXX-XXXXXX-XXXXXX"
+# hosting_site_id = "budget-agent-phase1912"
+# budget_amount   = 20
