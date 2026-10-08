@@ -46,11 +46,17 @@ business logic against stub implementations with no network access.
 
 How a receipt arrives is a port of its own, `ReceiptIngestionPort` (`app/ports/ingestion.py`,
 F11.1): one adapter per intake channel turns what that channel receives into one extraction,
-and categorisation, review and budgeting run on it unchanged. Photo upload is the only
-channel so far (`app/adapters/photo_ingestion.py`); every receipt records its `channel` and
+and categorisation, review and budgeting run on it unchanged. Photo upload and email are
+the channels so far (`app/adapters/photo_ingestion.py`, `app/adapters/email_ingestion.py`); every receipt records its `channel` and
 an optional `source_reference`. The photo adapter writes each image under
 `receipts/{user_id}/` (`receipt_object_name`, in `app/ports/storage.py`), the prefix that
 makes another user's photo impossible to name (N2).
+
+Email arrives from outside (F11.2, ADR-0013): a relay — App Engine's inbound mail in
+production, the `mail-relay` compose service locally — POSTs each raw message to
+`/api/v1/webhooks/inbound-email` with a shared secret. `InboundEmailService` decides
+whether it may become a receipt; `ReceiptService.store_from_channel` reads and stores it in
+the background, with the same categorisation as an upload.
 
 ### Errors crossing the API boundary
 

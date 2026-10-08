@@ -154,6 +154,30 @@ class Settings(BaseSettings):
             "cap (BRD F7); 0 turns it off."
         ),
     )
+    inbound_email_domain: str = Field(
+        default="inbound.localhost",
+        description=(
+            "Domain of every user's receipt forwarding address (F11.2): in production the "
+            "App Engine inbound mail domain, `<project>.appspotmail.com` (ADR-0013)."
+        ),
+    )
+    inbound_email_secret: SecretStr | None = Field(
+        default=None,
+        description=(
+            "Shared secret the inbound mail relay sends with every message (F11.2). Unset, "
+            "the intake endpoint answers 404: no deployment accepts mail by accident."
+        ),
+    )
+    inbound_email_max_bytes: int = Field(
+        default=10 * 1024 * 1024,
+        ge=1,
+        description="Largest inbound message accepted, body and attachments together (F11.2).",
+    )
+    inbound_email_daily_limit: int = Field(
+        default=20,
+        ge=1,
+        description="Emailed receipts accepted per user per UTC day (F11.2).",
+    )
     ocr_confidence_threshold: float = Field(
         default=0.80,
         ge=0.0,

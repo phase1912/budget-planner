@@ -5,6 +5,7 @@ from decimal import Decimal
 from sqlalchemy import Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.domain.email_intake import new_forwarding_token
 from app.models.base import Model
 
 
@@ -28,3 +29,8 @@ class User(Model):
     budget_limit: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
 
     role: Mapped[str] = mapped_column(String, default="user", server_default="user", nullable=False)
+    # The secret part of the user's receipt forwarding address (F11.2); the domain
+    # is configuration, so moving where mail lands needs no migration.
+    forwarding_token: Mapped[str] = mapped_column(
+        String(32), unique=True, default=new_forwarding_token, nullable=False
+    )

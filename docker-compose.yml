@@ -77,6 +77,8 @@ services:
       S3_BUCKET_NAME: receipts
       AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-budget_planner}
       AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-budget_planner_minio}
+      INBOUND_EMAIL_DOMAIN: inbound.localhost
+      INBOUND_EMAIL_SECRET: ${INBOUND_EMAIL_SECRET:-local-relay-secret}
     ports:
       - "8000:8000"
     volumes:
@@ -85,6 +87,21 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  # Receives "forwarded" receipts over SMTP on localhost:2525 and hands them to the
+  # backend's intake webhook — the local stand-in for the App Engine mail receiver
+  # (F11.2, ADR-0013). Send to the forwarding address shown in Profile.
+  mail-relay:
+    image: python:3.12-slim
+    command: sh -c "pip install --quiet --root-user-action=ignore aiosmtpd==1.4.6 && python /relay/relay.py"
+    environment:
+      INBOUND_EMAIL_SECRET: ${INBOUND_EMAIL_SECRET:-local-relay-secret}
+    ports:
+      - "2525:2525"
+    volumes:
+      - ./infra/dev/mail-relay:/relay:ro
+    depends_on:
+      - backend
 
   frontend:
     build:

@@ -10,7 +10,7 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 
 | Entity | Meaning | Owned by |
 |---|---|---|
-| **User** | An account. Holds identity (`first_name`, `last_name`, `email`), currency, optional monthly budget limit, and a role (`user` or `admin`) — N2's per-user isolation applies to an admin exactly as to any other account (G8). | — |
+| **User** | An account. Holds identity (`first_name`, `last_name`, `email`), currency, optional monthly budget limit, the token of their receipt forwarding address (F11.2), and a role (`user` or `admin`) — N2's per-user isolation applies to an admin exactly as to any other account (G8). | — |
 | **User Attributes** | | |
 | `id` | UUID | Primary key (generated via `gen_random_uuid()`) |
 | `email` | String | Unique, used for authentication |
@@ -23,7 +23,7 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | `created_at` | Timestamp | Standard audit field |
 | `updated_at` | Timestamp | Standard audit field |
 | **IdentityLink** | A linked Google or Facebook identity, verified-email-gated (G9-G11). | User |
-| **Receipt** | One purchase transaction, from one or more photos. | User |
+| **Receipt** | One purchase transaction, from one or more photos or a forwarded e-receipt. Records the channel it arrived through (`photo`, `email`) and, for email, the message's Message-ID as its source reference (F11.1, F11.2). | User |
 | **LineItem** | One position on a receipt: product, quantity, unit price, total. | Receipt |
 | **Category** | A spending classification. Either a system default or user-defined. | User (nullable for defaults) |
 | **PositionMatch** | A decision that two line items are, or are not, the same physical purchase. | Receipt |
@@ -241,6 +241,12 @@ Rules that must hold at all times. Each is a candidate for a test.
     at risk advice to cut back if it has none from this month, so the warning arrives
     with a way to correct course; advice already given this month, asked for or not, is
     left alone. The user may set a goal's warning aside, which holds until the month ends.
+18c. A receipt forwarded by email (F11.2) is read only when it was sent to a live
+    forwarding address, from that user's own account email, within 20 emailed receipts
+    a UTC day; anything else is dropped and never stored. It skips the upload wizard,
+    is categorised with the user's rules like an upload, and lands in review when the
+    read is uncertain or fails. The same Message-ID is one receipt however often it is
+    delivered. Replacing the address invalidates the old one at once (ADR-0013).
 18b. The user may mark a recommendation won't-follow or not helpful, and undo the mark
     (F8.9). A marked recommendation survives later refreshes of its goal's advice and
     stays visible, struck through. Every later ask is told what was turned down and not

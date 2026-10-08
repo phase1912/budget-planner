@@ -18,7 +18,7 @@ from app.db.session import get_db_session
 from app.domain.budget import ReceiptOrder
 from app.domain.categories import ItemView
 from app.domain.periods import DateRange
-from app.models.receipt import ReceiptStatus
+from app.models.receipt import ReceiptChannel, ReceiptStatus
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.ports.categorisation import ItemCategoriserPort
@@ -367,11 +367,13 @@ async def list_receipts(
     size: int = 20,
     status: ReceiptStatus | None = None,
     q: str | None = None,
+    channel: ReceiptChannel | None = None,
     order: ReceiptOrder = ReceiptOrder.NEWEST,
 ) -> PaginatedReceiptsResponse:
     """List an account's stored receipts with pagination, newest first unless asked (F3.8).
 
-    `order=largest` is a finished month's "Biggest receipts" on the dashboard (F6.5).
+    `order=largest` is a finished month's "Biggest receipts" on the dashboard (F6.5);
+    `channel` keeps only receipts that arrived one way, by photo or by email (F11.2).
     `start` and `end` narrow it to a run of days, both included (app/api/periods.py).
     """
     if page < 1:
@@ -387,6 +389,7 @@ async def list_receipts(
         period=period,
         search_query=q,
         order=order,
+        channel=channel,
     )
     pages = (total + size - 1) // size if size else 0
 

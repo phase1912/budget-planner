@@ -5,6 +5,7 @@ import { CurrencySelect } from "@/shared/components/CurrencySelect/CurrencySelec
 import { Card, CardHeader, CardBody } from "@/shared/components/Card/Card";
 import { Input } from "@/shared/components/Input/Input";
 import { Button } from "@/shared/components/Button/Button";
+import { ForwardingAddressCard } from "../components/ForwardingAddressCard";
 
 export const ProfilePage = observer(function ProfilePage() {
   const { authStore, profileStore } = useStores();
@@ -16,6 +17,10 @@ export const ProfilePage = observer(function ProfilePage() {
   const originalBudgetLimit = authStore.user?.budget_limit?.toString() ?? "";
 
   const isDirty = currency !== originalCurrency || budgetLimit !== originalBudgetLimit;
+
+  useEffect(() => {
+    void profileStore.loadProfile();
+  }, [profileStore]);
 
   useEffect(() => {
     if (authStore.user) {
@@ -133,6 +138,8 @@ export const ProfilePage = observer(function ProfilePage() {
             </div>
           </CardBody>
         </Card>
+
+        <ForwardingAddressCard />
 
         <Card variant="surface" flush>
           <CardHeader>Account</CardHeader>

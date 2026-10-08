@@ -47,6 +47,7 @@ def _mock_user() -> User:
     user.last_name = "User"
     user.currency = "USD"
     user.budget_limit = None
+    user.forwarding_token = "0123456789abcdef"
     return user
 
 
@@ -104,3 +105,19 @@ class TestUsersRouter:
         client = TestClient(app, raise_server_exceptions=False)
         resp = client.patch("/users/me", json={"budget_limit": limit})
         assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    def test_a_regenerated_forwarding_address_replaces_the_old_one(self) -> None:
+        """F11.2: the user gets a new address; the token behind the old one is gone."""
+        user = _mock_user()
+        _override_auth(user)
+        _, override = _make_session_override()
+        app.dependency_overrides[get_db_session] = override
+        client = TestClient(app, raise_server_exceptions=False)
+        before = client.get("/users/me").json()["forwarding_address"]
+
+        resp = client.post("/users/me/forwarding-address/regenerate")
+
+        after = resp.json()["forwarding_address"]
+        assert resp.status_code == status.HTTP_200_OK
+        assert after.startswith("receipts-") and after != before
+        assert "forwarding_token" not in resp.json()

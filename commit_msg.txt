@@ -1,0 +1,14 @@
+feat(ingest): add email receipt ingestion
+
+- Implements F11.2 email receipt ingestion
+- Adds InboundEmailPayload schema and webhook endpoint
+- Integrates EmailIngestionAdapter for parsing
+- Updates User model with forwarding address and regenerator
+- Updates UI to display forwarding address and filter by channel
+
+Closes #159
+Closes #360
+Closes #361
+Closes #369
+Closes #370
+Closes #371

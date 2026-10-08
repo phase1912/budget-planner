@@ -6,6 +6,7 @@ lives at the repository root so `docker compose up` works from a fresh clone; se
 
 | Directory | Contents |
 |---|---|
+| [`dev/mail-relay/`](dev/mail-relay/) | Local stand-in for the inbound mail receiver: SMTP on `localhost:2525`, started by `docker compose up` (F11.2, [ADR-0013](../docs/adr/0013-inbound-email-through-app-engine.md)) |
 | [`terraform/`](terraform/) | Cloud deployment IaC, targeting AWS ([ADR-0002](../docs/adr/0002-cloud-provider-aws.md)) |
 
 Not yet populated — tracked by [F0.4](../docs/planning/backlog.yaml) (local development
