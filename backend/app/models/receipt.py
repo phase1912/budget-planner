@@ -25,8 +25,21 @@ class ReceiptStatus(enum.StrEnum):
     FAILED = "failed"
 
 
+class ReceiptChannel(enum.StrEnum):
+    """How a receipt reached the user's record (F11.1, BRD A12, A15).
+
+    Kept on every receipt because a question about a wrong figure starts with
+    where the data came from. Only PHOTO has an intake today; the rest arrive
+    with E11's channels.
+    """
+
+    PHOTO = "photo"
+    EMAIL = "email"
+    QR = "qr"
+
+
 class Receipt(Model):
-    """One purchase transaction, from one or more photos."""
+    """One purchase transaction, arriving through an intake channel."""
 
     __tablename__ = "receipts"
     # Every month total, list and statistic filters one user's receipts by the
@@ -42,6 +55,13 @@ class Receipt(Model):
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
+    channel: Mapped[ReceiptChannel] = mapped_column(
+        Enum(ReceiptChannel, name="receipt_channel_enum", create_type=False),
+        default=ReceiptChannel.PHOTO,
+        server_default=ReceiptChannel.PHOTO.name,
+        nullable=False,
+    )
+    source_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
     merchant_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     transaction_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True

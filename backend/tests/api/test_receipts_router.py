@@ -14,7 +14,7 @@ from app.api.errors import DomainError
 from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.main import create_app
-from app.models.receipt import Receipt, ReceiptStatus
+from app.models.receipt import Receipt, ReceiptChannel, ReceiptStatus
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.ports.storage import StoragePort
@@ -868,6 +868,7 @@ def test_updating_a_receipt_returns_the_new_state(app: FastAPI) -> None:
         merchant_name="euro sklep",
         transaction_date=None,
         total_amount=Decimal("13.99"),
+        channel=ReceiptChannel.PHOTO,
         status=ReceiptStatus.PARSED,
         file_ids=[],
     )
