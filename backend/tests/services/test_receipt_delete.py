@@ -14,9 +14,9 @@ from app.core.context import current_user_id
 from app.models.line_item import LineItem
 from app.models.receipt import Receipt, ReceiptStatus
 from app.models.upload_job import JobStatus
-from app.ports.storage import StoragePort
+from app.ports.storage import StoragePort, receipt_object_name
 from app.repository.receipt import ReceiptRepository
-from app.services.receipt import ReceiptService, receipt_object_name
+from app.services.receipt import ReceiptService
 from tests.factories.upload_job import UploadJobFactory
 from tests.factories.user import UserFactory
 

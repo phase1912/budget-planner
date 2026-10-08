@@ -1,4 +1,15 @@
+import uuid
 from typing import Protocol
+
+
+def receipt_object_name(user_id: uuid.UUID, file_id: str) -> str:
+    """Build the object-storage key for one receipt image.
+
+    The owning user's id is part of the key, which is what makes cross-user
+    access impossible to express: a caller can only ever name keys under its
+    own prefix (BRD N2).
+    """
+    return f"receipts/{user_id}/{file_id}"
 
 
 class StoragePort(Protocol):

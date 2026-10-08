@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-17 epics · 111 features · 198 tasks written so far.
+17 epics · 110 features · 213 tasks written so far.
 
 14 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -20,7 +20,7 @@
 | E8 | Goals & AI Optimization Advice | BR-6 | 9 | yes | 1 | Diploma |
 | E9 | Web Client Foundation | — | 6 | yes | 1 | Diploma |
 | E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 7 | no | 1 | Out of scope |
-| E11 | Alternative Receipt Intake | — | 6 | no | 2 | Diploma |
+| E11 | Alternative Receipt Intake | — | 5 | yes | 2 | Diploma |
 | E12 | Household & Shared Budgets | — | 7 | no | 2 | Diploma |
 | E13 | Aggregated Purchase Analytics | — | 7 | no | 2 | Out of scope |
 | E14 | B2B Export & Accounting Integrations | — | 6 | no | 2 | Out of scope |
@@ -870,19 +870,40 @@ BRD section 10 assumes every receipt arrives as a photograph. That assumption is
 
 *Requirements: A12, A15*
 
-One ingestion port with an adapter per channel, so adding a channel does not touch parsing, categorisation or budget calculation. Every receipt records the channel it arrived through and the source reference, because a support question about a wrong figure starts with where the data came from.
+One ingestion port with an adapter per channel, so adding a channel does not touch parsing, categorisation or budget calculation. Every receipt records the channel it arrived through and the source reference, because a support question about a wrong figure starts with where the data came from. Photo upload becomes the first adapter; its behaviour does not change.
+
+**Demonstrated by:** No new screen of its own: upload a receipt photo exactly as before and confirm it, and the receipt's detail view says it was added from a photo.
+
+- **F11.1.1** Extend Receipt model with channel metadata — Add `channel` (enum: photo, email, qr) and an optional `source_reference` to the Receipt model and response schema, with an Alembic migration that marks every existing receipt as a photo. Further values arrive with the channel that needs them (F11.4's e-receipt service among them), not ahead of it.
+- **F11.1.2** Define Receipt Ingestion Port — Create a `ReceiptIngestionPort` protocol, typed by the payload its channel receives, that turns one receipt's raw input into one extraction for the existing categorisation and review pipeline.
+- **F11.1.3** Refactor photo upload to use Ingestion Port — Move photo storage and vision extraction into a photo adapter implementing the port. A pure move: same storage keys under the owner's prefix (N2), same merging of overlapping shots (B2-B4), same failure reporting; the existing tests pass unchanged in what they assert.
+- **F11.1.4** Carry the channel from intake to the stored receipt — The adapter states its channel and source reference; the upload job keeps them and the confirmed receipt is stored with them, so a second channel records itself rather than silently landing as a photo.
+- **F11.1.5** Show how a receipt arrived — The receipt detail view shows the channel ("Added from a photo") and, where there is one, the source reference. Checked at 375, 768 and 1280 px.
 
 ### F11.2 — Email receipt ingestion
 
-*Requirements: —*
+*Requirements: —* · *Blocked by: F11.1*
 
 A per-user forwarding address that accepts electronic receipts, extracting items from HTML bodies and PDF attachments. Sender verification matters here: an intake address is a public endpoint that writes to a user's financial record.
 
+**Demonstrated by:** In Profile, copy your receipt forwarding address and forward a store's e-receipt to it from the email you signed up with: the receipt appears on Receipts marked "From email", itemised and categorised like a photo. The same forward from an unknown sender adds nothing.
+
+- **F11.2.3** Decide the inbound email provider — ADR choosing how inbound mail reaches the backend on AWS (ADR-0002) — SES receipt rules or a provider webhook — and fixing the limits a public intake address needs: message and attachment size, accepted attachment types, and a per-address rate.
+- **F11.2.4** Per-user forwarding address — Give each user an unguessable forwarding address, stored with the user, that can be regenerated to stop spam reaching it; the old address stops accepting mail at once. Exposed to the user's own profile only (N2).
+- **F11.2.1** Configure email ingestion webhook — Receive inbound mail from the chosen provider, resolve the forwarding address to its user, and accept only mail whose verified sender is one of that user's registered addresses. Rejected mail is logged and dropped, never stored.
+- **F11.2.2** Implement email parsing and adapter — An email adapter implementing `ReceiptIngestionPort`: read the receipt from the HTML body or a PDF attachment through the existing parser, with the message id as the source reference. The receipt lands in the same review flow as a photo.
+- **F11.2.5** Forwarding address and email receipts in the UI — Profile shows the forwarding address with copy and regenerate, and how to forward a receipt to it. Receipts marks email receipts and can be filtered by how they arrived. Checked at 375, 768 and 1280 px.
+
 ### F11.3 — Fiscal QR code intake
 
-*Requirements: —*
+*Requirements: —* · *Blocked by: F11.1, F11.4*
 
-Scanning the QR code printed on a fiscal receipt retrieves the itemised record from the fiscal service directly, producing exact item data with no extraction error and no confidence threshold to tune.
+Scanning the QR code printed on a fiscal receipt retrieves the itemised record from the fiscal service directly, producing exact item data with no extraction error and no confidence threshold to tune. Whether the target markets' QR codes lead to itemised data at all is for the F11.4 spike to establish; this feature waits for its answer.
+
+**Demonstrated by:** On a phone, choose Upload, then Scan QR code, and point the camera at the code on a fiscal receipt: the receipt arrives itemised, marked "From QR code", without a step to check what was read.
+
+- **F11.3.1** Implement fiscal service client and adapter — Create a client to fetch itemized data from the fiscal service using QR code content, and adapt it using `ReceiptIngestionPort`, with the fiscal number as the source reference. A code the service does not know is reported to the user, not guessed at.
+- **F11.3.2** Scan a receipt's QR code in the upload flow — Add Scan QR code to Upload: the camera on a phone, an image of the code on desktop, and typing the code by hand when neither works. Mobile-first; checked at 375, 768 and 1280 px.
 
 ### F11.4 — National e-receipt service integration
 
@@ -890,17 +911,20 @@ Scanning the QR code printed on a fiscal receipt retrieves the itemised record f
 
 A feasibility spike followed by integration with the target market's e-receipt system (e-Paragon in Poland). The spike answers a question that affects the whole product: if receipts in this market become structured by law, extraction from photographs becomes the fallback path rather than the primary one. Produces an ADR before any code.
 
+**Demonstrated by:** No screen of its own yet: proven by the ADR, which says for e-Paragony (PL) and єЧек (UA) whether a third party can read a user's receipts and how, and whether fiscal QR codes lead to itemised data. The integration tasks are written from that answer.
+
+- **F11.4.1** Spike e-receipt system integration — Research integration feasibility with national e-receipt services and with fiscal QR codes in Poland and Ukraine. Produce an ADR with findings and architectural decisions, and the follow-up tasks for F11.3 and F11.4.
+
 ### F11.5 — Cross-channel duplicate detection
 
-*Requirements: A14*
+*Requirements: A14* · *Blocked by: F11.2*
 
 One purchase that arrives twice through two channels is one receipt. BRD A14 compares merchant, date and total, which cannot tell a second channel's copy apart from a second visit to the same shop on the same day.
 
-### F11.6 — Intake settings interface
+**Demonstrated by:** Photograph a purchase, then forward its e-receipt: instead of a second receipt, Receipts asks whether the email is the purchase already photographed, and the kept receipt lists both sources.
 
-*Requirements: —*
-
-The user can see their forwarding address, which channels are connected, and what arrived through each of them.
+- **F11.5.1** Enhance duplicate detection with channel data — Update the duplicate detection algorithm to incorporate `channel` and `source_reference` to distinguish between cross-channel duplicates and same-day repeat purchases. A receipt arriving through the same source reference twice is always the same one.
+- **F11.5.2** Confirm a cross-channel duplicate outside the upload flow — Email and QR receipts arrive without the upload wizard, so the A14 question is asked on Receipts: keep both, or merge into one receipt carrying both sources. Checked at 375, 768 and 1280 px.
 
 ---
 

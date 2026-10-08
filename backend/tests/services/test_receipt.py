@@ -6,11 +6,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from app.adapters.photo_ingestion import PhotoIngestionAdapter
 from app.api.errors import UnsupportedFileFormatError
 from app.models.category import Category
 from app.models.category_rule import CategoryRule
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
+from app.ports.storage import receipt_object_name
 from app.schemas.extraction import ExtractedLineItem
 from app.services.receipt import ReceiptService
 
@@ -66,23 +68,34 @@ def test_validate_receipt_file_rejects_invalid_formats() -> None:
 
 
 @pytest.mark.asyncio
-async def test_store_receipt_image() -> None:
+async def test_a_stored_photo_lives_under_its_owners_prefix() -> None:
+    """N2: the key the photo is written under is the one it is read back from."""
     mock_port = AsyncMock()
-    mock_port.upload_file.return_value = "receipts/test-user-id/test-file-id"
-    service = ReceiptService(storage_port=mock_port)
+    user = User(id=uuid.uuid4(), email="test@test.com")
+    photos = PhotoIngestionAdapter(storage_port=mock_port, parser_port=None)
 
-    user = User(id="test-user-id", email="test@test.com")
-    file_id = await service.store_receipt_image(user, b"content", "image/jpeg")
+    file_id = await photos.store_image(user, b"content", "image/jpeg")
 
-    assert "-" in file_id
     assert not file_id.startswith("receipts/")
-    mock_port.upload_file.assert_called_once()
+    object_name = mock_port.upload_file.call_args.args[0]
+    assert object_name == receipt_object_name(user.id, file_id)
+
+
+@pytest.mark.asyncio
+async def test_without_a_parser_the_photos_are_kept_and_nothing_is_read() -> None:
+    mock_port = AsyncMock()
+    user = User(id=uuid.uuid4(), email="test@test.com")
+    photos = PhotoIngestionAdapter(storage_port=mock_port, parser_port=None)
+
+    result = await photos.ingest(user, [{"content": b"a", "content_type": "image/jpeg"}])
+
+    assert result.extraction == {"file_ids": result.file_ids}
+    assert len(result.file_ids) == 1
 
 
 @pytest.mark.asyncio
 async def test_store_receipt_image_heic_conversion() -> None:
     mock_port = AsyncMock()
-    service = ReceiptService(storage_port=mock_port)
     user = User(id="test-user-id", email="test@test.com")
 
     # Create a valid dummy HEIC file structure so that pillow_heif doesn't throw a parsing error.
@@ -105,7 +118,9 @@ async def test_store_receipt_image_heic_conversion() -> None:
         mock_open.return_value = dummy_img
         # Pass a fake HEIC signature so it enters the conversion block
         fake_heic_bytes = b"\x00\x00\x00\x1cftypheic_fake_data"
-        file_id = await service.store_receipt_image(user, fake_heic_bytes, "image/heic")
+        file_id = await PhotoIngestionAdapter(storage_port=mock_port, parser_port=None).store_image(
+            user, fake_heic_bytes, "image/heic"
+        )
 
     assert "-" in file_id
 
@@ -182,7 +197,10 @@ async def test_process_upload_job_task_success() -> None:
 
     with (
         patch("app.services.receipt.get_session_factory", return_value=mock_session_factory),
-        patch.object(service, "store_receipt_image", new_callable=AsyncMock) as mock_store,
+        patch(
+            "app.adapters.photo_ingestion.PhotoIngestionAdapter.store_image",
+            new_callable=AsyncMock,
+        ) as mock_store,
     ):
         mock_store.return_value = "file-123"
         await service.process_upload_job_task(job_id, user, receipts_data)
@@ -194,7 +212,7 @@ async def test_process_upload_job_task_success() -> None:
 
 @pytest.mark.asyncio
 async def test_process_upload_job_task_failure() -> None:
-    service = ReceiptService()
+    service = ReceiptService(storage_port=AsyncMock())
 
     job_id = uuid.uuid4()
     user = User(id=uuid.uuid4(), email="test@test.com")
@@ -215,7 +233,10 @@ async def test_process_upload_job_task_failure() -> None:
 
     with (
         patch("app.services.receipt.get_session_factory", return_value=mock_session_factory),
-        patch.object(service, "store_receipt_image", new_callable=AsyncMock) as mock_store,
+        patch(
+            "app.adapters.photo_ingestion.PhotoIngestionAdapter.store_image",
+            new_callable=AsyncMock,
+        ) as mock_store,
         pytest.raises(Exception, match="Failed"),
     ):
         mock_store.side_effect = Exception("Failed")
@@ -257,11 +278,12 @@ async def test_run_extraction_multiple_photos_merges_items_and_headers() -> None
 
     mock_parser.parse.side_effect = [mock_ext1, mock_ext2]
 
-    service = ReceiptService(storage_port=mock_storage, parser_port=mock_parser)
     user = User(id=uuid.uuid4(), email="test@test.com")
 
     # Using private method directly for the unit test
-    result = await service._run_extraction(user, ["f1", "f2"], ["image/jpeg", "image/png"])
+    result = await PhotoIngestionAdapter(
+        storage_port=mock_storage, parser_port=mock_parser
+    )._run_extraction(user, ["f1", "f2"], ["image/jpeg", "image/png"])
 
     assert "error" not in result
     assert result["merchant_name"] == "Store"
@@ -286,10 +308,11 @@ async def test_run_extraction_failure_returns_error_dict() -> None:
     mock_storage.download_file.return_value = b"img1"
     mock_parser.parse.side_effect = Exception("Vision LLM Error")
 
-    service = ReceiptService(storage_port=mock_storage, parser_port=mock_parser)
     user = User(id=uuid.uuid4(), email="test@test.com")
 
-    result = await service._run_extraction(user, ["f1"], ["image/jpeg"])
+    result = await PhotoIngestionAdapter(
+        storage_port=mock_storage, parser_port=mock_parser
+    )._run_extraction(user, ["f1"], ["image/jpeg"])
 
     assert result == {"error": "extraction_failed"}
 
@@ -376,7 +399,10 @@ async def test_process_upload_job_task_position_matches() -> None:
 
     with (
         patch("app.services.receipt.get_session_factory", return_value=mock_session_factory),
-        patch.object(service, "store_receipt_image", new_callable=AsyncMock) as mock_store,
+        patch(
+            "app.adapters.photo_ingestion.PhotoIngestionAdapter.store_image",
+            new_callable=AsyncMock,
+        ) as mock_store,
     ):
         mock_store.side_effect = ["file-1", "file-2"]
         await service.process_upload_job_task(job_id, user, receipts_data)
@@ -430,10 +456,11 @@ async def test_run_extraction_skips_matching_for_distinct_receipts() -> None:
 
     mock_parser.parse.side_effect = [mock_ext1, mock_ext2]
 
-    service = ReceiptService(storage_port=mock_storage, parser_port=mock_parser)
     user = User(id=uuid.uuid4(), email="test@test.com")
 
-    result = await service._run_extraction(user, ["f1", "f2"], ["image/jpeg", "image/png"])
+    result = await PhotoIngestionAdapter(
+        storage_port=mock_storage, parser_port=mock_parser
+    )._run_extraction(user, ["f1", "f2"], ["image/jpeg", "image/png"])
 
     assert len(cast(list[Any], result.get("line_items", []))) == 2
     assert result.get("position_matches") == []
@@ -499,7 +526,10 @@ async def test_extracted_items_carry_their_category_into_the_job_result() -> Non
 
     with (
         patch("app.services.receipt.get_session_factory", return_value=session_factory),
-        patch.object(service, "store_receipt_image", new_callable=AsyncMock) as mock_store,
+        patch(
+            "app.adapters.photo_ingestion.PhotoIngestionAdapter.store_image",
+            new_callable=AsyncMock,
+        ) as mock_store,
     ):
         mock_store.return_value = "file-123"
         await service.process_upload_job_task(job_id, user, receipts_data)
@@ -541,7 +571,10 @@ async def test_items_stay_uncategorised_when_no_categoriser_is_wired_in() -> Non
 
     with (
         patch("app.services.receipt.get_session_factory", return_value=session_factory),
-        patch.object(service, "store_receipt_image", new_callable=AsyncMock) as mock_store,
+        patch(
+            "app.adapters.photo_ingestion.PhotoIngestionAdapter.store_image",
+            new_callable=AsyncMock,
+        ) as mock_store,
     ):
         mock_store.return_value = "file-123"
         await service.process_upload_job_task(
@@ -700,7 +733,10 @@ async def test_an_opust_discount_stays_a_line_filed_with_the_product_it_reduces(
 
     with (
         patch("app.services.receipt.get_session_factory", return_value=session_factory),
-        patch.object(service, "store_receipt_image", new_callable=AsyncMock) as mock_store,
+        patch(
+            "app.adapters.photo_ingestion.PhotoIngestionAdapter.store_image",
+            new_callable=AsyncMock,
+        ) as mock_store,
     ):
         mock_store.return_value = "file-123"
         await service.process_upload_job_task(
