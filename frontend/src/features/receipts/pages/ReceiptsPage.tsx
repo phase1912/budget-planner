@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Mail } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import type { components } from "@/api/schema";
 import { observer } from "mobx-react-lite";
@@ -8,6 +9,7 @@ import { EditReceiptDialog } from "../components/EditReceiptDialog";
 import { ReceiptDetailModal } from "../components/ReceiptDetailModal";
 import { DateFilterModal } from "../components/DateFilterModal";
 import { StatusFilterDropdown } from "../components/StatusFilterDropdown";
+import { ChannelFilterDropdown } from "../components/ChannelFilterDropdown";
 import { Card, Input, IconTile, Pagination } from "@/shared/components";
 import { SectionTabs } from "@/features/app-shell/SectionTabs";
 import { ExportMenu } from "@/features/exports/components/ExportMenu";
@@ -87,9 +89,10 @@ export const ReceiptsPage = observer(() => {
         </div>
 
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
-          <div className="flex items-center gap-[10px]">
+          <div className="flex flex-wrap items-center gap-2.5">
             <DateFilterModal />
             <StatusFilterDropdown />
+            <ChannelFilterDropdown />
           </div>
           <div className="relative w-full md:w-[250px]">
             <svg
@@ -183,6 +186,8 @@ export const ReceiptsPage = observer(() => {
                           <path d="M12 9v4" />
                           <path d="M12 17h.01" />
                         </svg>
+                      ) : receipt.channel === "email" ? (
+                        <Mail size={15} role="img" aria-label="From email" />
                       ) : (
                         <svg
                           width="15"

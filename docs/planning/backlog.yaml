@@ -2283,9 +2283,11 @@ epics:
             title: Decide the inbound email provider
             labels: [infra]
             detail: >
-              ADR choosing how inbound mail reaches the backend on AWS (ADR-0002) — SES receipt
-              rules or a provider webhook — and fixing the limits a public intake address needs:
-              message and attachment size, accepted attachment types, and a per-address rate.
+              ADR choosing how inbound mail reaches the backend without a paid domain — App
+              Engine's inbound mail on `<project>.appspotmail.com` relayed to a webhook
+              (ADR-0013) — and fixing the limits a public intake address needs: message size,
+              accepted attachment types, and a per-user daily rate. Includes the local SMTP relay
+              that stands in for it in docker compose.
           - key: F11.2.4
             title: Per-user forwarding address
             labels: [backend]
@@ -2297,9 +2299,10 @@ epics:
             title: Configure email ingestion webhook
             labels: [backend, infra]
             detail: >
-              Receive inbound mail from the chosen provider, resolve the forwarding address to its
-              user, and accept only mail whose verified sender is one of that user's registered
-              addresses. Rejected mail is logged and dropped, never stored.
+              Receive raw messages from the relay behind a shared secret, resolve the forwarding
+              address to its user, and accept only mail from that user's account email, within
+              the daily limit. Rejected mail is logged and dropped, never stored. The App Engine
+              receiver itself is deployed with the Google Cloud infrastructure (F0.9).
           - key: F11.2.2
             title: Implement email parsing and adapter
             labels: [backend]

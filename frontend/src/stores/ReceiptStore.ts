@@ -48,6 +48,7 @@ export class ReceiptStore {
   pages = 0;
 
   statusFilter: components["schemas"]["ReceiptStatus"] | undefined = undefined;
+  channelFilter: components["schemas"]["ReceiptChannel"] | undefined = undefined;
   startDateFilter: string | undefined = undefined;
   endDateFilter: string | undefined = undefined;
   searchQuery: string | undefined = undefined;
@@ -93,6 +94,7 @@ export class ReceiptStore {
 
   setFilters(filters: {
     status?: components["schemas"]["ReceiptStatus"] | undefined;
+    channel?: components["schemas"]["ReceiptChannel"] | undefined;
     startDate?: string | undefined;
     endDate?: string | undefined;
     searchQuery?: string | undefined;
@@ -103,6 +105,14 @@ export class ReceiptStore {
       changed = true;
     } else if (filters.status === undefined && "status" in filters) {
       this.statusFilter = undefined;
+      changed = true;
+    }
+
+    if (filters.channel !== undefined && this.channelFilter !== filters.channel) {
+      this.channelFilter = filters.channel;
+      changed = true;
+    } else if (filters.channel === undefined && "channel" in filters) {
+      this.channelFilter = undefined;
       changed = true;
     }
 
@@ -146,6 +156,7 @@ export class ReceiptStore {
             page,
             size,
             ...(this.statusFilter && { status: this.statusFilter }),
+            ...(this.channelFilter && { channel: this.channelFilter }),
             ...(this.startDateFilter && { start: this.startDateFilter }),
             ...(this.endDateFilter && { end: this.endDateFilter }),
             ...(this.searchQuery && { q: this.searchQuery }),

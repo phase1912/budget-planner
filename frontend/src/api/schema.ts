@@ -152,6 +152,26 @@ export interface paths {
         patch: operations["update_me_users_me_patch"];
         trace?: never;
     };
+    "/users/me/forwarding-address/regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Regenerate Forwarding Address
+         * @description Replace the user's receipt forwarding address; the old one stops working (F11.2).
+         */
+        post: operations["regenerate_forwarding_address_users_me_forwarding_address_regenerate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts/upload": {
         parameters: {
             query?: never;
@@ -314,7 +334,8 @@ export interface paths {
          * List Receipts
          * @description List an account's stored receipts with pagination, newest first unless asked (F3.8).
          *
-         *     `order=largest` is a finished month's "Biggest receipts" on the dashboard (F6.5).
+         *     `order=largest` is a finished month's "Biggest receipts" on the dashboard (F6.5);
+         *     `channel` keeps only receipts that arrived one way, by photo or by email (F11.2).
          *     `start` and `end` narrow it to a run of days, both included (app/api/periods.py).
          */
         get: operations["list_receipts_receipts_get"];
@@ -844,6 +865,31 @@ export interface paths {
         patch: operations["update_recommendation_feedback_api_v1_recommendations__recommendation_id__feedback_patch"];
         trace?: never;
     };
+    "/api/v1/webhooks/inbound-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Inbound Email
+         * @description Take one raw message from the inbound mail relay and read it as a receipt (F11.2).
+         *
+         *     The body is the message as received (RFC 5322) and `X-Inbound-Recipient` the
+         *     address it was sent to. Only the relay knows `X-Inbound-Secret`; without it the
+         *     answer is 401, and with no secret configured the endpoint does not exist (404).
+         *     A dropped message is still a success to the relay, so it is not retried.
+         */
+        post: operations["inbound_email_api_v1_webhooks_inbound_email_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1338,6 +1384,18 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * InboundEmailResponse
+         * @description What the relay is told about one message; it never retries either answer.
+         *
+         *     `reason` is set only when the message was dropped.
+         */
+        InboundEmailResponse: {
+            /** Status */
+            status: string;
+            /** Reason */
+            reason?: string | null;
         };
         /**
          * ItemView
@@ -1901,6 +1959,11 @@ export interface components {
             currency: string;
             /** Budget Limit */
             budget_limit?: string | null;
+            /**
+             * Forwarding Address
+             * @description Where the user forwards e-receipts (F11.2); only ever shown to its owner.
+             */
+            readonly forwarding_address: string;
         };
         /**
          * UserUpdateRequest
@@ -2183,6 +2246,37 @@ export interface operations {
             };
         };
     };
+    regenerate_forwarding_address_users_me_forwarding_address_regenerate_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     upload_receipt_receipts_upload_post: {
         parameters: {
             query?: {
@@ -2442,6 +2536,7 @@ export interface operations {
                 size?: number;
                 status?: components["schemas"]["ReceiptStatus"] | null;
                 q?: string | null;
+                channel?: components["schemas"]["ReceiptChannel"] | null;
                 order?: components["schemas"]["ReceiptOrder"];
                 token?: string | null;
                 /** @description First day of the period, included */
@@ -3454,6 +3549,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecommendationRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inbound_email_api_v1_webhooks_inbound_email_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-inbound-secret"?: string | null;
+                "x-inbound-recipient"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InboundEmailResponse"];
                 };
             };
             /** @description Validation Error */
