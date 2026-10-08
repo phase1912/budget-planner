@@ -16,4 +16,6 @@ def agent_from_settings() -> Agent:
         api_base=settings.llm_api_base,
         disable_reasoning=settings.llm_disable_reasoning,
         disable_json_schema=settings.llm_disable_json_schema,
+        vertex_project=settings.vertex_project,
+        vertex_location=settings.vertex_location,
     )

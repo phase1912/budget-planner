@@ -35,6 +35,7 @@ def test_settings_loads_required_fields_from_environment_variables(
     settings = Settings(_env_file=None)
 
     assert "localhost" in str(settings.database_url)
+    assert settings.anthropic_api_key is not None
     assert settings.anthropic_api_key.get_secret_value() == "sk-test-key"
     assert settings.environment is Environment.LOCAL
 
@@ -43,10 +44,22 @@ def test_settings_raises_when_a_required_variable_is_missing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.delenv("DATABASE_URL", raising=False)
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
     with pytest.raises(ValidationError):
         Settings(_env_file=None)
+
+
+def test_no_model_key_is_required_when_the_model_needs_none(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """ADR-0014: Vertex AI authenticates as the service account, so no key is set."""
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://u:p@localhost:5432/db")
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setenv("S3_BUCKET_NAME", "photos")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.anthropic_api_key is None
 
 
 def test_dotenv_file_is_read_when_a_value_is_not_set_in_the_environment(
@@ -63,6 +76,7 @@ def test_dotenv_file_is_read_when_a_value_is_not_set_in_the_environment(
     settings = Settings(_env_file=dotenv_path)
 
     assert "dotenv-host" in str(settings.database_url)
+    assert settings.anthropic_api_key is not None
     assert settings.anthropic_api_key.get_secret_value() == "dotenv-key"
 
 
@@ -80,6 +94,7 @@ def test_environment_variable_overrides_the_dotenv_file(
     settings = Settings(_env_file=dotenv_path)
 
     assert "envvar-host" in str(settings.database_url)
+    assert settings.anthropic_api_key is not None
     assert settings.anthropic_api_key.get_secret_value() == "envvar-key"
 
 

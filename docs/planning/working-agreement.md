@@ -161,6 +161,23 @@ by the issue number — a PR that merely mentions the issue number will not move
 feature in a later epic is now wrong, unnecessary, or shaped differently than planned — edit
 the YAML and re-sync. Record anything that constrains future work as an ADR.
 
+## Deploying and migrations
+
+Every merge to `main` deploys production (`.github/workflows/deploy.yml`, ADR-0014): the
+database is migrated by the `migrate` Cloud Run job first, and the new backend starts only
+if that succeeds. Two consequences for every change:
+
+- **A migration must work with the code already running.** For a few seconds the old
+  revision serves on the new schema. Adding a column, table or index is always safe.
+  Dropping or renaming something the running code reads takes two merges: first the code
+  stops using it, then a migration removes it.
+- **Fix forward.** The pipeline never runs `alembic downgrade`. A bad migration is
+  corrected by a new one; a broken deploy is rolled back by reverting the merge, which
+  deploys the previous code onto the (compatible) schema.
+
+Infrastructure is not deployed by merging: after a change under `infra/terraform/` is
+merged, run `terraform plan` and `terraform apply` by hand (`infra/terraform/README.md`).
+
 ## Adjusting the plan mid-flight
 
 This is expected, not exceptional. Discovering that a planned feature is wrong is the work

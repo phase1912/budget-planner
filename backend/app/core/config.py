@@ -14,6 +14,7 @@ defaults for local development only.
 
 from enum import StrEnum
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field, PostgresDsn, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -32,12 +33,16 @@ class Environment(StrEnum):
     PRODUCTION = "production"
 
 
+StorageBackend = Literal["s3", "gcs"]
+
+
 class Settings(BaseSettings):
     """Configuration layered environment variables > `.env` file > defaults.
 
-    `database_url` and `anthropic_api_key` have no default: constructing
-    `Settings` without them set raises `pydantic.ValidationError` immediately,
-    which is the fail-fast behaviour this module exists to provide.
+    `database_url` has no default: constructing `Settings` without it raises
+    `pydantic.ValidationError` immediately, which is the fail-fast behaviour this
+    module exists to provide. Model credentials are optional, because which ones a
+    deployment needs depends on `llm_model` (ADR-0006).
     """
 
     model_config = SettingsConfigDict(
@@ -56,7 +61,10 @@ class Settings(BaseSettings):
     database_max_overflow: int = Field(
         default=10, description="Extra connections allowed above the pool under load (F0.3.1)."
     )
-    anthropic_api_key: SecretStr
+    anthropic_api_key: SecretStr | None = Field(
+        default=None,
+        description="Anthropic key, read by litellm only when `llm_model` is an Anthropic model.",
+    )
     anthropic_model: str = Field(
         default="claude-haiku-4-5-20251001",
         description=(
@@ -89,6 +97,16 @@ class Settings(BaseSettings):
             "Optional custom base URL for the LLM provider. Required for "
             "proxies, OpenAI-compatible APIs (like Z-AI), or self-hosted models."
         ),
+    )
+    vertex_project: str | None = Field(
+        default=None,
+        description=(
+            "Google Cloud project for `vertex_ai/` models; credentials come from the "
+            "runtime service account, so no key is needed (ADR-0014)."
+        ),
+    )
+    vertex_location: str | None = Field(
+        default=None, description="Vertex AI region for `vertex_ai/` models, e.g. us-central1."
     )
     llm_disable_json_schema: bool = Field(
         default=False,
@@ -227,7 +245,16 @@ class Settings(BaseSettings):
         description="Degree of parallelism for Argon2id hashing.",
     )
 
-    s3_bucket_name: str = Field(description="Name of the S3-compatible bucket for receipt images.")
+    storage_backend: StorageBackend = Field(
+        default="s3",
+        description=(
+            "Where receipt photos live: `s3` for any S3-compatible store (MinIO locally), "
+            "`gcs` for Cloud Storage as the runtime's service account, keyless (ADR-0014)."
+        ),
+    )
+    s3_bucket_name: str = Field(
+        description="Bucket for receipt images, whichever `storage_backend` holds it."
+    )
     aws_region: str = Field(default="us-east-1", description="AWS region for the S3 bucket.")
     aws_access_key_id: SecretStr | None = Field(
         default=None, description="AWS access key ID. If None, boto3 uses environment/IAM roles."

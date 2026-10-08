@@ -233,8 +233,9 @@ docker-compose.yml  Local stack (API, client, PostgreSQL, MinIO) — repo root, 
                      so `docker compose up` works from a fresh clone with no extra flags
 backend/             FastAPI service — routers, services, repositories, ports (see Layers above)
 frontend/            React + MobX client
-infra/terraform/     Cloud deployment IaC — AWS is the target (ADR-0002); Azure was
-                     evaluated and deferred, not ruled out
+infra/terraform/     Production on Google Cloud (ADR-0014, which replaced AWS in ADR-0002)
+infra/mail-relay-appengine/  Inbound mail relay deployed to App Engine (ADR-0013)
+infra/dev/           Local-only stand-ins, e.g. the SMTP mail relay
 docs/                BRD, architecture, planning, ADRs — this tree
 scripts/             Repository tooling (e.g. backlog_sync.py)
 ```
@@ -255,6 +256,23 @@ tiers (local, staging, production), including which Claude model tier each calls
 [`environments.md`](environments.md#the-matrix) (F0.7.3). How the two real secrets
 (`ANTHROPIC_API_KEY`, the database credential) are stored and rotated per environment
 is [`secrets.md`](secrets.md) (F0.7.2).
+
+## Deployment
+
+Production is one environment on Google Cloud (ADR-0014), all of it in
+`infra/terraform/`:
+
+```
+Firebase Hosting (static frontend) ──HTTPS──► Cloud Run "backend" ──VPC──► Postgres on e2-micro
+                                                 │   │                      (daily disk snapshots)
+App Engine mail relay ──webhook + secret─────────┘   ├──► Cloud Storage (photos, S3 API)
+                                                     └──► Vertex AI Gemini (LiteLLM)
+```
+
+Every merge to `main` runs `.github/workflows/deploy.yml`, which signs in through Workload
+Identity Federation. It builds the backend image, migrates the database with the
+`migrate` Cloud Run job, deploys the service, publishes the frontend and the mail relay
+when they changed, and checks `/health`. `terraform apply` is a deliberate local step.
 
 ## Deliberate non-goals
 
