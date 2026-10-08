@@ -22,6 +22,11 @@ from app.domain.discounts import (
     file_discounts_with_products,
     printed_amount,
 )
+from app.domain.receipt_reconciliation import (
+    Reconciliation,
+    accepts_recheck,
+    reconcile_by_rules,
+)
 from app.domain.receipt_totals import lines_match_total
 from app.models.category import Category
 from app.models.category_rule import CategoryRule
@@ -32,7 +37,7 @@ from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.ports.categorisation import ItemCategoriserPort
 from app.ports.ingestion import ReceiptIngestionPort, UploadedFile
-from app.ports.parsing import CURRENT_PARSER_VERSION, ReceiptParserPort
+from app.ports.parsing import CURRENT_PARSER_VERSION, ReceiptParserPort, ReceiptRecheckerPort
 from app.ports.storage import StoragePort, receipt_object_name
 from app.repository.category import CategoryRepository
 from app.repository.receipt import ReceiptRepository
@@ -46,6 +51,23 @@ from app.schemas.receipt import (
 )
 
 logger = logging.getLogger(__name__)
+
+RECHECK_ATTEMPTS = 2
+"""Second looks the model gets at a receipt whose lines miss its total (BRD A9).
+
+The second sees what the first got wrong; a third rarely finds what two did not, and
+each costs a model call and the user's wait.
+"""
+
+
+def _reading_fields(extraction: dict[str, object]) -> dict[str, Any]:
+    return {k: v for k, v in extraction.items() if k in ExtractedReceipt.model_fields}
+
+
+def _settled(extraction: dict[str, object], how: Reconciliation) -> dict[str, object]:
+    """A corrected reading with its sums recomputed and how it was corrected recorded."""
+    validated = ExtractedReceipt(**_reading_fields(extraction)).model_dump()
+    return {**extraction, **validated, "total_reconciled_by": how.value}
 
 
 def _redated(stored: datetime | None, day: date | None) -> datetime | None:
@@ -77,6 +99,7 @@ class ReceiptService:
         self,
         storage_port: StoragePort | None = None,
         parser_port: ReceiptParserPort | None = None,
+        rechecker_port: ReceiptRecheckerPort | None = None,
         categoriser_port: "ItemCategoriserPort | None" = None,
         repository: "ReceiptRepository | None" = None,
         max_concurrency: int = 2,
@@ -84,6 +107,7 @@ class ReceiptService:
     ):
         self.storage_port = storage_port
         self.parser_port = parser_port
+        self.rechecker_port = rechecker_port
         self.categoriser_port = categoriser_port
         self.repository = repository
         self.max_concurrency = max_concurrency
@@ -167,6 +191,7 @@ class ReceiptService:
                 ) -> dict[str, object]:
                     uploads = cast(list[UploadedFile], files_data)
                     extraction = (await photos.ingest(user, uploads)).extraction
+                    extraction = await self._reconcile_total(user, extraction)
                     if self.parser_port:
                         await self._categorise_extraction(extraction, categories, rules)
                         self._file_discount_lines(extraction)
@@ -250,7 +275,7 @@ class ReceiptService:
             ):
                 return
             result = await ingestion.ingest(user, payload)
-            extraction = result.extraction
+            extraction = await self._reconcile_total(user, result.extraction)
             if "error" in extraction:
                 extraction["requires_manual_review"] = True
             else:
@@ -270,6 +295,53 @@ class ReceiptService:
                 source_reference=source_reference,
             )
             await session.commit()
+
+    async def _reconcile_total(
+        self, user: User, extraction: dict[str, object]
+    ) -> dict[str, object]:
+        """Make a reading's lines agree with its total before anyone is asked (BRD A9, A11).
+
+        Known causes are fixed by rule (`reconcile_by_rules`); otherwise the model looks
+        at the stored photos again, up to RECHECK_ATTEMPTS times, each time told how far
+        off the last reading was, and a new reading is kept only if it agrees with the
+        same total (`accepts_recheck`). What still disagrees is marked `unresolved`, so
+        the wizard can say the app already tried. Never raises: a failed recheck leaves
+        the first reading as it was.
+        """
+        if "error" in extraction or extraction.get("items_sum_matches_total") is not False:
+            return extraction
+        ruled = reconcile_by_rules(extraction)
+        if ruled is not None:
+            return _settled(*reversed(ruled))
+        latest = extraction
+        can_recheck = bool(self.rechecker_port and self.storage_port and extraction.get("file_ids"))
+        for _ in range(RECHECK_ATTEMPTS if can_recheck else 0):
+            assert self.rechecker_port is not None
+            try:
+                images, types = await self._stored_photos(user, latest)
+                reading = ExtractedReceipt(**_reading_fields(latest))
+                after = (
+                    await self.rechecker_port.recheck(images, mime_types=types, reading=reading)
+                ).model_dump()
+            except Exception:
+                logger.exception("Rechecking a receipt for user %s failed", user.id)
+                break
+            after["file_ids"] = extraction.get("file_ids", [])
+            if accepts_recheck(extraction, after):
+                return _settled(after, Reconciliation.RECHECKED)
+            latest = after
+        return {**extraction, "total_reconciled_by": Reconciliation.UNRESOLVED.value}
+
+    async def _stored_photos(
+        self, user: User, extraction: dict[str, object]
+    ) -> tuple[list[bytes], list[str]]:
+        assert self.storage_port is not None
+        file_ids = cast(list[str], extraction.get("file_ids") or [])
+        images = [
+            await self.storage_port.download_file(receipt_object_name(user.id, file_id))
+            for file_id in file_ids
+        ]
+        return images, [filetype.guess_mime(image) or "image/jpeg" for image in images]
 
     @staticmethod
     def _file_discount_lines(extraction: dict[str, object]) -> None:

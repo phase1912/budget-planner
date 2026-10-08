@@ -217,6 +217,14 @@ class ExtractedReceipt(BaseModel):
         description="The calculated sum of line-item totals. Set by backend validation.",
     )
 
+    total_reconciled_by: str | None = Field(
+        default=None,
+        description=(
+            "Set by the backend, never by the reader: how the lines were made to agree "
+            "with the total, or 'unresolved' (app.domain.receipt_reconciliation)."
+        ),
+    )
+
     requires_manual_review: bool | None = Field(
         default=False,
         description="True if critical fields missing, requiring manual review (BRD A11).",

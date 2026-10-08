@@ -50,6 +50,7 @@ interface ExtractedData {
   currency?: string;
   items_sum_matches_total?: boolean | null;
   computed_total?: string | null;
+  total_reconciled_by?: string | null;
   requires_manual_review?: boolean | null;
   line_items?: ExtractedLineItem[];
   file_ids?: string[];
@@ -161,6 +162,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
         )}
 
         {extractions.map((data, index) => {
+          const selectable = extractions.filter((e) => !e.is_skipped && !e.error).length > 1;
           if (data.is_skipped) return null;
           const merchantName = data.merchant_name ?? "Unknown merchant";
           const merchantNameLowConf = (data.merchant_name_confidence ?? 100) < 80;
@@ -274,7 +276,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                     </span>
                   </div>
                   <button
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors ml-1"
+                    className="inline-flex items-center justify-center w-11 h-11 md:w-8 md:h-8 rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors ml-1"
                     aria-label="Edit this receipt"
                     onClick={() => {
                       uploadStore.startEditingExtraction(index);
@@ -294,16 +296,25 @@ export const ExtractedStep = observer(function ExtractedStep() {
                       <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
                     </svg>
                   </button>
+                </div>
+              </CardHeader>
+
+              {/* Choosing which receipts to store only means something when there are several. */}
+              {selectable && (
+                <label className="flex min-h-11 cursor-pointer items-center gap-2.5 border-b border-border px-5 py-2 text-md font-semibold text-foreground">
                   <input
                     type="checkbox"
                     checked={uploadStore.selectedIndices.has(index)}
                     onChange={() => {
                       uploadStore.toggleSelection(index);
                     }}
-                    className="w-5 h-5 rounded border-border text-primary focus:ring-primary cursor-pointer ml-1"
+                    className="h-5 w-5 cursor-pointer rounded border-border accent-primary"
                   />
-                </div>
-              </CardHeader>
+                  {uploadStore.selectedIndices.has(index)
+                    ? "Save this receipt"
+                    : "Leave this receipt out"}
+                </label>
+              )}
 
               {matchesTotal === false && data.computed_total && data.receipt_total && (
                 <TotalsGapNote
@@ -315,6 +326,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                   onFix={() => {
                     uploadStore.startEditingExtraction(index);
                   }}
+                  triedToFix={data.total_reconciled_by === "unresolved"}
                 />
               )}
 

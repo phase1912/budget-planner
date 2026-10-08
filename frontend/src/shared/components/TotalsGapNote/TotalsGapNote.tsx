@@ -10,6 +10,8 @@ export interface TotalsGapNoteProps {
   /** Open the receipt to correct a missing or misread line. */
   onFix?: () => void;
   busy?: boolean;
+  /** The app already re-read the receipt and could not make it add up by itself. */
+  triedToFix?: boolean;
   className?: string;
 }
 
@@ -21,6 +23,8 @@ const money = (amount: number) => amount.toFixed(2);
  * Lines above the total usually mean the reader missed a discount: the note names
  * the exact amount and adds it in one click, the user's call rather than ours.
  * Lines below it mean a line is missing or misread, which only the user can fix.
+ * Shown only after the app has tried to reconcile the two by itself and failed
+ * (`triedToFix`), which the note says, so the user knows this is not the first resort.
  * Renders nothing when the two agree within a grosz.
  */
 export function TotalsGapNote({
@@ -29,6 +33,7 @@ export function TotalsGapNote({
   onAddDiscount,
   onFix,
   busy = false,
+  triedToFix = false,
   className,
 }: TotalsGapNoteProps) {
   const totals = totalsGap(linesSum, printedTotal);
@@ -38,6 +43,11 @@ export function TotalsGapNote({
   return (
     <Note tone="warning" className={className}>
       <div className="flex flex-col gap-2.5">
+        {triedToFix && (
+          <p className="m-0 font-semibold">
+            We read this receipt again and still could not make it add up, so it needs a look.
+          </p>
+        )}
         <p className="m-0">
           The lines come to <strong className="tabular-nums">{money(linesSum)}</strong>,{" "}
           <strong className="tabular-nums">{money(totals.gap)}</strong> {over ? "more" : "less"}{" "}
