@@ -41,6 +41,7 @@ from app.schemas.receipt import (
     PaginatedReceiptsResponse,
     ReceiptDetailResponse,
     ReceiptResponse,
+    ResolveDateRequest,
     ResolveDuplicateRequest,
     ResolvePositionMatchRequest,
     ResolveTotalRequest,
@@ -519,6 +520,51 @@ async def resolve_total(
     extractions[idx] = updated_extraction
     # Replaced in place inside the JSON column, which SQLAlchemy cannot see:
     # without this flag the typed total is returned but never saved.
+    flag_modified(job, "result_data")
+    await session.commit()
+
+    return UploadJobStatusResponse(
+        job_id=job.id,
+        status=job.status,
+        file_ids=job.file_ids,
+        extracted_data=job.result_data,
+        total_items=job.total_items or 0,
+        processed_items=job.processed_items or 0,
+    )
+
+
+@router.post("/upload/{job_id}/resolve-date", response_model=UploadJobStatusResponse)
+async def resolve_date(
+    job_id: uuid.UUID,
+    request_data: ResolveDateRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> UploadJobStatusResponse:
+    """Set a receipt's purchase date before it is stored (BRD A11, D3).
+
+    For a receipt that showed no date and was given its upload day, or one whose date
+    was misread. Another user's job is not found (N2).
+    """
+    stmt = select(UploadJob).where(UploadJob.id == job_id, UploadJob.user_id == current_user.id)
+    job = (await session.execute(stmt)).scalar_one_or_none()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if not job.result_data or "extractions" not in job.result_data:
+        raise HTTPException(status_code=400, detail="Job has no extractions")
+    extractions = job.result_data["extractions"]
+    idx = request_data.extraction_index
+    if idx < 0 or idx >= len(extractions):
+        raise HTTPException(status_code=400, detail="Invalid extraction index")
+
+    extraction = {
+        **extractions[idx],
+        "transaction_date": request_data.transaction_date.isoformat(),
+        "transaction_date_confidence": 100,
+        "transaction_date_assumed": False,
+    }
+    parsed = ExtractedReceipt(**extraction)
+    extraction["requires_manual_review"] = parsed.requires_manual_review
+    extractions[idx] = extraction
     flag_modified(job, "result_data")
     await session.commit()
 

@@ -472,6 +472,30 @@ export class UploadStore {
   }
 
   /**
+   * Set a receipt's purchase date before it is stored (BRD A11, D3): for one that showed
+   * no date and was given its upload day, or one whose date was misread. `date` is
+   * YYYY-MM-DD.
+   */
+  async resolveDate(extractionIndex: number, date: string): Promise<boolean> {
+    if (!this.jobId) return false;
+    try {
+      const res = await this.api.POST("/receipts/upload/{job_id}/resolve-date", {
+        params: { path: { job_id: this.jobId } },
+        body: { extraction_index: extractionIndex, transaction_date: date },
+      });
+      if (res.error) throw new Error(errorMessage(res.error, "Failed to set the date"));
+      runInAction(() => {
+        if (res.data.extracted_data) {
+          this.extractedData = res.data.extracted_data;
+        }
+      });
+      return true;
+    } catch (err) {
+      return this.report(err, "Failed to set the date");
+    }
+  }
+
+  /**
    * Correct one line item the parser misread, before anything is stored.
    *
    * Only the fields given are sent: the backend leaves the rest as parsed, and

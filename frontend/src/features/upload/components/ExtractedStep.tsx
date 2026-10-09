@@ -51,6 +51,7 @@ interface ExtractedData {
   items_sum_matches_total?: boolean | null;
   computed_total?: string | null;
   total_reconciled_by?: string | null;
+  transaction_date_assumed?: boolean;
   requires_manual_review?: boolean | null;
   line_items?: ExtractedLineItem[];
   file_ids?: string[];
@@ -86,6 +87,12 @@ function missingFieldsMessage(data: ExtractedData): string {
   const after = data.receipt_total ? " Set it from the receipt's Edit once it is stored." : "";
   return `${what} could be read, so it is excluded from budget calculation until you fill it in.${after}`;
 }
+
+const PURCHASE_DAY = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
 
 export const ExtractedStep = observer(function ExtractedStep() {
   const { uploadStore } = useStores();
@@ -314,6 +321,30 @@ export const ExtractedStep = observer(function ExtractedStep() {
                     ? "Save this receipt"
                     : "Leave this receipt out"}
                 </label>
+              )}
+
+              {data.transaction_date_assumed && data.transaction_date && (
+                <Note tone="info" className="rounded-none border-x-0 border-t-0 px-5 py-3.5">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <span>
+                      No date on the receipt, so it is dated the day you uploaded it:{" "}
+                      <strong>
+                        {PURCHASE_DAY.format(new Date(`${data.transaction_date}T00:00:00`))}
+                      </strong>
+                      .
+                    </span>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="min-h-11 w-full shrink-0 md:min-h-0 md:w-auto"
+                      onClick={() => {
+                        uploadStore.startEditingExtraction(index);
+                      }}
+                    >
+                      Change date
+                    </Button>
+                  </div>
+                </Note>
               )}
 
               {matchesTotal === false && data.computed_total && data.receipt_total && (

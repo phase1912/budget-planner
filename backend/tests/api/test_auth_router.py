@@ -69,6 +69,7 @@ class TestRegister:
             },
         )
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
+        assert resp.json()["detail"].startswith("The password needs at least 8 characters")
 
     def test_duplicate_email_rejected(self) -> None:
         """Registering with an email already in use must return 400."""

@@ -81,7 +81,7 @@ def register_account(auth_state, override_db, email="new.user@example.com"):
         "/auth/register",
         json={
             "email": email,
-            "password": "securepassword",
+            "password": "Secure-pass1",
             "first_name": "Test",
             "last_name": "User",
         },
@@ -113,7 +113,7 @@ def account_already_exists(auth_state, override_db, email):
         "/auth/register",
         json={
             "email": email,
-            "password": "securepassword",
+            "password": "Secure-pass1",
             "first_name": "Test",
             "last_name": "User",
         },
@@ -127,7 +127,7 @@ def register_duplicate(auth_state, override_db):
         "/auth/register",
         json={
             "email": "existing.user@example.com",
-            "password": "anotherpassword",
+            "password": "Another-pass2",
             "first_name": "Test",
             "last_name": "User",
         },

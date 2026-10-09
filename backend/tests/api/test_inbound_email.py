@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from email.message import EmailMessage
 from typing import Any
 from unittest.mock import patch
@@ -290,3 +291,33 @@ async def test_mail_past_the_monthly_receipt_quota_is_dropped_unread(
 
     assert response.json() == {"status": "dropped", "reason": "over_quota"}
     assert (await _receipts(db_session, owner), parser.read) == ([], [])
+
+
+@pytest.mark.asyncio
+async def test_a_receipt_with_no_readable_date_is_stored_on_the_day_it_arrived(
+    db_session: AsyncSession,
+) -> None:
+    """It is never held back for a date nobody can type in (BRD A11, D3)."""
+    owner = await UserFactory.create_async(email="shopper@example.com")
+    undated = StubParser()
+    undated.parse = _without_date(undated.parse)  # type: ignore[method-assign]
+
+    await _deliver(
+        db_session,
+        _address(owner),
+        _message("shopper@example.com", html="<p>x</p>"),
+        parser=undated,
+    )
+
+    [receipt] = await _receipts(db_session, owner)
+    assert receipt.transaction_date is not None
+    assert receipt.transaction_date.date() == datetime.now(UTC).date()
+    assert receipt.status == ReceiptStatus.PARSED
+
+
+def _without_date(parse: Any) -> Any:
+    async def parse_without_date(images: list[bytes], *, mime_types: Any = None) -> Any:
+        reading = await parse(images, mime_types=mime_types)
+        return reading.model_copy(update={"transaction_date": None})
+
+    return parse_without_date

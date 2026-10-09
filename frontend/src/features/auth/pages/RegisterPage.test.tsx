@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { describe, it, expect, vi } from "vitest";
 import { RegisterPage } from "./RegisterPage";
@@ -27,5 +27,42 @@ describe("RegisterPage", () => {
     expect(screen.getByLabelText(/^password/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /register/i })).toBeInTheDocument();
+  });
+
+  function renderPage() {
+    render(
+      <BrowserRouter>
+        <RegisterPage />
+      </BrowserRouter>,
+    );
+    const type = (label: RegExp, value: string) => {
+      fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    };
+    return { type };
+  }
+
+  it("ticks off each password rule as it is met, and holds Register until all are", () => {
+    const { type } = renderPage();
+    const checklist = within(screen.getByRole("list", { name: "What the password needs" }));
+
+    type(/^password/i, "kawa");
+    expect(checklist.getByText("At least 8 characters")).toHaveTextContent("missing");
+    expect(checklist.getByText("A letter")).toHaveTextContent("done");
+    expect(checklist.getByText("A digit")).toHaveTextContent("missing");
+    expect(screen.getByRole("button", { name: /register/i })).toBeDisabled();
+
+    type(/^password/i, "Kawa-2026");
+    type(/confirm password/i, "Kawa-2026");
+    expect(checklist.getByText(/special character/)).toHaveTextContent("done");
+    expect(checklist.getByText("Both passwords match")).toHaveTextContent("done");
+    expect(screen.getByRole("button", { name: /register/i })).toBeEnabled();
+  });
+
+  it("says when the two passwords differ", () => {
+    const { type } = renderPage();
+    type(/^password/i, "Kawa-2026");
+    type(/confirm password/i, "Kawa-2027");
+    expect(screen.getByText("Both passwords match")).toHaveTextContent("missing");
+    expect(screen.getByRole("button", { name: /register/i })).toBeDisabled();
   });
 });

@@ -49,6 +49,16 @@ class ResolvePositionMatchRequest(BaseModel):
     action: Literal["same", "different"]
 
 
+class ResolveDateRequest(BaseModel):
+    """The purchase date the user set for a receipt before storing it (BRD A11, D3).
+
+    Replaces the upload day assumed when the receipt showed no date, or a misread one.
+    """
+
+    extraction_index: int
+    transaction_date: date
+
+
 class ResolveTotalRequest(BaseModel):
     """The printed total the user typed for a receipt the parser could not read (BRD A11)."""
 

@@ -117,6 +117,11 @@ Rules that must hold at all times. Each is a candidate for a test.
    total, so the model can never "fix" a receipt by rewriting what was paid. Only what
    still disagrees is shown to the user, marked as already tried (`total_reconciled_by`
    = `unresolved`), with 5b's offer.
+5d. A receipt with no readable date is dated the day it was uploaded (UTC), marked as
+    assumed, and stored like any other; a missing date never holds it out of the month
+    or stops the upload (`app/domain/receipt_dates.py`). The wizard says the date was
+    assumed and lets the user change it before storing; after storing it is changed
+    from Edit like any date. Only a missing total still needs the user (5b, A11).
 6. An in-progress month is always labelled incomplete wherever it is displayed (D4).
 6a. Where the user has set a monthly limit, a month's spend is shown as a share of it
    (D7): rounded down, so a month under its limit never reads 100%, and not capped, so
@@ -271,6 +276,10 @@ Rules that must hold at all times. Each is a candidate for a test.
 
 19. Login and registration return an identical generic error whether the email is
     unknown or the password is wrong (G2, G4).
+19a. A new password has at least 8 characters, a letter, a digit and a special
+    character, and is not a common password (G1, `app/domain/passwords.py`). The
+    registration screen ticks each rule off as it is met, and a refusal names the rules
+    the password lacks — unlike a taken email, which stays generic (19).
 20. Refresh tokens rotate on use; presenting one already exchanged revokes every token
     issued from that session (G5, G6).
 21. An OIDC identity links to an existing account only when the provider reports a

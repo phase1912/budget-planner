@@ -14,6 +14,7 @@ from app.core.security import (
     get_password_hash,
     verify_password,
 )
+from app.domain.passwords import password_problems
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.repository.user import UserRepository
@@ -49,9 +50,9 @@ class AuthService:
         return access_token, refresh_token_str
 
     async def register(self, request: RegisterRequest) -> tuple[UserResponse, str, str]:
-        common_passwords = {"password", "12345678", "qwertyui", "admin123", "password123"}
-        if request.password.lower() in common_passwords or len(request.password) < 8:
-            raise RegistrationError("Registration failed. Please check your details and try again.")
+        problems = password_problems(request.password)
+        if problems:
+            raise RegistrationError(f"The password needs {', '.join(problems)}.")
 
         existing_user = await self.repo.get_by_email(request.email)
         if existing_user:

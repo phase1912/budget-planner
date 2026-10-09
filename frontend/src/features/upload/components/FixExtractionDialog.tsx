@@ -13,10 +13,13 @@ interface EditableItem {
 interface ExtractionPayload {
   line_items?: EditableItem[];
   merchant_name?: string | null;
+  transaction_date?: string | null;
+  transaction_date_assumed?: boolean;
 }
 
 /**
- * Lets the user correct what the parser read before any of it is stored.
+ * Lets the user correct what the parser read before any of it is stored: the purchase
+ * date (assumed from the upload day when the receipt shows none) and the lines.
  *
  * A receipt whose lines do not add up cannot be committed, so without somewhere
  * to fix a misread price the user would be stuck (BRD A9, A11). Only the rows
@@ -32,11 +35,13 @@ export const FixExtractionDialog = observer(function FixExtractionDialog() {
   const parsedItems = extraction?.line_items ?? [];
 
   const [draft, setDraft] = useState<EditableItem[] | null>(null);
+  const [dateDraft, setDateDraft] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   if (index === null || !extraction) return null;
 
   const items = draft ?? parsedItems;
+  const parsedDate = extraction.transaction_date?.slice(0, 10) ?? "";
 
   const update = (row: number, field: keyof EditableItem, value: string) => {
     const next = items.map((item, i) => (i === row ? { ...item, [field]: value } : item));
@@ -45,12 +50,17 @@ export const FixExtractionDialog = observer(function FixExtractionDialog() {
 
   const close = () => {
     setDraft(null);
+    setDateDraft(null);
     uploadStore.stopEditingExtraction();
   };
 
   const save = async () => {
     setIsSaving(true);
     try {
+      if (dateDraft !== null && dateDraft !== "" && dateDraft !== parsedDate) {
+        // The store has said why; keep the dialog open so the edit is not lost.
+        if (!(await uploadStore.resolveDate(index, dateDraft))) return;
+      }
       for (const [row, item] of items.entries()) {
         const original = parsedItems[row];
         if (!original) continue;
@@ -96,6 +106,23 @@ export const FixExtractionDialog = observer(function FixExtractionDialog() {
       </ModalHeader>
 
       <ModalBody className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1.5 border-b border-border pb-3 md:max-w-60">
+          <Input
+            id="purchase-date"
+            type="date"
+            label="Purchase date"
+            value={dateDraft ?? parsedDate}
+            max={new Date().toISOString().slice(0, 10)}
+            onChange={(e) => {
+              setDateDraft(e.target.value);
+            }}
+          />
+          {extraction.transaction_date_assumed && dateDraft === null && (
+            <span className="text-base text-muted-foreground">
+              Not on the receipt — this is the day you uploaded it.
+            </span>
+          )}
+        </div>
         <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_80px_110px_110px] gap-3 text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground">
           <span>Item</span>
           <span className="text-right">Qty</span>

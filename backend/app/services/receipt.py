@@ -22,6 +22,7 @@ from app.domain.discounts import (
     file_discounts_with_products,
     printed_amount,
 )
+from app.domain.receipt_dates import with_upload_date
 from app.domain.receipt_reconciliation import (
     Reconciliation,
     accepts_recheck,
@@ -62,6 +63,16 @@ each costs a model call and the user's wait.
 
 def _reading_fields(extraction: dict[str, object]) -> dict[str, Any]:
     return {k: v for k, v in extraction.items() if k in ExtractedReceipt.model_fields}
+
+
+def _dated(extraction: dict[str, object], today: date) -> dict[str, object]:
+    """The reading dated by its upload day if it had no date, with its review flag
+    recomputed: a missing date no longer holds a receipt back (BRD A11, D3)."""
+    dated = with_upload_date(extraction, today)
+    if dated is extraction:
+        return extraction
+    validated = ExtractedReceipt(**_reading_fields(dated)).model_dump()
+    return {**dated, "requires_manual_review": validated["requires_manual_review"]}
 
 
 def _settled(extraction: dict[str, object], how: Reconciliation) -> dict[str, object]:
@@ -192,6 +203,7 @@ class ReceiptService:
                     uploads = cast(list[UploadedFile], files_data)
                     extraction = (await photos.ingest(user, uploads)).extraction
                     extraction = await self._reconcile_total(user, extraction)
+                    extraction = _dated(extraction, datetime.now(UTC).date())
                     if self.parser_port:
                         await self._categorise_extraction(extraction, categories, rules)
                         self._file_discount_lines(extraction)
@@ -276,6 +288,7 @@ class ReceiptService:
                 return
             result = await ingestion.ingest(user, payload)
             extraction = await self._reconcile_total(user, result.extraction)
+            extraction = _dated(extraction, datetime.now(UTC).date())
             if "error" in extraction:
                 extraction["requires_manual_review"] = True
             else:
