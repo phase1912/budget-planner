@@ -13,6 +13,7 @@ from typing import Any
 import jwt
 import pytest
 from httpx import ASGITransport, AsyncClient, Response
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
@@ -20,6 +21,7 @@ from app.core.config import get_settings
 from app.core.context import current_user_id
 from app.db.session import get_db_session
 from app.main import create_app
+from app.models.receipt import Receipt, ReceiptChannel
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from tests.factories.upload_job import UploadJobFactory
@@ -125,3 +127,25 @@ async def test_a_duplicate_decision_is_saved(
     stored = await _stored_extraction(db_session, job)
     assert stored["is_duplicate"] is False
     assert stored["duplicate_resolved"] == resolution
+
+
+@pytest.mark.asyncio
+async def test_a_stored_receipt_keeps_the_channel_its_upload_came_through(
+    db_session: AsyncSession,
+) -> None:
+    """F11.1.4: the job carries its channel to the receipt, rather than every receipt
+    defaulting to a photo whatever brought it in."""
+    user = await UserFactory.create_async()
+    job = await _job(user, _unreadable_total(receipt_total="37.00", requires_manual_review=False))
+    job.channel = ReceiptChannel.EMAIL
+    await db_session.flush()
+
+    committed = await _post(
+        db_session, user, f"/receipts/upload/{job.id}/commit", {"indices_to_store": [0]}
+    )
+
+    assert committed.status_code == 200, committed.json()
+    stored = (
+        await db_session.execute(select(Receipt).where(Receipt.user_id == user.id))
+    ).scalar_one()
+    assert stored.channel == ReceiptChannel.EMAIL
