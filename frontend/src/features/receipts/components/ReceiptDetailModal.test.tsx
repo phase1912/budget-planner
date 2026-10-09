@@ -40,6 +40,7 @@ vi.mock("@/stores/StoreContext", () => ({
       reassignCategory: vi.fn(),
     },
     toastStore: { showError: vi.fn() },
+    authStore: { user: { currency: "PLN" } },
     receiptStore: {
       isLoadingDetail: false,
       get receiptDetail() {
@@ -128,5 +129,33 @@ describe("ReceiptDetailModal", () => {
     render(<ReceiptDetailModal />);
 
     expect(screen.queryByRole("button", { name: "Keep both" })).not.toBeInTheDocument();
+  });
+
+  it("shows both amounts of a receipt converted from another currency (F11.7)", () => {
+    detail.receipt = {
+      ...PHOTO_RECEIPT,
+      total_amount: "103.42",
+      original_currency: "UAH",
+      original_total: "1197.00",
+      exchange_rate: "0.0864",
+      exchange_rate_date: "2026-10-02",
+      exchange_rate_source: "NBP",
+    };
+    render(<ReceiptDetailModal />);
+
+    expect(screen.getByText("1197.00 UAH ≈ 103.42 PLN · NBP rate, 2 October")).toBeInTheDocument();
+  });
+
+  it("says why a foreign receipt with no rate is not counted", () => {
+    detail.receipt = {
+      ...PHOTO_RECEIPT,
+      status: "manual_review",
+      original_currency: "UAH",
+      original_total: "45.50",
+      exchange_rate: null,
+    };
+    render(<ReceiptDetailModal />);
+
+    expect(screen.getByText(/No UAH rate could be found/)).toBeInTheDocument();
   });
 });

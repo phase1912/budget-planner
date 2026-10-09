@@ -4,6 +4,7 @@ import { FixExtractionDialog } from "./FixExtractionDialog";
 import { ResolveTotalForm } from "./ResolveTotalForm";
 import { useStores } from "@/stores/StoreContext";
 import { alreadyStoredText, type AlreadyStored } from "../alreadyStored";
+import { conversionLine, converted } from "@/shared/exchange";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
 import { Button } from "@/shared/components/Button/Button";
 import { SecureImage, Note, IconTile, Pill, TotalsGapNote } from "@/shared/components";
@@ -60,6 +61,7 @@ interface ExtractedData {
   duplicate_resolved?: string | null;
   is_skipped?: boolean | null;
   already_stored?: AlreadyStored | null;
+  conversion?: Conversion | null;
   position_matches?: {
     item_a_index: number;
     item_b_index: number;
@@ -68,6 +70,16 @@ interface ExtractedData {
     user_overridden?: boolean;
   }[];
   error?: string | null;
+}
+
+/** The rate a foreign receipt will be stored at, as the server previewed it (F11.7). */
+interface Conversion {
+  currency: string;
+  account_currency: string;
+  rate?: string;
+  rate_date?: string;
+  source?: string;
+  unavailable?: boolean;
 }
 
 interface ExtractedDataPayload {
@@ -369,6 +381,10 @@ export const ExtractedStep = observer(function ExtractedStep() {
                   }}
                   triedToFix={data.total_reconciled_by === "unresolved"}
                 />
+              )}
+
+              {data.conversion && (
+                <ConversionNote conversion={data.conversion} total={data.receipt_total} />
               )}
 
               {isNotReceipt && (
@@ -714,3 +730,32 @@ export const ExtractedStep = observer(function ExtractedStep() {
     </Container>
   );
 });
+
+/**
+ * What a foreign receipt will count as once stored (F11.7, ADR-0016), following a total
+ * corrected in the wizard; or, with no rate to be had, that it will wait in review.
+ */
+function ConversionNote({ conversion, total }: { conversion: Conversion; total?: string | null }) {
+  const className = "rounded-none border-x-0 border-t-0 px-5 py-3.5";
+  if (conversion.unavailable || !conversion.rate) {
+    return (
+      <Note tone="warning" className={className}>
+        No {conversion.currency} to {conversion.account_currency} rate could be found for this date.
+        It will be stored in {conversion.currency} and wait in review, not counted, until you enter
+        the amounts in {conversion.account_currency}.
+      </Note>
+    );
+  }
+  const amount = converted(total, conversion.rate);
+  return (
+    <Note tone="info" className={className}>
+      {total && amount
+        ? conversionLine(total, conversion.currency, amount, conversion.account_currency, {
+            rate: conversion.rate,
+            rateDate: conversion.rate_date ?? "",
+            source: conversion.source ?? "",
+          })
+        : `Paid in ${conversion.currency}; it will be counted in ${conversion.account_currency}.`}
+    </Note>
+  );
+}

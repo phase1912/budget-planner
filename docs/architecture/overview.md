@@ -63,6 +63,12 @@ stored (F11.5, ADR-0015): by its fiscal identity (`app/domain/fiscal_identity.py
 off the receipt by the model, which recognises a copy exactly, and otherwise by merchant,
 date and total, which only flags it for the user.
 
+A receipt paid in another currency is converted into the account's when it is stored
+(F11.7, ADR-0016) through `ExchangeRatePort` (`app/ports/exchange_rates.py`): the National
+Bank of Poland's rates, the ECB's (Frankfurter) as fallback (`app/adapters/exchange_rates.py`),
+each rate cached in the `exchange_rates` table by pair and date. The wizard is shown the
+rate before storing; budget and statistics only ever see the account's currency.
+
 ### Errors crossing the API boundary
 
 A service or repository that needs to fail the request raises an `app.errors.AppError`
@@ -296,5 +302,5 @@ when they changed, and checks `/health`. `terraform apply` is a deliberate local
 ## Deliberate non-goals
 
 Out of scope by BRD section 4.2, and worth stating so nobody "helpfully" adds them:
-bank integrations, multi-currency conversion, shared household budgets, automated
-payments, tax advice.
+bank integrations, shared household budgets, automated payments, tax advice. Budgets,
+goals and advice are in one currency per account; only receipts are converted (ADR-0016).

@@ -515,7 +515,7 @@ export interface paths {
         put?: never;
         /**
          * Commit Job
-         * @description Commit all resolved extractions to the database (F4.7).
+         * @description Commit all resolved extractions to the database (F4.7), in the account's currency.
          */
         post: operations["commit_job_receipts_upload__job_id__commit_post"];
         delete?: never;
@@ -1709,6 +1709,16 @@ export interface components {
             fiscal_receipt_number?: string | null;
             /** Possible Duplicate Of Id */
             possible_duplicate_of_id?: string | null;
+            /** Original Currency */
+            original_currency?: string | null;
+            /** Original Total */
+            original_total?: string | null;
+            /** Exchange Rate */
+            exchange_rate?: string | null;
+            /** Exchange Rate Date */
+            exchange_rate_date?: string | null;
+            /** Exchange Rate Source */
+            exchange_rate_source?: string | null;
             /** File Ids */
             file_ids: string[];
             /**
@@ -1780,6 +1790,16 @@ export interface components {
             fiscal_receipt_number?: string | null;
             /** Possible Duplicate Of Id */
             possible_duplicate_of_id?: string | null;
+            /** Original Currency */
+            original_currency?: string | null;
+            /** Original Total */
+            original_total?: string | null;
+            /** Exchange Rate */
+            exchange_rate?: string | null;
+            /** Exchange Rate Date */
+            exchange_rate_date?: string | null;
+            /** Exchange Rate Source */
+            exchange_rate_source?: string | null;
             /** File Ids */
             file_ids: string[];
             /**

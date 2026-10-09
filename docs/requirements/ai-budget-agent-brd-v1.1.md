@@ -44,7 +44,7 @@ Manual expense tracking has a well-known adoption problem: users abandon budgeti
 ### 4.2 Out of Scope (for this phase)
 
 - Direct integration with bank accounts or card transaction feeds.
-- Multi-currency conversion (single-currency operation assumed; currency is configurable per user).
+- ~~Multi-currency conversion~~ — reversed for receipts by ADR-0016 (F11.7): a receipt in another currency is converted into the account's currency at the NBP rate of its purchase date. Budgets, goals and advice stay in one currency per account.
 - Shared/household budgets across multiple user accounts.
 - Automated bill payment or financial transactions of any kind — the agent advises, it does not act on the user's finances.
 - Tax filing or tax-advice functionality.
@@ -638,7 +638,7 @@ Feature: Cross-cutting non-functional requirements
 ## 10. Assumptions
 
 - Users have a smartphone or device capable of taking a legible photo of a receipt.
-- Users operate in a single home currency per account (PLN used in illustrative examples).
+- Users operate in a single home currency per account (PLN used in illustrative examples); receipts in other currencies are converted into it (ADR-0016).
 - Receipts are itemized (list individual purchased items), not just a single total — item-level features (categorization, position matching, item-based advice) depend on this.
 - A default spending category taxonomy will be provided by the business prior to development; users may extend it with custom categories.
 - The business will define initial confidence thresholds (for OCR extraction, categorization, and manual-review triggers) in collaboration with the development team during design.

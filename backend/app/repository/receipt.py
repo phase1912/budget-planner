@@ -653,6 +653,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
             fiscal_register_id=identity[0] if identity else None,
             fiscal_receipt_number=identity[1] if identity else None,
             possible_duplicate_of_id=possible_duplicate_of_id,
+            **_currency_fields(extraction),
         )
 
         items_data = extraction.get("line_items", [])
@@ -769,3 +770,24 @@ class ReceiptRepository(BaseRepository[Receipt]):
         stmt = select(LineItem).join(Receipt).where(LineItem.id == item_id)
         stmt = self._apply_ownership(stmt)
         return (await self.session.execute(stmt)).scalar_one_or_none()
+
+
+def _currency_fields(extraction: dict[str, typing.Any]) -> dict[str, typing.Any]:
+    """The printed currency, total and rate a converted receipt keeps (F11.7, ADR-0016)."""
+    from datetime import date
+    from decimal import Decimal, InvalidOperation
+
+    def decimal(value: typing.Any) -> Decimal | None:
+        try:
+            return None if value in (None, "") else Decimal(str(value).replace(",", "."))
+        except InvalidOperation:
+            return None
+
+    rate_date = extraction.get("exchange_rate_date")
+    return {
+        "original_currency": extraction.get("original_currency"),
+        "original_total": decimal(extraction.get("original_total")),
+        "exchange_rate": decimal(extraction.get("exchange_rate")),
+        "exchange_rate_date": date.fromisoformat(rate_date) if rate_date else None,
+        "exchange_rate_source": extraction.get("exchange_rate_source"),
+    }

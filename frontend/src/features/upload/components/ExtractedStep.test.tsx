@@ -72,6 +72,34 @@ describe("ExtractedStep", () => {
     expect(screen.getByText("150.00 PLN")).toBeInTheDocument();
   });
 
+  const withConversion = (conversion: Record<string, unknown>) => {
+    runInAction(() => {
+      const payload = mockStore.uploadStore.extractedData as {
+        extractions: Record<string, unknown>[];
+      };
+      const [extraction = {}] = payload.extractions;
+      Object.assign(extraction, { currency: "UAH", receipt_total: "1197.00", conversion });
+    });
+  };
+
+  it("shows what a foreign receipt will count as before it is stored (F11.7)", () => {
+    withConversion({
+      currency: "UAH",
+      account_currency: "PLN",
+      rate: "0.0864",
+      rate_date: "2026-10-02",
+      source: "NBP",
+    });
+    renderComponent();
+    expect(screen.getByText("1197.00 UAH ≈ 103.42 PLN · NBP rate, 2 October")).toBeInTheDocument();
+  });
+
+  it("warns that a foreign receipt with no rate will wait in review", () => {
+    withConversion({ currency: "UAH", account_currency: "PLN", unavailable: true });
+    renderComponent();
+    expect(screen.getByText(/No UAH to PLN rate could be found/)).toBeInTheDocument();
+  });
+
   it("should render line items", () => {
     renderComponent();
     expect(screen.getByText("Item 1")).toBeInTheDocument();

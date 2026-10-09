@@ -252,6 +252,11 @@ class ReceiptResponse(BaseModel):
     fiscal_register_id: str | None = None
     fiscal_receipt_number: str | None = None
     possible_duplicate_of_id: uuid.UUID | None = None
+    original_currency: str | None = None
+    original_total: Decimal | None = None
+    exchange_rate: Decimal | None = None
+    exchange_rate_date: date | None = None
+    exchange_rate_source: str | None = None
     file_ids: list[str]
     created_at: datetime
     line_items: list[LineItemResponse] = []

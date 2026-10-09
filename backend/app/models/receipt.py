@@ -1,10 +1,10 @@
 import enum
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, text
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -78,6 +78,14 @@ class Receipt(Model):
         DateTime(timezone=True), nullable=True
     )
     total_amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    # A receipt paid in another currency keeps what was printed and the rate it was
+    # converted at; its amounts above are in the account's currency (F11.7, ADR-0016).
+    # A currency with no rate means the amounts are still the printed ones, held in review.
+    original_currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
+    original_total: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    exchange_rate: Mapped[Decimal | None] = mapped_column(Numeric(18, 8), nullable=True)
+    exchange_rate_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    exchange_rate_source: Mapped[str | None] = mapped_column(String(20), nullable=True)
     status: Mapped[ReceiptStatus] = mapped_column(
         Enum(ReceiptStatus, name="receipt_status_enum", create_type=False),
         default=ReceiptStatus.UPLOADED,

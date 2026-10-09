@@ -20,6 +20,8 @@ os.environ["S3_BUCKET_NAME"] = "test-bucket"
 os.environ["AWS_ACCESS_KEY_ID"] = "test"
 os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
 os.environ["S3_ENDPOINT_URL"] = "http://localhost:9000"
+# Foreign receipts are converted only where a test injects a stub rate source (F11.7).
+os.environ["EXCHANGE_RATE_SOURCE"] = "off"
 import pytest_asyncio
 from alembic.config import Config
 from sqlalchemy import text

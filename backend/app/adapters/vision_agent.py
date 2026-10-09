@@ -34,7 +34,9 @@ Extract the following into the JSON schema provided:
 - merchant_name: the store or restaurant name from the header
 - transaction_date: in YYYY-MM-DD format
 - transaction_time: in HH:MM format (24-hour)
-- currency: ISO 4217 code (e.g. PLN, USD, EUR)
+- currency: ISO 4217 code of the currency the amounts are in (e.g. PLN, UAH, USD, \
+  EUR), from the code or symbol printed (zł, грн, $, €) or the country of the \
+  shop's address; null if the receipt gives no way to tell
 - line_items: every purchased item with name, quantity, unit_price, total_price
 - receipt_total: the amount actually paid. When the footer prints both a goods \
   subtotal ("SUMA PLN") and an amount to pay ("DO ZAPŁATY", "RAZEM DO ZAPŁATY", \
