@@ -23,7 +23,7 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | `created_at` | Timestamp | Standard audit field |
 | `updated_at` | Timestamp | Standard audit field |
 | **IdentityLink** | A linked Google or Facebook identity, verified-email-gated (G9-G11). | User |
-| **Receipt** | One purchase transaction, from one or more photos or a forwarded e-receipt. Records the channel it arrived through (`photo`, `email`) and, for email, the message's Message-ID as its source reference (F11.1, F11.2). | User |
+| **Receipt** | One purchase transaction, from one or more photos or a forwarded e-receipt. Records the channel it arrived through (`photo`, `email`) and, for email, the message's Message-ID as its source reference (F11.1, F11.2). Carries its fiscal identity when one was read — the cash register's number and the receipt's number on it (F11.3, ADR-0015) — and, for an emailed receipt alike to a stored one, a mark naming that receipt until the user decides (F11.5). | User |
 | **LineItem** | One position on a receipt: product, quantity, unit price, total. | Receipt |
 | **Category** | A spending classification. Either a system default or user-defined. | User (nullable for defaults) |
 | **PositionMatch** | A decision that two line items are, or are not, the same physical purchase. | Receipt |
@@ -179,6 +179,19 @@ Rules that must hold at all times. Each is a candidate for a test.
     is normal repeat buying (B9).
 11. A user override wins over any automatic determination and is stored as labelled data
     for future tuning (B7, B8).
+
+**Duplicate receipts**
+
+11a. A receipt's fiscal identity is its register number and its receipt number, both read
+    and normalised to letters and digits; half of one identifies nothing. A receipt whose
+    fiscal identity matches one the user already has is the same receipt, whichever
+    channel brought it: it is never stored again — the wizard says so and when the first
+    was added, and email drops it (F11.5).
+11b. Without a fiscal match, a receipt with the same merchant, date and total as a stored
+    one is only likely the same: the wizard asks, and an emailed one is stored with the
+    mark until the user keeps both or removes it. Two receipts whose fiscal identities
+    are both known and differ are never likely duplicates (A14).
+11c. A receipt the user skipped as a duplicate is never stored (A14).
 
 **Categorisation**
 

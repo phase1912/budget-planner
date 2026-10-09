@@ -8,6 +8,7 @@ import {
   ModalBody,
   ModalFooter,
   Button,
+  Note,
   IconTile,
   SecureImage,
   TotalsGapNote,
@@ -95,6 +96,11 @@ export const ReceiptDetailModal = observer(() => {
                 Reference: {source.reference}
               </span>
             )}
+            {receipt.fiscal_register_id && receipt.fiscal_receipt_number && (
+              <span className="break-words text-[13px] text-muted-foreground">
+                Register {receipt.fiscal_register_id} · receipt {receipt.fiscal_receipt_number}
+              </span>
+            )}
           </div>
         </div>
         <button
@@ -119,6 +125,38 @@ export const ReceiptDetailModal = observer(() => {
       </ModalHeader>
 
       <ModalBody>
+        {receipt.possible_duplicate_of_id && (
+          <Note tone="warning" className="mb-3">
+            <span className="flex flex-col gap-3">
+              <span>
+                This looks like a receipt you already have: same shop, day and total. Is it a second
+                purchase?
+              </span>
+              <span className="flex gap-2 [&>*]:flex-1 md:[&>*]:flex-none">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={receiptStore.isKeepingDuplicate}
+                  onClick={() => {
+                    void receiptStore.keepPossibleDuplicate();
+                  }}
+                >
+                  Keep both
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => {
+                    receiptStore.confirmDelete(receipt.id);
+                  }}
+                >
+                  <span className="hidden md:inline">Remove this one</span>
+                  <span className="md:hidden">Remove</span>
+                </Button>
+              </span>
+            </span>
+          </Note>
+        )}
         {receipt.status === "manual_review" && receipt.total_amount && (
           <TotalsGapNote
             className="mb-3"

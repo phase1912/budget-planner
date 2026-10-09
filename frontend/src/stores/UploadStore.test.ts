@@ -45,6 +45,34 @@ describe("UploadStore", () => {
     expect(store.errorTitle).toBeNull();
   });
 
+  it("leaves a receipt the user already has out of the selection (F11.5)", async () => {
+    (mockApi as { POST: ReturnType<typeof vi.fn> }).POST.mockResolvedValue({
+      data: { message: "File accepted", job_id: "test-job-id" },
+      error: undefined,
+      response: { status: 200 },
+    });
+    (mockApi as { GET: ReturnType<typeof vi.fn> }).GET.mockResolvedValue({
+      data: {
+        status: "completed",
+        file_ids: ["f1", "f2"],
+        extracted_data: {
+          extractions: [
+            { merchant_name: "Rossmann", already_stored: { receipt_id: "r1" } },
+            { merchant_name: "Biedronka" },
+          ],
+        },
+      },
+      error: undefined,
+      response: { status: 200 },
+    });
+
+    await store.uploadFile(new File(["x"], "a.png", { type: "image/png" }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(Array.from(store.selectedIndices)).toEqual([1]);
+    expect(store.receiptsToStore).toBe(1);
+  });
+
   it("should handle 415 unsupported format error", async () => {
     (mockApi as { POST: ReturnType<typeof vi.fn> }).POST.mockResolvedValue({
       data: undefined,

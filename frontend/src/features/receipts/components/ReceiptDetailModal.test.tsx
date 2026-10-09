@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ReceiptDetailModal } from "./ReceiptDetailModal";
 
 const mockClearSelection = vi.fn();
+const mockKeep = vi.fn();
+const mockConfirmDelete = vi.fn();
 
 const PHOTO_RECEIPT = {
   id: "r1",
@@ -44,6 +46,9 @@ vi.mock("@/stores/StoreContext", () => ({
         return detail.receipt;
       },
       clearSelection: mockClearSelection,
+      keepPossibleDuplicate: mockKeep,
+      confirmDelete: mockConfirmDelete,
+      isKeepingDuplicate: false,
     },
   }),
 }));
@@ -95,5 +100,33 @@ describe("ReceiptDetailModal", () => {
     expect(screen.getByText("Added from email", { exact: false })).toBeInTheDocument();
     expect(screen.getByText("Reference: receipt-1@shop.example")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /photos/i })).toBeNull();
+  });
+
+  it("shows the fiscal numbers that identify the receipt (F11.3)", () => {
+    detail.receipt = {
+      ...PHOTO_RECEIPT,
+      fiscal_register_id: "ECA2201079960",
+      fiscal_receipt_number: "85503",
+    };
+    render(<ReceiptDetailModal />);
+
+    expect(screen.getByText("Register ECA2201079960 · receipt 85503")).toBeInTheDocument();
+  });
+
+  it("asks about a likely duplicate and lets the user keep both or remove it (F11.5)", () => {
+    detail.receipt = { ...PHOTO_RECEIPT, possible_duplicate_of_id: "r0" };
+    render(<ReceiptDetailModal />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Keep both" }));
+    fireEvent.click(screen.getByRole("button", { name: /remove/i }));
+
+    expect(mockKeep).toHaveBeenCalled();
+    expect(mockConfirmDelete).toHaveBeenCalledWith("r1");
+  });
+
+  it("does not ask about duplicates for an ordinary receipt", () => {
+    render(<ReceiptDetailModal />);
+
+    expect(screen.queryByRole("button", { name: "Keep both" })).not.toBeInTheDocument();
   });
 });

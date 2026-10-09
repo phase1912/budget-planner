@@ -22,6 +22,7 @@ from app.domain.discounts import (
     file_discounts_with_products,
     printed_amount,
 )
+from app.domain.fiscal_identity import fiscal_identity
 from app.domain.receipt_dates import with_upload_date
 from app.domain.receipt_reconciliation import (
     Reconciliation,
@@ -239,15 +240,7 @@ class ReceiptService:
 
                     if self.parser_port and self.storage_port:
                         repo = ReceiptRepository(session).bypass_ownership()
-                        is_dup = await repo.has_duplicate(
-                            user_id=user.id,
-                            merchant_name=cast(str | None, extraction.get("merchant_name")),
-                            transaction_date_str=cast(
-                                str | None, extraction.get("transaction_date")
-                            ),
-                            total_amount_str=cast(str | None, extraction.get("receipt_total")),
-                        )
-                        extraction["is_duplicate"] = is_dup
+                        await _mark_duplicates(repo, user.id, extraction)
                         all_extractions.append(extraction)
 
                 job.file_ids = all_file_ids
@@ -289,6 +282,11 @@ class ReceiptService:
             result = await ingestion.ingest(user, payload)
             extraction = await self._reconcile_total(user, result.extraction)
             extraction = _dated(extraction, datetime.now(UTC).date())
+            identity = fiscal_identity(extraction)
+            if identity and await receipts.find_by_fiscal_identity(user.id, identity):
+                logger.info("Email receipt for user %s dropped: already stored", user.id)
+                return
+            likely = None
             if "error" in extraction:
                 extraction["requires_manual_review"] = True
             else:
@@ -299,6 +297,7 @@ class ReceiptService:
                     await category_repository.list_rules(user.id),
                 )
                 self._file_discount_lines(extraction)
+                likely = await _likely_duplicate(receipts, user.id, extraction, identity)
             receipts.create_from_extraction(
                 user_id=user.id,
                 file_ids=result.file_ids,
@@ -306,6 +305,7 @@ class ReceiptService:
                 parser_version=CURRENT_PARSER_VERSION,
                 channel=ingestion.channel,
                 source_reference=source_reference,
+                possible_duplicate_of_id=likely.id if likely else None,
             )
             await session.commit()
 
@@ -594,6 +594,19 @@ class ReceiptService:
             processed_items=job.processed_items or 0,
         )
 
+    async def keep_possible_duplicate(self, receipt_id: uuid.UUID) -> Receipt | None:
+        """Record that a receipt marked as a likely duplicate is a purchase of its own (F11.5).
+
+        Clears the mark an email receipt got for matching a stored one on merchant, date
+        and total (BRD A14). Returns None when the receipt does not exist or belongs to
+        someone else (BRD N2).
+        """
+        assert self.repository is not None
+        receipt = await self.repository.get_with_items(receipt_id)
+        if receipt is not None:
+            receipt.possible_duplicate_of_id = None
+        return receipt
+
     async def update_receipt(
         self, receipt_id: uuid.UUID, request_data: UpdateReceiptRequest
     ) -> Receipt | None:
@@ -736,3 +749,49 @@ class ReceiptService:
             total_items=job.total_items or 0,
             processed_items=job.processed_items or 0,
         )
+
+
+async def _mark_duplicates(
+    repo: ReceiptRepository, user_id: uuid.UUID, extraction: dict[str, Any]
+) -> None:
+    """Flag an extraction the user may already have stored (BRD A14, F11.5, ADR-0015).
+
+    A fiscal-identity match is the same receipt, so it is marked `already_stored` and
+    never stored again. Only without one does the merchant/date/total match apply, and
+    that is put to the user as `is_duplicate`, since it may be a second purchase.
+    """
+    identity = fiscal_identity(extraction)
+    stored = await repo.find_by_fiscal_identity(user_id, identity) if identity else None
+    if stored is not None:
+        extraction["already_stored"] = {
+            "receipt_id": str(stored.id),
+            "created_at": stored.created_at.isoformat(),
+            "merchant_name": stored.merchant_name,
+        }
+        extraction["is_duplicate"] = False
+        return
+    extraction["is_duplicate"] = (
+        await _likely_duplicate(repo, user_id, extraction, identity) is not None
+    )
+
+
+async def _likely_duplicate(
+    repo: ReceiptRepository,
+    user_id: uuid.UUID,
+    extraction: dict[str, Any],
+    identity: tuple[str, str] | None,
+) -> Receipt | None:
+    """A stored receipt with the same merchant, date and total, unless proven different.
+
+    Two receipts that both carry a fiscal identity, and different ones, are two real
+    purchases however alike they look (ADR-0015); every other match is only likely.
+    """
+    likely = await repo.find_likely_duplicate(
+        user_id,
+        cast(str | None, extraction.get("merchant_name")),
+        cast(str | None, extraction.get("transaction_date")),
+        cast(str | None, extraction.get("receipt_total")),
+    )
+    if likely is None or identity is None or likely.fiscal_register_id is None:
+        return likely
+    return None if (likely.fiscal_register_id, likely.fiscal_receipt_number) != identity else likely

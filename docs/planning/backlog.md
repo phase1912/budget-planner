@@ -921,37 +921,37 @@ A per-user forwarding address that accepts electronic receipts, extracting items
 - **F11.2.2** Implement email parsing and adapter — An email adapter implementing `ReceiptIngestionPort`: read the receipt from the HTML body or a PDF attachment through the existing parser, with the message id as the source reference. The receipt lands in the same review flow as a photo.
 - **F11.2.5** Forwarding address and email receipts in the UI — Profile shows the forwarding address with copy and regenerate, and how to forward a receipt to it. Receipts marks email receipts and can be filtered by how they arrived. Checked at 375, 768 and 1280 px.
 
-### F11.3 — Fiscal QR code intake
+### F11.3 — Fiscal identity of a receipt
 
-*Requirements: —* · *Blocked by: F11.1, F11.4*
+*Requirements: A12, A14* · *Blocked by: F11.1, F11.4*
 
-Scanning the QR code printed on a fiscal receipt retrieves the itemised record from the fiscal service directly, producing exact item data with no extraction error and no confidence threshold to tune. Whether the target markets' QR codes lead to itemised data at all is for the F11.4 spike to establish; this feature waits for its answer.
+Every fiscal receipt prints numbers that identify it uniquely — in Poland the cash register's number (ECA …) and the printout number, in Ukraine the register's and the receipt's fiscal numbers. The reader takes them off the photo, and they are stored with the receipt. This replaces the planned QR intake: the F11.4 spike (ADR-0015) found that neither market lets a third-party app fetch a receipt's items, and Polish receipts carry no fiscal QR code at all.
 
-**Demonstrated by:** On a phone, choose Upload, then Scan QR code, and point the camera at the code on a fiscal receipt: the receipt arrives itemised, marked "From QR code", without a step to check what was read.
+**Demonstrated by:** Upload a Polish shop receipt: the receipt view shows "Register ECA 2201079960 · receipt 85503". A restaurant bill without fiscal numbers shows none, and nothing else changes.
 
-- **F11.3.1** Implement fiscal service client and adapter — Create a client to fetch itemized data from the fiscal service using QR code content, and adapt it using `ReceiptIngestionPort`, with the fiscal number as the source reference. A code the service does not know is reported to the user, not guessed at.
-- **F11.3.2** Scan a receipt's QR code in the upload flow — Add Scan QR code to Upload: the camera on a phone, an image of the code on desktop, and typing the code by hand when neither works. Mobile-first; checked at 375, 768 and 1280 px.
+- **F11.3.1** Read and store the fiscal identity — The reader returns the register number and the receipt number, normalised; they are stored on the receipt, from the wizard and from email alike, indexed per user. A receipt without them stores none. Parser version bumped.
+- **F11.3.2** Show the fiscal identity on the receipt — The receipt view shows the register and receipt numbers when the receipt has them. Checked at 375, 768 and 1280 px.
 
 ### F11.4 — National e-receipt service integration
 
 *Requirements: —*
 
-A feasibility spike followed by integration with the target market's e-receipt system (e-Paragon in Poland). The spike answers a question that affects the whole product: if receipts in this market become structured by law, extraction from photographs becomes the fallback path rather than the primary one. Produces an ADR before any code.
+A feasibility spike on integrating with the target markets' e-receipt systems (e-Paragony in Poland, єЧек in Ukraine) and on fiscal QR codes. Answered by ADR-0015: neither is open to a third-party app today, so there is no integration to build; the receipt's printed fiscal identity (F11.3) is used instead.
 
-**Demonstrated by:** No screen of its own yet: proven by the ADR, which says for e-Paragony (PL) and єЧек (UA) whether a third party can read a user's receipts and how, and whether fiscal QR codes lead to itemised data. The integration tasks are written from that answer.
+**Demonstrated by:** No screen of its own: proven by ADR-0015, which records for Poland and Ukraine what a fiscal QR code holds, why its items cannot be fetched, and what to watch for that would reopen the question.
 
 - **F11.4.1** Spike e-receipt system integration — Research integration feasibility with national e-receipt services and with fiscal QR codes in Poland and Ukraine. Produce an ADR with findings and architectural decisions, and the follow-up tasks for F11.3 and F11.4.
 
 ### F11.5 — Cross-channel duplicate detection
 
-*Requirements: A14* · *Blocked by: F11.2*
+*Requirements: A14* · *Blocked by: F11.2, F11.3*
 
-One purchase that arrives twice through two channels is one receipt. BRD A14 compares merchant, date and total, which cannot tell a second channel's copy apart from a second visit to the same shop on the same day.
+One purchase that arrives twice — photographed twice, or photographed and emailed — is one receipt. BRD A14 compares merchant, date and total, which cannot tell a second copy apart from a second visit to the same shop on the same day; the fiscal identity can.
 
-**Demonstrated by:** Photograph a purchase, then forward its e-receipt: instead of a second receipt, Receipts asks whether the email is the purchase already photographed, and the kept receipt lists both sources.
+**Demonstrated by:** Upload a receipt already stored: the wizard says "Already stored — added 3 October" and does not store it again, without asking. Forward the e-receipt of a restaurant bill you already photographed: Receipts marks the new one as a possible duplicate, and you keep both or remove it.
 
-- **F11.5.1** Enhance duplicate detection with channel data — Update the duplicate detection algorithm to incorporate `channel` and `source_reference` to distinguish between cross-channel duplicates and same-day repeat purchases. A receipt arriving through the same source reference twice is always the same one.
-- **F11.5.2** Confirm a cross-channel duplicate outside the upload flow — Email and QR receipts arrive without the upload wizard, so the A14 question is asked on Receipts: keep both, or merge into one receipt carrying both sources. Checked at 375, 768 and 1280 px.
+- **F11.5.1** Recognise a receipt already stored by its fiscal identity — A receipt whose register and receipt numbers match one of the user's stored receipts is not stored again — in the wizard it is shown as already stored, with when it was added, and left out of the commit; by email it is dropped. Without a fiscal identity, merchant, date and total still ask the user (A14). A duplicate the user chose to skip is never stored.
+- **F11.5.2** Confirm a cross-channel duplicate outside the upload flow — Email receipts arrive without the wizard, so a likely duplicate by merchant, date and total is stored marked as possibly the same as an earlier receipt; Receipts shows the mark, and the receipt view offers to keep both or remove the new one. Checked at 375, 768 and 1280 px.
 
 ### F11.7 — Receipts in a foreign currency
 

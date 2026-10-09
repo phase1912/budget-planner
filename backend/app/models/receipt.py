@@ -50,6 +50,8 @@ class Receipt(Model):
             "user_id",
             text("coalesce(transaction_date, created_at)"),
         ),
+        # A receipt arriving again is found by its fiscal identity (F11.5, ADR-0015).
+        Index("ix_receipts_user_fiscal", "user_id", "fiscal_register_id", "fiscal_receipt_number"),
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -62,6 +64,15 @@ class Receipt(Model):
         nullable=False,
     )
     source_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # The register's number and this receipt's number on it, normalised (F11.3); both or
+    # neither, and together unique to one real receipt.
+    fiscal_register_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    fiscal_receipt_number: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    # Set on a receipt that arrived without the wizard and looks like an earlier one by
+    # merchant, date and total, until the user keeps both or removes it (F11.5.2, A14).
+    possible_duplicate_of_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("receipts.id", ondelete="SET NULL"), nullable=True
+    )
     merchant_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     transaction_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True

@@ -401,6 +401,26 @@ export interface paths {
         patch: operations["update_receipt_receipts__receipt_id__patch"];
         trace?: never;
     };
+    "/receipts/{receipt_id}/keep-duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Keep Possible Duplicate
+         * @description Keep a receipt marked as a likely duplicate as a purchase of its own (F11.5, A14).
+         */
+        post: operations["keep_possible_duplicate_receipts__receipt_id__keep_duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts/upload/{job_id}/resolve-total": {
         parameters: {
             query?: never;
@@ -1683,6 +1703,12 @@ export interface components {
             channel: components["schemas"]["ReceiptChannel"];
             /** Source Reference */
             source_reference?: string | null;
+            /** Fiscal Register Id */
+            fiscal_register_id?: string | null;
+            /** Fiscal Receipt Number */
+            fiscal_receipt_number?: string | null;
+            /** Possible Duplicate Of Id */
+            possible_duplicate_of_id?: string | null;
             /** File Ids */
             file_ids: string[];
             /**
@@ -1748,6 +1774,12 @@ export interface components {
             channel: components["schemas"]["ReceiptChannel"];
             /** Source Reference */
             source_reference?: string | null;
+            /** Fiscal Register Id */
+            fiscal_register_id?: string | null;
+            /** Fiscal Receipt Number */
+            fiscal_receipt_number?: string | null;
+            /** Possible Duplicate Of Id */
+            possible_duplicate_of_id?: string | null;
             /** File Ids */
             file_ids: string[];
             /**
@@ -2769,6 +2801,39 @@ export interface operations {
                 "application/json": components["schemas"]["UpdateReceiptRequest"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    keep_possible_duplicate_receipts__receipt_id__keep_duplicate_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

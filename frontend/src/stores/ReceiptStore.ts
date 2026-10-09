@@ -61,6 +61,7 @@ export class ReceiptStore {
   isLoadingDetail = false;
   detailError: string | null = null;
   isRecategorising = false;
+  isKeepingDuplicate = false;
 
   pendingDeleteId: string | null = null;
   isDeleting = false;
@@ -258,6 +259,30 @@ export class ReceiptStore {
       }
       if (this.selectedReceiptId === id) this.receiptDetail = response.data;
       this.toastStore.showSuccess("Categories updated. Your own choices were kept.");
+    });
+  }
+
+  /**
+   * Keep the open receipt although it looks like one already stored (F11.5, BRD A14):
+   * the user says it is a purchase of its own, so the mark goes from the detail and the list.
+   */
+  async keepPossibleDuplicate(): Promise<void> {
+    const id = this.selectedReceiptId;
+    if (!id) return;
+    this.isKeepingDuplicate = true;
+    const response = await apiClient.POST("/receipts/{receipt_id}/keep-duplicate", {
+      params: { path: { receipt_id: id } },
+    });
+    runInAction(() => {
+      this.isKeepingDuplicate = false;
+      if (response.error) {
+        this.toastStore.showError(errorMessage(response.error, "Could not keep this receipt"));
+        return;
+      }
+      if (this.selectedReceiptId === id) this.receiptDetail = response.data;
+      const listed = this.receipts.find((r) => r.id === id);
+      if (listed) listed.possible_duplicate_of_id = null;
+      this.toastStore.showSuccess("Kept as a separate purchase.");
     });
   }
 

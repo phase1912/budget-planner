@@ -31,6 +31,7 @@ interface ExtractedData {
   is_duplicate?: boolean | null;
   duplicate_resolved?: string | null;
   is_skipped?: boolean | null;
+  already_stored?: unknown;
   receipt_total?: string | null;
   receipt_total_confidence?: number;
   requires_manual_review?: boolean | null;
@@ -117,7 +118,7 @@ export const ResolveStep = observer(function ResolveStep() {
   let settledCount = 0;
 
   extractions.forEach((data) => {
-    if (data.is_skipped) return;
+    if (data.is_skipped || data.already_stored) return;
 
     // Position matches
     if (data.position_matches) {
@@ -220,7 +221,7 @@ export const ResolveStep = observer(function ResolveStep() {
         </div>
 
         {extractions.map((data, eIdx) => {
-          if (data.is_skipped) return null;
+          if (data.is_skipped || data.already_stored) return null;
           const matches = data.position_matches ?? [];
           const items = data.line_items ?? [];
           const merchantName = data.merchant_name ?? "Unknown merchant";
