@@ -3,6 +3,8 @@ import { observer } from "mobx-react-lite";
 import { useNavigate, Link } from "react-router-dom";
 import { useStores } from "@/stores/StoreContext";
 import { Button, Input, Card, Note } from "@/shared/components";
+import { PasswordChecklist } from "../components/PasswordChecklist";
+import { passwordIsValid } from "../passwordRules";
 
 export const RegisterPage = observer(() => {
   const { authStore } = useStores();
@@ -51,7 +53,7 @@ export const RegisterPage = observer(() => {
           }}
           className="flex flex-col gap-5"
         >
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Input
               id="firstName"
               type="text"
@@ -107,8 +109,18 @@ export const RegisterPage = observer(() => {
             minLength={8}
             error={passwordError}
           />
+          <PasswordChecklist password={password} confirm={confirmPassword} />
 
-          <Button type="submit" size="lg" disabled={authStore.authState.isLoading} className="mt-2">
+          <Button
+            type="submit"
+            size="lg"
+            disabled={
+              authStore.authState.isLoading ||
+              !passwordIsValid(password) ||
+              password !== confirmPassword
+            }
+            className="mt-2"
+          >
             {authStore.authState.isLoading ? "Creating account..." : "Register"}
           </Button>
         </form>

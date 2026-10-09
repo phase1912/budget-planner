@@ -149,3 +149,55 @@ async def test_a_stored_receipt_keeps_the_channel_its_upload_came_through(
         await db_session.execute(select(Receipt).where(Receipt.user_id == user.id))
     ).scalar_one()
     assert stored.channel == ReceiptChannel.EMAIL
+
+
+@pytest.mark.asyncio
+async def test_a_date_set_in_the_wizard_replaces_the_assumed_one_and_is_stored(
+    db_session: AsyncSession,
+) -> None:
+    user = await UserFactory.create_async()
+    job = await _job(
+        user,
+        _unreadable_total(
+            receipt_total="37.00",
+            requires_manual_review=False,
+            transaction_date="2026-10-09",
+            transaction_date_assumed=True,
+        ),
+    )
+
+    resolved = await _post(
+        db_session,
+        user,
+        f"/receipts/upload/{job.id}/resolve-date",
+        {"extraction_index": 0, "transaction_date": "2026-10-03"},
+    )
+    stored = await _stored_extraction(db_session, job)
+    committed = await _post(
+        db_session, user, f"/receipts/upload/{job.id}/commit", {"indices_to_store": [0]}
+    )
+
+    assert resolved.status_code == 200, resolved.json()
+    assert (stored["transaction_date"], stored["transaction_date_assumed"]) == ("2026-10-03", False)
+    assert committed.status_code == 200, committed.json()
+    receipt = (
+        await db_session.execute(select(Receipt).where(Receipt.user_id == user.id))
+    ).scalar_one()
+    assert receipt.transaction_date is not None and receipt.transaction_date.day == 3
+
+
+@pytest.mark.asyncio
+async def test_another_users_upload_cannot_be_redated(db_session: AsyncSession) -> None:
+    """N2: someone else's job is as good as missing."""
+    owner = await UserFactory.create_async()
+    stranger = await UserFactory.create_async()
+    job = await _job(owner, _unreadable_total(transaction_date="2026-10-09"))
+
+    response = await _post(
+        db_session,
+        stranger,
+        f"/receipts/upload/{job.id}/resolve-date",
+        {"extraction_index": 0, "transaction_date": "2026-10-03"},
+    )
+
+    assert response.status_code == 404

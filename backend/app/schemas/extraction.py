@@ -217,6 +217,14 @@ class ExtractedReceipt(BaseModel):
         description="The calculated sum of line-item totals. Set by backend validation.",
     )
 
+    transaction_date_assumed: bool = Field(
+        default=False,
+        description=(
+            "Set by the backend, never by the reader: no date could be read, so the "
+            "upload day was used (app.domain.receipt_dates)."
+        ),
+    )
+
     total_reconciled_by: str | None = Field(
         default=None,
         description=(

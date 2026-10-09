@@ -421,6 +421,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/receipts/upload/{job_id}/resolve-date": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Date
+         * @description Set a receipt's purchase date before it is stored (BRD A11, D3).
+         *
+         *     For a receipt that showed no date and was given its upload day, or one whose date
+         *     was misread. Another user's job is not found (N2).
+         */
+        post: operations["resolve_date_receipts_upload__job_id__resolve_date_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts/upload/{job_id}/line-item": {
         parameters: {
             query?: never;
@@ -1815,6 +1838,21 @@ export interface components {
             last_name: string;
         };
         /**
+         * ResolveDateRequest
+         * @description The purchase date the user set for a receipt before storing it (BRD A11, D3).
+         *
+         *     Replaces the upload day assumed when the receipt showed no date, or a misread one.
+         */
+        ResolveDateRequest: {
+            /** Extraction Index */
+            extraction_index: number;
+            /**
+             * Transaction Date
+             * Format: date
+             */
+            transaction_date: string;
+        };
+        /**
          * ResolveDuplicateRequest
          * @description Request to resolve a duplicate receipt extraction.
          */
@@ -2766,6 +2804,43 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ResolveTotalRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadJobStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_date_receipts_upload__job_id__resolve_date_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveDateRequest"];
             };
         };
         responses: {

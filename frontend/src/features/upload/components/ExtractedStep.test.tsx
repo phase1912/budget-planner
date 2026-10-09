@@ -244,4 +244,13 @@ describe("ExtractedStep", () => {
     renderComponent();
     expect(screen.getByText(/We read this receipt again and still could not/)).toBeInTheDocument();
   });
+
+  it("says an undated receipt took its upload day, and offers to change it", () => {
+    withExtraction({ transaction_date: "2026-10-09", transaction_date_assumed: true });
+    renderComponent();
+
+    expect(screen.getByText(/No date on the receipt/)).toHaveTextContent("9 October 2026");
+    fireEvent.click(screen.getByRole("button", { name: "Change date" }));
+    expect(mockStore.uploadStore.editingExtractionIndex).toBe(0);
+  });
 });
