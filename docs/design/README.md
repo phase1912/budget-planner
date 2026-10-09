@@ -82,7 +82,11 @@ the short version:
   1197.00 UAH" under the total. No screen in `screens/` draws these either.
 - **Profile has a Household card** (E12, ADR-0017): start a household, see its members with
   Owner and You marks, rename it and remove members as owner, leave as member — every
-  removal confirmed in place. No screen in `screens/` draws it.
+  removal confirmed in place; the owner also gets the invite link with Copy and Get a new
+  link. An invite opens `/join/:code`: whose household it is, what joining shares, and a
+  Join button, with a refusal (another currency, already in one) shown beside it. A visitor
+  not signed in is sent through sign-in or registration and back. No screen in `screens/`
+  draws either.
 - **`/categories` is the queue, not the taxonomy.** `categorisation.html` owns the
   address and the nav item; the list of categories lives one level down at
   `/categories/manage`. The picker is a native `select` rather than the drawn menu,

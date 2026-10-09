@@ -4,7 +4,7 @@ import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.models.household import Household, HouseholdMember
 
@@ -35,6 +35,21 @@ class HouseholdRepository:
             .execution_options(populate_existing=True)
         )
         return (await self.session.execute(stmt)).unique().scalar_one_or_none()
+
+    async def by_invite_code(self, code: str) -> Household | None:
+        """The household whose current invite link carries `code`, with its members."""
+        stmt = (
+            select(Household)
+            .where(Household.invite_code == code)
+            .options(selectinload(Household.members).joinedload(HouseholdMember.user))
+            .execution_options(populate_existing=True)
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none()
+
+    async def add_member(self, household: Household, member: HouseholdMember) -> None:
+        """Put a user into a household."""
+        household.members.append(member)
+        await self.session.flush()
 
     async def add(self, household: Household) -> None:
         """Store a new household with the members it was given."""

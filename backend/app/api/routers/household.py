@@ -3,15 +3,23 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api import rate_limit
 from app.api.dependencies import get_current_user
+from app.api.rate_limit import limiter
 from app.db.session import get_db_session
-from app.models.household import Household
+from app.models.household import Household, HouseholdRole
 from app.models.user import User
 from app.repository.household import HouseholdRepository
-from app.schemas.household import HouseholdMemberRead, HouseholdName, HouseholdRead
+from app.schemas.household import (
+    HouseholdInvite,
+    HouseholdMemberRead,
+    HouseholdName,
+    HouseholdRead,
+    JoinRequest,
+)
 from app.services.household import HouseholdService
 
 router = APIRouter(prefix="/api/v1/household", tags=["household"])
@@ -41,7 +49,13 @@ def _read(household: Household, user: User) -> HouseholdRead:
         for m in household.members
     ]
     my_role = next(m.role for m in household.members if m.user_id == user.id)
-    return HouseholdRead(id=household.id, name=household.name, my_role=my_role, members=members)
+    return HouseholdRead(
+        id=household.id,
+        name=household.name,
+        my_role=my_role,
+        members=members,
+        invite_code=household.invite_code if my_role == HouseholdRole.OWNER else None,
+    )
 
 
 @router.get("", response_model=HouseholdRead | None)
@@ -79,3 +93,33 @@ async def remove_member(
 ) -> HouseholdRead:
     """The owner removes a member, whose access ends at once; 404 for anyone not in it."""
     return _read(await service.remove_member(current_user, user_id), current_user)
+
+
+@router.post("/invite/regenerate", response_model=HouseholdRead)
+async def regenerate_invite(current_user: CurrentUser, service: Service) -> HouseholdRead:
+    """A new invite link for the household; the old one stops working (owner only)."""
+    return _read(await service.regenerate_invite(current_user), current_user)
+
+
+@router.get("/invites/{code}", response_model=HouseholdInvite)
+@limiter.shared_limit(rate_limit.JOIN, scope="household-invites")
+async def read_invite(
+    request: Request, code: str, current_user: CurrentUser, service: Service
+) -> HouseholdInvite:
+    """Whose household an invite link leads to, before joining; 404 for a dead link."""
+    household = await service.invited_to(code)
+    owner = next(m.user for m in household.members if m.role == HouseholdRole.OWNER)
+    return HouseholdInvite(
+        name=household.name,
+        owner_name=f"{owner.first_name} {owner.last_name}".strip(),
+        member_count=len(household.members),
+    )
+
+
+@router.post("/join", response_model=HouseholdRead)
+@limiter.shared_limit(rate_limit.JOIN, scope="household-invites")
+async def join_household(
+    request: Request, body: JoinRequest, current_user: CurrentUser, service: Service
+) -> HouseholdRead:
+    """Join by invite link (F12.3); 409 when already in one or in another currency."""
+    return _read(await service.join(current_user, body.code), current_user)

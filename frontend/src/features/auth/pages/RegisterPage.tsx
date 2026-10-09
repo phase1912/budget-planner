@@ -1,6 +1,6 @@
 import * as React from "react";
 import { observer } from "mobx-react-lite";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useStores } from "@/stores/StoreContext";
 import { Button, Input, Card, Note } from "@/shared/components";
 import { PasswordChecklist } from "../components/PasswordChecklist";
@@ -9,6 +9,9 @@ import { passwordIsValid } from "../passwordRules";
 export const RegisterPage = observer(() => {
   const { authStore } = useStores();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Where the visitor was going before being asked to sign in — an invite link (F12.3).
+  const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? "/";
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -33,7 +36,7 @@ export const RegisterPage = observer(() => {
       last_name: lastName,
     });
     if (success) {
-      await navigate("/");
+      await navigate(from, { replace: true });
     }
   };
 
@@ -127,7 +130,11 @@ export const RegisterPage = observer(() => {
 
         <div className="text-center text-base mt-2">
           <span className="text-muted-foreground">Already have an account? </span>
-          <Link to="/login" className="text-primary hover:underline font-medium">
+          <Link
+            to="/login"
+            state={location.state as unknown}
+            className="text-primary hover:underline font-medium"
+          >
             Sign in
           </Link>
         </div>

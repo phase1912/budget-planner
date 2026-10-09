@@ -39,7 +39,13 @@ function household(myRole: "owner" | "member", withAnna = true): Household {
       role: "member",
       joined_at: "2026-10-09T11:00:00Z",
     });
-  return { id: "h1", name: "Home", my_role: myRole, members };
+  return {
+    id: "h1",
+    name: "Home",
+    my_role: myRole,
+    members,
+    invite_code: myRole === "owner" ? "c0de" : null,
+  };
 }
 
 describe("HouseholdCard", () => {
@@ -143,5 +149,37 @@ describe("HouseholdCard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save name" }));
 
     expect(await screen.findByRole("heading", { name: "Family" })).toBeInTheDocument();
+  });
+
+  it("gives the owner the invite link to copy", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    api.GET.mockResolvedValue({ data: household("owner") });
+    renderCard();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Copy link" }));
+
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/join/c0de`);
+  });
+
+  it("replaces the invite link only after confirming", async () => {
+    api.GET.mockResolvedValue({ data: household("owner") });
+    api.POST.mockResolvedValue({ data: { ...household("owner"), invite_code: "n3w" } });
+    renderCard();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Get a new link" }));
+    expect(api.POST).not.toHaveBeenCalled();
+    const dialog = screen.getByRole("alertdialog", { name: "Replace invite link" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Get a new link" }));
+
+    expect(await screen.findByText(`${window.location.origin}/join/n3w`)).toBeInTheDocument();
+  });
+
+  it("gives a member no invite link", async () => {
+    api.GET.mockResolvedValue({ data: household("member") });
+    renderCard();
+
+    await screen.findByText("Anna R");
+    expect(screen.queryByText("Invite link")).not.toBeInTheDocument();
   });
 });

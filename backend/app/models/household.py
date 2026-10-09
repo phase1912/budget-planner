@@ -1,10 +1,11 @@
 """Households: users keeping one budget together (E12, ADR-0017)."""
 
 import enum
+import secrets
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Model
@@ -30,6 +31,15 @@ class Household(Model):
     __tablename__ = "households"
 
     name: Mapped[str] = mapped_column(String(60), nullable=False)
+    # The secret in the household's invite link (F12.3); 128 random bits, so it cannot be
+    # guessed, and replacing it is how the owner stops an old link working.
+    invite_code: Mapped[str] = mapped_column(
+        String(32),
+        unique=True,
+        nullable=False,
+        default=lambda: secrets.token_hex(16),
+        server_default=text("replace((gen_random_uuid())::text, '-'::text, ''::text)"),
+    )
 
     members: Mapped[list["HouseholdMember"]] = relationship(
         "HouseholdMember",

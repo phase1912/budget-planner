@@ -72,7 +72,10 @@ rate before storing; budget and statistics only ever see the account's currency.
 Households (E12, ADR-0017) live in `app/services/household.py` behind `/api/v1/household`.
 They have no `user_id`, so `HouseholdRepository` does not use the ownership filter: every
 lookup starts from the caller's own membership row, which is what keeps one household out
-of another's reach (N2). Receipts are untouched by membership; reading them is F12.4's.
+of another's reach (N2) — except joining, which names a household by the 128-bit code in
+its invite link (F12.3). Looking at and using invite links share one per-IP limit, since
+the limiter keys routes by URL and every code is a different one. Receipts are untouched
+by membership; reading them is F12.4's.
 
 ### Errors crossing the API boundary
 

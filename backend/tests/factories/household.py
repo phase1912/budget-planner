@@ -1,3 +1,4 @@
+import secrets
 from typing import ClassVar
 
 from polyfactory import Use
@@ -12,6 +13,7 @@ class HouseholdFactory(ModelFactory[Household]):
     __model__ = Household
 
     name = Use(lambda: "Home")
+    invite_code = Use(lambda: secrets.token_hex(16))
     members: ClassVar[list[HouseholdMember]] = []
 
 

@@ -71,7 +71,12 @@ export const LoginPage = observer(() => {
 
         <div className="text-center text-base mt-2">
           <span className="text-muted-foreground">Don't have an account? </span>
-          <Link to="/register" className="text-primary hover:underline font-medium">
+          {/* Passed on, so registering instead still ends where sign-in would (F12.3). */}
+          <Link
+            to="/register"
+            state={location.state as unknown}
+            className="text-primary hover:underline font-medium"
+          >
             Register here
           </Link>
         </div>

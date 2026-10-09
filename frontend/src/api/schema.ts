@@ -263,6 +263,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/household/invite/regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Regenerate Invite
+         * @description A new invite link for the household; the old one stops working (owner only).
+         */
+        post: operations["regenerate_invite_api_v1_household_invite_regenerate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/household/invites/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Invite
+         * @description Whose household an invite link leads to, before joining; 404 for a dead link.
+         */
+        get: operations["read_invite_api_v1_household_invites__code__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/household/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Join Household
+         * @description Join by invite link (F12.3); 409 when already in one or in another currency.
+         */
+        post: operations["join_household_api_v1_household_join_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts/upload": {
         parameters: {
             query?: never;
@@ -1526,6 +1586,18 @@ export interface components {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
+         * HouseholdInvite
+         * @description What an invite link shows before joining: whose household it is, and how big.
+         */
+        HouseholdInvite: {
+            /** Name */
+            name: string;
+            /** Owner Name */
+            owner_name: string;
+            /** Member Count */
+            member_count: number;
+        };
+        /**
          * HouseholdMemberRead
          * @description One person in the household, as the other members see them.
          */
@@ -1573,6 +1645,11 @@ export interface components {
             my_role: string;
             /** Members */
             members: components["schemas"]["HouseholdMemberRead"][];
+            /**
+             * Invite Code
+             * @description The secret of the invite link; shown to the owner only.
+             */
+            invite_code?: string | null;
         };
         /**
          * InboundEmailResponse
@@ -1601,6 +1678,14 @@ export interface components {
          * @enum {string}
          */
         JobStatus: "pending" | "processing" | "completed" | "stored" | "failed";
+        /**
+         * JoinRequest
+         * @description The code from an invite link.
+         */
+        JoinRequest: {
+            /** Code */
+            code: string;
+        };
         /**
          * LineItemInput
          * @description One line item in an `UpdateReceiptRequest`.
@@ -2707,6 +2792,105 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    regenerate_invite_api_v1_household_invite_regenerate_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_invite_api_v1_household_invites__code__get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdInvite"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    join_household_api_v1_household_join_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JoinRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

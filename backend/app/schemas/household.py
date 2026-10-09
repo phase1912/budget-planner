@@ -35,5 +35,22 @@ class HouseholdRead(BaseModel):
     name: str
     my_role: str
     members: list[HouseholdMemberRead]
+    invite_code: str | None = Field(
+        default=None, description="The secret of the invite link; shown to the owner only."
+    )
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class HouseholdInvite(BaseModel):
+    """What an invite link shows before joining: whose household it is, and how big."""
+
+    name: str
+    owner_name: str
+    member_count: int
+
+
+class JoinRequest(BaseModel):
+    """The code from an invite link."""
+
+    code: str = Field(min_length=1, max_length=64)
