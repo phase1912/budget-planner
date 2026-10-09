@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-17 epics · 111 features · 227 tasks written so far.
+17 epics · 112 features · 231 tasks written so far.
 
 14 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -20,7 +20,7 @@
 | E8 | Goals & AI Optimization Advice | BR-6 | 9 | yes | 1 | Diploma |
 | E9 | Web Client Foundation | — | 7 | yes | 1 | Diploma |
 | E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 7 | no | 1 | Out of scope |
-| E11 | Alternative Receipt Intake | — | 5 | yes | 2 | Diploma |
+| E11 | Alternative Receipt Intake | — | 6 | yes | 2 | Diploma |
 | E12 | Household & Shared Budgets | — | 7 | no | 2 | Diploma |
 | E13 | Aggregated Purchase Analytics | — | 7 | no | 2 | Out of scope |
 | E14 | B2B Export & Accounting Integrations | — | 6 | no | 2 | Out of scope |
@@ -952,6 +952,19 @@ One purchase that arrives twice through two channels is one receipt. BRD A14 com
 
 - **F11.5.1** Enhance duplicate detection with channel data — Update the duplicate detection algorithm to incorporate `channel` and `source_reference` to distinguish between cross-channel duplicates and same-day repeat purchases. A receipt arriving through the same source reference twice is always the same one.
 - **F11.5.2** Confirm a cross-channel duplicate outside the upload flow — Email and QR receipts arrive without the upload wizard, so the A14 question is asked on Receipts: keep both, or merge into one receipt carrying both sources. Checked at 375, 768 and 1280 px.
+
+### F11.7 — Receipts in a foreign currency
+
+*Requirements: D1* · *Blocked by: F11.1*
+
+A receipt from a trip abroad — hryvnias on a złoty account — is converted into the account's currency at the rate of its purchase date, instead of being counted as if 1197 UAH were 1197 PLN. The original amount, currency and rate stay on the receipt, so the figure can always be traced back. Until now the reader recognised the currency and the app dropped it, which overstated a month roughly tenfold; the BRD had multi-currency down as a non-goal, and this feature reverses that, with an ADR.
+
+**Demonstrated by:** On a złoty account, upload a Ukrainian receipt: the wizard shows "1197.00 UAH ≈ 115.40 PLN · NBP rate, 3 October"; once stored, the month total and the statistics count 115.40, and the receipt shows both amounts.
+
+- **F11.7.1** Decide how foreign receipts are converted — ADR: a free, keyless rate source that covers any account currency and any receipt currency, wherever the user lives — the National Bank of Poland's tables A (daily) and B (weekly, the rarer currencies), crossed through the złoty for accounts in other currencies, with the ECB rates (Frankfurter) as the fallback; verify both cover UAH and USD before deciding. Also the rate date (the purchase date, else the last published rate before it), rounding, and that the rate is stored with the receipt so totals never shift afterwards. Updates the BRD non-goal and answers the domain model's open question on multi-currency.
+- **F11.7.2** Exchange-rate port with cached rates — An ExchangeRatePort with NBP and ECB adapters, converting between any two currencies they cover (crossing through a common one where needed, e.g. UAH → PLN → USD for a dollar account); each rate fetched is cached in the database by currency pair and date, so a month of receipts costs a handful of calls. Tests stub the port; a rate service that cannot answer raises one error type the caller handles.
+- **F11.7.3** Store the original amount and convert on intake — A receipt keeps its original currency, original total and the rate and its date; its line totals are stored in the account's currency so every total, statistic and budget figure stays one currency (D1). Conversion happens when a receipt is stored, whether through the wizard or by email. With no rate available the receipt is held in review saying why, never stored as if it were in the account's currency.
+- **F11.7.4** Show both amounts — The wizard and the receipt view show the original amount beside the converted one with the rate's source and date; the receipts list shows the converted total with the original currency marked. Checked at 375, 768 and 1280 px.
 
 ---
 
