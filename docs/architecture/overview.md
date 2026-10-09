@@ -232,6 +232,14 @@ retheme. When a built screen and its reference in `docs/design/` disagree, the b
 screen is wrong; when implementation shows the reference itself is wrong, fix
 `docs/design/` in the same commit as the code that prompted it.
 
+The client is also an installable app (PWA, F9.8): `frontend/public/manifest.webmanifest`
+and the Apple meta tags in `index.html` make it open full screen from the home screen,
+and `public/sw.js` caches only the app itself — content-hashed assets and an offline
+page, never API responses, which are financial data and live on another origin.
+Pages are fetched network-first, so every deploy reaches installed copies on their next
+launch; there is no app store build to keep in step. The worker registers in production
+builds only.
+
 ## Repository layout and the frontend/backend boundary
 
 ```

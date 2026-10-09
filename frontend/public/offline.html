@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f172a" />
+    <title>Offline · Budget Agent</title>
+    <style>
+      /* Self-contained: shown with no network, so it can load nothing else. Colours are
+         the design tokens' dark values (src/shared/styles/colors.css). */
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        box-sizing: border-box;
+        background: #0f172a;
+        color: #f8fafc;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        text-align: center;
+      }
+      main {
+        max-width: 22rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+      img {
+        width: 64px;
+        height: 64px;
+      }
+      h1 {
+        margin: 8px 0 0;
+        font-size: 22px;
+      }
+      p {
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.5;
+        color: #94a3b8;
+      }
+      button {
+        margin-top: 12px;
+        min-height: 44px;
+        width: 100%;
+        border: 0;
+        border-radius: 10px;
+        background: #4ade80;
+        color: #052e14;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icon.svg" alt="" />
+      <h1>You're offline</h1>
+      <p>
+        Budget Agent needs a connection to read receipts and show your figures. Nothing is lost —
+        try again when you're back online.
+      </p>
+      <button type="button" onclick="location.reload()">Try again</button>
+    </main>
+  </body>
+</html>

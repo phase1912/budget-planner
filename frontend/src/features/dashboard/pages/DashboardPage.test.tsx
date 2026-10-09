@@ -45,6 +45,7 @@ vi.mock("@/stores/StoreContext", () => ({
     budgetStore,
     receiptStore,
     adviceStore: { warnings: [], loadProgress: vi.fn(), dismissWarning: vi.fn() },
+    installStore: { dismissed: false, offersInstall: false, showsIosHint: false },
     authStore: {
       user: { email: "test@example.com", first_name: "Anna", last_name: "Smith", currency: "PLN" },
     },

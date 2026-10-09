@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { App } from "@/App";
 import "@/shared/styles/index.css";
 import { StoreProvider } from "@/stores/StoreContext";
+import { registerServiceWorker } from "@/pwa/registerServiceWorker";
 
 const container = document.getElementById("root");
 if (!container) {
@@ -17,3 +18,5 @@ createRoot(container).render(
     </StoreProvider>
   </StrictMode>,
 );
+
+registerServiceWorker();
