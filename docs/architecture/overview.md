@@ -69,6 +69,11 @@ Bank of Poland's rates, the ECB's (Frankfurter) as fallback (`app/adapters/excha
 each rate cached in the `exchange_rates` table by pair and date. The wizard is shown the
 rate before storing; budget and statistics only ever see the account's currency.
 
+Households (E12, ADR-0017) live in `app/services/household.py` behind `/api/v1/household`.
+They have no `user_id`, so `HouseholdRepository` does not use the ownership filter: every
+lookup starts from the caller's own membership row, which is what keeps one household out
+of another's reach (N2). Receipts are untouched by membership; reading them is F12.4's.
+
 ### Errors crossing the API boundary
 
 A service or repository that needs to fail the request raises an `app.errors.AppError`
@@ -302,5 +307,6 @@ when they changed, and checks `/health`. `terraform apply` is a deliberate local
 ## Deliberate non-goals
 
 Out of scope by BRD section 4.2, and worth stating so nobody "helpfully" adds them:
-bank integrations, shared household budgets, automated payments, tax advice. Budgets,
-goals and advice are in one currency per account; only receipts are converted (ADR-0016).
+bank integrations, automated payments, tax advice. Budgets, goals and advice are in one
+currency per account; only receipts are converted (ADR-0016). Households (E12) read their
+members' receipts but never own them, so every write stays owner-only (ADR-0017).

@@ -80,6 +80,9 @@ the short version:
   info note, "1197.00 UAH ≈ 103.42 PLN · NBP rate, 2 October", or a warning when no rate
   exists; the receipt view repeats the line under the date; the receipts list puts "from
   1197.00 UAH" under the total. No screen in `screens/` draws these either.
+- **Profile has a Household card** (E12, ADR-0017): start a household, see its members with
+  Owner and You marks, rename it and remove members as owner, leave as member — every
+  removal confirmed in place. No screen in `screens/` draws it.
 - **`/categories` is the queue, not the taxonomy.** `categorisation.html` owns the
   address and the nav item; the list of categories lives one level down at
   `/categories/manage`. The picker is a native `select` rather than the drawn menu,

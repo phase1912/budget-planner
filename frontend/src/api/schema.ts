@@ -195,6 +195,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/household": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Household
+         * @description The caller's household with its members, or null when they have none.
+         */
+        get: operations["get_my_household_api_v1_household_get"];
+        put?: never;
+        /**
+         * Create Household
+         * @description Start a household owned by the caller; 409 if they already belong to one.
+         */
+        post: operations["create_household_api_v1_household_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Rename Household
+         * @description Rename the caller's household; 403 unless they own it.
+         */
+        patch: operations["rename_household_api_v1_household_patch"];
+        trace?: never;
+    };
+    "/api/v1/household/leave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Leave Household
+         * @description Leave the caller's household; 409 for an owner with members left.
+         */
+        post: operations["leave_household_api_v1_household_leave_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/household/members/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Member
+         * @description The owner removes a member, whose access ends at once; 404 for anyone not in it.
+         */
+        delete: operations["remove_member_api_v1_household_members__user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts/upload": {
         parameters: {
             query?: never;
@@ -1458,6 +1526,55 @@ export interface components {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
+         * HouseholdMemberRead
+         * @description One person in the household, as the other members see them.
+         */
+        HouseholdMemberRead: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Email */
+            email: string;
+            /** Role */
+            role: string;
+            /**
+             * Joined At
+             * Format: date-time
+             */
+            joined_at: string;
+        };
+        /**
+         * HouseholdName
+         * @description A household's name, as typed: trimmed, 1 to 60 characters.
+         */
+        HouseholdName: {
+            /** Name */
+            name: string;
+        };
+        /**
+         * HouseholdRead
+         * @description The caller's household, their role in it and who else is in it.
+         */
+        HouseholdRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** My Role */
+            my_role: string;
+            /** Members */
+            members: components["schemas"]["HouseholdMemberRead"][];
+        };
+        /**
          * InboundEmailResponse
          * @description What the relay is told about one message; it never retries either answer.
          *
@@ -2435,6 +2552,169 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReceiptQuotaRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_my_household_api_v1_household_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdRead"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_household_api_v1_household_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseholdName"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_household_api_v1_household_patch: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseholdName"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    leave_household_api_v1_household_leave_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_member_api_v1_household_members__user_id__delete: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdRead"];
                 };
             };
             /** @description Validation Error */

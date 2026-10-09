@@ -215,7 +215,7 @@ describe("ReceiptStore", () => {
   it("tells the month view to refetch after a delete", async () => {
     const changed = vi.fn();
     const store = new ReceiptStore(toastStore, changed);
-    vi.mocked(apiClient.DELETE).mockResolvedValueOnce({ response: new Response() } as never);
+    vi.mocked(apiClient.DELETE).mockResolvedValueOnce({ response: new Response() });
     vi.mocked(apiClient.GET).mockResolvedValueOnce({
       data: { items: [], total: 0, page: 1, size: 20, pages: 0 },
       response: new Response(),
