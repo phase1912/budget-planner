@@ -14,6 +14,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException
 
 logger = logging.getLogger(__name__)
@@ -134,6 +135,22 @@ class UploadLimitExceededError(AppError):
     title = "Upload Limit Exceeded"
 
 
+class ReceiptQuotaExceededError(AppError):
+    """Raised when an account has used its receipt reads for the month (F10.6)."""
+
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    code = "quota_exceeded"
+    title = "Monthly Receipt Limit Reached"
+
+
+class ServiceBusyError(AppError):
+    """Raised when the service has read as many receipts today as it will (F10.6)."""
+
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = "service_busy"
+    title = "Service Busy"
+
+
 class MessageTooLargeError(AppError):
     """Raised for an inbound email larger than receipt intake accepts (F11.2)."""
 
@@ -190,6 +207,25 @@ async def _handle_app_error(request: Request, exc: Exception) -> JSONResponse:
     )
 
 
+async def _handle_rate_limited(request: Request, exc: Exception) -> JSONResponse:
+    """Too many requests from one client (F10.6.3), in the envelope every error uses.
+
+    Retry-After is the length of the limit's window: the earliest the count can have
+    dropped, never later than it really frees up by more than one window.
+    """
+    error = cast(RateLimitExceeded, exc)
+    retry_after = int(error.limit.limit.get_expiry()) if error.limit else 60
+    response = _problem_response(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        code="rate_limited",
+        title="Too Many Requests",
+        detail=f"Too many requests from this address ({error.detail}). "
+        f"Try again in {retry_after} seconds.",
+    )
+    response.headers["Retry-After"] = str(retry_after)
+    return response
+
+
 async def _handle_validation_error(request: Request, exc: Exception) -> JSONResponse:
     error = cast(RequestValidationError, exc)
     detail = "; ".join(
@@ -230,6 +266,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     exception instance.
     """
     app.add_exception_handler(AppError, _handle_app_error)
+    app.add_exception_handler(RateLimitExceeded, _handle_rate_limited)
     app.add_exception_handler(RequestValidationError, _handle_validation_error)
     app.add_exception_handler(HTTPException, _handle_http_exception)
     app.add_exception_handler(Exception, _handle_unexpected_error)

@@ -276,6 +276,21 @@ Rules that must hold at all times. Each is a candidate for a test.
 21. An OIDC identity links to an existing account only when the provider reports a
     verified email matching it; an unverified email never links automatically (G10, G11).
 
+**Limits**
+
+21a. Every receipt read costs a model call, so reads, not stored receipts, are limited
+    (F10.6, `app/services/quota.py`). An ordinary account may have
+    `monthly_receipt_quota` receipts read per calendar month in UTC (10 by default): each
+    receipt in an upload counts when the upload is accepted, stored later or not, and so
+    does each e-receipt that arrives by email. An upload that would go past it is refused
+    before anything is read, saying the limit and the date it resets; an e-receipt past
+    it is dropped. All non-admin accounts together may have at most
+    `daily_receipt_read_ceiling` receipts read per UTC day (100 by default), whatever
+    their own quotas say. An admin — role `admin`, or an email in `admin_emails` — has
+    neither limit and no wider access to data (N2, G8).
+21b. Registration, upload, asking for advice and export are also limited per client IP,
+    as login already was; a limit hit is a 429 that says when to try again.
+
 **Access**
 
 22. Every query for a user-owned entity is filtered by owner (N2).

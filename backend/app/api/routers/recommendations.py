@@ -3,12 +3,14 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.advice_generation_agent import AdviceGenerationAdapter
 from app.agent.factory import agent_from_settings
+from app.api import rate_limit
 from app.api.dependencies import get_current_user
+from app.api.rate_limit import limiter
 from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.models.recommendation import Recommendation
@@ -110,10 +112,13 @@ async def dismiss_warning(goal_id: uuid.UUID, current_user: CurrentUser, service
     response_model=list[RecommendationRead],
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit(rate_limit.ADVICE)
 async def advise_on_goal(
-    goal_id: uuid.UUID, current_user: CurrentUser, service: Service
+    request: Request, goal_id: uuid.UUID, current_user: CurrentUser, service: Service
 ) -> Sequence[Recommendation]:
     """Fresh advice on one goal, replacing its earlier advice (BRD F2, F3).
+
+    Each ask is a model call, so it is limited per client IP (F10.6.3).
 
     Another user's goal is not found (N2); too little history is 422 with the code
     `insufficient_data` (F5); a model that gives no answer is 503.

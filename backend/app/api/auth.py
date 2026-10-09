@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api import rate_limit
 from app.api.rate_limit import limiter
 from app.db.session import get_db_session
 from app.schemas.auth import (
@@ -24,12 +25,18 @@ def get_auth_service(session: Annotated[AsyncSession, Depends(get_db_session)]) 
 
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit(rate_limit.REGISTER)
 async def register(
-    request: RegisterRequest,
+    request: Request,
+    register_request: RegisterRequest,
     service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> AuthResponse:
-    """Create a new account and return it with a session (F1.1.3)."""
-    user_response, access_token, refresh_token = await service.register(request)
+    """Create a new account and return it with a session (F1.1.3).
+
+    Limited per client IP (F10.6.3), so accounts cannot be made in bulk to get round
+    the per-account receipt quota.
+    """
+    user_response, access_token, refresh_token = await service.register(register_request)
     return AuthResponse(user=user_response, access_token=access_token, refresh_token=refresh_token)
 
 
@@ -38,7 +45,7 @@ async def register(
     response_model=AuthResponse,
     responses={status.HTTP_429_TOO_MANY_REQUESTS: {"description": "Too Many Requests"}},
 )
-@limiter.limit("5/minute")
+@limiter.limit(rate_limit.LOGIN)
 async def login(
     request: Request,
     login_request: LoginRequest,

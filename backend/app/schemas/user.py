@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
@@ -33,3 +34,18 @@ class UserUpdateRequest(BaseModel):
     currency: str | None = Field(None, min_length=3, max_length=3, pattern=r"^[A-Z]{3}$")
     # Spend is shown as a share of it (D7), so zero or less is not a limit; null removes it.
     budget_limit: Decimal | None = Field(None, gt=0, max_digits=12, decimal_places=2)
+
+
+class ReceiptQuotaRead(BaseModel):
+    """The account's receipt reads this month against its limit (F10.6).
+
+    `limit` and `remaining` are null for an account without a limit (an admin).
+    """
+
+    limit: int | None
+    used: int
+    remaining: int | None
+    unlimited: bool
+    resets_on: date
+
+    model_config = ConfigDict(from_attributes=True)

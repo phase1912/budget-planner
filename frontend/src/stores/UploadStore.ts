@@ -43,17 +43,26 @@ export class UploadStore {
   isAddingDiscount = false;
   private readonly toastStore: ToastStore | undefined;
   private readonly onReceiptsStored: () => void;
+  private readonly onUploadSent: () => void;
 
-  /** `onReceiptsStored` runs once receipts are committed, so the month figure can refetch (D6). */
+  /**
+   * `onReceiptsStored` runs once receipts are committed, so the month figure can refetch
+   * (D6); `onUploadSent` once an upload is answered, so the receipt quota can (F10.6).
+   */
   constructor(
     api: ApiClient,
     toastStore?: ToastStore,
     onReceiptsStored: () => void = () => undefined,
+    onUploadSent: () => void = () => undefined,
   ) {
     this.api = api;
     this.toastStore = toastStore;
     this.onReceiptsStored = onReceiptsStored;
-    makeAutoObservable<this, "onReceiptsStored">(this, { onReceiptsStored: false });
+    this.onUploadSent = onUploadSent;
+    makeAutoObservable<this, "onReceiptsStored" | "onUploadSent">(this, {
+      onReceiptsStored: false,
+      onUploadSent: false,
+    });
   }
 
   /**
@@ -229,7 +238,9 @@ export class UploadStore {
 
           this.uploadState.fail(errorMsg);
 
-          if ((response.status === 415 || response.status === 400) && typedError.title) {
+          // A refusal the server explains (unsupported file, a limit reached) is shown as
+          // it was written; anything else gets the generic message.
+          if ([400, 415, 429, 503].includes(response.status) && typedError.title) {
             this.errorTitle = typedError.title;
             this.errorDetails =
               typeof typedError.detail === "string" ? typedError.detail : "Unknown error";
@@ -248,6 +259,7 @@ export class UploadStore {
         }
       });
 
+      this.onUploadSent();
       if (startedJobId) {
         void this.pollJobStatus(startedJobId);
       }

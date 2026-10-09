@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.email_ingestion import EmailIngestionAdapter
 from app.adapters.vision_agent import VisionAgentAdapter
 from app.agent.factory import agent_from_settings
-from app.api.dependencies import get_storage_service
+from app.api.dependencies import get_quota_service, get_storage_service
 from app.api.errors import AuthenticationError, MessageTooLargeError, NotFoundError
 from app.api.routers.receipts import get_receipt_service
 from app.core.config import get_settings
@@ -18,6 +18,7 @@ from app.db.session import get_db_session
 from app.ports.storage import StoragePort
 from app.schemas.webhook import InboundEmailResponse
 from app.services.email_receipt import Accepted, InboundEmailService
+from app.services.quota import QuotaService
 from app.services.receipt import ReceiptService
 
 router = APIRouter(prefix="/api/v1/webhooks", tags=["webhooks"])
@@ -41,6 +42,7 @@ async def inbound_email(
     session: Annotated[AsyncSession, Depends(get_db_session)],
     ingestion: Annotated[EmailIngestionAdapter, Depends(get_email_ingestion)],
     receipts: Annotated[ReceiptService, Depends(get_receipt_service)],
+    quota: Annotated[QuotaService, Depends(get_quota_service)],
     x_inbound_secret: Annotated[str | None, Header()] = None,
     x_inbound_recipient: Annotated[str, Header()] = "",
 ) -> InboundEmailResponse:
@@ -65,6 +67,7 @@ async def inbound_email(
         session,
         domain=settings.inbound_email_domain,
         daily_limit=settings.inbound_email_daily_limit,
+        quota=quota,
     )
     verdict = await gate.screen(raw, x_inbound_recipient, now=datetime.now(UTC))
     if not isinstance(verdict, Accepted):

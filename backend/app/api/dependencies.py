@@ -14,6 +14,7 @@ from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.models.user import User
 from app.ports.storage import StoragePort
+from app.services.quota import QuotaService
 from app.services.storage import S3StorageService
 
 """API dependencies (F1.2.4)."""
@@ -70,3 +71,10 @@ async def get_storage_service() -> AsyncGenerator[StoragePort, None]:
     )
     async with service:
         yield service
+
+
+def get_quota_service(
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> QuotaService:
+    """The receipt quota (F10.6); tests override it where they have no real database."""
+    return QuotaService(session, get_settings())

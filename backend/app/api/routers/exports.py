@@ -2,11 +2,13 @@ import uuid
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api import rate_limit
 from app.api.dependencies import get_current_user, get_storage_service
 from app.api.errors import DomainError, InvalidPeriodError, NotFoundError
+from app.api.rate_limit import limiter
 from app.db.session import get_db_session
 from app.domain.periods import DateRange
 from app.models.export_job import ExportJob, ExportKind, ExportStatus
@@ -44,8 +46,10 @@ def _params(request: ExportRequest) -> dict[str, Any]:
 
 
 @router.post("", response_model=ExportJobResponse, status_code=status.HTTP_202_ACCEPTED)
+@limiter.limit(rate_limit.EXPORT)
 async def start_export(
-    request: ExportRequest,
+    request: Request,
+    export_request: ExportRequest,
     background_tasks: BackgroundTasks,
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
@@ -54,15 +58,18 @@ async def start_export(
 
     Answers at once with the job; the file is written in the background, so a
     long history never holds the request open. Poll the job until it is ready.
+    Limited per client IP (F10.6.3).
     """
-    params = _params(request)
+    params = _params(export_request)
     job = ExportJob(
         user_id=current_user.id,
-        kind=request.kind,
-        format=request.format,
+        kind=export_request.kind,
+        format=export_request.format,
         params=params,
         status=ExportStatus.PENDING,
-        filename=export_filename(request.kind, request.format, params, datetime.now(UTC).date()),
+        filename=export_filename(
+            export_request.kind, export_request.format, params, datetime.now(UTC).date()
+        ),
     )
     ExportJobRepository(session).add(job)
     await session.commit()

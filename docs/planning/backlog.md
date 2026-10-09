@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-17 epics · 110 features · 219 tasks written so far.
+17 epics · 110 features · 224 tasks written so far.
 
 14 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -853,11 +853,17 @@ Correlated request logging with financial values redacted, plus the latency metr
 
 ### F10.6 — Rate limiting and abuse protection
 
-*Requirements: —*
+*Requirements: —* · *Blocked by: F0.9* · *Scope: Diploma, unlike its epic*
 
-Upload and AI-backed endpoints are the expensive ones; limit them per account and define the behaviour when a limit is hit.
+Upload and AI-backed endpoints are the expensive ones; limit them per account and define the behaviour when a limit is hit. Each account gets a monthly number of receipt reads, configurable without a release; admins have none. Expensive and abusable endpoints are rate-limited per IP, and a service-wide daily ceiling on model calls caps the bill whatever happens to the per-account limits.
 
-**Demonstrated by:** Upload repeatedly past the limit and read the refusal on the upload screen — what the limit is and when it resets — rather than a bare 429.
+**Demonstrated by:** On a phone, upload receipts as an ordinary account and watch "8 of 10 receipts left this month" count down; past the limit the upload screen says what the limit is and the date it resets, rather than a bare 429. Signed in as the admin, the same screen says there is no limit.
+
+- **F10.6.1** Monthly receipt-reading quota per account — Each account may have at most `monthly_receipt_quota` receipts read per calendar month (UTC, ADR-0009), default 10, set by environment variable. A receipt counts when it is read, not when it is stored, because the model call is the cost: receipts in upload jobs started this month plus emailed receipts. An upload that would exceed it is refused before any model call with a `quota_exceeded` problem stating the limit and the reset date; emailed receipts over it are dropped and logged. GET /users/me/quota returns limit, used, remaining, reset date and whether the account is unlimited.
+- **F10.6.2** Admin accounts without limits — An account is an admin when its role is `admin` or its email is listed in `admin_emails` (environment, set from Terraform). Admins have no receipt quota and no service-wide ceiling. Being an admin grants no access to another user's data (BRD N2, G8).
+- **F10.6.3** Per-IP rate limits on expensive endpoints — Registration, receipt upload, asking for advice and exports are limited per client IP (Cloud Run passes it in X-Forwarded-For), alongside the existing login limit. A limit hit is a 429 in the RFC 7807 envelope with the retry delay, never the library's default body.
+- **F10.6.4** Service-wide daily ceiling on receipt reads — At most `daily_receipt_read_ceiling` receipts are read per UTC day across all non-admin accounts, so the bill is bounded even if the per-account quota is misconfigured or many accounts are created. Over it, uploads are refused with a `service_busy` problem saying when to try again. Vertex AI quotas cannot serve this: Gemini 2.x runs on a shared dynamic quota with no per-project cap.
+- **F10.6.5** Quota on the upload screen and the profile — The upload screen shows how many receipts are left this month, and past the limit explains the limit and the reset date instead of offering to upload; the profile shows the month's usage; an admin sees that there is no limit. Checked at 375, 768 and 1280 px.
 
 ### F10.7 — Account deletion and full data export
 

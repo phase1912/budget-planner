@@ -194,6 +194,12 @@ returns, so a file and the screen cannot disagree.
 - Cross-user access returns 404, never 403 — a 403 confirms the record exists.
 - Automatic classification decisions are logged with confidence scores for audit and
   tuning (N5).
+- Spending is bounded in the application, not by the cloud (F10.6): a monthly quota of
+  receipt reads per account and a daily ceiling for the whole service, checked before any
+  model call (`QuotaService`, injected through `get_quota_service`), plus per-IP limits on
+  login, registration, upload, advice and export (`app/api/rate_limit.py`, slowapi,
+  counted in memory per instance). Vertex AI offers no per-project cap for Gemini 2.x, and
+  the billing budget only alerts.
 - The agent advises and never moves money. There is no code path to a payment API, by
   design (BRD constraint 11.2).
 

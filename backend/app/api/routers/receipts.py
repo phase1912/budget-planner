@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, UploadFile
@@ -10,9 +11,11 @@ from sqlalchemy.orm.attributes import flag_modified
 from app.adapters.categorisation_agent import ItemCategoriserAdapter
 from app.adapters.vision_agent import VisionAgentAdapter
 from app.agent.factory import agent_from_settings
-from app.api.dependencies import get_current_user, get_storage_service
+from app.api import rate_limit
+from app.api.dependencies import get_current_user, get_quota_service, get_storage_service
 from app.api.errors import UploadLimitExceededError
 from app.api.periods import optional_period
+from app.api.rate_limit import limiter
 from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.domain.budget import ReceiptOrder
@@ -47,6 +50,7 @@ from app.schemas.receipt import (
     UploadReceiptResponse,
 )
 from app.services.categorisation import CategorisationService
+from app.services.quota import QuotaService
 from app.services.receipt import ReceiptService
 from app.services.storage import ObjectNotFoundError
 
@@ -76,17 +80,22 @@ def get_receipt_service(
 
 
 @router.post("/upload", response_model=UploadReceiptResponse)
+@limiter.limit(rate_limit.UPLOAD)
 async def upload_receipt(
+    request: Request,
     files: list[UploadFile],
     background_tasks: BackgroundTasks,
     current_user: Annotated[User, Depends(get_current_user)],
     receipt_service: Annotated[ReceiptService, Depends(get_receipt_service)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
+    quota: Annotated[QuotaService, Depends(get_quota_service)],
 ) -> UploadReceiptResponse:
     """Accept up to 10 photos or scans for a single receipt (F2.2).
 
     Validates count (max 10) and total size (max 50MB) (BRD A4, A8).
     Validates that each uploaded file is a supported image or PDF (BRD A1, A2).
+    Refuses, before any model call, past the account's monthly receipt quota or the
+    service's daily ceiling (F10.6), and is rate-limited per client IP.
     Returns immediately with a tracking handle (F2.5).
     """
     if len(files) > 10:
@@ -109,7 +118,8 @@ async def upload_receipt(
     if total_size > 50 * 1024 * 1024:
         raise UploadLimitExceededError("The photos on this line add up to more than 50 MB.")
 
-    job = UploadJob(user_id=current_user.id)
+    await quota.ensure_can_read(current_user, 1, datetime.now(UTC))
+    job = UploadJob(user_id=current_user.id, total_items=1)
     session.add(job)
     await session.commit()
 
@@ -139,18 +149,21 @@ async def upload_receipt(
         }
     },
 )
+@limiter.limit(rate_limit.UPLOAD)
 async def upload_receipts_batch(
     request: Request,
     background_tasks: BackgroundTasks,
     current_user: Annotated[User, Depends(get_current_user)],
     receipt_service: Annotated[ReceiptService, Depends(get_receipt_service)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
+    quota: Annotated[QuotaService, Depends(get_quota_service)],
 ) -> UploadReceiptResponse:
     """Accept multiple receipts in one request (F2.3.1).
 
     Each form field represents a distinct receipt. Its value must be a list of files.
     Limits (max 10 photos, max 50MB) are applied independently per receipt (BRD A5, A7, A8).
     Validates that each uploaded file is a supported image or PDF (BRD A1, A2).
+    Every receipt in the batch counts toward the monthly quota (F10.6).
     Returns immediately with a tracking handle (F2.5).
     """
     form_data = await request.form()
@@ -193,7 +206,8 @@ async def upload_receipts_batch(
 
         receipts_data.append(receipt_data)
 
-    job = UploadJob(user_id=current_user.id)
+    await quota.ensure_can_read(current_user, len(receipts_data), datetime.now(UTC))
+    job = UploadJob(user_id=current_user.id, total_items=len(receipts_data))
     session.add(job)
     await session.commit()
 

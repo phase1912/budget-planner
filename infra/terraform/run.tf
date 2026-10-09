@@ -6,14 +6,17 @@ locals {
 
   # Settings every backend process gets, service and migrations job alike.
   backend_env = {
-    ENVIRONMENT          = "production"
-    STORAGE_BACKEND      = "gcs"
-    S3_BUCKET_NAME       = google_storage_bucket.receipts.name
-    LLM_MODEL            = var.llm_model
-    VERTEX_PROJECT       = var.project_id
-    VERTEX_LOCATION      = var.region
-    INBOUND_EMAIL_DOMAIN = "${var.project_id}.appspotmail.com"
-    CORS_ORIGINS         = jsonencode(local.frontend_origins)
+    ENVIRONMENT                = "production"
+    STORAGE_BACKEND            = "gcs"
+    S3_BUCKET_NAME             = google_storage_bucket.receipts.name
+    LLM_MODEL                  = var.llm_model
+    VERTEX_PROJECT             = var.project_id
+    VERTEX_LOCATION            = var.region
+    INBOUND_EMAIL_DOMAIN       = "${var.project_id}.appspotmail.com"
+    CORS_ORIGINS               = jsonencode(local.frontend_origins)
+    ADMIN_EMAILS               = jsonencode(var.admin_emails)
+    MONTHLY_RECEIPT_QUOTA      = tostring(var.monthly_receipt_quota)
+    DAILY_RECEIPT_READ_CEILING = tostring(var.daily_receipt_read_ceiling)
   }
 
   backend_secrets = {

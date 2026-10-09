@@ -43,6 +43,9 @@ A field with no default (`database_url`, `anthropic_api_key`) makes `Settings()`
 | `ocr_confidence_threshold` | `OCR_CONFIDENCE_THRESHOLD` | No | `0.80` | Below this, an extracted required field is flagged "low confidence" instead of accepted silently (BRD A10). Must be within `[0.0, 1.0]`. See ADR-0005. |
 | `categorization_confidence_threshold` | `CATEGORIZATION_CONFIDENCE_THRESHOLD` | No | `0.70` | Below this, a line item is `Uncategorized` and flagged for review instead of guessed (BRD C3). Must be within `[0.0, 1.0]`. See ADR-0005. |
 | `storage_backend` | `STORAGE_BACKEND` | No | `s3` | `s3` for an S3-compatible store (MinIO locally), `gcs` for Cloud Storage as the runtime's service account, keyless (ADR-0014). `S3_BUCKET_NAME` names the bucket either way. |
+| `monthly_receipt_quota` | `MONTHLY_RECEIPT_QUOTA` | No | `10` | Receipts an ordinary account may have read per calendar month (F10.6). Set from Terraform's `monthly_receipt_quota`. |
+| `daily_receipt_read_ceiling` | `DAILY_RECEIPT_READ_CEILING` | No | `100` | Receipts read per UTC day across every non-admin account (F10.6). |
+| `admin_emails` | `ADMIN_EMAILS` | No | `[]` | JSON list of emails treated as admins (no receipt limits), besides accounts with role `admin`. Set from `terraform.tfvars`, which is kept out of git. |
 | `build_sha` | `BUILD_SHA` | No | `dev` | Set by CI/CD at deploy time; stays `dev` outside a built image. Surfaced for support/debugging, not read by any business logic. |
 
 ## Where each environment's values actually come from
