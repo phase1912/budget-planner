@@ -1,3 +1,4 @@
+import enum
 import uuid
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
@@ -243,11 +244,20 @@ class ReceiptResponse(BaseModel):
     """Schema for a receipt list item."""
 
     id: uuid.UUID
+    user_id: uuid.UUID
     merchant_name: str | None
     transaction_date: datetime | None
     total_amount: Decimal | None
     status: str
     channel: ReceiptChannel
+    is_private: bool = False
+
+    @field_validator("is_private", mode="before")
+    @classmethod
+    def _unsaved_is_shared(cls, value: object) -> object:
+        """A receipt not yet flushed has no column default applied: it is shared."""
+        return False if value is None else value
+
     source_reference: str | None = None
     fiscal_register_id: str | None = None
     fiscal_receipt_number: str | None = None
@@ -278,3 +288,16 @@ class PaginatedReceiptsResponse(BaseModel):
     page: int
     size: int
     pages: int
+
+
+class ReceiptScope(enum.StrEnum):
+    """Whose receipts a list shows: the caller's, or their household's (F12.4)."""
+
+    MINE = "mine"
+    HOUSEHOLD = "household"
+
+
+class ReceiptPrivacyRequest(BaseModel):
+    """Whether the owner's household may see this receipt beyond its money (F12.4)."""
+
+    is_private: bool

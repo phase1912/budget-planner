@@ -10,7 +10,7 @@ import { ReceiptDetailModal } from "../components/ReceiptDetailModal";
 import { DateFilterModal } from "../components/DateFilterModal";
 import { StatusFilterDropdown } from "../components/StatusFilterDropdown";
 import { ChannelFilterDropdown } from "../components/ChannelFilterDropdown";
-import { Card, Input, IconTile, Pagination } from "@/shared/components";
+import { Card, Input, IconTile, Pagination, SegmentedControl } from "@/shared/components";
 import { SectionTabs } from "@/features/app-shell/SectionTabs";
 import { ExportMenu } from "@/features/exports/components/ExportMenu";
 import { formatPurchase } from "@/shared/purchaseDate";
@@ -32,7 +32,26 @@ function isReceiptStatus(value: string | null): value is ReceiptStatus {
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 export const ReceiptsPage = observer(() => {
-  const { receiptStore, exportStore } = useStores();
+  const { receiptStore, exportStore, householdStore, authStore } = useStores();
+  const household = householdStore.household;
+  // A household of one has nothing to share yet, so the switch waits for a second member.
+  const shared = household !== null && household.members.length > 1;
+  const showingHousehold = shared && receiptStore.scope === "household";
+  const ownerName = (userId: string): string | null =>
+    userId === authStore.user?.id
+      ? null
+      : (household?.members.find((m) => m.user_id === userId)?.first_name ?? "Former member");
+
+  useEffect(() => {
+    void householdStore.load();
+  }, [householdStore]);
+
+  useEffect(() => {
+    // Left the household, or the other member did: there is nothing shared to show.
+    if (householdStore.loaded && !shared && receiptStore.scope === "household") {
+      receiptStore.setScope("mine");
+    }
+  }, [householdStore.loaded, shared, receiptStore]);
   const [searchParams] = useSearchParams();
   const requestedStatus = searchParams.get("status");
   const requestedStart = searchParams.get("start");
@@ -70,23 +89,40 @@ export const ReceiptsPage = observer(() => {
               {String(receiptStore.total)} stored &middot; newest first
             </p>
           </div>
-          <ExportMenu
-            label="Export this list"
-            busy={Boolean(exportStore.busy.receipts)}
-            onExport={(format) => {
-              // The file holds the list as filtered on screen (BRD N6).
-              void exportStore.start({
-                kind: "receipts",
-                format,
-                start: receiptStore.startDateFilter ?? null,
-                end: receiptStore.endDateFilter ?? null,
-                status: receiptStore.statusFilter ?? null,
-                q: receiptStore.searchQuery ?? null,
-                compare: false,
-              });
-            }}
-          />
+          {/* An export is the user's own data (N6); the household view has none to offer. */}
+          {!showingHousehold && (
+            <ExportMenu
+              label="Export this list"
+              busy={Boolean(exportStore.busy.receipts)}
+              onExport={(format) => {
+                // The file holds the list as filtered on screen (BRD N6).
+                void exportStore.start({
+                  kind: "receipts",
+                  format,
+                  start: receiptStore.startDateFilter ?? null,
+                  end: receiptStore.endDateFilter ?? null,
+                  status: receiptStore.statusFilter ?? null,
+                  q: receiptStore.searchQuery ?? null,
+                  compare: false,
+                });
+              }}
+            />
+          )}
         </div>
+        {shared && (
+          <SegmentedControl
+            label="Whose receipts"
+            value={receiptStore.scope}
+            onChange={(scope) => {
+              receiptStore.setScope(scope);
+            }}
+            fill
+            options={[
+              { value: "mine", label: "Mine" },
+              { value: "household", label: household.name, shortLabel: "Household" },
+            ]}
+          />
+        )}
 
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
           <div className="flex flex-wrap items-center gap-2.5">
@@ -206,6 +242,17 @@ export const ReceiptsPage = observer(() => {
                       )}
                     </IconTile>
                     <span className="truncate">{receipt.merchant_name ?? "Unknown Merchant"}</span>
+                    {/* F12.4: in the household view, whose each receipt is, and which of mine it does not see. */}
+                    {showingHousehold && ownerName(receipt.user_id) && (
+                      <span className="shrink-0 text-[12px] font-normal text-muted-foreground">
+                        {ownerName(receipt.user_id)}
+                      </span>
+                    )}
+                    {showingHousehold && receipt.is_private && (
+                      <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[12px] font-semibold text-muted-foreground">
+                        Private
+                      </span>
+                    )}
                     {/* F11.5: an emailed receipt alike to a stored one waits for the user. */}
                     {receipt.possible_duplicate_of_id && (
                       <span className="shrink-0 rounded-full bg-tone-warning-bg px-2 py-0.5 text-[12px] font-semibold text-tone-warning-text">

@@ -87,6 +87,12 @@ the short version:
   Join button, with a refusal (another currency, already in one) shown beside it. A visitor
   not signed in is sent through sign-in or registration and back. No screen in `screens/`
   draws either.
+- **Receipts has a "Mine / <household>" switch** once a household has two members (F12.4).
+  The household view names who added each other member's receipt and marks the user's
+  own private ones; it has no export, since an export is the user's own data. Another
+  member's receipt opens read-only — "Added by Anna · view only", categories as text, no
+  edit, delete, photos or duplicate actions. The owner's own receipt has a Private
+  checkbox, in a household only. No screen in `screens/` draws these.
 - **`/categories` is the queue, not the taxonomy.** `categorisation.html` owns the
   address and the nav item; the list of categories lives one level down at
   `/categories/manage`. The picker is a native `select` rather than the drawn menu,

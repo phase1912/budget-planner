@@ -9,6 +9,7 @@ vi.mock("../api/client", () => ({
   apiClient: {
     GET: vi.fn(),
     PATCH: vi.fn(),
+    PUT: vi.fn(),
     DELETE: vi.fn(),
   },
 }));
@@ -267,5 +268,58 @@ describe("changeMessage", () => {
     expect(changeMessage("Receipt deleted", [dated(null, "2026-08-20T09:00:00Z")], SEPT_26)).toBe(
       "Receipt deleted. August 2026 recalculated",
     );
+  });
+});
+
+describe("ReceiptStore in a household (F12.4)", () => {
+  let store: ReceiptStore;
+
+  beforeEach(() => {
+    store = new ReceiptStore(new ToastStore());
+    vi.clearAllMocks();
+  });
+
+  const page = { items: [], total: 0, page: 1, size: 20, pages: 0 };
+
+  it("asks for the household's receipts once switched to them, from the first page", async () => {
+    vi.mocked(apiClient.GET).mockResolvedValue({ data: page, response: new Response() });
+    store.page = 3;
+
+    store.setScope("household");
+    await vi.waitFor(() => {
+      expect(apiClient.GET).toHaveBeenCalled();
+    });
+
+    const [, options] = vi.mocked(apiClient.GET).mock.calls[0] as unknown as [
+      string,
+      { params: { query: Record<string, unknown> } },
+    ];
+    expect(options.params.query).toMatchObject({ page: 1, scope: "household" });
+  });
+
+  it("forgets the household view when another user signs in", () => {
+    store.scope = "household";
+
+    store.resetScope();
+
+    expect(store.scope).toBe("mine");
+  });
+
+  it("marks the open receipt private and updates it in the list", async () => {
+    store.selectedReceiptId = "r1";
+    store.receipts = [{ id: "r1", is_private: false }] as never;
+    vi.mocked(apiClient.PUT).mockResolvedValueOnce({
+      data: { id: "r1", is_private: true },
+      response: new Response(),
+    } as never);
+
+    await store.setPrivacy(true);
+
+    expect(apiClient.PUT).toHaveBeenCalledWith("/receipts/{receipt_id}/privacy", {
+      params: { path: { receipt_id: "r1" } },
+      body: { is_private: true },
+    });
+    expect(store.receipts[0]?.is_private).toBe(true);
+    expect(store.receiptDetail?.is_private).toBe(true);
   });
 });

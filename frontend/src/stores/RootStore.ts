@@ -74,6 +74,7 @@ export class RootStore {
         this.adviceStore.reset();
         this.quotaStore.reset();
         this.householdStore.reset();
+        this.receiptStore.resetScope();
       },
     );
   }

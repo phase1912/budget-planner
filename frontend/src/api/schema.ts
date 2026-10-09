@@ -491,6 +491,8 @@ export interface paths {
          *     `order=largest` is a finished month's "Biggest receipts" on the dashboard (F6.5);
          *     `channel` keeps only receipts that arrived one way, by photo or by email (F11.2).
          *     `start` and `end` narrow it to a run of days, both included (app/api/periods.py).
+         *     `scope=household` lists every member's receipts but the others' private ones,
+         *     read-only (F12.4, ADR-0017); 404 outside a household.
          */
         get: operations["list_receipts_receipts_get"];
         put?: never;
@@ -511,6 +513,9 @@ export interface paths {
         /**
          * Get Receipt
          * @description Get a receipt's detail including its line items (F3.8).
+         *
+         *     Another household member's receipt opens too, read-only, unless it is private
+         *     (F12.4, ADR-0017); to anyone else it does not exist (N2).
          */
         get: operations["get_receipt_receipts__receipt_id__get"];
         put?: never;
@@ -543,6 +548,29 @@ export interface paths {
          * @description Keep a receipt marked as a likely duplicate as a purchase of its own (F11.5, A14).
          */
         post: operations["keep_possible_duplicate_receipts__receipt_id__keep_duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/receipts/{receipt_id}/privacy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Receipt Privacy
+         * @description Hide a receipt from the owner's household, or share it again (F12.4, ADR-0017).
+         *
+         *     The household still counts a private receipt's money; only its owner may change
+         *     this, so another member's receipt is not found (N2).
+         */
+        put: operations["set_receipt_privacy_receipts__receipt_id__privacy_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1894,6 +1922,11 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
             /** Merchant Name */
             merchant_name: string | null;
             /** Transaction Date */
@@ -1903,6 +1936,11 @@ export interface components {
             /** Status */
             status: string;
             channel: components["schemas"]["ReceiptChannel"];
+            /**
+             * Is Private
+             * @default false
+             */
+            is_private: boolean;
             /** Source Reference */
             source_reference?: string | null;
             /** Fiscal Register Id */
@@ -1945,6 +1983,14 @@ export interface components {
          */
         ReceiptOrder: "newest" | "largest";
         /**
+         * ReceiptPrivacyRequest
+         * @description Whether the owner's household may see this receipt beyond its money (F12.4).
+         */
+        ReceiptPrivacyRequest: {
+            /** Is Private */
+            is_private: boolean;
+        };
+        /**
          * ReceiptQuotaRead
          * @description The account's receipt reads this month against its limit (F10.6).
          *
@@ -1975,6 +2021,11 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
             /** Merchant Name */
             merchant_name: string | null;
             /** Transaction Date */
@@ -1984,6 +2035,11 @@ export interface components {
             /** Status */
             status: string;
             channel: components["schemas"]["ReceiptChannel"];
+            /**
+             * Is Private
+             * @default false
+             */
+            is_private: boolean;
             /** Source Reference */
             source_reference?: string | null;
             /** Fiscal Register Id */
@@ -2015,6 +2071,12 @@ export interface components {
              */
             line_items: components["schemas"]["LineItemResponse"][];
         };
+        /**
+         * ReceiptScope
+         * @description Whose receipts a list shows: the caller's, or their household's (F12.4).
+         * @enum {string}
+         */
+        ReceiptScope: "mine" | "household";
         /**
          * ReceiptStatus
          * @description Lifecycle states of a receipt.
@@ -3173,6 +3235,7 @@ export interface operations {
                 q?: string | null;
                 channel?: components["schemas"]["ReceiptChannel"] | null;
                 order?: components["schemas"]["ReceiptOrder"];
+                scope?: components["schemas"]["ReceiptScope"];
                 token?: string | null;
                 /** @description First day of the period, included */
                 start?: string | null;
@@ -3318,6 +3381,43 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_receipt_privacy_receipts__receipt_id__privacy_put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceiptPrivacyRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

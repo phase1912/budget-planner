@@ -32,7 +32,7 @@ function formatAmount(value: string | null | undefined, digits: number): string 
 }
 
 export const ReceiptDetailModal = observer(() => {
-  const { receiptStore, authStore } = useStores();
+  const { receiptStore, authStore, householdStore } = useStores();
   const receipt = receiptStore.receiptDetail;
   const [showPhotos, setShowPhotos] = useState(false);
 
@@ -55,6 +55,10 @@ export const ReceiptDetailModal = observer(() => {
   const source = receiptSource(receipt);
   const accountCurrency = authStore.user?.currency ?? "";
   const waitsForRate = Boolean(receipt.original_currency) && !receipt.exchange_rate;
+  // Another household member's receipt: theirs to change, ours only to read (ADR-0017).
+  const readOnly = receipt.user_id !== authStore.user?.id;
+  const addedBy = householdStore.household?.members.find((m) => m.user_id === receipt.user_id);
+  const inSharedHousehold = (householdStore.household?.members.length ?? 0) > 1;
 
   return (
     <Modal isOpen={true} onClose={handleClose} className="md:w-[660px]">
@@ -97,6 +101,11 @@ export const ReceiptDetailModal = observer(() => {
             {source.reference && (
               <span className="break-all text-base text-muted-foreground">
                 Reference: {source.reference}
+              </span>
+            )}
+            {readOnly && (
+              <span className="text-[13px] text-muted-foreground">
+                Added by {addedBy?.first_name ?? "another member"} &middot; view only
               </span>
             )}
             {receipt.original_currency &&
@@ -146,14 +155,14 @@ export const ReceiptDetailModal = observer(() => {
       </ModalHeader>
 
       <ModalBody>
-        {waitsForRate && (
+        {waitsForRate && !readOnly && (
           <Note tone="warning" className="mb-3">
             No {receipt.original_currency} rate could be found for this date, so these amounts are
             in {receipt.original_currency} and not counted. Edit them into {accountCurrency} to
             count this receipt.
           </Note>
         )}
-        {receipt.possible_duplicate_of_id && (
+        {receipt.possible_duplicate_of_id && !readOnly && (
           <Note tone="warning" className="mb-3">
             <span className="flex flex-col gap-3">
               <span>
@@ -185,7 +194,7 @@ export const ReceiptDetailModal = observer(() => {
             </span>
           </Note>
         )}
-        {receipt.status === "manual_review" && receipt.total_amount && (
+        {receipt.status === "manual_review" && receipt.total_amount && !readOnly && (
           <TotalsGapNote
             className="mb-3"
             linesSum={receipt.line_items.reduce((sum, item) => sum + Number(item.total_price), 0)}
@@ -195,23 +204,51 @@ export const ReceiptDetailModal = observer(() => {
             }}
           />
         )}
-        <div className="flex justify-end pb-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={receiptStore.isRecategorising}
-            onClick={() => {
-              void receiptStore.recategoriseReceipt();
-            }}
-          >
-            <RefreshCw
-              size={14}
-              aria-hidden="true"
-              className={receiptStore.isRecategorising ? "animate-spin" : ""}
+        {!readOnly && inSharedHousehold && (
+          <div className="mb-3 flex min-h-11 items-start gap-3 rounded-control border border-border p-3">
+            <input
+              id="receipt-private"
+              type="checkbox"
+              aria-describedby="receipt-private-hint"
+              className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-primary"
+              checked={receipt.is_private}
+              disabled={receiptStore.isSavingPrivacy}
+              onChange={(e) => {
+                void receiptStore.setPrivacy(e.target.checked);
+              }}
             />
-            Re-run categorisation
-          </Button>
-        </div>
+            <div className="flex flex-col gap-0.5">
+              <label
+                htmlFor="receipt-private"
+                className="cursor-pointer text-[13px] font-semibold text-foreground"
+              >
+                Private
+              </label>
+              <span id="receipt-private-hint" className="text-[13px] text-muted-foreground">
+                Your household sees only its amount, added to your private total for the month.
+              </span>
+            </div>
+          </div>
+        )}
+        {!readOnly && (
+          <div className="flex justify-end pb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={receiptStore.isRecategorising}
+              onClick={() => {
+                void receiptStore.recategoriseReceipt();
+              }}
+            >
+              <RefreshCw
+                size={14}
+                aria-hidden="true"
+                className={receiptStore.isRecategorising ? "animate-spin" : ""}
+              />
+              Re-run categorisation
+            </Button>
+          </div>
+        )}
         <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_36px_70px_86px_156px] items-center gap-[12px] pb-1 border-b border-border">
           <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
             Item
@@ -250,16 +287,22 @@ export const ReceiptDetailModal = observer(() => {
               {formatAmount(item.quantity, 0)} × {formatAmount(item.unit_price, 2)}
             </span>
             <span className="col-span-2 md:col-span-1">
-              <InlineCategoryPicker
-                itemId={item.id}
-                itemName={item.name}
-                merchantName={receipt.merchant_name}
-                currentCategoryId={item.category_id}
-                lowConfidence={item.category_is_low_confidence}
-                onCategoryChanged={() => {
-                  void receiptStore.reloadReceiptDetail();
-                }}
-              />
+              {readOnly ? (
+                <span className="text-[13px] text-muted-foreground">
+                  {item.category?.name ?? "Uncategorized"}
+                </span>
+              ) : (
+                <InlineCategoryPicker
+                  itemId={item.id}
+                  itemName={item.name}
+                  merchantName={receipt.merchant_name}
+                  currentCategoryId={item.category_id}
+                  lowConfidence={item.category_is_low_confidence}
+                  onCategoryChanged={() => {
+                    void receiptStore.reloadReceiptDetail();
+                  }}
+                />
+              )}
             </span>
           </div>
         ))}
@@ -291,37 +334,14 @@ export const ReceiptDetailModal = observer(() => {
             {receipt.total_amount ? Number(receipt.total_amount).toFixed(2) : "—"}
           </span>
         </div>
-        <div className="flex w-full items-center gap-[10px] md:w-auto [&>*]:flex-1 md:[&>*]:flex-none">
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => {
-              receiptStore.confirmDelete(receipt.id);
-            }}
-          >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 6h18" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
-            Delete
-          </Button>
-          {/* A receipt read from an email's text has no photos to show (F11.2). */}
-          {receipt.file_ids.length > 0 && (
+        {/* Another member's receipt can be read, never changed, and its photos stay its owner's. */}
+        {!readOnly && (
+          <div className="flex w-full items-center gap-[10px] md:w-auto [&>*]:flex-1 md:[&>*]:flex-none">
             <Button
-              variant="secondary"
+              variant="danger"
               size="sm"
               onClick={() => {
-                setShowPhotos((shown) => !shown);
+                receiptStore.confirmDelete(receipt.id);
               }}
             >
               <svg
@@ -333,45 +353,71 @@ export const ReceiptDetailModal = observer(() => {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-muted-foreground"
               >
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="9" cy="9" r="2" />
-                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                <path d="M3 6h18" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
               </svg>
-              {showPhotos ? (
-                "Hide photos"
-              ) : (
-                <>
-                  <span className="hidden md:inline">Original photos</span>
-                  <span className="md:hidden">Photos</span>
-                </>
-              )}
+              Delete
             </Button>
-          )}
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => {
-              receiptStore.startEditingReceipt();
-            }}
-          >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            {/* A receipt read from an email's text has no photos to show (F11.2). */}
+            {receipt.file_ids.length > 0 && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setShowPhotos((shown) => !shown);
+                }}
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-muted-foreground"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                </svg>
+                {showPhotos ? (
+                  "Hide photos"
+                ) : (
+                  <>
+                    <span className="hidden md:inline">Original photos</span>
+                    <span className="md:hidden">Photos</span>
+                  </>
+                )}
+              </Button>
+            )}
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                receiptStore.startEditingReceipt();
+              }}
             >
-              <path d="M12 20h9" />
-              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
-            </svg>
-            Edit
-          </Button>
-        </div>
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+              Edit
+            </Button>
+          </div>
+        )}
       </ModalFooter>
     </Modal>
   );
