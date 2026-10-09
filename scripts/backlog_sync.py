@@ -128,26 +128,34 @@ def phase_line(epic: dict) -> str:
     return f"- **Phase:** {phase_of(epic)} — beyond the BRD"
 
 
-def scope_of(epic: dict) -> str:
-    """Whether an epic is built for the diploma project or left out of it.
+def scope_of(epic: dict, feature: dict | None = None) -> str:
+    """Whether an epic, or one feature of it, is built for the diploma project.
 
-    Scope is an epic-level decision: its features and tasks inherit it. Every epic
+    Scope is decided per epic, and its features and tasks inherit it, except a feature
+    that states its own: one feature of an out-of-scope epic can be taken into the
+    diploma without the rest of the epic (F10.6, rate limiting, out of E10). Every epic
     must state one, so nothing lands on the board without an answer.
     """
-    scope = epic.get("scope")
+    scope = (feature or {}).get("scope") or epic.get("scope")
     if scope not in SCOPES:
-        raise SystemExit(f"{epic['key']}: scope must be one of {sorted(SCOPES)}, got {scope!r}")
+        owner = (feature or epic)["key"]
+        raise SystemExit(f"{owner}: scope must be one of {sorted(SCOPES)}, got {scope!r}")
     return str(scope)
 
 
-def scope_line(epic: dict) -> str:
-    if scope_of(epic) == "diploma":
+def is_groomed(epic: dict, feature: dict) -> bool:
+    """Whether a feature's tasks are written: the whole epic is groomed, or the feature is."""
+    return bool(epic.get("groomed") or feature.get("groomed"))
+
+
+def scope_line(epic: dict, feature: dict | None = None) -> str:
+    if scope_of(epic, feature) == "diploma":
         return "- **Scope:** diploma project"
     return "- **Scope:** out of scope for the diploma project"
 
 
-def scope_labels(epic: dict) -> list[str]:
-    return [scope_of(epic)]
+def scope_labels(epic: dict, feature: dict | None = None) -> list[str]:
+    return [scope_of(epic, feature)]
 
 
 # ------------------------------------------------------------------ issue bodies
@@ -189,7 +197,7 @@ def feature_body(feature: dict, epic: dict, epic_number: int | None,
         f"- **Epic:** {f'#{epic_number}' if epic_number else ''} {epic['key']} {epic['title']}",
         f"- **BRD requirements:** {requirement_line(feature.get('requirements'))}",
         phase_line(epic),
-        scope_line(epic),
+        scope_line(epic, feature),
     ]
     blocked = depends_line(feature.get("depends_on"), numbers or {})
     if blocked:
@@ -202,7 +210,7 @@ def feature_body(feature: dict, epic: dict, epic_number: int | None,
     demo = clean(feature.get("demo"))
     if demo:
         lines += ["", "### Demonstrated by", demo]
-    tasks = (feature.get("tasks") or []) if epic.get("groomed") else []
+    tasks = (feature.get("tasks") or []) if is_groomed(epic, feature) else []
     if tasks:
         lines += ["", "### Tasks"]
         for index, task in enumerate(tasks, start=1):
@@ -230,7 +238,7 @@ def task_body(task: dict, key: str, feature: dict, feature_number: int | None,
         f"- **Feature:** {f'#{feature_number}' if feature_number else ''} {feature['key']} {feature['title']}",
         f"- **BRD requirements:** {requirement_line(feature.get('requirements'))}",
         phase_line(epic),
-        scope_line(epic),
+        scope_line(epic, feature),
     ]
     blocked = depends_line(task.get("depends_on"), numbers or {})
     if blocked:
@@ -299,7 +307,12 @@ def render_markdown(data: dict) -> str:
                 f"### {feature['key']} — {feature['title']}",
                 "",
                 f"*Requirements: {requirement_line(feature.get('requirements'))}*"
-                + (f" · *Blocked by: {', '.join(blocked)}*" if blocked else ""),
+                + (f" · *Blocked by: {', '.join(blocked)}*" if blocked else "")
+                + (
+                    f" · *Scope: {SCOPES[scope_of(epic, feature)]}, unlike its epic*"
+                    if scope_of(epic, feature) != scope_of(epic)
+                    else ""
+                ),
                 "",
                 clean(feature.get("intent")),
                 "",
@@ -307,7 +320,7 @@ def render_markdown(data: dict) -> str:
             demo = clean(feature.get("demo"))
             if demo:
                 lines += [f"**Demonstrated by:** {demo}", ""]
-            tasks = (feature.get("tasks") or []) if epic.get("groomed") else []
+            tasks = (feature.get("tasks") or []) if is_groomed(epic, feature) else []
             if tasks:
                 for index, task in enumerate(tasks, start=1):
                     blocked = task.get("depends_on")
@@ -395,7 +408,7 @@ def backlog_keys(data: dict) -> set[str]:
         keys.add(epic["key"])
         for feature in epic["features"]:
             keys.add(feature["key"])
-            for i, task in enumerate((feature.get("tasks") or []) if epic.get("groomed") else [], start=1):
+            for i, task in enumerate((feature.get("tasks") or []) if is_groomed(epic, feature) else [], start=1):
                 keys.add(task_key(feature["key"], i, task))
     return keys
 
@@ -446,18 +459,18 @@ def sync(data: dict, dry_run: bool) -> None:
         for feature in epic["features"]:
             f_number = upsert(repo, feature["key"], f"[{feature['key']}] {feature['title']}",
                               feature_body(feature, epic, epic_numbers.get(epic["key"]), task_numbers),
-                              ["feature"] + list(feature.get("labels") or []) + scope_labels(epic),
+                              ["feature"] + list(feature.get("labels") or []) + scope_labels(epic, feature),
                               milestone, index, dry_run)
             if f_number:
                 feature_numbers[feature["key"]] = f_number
 
-            for i, task in enumerate((feature.get("tasks") or []) if epic.get("groomed") else [], start=1):
+            for i, task in enumerate((feature.get("tasks") or []) if is_groomed(epic, feature) else [], start=1):
                 key = task_key(feature["key"], i, task)
                 t_number = upsert(repo, key, f"[{key}] {task['title']}",
                                   task_body(task, key, feature,
                                             feature_numbers.get(feature["key"]), epic),
                                   ["task"] + list(task.get("labels") or feature.get("labels") or [])
-                                  + scope_labels(epic),
+                                  + scope_labels(epic, feature),
                                   milestone, index, dry_run)
                 if t_number:
                     task_numbers[key] = t_number
@@ -481,7 +494,7 @@ def sync(data: dict, dry_run: bool) -> None:
             f_number = feature_numbers[feature["key"]]
             gh_api(f"repos/{repo}/issues/{f_number}", "PATCH",
                    {"body": feature_body(feature, epic, number, task_numbers, numbers)})
-            for i, task in enumerate((feature.get("tasks") or []) if epic.get("groomed") else [], start=1):
+            for i, task in enumerate((feature.get("tasks") or []) if is_groomed(epic, feature) else [], start=1):
                 if not task.get("depends_on"):
                     continue
                 key = task_key(feature["key"], i, task)

@@ -12,8 +12,6 @@ from datetime import date
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
 
 from app.adapters.advice_generation_agent import AdviceGenerationAdapter
 from app.agent.factory import agent_from_settings
@@ -73,7 +71,6 @@ def create_app() -> FastAPI:
     """Build and wire a fresh FastAPI application instance."""
     app = FastAPI(title="AI Budget Agent", lifespan=lifespan)
     app.state.limiter = limiter
-    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
     settings = get_settings()
     app.add_middleware(

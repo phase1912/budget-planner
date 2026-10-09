@@ -3,3 +3,6 @@ project_id      = "project-09a590a3-af55-42f3-998"
 billing_account = "XXXXXX-XXXXXX-XXXXXX"
 # hosting_site_id = "budget-agent-phase1912"
 # budget_amount   = 20
+# admin_emails               = ["you@example.com"]   # no receipt quota (F10.6)
+# monthly_receipt_quota      = 10
+# daily_receipt_read_ceiling = 100

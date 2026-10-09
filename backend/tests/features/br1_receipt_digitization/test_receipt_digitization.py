@@ -10,7 +10,7 @@ from httpx import Response
 from pytest import FixtureRequest
 from pytest_bdd import given, scenarios, then, when
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, get_quota_service
 from app.main import create_app
 from app.models.user import User
 
@@ -130,6 +130,14 @@ def app() -> FastAPI:
         return MockReceiptService(MockStoragePort())
 
     app_instance.dependency_overrides[get_receipt_service] = mock_get_receipt_service
+
+    class UnlimitedQuota:
+        """These scenarios are about photos, not quotas (F10.6 has its own tests)."""
+
+        async def ensure_can_read(self, user: User, receipts: int, now: Any) -> None:
+            return None
+
+    app_instance.dependency_overrides[get_quota_service] = UnlimitedQuota
 
     return app_instance
 

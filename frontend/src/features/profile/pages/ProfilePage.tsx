@@ -6,9 +6,10 @@ import { Card, CardHeader, CardBody } from "@/shared/components/Card/Card";
 import { Input } from "@/shared/components/Input/Input";
 import { Button } from "@/shared/components/Button/Button";
 import { ForwardingAddressCard } from "../components/ForwardingAddressCard";
+import { ReceiptUsageCard } from "../components/ReceiptUsageCard";
 
 export const ProfilePage = observer(function ProfilePage() {
-  const { authStore, profileStore } = useStores();
+  const { authStore, profileStore, quotaStore } = useStores();
 
   const [currency, setCurrency] = useState("USD");
   const [budgetLimit, setBudgetLimit] = useState("");
@@ -20,7 +21,8 @@ export const ProfilePage = observer(function ProfilePage() {
 
   useEffect(() => {
     void profileStore.loadProfile();
-  }, [profileStore]);
+    void quotaStore.load();
+  }, [profileStore, quotaStore]);
 
   useEffect(() => {
     if (authStore.user) {
@@ -138,6 +140,8 @@ export const ProfilePage = observer(function ProfilePage() {
             </div>
           </CardBody>
         </Card>
+
+        <ReceiptUsageCard />
 
         <ForwardingAddressCard />
 

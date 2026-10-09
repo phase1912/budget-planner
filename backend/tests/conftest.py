@@ -27,6 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 from sqlalchemy.pool import NullPool
 
 from alembic import command
+from app.api.rate_limit import limiter
 from app.core.config import get_settings
 from tests.factories.base import ModelFactory
 
@@ -163,3 +164,14 @@ async def db_session(test_database_url: str) -> AsyncIterator[AsyncSession]:
                 await transaction.rollback()
     finally:
         await engine.dispose()
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limits() -> Iterator[None]:
+    """Start every test with empty per-IP counters (F10.6.3).
+
+    Every test client calls from the same address, so counts would otherwise carry
+    from one test into the next and fail whichever one comes after the limit.
+    """
+    limiter.reset()
+    yield

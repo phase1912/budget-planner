@@ -172,6 +172,29 @@ class Settings(BaseSettings):
             "cap (BRD F7); 0 turns it off."
         ),
     )
+    monthly_receipt_quota: int = Field(
+        default=10,
+        ge=0,
+        description=(
+            "Receipts an ordinary account may have read per calendar month (F10.6). A "
+            "receipt counts when it is read, since the model call is the cost."
+        ),
+    )
+    daily_receipt_read_ceiling: int = Field(
+        default=100,
+        ge=0,
+        description=(
+            "Receipts read per UTC day across every non-admin account (F10.6): bounds the "
+            "bill whatever happens to the per-account quota."
+        ),
+    )
+    admin_emails: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Accounts treated as admins besides those with role 'admin': no receipt quota, "
+            "no service-wide ceiling, and no access to other users' data (F10.6, BRD N2)."
+        ),
+    )
     inbound_email_domain: str = Field(
         default="inbound.localhost",
         description=(

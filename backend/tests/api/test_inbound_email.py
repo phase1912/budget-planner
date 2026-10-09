@@ -270,3 +270,23 @@ async def test_a_regenerated_address_stops_the_old_one_working(db_session: Async
     response = await _deliver(db_session, old, _message("shopper@example.com", html="<p>x</p>"))
 
     assert response.json()["reason"] == "unknown_recipient"
+
+
+@pytest.mark.asyncio
+async def test_mail_past_the_monthly_receipt_quota_is_dropped_unread(
+    db_session: AsyncSession,
+) -> None:
+    """F10.6: a forwarded receipt is a read like an upload, and counts the same."""
+    owner = await UserFactory.create_async(email="shopper@example.com", role="user")
+    parser = StubParser()
+
+    with patch.object(get_settings(), "monthly_receipt_quota", 0):
+        response = await _deliver(
+            db_session,
+            _address(owner),
+            _message("shopper@example.com", html="<p>x</p>"),
+            parser=parser,
+        )
+
+    assert response.json() == {"status": "dropped", "reason": "over_quota"}
+    assert (await _receipts(db_session, owner), parser.read) == ([], [])

@@ -9,3 +9,5 @@ class UserFactory(ModelFactory[User]):
     __model__ = User
 
     forwarding_token = Use(new_forwarding_token)
+    # An admin has no receipt quota (F10.6); a random role would make that random.
+    role = "user"

@@ -60,6 +60,9 @@ export interface paths {
         /**
          * Register
          * @description Create a new account and return it with a session (F1.1.3).
+         *
+         *     Limited per client IP (F10.6.3), so accounts cannot be made in bulk to get round
+         *     the per-account receipt quota.
          */
         post: operations["register_auth_register_post"];
         delete?: never;
@@ -172,6 +175,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/me/quota": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Quota
+         * @description How many receipts the user may still have read this month (F10.6.1).
+         */
+        get: operations["get_my_quota_users_me_quota_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts/upload": {
         parameters: {
             query?: never;
@@ -187,6 +210,8 @@ export interface paths {
          *
          *     Validates count (max 10) and total size (max 50MB) (BRD A4, A8).
          *     Validates that each uploaded file is a supported image or PDF (BRD A1, A2).
+         *     Refuses, before any model call, past the account's monthly receipt quota or the
+         *     service's daily ceiling (F10.6), and is rate-limited per client IP.
          *     Returns immediately with a tracking handle (F2.5).
          */
         post: operations["upload_receipt_receipts_upload_post"];
@@ -212,6 +237,7 @@ export interface paths {
          *     Each form field represents a distinct receipt. Its value must be a list of files.
          *     Limits (max 10 photos, max 50MB) are applied independently per receipt (BRD A5, A7, A8).
          *     Validates that each uploaded file is a supported image or PDF (BRD A1, A2).
+         *     Every receipt in the batch counts toward the monthly quota (F10.6).
          *     Returns immediately with a tracking handle (F2.5).
          */
         post: operations["upload_receipts_batch_receipts_upload_batch_post"];
@@ -636,6 +662,7 @@ export interface paths {
          *
          *     Answers at once with the job; the file is written in the background, so a
          *     long history never holds the request open. Poll the job until it is ready.
+         *     Limited per client IP (F10.6.3).
          */
         post: operations["start_export_api_v1_exports_post"];
         delete?: never;
@@ -831,6 +858,8 @@ export interface paths {
         /**
          * Advise On Goal
          * @description Fresh advice on one goal, replacing its earlier advice (BRD F2, F3).
+         *
+         *     Each ask is a model call, so it is limited per client IP (F10.6.3).
          *
          *     Another user's goal is not found (N2); too little history is 422 with the code
          *     `insufficient_data` (F5); a model that gives no answer is 503.
@@ -1655,6 +1684,27 @@ export interface components {
          */
         ReceiptOrder: "newest" | "largest";
         /**
+         * ReceiptQuotaRead
+         * @description The account's receipt reads this month against its limit (F10.6).
+         *
+         *     `limit` and `remaining` are null for an account without a limit (an admin).
+         */
+        ReceiptQuotaRead: {
+            /** Limit */
+            limit: number | null;
+            /** Used */
+            used: number;
+            /** Remaining */
+            remaining: number | null;
+            /** Unlimited */
+            unlimited: boolean;
+            /**
+             * Resets On
+             * Format: date
+             */
+            resets_on: string;
+        };
+        /**
          * ReceiptResponse
          * @description Schema for a receipt list item.
          */
@@ -2264,6 +2314,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_my_quota_users_me_quota_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptQuotaRead"];
                 };
             };
             /** @description Validation Error */

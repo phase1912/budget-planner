@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/StoreContext";
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
 import { Card, CardBody } from "@/shared/components/Card/Card";
 import { Button } from "@/shared/components/Button/Button";
@@ -9,9 +9,14 @@ import { ReceiptLineCard } from "../components/ReceiptLineCard";
 import { ExtractedStep } from "../components/ExtractedStep";
 
 import { ResolveStep } from "../components/ResolveStep";
+import { ReceiptQuotaNote } from "../components/ReceiptQuotaNote";
 
 export const UploadPage = observer(function UploadPage() {
-  const { uploadStore } = useStores();
+  const { uploadStore, quotaStore } = useStores();
+
+  useEffect(() => {
+    void quotaStore.load();
+  }, [quotaStore]);
   const singleInputRef = useRef<HTMLInputElement>(null);
 
   const handleUploadClick = () => {
@@ -81,6 +86,8 @@ export const UploadPage = observer(function UploadPage() {
             JPEG, PNG, HEIC or a PDF scan. Up to 10 photos and 50&nbsp;MB per receipt.
           </p>
         </div>
+
+        <ReceiptQuotaNote needed={uploadStore.lines.length} />
 
         <div
           className="flex w-full gap-1 border border-border rounded-control bg-muted p-1 md:inline-flex md:w-auto md:self-start"
@@ -284,7 +291,9 @@ export const UploadPage = observer(function UploadPage() {
                 variant="primary"
                 onClick={handleUploadClick}
                 disabled={
-                  uploadStore.isAnyLineOverLimit || uploadStore.uploadState.status === "loading"
+                  uploadStore.isAnyLineOverLimit ||
+                  uploadStore.uploadState.status === "loading" ||
+                  !quotaStore.allows(uploadStore.lines.length)
                 }
               >
                 {uploadStore.uploadState.status === "loading"

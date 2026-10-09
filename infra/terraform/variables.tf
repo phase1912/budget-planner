@@ -55,3 +55,21 @@ variable "budget_amount" {
   type        = number
   default     = 20
 }
+
+variable "admin_emails" {
+  description = "Accounts with no receipt quota (F10.6.2). Kept in terraform.tfvars, out of git, because it names real people."
+  type        = list(string)
+  default     = []
+}
+
+variable "monthly_receipt_quota" {
+  description = "Receipts an ordinary account may have read per calendar month (F10.6.1)."
+  type        = number
+  default     = 10
+}
+
+variable "daily_receipt_read_ceiling" {
+  description = "Receipts read per UTC day across every non-admin account (F10.6.4)."
+  type        = number
+  default     = 100
+}

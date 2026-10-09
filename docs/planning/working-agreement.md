@@ -93,7 +93,12 @@ worked on. The diploma project is the base already delivered, E8 to the end, and
 the competitor analysis chose as what the product does better than the apps already on the
 market: E11 (receipts without photographing them), E12 (household budgets), E15 (receipt
 accuracy and trust) and E16 (personal price history). E10, E13 and E14 stay planned in the
-open but out of scope.
+open but out of scope — except F10.6 (rate limiting and abuse protection), taken in on its
+own once the product went public on Google Cloud, since every receipt read costs a model call.
+
+A feature may state its own `scope:` (and `groomed: true`) to override its epic's, for exactly
+this case: one feature of an out-of-scope epic built without the rest. Use it sparingly — when
+most of an epic is wanted, move the epic.
 
 The rule for choosing: when a feature the analysis asks for already sits in a planned epic,
 that epic is moved into scope rather than a new one written. A new epic is written only where

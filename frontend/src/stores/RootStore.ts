@@ -14,6 +14,7 @@ import { StatisticsStore } from "@/stores/StatisticsStore";
 import { ExportStore } from "@/stores/ExportStore";
 import { GoalsStore } from "@/stores/GoalsStore";
 import { AdviceStore } from "@/stores/AdviceStore";
+import { QuotaStore } from "@/stores/QuotaStore";
 
 /**
  * Single instantiation point for every MobX store in the client (F9.2.1). Feature
@@ -34,6 +35,7 @@ export class RootStore {
   readonly exportStore: ExportStore;
   readonly goalsStore: GoalsStore;
   readonly adviceStore: AdviceStore;
+  readonly quotaStore: QuotaStore;
 
   constructor() {
     this.themeStore = new ThemeStore();
@@ -43,7 +45,11 @@ export class RootStore {
     this.budgetStore = new BudgetStore();
     // Any receipt change may have recalculated the month on screen (BRD D6, F6.5).
     const refreshMonth = () => void this.budgetStore.refresh();
-    this.uploadStore = new UploadStore(apiClient, this.toastStore, refreshMonth);
+    this.quotaStore = new QuotaStore();
+    // Every upload started uses up receipt reads (F10.6), whether or not it is stored.
+    this.uploadStore = new UploadStore(apiClient, this.toastStore, refreshMonth, () => {
+      void this.quotaStore.load();
+    });
     this.receiptStore = new ReceiptStore(this.toastStore, refreshMonth);
     this.categoriesStore = new CategoriesStore();
     this.statisticsStore = new StatisticsStore();
@@ -60,6 +66,7 @@ export class RootStore {
         this.statisticsStore.reset();
         this.goalsStore.reset();
         this.adviceStore.reset();
+        this.quotaStore.reset();
       },
     );
   }
