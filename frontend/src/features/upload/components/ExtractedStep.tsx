@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import { FixExtractionDialog } from "./FixExtractionDialog";
 import { ResolveTotalForm } from "./ResolveTotalForm";
 import { useStores } from "@/stores/StoreContext";
+import { alreadyStoredText, type AlreadyStored } from "../alreadyStored";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
 import { Button } from "@/shared/components/Button/Button";
 import { SecureImage, Note, IconTile, Pill, TotalsGapNote } from "@/shared/components";
@@ -58,6 +59,7 @@ interface ExtractedData {
   is_duplicate?: boolean | null;
   duplicate_resolved?: string | null;
   is_skipped?: boolean | null;
+  already_stored?: AlreadyStored | null;
   position_matches?: {
     item_a_index: number;
     item_b_index: number;
@@ -169,8 +171,16 @@ export const ExtractedStep = observer(function ExtractedStep() {
         )}
 
         {extractions.map((data, index) => {
-          const selectable = extractions.filter((e) => !e.is_skipped && !e.error).length > 1;
+          const selectable =
+            extractions.filter((e) => !e.is_skipped && !e.error && !e.already_stored).length > 1;
           if (data.is_skipped) return null;
+          if (data.already_stored) {
+            return (
+              <Note key={index} tone="info" className="mt-4">
+                {alreadyStoredText(data.already_stored, data.merchant_name)}
+              </Note>
+            );
+          }
           const merchantName = data.merchant_name ?? "Unknown merchant";
           const merchantNameLowConf = (data.merchant_name_confidence ?? 100) < 80;
           const transactionDate = data.transaction_date ?? "Unknown date";
@@ -678,8 +688,9 @@ export const ExtractedStep = observer(function ExtractedStep() {
                 void uploadStore.commitJob();
               }}
             >
-              Store {uploadStore.selectedIndices.size} receipt
-              {uploadStore.selectedIndices.size !== 1 ? "s" : ""}
+              {uploadStore.selectedIndices.size === 0
+                ? "Nothing to store"
+                : `Store ${String(uploadStore.selectedIndices.size)} receipt${uploadStore.selectedIndices.size !== 1 ? "s" : ""}`}
               <svg
                 width="16"
                 height="16"

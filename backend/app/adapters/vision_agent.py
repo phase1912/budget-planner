@@ -39,6 +39,12 @@ Extract the following into the JSON schema provided:
 - receipt_total: the amount actually paid. When the footer prints both a goods \
   subtotal ("SUMA PLN") and an amount to pay ("DO ZAPŁATY", "RAZEM DO ZAPŁATY", \
   "Total due"), take the amount to pay
+- fiscal_register_id, fiscal_receipt_number: the fiscal numbers that identify this \
+  receipt, exactly as printed — in Poland the register number beside the fiscal logo \
+  (e.g. "ECA 2201079960") and the printout number of the PARAGON FISKALNY (e.g. \
+  "nr:85503"), in Ukraine the ФН of the register and the receipt's fiscal number. Use \
+  the fiscal receipt's numbers, never those of a non-fiscal printout (NIEFISKALNY) on \
+  the same paper. Null when the receipt prints none
 - items_sum_matches_total: true if the sum of line item totals equals the \
   receipt total, false if they differ, null if either side is missing
 

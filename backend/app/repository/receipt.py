@@ -11,6 +11,7 @@ from sqlalchemy.orm import contains_eager, joinedload
 
 from app.domain.budget import ReceiptOrder
 from app.domain.categories import UNCATEGORIZED, ItemView
+from app.domain.fiscal_identity import fiscal_identity
 from app.domain.periods import DateRange
 from app.models.category import Category
 from app.models.line_item import LineItem
@@ -520,6 +521,21 @@ class ReceiptRepository(BaseRepository[Receipt]):
         )
         return int(await self.session.scalar(stmt) or 0)
 
+    async def find_by_fiscal_identity(
+        self, user_id: uuid.UUID, identity: tuple[str, str]
+    ) -> Receipt | None:
+        """The user's receipt with this (register, receipt number), if it is stored (F11.5).
+
+        Fiscal identities are unique to one real receipt, so a match is that receipt.
+        """
+        register, number = identity
+        stmt = select(Receipt).where(
+            Receipt.user_id == user_id,
+            Receipt.fiscal_register_id == register,
+            Receipt.fiscal_receipt_number == number,
+        )
+        return (await self.session.execute(stmt.limit(1))).scalar_one_or_none()
+
     async def has_duplicate(
         self,
         user_id: uuid.UUID,
@@ -528,8 +544,25 @@ class ReceiptRepository(BaseRepository[Receipt]):
         total_amount_str: str | None,
     ) -> bool:
         """Check if a receipt with the same merchant, date, and total exists for the user."""
+        match = await self.find_likely_duplicate(
+            user_id, merchant_name, transaction_date_str, total_amount_str
+        )
+        return match is not None
+
+    async def find_likely_duplicate(
+        self,
+        user_id: uuid.UUID,
+        merchant_name: str | None,
+        transaction_date_str: str | None,
+        total_amount_str: str | None,
+    ) -> Receipt | None:
+        """The user's receipt with the same merchant, date and total, if any (BRD A14).
+
+        Only a likely duplicate: two visits to one shop on one day for the same amount are
+        two purchases, which is why a match is put to the user rather than acted on.
+        """
         if not merchant_name or not transaction_date_str or not total_amount_str:
-            return False
+            return None
 
         import contextlib
         from decimal import Decimal
@@ -541,7 +574,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
             total_amount = Decimal(str(total_amount_str).replace(",", "."))
 
         if total_amount is None:
-            return False
+            return None
 
         stmt = select(self.model_class).where(
             self.model_class.user_id == user_id,
@@ -555,10 +588,10 @@ class ReceiptRepository(BaseRepository[Receipt]):
             dt = datetime.datetime.strptime(transaction_date_str, "%Y-%m-%d").date()
             stmt = stmt.where(cast(self.model_class.transaction_date, Date) == dt)
         except ValueError:
-            return False
+            return None
 
         result = await self.session.execute(stmt.limit(1))
-        return result.scalar_one_or_none() is not None
+        return result.scalar_one_or_none()
 
     def create_from_extraction(
         self,
@@ -568,6 +601,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         parser_version: str,
         channel: ReceiptChannel = ReceiptChannel.PHOTO,
         source_reference: str | None = None,
+        possible_duplicate_of_id: uuid.UUID | None = None,
     ) -> Receipt:
         """Instantiate and save a Receipt and its LineItems from a parser extraction."""
         import contextlib
@@ -605,6 +639,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
             with contextlib.suppress(Exception):
                 total_amt = Decimal(str(rt).replace(",", "."))
 
+        identity = fiscal_identity(extraction)
         receipt = Receipt(
             user_id=user_id,
             merchant_name=extraction.get("merchant_name"),
@@ -615,6 +650,9 @@ class ReceiptRepository(BaseRepository[Receipt]):
             parser_version=parser_version,
             channel=channel,
             source_reference=source_reference,
+            fiscal_register_id=identity[0] if identity else None,
+            fiscal_receipt_number=identity[1] if identity else None,
+            possible_duplicate_of_id=possible_duplicate_of_id,
         )
 
         items_data = extraction.get("line_items", [])

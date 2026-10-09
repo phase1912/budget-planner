@@ -11,3 +11,9 @@ class ReceiptFactory(ModelFactory[Receipt]):
     # A test builds the line items it needs; generated ones would drag in
     # randomly-owned categories and users behind them.
     line_items: ClassVar[list[LineItem]] = []
+
+    # Random fiscal numbers would make unrelated receipts look like copies of each
+    # other or not at random; a test about duplicates sets them (F11.5).
+    fiscal_register_id = None
+    fiscal_receipt_number = None
+    possible_duplicate_of_id = None

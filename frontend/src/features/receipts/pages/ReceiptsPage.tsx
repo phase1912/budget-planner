@@ -123,7 +123,7 @@ export const ReceiptsPage = observer(() => {
         </div>
 
         <Card flush>
-          <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_120px_92px_120px_170px_28px] items-center gap-4 px-[18px] py-[12px] bg-surface border-b border-border">
+          <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_120px_92px_120px_170px_28px] items-center gap-4 px-[18px] py-[12px] bg-surface border-b border-border">
             <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
               Merchant
             </span>
@@ -159,7 +159,7 @@ export const ReceiptsPage = observer(() => {
               return (
                 <button
                   key={receipt.id}
-                  className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 px-4 py-3 w-full text-left border-b border-border last:border-0 cursor-pointer transition-colors md:grid-cols-[minmax(0,1fr)_120px_92px_120px_170px_28px] md:gap-4 md:px-[18px] md:py-[14px] ${rowBg}`}
+                  className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 px-4 py-3 w-full text-left border-b border-border last:border-0 cursor-pointer transition-colors lg:grid-cols-[minmax(0,1fr)_120px_92px_120px_170px_28px] lg:gap-4 lg:px-[18px] lg:py-[14px] ${rowBg}`}
                   onClick={() => {
                     void receiptStore.fetchReceiptDetail(receipt.id);
                   }}
@@ -205,9 +205,15 @@ export const ReceiptsPage = observer(() => {
                         </svg>
                       )}
                     </IconTile>
-                    {receipt.merchant_name ?? "Unknown Merchant"}
+                    <span className="truncate">{receipt.merchant_name ?? "Unknown Merchant"}</span>
+                    {/* F11.5: an emailed receipt alike to a stored one waits for the user. */}
+                    {receipt.possible_duplicate_of_id && (
+                      <span className="shrink-0 rounded-full bg-tone-warning-bg px-2 py-0.5 text-[12px] font-semibold text-tone-warning-text">
+                        Duplicate?
+                      </span>
+                    )}
                   </span>
-                  <span className="order-2 pl-[41px] tabular-nums text-muted-foreground text-[12px] md:order-none md:pl-0 md:text-[13px]">
+                  <span className="order-2 pl-[41px] tabular-nums text-muted-foreground text-[12px] lg:order-none lg:pl-0 lg:text-[13px]">
                     {receipt.transaction_date
                       ? formatPurchase(receipt.transaction_date, {
                           day: "numeric",
@@ -219,21 +225,21 @@ export const ReceiptsPage = observer(() => {
                           minute: "2-digit",
                         })
                       : "Unknown"}
-                    {/* A phone has no items column; the count joins the date. */}
-                    <span className="md:hidden">
+                    {/* Below lg there is no items column; the count joins the date. */}
+                    <span className="lg:hidden">
                       {" · "}
                       {receipt.line_items.length === 1
                         ? "1 item"
                         : `${String(receipt.line_items.length)} items`}
                     </span>
                   </span>
-                  <span className="hidden md:block tabular-nums text-muted-foreground text-right text-[13px]">
+                  <span className="hidden lg:block tabular-nums text-muted-foreground text-right text-[13px]">
                     {receipt.line_items.length}
                   </span>
-                  <span className="order-1 tabular-nums text-right text-[14px] font-semibold text-foreground md:order-none">
+                  <span className="order-1 tabular-nums text-right text-[14px] font-semibold text-foreground lg:order-none">
                     {receipt.total_amount ? Number(receipt.total_amount).toFixed(2) : "—"}
                   </span>
-                  <span className="order-3 justify-self-end md:order-none md:justify-self-auto">
+                  <span className="order-3 justify-self-end lg:order-none lg:justify-self-auto">
                     <span
                       className={`inline-flex items-center gap-[6px] rounded-full px-[11px] py-[5px] text-[12px] font-semibold whitespace-nowrap ${
                         isParsed
@@ -309,7 +315,7 @@ export const ReceiptsPage = observer(() => {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="hidden text-muted-foreground md:block"
+                    className="hidden text-muted-foreground lg:block"
                   >
                     <path d="m9 18 6-6-6-6" />
                   </svg>

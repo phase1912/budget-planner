@@ -71,6 +71,11 @@ the short version:
 - **One conflict queue.** Cross-photo duplicates, low-confidence fields and suspected
   duplicate receipts all queue together, with a counter, and nothing is stored while
   anything is open.
+- **A receipt already stored is not a conflict** (F11.5, ADR-0015). Its fiscal numbers
+  match one the user has, so "What we read" shows it as one info note saying when it was
+  added, unselected, and it never reaches the queue. An emailed receipt that only looks
+  like a stored one carries a "Duplicate?" pill on Receipts and a note in its detail with
+  "Keep both" and "Remove this one" — no screen in `screens/` draws these.
 - **`/categories` is the queue, not the taxonomy.** `categorisation.html` owns the
   address and the nav item; the list of categories lives one level down at
   `/categories/manage`. The picker is a native `select` rather than the drawn menu,

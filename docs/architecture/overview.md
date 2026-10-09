@@ -58,6 +58,11 @@ production, the `mail-relay` compose service locally — POSTs each raw message 
 whether it may become a receipt; `ReceiptService.store_from_channel` reads and stores it in
 the background, with the same categorisation as an upload.
 
+Whatever the channel, a receipt is checked against the user's stored ones before it is
+stored (F11.5, ADR-0015): by its fiscal identity (`app/domain/fiscal_identity.py`), read
+off the receipt by the model, which recognises a copy exactly, and otherwise by merchant,
+date and total, which only flags it for the user.
+
 ### Errors crossing the API boundary
 
 A service or repository that needs to fail the request raises an `app.errors.AppError`

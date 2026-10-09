@@ -21,6 +21,7 @@ from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.domain.budget import ReceiptOrder
 from app.domain.categories import ItemView
+from app.domain.fiscal_identity import fiscal_identity, is_left_out
 from app.domain.periods import DateRange
 from app.models.receipt import ReceiptChannel, ReceiptStatus
 from app.models.upload_job import JobStatus, UploadJob
@@ -461,6 +462,21 @@ async def update_receipt(
     return ReceiptDetailResponse.model_validate(receipt)
 
 
+@router.post("/{receipt_id}/keep-duplicate", response_model=ReceiptDetailResponse)
+async def keep_possible_duplicate(
+    receipt_id: uuid.UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> ReceiptDetailResponse:
+    """Keep a receipt marked as a likely duplicate as a purchase of its own (F11.5, A14)."""
+    receipt_service = ReceiptService(repository=ReceiptRepository(session))
+    receipt = await receipt_service.keep_possible_duplicate(receipt_id)
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+    await session.commit()
+    return ReceiptDetailResponse.model_validate(receipt)
+
+
 @router.delete("/{receipt_id}", status_code=204)
 async def delete_receipt(
     receipt_id: uuid.UUID,
@@ -648,7 +664,7 @@ async def commit_job(
         raise HTTPException(status_code=400, detail=f"Unknown extraction indices: {out_of_range}")
 
     for i, extraction in enumerate(extractions):
-        if i not in selected:
+        if i not in selected or is_left_out(extraction):
             continue
 
         # A failed parse carries none of the fields the checks below look at, so
@@ -670,11 +686,17 @@ async def commit_job(
                 )
 
     repo = ReceiptRepository(session).bypass_ownership()
+    stored_identities: set[tuple[str, str]] = set()
     for i, extraction in enumerate(extractions):
-        if i not in selected:
+        if i not in selected or is_left_out(extraction):
             continue
-        if extraction.get("duplicate_resolved") == "skip":
-            continue
+        identity = fiscal_identity(extraction)
+        if identity is not None:
+            if identity in stored_identities or await repo.find_by_fiscal_identity(
+                current_user.id, identity
+            ):
+                continue
+            stored_identities.add(identity)
 
         repo.create_from_extraction(
             user_id=current_user.id,

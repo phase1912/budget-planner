@@ -294,10 +294,11 @@ export class UploadStore {
               this.extractedData = res.data.extracted_data ?? null;
 
               this.selectedIndices.clear();
+              // A receipt the user already has is never stored again (F11.5).
               if (this.extractedData?.extractions) {
                 const extractions = this.extractedData.extractions as Record<string, unknown>[];
                 extractions.forEach((ext, idx) => {
-                  if (!ext.error) {
+                  if (!ext.error && !ext.already_stored) {
                     this.selectedIndices.add(idx);
                   }
                 });

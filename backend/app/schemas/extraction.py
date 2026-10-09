@@ -158,6 +158,23 @@ class ExtractedReceipt(BaseModel):
         default=100, ge=0, le=100, description="Confidence score between 0 and 100 (e.g. 100)"
     )
 
+    fiscal_register_id: str | None = Field(
+        default=None,
+        description=(
+            "The cash register's unique number as printed: in Poland the ECA/EAO… number "
+            "beside the fiscal logo, in Ukraine the register's fiscal number (FN). Null if "
+            "not printed."
+        ),
+    )
+    fiscal_receipt_number: str | None = Field(
+        default=None,
+        description=(
+            "This receipt's number on that register: in Poland the printout number (nr:…) "
+            "of the fiscal receipt, in Ukraine the receipt's fiscal number (ФН чека). Null "
+            "if not printed."
+        ),
+    )
+
     transaction_date: str | None = Field(
         default=None,
         description="Transaction date in ISO 8601 format (YYYY-MM-DD)",
