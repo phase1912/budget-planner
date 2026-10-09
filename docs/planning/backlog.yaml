@@ -2616,9 +2616,9 @@ epics:
               the original currency marked. Checked at 375, 768 and 1280 px.
 
   # F11.6 "Intake settings interface" was retired at grooming. It was this epic's UI in one
-  # trailing feature: the forwarding address now ships with email intake (F11.2.5), QR scanning
-  # with QR intake (F11.3.2), and "what arrived through each" with the receipts list. Issues
-  # #163, #365 and #366 are closed by hand. The key is retired; never reuse it.
+  # trailing feature: the forwarding address now ships with email intake (F11.2.5), and "what
+  # arrived through each" with the receipts list (F11.1.4). QR scanning was dropped (ADR-0015).
+  # Issues #163, #365 and #366 are closed by hand. The key is retired; never reuse it.
 
   - key: E12
     title: Household & Shared Budgets

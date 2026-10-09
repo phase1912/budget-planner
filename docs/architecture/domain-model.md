@@ -17,13 +17,13 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | `first_name` | String | User's first name |
 | `last_name` | String | User's last name |
 | `password_hash` | String | Argon2id hash |
-| `currency` | String | Default `USD`. Used as the base currency for all monetary amounts |
+| `currency` | String | Default `USD`. Used as the base currency for all monetary amounts; receipts in other currencies are converted into it (ADR-0016). Fixed once receipts exist (F1.4.2) |
 | `budget_limit` | Decimal | Optional monthly budget cap; more than zero when set (D7) |
 | `role` | String | `user` or `admin` (controls cross-user visibility) |
 | `created_at` | Timestamp | Standard audit field |
 | `updated_at` | Timestamp | Standard audit field |
 | **IdentityLink** | A linked Google or Facebook identity, verified-email-gated (G9-G11). | User |
-| **Receipt** | One purchase transaction, from one or more photos or a forwarded e-receipt. Records the channel it arrived through (`photo`, `email`) and, for email, the message's Message-ID as its source reference (F11.1, F11.2). Carries its fiscal identity when one was read — the cash register's number and the receipt's number on it (F11.3, ADR-0015) — and, for an emailed receipt alike to a stored one, a mark naming that receipt until the user decides (F11.5). | User |
+| **Receipt** | One purchase transaction, from one or more photos or a forwarded e-receipt. Records the channel it arrived through (`photo`, `email`) and, for email, the message's Message-ID as its source reference (F11.1, F11.2). Carries its fiscal identity when one was read — the cash register's number and the receipt's number on it (F11.3, ADR-0015) — and, for an emailed receipt alike to a stored one, a mark naming that receipt until the user decides (F11.5). A receipt paid in another currency keeps its original currency, total and the rate it was converted at (F11.7, ADR-0016). | User |
 | **LineItem** | One position on a receipt: product, quantity, unit price, total. | Receipt |
 | **Category** | A spending classification. Either a system default or user-defined. | User (nullable for defaults) |
 | **PositionMatch** | A decision that two line items are, or are not, the same physical purchase. | Receipt |
@@ -193,6 +193,19 @@ Rules that must hold at all times. Each is a candidate for a test.
     are both known and differ are never likely duplicates (A14).
 11c. A receipt the user skipped as a duplicate is never stored (A14).
 
+**Foreign currency** (ADR-0016)
+
+11d. Every stored amount is in the account's currency (D1). A receipt paid in another is
+    converted when it is stored, at the NBP mid rate of its purchase date or the last
+    published before it, crossed through the złoty, the ECB's as fallback (F11.7). It
+    keeps its original currency, total, the rate, its date and source; the rate is never
+    looked up again, so a stored month never shifts.
+11e. Converted line totals add up to the converted total whenever the printed ones added
+    up to the printed total: the rounding cent goes on the largest line (A9).
+11f. A foreign receipt no rate is found for is held in review in its printed amounts, never
+    counted as if it were in the account's currency (A11, D3). Amounts the owner then
+    corrects are in the account's currency, and the rate they imply is recorded as manual (F11.7).
+
 **Categorisation**
 
 12. Every line item has a category. Below the confidence threshold it is `Uncategorized`
@@ -336,5 +349,5 @@ here as an ADR when it arrives.
 | Whether budget periods are strictly calendar months or support custom cycles | Resolved — calendar months, see ADR-0009 |
 | Whether thin history yields softened advice or none at all | E8 |
 | Target values for the success metrics (section 12) | Not epic-blocking — informs tuning throughout |
-| Which markets/currencies ship at launch, and whether multi-currency is truly out of scope | F1.4 |
+| Which markets/currencies ship at launch, and whether multi-currency is truly out of scope | Resolved — any account currency; foreign receipts converted at NBP rates, see ADR-0016 |
 | Whether household/shared budgets change the single-user assumption | Resolved — phase 2, see E12 in `docs/planning/backlog.yaml` |

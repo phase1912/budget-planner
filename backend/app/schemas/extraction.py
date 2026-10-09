@@ -191,9 +191,12 @@ class ExtractedReceipt(BaseModel):
         default=100, ge=0, le=100, description="Confidence score between 0 and 100 (e.g. 100)"
     )
 
-    currency: str = Field(
-        default="PLN",
-        description="ISO 4217 currency code, e.g. 'PLN', 'USD', 'EUR'",
+    currency: str | None = Field(
+        default=None,
+        description=(
+            "ISO 4217 code of the currency the amounts are in, e.g. 'PLN', 'UAH', 'USD'; "
+            "None when the receipt does not show it, which means the account's (F11.7)"
+        ),
     )
 
     line_items: list[ExtractedLineItem] = Field(

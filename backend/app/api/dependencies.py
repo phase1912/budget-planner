@@ -8,11 +8,17 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.adapters.exchange_rates import (
+    FallbackExchangeRates,
+    FrankfurterExchangeRates,
+    NbpExchangeRates,
+)
 from app.adapters.gcs_storage import GcsStorageService
 from app.api.errors import AuthenticationError
 from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.models.user import User
+from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.storage import StoragePort
 from app.services.quota import QuotaService
 from app.services.storage import S3StorageService
@@ -78,3 +84,10 @@ def get_quota_service(
 ) -> QuotaService:
     """The receipt quota (F10.6); tests override it where they have no real database."""
     return QuotaService(session, get_settings())
+
+
+def get_exchange_rates() -> ExchangeRatePort | None:
+    """Rates for converting foreign receipts (F11.7, ADR-0016); None when switched off."""
+    if get_settings().exchange_rate_source == "off":
+        return None
+    return FallbackExchangeRates(NbpExchangeRates(), FrankfurterExchangeRates())

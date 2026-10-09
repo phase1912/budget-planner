@@ -236,8 +236,15 @@ export const ReceiptsPage = observer(() => {
                   <span className="hidden lg:block tabular-nums text-muted-foreground text-right text-[13px]">
                     {receipt.line_items.length}
                   </span>
-                  <span className="order-1 tabular-nums text-right text-[14px] font-semibold text-foreground lg:order-none">
+                  <span className="order-1 flex flex-col items-end tabular-nums text-right text-[14px] font-semibold text-foreground lg:order-none">
                     {receipt.total_amount ? Number(receipt.total_amount).toFixed(2) : "—"}
+                    {/* F11.7: converted from another currency, which the row names. */}
+                    {receipt.original_currency && receipt.original_total && (
+                      <span className="text-[12px] font-normal text-muted-foreground">
+                        {receipt.exchange_rate ? "from " : "in "}
+                        {Number(receipt.original_total).toFixed(2)} {receipt.original_currency}
+                      </span>
+                    )}
                   </span>
                   <span className="order-3 justify-self-end lg:order-none lg:justify-self-auto">
                     <span

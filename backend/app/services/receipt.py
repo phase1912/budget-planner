@@ -10,12 +10,21 @@ from typing import Any, cast
 import filetype  # type: ignore[import-untyped]
 from pydantic import ValidationError
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.adapters.photo_ingestion import PhotoIngestionAdapter
 from app.core.config import get_settings
 from app.db.session import get_session_factory
 from app.domain.categories import UNCATEGORIZED, confident_category, match_rule
+from app.domain.currency import (
+    RATE_PLACES,
+    ExchangeRate,
+    conversion_preview,
+    convert_extraction,
+    receipt_currency,
+    unconverted,
+)
 from app.domain.discounts import (
     WHOLE_RECEIPT_DISCOUNT,
     dominant_category,
@@ -38,10 +47,12 @@ from app.models.receipt import Receipt
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.ports.categorisation import ItemCategoriserPort
+from app.ports.exchange_rates import ExchangeRatePort, ExchangeRateUnavailable
 from app.ports.ingestion import ReceiptIngestionPort, UploadedFile
 from app.ports.parsing import CURRENT_PARSER_VERSION, ReceiptParserPort, ReceiptRecheckerPort
 from app.ports.storage import StoragePort, receipt_object_name
 from app.repository.category import CategoryRepository
+from app.repository.exchange_rate import CachedExchangeRates
 from app.repository.receipt import ReceiptRepository
 from app.schemas.extraction import ExtractedLineItem, ExtractedReceipt
 from app.schemas.receipt import (
@@ -116,6 +127,7 @@ class ReceiptService:
         repository: "ReceiptRepository | None" = None,
         max_concurrency: int = 2,
         job_timeout_seconds: int = 900,
+        exchange_rates: ExchangeRatePort | None = None,
     ):
         self.storage_port = storage_port
         self.parser_port = parser_port
@@ -124,6 +136,7 @@ class ReceiptService:
         self.repository = repository
         self.max_concurrency = max_concurrency
         self.job_timeout_seconds = job_timeout_seconds
+        self.exchange_rates = exchange_rates
 
     def validate_receipt_file(self, content: bytes) -> None:
         """Validate that the file is a supported image format or PDF."""
@@ -240,6 +253,7 @@ class ReceiptService:
 
                     if self.parser_port and self.storage_port:
                         repo = ReceiptRepository(session).bypass_ownership()
+                        await self.preview_conversion(session, extraction, user.currency)
                         await _mark_duplicates(repo, user.id, extraction)
                         all_extractions.append(extraction)
 
@@ -286,6 +300,7 @@ class ReceiptService:
             if identity and await receipts.find_by_fiscal_identity(user.id, identity):
                 logger.info("Email receipt for user %s dropped: already stored", user.id)
                 return
+            extraction = await self.convert_for_account(session, extraction, user.currency)
             likely = None
             if "error" in extraction:
                 extraction["requires_manual_review"] = True
@@ -308,6 +323,59 @@ class ReceiptService:
                 possible_duplicate_of_id=likely.id if likely else None,
             )
             await session.commit()
+
+    async def preview_conversion(
+        self, session: AsyncSession, extraction: dict[str, Any], account_currency: str
+    ) -> None:
+        """Put the rate a foreign receipt will be stored at on it, for the wizard (F11.7.4).
+
+        Sets `conversion` to the rate and the total it gives, or to `{"currency": …,
+        "unavailable": True}` when no source has one; leaves a receipt in the account's
+        currency, or one that failed to read, untouched.
+        """
+        found = await self._rate_for(session, extraction, account_currency)
+        if found is None:
+            return
+        currency, rate = found
+        extraction["conversion"] = (
+            conversion_preview(extraction, rate)
+            if rate is not None
+            else {"currency": currency, "account_currency": account_currency, "unavailable": True}
+        )
+
+    async def convert_for_account(
+        self, session: AsyncSession, extraction: dict[str, Any], account_currency: str
+    ) -> dict[str, Any]:
+        """The extraction in the account's currency, as it is about to be stored (BRD D1).
+
+        A foreign receipt is converted at the rate of its purchase date and keeps what was
+        printed (ADR-0016); one no rate is found for is held in review, unconverted. The
+        rest come back as they were.
+        """
+        found = await self._rate_for(session, extraction, account_currency)
+        if found is None:
+            return extraction
+        currency, rate = found
+        if rate is None:
+            return unconverted(extraction, currency)
+        return convert_extraction(extraction, rate)
+
+    async def _rate_for(
+        self, session: AsyncSession, extraction: dict[str, Any], account_currency: str
+    ) -> tuple[str, ExchangeRate | None] | None:
+        """The receipt's foreign currency and its rate (None if unavailable), or None
+        when there is nothing to convert."""
+        if self.exchange_rates is None or extraction.get("error"):
+            return None
+        currency = receipt_currency(extraction, account_currency)
+        if currency == account_currency:
+            return None
+        rates = CachedExchangeRates(self.exchange_rates, session)
+        try:
+            return currency, await rates.rate(currency, account_currency, _purchase_day(extraction))
+        except ExchangeRateUnavailable:
+            logger.warning("No %s/%s rate; receipt held in review", currency, account_currency)
+            return currency, None
 
     async def _reconcile_total(
         self, user: User, extraction: dict[str, object]
@@ -644,6 +712,7 @@ class ReceiptService:
         receipt.merchant_name = request_data.merchant_name
         receipt.transaction_date = _redated(receipt.transaction_date, request_data.transaction_date)
         receipt.total_amount = request_data.total_amount
+        _record_manual_rate(receipt)
 
         existing_by_id = {item.id: item for item in receipt.line_items}
         sent_ids = {item.id for item in request_data.line_items if item.id is not None}
@@ -790,8 +859,40 @@ async def _likely_duplicate(
         user_id,
         cast(str | None, extraction.get("merchant_name")),
         cast(str | None, extraction.get("transaction_date")),
-        cast(str | None, extraction.get("receipt_total")),
+        cast(str | None, _total_in_account_currency(extraction)),
     )
     if likely is None or identity is None or likely.fiscal_register_id is None:
         return likely
     return None if (likely.fiscal_register_id, likely.fiscal_receipt_number) != identity else likely
+
+
+def _purchase_day(extraction: dict[str, Any]) -> date:
+    """The day a receipt's rate is taken for: its date, else today (ADR-0016, BRD A11)."""
+    try:
+        return date.fromisoformat(str(extraction.get("transaction_date")))
+    except ValueError:
+        return datetime.now(UTC).date()
+
+
+def _total_in_account_currency(extraction: dict[str, Any]) -> Any:
+    """The total a stored receipt would have: converted, for a foreign one in the wizard."""
+    conversion = extraction.get("conversion") or {}
+    return conversion.get("converted_total") or extraction.get("receipt_total")
+
+
+def _record_manual_rate(receipt: Receipt) -> None:
+    """A foreign receipt no rate was found for, corrected by hand, is now converted.
+
+    The amounts the owner typed are in the account's currency, so the rate they imply
+    is recorded as `manual`, keeping the figure traceable to what was printed (ADR-0016).
+    """
+    if (
+        receipt.original_currency is None
+        or receipt.exchange_rate is not None
+        or not receipt.original_total
+        or receipt.total_amount is None
+    ):
+        return
+    receipt.exchange_rate = (receipt.total_amount / receipt.original_total).quantize(RATE_PLACES)
+    receipt.exchange_rate_date = (receipt.transaction_date or datetime.now(UTC)).date()
+    receipt.exchange_rate_source = "manual"

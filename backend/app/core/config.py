@@ -34,6 +34,7 @@ class Environment(StrEnum):
 
 
 StorageBackend = Literal["s3", "gcs"]
+ExchangeRateSource = Literal["nbp", "off"]
 
 
 class Settings(BaseSettings):
@@ -266,6 +267,15 @@ class Settings(BaseSettings):
     argon2_parallelism: int = Field(
         default=1,
         description="Degree of parallelism for Argon2id hashing.",
+    )
+
+    exchange_rate_source: ExchangeRateSource = Field(
+        default="nbp",
+        description=(
+            "Where foreign receipts get their rate: `nbp`, the National Bank of Poland with "
+            "the ECB as fallback (ADR-0016); `off` stores them unconverted, as before F11.7 — "
+            "for the test suite, which never reaches the network."
+        ),
     )
 
     storage_backend: StorageBackend = Field(

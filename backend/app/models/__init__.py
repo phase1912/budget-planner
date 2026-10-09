@@ -8,6 +8,7 @@ epic (E1+) adds a concrete entity — F0.3 delivers only the base and convention
 from app.models.base import Base, Model
 from app.models.category import Category
 from app.models.category_rule import CategoryRule
+from app.models.exchange_rate import CachedExchangeRate
 from app.models.export_job import ExportJob
 from app.models.goal import Goal
 from app.models.line_item import LineItem
@@ -21,6 +22,7 @@ from app.models.user import User
 
 __all__ = [
     "Base",
+    "CachedExchangeRate",
     "Category",
     "CategoryRule",
     "ExportJob",

@@ -76,6 +76,10 @@ the short version:
   added, unselected, and it never reaches the queue. An emailed receipt that only looks
   like a stored one carries a "Duplicate?" pill on Receipts and a note in its detail with
   "Keep both" and "Remove this one" — no screen in `screens/` draws these.
+- **A foreign receipt shows both amounts** (F11.7, ADR-0016). "What we read" carries an
+  info note, "1197.00 UAH ≈ 103.42 PLN · NBP rate, 2 October", or a warning when no rate
+  exists; the receipt view repeats the line under the date; the receipts list puts "from
+  1197.00 UAH" under the total. No screen in `screens/` draws these either.
 - **`/categories` is the queue, not the taxonomy.** `categorisation.html` owns the
   address and the nav item; the list of categories lives one level down at
   `/categories/manage`. The picker is a native `select` rather than the drawn menu,

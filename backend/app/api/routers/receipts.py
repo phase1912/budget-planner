@@ -13,7 +13,12 @@ from app.adapters.photo_ingestion import PhotoIngestionAdapter
 from app.adapters.vision_agent import VisionAgentAdapter
 from app.agent.factory import agent_from_settings
 from app.api import rate_limit
-from app.api.dependencies import get_current_user, get_quota_service, get_storage_service
+from app.api.dependencies import (
+    get_current_user,
+    get_exchange_rates,
+    get_quota_service,
+    get_storage_service,
+)
 from app.api.errors import UploadLimitExceededError
 from app.api.periods import optional_period
 from app.api.rate_limit import limiter
@@ -27,6 +32,7 @@ from app.models.receipt import ReceiptChannel, ReceiptStatus
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.ports.categorisation import ItemCategoriserPort
+from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.parsing import CURRENT_PARSER_VERSION
 from app.ports.storage import StoragePort
 from app.repository.category import CategoryRepository
@@ -67,13 +73,15 @@ def get_item_categoriser() -> ItemCategoriserPort:
 
 def get_receipt_service(
     storage_port: Annotated[StoragePort, Depends(get_storage_service)],
+    exchange_rates: Annotated[ExchangeRatePort | None, Depends(get_exchange_rates)],
 ) -> ReceiptService:
-    """Provide a ReceiptService with storage and vision parser wired up."""
+    """Provide a ReceiptService with storage, vision parser and exchange rates wired up."""
     settings = get_settings()
     agent = agent_from_settings()
     reader = VisionAgentAdapter(agent)
     return ReceiptService(
         storage_port,
+        exchange_rates=exchange_rates,
         parser_port=reader,
         rechecker_port=reader,
         categoriser_port=ItemCategoriserAdapter(agent),
@@ -642,8 +650,9 @@ async def commit_job(
     request: CommitJobRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
+    exchange_rates: Annotated[ExchangeRatePort | None, Depends(get_exchange_rates)],
 ) -> UploadJobStatusResponse:
-    """Commit all resolved extractions to the database (F4.7)."""
+    """Commit all resolved extractions to the database (F4.7), in the account's currency."""
     stmt = select(UploadJob).where(UploadJob.id == job_id, UploadJob.user_id == current_user.id)
     job = (await session.execute(stmt)).scalar_one_or_none()
 
@@ -686,6 +695,7 @@ async def commit_job(
                 )
 
     repo = ReceiptRepository(session).bypass_ownership()
+    converter = ReceiptService(exchange_rates=exchange_rates)
     stored_identities: set[tuple[str, str]] = set()
     for i, extraction in enumerate(extractions):
         if i not in selected or is_left_out(extraction):
@@ -701,7 +711,9 @@ async def commit_job(
         repo.create_from_extraction(
             user_id=current_user.id,
             file_ids=extraction.get("file_ids", []),
-            extraction=extraction,
+            extraction=await converter.convert_for_account(
+                session, extraction, current_user.currency
+            ),
             parser_version=CURRENT_PARSER_VERSION,
             channel=job.channel,
         )

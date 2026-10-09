@@ -16,6 +16,7 @@ import {
 import { RefreshCw } from "lucide-react";
 import { InlineCategoryPicker } from "@/features/categories/components/InlineCategoryPicker";
 import { formatPurchase } from "@/shared/purchaseDate";
+import { conversionLine } from "@/shared/exchange";
 
 /**
  * Render an amount, or an em dash when there is nothing to render.
@@ -31,7 +32,7 @@ function formatAmount(value: string | null | undefined, digits: number): string 
 }
 
 export const ReceiptDetailModal = observer(() => {
-  const { receiptStore } = useStores();
+  const { receiptStore, authStore } = useStores();
   const receipt = receiptStore.receiptDetail;
   const [showPhotos, setShowPhotos] = useState(false);
 
@@ -52,6 +53,8 @@ export const ReceiptDetailModal = observer(() => {
   }
 
   const source = receiptSource(receipt);
+  const accountCurrency = authStore.user?.currency ?? "";
+  const waitsForRate = Boolean(receipt.original_currency) && !receipt.exchange_rate;
 
   return (
     <Modal isOpen={true} onClose={handleClose} className="md:w-[660px]">
@@ -96,6 +99,24 @@ export const ReceiptDetailModal = observer(() => {
                 Reference: {source.reference}
               </span>
             )}
+            {receipt.original_currency &&
+              receipt.original_total &&
+              receipt.exchange_rate &&
+              receipt.total_amount && (
+                <span className="text-[13px] text-muted-foreground">
+                  {conversionLine(
+                    receipt.original_total,
+                    receipt.original_currency,
+                    Number(receipt.total_amount).toFixed(2),
+                    accountCurrency,
+                    {
+                      rate: receipt.exchange_rate,
+                      rateDate: receipt.exchange_rate_date ?? "",
+                      source: receipt.exchange_rate_source ?? "",
+                    },
+                  )}
+                </span>
+              )}
             {receipt.fiscal_register_id && receipt.fiscal_receipt_number && (
               <span className="break-words text-[13px] text-muted-foreground">
                 Register {receipt.fiscal_register_id} · receipt {receipt.fiscal_receipt_number}
@@ -125,6 +146,13 @@ export const ReceiptDetailModal = observer(() => {
       </ModalHeader>
 
       <ModalBody>
+        {waitsForRate && (
+          <Note tone="warning" className="mb-3">
+            No {receipt.original_currency} rate could be found for this date, so these amounts are
+            in {receipt.original_currency} and not counted. Edit them into {accountCurrency} to
+            count this receipt.
+          </Note>
+        )}
         {receipt.possible_duplicate_of_id && (
           <Note tone="warning" className="mb-3">
             <span className="flex flex-col gap-3">

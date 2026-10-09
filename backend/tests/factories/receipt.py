@@ -17,3 +17,10 @@ class ReceiptFactory(ModelFactory[Receipt]):
     fiscal_register_id = None
     fiscal_receipt_number = None
     possible_duplicate_of_id = None
+
+    # A receipt is in the account's currency unless a test about conversion says not (F11.7).
+    original_currency = None
+    original_total = None
+    exchange_rate = None
+    exchange_rate_date = None
+    exchange_rate_source = None
