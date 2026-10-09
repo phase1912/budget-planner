@@ -1,6 +1,7 @@
-"""The household rules: one per user, an owner who manages it, members who may leave
-(F12.2, ADR-0017)."""
+"""The household rules: one per user, an owner who manages it, members who may leave,
+and joining by the owner's invite link (F12.2, F12.3, ADR-0017)."""
 
+import secrets
 import uuid
 
 from app.api.errors import DomainError, NotFoundError, PermissionDeniedError
@@ -13,7 +14,8 @@ class HouseholdService:
     """Creates, renames and dissolves households and moves people out of them.
 
     Every operation acts on the caller's own household, found from their membership, so
-    no request can name someone else's (N2). Joining is F12.3's.
+    no request can name someone else's (N2) — except joining, which names one by the
+    secret code in its invite link.
     """
 
     def __init__(self, households: HouseholdRepository) -> None:
@@ -78,6 +80,43 @@ class HouseholdService:
         membership.household.members.remove(target)
         return membership.household
 
+    async def regenerate_invite(self, user: User) -> Household:
+        """Give the household a new invite link; the old one stops working at once (owner)."""
+        membership = await self._owned_by(user)
+        membership.household.invite_code = secrets.token_hex(16)
+        return membership.household
+
+    async def invited_to(self, code: str) -> Household:
+        """The household an invite link leads to, for the person deciding whether to join.
+
+        Raises NotFoundError for a code that is not, or no longer, any household's.
+        """
+        household = await self.households.by_invite_code(code)
+        if household is None:
+            raise NotFoundError("This invite link is not valid. Ask for a new one.")
+        return household
+
+    async def join(self, user: User, code: str) -> Household:
+        """Put the caller into the household the invite link leads to, as a member.
+
+        Refused (DomainError) when they already belong to a household — one each — or
+        when their account currency is not the household's, since its totals are in one
+        currency (ADR-0017, ADR-0016). Their receipts become readable by the household.
+        """
+        household = await self.invited_to(code)
+        if await self.households.membership_of(user.id):
+            raise DomainError("You already belong to a household; leave it to join another.")
+        currency = _currency_of(household)
+        if currency is not None and user.currency != currency:
+            raise DomainError(
+                f"This household keeps its budget in {currency} and your account is in "
+                f"{user.currency}. Only accounts in the same currency can share a budget."
+            )
+        await self.households.add_member(
+            household, HouseholdMember(user_id=user.id, role=HouseholdRole.MEMBER)
+        )
+        return await self._household(user)
+
     async def _household(self, user: User) -> Household:
         return (await self._membership(user)).household
 
@@ -92,3 +131,8 @@ class HouseholdService:
         if membership.role != HouseholdRole.OWNER:
             raise PermissionDeniedError("Only the household's owner can do this.")
         return membership
+
+
+def _currency_of(household: Household) -> str | None:
+    """The currency the household's totals are in: its members' (ADR-0017)."""
+    return household.members[0].user.currency if household.members else None

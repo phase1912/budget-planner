@@ -15,6 +15,7 @@ import { CategoriesPage } from "@/features/categories/pages/CategoriesPage";
 import { CategorisationQueuePage } from "@/features/categories/pages/CategorisationQueuePage";
 import { GoalsPage } from "@/features/goals/pages/GoalsPage";
 import { StatisticsPage } from "@/features/statistics/pages/StatisticsPage";
+import { JoinHouseholdPage } from "@/features/household/pages/JoinHouseholdPage";
 
 export const App = observer(function App() {
   const { authStore } = useStores();
@@ -43,6 +44,7 @@ export const App = observer(function App() {
             <Route path="/goals" element={<GoalsPage />} />
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/join/:code" element={<JoinHouseholdPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Route>

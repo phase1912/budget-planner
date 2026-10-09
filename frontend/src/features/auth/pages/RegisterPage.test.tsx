@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, it, expect, vi } from "vitest";
 import { RegisterPage } from "./RegisterPage";
 
@@ -64,5 +64,30 @@ describe("RegisterPage", () => {
     type(/confirm password/i, "Kawa-2027");
     expect(screen.getByText("Both passwords match")).toHaveTextContent("missing");
     expect(screen.getByRole("button", { name: /register/i })).toBeDisabled();
+  });
+
+  it("returns a visitor who came from an invite link to it after registering (F12.3)", async () => {
+    render(
+      <MemoryRouter
+        initialEntries={[{ pathname: "/register", state: { from: { pathname: "/join/abc" } } }]}
+      >
+        <Routes>
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/join/:code" element={<p>Invite page</p>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const type = (label: RegExp, value: string) => {
+      fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    };
+    type(/email address/i, "anna@example.com");
+    type(/first name/i, "Anna");
+    type(/last name/i, "R");
+    type(/^password/i, "Kawa-2026");
+    type(/confirm password/i, "Kawa-2026");
+
+    fireEvent.click(screen.getByRole("button", { name: /register/i }));
+
+    expect(await screen.findByText("Invite page")).toBeInTheDocument();
   });
 });

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
+import { Check, Copy, RefreshCw } from "lucide-react";
 
 import { Button } from "@/shared/components/Button/Button";
 import { Card, CardBody, CardHeader } from "@/shared/components/Card/Card";
@@ -169,6 +170,8 @@ const HouseholdDetails = observer(function HouseholdDetails() {
         ))}
       </ul>
 
+      {householdStore.isOwner && <InviteLink />}
+
       {householdStore.isOwner && others > 0 ? (
         <p className="m-0 text-md text-muted-foreground">
           To leave, remove the other members first: a household needs its owner.
@@ -201,6 +204,81 @@ const HouseholdDetails = observer(function HouseholdDetails() {
         </Button>
       )}
     </>
+  );
+});
+
+/**
+ * The owner's invite link (F12.3): sent however they like, it lets someone join after
+ * seeing whose household it is. Replacing it is confirmed, since the old one dies at once.
+ */
+const InviteLink = observer(function InviteLink() {
+  const { householdStore } = useStores();
+  const [copied, setCopied] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const link = householdStore.inviteLink(window.location.origin) ?? "";
+
+  const copy = async () => {
+    await navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
+  const regenerate = async () => {
+    if (await householdStore.regenerateInvite()) setConfirming(false);
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <label htmlFor="household-invite" className="font-semibold text-foreground">
+        Invite link
+      </label>
+      <p className="m-0 text-md leading-relaxed text-muted-foreground">
+        Send it to the person you want to share a budget with. Anyone with the link can ask to join,
+        so get a new one if it reaches someone else.
+      </p>
+      <div className="flex flex-col gap-2 md:flex-row md:items-center">
+        <output
+          id="household-invite"
+          className="min-h-11 min-w-0 flex-1 break-all rounded-control border border-border bg-muted px-3 py-2.5 font-mono text-md text-foreground md:min-h-0"
+        >
+          {link}
+        </output>
+        <Button
+          type="button"
+          variant="secondary"
+          className="min-h-11 w-full md:min-h-0 md:w-auto"
+          onClick={() => void copy()}
+        >
+          {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
+          {copied ? "Copied" : "Copy link"}
+        </Button>
+      </div>
+      {confirming ? (
+        <Confirm
+          label="Replace invite link"
+          question="The current link stops working at once. Members already in stay."
+          action="Get a new link"
+          busy={householdStore.saveState.isLoading}
+          onCancel={() => {
+            setConfirming(false);
+          }}
+          onConfirm={() => void regenerate()}
+        />
+      ) : (
+        <Button
+          type="button"
+          variant="ghost"
+          className="min-h-11 w-full md:min-h-0 md:w-auto md:self-start"
+          onClick={() => {
+            setConfirming(true);
+          }}
+        >
+          <RefreshCw size={16} aria-hidden="true" />
+          Get a new link
+        </Button>
+      )}
+    </div>
   );
 });
 

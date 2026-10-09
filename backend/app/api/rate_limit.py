@@ -21,3 +21,9 @@ ADVICE = "10/minute"
 """Each ask is a model call."""
 EXPORT = "5/minute"
 """Each export writes a file of the whole history in the background."""
+
+JOIN = "10/minute"
+"""Reading and using invite links: codes are unguessable, this only stops scripted probing.
+
+Applied as one shared limit, not per route: the limiter keys routes by URL, and every code
+is a different URL, so a per-route limit would never be reached by trying codes."""
