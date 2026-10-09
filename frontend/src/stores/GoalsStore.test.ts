@@ -87,7 +87,7 @@ describe("GoalsStore", () => {
 
   it("drops a removed goal", async () => {
     store.goals = [goal("1", "First"), goal("2", "Second")];
-    vi.mocked(apiClient.DELETE).mockResolvedValue({ response: new Response() } as never);
+    vi.mocked(apiClient.DELETE).mockResolvedValue({ response: new Response() });
     expect(await store.remove("1")).toBe(true);
     expect(store.goals.map((g) => g.id)).toEqual(["2"]);
     expect(toast.showSuccess).toHaveBeenCalledWith("Goal removed");
@@ -120,7 +120,7 @@ describe("GoalsStore", () => {
       .mockResolvedValueOnce(ok(goal("1", "Ceiling")))
       .mockResolvedValueOnce(refused("A money goal needs an amount above zero."));
     vi.mocked(apiClient.PATCH).mockResolvedValue(ok(goal("1", "Lower ceiling")));
-    vi.mocked(apiClient.DELETE).mockResolvedValue({ response: new Response() } as never);
+    vi.mocked(apiClient.DELETE).mockResolvedValue({ response: new Response() });
 
     await watched.create({ type: "financial", name: "Ceiling" });
     await watched.create({ type: "financial", name: "Zero" });

@@ -31,9 +31,11 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | **MonthlySnapshot** | A finalised month: total, receipt count, and the count and value held out for review. A cache of derived data, taken on the first look after the month ends (ADR-0010). | User |
 | **ExportJob** | One export of the user's receipts or statistics as CSV or JSON, written in the background: the filters it was asked with, its status, and where the finished file is stored (N6). | User |
 | **Goal** | A financial or lifestyle objective the user declared. A financial goal is one of three kinds: a monthly spending ceiling, a savings target, or a cap on one category (F1). | User |
+| **Household** | A group of users keeping one budget (E12, ADR-0017): a name, an invite code, an optional monthly budget. Reads its members' receipts, never owns them. | Its owner |
+| **HouseholdMember** | A user's place in a household, as `owner` or `member`. One household per user. | Household |
 | **Recommendation** | Advice on one goal: the category or recurring purchase it targets, what to do and why. Asking again replaces the goal's advice, except advice the user marked won't-follow or not helpful (F8.9), which stays. Carries its projected impact (F8.5). | User |
 
-Relationships: a User has many Receipts; a Receipt has many LineItems; a LineItem has one
+Relationships: a User has many Receipts and belongs to at most one Household; a Receipt has many LineItems; a LineItem has one
 Category; a Goal produces many Recommendations; a User has many IdentityLinks; a User has many PositionMatchOverrides.
 
 **Not yet groomed:** BR-7 (G1-G12, added by F0.10.1) is fully specified in the BRD, but
@@ -206,6 +208,16 @@ Rules that must hold at all times. Each is a candidate for a test.
     counted as if it were in the account's currency (A11, D3). Amounts the owner then
     corrects are in the account's currency, and the rate they imply is recorded as manual (F11.7).
 
+**Households** (ADR-0017)
+
+11g. A receipt is only ever written by its owner. Membership of a household grants read
+    access to the other members' receipts that are not private, and nothing else; leaving
+    or removal revokes it at once (N2).
+11h. A private receipt counts in the household's totals and budget, but the household sees
+    only one sum per member per month, never its merchant, items, category or date (N2).
+11i. A user belongs to at most one household, and its members share one account currency,
+    in which its totals are (D1).
+
 **Categorisation**
 
 12. Every line item has a category. Below the confidence threshold it is `Uncategorized`
@@ -350,4 +362,4 @@ here as an ADR when it arrives.
 | Whether thin history yields softened advice or none at all | E8 |
 | Target values for the success metrics (section 12) | Not epic-blocking — informs tuning throughout |
 | Which markets/currencies ship at launch, and whether multi-currency is truly out of scope | Resolved — any account currency; foreign receipts converted at NBP rates, see ADR-0016 |
-| Whether household/shared budgets change the single-user assumption | Resolved — phase 2, see E12 in `docs/planning/backlog.yaml` |
+| Whether household/shared budgets change the single-user assumption | Resolved — receipts stay their owner's, a household only reads them, see ADR-0017 |

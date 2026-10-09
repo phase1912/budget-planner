@@ -6,6 +6,7 @@ import { Card, CardHeader, CardBody } from "@/shared/components/Card/Card";
 import { Input } from "@/shared/components/Input/Input";
 import { Button } from "@/shared/components/Button/Button";
 import { ForwardingAddressCard } from "../components/ForwardingAddressCard";
+import { HouseholdCard } from "../components/HouseholdCard";
 import { ReceiptUsageCard } from "../components/ReceiptUsageCard";
 import { InstallAppCard } from "@/features/install/InstallAppCard";
 
@@ -145,6 +146,8 @@ export const ProfilePage = observer(function ProfilePage() {
         <ReceiptUsageCard />
 
         <ForwardingAddressCard />
+
+        <HouseholdCard />
 
         <InstallAppCard />
 

@@ -16,6 +16,7 @@ import { GoalsStore } from "@/stores/GoalsStore";
 import { AdviceStore } from "@/stores/AdviceStore";
 import { QuotaStore } from "@/stores/QuotaStore";
 import { InstallStore } from "@/stores/InstallStore";
+import { HouseholdStore } from "@/stores/HouseholdStore";
 
 /**
  * Single instantiation point for every MobX store in the client (F9.2.1). Feature
@@ -38,6 +39,7 @@ export class RootStore {
   readonly adviceStore: AdviceStore;
   readonly quotaStore: QuotaStore;
   readonly installStore: InstallStore;
+  readonly householdStore: HouseholdStore;
 
   constructor() {
     this.themeStore = new ThemeStore();
@@ -49,6 +51,7 @@ export class RootStore {
     const refreshMonth = () => void this.budgetStore.refresh();
     this.quotaStore = new QuotaStore();
     this.installStore = new InstallStore();
+    this.householdStore = new HouseholdStore(this.toastStore);
     // Every upload started uses up receipt reads (F10.6), whether or not it is stored.
     this.uploadStore = new UploadStore(apiClient, this.toastStore, refreshMonth, () => {
       void this.quotaStore.load();
@@ -70,6 +73,7 @@ export class RootStore {
         this.goalsStore.reset();
         this.adviceStore.reset();
         this.quotaStore.reset();
+        this.householdStore.reset();
       },
     );
   }

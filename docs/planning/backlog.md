@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-17 epics · 112 features · 231 tasks written so far.
+17 epics · 111 features · 243 tasks written so far.
 
 14 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -21,7 +21,7 @@
 | E9 | Web Client Foundation | — | 7 | yes | 1 | Diploma |
 | E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 7 | no | 1 | Out of scope |
 | E11 | Alternative Receipt Intake | — | 6 | yes | 2 | Diploma |
-| E12 | Household & Shared Budgets | — | 7 | no | 2 | Diploma |
+| E12 | Household & Shared Budgets | — | 6 | yes | 2 | Diploma |
 | E13 | Aggregated Purchase Analytics | — | 7 | no | 2 | Out of scope |
 | E14 | B2B Export & Accounting Integrations | — | 6 | no | 2 | Out of scope |
 | E15 | Receipt Accuracy & Trust | — | 4 | yes | 2 | Diploma |
@@ -972,49 +972,73 @@ A receipt from a trip abroad — hryvnias on a złoty account — is converted i
 
 **BRD sections:** — · **Phase:** 2 · **Scope:** Diploma
 
-BRD section 4.2 places shared budgets out of scope and section 14 leaves the question open. Commercially they are what makes the product stick: a household that has agreed a shared budget does not churn the way one person tracking their own spending does. This is not a feature bolted on top — it replaces the single-owner model that N2, every repository and every access-control test are built around, which is why it needs a recorded decision before any schema changes.
+BRD section 4.2 places shared budgets out of scope and section 14 leaves the question open. Commercially they are what makes the product stick: a household that has agreed a shared budget does not churn the way one person tracking their own spending does. Groomed on 2026-10-09 around the cheapest model that delivers it: a receipt stays its owner's, and belonging to a household only adds read access to the other members' receipts, so N2, every repository and every access test written so far keep working unchanged. Goals and advice stay personal.
 
 ### F12.1 — Ownership model decision
 
 *Requirements: N2*
 
-Whether a receipt is owned by a user who may share it, or by a household its members belong to. The choice constrains every repository already written, so it is decided and written up as an ADR before code changes.
+A receipt is owned by the user who added it; a household is a group of users, and membership grants read access to the members' shared receipts, never write access. Decided and written up before any schema changes, because it constrains every repository already written.
 
-### F12.2 — Household entity, membership and roles
+**Demonstrated by:** No screen of its own: the ADR in docs/adr/ that every later E12 feature is built on.
 
-*Requirements: —*
+- **F12.1.1** Decide how a household shares receipts — ADR: receipts stay owned by their user (user_id unchanged); one household per user; members read each other's shared receipts and only the owner edits or deletes; joining shares everything except receipts marked private; a private receipt's money still counts in the household's totals, but the household sees only one line per member per month ("Private — Anna: 120 PLN") with no merchant, items, category or date; members must share one account currency, since household totals are in it (ADR-0016). Updates the BRD out-of-scope note, the domain model's open question on households and invariants for the household, and overview.md.
 
-Households, the members in them, and what a member may do — who can edit a shared receipt, who can change the household budget, who can remove a member.
-
-### F12.3 — Invitations and joining
+### F12.2 — Household and its members
 
 *Requirements: —*
 
-Inviting someone to a household and the states an invitation moves through, including an invitation to an address that has no account yet.
+A household, the users in it, and two roles: the owner, who created it and may rename it, set its budget and remove members, and members, who may leave.
 
-### F12.4 — Personal and shared visibility
+**Demonstrated by:** On Profile, create a household and give it a name; it lists you as its owner. A second account that joins (F12.3) appears in the list; the owner can remove it, and a member can leave.
+
+- **F12.2.1** Household and membership — Household (name, owner) and HouseholdMember (household, user, role, joined_at), with a migration that only adds. Endpoints to create, read, rename, leave, and for the owner to remove a member. A user belongs to at most one household; the owner leaving with members left is refused until they remove them, and the last member leaving deletes it. Cross-household tests (N2): a non-member reads nothing and changes nothing.
+- **F12.2.2** Household on Profile — Profile gains a Household card: create one, see its name and members with their roles, rename and remove members as owner, leave as member, each with a confirmation. Checked at 375, 768 and 1280 px.
+
+### F12.3 — Joining by invite link
 
 *Requirements: —*
 
-A member's receipts are not household property by default. Sharing is a decision made per receipt or per intake channel — the weekly grocery run is shared, the pharmacy visit is not — and the household's totals include only what was shared.
+Joining by a link the owner shares however they like, so no mail provider is needed. The link can be regenerated, which stops the old one working.
 
-### F12.5 — Household budgets, statistics and goals
+**Demonstrated by:** The owner copies the household's invite link from Profile and sends it by messenger; the other person opens it, signs in or registers, and joins after confirming.
+
+- **F12.3.1** Invite codes — The household carries an unguessable invite code the owner can read and regenerate. Joining by code adds the user as a member unless they are already in a household or their account currency differs from the household's, each refused with a reason; a regenerated code invalidates the old one. Joining is rate-limited per IP like login (F10.6). Tests for each refusal.
+- **F12.3.2** Invite link and join page — The Household card shows the invite link with copy and regenerate. /join/:code shows the household's name and owner and a Join button; an anonymous visitor is sent to sign in or register and returned to it. Refusals are shown in words. Checked at 375, 768 and 1280 px.
+
+### F12.4 — Shared and private receipts
+
+*Requirements: N2*
+
+A member's receipts are shared with the household from the moment they join, except those they mark private. The household sees shared receipts in full and read-only; a private one is never shown, only its money (F12.5).
+
+**Demonstrated by:** In a household of two, Receipts gains a "Mine / Household" switch: the household view lists both members' receipts with who added each, read-only for the other's. Marking a receipt private removes it from the other member's view.
+
+- **F12.4.1** Read access through membership — Receipt gains `is_private` (default false, add-only migration). A household receipts listing returns the members' non-private receipts with who added each, and a member may open one; edit, delete, recategorise and every write stay owner-only through the existing ownership filter. Leaving or being removed revokes access at once. Cross-household tests: a non-member, a removed member and a private receipt are each invisible (N2).
+- **F12.4.2** Mark a receipt private — The owner marks or unmarks a receipt private from the receipt view, which says what the household then sees ("only the amount, in your monthly private total"). Absent outside a household. Checked at 375, 768 and 1280 px.
+- **F12.4.3** Household view of Receipts — A "Mine / Household" switch on Receipts, shown only in a household; the household view marks whose each receipt is and opens another member's read-only, without edit, delete or category controls. Filters and pagination work as in the personal view. Checked at 375, 768 and 1280 px.
+
+### F12.5 — Household budget and statistics
 
 *Requirements: —*
 
-BR-4, BR-5 and BR-6 computed over a household's combined shared data, including each member's contribution to the total, which is the number households actually argue over.
+BR-4 and BR-5 over the household's combined spending, including each member's contribution, which is the number households actually argue over. Private receipts count in the money but never show what they were. Goals and advice stay personal.
+
+**Demonstrated by:** The owner sets a household budget on Profile; the dashboard's "Household" view shows the month's total against it with each member's share, private spending included as one line per member; Statistics shows the household's categories with a "Private" row.
+
+- **F12.5.1** Household month and limit — The owner sets an optional household monthly budget. The household month adds every member's parsed receipts filed in it (D1-D3, same month rules as personal), private ones included, against that budget, and splits the total per member, each member's private receipts summed into one figure with no date or detail. Tests that a private receipt changes the totals and nothing else about it is returned.
+- **F12.5.2** Household statistics — Category statistics over the household's shared receipts for a period, as the personal ones (E6), with private spending as a single "Private" row; each member's own categories are kept apart by user, so a custom category name is shown with its owner. Tests that no private receipt's category or items leak.
+- **F12.5.3** Household dashboard and statistics views — Dashboard and Statistics gain the same "Mine / Household" switch: the household month shows the total against the household budget and a per-member split with private lines; Statistics shows household categories with the Private row. The owner sets the household budget on the Household card. Checked at 375, 768 and 1280 px.
 
 ### F12.6 — Access control under shared ownership
 
 *Requirements: N2*
 
-The cross-user suite from F1.3 and F10.2 becomes a cross-household suite: membership grants access, removal revokes it immediately, and a personal receipt stays invisible to the rest of the household.
+One suite that walks every household-aware endpoint as the owner, a member, a removed member and a stranger, so a later change cannot open one quietly.
 
-### F12.7 — Household interface
+**Demonstrated by:** No screen of its own: the cross-household suite in CI, failing if any household endpoint lets a non-member, a removed member or a private receipt through.
 
-*Requirements: —*
-
-Creating a household, managing members, choosing what is shared, and reading the household view of budget and statistics alongside the personal one.
+- **F12.6.1** Cross-household access suite — A parametrised suite over every endpoint E12 adds or widens: membership grants read only, removal revokes at once, a private receipt's details are never in any response to anyone but its owner, and every write stays owner-only.
 
 ---
 

@@ -48,9 +48,8 @@ retired and their screens sit with the endpoints they expose.
 
 ### Every feature says how it is demonstrated
 
-Each feature in `backlog.yaml` carries a `demo:` line (except foundation in E0 and E9, and
-E12, which gains them when it is groomed), which `sync` renders into the
-issue as **Demonstrated by**. It answers one question: *when this lands, what do I do in the
+Each feature in `backlog.yaml` carries a `demo:` line (except foundation in E0 and E9),
+which `sync` renders into the issue as **Demonstrated by**. It answers one question: *when this lands, what do I do in the
 product to see it?*
 
 - Usually the feature carries the slice of UI that makes it visible, and `demo:` says which

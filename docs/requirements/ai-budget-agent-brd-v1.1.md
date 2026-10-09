@@ -45,7 +45,7 @@ Manual expense tracking has a well-known adoption problem: users abandon budgeti
 
 - Direct integration with bank accounts or card transaction feeds.
 - ~~Multi-currency conversion~~ — reversed for receipts by ADR-0016 (F11.7): a receipt in another currency is converted into the account's currency at the NBP rate of its purchase date. Budgets, goals and advice stay in one currency per account.
-- Shared/household budgets across multiple user accounts.
+- ~~Shared/household budgets across multiple user accounts~~ — taken into phase 2 by E12: a household reads its members' receipts and keeps one budget, while every receipt stays its owner's (ADR-0017).
 - Automated bill payment or financial transactions of any kind — the agent advises, it does not act on the user's finances.
 - Tax filing or tax-advice functionality.
 
