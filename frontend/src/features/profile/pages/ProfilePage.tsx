@@ -7,6 +7,7 @@ import { Input } from "@/shared/components/Input/Input";
 import { Button } from "@/shared/components/Button/Button";
 import { ForwardingAddressCard } from "../components/ForwardingAddressCard";
 import { ReceiptUsageCard } from "../components/ReceiptUsageCard";
+import { InstallAppCard } from "@/features/install/InstallAppCard";
 
 export const ProfilePage = observer(function ProfilePage() {
   const { authStore, profileStore, quotaStore } = useStores();
@@ -144,6 +145,8 @@ export const ProfilePage = observer(function ProfilePage() {
         <ReceiptUsageCard />
 
         <ForwardingAddressCard />
+
+        <InstallAppCard />
 
         <Card variant="surface" flush>
           <CardHeader>Account</CardHeader>

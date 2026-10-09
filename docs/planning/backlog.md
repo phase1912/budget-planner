@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-17 epics · 110 features · 224 tasks written so far.
+17 epics · 111 features · 227 tasks written so far.
 
 14 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -18,7 +18,7 @@
 | E6 | Monthly Budget Calculation | BR-4 | 7 | no | 1 | Diploma |
 | E7 | Statistics, Comparison & Export | BR-5 | 6 | no | 1 | Diploma |
 | E8 | Goals & AI Optimization Advice | BR-6 | 9 | yes | 1 | Diploma |
-| E9 | Web Client Foundation | — | 6 | yes | 1 | Diploma |
+| E9 | Web Client Foundation | — | 7 | yes | 1 | Diploma |
 | E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 7 | no | 1 | Out of scope |
 | E11 | Alternative Receipt Intake | — | 5 | yes | 2 | Diploma |
 | E12 | Household & Shared Budgets | — | 7 | no | 2 | Diploma |
@@ -802,6 +802,18 @@ One documented treatment for each, so the honest empty states E5 and F5 require 
 - **F9.7.1** Implement Loading state component — A generic loading component (e.g. spinner or skeleton) for use while fetching data.
 - **F9.7.2** Implement Empty state component — A component for screens with no data, supporting an icon, title, message, and action button.
 - **F9.7.3** Implement Error state component — A component for failure/refused states, supporting an error icon, message, and retry button.
+
+### F9.8 — Installable app (PWA)
+
+*Requirements: —* · *Blocked by: F0.9*
+
+The web client installs on a phone's home screen and opens full screen like an app, so photographing receipts does not start with typing an address — without an app store, its fees or its review, and with every deploy reaching installed copies at once. Push notifications are left for a feature of their own: they need a backend to send them and something worth sending.
+
+**Demonstrated by:** On an iPhone, open the production URL in Safari, follow the hint to add it to the Home Screen, and open it from the new icon: full screen, no browser bar, the camera available on Upload. On Android, Chrome offers "Install app" itself. With the network off, the installed app opens to a page saying it is offline instead of a browser error.
+
+- **F9.8.1** Web app manifest and icons — A manifest naming the app, its start URL, standalone display and theme colours from the design tokens; an app icon (also maskable) and an Apple touch icon, added to docs/design; the iOS meta tags that make the installed app full screen. The browser tab gets the same icon.
+- **F9.8.2** Service worker for the app shell — Caches the built app so an installed copy opens fast and, without a network, shows an offline page rather than a browser error. Never caches API responses — receipts and figures are financial data and must not linger on the device. A new deploy is picked up on the next launch. Firebase Hosting serves the worker and manifest uncached.
+- **F9.8.3** Install hint — Where a browser offers installing (Android Chrome), an "Install app" action in the profile; on iPhone Safari, which never offers it, a short dismissible hint how to add the app to the Home Screen. Nothing shown once installed. Checked at 375, 768 and 1280 px.
 
 ---
 

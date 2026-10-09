@@ -24,6 +24,7 @@ defect, not technical debt.
 | `design.css` | **The values.** Colour, radius, shadow, control anatomy — defined once. |
 | `components.md` | The anatomy of each primitive in numbers, for checking code against. |
 | `screens/*.html` | One file per screen. Plain HTML; no build step, no dependencies. |
+| `app-icon/*.svg` | The app icon (F9.8): a white receipt glyph from the same lucide set as the UI, on the light `--color-primary`. `icon.svg` has rounded corners for the browser tab; `icon-full.svg` is full-bleed for Android and iOS, which round it themselves; `icon-maskable.svg` keeps the glyph inside the maskable safe zone. The PNGs in `frontend/public/` are rendered from these. |
 
 `design.css` is what makes divergence checkable. Screens reference token names
 (`var(--color-primary)`, `var(--radius-card)`) and primitive classes (`.btn--primary`,

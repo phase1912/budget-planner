@@ -12,6 +12,7 @@ import { EditReceiptDialog } from "@/features/receipts/components/EditReceiptDia
 import { ReceiptDetailModal } from "@/features/receipts/components/ReceiptDetailModal";
 import { CategorySpendList } from "@/features/categories/components/CategorySpendList";
 import { AtRiskWarnings } from "@/features/goals/components/AtRiskWarnings";
+import { InstallHint } from "@/features/install/InstallHint";
 import { LimitStatus } from "../components/LimitStatus";
 import { MonthReceipts } from "../components/MonthReceipts";
 import { MonthStatus } from "../components/MonthStatus";
@@ -133,6 +134,8 @@ export const DashboardPage = observer(function DashboardPage() {
             <ArrowRight size={16} aria-hidden="true" />
           </Link>
         </div>
+
+        <InstallHint />
 
         <AtRiskWarnings linkToGoals />
 
