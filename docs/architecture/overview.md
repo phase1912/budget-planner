@@ -75,7 +75,13 @@ lookup starts from the caller's own membership row, which is what keeps one hous
 of another's reach (N2) — except joining, which names a household by the 128-bit code in
 its invite link (F12.3). Looking at and using invite links share one per-IP limit, since
 the limiter keys routes by URL and every code is a different one. Receipts are untouched
-by membership; reading them is F12.4's.
+by membership. Reading them (F12.4) goes through `HouseholdReaders`
+(`app/repository/receipt.py`): built from the caller's membership on each request, it is
+the one SQL condition — a member's own receipts and the others' that are not private —
+used by `GET /receipts?scope=household` and by opening a receipt that is not the
+caller's. Every write keeps the plain ownership filter, so another member's receipt is
+not found for editing, deleting, recategorising or privacy. Photos stay under their
+owner's storage prefix and are not shown to the household.
 
 ### Errors crossing the API boundary
 

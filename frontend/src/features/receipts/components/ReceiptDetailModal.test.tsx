@@ -5,9 +5,12 @@ import { ReceiptDetailModal } from "./ReceiptDetailModal";
 const mockClearSelection = vi.fn();
 const mockKeep = vi.fn();
 const mockConfirmDelete = vi.fn();
+const mockSetPrivacy = vi.fn();
 
 const PHOTO_RECEIPT = {
   id: "r1",
+  user_id: "me",
+  is_private: false,
   merchant_name: "Tesco",
   transaction_date: "2026-07-20T14:30:00Z",
   total_amount: "45.50",
@@ -27,7 +30,10 @@ const PHOTO_RECEIPT = {
   ],
 };
 
-const detail = vi.hoisted(() => ({ receipt: {} }));
+const detail = vi.hoisted(() => ({
+  receipt: {},
+  household: null as null | { members: { user_id: string; first_name: string }[] },
+}));
 
 vi.mock("@/stores/StoreContext", () => ({
   useStores: () => ({
@@ -40,7 +46,12 @@ vi.mock("@/stores/StoreContext", () => ({
       reassignCategory: vi.fn(),
     },
     toastStore: { showError: vi.fn() },
-    authStore: { user: { currency: "PLN" } },
+    authStore: { user: { id: "me", currency: "PLN" } },
+    householdStore: {
+      get household() {
+        return detail.household;
+      },
+    },
     receiptStore: {
       isLoadingDetail: false,
       get receiptDetail() {
@@ -50,6 +61,8 @@ vi.mock("@/stores/StoreContext", () => ({
       keepPossibleDuplicate: mockKeep,
       confirmDelete: mockConfirmDelete,
       isKeepingDuplicate: false,
+      isSavingPrivacy: false,
+      setPrivacy: mockSetPrivacy,
     },
   }),
 }));
@@ -58,6 +71,7 @@ describe("ReceiptDetailModal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     detail.receipt = { ...PHOTO_RECEIPT };
+    detail.household = null;
   });
 
   it("renders receipt details correctly", () => {
@@ -157,5 +171,42 @@ describe("ReceiptDetailModal", () => {
     render(<ReceiptDetailModal />);
 
     expect(screen.getByText(/No UAH rate could be found/)).toBeInTheDocument();
+  });
+
+  describe("in a household (F12.4)", () => {
+    beforeEach(() => {
+      detail.household = {
+        members: [
+          { user_id: "me", first_name: "Bohdan" },
+          { user_id: "anna", first_name: "Anna" },
+        ],
+      };
+    });
+
+    it("opens another member's receipt to read, with nothing to change", () => {
+      detail.receipt = { ...PHOTO_RECEIPT, user_id: "anna", possible_duplicate_of_id: "r0" };
+      render(<ReceiptDetailModal />);
+
+      expect(screen.getByText(/Added by Anna/)).toBeInTheDocument();
+      expect(screen.getByText("Groceries")).toBeInTheDocument();
+      for (const name of [/Edit/, /Delete/, /photos/i, /Re-run/, "Keep both", "Private"]) {
+        expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
+      }
+      expect(screen.queryByLabelText("Private")).not.toBeInTheDocument();
+    });
+
+    it("lets the owner mark their receipt private", () => {
+      render(<ReceiptDetailModal />);
+
+      fireEvent.click(screen.getByLabelText("Private"));
+
+      expect(mockSetPrivacy).toHaveBeenCalledWith(true);
+    });
+  });
+
+  it("offers no privacy outside a household", () => {
+    render(<ReceiptDetailModal />);
+
+    expect(screen.queryByLabelText("Private")).not.toBeInTheDocument();
   });
 });

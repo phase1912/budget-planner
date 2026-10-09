@@ -24,3 +24,6 @@ class ReceiptFactory(ModelFactory[Receipt]):
     exchange_rate = None
     exchange_rate_date = None
     exchange_rate_source = None
+
+    # Shared with the household unless a test about privacy says not (F12.4).
+    is_private = False

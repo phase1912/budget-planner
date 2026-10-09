@@ -132,6 +132,22 @@ class ReceiptRepository(BaseRepository[Receipt]):
         stmt = self._apply_ownership(stmt)
         return (await self.session.execute(stmt)).unique().scalar_one_or_none()
 
+    async def get_readable_with_items(
+        self, receipt_id: uuid.UUID, readers: "HouseholdReaders"
+    ) -> Receipt | None:
+        """A receipt a household member may open: theirs, or another member's not private.
+
+        For reading only; every write still goes through the ownership filter (ADR-0017).
+        """
+        from app.models.line_item import LineItem
+
+        stmt = (
+            select(Receipt)
+            .where(Receipt.id == receipt_id, readers.can_read())
+            .options(joinedload(Receipt.line_items).joinedload(LineItem.category))
+        )
+        return (await self.session.execute(stmt)).unique().scalar_one_or_none()
+
     def _filtered_items(
         self,
         view: ItemView,
@@ -438,16 +454,23 @@ class ReceiptRepository(BaseRepository[Receipt]):
         search_query: str | None = None,
         order: ReceiptOrder = ReceiptOrder.NEWEST,
         channel: ReceiptChannel | None = None,
+        readers: "HouseholdReaders | None" = None,
     ) -> tuple[typing.Sequence[Receipt], int]:
         """Return a page of receipts and the total count, with optional filters.
 
         The date range places an undated receipt by its upload date, as the
         month total does (domain model), so a month's list and figure agree.
+        With `readers`, the page is the household's: every member's receipts
+        but the others' private ones (F12.4), instead of the caller's own.
         """
         from sqlalchemy import func, or_
 
         base_stmt = select(self.model_class)
-        base_stmt = self._apply_ownership(base_stmt)
+        base_stmt = (
+            base_stmt.where(readers.can_read())
+            if readers is not None
+            else self._apply_ownership(base_stmt)
+        )
 
         if status:
             base_stmt = base_stmt.where(self.model_class.status == status)
@@ -791,3 +814,22 @@ def _currency_fields(extraction: dict[str, typing.Any]) -> dict[str, typing.Any]
         "exchange_rate_date": date.fromisoformat(rate_date) if rate_date else None,
         "exchange_rate_source": extraction.get("exchange_rate_source"),
     }
+
+
+@dataclass(frozen=True)
+class HouseholdReaders:
+    """Whose receipts a household member may read (F12.4, ADR-0017, BRD N2).
+
+    Their own, and every other member's that is not private. Built from the reader's
+    membership at the time of the request, so leaving or removal ends access at once.
+    """
+
+    reader_id: uuid.UUID
+    member_ids: frozenset[uuid.UUID]
+
+    def can_read(self) -> ColumnElement[bool]:
+        """The SQL condition on `Receipt` that holds for exactly those receipts."""
+        return and_(
+            Receipt.user_id.in_(self.member_ids),
+            or_(Receipt.user_id == self.reader_id, Receipt.is_private.is_(False)),
+        )

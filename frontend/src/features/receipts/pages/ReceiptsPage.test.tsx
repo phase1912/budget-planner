@@ -12,14 +12,28 @@ const mockFetchReceipts = vi.fn();
 const mockFetchReceiptDetail = vi.fn();
 const mockSetFilters = vi.fn();
 const mockStartExport = vi.fn();
+const mockSetScope = vi.fn();
+const shared = vi.hoisted(() => ({
+  household: null as null | { name: string; members: { user_id: string; first_name: string }[] },
+  scope: "mine",
+}));
 
 vi.mock("@/stores/StoreContext", () => ({
   useStores: () => ({
     exportStore: { busy: {}, start: mockStartExport },
+    authStore: { user: { id: "me" } },
+    householdStore: {
+      get household() {
+        return shared.household;
+      },
+      loaded: true,
+      load: vi.fn(),
+    },
     receiptStore: {
       receipts: [
         {
           id: "r1",
+          user_id: "me",
           merchant_name: "Tesco",
           transaction_date: "2026-07-20T14:30:00Z",
           total_amount: "45.50",
@@ -28,6 +42,7 @@ vi.mock("@/stores/StoreContext", () => ({
         },
         {
           id: "r2",
+          user_id: "anna",
           merchant_name: "Unknown Merchant",
           transaction_date: null,
           total_amount: null,
@@ -44,6 +59,10 @@ vi.mock("@/stores/StoreContext", () => ({
       fetchReceipts: mockFetchReceipts,
       fetchReceiptDetail: mockFetchReceiptDetail,
       setFilters: mockSetFilters,
+      setScope: mockSetScope,
+      get scope() {
+        return shared.scope;
+      },
     },
   }),
 }));
@@ -51,6 +70,8 @@ vi.mock("@/stores/StoreContext", () => ({
 describe("ReceiptsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    shared.household = null;
+    shared.scope = "mine";
   });
 
   it("fetches receipts on mount", () => {
@@ -148,5 +169,53 @@ describe("ReceiptsPage", () => {
     expect(mockStartExport).toHaveBeenCalledWith(
       expect.objectContaining({ kind: "receipts", format: "csv", compare: false }),
     );
+  });
+
+  describe("in a household (F12.4)", () => {
+    beforeEach(() => {
+      shared.household = {
+        name: "Home",
+        members: [
+          { user_id: "me", first_name: "Bohdan" },
+          { user_id: "anna", first_name: "Anna" },
+        ],
+      };
+    });
+
+    it("offers a switch between my receipts and the household's", () => {
+      render(
+        <BrowserRouter>
+          <ReceiptsPage />
+        </BrowserRouter>,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "Home" }));
+
+      expect(mockSetScope).toHaveBeenCalledWith("household");
+    });
+
+    it("names who added another member's receipt, and drops the export", () => {
+      shared.scope = "household";
+      render(
+        <BrowserRouter>
+          <ReceiptsPage />
+        </BrowserRouter>,
+      );
+
+      expect(screen.getByText("Anna")).toBeInTheDocument();
+      expect(screen.queryByText("Bohdan")).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Export/ })).not.toBeInTheDocument();
+    });
+  });
+
+  it("shows no switch outside a household", () => {
+    render(
+      <BrowserRouter>
+        <ReceiptsPage />
+      </BrowserRouter>,
+    );
+
+    expect(screen.queryByRole("group", { name: "Whose receipts" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Mine" })).not.toBeInTheDocument();
   });
 });

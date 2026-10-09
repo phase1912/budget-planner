@@ -19,7 +19,7 @@ from app.api.dependencies import (
     get_quota_service,
     get_storage_service,
 )
-from app.api.errors import UploadLimitExceededError
+from app.api.errors import NotFoundError, UploadLimitExceededError
 from app.api.periods import optional_period
 from app.api.rate_limit import limiter
 from app.core.config import get_settings
@@ -36,6 +36,7 @@ from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.parsing import CURRENT_PARSER_VERSION
 from app.ports.storage import StoragePort
 from app.repository.category import CategoryRepository
+from app.repository.household import HouseholdRepository
 from app.repository.receipt import ReceiptRepository
 from app.schemas.extraction import ExtractedReceipt
 from app.schemas.receipt import (
@@ -47,7 +48,9 @@ from app.schemas.receipt import (
     LineItemResponse,
     PaginatedReceiptsResponse,
     ReceiptDetailResponse,
+    ReceiptPrivacyRequest,
     ReceiptResponse,
+    ReceiptScope,
     ResolveDateRequest,
     ResolveDuplicateRequest,
     ResolvePositionMatchRequest,
@@ -59,6 +62,7 @@ from app.schemas.receipt import (
     UploadReceiptResponse,
 )
 from app.services.categorisation import CategorisationService
+from app.services.household import HouseholdService
 from app.services.quota import QuotaService
 from app.services.receipt import ReceiptService
 from app.services.storage import ObjectNotFoundError
@@ -400,13 +404,21 @@ async def list_receipts(
     q: str | None = None,
     channel: ReceiptChannel | None = None,
     order: ReceiptOrder = ReceiptOrder.NEWEST,
+    scope: ReceiptScope = ReceiptScope.MINE,
 ) -> PaginatedReceiptsResponse:
     """List an account's stored receipts with pagination, newest first unless asked (F3.8).
 
     `order=largest` is a finished month's "Biggest receipts" on the dashboard (F6.5);
     `channel` keeps only receipts that arrived one way, by photo or by email (F11.2).
     `start` and `end` narrow it to a run of days, both included (app/api/periods.py).
+    `scope=household` lists every member's receipts but the others' private ones,
+    read-only (F12.4, ADR-0017); 404 outside a household.
     """
+    readers = None
+    if scope is ReceiptScope.HOUSEHOLD:
+        readers = await HouseholdService(HouseholdRepository(session)).readers(current_user)
+        if readers is None:
+            raise NotFoundError("You do not belong to a household.")
     if page < 1:
         page = 1
     if size < 1:
@@ -421,6 +433,7 @@ async def list_receipts(
         search_query=q,
         order=order,
         channel=channel,
+        readers=readers,
     )
     pages = (total + size - 1) // size if size else 0
 
@@ -439,9 +452,17 @@ async def get_receipt(
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> ReceiptDetailResponse:
-    """Get a receipt's detail including its line items (F3.8)."""
+    """Get a receipt's detail including its line items (F3.8).
+
+    Another household member's receipt opens too, read-only, unless it is private
+    (F12.4, ADR-0017); to anyone else it does not exist (N2).
+    """
     repo = ReceiptRepository(session)
     receipt = await repo.get_with_items(receipt_id)
+    if not receipt:
+        readers = await HouseholdService(HouseholdRepository(session)).readers(current_user)
+        if readers is not None:
+            receipt = await repo.get_readable_with_items(receipt_id, readers)
 
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
@@ -481,6 +502,26 @@ async def keep_possible_duplicate(
     receipt = await receipt_service.keep_possible_duplicate(receipt_id)
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
+    await session.commit()
+    return ReceiptDetailResponse.model_validate(receipt)
+
+
+@router.put("/{receipt_id}/privacy", response_model=ReceiptDetailResponse)
+async def set_receipt_privacy(
+    receipt_id: uuid.UUID,
+    request_data: ReceiptPrivacyRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> ReceiptDetailResponse:
+    """Hide a receipt from the owner's household, or share it again (F12.4, ADR-0017).
+
+    The household still counts a private receipt's money; only its owner may change
+    this, so another member's receipt is not found (N2).
+    """
+    receipt = await ReceiptRepository(session).get_with_items(receipt_id)
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+    receipt.is_private = request_data.is_private
     await session.commit()
     return ReceiptDetailResponse.model_validate(receipt)
 

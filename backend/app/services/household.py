@@ -8,6 +8,7 @@ from app.api.errors import DomainError, NotFoundError, PermissionDeniedError
 from app.models.household import Household, HouseholdMember, HouseholdRole
 from app.models.user import User
 from app.repository.household import HouseholdRepository
+from app.repository.receipt import HouseholdReaders
 
 
 class HouseholdService:
@@ -79,6 +80,18 @@ class HouseholdService:
         await self.households.remove_member(target)
         membership.household.members.remove(target)
         return membership.household
+
+    async def readers(self, user: User) -> HouseholdReaders | None:
+        """Whose receipts the user may read through their household, or None outside one.
+
+        Read from their membership now, so a member who has left or been removed reads
+        nothing of the household's from the next request on (ADR-0017, N2).
+        """
+        membership = await self.households.membership_of(user.id)
+        if membership is None:
+            return None
+        members = frozenset(m.user_id for m in membership.household.members)
+        return HouseholdReaders(reader_id=user.id, member_ids=members)
 
     async def regenerate_invite(self, user: User) -> Household:
         """Give the household a new invite link; the old one stops working at once (owner)."""

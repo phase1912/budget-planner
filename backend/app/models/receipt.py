@@ -4,7 +4,18 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, text
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -72,6 +83,10 @@ class Receipt(Model):
     # merchant, date and total, until the user keeps both or removes it (F11.5.2, A14).
     possible_duplicate_of_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("receipts.id", ondelete="SET NULL"), nullable=True
+    )
+    # Hidden from the owner's household, which still counts its money (F12.4, ADR-0017).
+    is_private: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=text("false"), nullable=False
     )
     merchant_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     transaction_date: Mapped[datetime | None] = mapped_column(

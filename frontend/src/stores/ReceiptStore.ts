@@ -49,6 +49,9 @@ export class ReceiptStore {
 
   statusFilter: components["schemas"]["ReceiptStatus"] | undefined = undefined;
   channelFilter: components["schemas"]["ReceiptChannel"] | undefined = undefined;
+  /** Whose receipts the list shows: the user's own, or their household's (F12.4). */
+  scope: components["schemas"]["ReceiptScope"] = "mine";
+  isSavingPrivacy = false;
   startDateFilter: string | undefined = undefined;
   endDateFilter: string | undefined = undefined;
   searchQuery: string | undefined = undefined;
@@ -147,6 +150,46 @@ export class ReceiptStore {
     }
   }
 
+  /** Back to the user's own receipts: a different user is signing in. */
+  resetScope() {
+    this.scope = "mine";
+  }
+
+  /** Switch between the user's own receipts and the household's, from the first page. */
+  setScope(scope: components["schemas"]["ReceiptScope"]) {
+    if (this.scope === scope) return;
+    this.scope = scope;
+    this.page = 1;
+    void this.fetchReceipts(1, this.size);
+  }
+
+  /**
+   * Hide the open receipt from the user's household, or share it again (F12.4). The
+   * household keeps counting its money; only its details go.
+   */
+  async setPrivacy(isPrivate: boolean): Promise<void> {
+    const id = this.selectedReceiptId;
+    if (!id) return;
+    this.isSavingPrivacy = true;
+    const response = await apiClient.PUT("/receipts/{receipt_id}/privacy", {
+      params: { path: { receipt_id: id } },
+      body: { is_private: isPrivate },
+    });
+    runInAction(() => {
+      this.isSavingPrivacy = false;
+      if (response.error) {
+        this.toastStore.showError(errorMessage(response.error, "Could not change who sees it"));
+        return;
+      }
+      if (this.selectedReceiptId === id) this.receiptDetail = response.data;
+      const listed = this.receipts.find((r) => r.id === id);
+      if (listed) listed.is_private = isPrivate;
+      this.toastStore.showSuccess(
+        isPrivate ? "Private: the household sees only its amount." : "Shared with the household.",
+      );
+    });
+  }
+
   async fetchReceipts(page = 1, size = 20) {
     this.isLoadingList = true;
     this.listError = null;
@@ -161,6 +204,7 @@ export class ReceiptStore {
             ...(this.startDateFilter && { start: this.startDateFilter }),
             ...(this.endDateFilter && { end: this.endDateFilter }),
             ...(this.searchQuery && { q: this.searchQuery }),
+            ...(this.scope === "household" && { scope: this.scope }),
           },
         },
       });
