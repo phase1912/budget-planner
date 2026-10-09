@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.adapters.categorisation_agent import ItemCategoriserAdapter
+from app.adapters.photo_ingestion import PhotoIngestionAdapter
 from app.adapters.vision_agent import VisionAgentAdapter
 from app.agent.factory import agent_from_settings
 from app.api import rate_limit
@@ -119,7 +120,7 @@ async def upload_receipt(
         raise UploadLimitExceededError("The photos on this line add up to more than 50 MB.")
 
     await quota.ensure_can_read(current_user, 1, datetime.now(UTC))
-    job = UploadJob(user_id=current_user.id, total_items=1)
+    job = UploadJob(user_id=current_user.id, total_items=1, channel=PhotoIngestionAdapter.channel)
     session.add(job)
     await session.commit()
 
@@ -207,7 +208,11 @@ async def upload_receipts_batch(
         receipts_data.append(receipt_data)
 
     await quota.ensure_can_read(current_user, len(receipts_data), datetime.now(UTC))
-    job = UploadJob(user_id=current_user.id, total_items=len(receipts_data))
+    job = UploadJob(
+        user_id=current_user.id,
+        total_items=len(receipts_data),
+        channel=PhotoIngestionAdapter.channel,
+    )
     session.add(job)
     await session.commit()
 
@@ -630,6 +635,7 @@ async def commit_job(
             file_ids=extraction.get("file_ids", []),
             extraction=extraction,
             parser_version=CURRENT_PARSER_VERSION,
+            channel=job.channel,
         )
 
     job.status = JobStatus.STORED

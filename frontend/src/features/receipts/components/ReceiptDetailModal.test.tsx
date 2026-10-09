@@ -4,6 +4,29 @@ import { ReceiptDetailModal } from "./ReceiptDetailModal";
 
 const mockClearSelection = vi.fn();
 
+const PHOTO_RECEIPT = {
+  id: "r1",
+  merchant_name: "Tesco",
+  transaction_date: "2026-07-20T14:30:00Z",
+  total_amount: "45.50",
+  status: "parsed",
+  channel: "photo",
+  source_reference: null as string | null,
+  file_ids: ["f1", "f2"],
+  line_items: [
+    {
+      id: "i1",
+      name: "Milk",
+      quantity: "1",
+      unit_price: "2.50",
+      total_price: "2.50",
+      category: { name: "Groceries" },
+    },
+  ],
+};
+
+const detail = vi.hoisted(() => ({ receipt: {} }));
+
 vi.mock("@/stores/StoreContext", () => ({
   useStores: () => ({
     categoriesStore: {
@@ -17,23 +40,8 @@ vi.mock("@/stores/StoreContext", () => ({
     toastStore: { showError: vi.fn() },
     receiptStore: {
       isLoadingDetail: false,
-      receiptDetail: {
-        id: "r1",
-        merchant_name: "Tesco",
-        transaction_date: "2026-07-20T14:30:00Z",
-        total_amount: "45.50",
-        status: "parsed",
-        file_ids: ["f1", "f2"],
-        line_items: [
-          {
-            id: "i1",
-            name: "Milk",
-            quantity: "1",
-            unit_price: "2.50",
-            total_price: "2.50",
-            category: { name: "Groceries" },
-          },
-        ],
+      get receiptDetail() {
+        return detail.receipt;
       },
       clearSelection: mockClearSelection,
     },
@@ -43,6 +51,7 @@ vi.mock("@/stores/StoreContext", () => ({
 describe("ReceiptDetailModal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    detail.receipt = { ...PHOTO_RECEIPT };
   });
 
   it("renders receipt details correctly", () => {
@@ -52,7 +61,8 @@ describe("ReceiptDetailModal", () => {
     expect(screen.getByText("Milk")).toBeInTheDocument();
     expect(screen.getByText("Groceries")).toBeInTheDocument();
     expect(screen.getByText("45.50")).toBeInTheDocument();
-    expect(screen.getByText("2 photos", { exact: false })).toBeInTheDocument();
+    expect(screen.getByText("Added from 2 photos", { exact: false })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /photos/i })).toBeInTheDocument();
   });
 
   it("calls clearSelection on overlay click", () => {
@@ -71,5 +81,19 @@ describe("ReceiptDetailModal", () => {
     fireEvent.click(closeButton);
 
     expect(mockClearSelection).toHaveBeenCalled();
+  });
+
+  it("says a receipt came by email, names its message, and offers no photos it lacks", () => {
+    detail.receipt = {
+      ...PHOTO_RECEIPT,
+      channel: "email",
+      source_reference: "<receipt-1@shop.example>",
+      file_ids: [],
+    };
+    render(<ReceiptDetailModal />);
+
+    expect(screen.getByText("Added from email", { exact: false })).toBeInTheDocument();
+    expect(screen.getByText("Reference: receipt-1@shop.example")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /photos/i })).toBeNull();
   });
 });

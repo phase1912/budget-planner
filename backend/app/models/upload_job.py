@@ -6,6 +6,7 @@ from sqlalchemy import JSON, Enum, ForeignKey, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Model
+from app.models.receipt import ReceiptChannel
 
 
 class JobStatus(enum.StrEnum):
@@ -46,6 +47,14 @@ class UploadJob(Model):
         JSON,
         default=None,
         nullable=True,
+    )
+    # The intake the job's receipts arrived through, handed on to the receipts it stores
+    # (F11.1.4); the upload wizard is the photo channel's.
+    channel: Mapped[ReceiptChannel] = mapped_column(
+        Enum(ReceiptChannel, name="receipt_channel_enum", create_type=False),
+        default=ReceiptChannel.PHOTO,
+        server_default=ReceiptChannel.PHOTO.name,
+        nullable=False,
     )
     total_items: Mapped[int] = mapped_column(default=0, server_default=text("0"), nullable=False)
     processed_items: Mapped[int] = mapped_column(
