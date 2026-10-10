@@ -3,12 +3,13 @@ and joining by the owner's invite link (F12.2, F12.3, ADR-0017)."""
 
 import secrets
 import uuid
+from decimal import Decimal
 
 from app.api.errors import DomainError, NotFoundError, PermissionDeniedError
 from app.models.household import Household, HouseholdMember, HouseholdRole
 from app.models.user import User
 from app.repository.household import HouseholdRepository
-from app.repository.receipt import HouseholdReaders
+from app.repository.receipt import HouseholdReaders, ReceiptRepository
 
 
 class HouseholdService:
@@ -21,6 +22,7 @@ class HouseholdService:
 
     def __init__(self, households: HouseholdRepository) -> None:
         self.households = households
+        self.receipts = ReceiptRepository(households.session).bypass_ownership()
 
     async def mine(self, user: User) -> Household | None:
         """The caller's household, or None when they belong to none."""
@@ -93,6 +95,16 @@ class HouseholdService:
         members = frozenset(m.user_id for m in membership.household.members)
         return HouseholdReaders(reader_id=user.id, member_ids=members)
 
+    async def set_budget(self, user: User, limit: Decimal | None) -> Household:
+        """Set or clear what the household means to spend a month (owner only, D7).
+
+        Like a personal limit it is presentation only: months are measured against it
+        as it stands, never rewritten by it.
+        """
+        membership = await self._owned_by(user)
+        membership.household.budget_limit = limit
+        return membership.household
+
     async def regenerate_invite(self, user: User) -> Household:
         """Give the household a new invite link; the old one stops working at once (owner)."""
         membership = await self._owned_by(user)
@@ -114,17 +126,23 @@ class HouseholdService:
 
         Refused (DomainError) when they already belong to a household — one each — or
         when their account currency is not the household's, since its totals are in one
-        currency (ADR-0017, ADR-0016). Their receipts become readable by the household.
+        currency (ADR-0017, ADR-0016). An account with no receipts yet, such as one just
+        registered from the invite link, takes the household's currency instead.
         """
         household = await self.invited_to(code)
         if await self.households.membership_of(user.id):
             raise DomainError("You already belong to a household; leave it to join another.")
         currency = _currency_of(household)
         if currency is not None and user.currency != currency:
-            raise DomainError(
-                f"This household keeps its budget in {currency} and your account is in "
-                f"{user.currency}. Only accounts in the same currency can share a budget."
-            )
+            # A new account has had no reason to pick a currency yet; it takes the
+            # household's, as it could on Profile, since no receipt is in the old one.
+            if not await self.receipts.exists_for_user(user.id):
+                user.currency = currency
+            else:
+                raise DomainError(
+                    f"This household keeps its budget in {currency} and your account is in "
+                    f"{user.currency}. Only accounts in the same currency can share a budget."
+                )
         await self.households.add_member(
             household, HouseholdMember(user_id=user.id, role=HouseholdRole.MEMBER)
         )

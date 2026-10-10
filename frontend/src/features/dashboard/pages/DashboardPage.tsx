@@ -19,6 +19,8 @@ import { MonthStatus } from "../components/MonthStatus";
 import { MonthSwitcher } from "../components/MonthSwitcher";
 import { TopCategories } from "../components/TopCategories";
 import { WelcomePanel } from "../components/WelcomePanel";
+import { HouseholdMonthView } from "@/features/household/components/HouseholdMonthView";
+import { HouseholdViewSwitch } from "@/features/household/components/HouseholdViewSwitch";
 
 const MONTH_AND_YEAR = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" });
 const MONTH = new Intl.DateTimeFormat("en-GB", { month: "long" });
@@ -49,13 +51,14 @@ const AMOUNT = new Intl.NumberFormat("en-US", {
  * receipts column.
  */
 export const DashboardPage = observer(function DashboardPage() {
-  const { budgetStore, authStore, receiptStore } = useStores();
+  const { budgetStore, authStore, receiptStore, householdStore } = useStores();
   const { summary, isLoading, error } = budgetStore;
   const navigate = useNavigate();
 
   useEffect(() => {
     void budgetStore.open();
-  }, [budgetStore]);
+    void householdStore.load();
+  }, [budgetStore, householdStore]);
 
   if (!summary) {
     return (
@@ -71,7 +74,8 @@ export const DashboardPage = observer(function DashboardPage() {
     );
   }
 
-  if (!summary.has_receipts) return <WelcomePanel />;
+  // A new member has no receipts yet but already has the household's month to look at.
+  if (!summary.has_receipts && !householdStore.shared) return <WelcomePanel />;
 
   const selected = new Date(budgetStore.year, budgetStore.month - 1, 1);
   // The figure's own month, not the selection: while the next month loads, the
@@ -135,91 +139,105 @@ export const DashboardPage = observer(function DashboardPage() {
           </Link>
         </div>
 
+        <HouseholdViewSwitch />
+
         <InstallHint />
 
         <AtRiskWarnings linkToGoals />
 
-        {error && (
-          <ErrorState layout="banner" title="The month could not be loaded" message={error} />
-        )}
-
-        <Card
-          variant="surface"
-          aria-busy={isLoading}
-          className={`flex flex-col gap-3 p-5 md:gap-2.5 md:px-8 md:py-7 transition-opacity ${isLoading ? "opacity-60" : ""}`}
-        >
-          <span className="text-base font-medium text-muted-foreground md:text-md">{heading}</span>
-          <p className="m-0 flex flex-wrap items-baseline gap-2 md:gap-3">
-            <span className="tabular-nums text-[36px] font-bold leading-none tracking-[-0.025em] md:text-[46px]">
-              {AMOUNT.format(Number(summary.total))}
-            </span>
-            <span className="text-[16px] font-semibold text-muted-foreground md:text-xl">
-              {currency}
-            </span>
-          </p>
-          {limit ? (
-            <LimitStatus {...limit} currency={currency}>
-              {meta}
-            </LimitStatus>
-          ) : (
-            meta
-          )}
-        </Card>
-
-        {summary.excluded_count > 0 && (
+        {householdStore.showingHousehold ? (
+          <HouseholdMonthView
+            year={budgetStore.year}
+            month={budgetStore.month}
+            currency={currency}
+          />
+        ) : (
           <>
-            <Link to="/receipts?status=manual_review" className="text-inherit md:hidden">
-              <Note tone="warning">
-                <span className="flex items-center justify-between gap-3">
-                  <span className="tabular-nums">
-                    {heldOutWorth} {summary.excluded_count === 1 ? "sits" : "sit"} outside this
-                    total.
-                  </span>
-                  <ChevronRight size={16} aria-hidden="true" className="shrink-0" />
+            {error && (
+              <ErrorState layout="banner" title="The month could not be loaded" message={error} />
+            )}
+
+            <Card
+              variant="surface"
+              aria-busy={isLoading}
+              className={`flex flex-col gap-3 p-5 md:gap-2.5 md:px-8 md:py-7 transition-opacity ${isLoading ? "opacity-60" : ""}`}
+            >
+              <span className="text-base font-medium text-muted-foreground md:text-md">
+                {heading}
+              </span>
+              <p className="m-0 flex flex-wrap items-baseline gap-2 md:gap-3">
+                <span className="tabular-nums text-[36px] font-bold leading-none tracking-[-0.025em] md:text-[46px]">
+                  {AMOUNT.format(Number(summary.total))}
                 </span>
-              </Note>
-            </Link>
-            <div className="hidden md:block">
-              <Note tone="warning">
-                <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <span className="tabular-nums">
-                    {heldOutWorth} {summary.excluded_count === 1 ? "is" : "are"} not in this total —
-                    the date or total could not be read.
-                  </span>
-                  <Link to="/receipts?status=manual_review" className="shrink-0 underline">
-                    {summary.excluded_count === 1 ? "Resolve it" : "Resolve them"}
-                  </Link>
+                <span className="text-[16px] font-semibold text-muted-foreground md:text-xl">
+                  {currency}
                 </span>
-              </Note>
+              </p>
+              {limit ? (
+                <LimitStatus {...limit} currency={currency}>
+                  {meta}
+                </LimitStatus>
+              ) : (
+                meta
+              )}
+            </Card>
+
+            {summary.excluded_count > 0 && (
+              <>
+                <Link to="/receipts?status=manual_review" className="text-inherit md:hidden">
+                  <Note tone="warning">
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="tabular-nums">
+                        {heldOutWorth} {summary.excluded_count === 1 ? "sits" : "sit"} outside this
+                        total.
+                      </span>
+                      <ChevronRight size={16} aria-hidden="true" className="shrink-0" />
+                    </span>
+                  </Note>
+                </Link>
+                <div className="hidden md:block">
+                  <Note tone="warning">
+                    <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                      <span className="tabular-nums">
+                        {heldOutWorth} {summary.excluded_count === 1 ? "is" : "are"} not in this
+                        total — the date or total could not be read.
+                      </span>
+                      <Link to="/receipts?status=manual_review" className="shrink-0 underline">
+                        {summary.excluded_count === 1 ? "Resolve it" : "Resolve them"}
+                      </Link>
+                    </span>
+                  </Note>
+                </div>
+              </>
+            )}
+
+            <div className="md:hidden">
+              <TopCategories
+                spend={budgetStore.spend}
+                hrefFor={(categoryId) => categoryItemsHref(summary, categoryId)}
+              />
+            </div>
+
+            <div className="hidden gap-5 md:grid md:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+              <CategorySpendList
+                spend={budgetStore.spend}
+                hint="Highest first"
+                onSelect={(categoryId) => {
+                  if (categoryId) void navigate(categoryItemsHref(summary, categoryId));
+                }}
+              />
+              <MonthReceipts
+                title={summary.is_complete ? "Biggest receipts" : "Latest receipts"}
+                receipts={budgetStore.receipts}
+                total={budgetStore.receiptsInMonth}
+                allHref={`/receipts?${monthQuery(summary)}`}
+                onOpen={(id) => {
+                  void receiptStore.fetchReceiptDetail(id);
+                }}
+              />
             </div>
           </>
         )}
-
-        <div className="md:hidden">
-          <TopCategories
-            spend={budgetStore.spend}
-            hrefFor={(categoryId) => categoryItemsHref(summary, categoryId)}
-          />
-        </div>
-
-        <div className="hidden gap-5 md:grid md:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
-          <CategorySpendList
-            spend={budgetStore.spend}
-            hint="Highest first"
-            onSelect={(categoryId) => {
-              if (categoryId) void navigate(categoryItemsHref(summary, categoryId));
-            }}
-          />
-          <MonthReceipts
-            title={summary.is_complete ? "Biggest receipts" : "Latest receipts"}
-            receipts={budgetStore.receipts}
-            total={budgetStore.receiptsInMonth}
-            allHref={`/receipts?${monthQuery(summary)}`}
-            onOpen={(id) => {
-              void receiptStore.fetchReceiptDetail(id);
-            }}
-          />
-        </div>
 
         {receiptStore.selectedReceiptId && <ReceiptDetailModal />}
         <DeleteReceiptDialog />

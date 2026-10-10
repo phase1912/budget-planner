@@ -14,6 +14,8 @@ interface LimitStatusProps {
   /** What is left of the limit, negative by the amount over it. */
   remaining: string;
   currency: string;
+  /** Whose limit it is, as the wide text says it: "your" by default, or the household's (F12.5). */
+  whose?: string;
   /** The line beneath the bar: the month's days and receipts. */
   children?: ReactNode;
 }
@@ -27,7 +29,14 @@ interface LimitStatusProps {
  * puts the bar first and drops the currency and "your … limit" from the text
  * (dashboard-mobile.html).
  */
-export function LimitStatus({ limit, percent, remaining, currency, children }: LimitStatusProps) {
+export function LimitStatus({
+  limit,
+  percent,
+  remaining,
+  currency,
+  whose = "your",
+  children,
+}: LimitStatusProps) {
   const left = Number(remaining);
   const over = left < 0;
   const tone = over ? "text-error" : "text-primary";
@@ -38,7 +47,7 @@ export function LimitStatus({ limit, percent, remaining, currency, children }: L
     <div className="flex flex-col gap-1.75 md:mt-1.5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
         <span className={`tabular-nums text-base font-semibold md:text-md ${tone}`}>
-          {percent}% of {wide("your ")}
+          {percent}% of {wide(`${whose} `)}
           {AMOUNT.format(Number(limit))}
           {wide(` ${currency} limit`)}
         </span>

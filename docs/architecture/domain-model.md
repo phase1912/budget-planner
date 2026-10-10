@@ -217,6 +217,12 @@ Rules that must hold at all times. Each is a candidate for a test.
     only one sum per member per month, never its merchant, items, category or date (N2).
 11i. A user belongs to at most one household, and its members share one account currency,
     in which its totals are (D1).
+11j. A household's month is the sum of its members' months, counted by the same rules (D1-D3),
+    private receipts included as money, against the budget its owner sets (D7). It is
+    always computed live, never snapshotted: a member who leaves takes their receipts with
+    them (F12.5).
+11k. An account with no receipts yet takes the household's currency when it joins, as it
+    could on Profile; one with receipts in another currency is refused (F12.3, D1).
 
 **Categorisation**
 
