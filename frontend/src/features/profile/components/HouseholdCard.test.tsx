@@ -8,11 +8,18 @@ import { StoreProvider } from "@/stores/StoreContext";
 import { HouseholdCard } from "./HouseholdCard";
 
 vi.mock("@/api/client", () => ({
-  apiClient: { GET: vi.fn(), POST: vi.fn(), PATCH: vi.fn(), DELETE: vi.fn(), use: vi.fn() },
+  apiClient: {
+    GET: vi.fn(),
+    POST: vi.fn(),
+    PATCH: vi.fn(),
+    PUT: vi.fn(),
+    DELETE: vi.fn(),
+    use: vi.fn(),
+  },
 }));
 
 const api = apiClient as unknown as Record<
-  "GET" | "POST" | "PATCH" | "DELETE",
+  "GET" | "POST" | "PATCH" | "PUT" | "DELETE",
   ReturnType<typeof vi.fn>
 >;
 
@@ -181,5 +188,30 @@ describe("HouseholdCard", () => {
 
     await screen.findByText("Anna R");
     expect(screen.queryByText("Invite link")).not.toBeInTheDocument();
+  });
+
+  it("lets the owner set the household's monthly budget", async () => {
+    api.GET.mockResolvedValue({ data: household("owner") });
+    api.PUT.mockResolvedValue({ data: { ...household("owner"), budget_limit: "1500.00" } });
+    renderCard();
+
+    fireEvent.change(await screen.findByLabelText(/Household budget a month/), {
+      target: { value: "1500" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save budget" }));
+
+    await waitFor(() => {
+      expect(api.PUT).toHaveBeenCalledWith("/api/v1/household/budget", {
+        body: { budget_limit: "1500.00" },
+      });
+    });
+  });
+
+  it("shows a member the budget the owner set", async () => {
+    api.GET.mockResolvedValue({ data: { ...household("member"), budget_limit: "1500.00" } });
+    renderCard();
+
+    expect(await screen.findByText(/1500.00 PLN a month, set by the owner/)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Household budget a month/)).not.toBeInTheDocument();
   });
 });

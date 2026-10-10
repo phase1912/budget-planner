@@ -323,6 +323,73 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/household/budget": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Household Budget
+         * @description Set or clear the household's monthly budget (F12.5, D7); 403 unless the owner.
+         */
+        put: operations["set_household_budget_api_v1_household_budget_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/household/months/{year}/{month}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Household Month
+         * @description The household's spend in one month, against its budget, split by member (F12.5).
+         *
+         *     Every member's parsed receipts count, private ones included, but a private one only
+         *     as money in its owner's private sum (ADR-0017). `today` is the user's own date, as
+         *     for the personal month (ADR-0009). 404 outside a household.
+         */
+        get: operations["get_household_month_api_v1_household_months__year___month__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/household/statistics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Household Statistics
+         * @description The household's spend by category between two dates, private as one row (F12.5).
+         *
+         *     Only shared receipts give categories; private spend is a single figure, so nothing
+         *     in it says what was bought (ADR-0017). 404 outside a household.
+         */
+        get: operations["get_household_statistics_api_v1_household_statistics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts/upload": {
         parameters: {
             query?: never;
@@ -1614,6 +1681,32 @@ export interface components {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
+         * HouseholdBudgetRequest
+         * @description The household's monthly budget; null removes it (F12.5).
+         */
+        HouseholdBudgetRequest: {
+            /** Budget Limit */
+            budget_limit?: number | string | null;
+        };
+        /**
+         * HouseholdCategoryResponse
+         * @description A category's part of the household's shared spend; `owner_id` for a member's own.
+         */
+        HouseholdCategoryResponse: {
+            /** Category Id */
+            category_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Owner Id */
+            owner_id: string | null;
+            /** Item Count */
+            item_count: number;
+            /** Total */
+            total: string;
+            /** Share */
+            share: string;
+        };
+        /**
          * HouseholdInvite
          * @description What an invite link shows before joining: whose household it is, and how big.
          */
@@ -1650,6 +1743,33 @@ export interface components {
             joined_at: string;
         };
         /**
+         * HouseholdMonthResponse
+         * @description The household's month: its total, how far through it is, and who spent what.
+         */
+        HouseholdMonthResponse: {
+            /** Year */
+            year: number;
+            /** Month */
+            month: number;
+            /** Total */
+            total: string;
+            /** Receipt Count */
+            receipt_count: number;
+            /** Is Complete */
+            is_complete: boolean;
+            /** Days Elapsed */
+            days_elapsed: number;
+            /** Days */
+            days: number;
+            /** Excluded Count */
+            excluded_count: number;
+            /** Excluded Amount */
+            excluded_amount: string;
+            limit: components["schemas"]["LimitUsageResponse"] | null;
+            /** Members */
+            members: components["schemas"]["MemberShareResponse"][];
+        };
+        /**
          * HouseholdName
          * @description A household's name, as typed: trimmed, 1 to 60 characters.
          */
@@ -1673,11 +1793,31 @@ export interface components {
             my_role: string;
             /** Members */
             members: components["schemas"]["HouseholdMemberRead"][];
+            /** Budget Limit */
+            budget_limit?: string | null;
             /**
              * Invite Code
              * @description The secret of the invite link; shown to the owner only.
              */
             invite_code?: string | null;
+        };
+        /**
+         * HouseholdStatisticsResponse
+         * @description The household's spend by category for a period, private spend as one figure.
+         */
+        HouseholdStatisticsResponse: {
+            /** Start */
+            start: string;
+            /** End */
+            end: string;
+            /** Total */
+            total: string;
+            /** Categories */
+            categories: components["schemas"]["HouseholdCategoryResponse"][];
+            /** Private Total */
+            private_total: string;
+            /** Private Share */
+            private_share: string;
         };
         /**
          * InboundEmailResponse
@@ -1713,6 +1853,18 @@ export interface components {
         JoinRequest: {
             /** Code */
             code: string;
+        };
+        /**
+         * LimitUsageResponse
+         * @description The month's spend against the household budget (D7).
+         */
+        LimitUsageResponse: {
+            /** Limit */
+            limit: string;
+            /** Percent */
+            percent: number;
+            /** Remaining */
+            remaining: string;
         };
         /**
          * LineItemInput
@@ -1816,6 +1968,25 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+        };
+        /**
+         * MemberShareResponse
+         * @description One member's part of the month: shared spend, and private spend as one sum.
+         */
+        MemberShareResponse: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** First Name */
+            first_name: string;
+            /** Shared Total */
+            shared_total: string;
+            /** Private Total */
+            private_total: string;
+            /** Total */
+            total: string;
         };
         /**
          * MessageResponse
@@ -2961,6 +3132,111 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HouseholdRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_household_budget_api_v1_household_budget_put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseholdBudgetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_household_month_api_v1_household_months__year___month__get: {
+        parameters: {
+            query?: {
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                year: number;
+                month: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdMonthResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_household_statistics_api_v1_household_statistics_get: {
+        parameters: {
+            query: {
+                /** @description First day of the period, included */
+                start: string;
+                /** @description Last day of the period, included */
+                end: string;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdStatisticsResponse"];
                 };
             };
             /** @description Validation Error */

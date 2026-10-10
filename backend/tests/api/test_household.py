@@ -17,6 +17,7 @@ from app.main import create_app
 from app.models.household import Household, HouseholdMember, HouseholdRole
 from app.models.user import User
 from tests.factories.household import HouseholdFactory, HouseholdMemberFactory
+from tests.factories.receipt import ReceiptFactory
 from tests.factories.user import UserFactory
 
 
@@ -292,10 +293,13 @@ async def test_someone_in_a_household_cannot_join_another(db_session: AsyncSessi
 
 
 @pytest.mark.asyncio
-async def test_an_account_in_another_currency_cannot_join(db_session: AsyncSession) -> None:
+async def test_an_account_with_receipts_in_another_currency_cannot_join(
+    db_session: AsyncSession,
+) -> None:
     """The household's totals are in one currency (ADR-0017)."""
     owner = await UserFactory.create_async(currency="PLN")
     guest = await UserFactory.create_async(currency="USD")
+    await ReceiptFactory.create_async(user_id=guest.id, file_ids=[])
     await _household_of(owner)
     code = await _invite_code(db_session, owner)
 
@@ -352,3 +356,34 @@ async def test_probing_invite_links_is_rate_limited(db_session: AsyncSession) ->
 
     assert answers[:10] == [404] * 10
     assert answers[10] == 429
+
+
+@pytest.mark.asyncio
+async def test_someone_new_registers_from_the_invite_and_joins(db_session: AsyncSession) -> None:
+    """The invite reaches a person with no account: they register, then join, and their
+    new account takes the household's currency, since nothing is recorded in its own."""
+    owner = await UserFactory.create_async(currency="PLN")
+    await _household_of(owner)
+    code = await _invite_code(db_session, owner)
+    registered = await _call(
+        db_session,
+        owner,
+        "POST",
+        "/auth/register",
+        {
+            "email": "anna.new@example.com",
+            "password": "Kawa-2026!",
+            "first_name": "Anna",
+            "last_name": "New",
+        },
+    )
+    assert registered.status_code == 201, registered.json()
+    anna = await db_session.scalar(select(User).where(User.email == "anna.new@example.com"))
+    assert anna is not None and anna.currency == "USD"
+
+    joined = await _call(db_session, anna, "POST", f"{URL}/join", {"code": code})
+
+    assert joined.status_code == 200, joined.json()
+    assert joined.json()["my_role"] == "member"
+    await db_session.refresh(anna)
+    assert anna.currency == "PLN"

@@ -83,6 +83,11 @@ caller's. Every write keeps the plain ownership filter, so another member's rece
 not found for editing, deleting, recategorising or privacy. Photos stay under their
 owner's storage prefix and are not shown to the household.
 
+The household's month and statistics (F12.5) come from `HouseholdBudgetService`
+(`app/services/household_budget.py`) over `HouseholdSpendRepository`, which returns sums
+only: per member, shared and private apart, and per category over shared receipts. No
+query in it returns a private receipt's merchant, items, category or date.
+
 ### Errors crossing the API boundary
 
 A service or repository that needs to fail the request raises an `app.errors.AppError`

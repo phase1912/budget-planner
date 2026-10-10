@@ -9,6 +9,15 @@ import type { ToastStore } from "@/stores/ToastStore";
 export type Household = components["schemas"]["HouseholdRead"];
 export type HouseholdMember = components["schemas"]["HouseholdMemberRead"];
 export type HouseholdInvite = components["schemas"]["HouseholdInvite"];
+export type HouseholdMonth = components["schemas"]["HouseholdMonthResponse"];
+export type HouseholdStatistics = components["schemas"]["HouseholdStatisticsResponse"];
+export type HouseholdView = "mine" | "household";
+
+/** Today by the browser's own calendar, as YYYY-MM-DD: whether a month is over is the user's call (ADR-0009). */
+function localToday(now: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${String(now.getFullYear())}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
 
 /**
  * The signed-in user's household (E12 — F12.2, ADR-0017): who is in it, and the owner's
@@ -18,6 +27,16 @@ export type HouseholdInvite = components["schemas"]["HouseholdInvite"];
 export class HouseholdStore {
   household: Household | null = null;
   loaded = false;
+  /** Whether the dashboard and statistics show the user's own figures or the household's (F12.5). */
+  view: HouseholdView = "mine";
+  month: HouseholdMonth | null = null;
+  readonly monthState = new AsyncState();
+  statistics: HouseholdStatistics | null = null;
+  readonly statisticsState = new AsyncState();
+  // Only the latest request may land: switching month or period quickly must not let
+  // an older answer arrive last and overwrite the one asked for.
+  private monthRequest = 0;
+  private statisticsRequest = 0;
   readonly saveState = new AsyncState();
   private readonly toastStore: ToastStore;
 
@@ -29,6 +48,71 @@ export class HouseholdStore {
   /** Whether the user owns their household and may manage it. */
   get isOwner(): boolean {
     return this.household?.my_role === "owner";
+  }
+
+  /** Whether there is anyone to share with: a household of one has no household view. */
+  get shared(): boolean {
+    return (this.household?.members.length ?? 0) > 1;
+  }
+
+  /** Whether the household's figures are what the user is looking at. */
+  get showingHousehold(): boolean {
+    return this.shared && this.view === "household";
+  }
+
+  setView(view: HouseholdView): void {
+    this.view = view;
+  }
+
+  /** The household's spend in one month, against its budget, split by member (F12.5). */
+  async loadMonth(year: number, month: number, now: Date = new Date()): Promise<void> {
+    this.monthState.start();
+    const request = ++this.monthRequest;
+    const response = await settle(() =>
+      apiClient.GET("/api/v1/household/months/{year}/{month}", {
+        params: { path: { year, month }, query: { today: localToday(now) } },
+      }),
+    );
+    runInAction(() => {
+      if (request !== this.monthRequest) return;
+      if (response.error) {
+        this.monthState.fail(
+          errorMessage(response.error, "The household's month could not be loaded"),
+        );
+        return;
+      }
+      this.month = response.data;
+      this.monthState.succeed();
+    });
+  }
+
+  /** The household's spend by category over `start`-`end`, private as one row (F12.5). */
+  async loadStatistics(start: string, end: string): Promise<void> {
+    this.statisticsState.start();
+    const request = ++this.statisticsRequest;
+    const response = await settle(() =>
+      apiClient.GET("/api/v1/household/statistics", { params: { query: { start, end } } }),
+    );
+    runInAction(() => {
+      if (request !== this.statisticsRequest) return;
+      if (response.error) {
+        this.statisticsState.fail(
+          errorMessage(response.error, "The household's statistics could not be loaded"),
+        );
+        return;
+      }
+      this.statistics = response.data;
+      this.statisticsState.succeed();
+    });
+  }
+
+  /** Set or clear the household's monthly budget; the owner only (F12.5, D7). */
+  async setBudget(limit: string | null): Promise<boolean> {
+    return this.save(
+      () => apiClient.PUT("/api/v1/household/budget", { body: { budget_limit: limit } }),
+      "Could not save the household budget",
+      limit === null ? "Household budget removed." : "Household budget saved.",
+    );
   }
 
   /** Read the household, if the user has one. */
@@ -129,6 +213,9 @@ export class HouseholdStore {
   reset(): void {
     this.household = null;
     this.loaded = false;
+    this.view = "mine";
+    this.month = null;
+    this.statistics = null;
   }
 
   private async save(

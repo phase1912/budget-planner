@@ -170,6 +170,8 @@ const HouseholdDetails = observer(function HouseholdDetails() {
         ))}
       </ul>
 
+      <HouseholdBudget />
+
       {householdStore.isOwner && <InviteLink />}
 
       {householdStore.isOwner && others > 0 ? (
@@ -204,6 +206,66 @@ const HouseholdDetails = observer(function HouseholdDetails() {
         </Button>
       )}
     </>
+  );
+});
+
+/**
+ * What the household means to spend a month (F12.5, D7): the owner sets or removes it,
+ * members see it. The household's month on the dashboard is measured against it.
+ */
+const HouseholdBudget = observer(function HouseholdBudget() {
+  const { householdStore, authStore } = useStores();
+  const current = householdStore.household?.budget_limit ?? null;
+  const currency = authStore.user?.currency ?? "";
+  const [value, setValue] = useState(current ?? "");
+  const amount = Number(value);
+  const valid = value.trim() === "" || (Number.isFinite(amount) && amount > 0);
+  const unchanged = value.trim() === "" ? current === null : Number(current) === amount;
+  const save = () => {
+    if (valid) void householdStore.setBudget(value.trim() === "" ? null : amount.toFixed(2));
+  };
+
+  if (!householdStore.isOwner) {
+    return (
+      <p className="m-0 text-md text-muted-foreground">
+        {current
+          ? `Household budget: ${Number(current).toFixed(2)} ${currency} a month, set by the owner.`
+          : "The household has no monthly budget yet; its owner can set one."}
+      </p>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2 md:flex-row md:items-end">
+      <Input
+        label={`Household budget a month, ${currency}`}
+        type="number"
+        min="0.01"
+        step="0.01"
+        inputMode="decimal"
+        value={value}
+        placeholder="No budget"
+        containerClassName="w-full md:flex-1"
+        error={valid ? undefined : "Enter an amount above zero, or leave it empty."}
+        onChange={(e) => {
+          setValue(e.target.value);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            save();
+          }
+        }}
+      />
+      <Button
+        type="button"
+        variant="secondary"
+        className="min-h-11 w-full md:w-auto"
+        disabled={!valid || householdStore.saveState.isLoading || unchanged}
+        onClick={save}
+      >
+        {value.trim() === "" && current ? "Remove budget" : "Save budget"}
+      </Button>
+    </div>
   );
 });
 

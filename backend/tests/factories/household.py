@@ -14,6 +14,8 @@ class HouseholdFactory(ModelFactory[Household]):
 
     name = Use(lambda: "Home")
     invite_code = Use(lambda: secrets.token_hex(16))
+    # No budget unless a test about the household budget sets one (F12.5).
+    budget_limit = None
     members: ClassVar[list[HouseholdMember]] = []
 
 

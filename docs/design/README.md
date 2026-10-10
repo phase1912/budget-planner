@@ -93,6 +93,12 @@ the short version:
   member's receipt opens read-only — "Added by Anna · view only", categories as text, no
   edit, delete, photos or duplicate actions. The owner's own receipt has a Private
   checkbox, in a household only. No screen in `screens/` draws these.
+- **The dashboard and Statistics have a "Mine / <household>" switch** (F12.5). The
+  household's month reads "Spent together", measured against the household's budget,
+  with "Who spent what" beneath: each member's total, share and "of which private". Its
+  statistics rank the shared categories, a member's own category marked with their name,
+  and end with one Private row; no comparison, chart or export. The owner sets the budget
+  on the Household card. No screen in `screens/` draws these.
 - **`/categories` is the queue, not the taxonomy.** `categorisation.html` owns the
   address and the nav item; the list of categories lives one level down at
   `/categories/manage`. The picker is a native `select` rather than the drawn menu,

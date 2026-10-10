@@ -25,6 +25,8 @@ vi.mock("@/stores/StoreContext", () => ({
   useStores: () => ({
     statisticsStore,
     exportStore,
+    // Not in a household: the pages show only the user's own figures (F12.5).
+    householdStore: { household: null, shared: false, showingHousehold: false, load: vi.fn() },
     authStore: { user: { currency: "PLN" } },
   }),
 }));

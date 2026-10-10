@@ -3,9 +3,10 @@
 import enum
 import secrets
 import uuid
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String, text
+from sqlalchemy import ForeignKey, Numeric, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Model
@@ -40,6 +41,9 @@ class Household(Model):
         default=lambda: secrets.token_hex(16),
         server_default=text("replace((gen_random_uuid())::text, '-'::text, ''::text)"),
     )
+
+    # What the household agreed to spend a month, set by its owner (F12.5, D7); optional.
+    budget_limit: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
 
     members: Mapped[list["HouseholdMember"]] = relationship(
         "HouseholdMember",
