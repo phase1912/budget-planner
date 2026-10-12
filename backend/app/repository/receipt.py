@@ -132,6 +132,21 @@ class ReceiptRepository(BaseRepository[Receipt]):
         stmt = self._apply_ownership(stmt)
         return (await self.session.execute(stmt)).unique().scalar_one_or_none()
 
+    async def owner_of_readable_photo(
+        self, file_id: str, readers: "HouseholdReaders"
+    ) -> uuid.UUID | None:
+        """Whose receipt a photo belongs to, if it is on one the household member may read.
+
+        Only a receipt `readers` may open counts — the reader's own or another member's
+        shared one — so a private receipt's photo, or a stranger's, is never found.
+        """
+        stmt = (
+            select(Receipt.user_id)
+            .where(readers.can_read(), Receipt.file_ids.contains([file_id]))
+            .limit(1)
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none()
+
     async def get_readable_with_items(
         self, receipt_id: uuid.UUID, readers: "HouseholdReaders"
     ) -> Receipt | None:

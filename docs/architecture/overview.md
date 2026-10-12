@@ -81,12 +81,21 @@ the one SQL condition — a member's own receipts and the others' that are not p
 used by `GET /receipts?scope=household` and by opening a receipt that is not the
 caller's. Every write keeps the plain ownership filter, so another member's receipt is
 not found for editing, deleting, recategorising or privacy. Photos stay under their
-owner's storage prefix and are not shown to the household.
+owner's storage prefix; `GET /receipts/images/{file_id}` signs one under another
+member's prefix only when `HouseholdReaders` finds it on a receipt the caller may read, so
+a private receipt's photo, or a stranger's, is never found.
 
 The household's month and statistics (F12.5) come from `HouseholdBudgetService`
 (`app/services/household_budget.py`) over `HouseholdSpendRepository`, which returns sums
 only: per member, shared and private apart, and per category over shared receipts. No
 query in it returns a private receipt's merchant, items, category or date.
+
+These rules are held together by one suite, `backend/tests/security/test_cross_household_access.py`
+(F12.6): it builds a household with an owner, a member, a removed member and a stranger
+elsewhere, then walks every read that reaches or adds up another member's receipts and
+every write on a receipt as each of them. No response may carry the private receipt's
+details, the removed member and the stranger read nothing, and every write stays the
+owner's. A new household-aware route belongs in its tables.
 
 ### Errors crossing the API boundary
 

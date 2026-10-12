@@ -265,10 +265,21 @@ async def get_receipt_image(
     file_id: str,
     current_user: Annotated[User, Depends(get_current_user)],
     receipt_service: Annotated[ReceiptService, Depends(get_receipt_service)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> RedirectResponse:
-    """Redirects to a time-limited URL for the requested receipt image (F2.4.2)."""
+    """Redirects to a time-limited URL for the requested receipt image (F2.4.2).
+
+    A photo of another household member's shared receipt opens too (F12.4, ADR-0017);
+    a private one's, or anyone else's, is not found (N2).
+    """
+    owner_id = None
+    readers = await HouseholdService(HouseholdRepository(session)).readers(current_user)
+    if readers is not None:
+        owner_id = await ReceiptRepository(session).owner_of_readable_photo(file_id, readers)
     try:
-        url = await receipt_service.get_presigned_url_for_image(current_user, file_id)
+        url = await receipt_service.get_presigned_url_for_image(
+            current_user, file_id, owner_id=owner_id
+        )
         return RedirectResponse(url=url)
     except ObjectNotFoundError:
         raise HTTPException(status_code=404, detail="Image not found") from None

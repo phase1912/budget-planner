@@ -152,12 +152,19 @@ class ReceiptService:
                 "The other files on this line are fine."
             )
 
-    async def get_presigned_url_for_image(self, user: User, file_id: str) -> str:
-        """Generates a presigned URL for a receipt image, ensuring ownership."""
+    async def get_presigned_url_for_image(
+        self, user: User, file_id: str, *, owner_id: uuid.UUID | None = None
+    ) -> str:
+        """Generates a presigned URL for a receipt image, ensuring ownership.
+
+        The image is looked for under its owner's prefix: the user's own, or — for a
+        household member's shared receipt the caller may read — `owner_id` (F12.4).
+        The caller decides `owner_id`; anything not stored there is not found (N2).
+        """
         if not self.storage_port:
             raise RuntimeError("Storage port not configured.")
 
-        object_name = receipt_object_name(user.id, file_id)
+        object_name = receipt_object_name(owner_id or user.id, file_id)
 
         from app.services.storage import ObjectNotFoundError
 

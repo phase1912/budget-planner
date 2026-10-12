@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import Iterator
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any, ClassVar
@@ -56,10 +57,14 @@ class MockStoragePort(StoragePort):
 
 
 @pytest.fixture
-def app() -> FastAPI:
+def app() -> Iterator[FastAPI]:
     app = create_app()
     app.dependency_overrides[get_storage_service] = lambda: MockStoragePort()
-    return app
+    # These users belong to no household, so only their own photos are theirs (F12.4).
+    app.dependency_overrides[get_db_session] = lambda: AsyncMock()
+    with patch("app.api.routers.receipts.HouseholdService") as households:
+        households.return_value.readers = AsyncMock(return_value=None)
+        yield app
 
 
 def test_cross_user_access_returns_404(app: FastAPI) -> None:
