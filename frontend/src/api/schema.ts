@@ -472,6 +472,9 @@ export interface paths {
         /**
          * Get Receipt Image
          * @description Redirects to a time-limited URL for the requested receipt image (F2.4.2).
+         *
+         *     A photo of another household member's shared receipt opens too (F12.4, ADR-0017);
+         *     a private one's, or anyone else's, is not found (N2).
          */
         get: operations["get_receipt_image_receipts_images__file_id__get"];
         put?: never;

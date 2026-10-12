@@ -334,9 +334,9 @@ export const ReceiptDetailModal = observer(() => {
             {receipt.total_amount ? Number(receipt.total_amount).toFixed(2) : "—"}
           </span>
         </div>
-        {/* Another member's receipt can be read, never changed, and its photos stay its owner's. */}
-        {!readOnly && (
-          <div className="flex w-full items-center gap-[10px] md:w-auto [&>*]:flex-1 md:[&>*]:flex-none">
+        {/* Another member's receipt can be read and its photos seen, never changed (F12.4). */}
+        <div className="flex w-full items-center gap-[10px] md:w-auto [&>*]:flex-1 md:[&>*]:flex-none">
+          {!readOnly && (
             <Button
               variant="danger"
               size="sm"
@@ -360,40 +360,42 @@ export const ReceiptDetailModal = observer(() => {
               </svg>
               Delete
             </Button>
-            {/* A receipt read from an email's text has no photos to show (F11.2). */}
-            {receipt.file_ids.length > 0 && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setShowPhotos((shown) => !shown);
-                }}
+          )}
+          {/* A receipt read from an email's text has no photos to show (F11.2). */}
+          {receipt.file_ids.length > 0 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setShowPhotos((shown) => !shown);
+              }}
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-muted-foreground"
               >
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-muted-foreground"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <circle cx="9" cy="9" r="2" />
-                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                </svg>
-                {showPhotos ? (
-                  "Hide photos"
-                ) : (
-                  <>
-                    <span className="hidden md:inline">Original photos</span>
-                    <span className="md:hidden">Photos</span>
-                  </>
-                )}
-              </Button>
-            )}
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="9" cy="9" r="2" />
+                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+              </svg>
+              {showPhotos ? (
+                "Hide photos"
+              ) : (
+                <>
+                  <span className="hidden md:inline">Original photos</span>
+                  <span className="md:hidden">Photos</span>
+                </>
+              )}
+            </Button>
+          )}
+          {!readOnly && (
             <Button
               variant="primary"
               size="sm"
@@ -416,8 +418,8 @@ export const ReceiptDetailModal = observer(() => {
               </svg>
               Edit
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </ModalFooter>
     </Modal>
   );

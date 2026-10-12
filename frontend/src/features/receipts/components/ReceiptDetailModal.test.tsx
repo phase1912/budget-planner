@@ -189,9 +189,11 @@ describe("ReceiptDetailModal", () => {
 
       expect(screen.getByText(/Added by Anna/)).toBeInTheDocument();
       expect(screen.getByText("Groceries")).toBeInTheDocument();
-      for (const name of [/Edit/, /Delete/, /photos/i, /Re-run/, "Keep both", "Private"]) {
+      for (const name of [/Edit/, /Delete/, /Re-run/, "Keep both", "Private"]) {
         expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
       }
+      // Its photos open too: the server signs them for a member of the household (F12.4).
+      expect(screen.getByRole("button", { name: /photos/i })).toBeInTheDocument();
       expect(screen.queryByLabelText("Private")).not.toBeInTheDocument();
     });
 

@@ -91,7 +91,7 @@ the short version:
   The household view names who added each other member's receipt and marks the user's
   own private ones; it has no export, since an export is the user's own data. Another
   member's receipt opens read-only — "Added by Anna · view only", categories as text, no
-  edit, delete, photos or duplicate actions. The owner's own receipt has a Private
+  edit, delete or duplicate actions, but its photos open. The owner's own receipt has a Private
   checkbox, in a household only. No screen in `screens/` draws these.
 - **The dashboard and Statistics have a "Mine / <household>" switch** (F12.5). The
   household's month reads "Spent together", measured against the household's budget,
