@@ -7,6 +7,7 @@ import enGoals from "@/locales/en/goals.json";
 import enHousehold from "@/locales/en/household.json";
 import enLanding from "@/locales/en/landing.json";
 import enMessages from "@/locales/en/messages.json";
+import enProducts from "@/locales/en/products.json";
 import enProfile from "@/locales/en/profile.json";
 import enReceipts from "@/locales/en/receipts.json";
 import enStatistics from "@/locales/en/statistics.json";
@@ -20,6 +21,7 @@ import plGoals from "@/locales/pl/goals.json";
 import plHousehold from "@/locales/pl/household.json";
 import plLanding from "@/locales/pl/landing.json";
 import plMessages from "@/locales/pl/messages.json";
+import plProducts from "@/locales/pl/products.json";
 import plProfile from "@/locales/pl/profile.json";
 import plReceipts from "@/locales/pl/receipts.json";
 import plStatistics from "@/locales/pl/statistics.json";
@@ -33,6 +35,7 @@ import ukGoals from "@/locales/uk/goals.json";
 import ukHousehold from "@/locales/uk/household.json";
 import ukLanding from "@/locales/uk/landing.json";
 import ukMessages from "@/locales/uk/messages.json";
+import ukProducts from "@/locales/uk/products.json";
 import ukProfile from "@/locales/uk/profile.json";
 import ukReceipts from "@/locales/uk/receipts.json";
 import ukStatistics from "@/locales/uk/statistics.json";
@@ -53,6 +56,7 @@ export const en = {
   household: enHousehold,
   landing: enLanding,
   messages: enMessages,
+  products: enProducts,
   profile: enProfile,
   receipts: enReceipts,
   statistics: enStatistics,
@@ -71,6 +75,7 @@ export const resources = {
     household: ukHousehold,
     landing: ukLanding,
     messages: ukMessages,
+    products: ukProducts,
     profile: ukProfile,
     receipts: ukReceipts,
     statistics: ukStatistics,
@@ -86,6 +91,7 @@ export const resources = {
     household: plHousehold,
     landing: plLanding,
     messages: plMessages,
+    products: plProducts,
     profile: plProfile,
     receipts: plReceipts,
     statistics: plStatistics,

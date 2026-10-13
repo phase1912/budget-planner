@@ -48,5 +48,10 @@
     "month_other": "{{month}} is still running, so it is compared against the same {{count}} days of {{previous}} rather than the whole month.",
     "range": "{{current}} stops partway through a month, so it is compared against {{previous}} rather than whole months."
   },
-  "noChange": "no change"
+  "noChange": "no change",
+  "tabs": {
+    "label": "What to look at",
+    "categories": "Categories",
+    "products": "Products"
+  }
 }

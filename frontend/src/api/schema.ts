@@ -982,6 +982,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Products
+         * @description The products the caller buys, most bought first, with how each is printed (F16.1).
+         *
+         *     Lines not matched to a product yet are matched first, so receipts stored before
+         *     products existed appear too. Only the caller's own receipts (N2).
+         */
+        get: operations["list_products_api_v1_products_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{product_id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Merge Products
+         * @description Fold other products into this one, with their lines and ways of printing (F16.1).
+         *
+         *     Answers with the products list as it now is. Another user's product is not found (N2).
+         */
+        post: operations["merge_products_api_v1_products__product_id__merge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{product_id}/split": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Split Product
+         * @description Take one way of printing out of this product into a product of its own (F16.1).
+         *
+         *     Answers with the products list as it now is. Another user's product is not found
+         *     (N2); a product printed one way only cannot be split (400).
+         */
+        post: operations["split_product_api_v1_products__product_id__split_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/exports": {
         parameters: {
             query?: never;
@@ -2070,6 +2138,14 @@ export interface components {
             total: string;
         };
         /**
+         * MergeProductsRequest
+         * @description Other products to fold into the one in the path; it keeps its name (F16.1).
+         */
+        MergeProductsRequest: {
+            /** Product Ids */
+            product_ids: string[];
+        };
+        /**
          * MessageResponse
          * @description Generic message response.
          */
@@ -2168,6 +2244,50 @@ export interface components {
             size: number;
             /** Pages */
             pages: number;
+        };
+        /**
+         * ProductResponse
+         * @description A product the user buys, as the products list shows it (F16.1).
+         *
+         *     The size is in grams (`g`) or millilitres (`ml`), when the receipt printed one.
+         */
+        ProductResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Size Amount */
+            size_amount: string | null;
+            /** Size Unit */
+            size_unit: string | null;
+            /** Purchases */
+            purchases: number;
+            /** Shops */
+            shops: number;
+            /** Last Bought */
+            last_bought: string | null;
+            /** Spent */
+            spent: string;
+            /** Variants */
+            variants: components["schemas"]["ProductVariantResponse"][];
+        };
+        /**
+         * ProductVariantResponse
+         * @description One way a product is printed, and how often it was bought under it (F16.1).
+         */
+        ProductVariantResponse: {
+            /**
+             * Alias Id
+             * Format: uuid
+             */
+            alias_id: string;
+            /** Printed Name */
+            printed_name: string;
+            /** Purchases */
+            purchases: number;
         };
         /**
          * ReadingAccuracyResponse
@@ -2572,6 +2692,17 @@ export interface components {
             receipts: number;
             /** Corrected */
             corrected: number;
+        };
+        /**
+         * SplitProductRequest
+         * @description The way of printing to take out of the product into one of its own (F16.1).
+         */
+        SplitProductRequest: {
+            /**
+             * Alias Id
+             * Format: uuid
+             */
+            alias_id: string;
         };
         /**
          * UndoExtractedCorrectionRequest
@@ -4484,6 +4615,112 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReadingAccuracyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_products_api_v1_products_get: {
+        parameters: {
+            query?: {
+                search?: string;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    merge_products_api_v1_products__product_id__merge_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeProductsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    split_product_api_v1_products__product_id__split_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SplitProductRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductResponse"][];
                 };
             };
             /** @description Validation Error */

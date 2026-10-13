@@ -1,0 +1,136 @@
+import { makeAutoObservable, runInAction } from "mobx";
+
+import type { components } from "@/api/schema";
+import { apiClient } from "@/api/client";
+import { errorMessage, settle } from "@/api/errors";
+import i18n from "@/i18n";
+import type { ToastStore } from "@/stores/ToastStore";
+
+export type Product = components["schemas"]["ProductResponse"];
+
+/**
+ * The products the user buys, matched across receipts and shops (F16.1): the list,
+ * its search, the products ticked for merging, and merging and splitting them. The
+ * server answers both with the list as it now is.
+ */
+export class ProductsStore {
+  products: Product[] = [];
+  search = "";
+  selected: string[] = [];
+  isLoading = false;
+  isSaving = false;
+  loadError: string | null = null;
+  private requests = 0;
+  private readonly toastStore: ToastStore;
+
+  constructor(toastStore: ToastStore) {
+    this.toastStore = toastStore;
+    makeAutoObservable<this, "toastStore" | "requests">(
+      this,
+      { toastStore: false, requests: false },
+      { autoBind: true },
+    );
+  }
+
+  /** The products ticked for merging, in the order they were ticked. */
+  get selectedProducts(): Product[] {
+    return this.selected
+      .map((id) => this.products.find((p) => p.id === id))
+      .filter((p): p is Product => p !== undefined);
+  }
+
+  /** Ask for the list; a later request wins over an earlier one still on its way. */
+  async load(): Promise<void> {
+    const request = ++this.requests;
+    this.isLoading = true;
+    this.loadError = null;
+    const response = await settle(() =>
+      apiClient.GET("/api/v1/products", { params: { query: { search: this.search } } }),
+    );
+    runInAction(() => {
+      if (request !== this.requests) return;
+      this.isLoading = false;
+      if (response.error) {
+        this.loadError = errorMessage(response.error, i18n.t("messages:products.loadFailed"));
+        return;
+      }
+      this.products = response.data;
+      this.selected = this.selected.filter((id) => response.data.some((p) => p.id === id));
+    });
+  }
+
+  setSearch(search: string): void {
+    this.search = search;
+    void this.load();
+  }
+
+  toggle(id: string): void {
+    this.selected = this.selected.includes(id)
+      ? this.selected.filter((s) => s !== id)
+      : [...this.selected, id];
+  }
+
+  clearSelection(): void {
+    this.selected = [];
+  }
+
+  /** Fold the other ticked products into `targetId`, which keeps its name. */
+  async merge(targetId: string): Promise<boolean> {
+    const others = this.selected.filter((id) => id !== targetId);
+    if (others.length === 0 || this.isSaving) return false;
+    this.isSaving = true;
+    const response = await settle(() =>
+      apiClient.POST("/api/v1/products/{product_id}/merge", {
+        params: { path: { product_id: targetId } },
+        body: { product_ids: others },
+      }),
+    );
+    return this.settleChange(response, i18n.t("messages:products.mergeFailed"), () => {
+      this.selected = [];
+      this.toastStore.showSuccess(i18n.t("messages:products.merged"));
+    });
+  }
+
+  /** Take one way of printing out of a product into a product of its own. */
+  async split(productId: string, aliasId: string): Promise<boolean> {
+    if (this.isSaving) return false;
+    this.isSaving = true;
+    const response = await settle(() =>
+      apiClient.POST("/api/v1/products/{product_id}/split", {
+        params: { path: { product_id: productId } },
+        body: { alias_id: aliasId },
+      }),
+    );
+    return this.settleChange(response, i18n.t("messages:products.splitFailed"), () => {
+      this.toastStore.showSuccess(i18n.t("messages:products.split"));
+    });
+  }
+
+  private settleChange(
+    response: { data?: Product[]; error?: unknown },
+    fallback: string,
+    done: () => void,
+  ): boolean {
+    const products = response.error ? undefined : response.data;
+    runInAction(() => {
+      this.isSaving = false;
+      if (!products) {
+        this.toastStore.showError(errorMessage(response.error, fallback));
+        return;
+      }
+      // The answer is the whole list; while searching, the search is asked again instead.
+      if (!this.search) this.products = products;
+      done();
+    });
+    if (products && this.search) void this.load();
+    return products !== undefined;
+  }
+
+  /** Forget everything: a different user is signing in. */
+  reset(): void {
+    this.products = [];
+    this.search = "";
+    this.selected = [];
+    this.loadError = null;
+  }
+}

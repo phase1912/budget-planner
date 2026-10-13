@@ -34,6 +34,10 @@ class LineItem(Model):
     """What was printed, when the name shown is a remembered correction of it (F15.3)."""
     user_corrected: Mapped[bool] = mapped_column(default=False, server_default="false")
     """The user changed or added this line after it was read (F15.4)."""
+    product_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("products.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    """The product this line is a purchase of, once matched (F16.1)."""
     is_category_manual: Mapped[bool] = mapped_column(default=False, server_default="false")
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 

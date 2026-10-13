@@ -21,7 +21,7 @@ export const AppShell = observer(() => {
       <ToastContainer />
 
       <main
-        className={`flex-grow overflow-hidden flex flex-col md:p-8 ${withBottomBar ? "pb-24" : ""}`}
+        className={`flex-grow overflow-clip flex flex-col md:p-8 ${withBottomBar ? "pb-24" : ""}`}
       >
         <Container className="flex-grow flex flex-col">
           <Outlet />

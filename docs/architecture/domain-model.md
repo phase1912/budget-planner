@@ -25,6 +25,8 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | **IdentityLink** | A linked Google or Facebook identity, verified-email-gated (G9-G11). | User |
 | **Receipt** | One purchase transaction, from one or more photos or a forwarded e-receipt. Records the channel it arrived through (`photo`, `email`) and, for email, the message's Message-ID as its source reference (F11.1, F11.2). Carries its fiscal identity when one was read — the cash register's number and the receipt's number on it (F11.3, ADR-0015) — and, for an emailed receipt alike to a stored one, a mark naming that receipt until the user decides (F11.5). A receipt paid in another currency keeps its original currency, total and the rate it was converted at (F11.7, ADR-0016). | User |
 | **LineItem** | One position on a receipt: product, quantity, unit price, total. Keeps the reader's confidence in it (F15.2) and, when its name is a remembered correction, what was printed (F15.3). | Receipt |
+| **Product** | One thing the user buys, however each shop prints it: a name and, when printed, a package size in grams or millilitres (F16.1). Purchase lines link to it. | User |
+| **ProductAlias** | One way a product is printed, as its matching key with an example; merging and splitting move these (F16.1). | Product |
 | **NameCorrection** | A line name the user corrected on one shop's receipt — the printed name and what it means — applied to that shop's later receipts (F15.3). | User |
 | **Category** | A spending classification. Either a system default or user-defined. | User (nullable for defaults) |
 | **PositionMatch** | A decision that two line items are, or are not, the same physical purchase. | Receipt |
@@ -241,6 +243,15 @@ Rules that must hold at all times. Each is a candidate for a test.
     storing it; such lines are marked too. A name fixed by a remembered correction is not
     a user correction: it is counted apart as reading that worked. The reading-accuracy
     report counts these over the months receipts were read in, never across users (F15.4).
+
+11o. A product is the user's own: lines are matched only to their products. A line
+    printed a way already known joins that product; a name that abbreviates a known one
+    word for word, of the same size, joins it too; a name merely alike is asked of the
+    model, and otherwise starts a product. Different sizes, article numbers or
+    varieties are never matched by rule. Discounts and zero lines are not products.
+    Merging folds products into one that keeps its name; splitting takes one way of
+    printing, with its lines, into a product of its own. Both hold for later receipts
+    (F16.1).
 
 **Categorisation**
 

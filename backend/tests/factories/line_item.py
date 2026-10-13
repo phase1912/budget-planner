@@ -11,5 +11,11 @@ class LineItemFactory(ModelFactory[LineItem]):
     category_id = None
     category = None
     receipt = None
+    # Unmatched until the products list matches it (F16.1); never a random product.
+    product_id = None
+    # As read, with no score kept, nothing printed differently and nothing corrected.
+    read_confidence = None
+    read_name = None
+    user_corrected = False
     # Automatic is the normal case; a test about a manual override says so.
     is_category_manual = False
