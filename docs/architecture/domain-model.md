@@ -24,7 +24,8 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | `updated_at` | Timestamp | Standard audit field |
 | **IdentityLink** | A linked Google or Facebook identity, verified-email-gated (G9-G11). | User |
 | **Receipt** | One purchase transaction, from one or more photos or a forwarded e-receipt. Records the channel it arrived through (`photo`, `email`) and, for email, the message's Message-ID as its source reference (F11.1, F11.2). Carries its fiscal identity when one was read — the cash register's number and the receipt's number on it (F11.3, ADR-0015) — and, for an emailed receipt alike to a stored one, a mark naming that receipt until the user decides (F11.5). A receipt paid in another currency keeps its original currency, total and the rate it was converted at (F11.7, ADR-0016). | User |
-| **LineItem** | One position on a receipt: product, quantity, unit price, total. | Receipt |
+| **LineItem** | One position on a receipt: product, quantity, unit price, total. Keeps the reader's confidence in it (F15.2) and, when its name is a remembered correction, what was printed (F15.3). | Receipt |
+| **NameCorrection** | A line name the user corrected on one shop's receipt — the printed name and what it means — applied to that shop's later receipts (F15.3). | User |
 | **Category** | A spending classification. Either a system default or user-defined. | User (nullable for defaults) |
 | **PositionMatch** | A decision that two line items are, or are not, the same physical purchase. | Receipt |
 | **PositionMatchOverride** | A user correction flipping a same-item/two-items decision. Kept as labelled data (B7). | User |
@@ -228,6 +229,12 @@ Rules that must hold at all times. Each is a candidate for a test.
     `ocr_confidence_threshold` is doubtful: marked "check this" in the wizard and on the
     stored receipt, never silently accepted (A10, F15.2). A line the user corrects is no
     longer doubtful; one stored before scores were kept, or typed by hand, has none.
+
+11m. A line the user renames on a receipt from a known shop is remembered: that shop's
+    later receipts read the same printed name, ignoring case and spacing, as the user's
+    name, before they are categorised. The printed name stays beside it, and the line can
+    be put back, or the correction forgotten for the shop. A near match is never renamed:
+    it may be another product (F15.3).
 
 **Categorisation**
 

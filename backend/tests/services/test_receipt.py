@@ -750,3 +750,58 @@ async def test_an_opust_discount_stays_a_line_filed_with_the_product_it_reduces(
         ("OPUST", "-10.04", str(groceries.id)),
         ("Kawa", "49.98", str(groceries.id)),
     ]
+
+
+@pytest.mark.asyncio
+async def test_the_shops_next_receipt_is_read_with_the_users_correction() -> None:
+    """F15.3: the misreading corrected once is corrected on the next upload, before filing."""
+    mock_storage = AsyncMock()
+    mock_parser = AsyncMock()
+    mock_extraction = MagicMock()
+    mock_extraction.model_dump.return_value = {
+        "merchant_name": "Biedronka",
+        "receipt_total": "7.49",
+        "items_sum_matches_total": True,
+        "line_items": [
+            {
+                "name": "MastoZPolskMlecz200g",
+                "quantity": "1",
+                "unit_price": "7.49",
+                "total_price": "7.49",
+            }
+        ],
+    }
+    mock_parser.parse.return_value = mock_extraction
+    mock_storage.download_file.return_value = b"image-data"
+    service = ReceiptService(storage_port=mock_storage, parser_port=mock_parser)
+    user = User(id=uuid.uuid4(), email="test@test.com")
+    job = UploadJob(id=uuid.uuid4(), user_id=user.id)
+    session = _session_returning(job, [])
+    factory = MagicMock()
+    factory.return_value.__aenter__.return_value = session
+    remembered = MagicMock(
+        merchant_name="biedronka",
+        read_name="mastozpolskmlecz200g",
+        corrected_name="Masło 200g",
+    )
+
+    with (
+        patch("app.services.receipt.get_session_factory", return_value=factory),
+        patch(
+            "app.adapters.photo_ingestion.PhotoIngestionAdapter.store_image",
+            new_callable=AsyncMock,
+            return_value="file-1",
+        ),
+        patch(
+            "app.repository.name_correction.NameCorrectionRepository.list_for",
+            new_callable=AsyncMock,
+            return_value=[remembered],
+        ),
+    ):
+        await service.process_upload_job_task(
+            job.id, user, [[{"content": b"x", "content_type": "image/jpeg"}]]
+        )
+
+    assert job.result_data is not None
+    line = job.result_data["extractions"][0]["line_items"][0]
+    assert (line["name"], line["read_name"]) == ("Masło 200g", "MastoZPolskMlecz200g")

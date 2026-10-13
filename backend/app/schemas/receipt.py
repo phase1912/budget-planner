@@ -111,6 +111,23 @@ class EditLineItemRequest(BaseModel):
     total_price: str | None = None
 
 
+class UndoExtractedCorrectionRequest(BaseModel):
+    """Put back what was printed on one line of an extracted receipt (F15.3.2).
+
+    `forget` also stops the shop's later receipts being corrected the same way.
+    """
+
+    extraction_index: int
+    item_index: int
+    forget: bool = False
+
+
+class UndoLineCorrectionRequest(BaseModel):
+    """Put back what was printed on one stored line; `forget` drops the correction (F15.3.2)."""
+
+    forget: bool = False
+
+
 class LineItemInput(BaseModel):
     """One line item in an `UpdateReceiptRequest`.
 
@@ -175,6 +192,7 @@ class LineItemResponse(BaseModel):
     category_confidence: int | None = None
     is_category_manual: bool = False
     read_confidence: int | None = None
+    read_name: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

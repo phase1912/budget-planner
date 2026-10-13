@@ -6,6 +6,7 @@ const mockClearSelection = vi.fn();
 const mockKeep = vi.fn();
 const mockConfirmDelete = vi.fn();
 const mockSetPrivacy = vi.fn();
+const mockUndoCorrection = vi.fn();
 
 const PHOTO_RECEIPT = {
   id: "r1",
@@ -63,6 +64,8 @@ vi.mock("@/stores/StoreContext", () => ({
       isKeepingDuplicate: false,
       isSavingPrivacy: false,
       setPrivacy: mockSetPrivacy,
+      isUndoingCorrection: false,
+      undoLineCorrection: mockUndoCorrection,
     },
   }),
 }));
@@ -238,6 +241,23 @@ describe("ReceiptDetailModal", () => {
 
     expect(screen.queryByText("Check this")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Only lines to check" })).not.toBeInTheDocument();
+  });
+
+  it("says a line was corrected from memory and lets the user undo or forget it (F15.3)", () => {
+    detail.receipt = {
+      ...PHOTO_RECEIPT,
+      line_items: [
+        { ...PHOTO_RECEIPT.line_items[0], name: "Masło 200g", read_name: "MastoZPolsk" },
+      ],
+    };
+    render(<ReceiptDetailModal />);
+
+    expect(screen.getByText("Corrected from “MastoZPolsk”")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Forget for this shop" }));
+
+    expect(mockUndoCorrection).toHaveBeenNthCalledWith(1, "i1", false);
+    expect(mockUndoCorrection).toHaveBeenNthCalledWith(2, "i1", true);
   });
 
   it("offers no privacy outside a household", () => {

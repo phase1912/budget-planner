@@ -84,5 +84,10 @@
     "photos": "Zdjęcia paragonu",
     "mark": "Sprawdź",
     "title": "Odczyt tej pozycji nie jest pewny"
+  },
+  "corrected": {
+    "from": "Poprawiono z „{{name}}”",
+    "undo": "Cofnij",
+    "forget": "Zapomnij dla tego sklepu"
   }
 }

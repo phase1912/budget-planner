@@ -15,6 +15,7 @@ import {
   TotalsGapNote,
   DoubtfulLinesNote,
   DoubtfulMark,
+  CorrectedName,
 } from "@/shared/components";
 import type { PillProps } from "@/shared/components";
 import { Card, CardHeader, CardFooter } from "@/shared/components/Card/Card";
@@ -29,6 +30,8 @@ interface ExtractedLineItem {
   unit_price: string;
   total_price: string;
   confidence?: number;
+  /** What was printed, when `name` is the user's remembered correction of it (F15.3). */
+  read_name?: string | null;
   /** The reader was unsure of this line — decided by the backend (BRD A10, ADR-0005). */
   is_doubtful?: boolean;
   file_id?: string | null;
@@ -583,18 +586,28 @@ export const ExtractedStep = observer(function ExtractedStep() {
                     key={idx}
                     className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 px-4 py-3 md:grid-cols-[minmax(0,1fr)_48px_84px_92px_148px] md:gap-3 md:px-5 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors text-[13px]"
                   >
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      {showProvenance && (
-                        <span className="shrink-0 inline-flex items-center justify-center h-4 px-1.5 rounded-sm bg-muted text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
-                          {provenanceLabel}
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        {showProvenance && (
+                          <span className="shrink-0 inline-flex items-center justify-center h-4 px-1.5 rounded-sm bg-muted text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
+                            {provenanceLabel}
+                          </span>
+                        )}
+                        <span
+                          className={`font-medium truncate ${itemLowConf ? "text-tone-warning-text" : "text-foreground"}`}
+                        >
+                          {item.name}
                         </span>
+                        {itemLowConf && <DoubtfulMark className="shrink-0" />}
+                      </div>
+                      {item.read_name && (
+                        <CorrectedName
+                          readName={item.read_name}
+                          busy={uploadStore.isUndoingCorrection}
+                          onUndo={() => void uploadStore.undoCorrection(index, idx, false)}
+                          onForget={() => void uploadStore.undoCorrection(index, idx, true)}
+                        />
                       )}
-                      <span
-                        className={`font-medium truncate ${itemLowConf ? "text-tone-warning-text" : "text-foreground"}`}
-                      >
-                        {item.name}
-                      </span>
-                      {itemLowConf && <DoubtfulMark className="shrink-0" />}
                     </div>
                     <span
                       className={`hidden md:block text-right tabular-nums ${itemLowConf ? "text-tone-warning-text" : "text-muted-foreground"}`}

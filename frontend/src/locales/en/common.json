@@ -82,5 +82,10 @@
     "photos": "Receipt photos",
     "mark": "Check this",
     "title": "The reader was unsure of this line"
+  },
+  "corrected": {
+    "from": "Corrected from “{{name}}”",
+    "undo": "Undo",
+    "forget": "Forget for this shop"
   }
 }

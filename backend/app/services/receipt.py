@@ -16,7 +16,12 @@ from sqlalchemy.orm.attributes import flag_modified
 from app.adapters.photo_ingestion import PhotoIngestionAdapter
 from app.core.config import get_settings
 from app.db.session import get_session_factory
-from app.domain.categories import UNCATEGORIZED, confident_category, match_rule
+from app.domain.categories import (
+    UNCATEGORIZED,
+    confident_category,
+    match_rule,
+    normalise_name,
+)
 from app.domain.currency import (
     RATE_PLACES,
     ExchangeRate,
@@ -32,6 +37,7 @@ from app.domain.discounts import (
     printed_amount,
 )
 from app.domain.fiscal_identity import fiscal_identity
+from app.domain.name_corrections import apply_corrections, printed_name
 from app.domain.receipt_dates import with_upload_date
 from app.domain.receipt_reconciliation import (
     Reconciliation,
@@ -53,6 +59,7 @@ from app.ports.parsing import CURRENT_PARSER_VERSION, ReceiptParserPort, Receipt
 from app.ports.storage import StoragePort, receipt_object_name
 from app.repository.category import CategoryRepository
 from app.repository.exchange_rate import CachedExchangeRates
+from app.repository.name_correction import NameCorrectionRepository
 from app.repository.receipt import ReceiptRepository
 from app.schemas.extraction import ExtractedLineItem, ExtractedReceipt
 from app.schemas.receipt import (
@@ -60,6 +67,7 @@ from app.schemas.receipt import (
     EditLineItemRequest,
     LineItemInput,
     ResolvePositionMatchRequest,
+    UndoExtractedCorrectionRequest,
     UpdateReceiptRequest,
     UploadJobStatusResponse,
 )
@@ -224,6 +232,7 @@ class ReceiptService:
                 category_repository = CategoryRepository(session)
                 categories = await category_repository.list_available(user.id)
                 rules = await category_repository.list_rules(user.id)
+                corrections = await NameCorrectionRepository(session).list_for(user.id)
 
                 if self.storage_port is None:
                     raise RuntimeError("Storage port not configured.")
@@ -236,6 +245,7 @@ class ReceiptService:
                     extraction = (await photos.ingest(user, uploads)).extraction
                     extraction = await self._reconcile_total(user, extraction)
                     extraction = _dated(extraction, datetime.now(UTC).date())
+                    apply_corrections(extraction, corrections)
                     if self.parser_port:
                         await self._categorise_extraction(extraction, categories, rules)
                         self._file_discount_lines(extraction)
@@ -314,6 +324,7 @@ class ReceiptService:
             result = await ingestion.ingest(user, payload)
             extraction = await self._reconcile_total(user, result.extraction)
             extraction = _dated(extraction, datetime.now(UTC).date())
+            apply_corrections(extraction, await NameCorrectionRepository(session).list_for(user.id))
             identity = fiscal_identity(extraction)
             if identity and await receipts.find_by_fiscal_identity(user.id, identity):
                 logger.info("Email receipt for user %s dropped: already stored", user.id)
@@ -594,10 +605,103 @@ class ReceiptService:
         if not changes:
             raise ValueError("No fields to update")
 
+        line = {**items[item_idx], **changes, "confidence": 100}
+        if "name" in changes and changes["name"] is not None:
+            await self._remember_name(
+                user_id, extraction.get("merchant_name"), line, items[item_idx]
+            )
         # The user has now looked at this line, so it no longer needs checking (BRD A10).
-        items[item_idx] = {**items[item_idx], **changes, "confidence": 100}
+        items[item_idx] = line
         extraction["line_items"] = items
         return self._recheck(job, extractions, request_data.extraction_index, extraction)
+
+    async def _remember_name(
+        self,
+        user_id: uuid.UUID,
+        merchant_name: object,
+        line: dict[str, Any],
+        before: dict[str, Any],
+    ) -> None:
+        """Rename an extracted line and remember it for the shop, or undo when it is reverted.
+
+        `line` is changed in place: it keeps what was printed as `read_name` while its name
+        differs from it, and loses it once the user types the printed name back (F15.3).
+        """
+        assert self.repository is not None
+        printed = printed_name(before, str(before.get("name") or ""))
+        new_name = str(line["name"])
+        merchant = merchant_name if isinstance(merchant_name, str) else None
+        if normalise_name(new_name) == normalise_name(printed):
+            line["read_name"] = None
+            return
+        line["read_name"] = printed
+        await NameCorrectionRepository(self.repository.session).remember(
+            user_id, merchant, printed, new_name
+        )
+
+    async def _remember_stored_name(
+        self, user_id: uuid.UUID, merchant_name: str | None, item: LineItem, new_name: str
+    ) -> None:
+        """The same for a stored line the user renamed in the edit dialog (F15.3)."""
+        assert self.repository is not None
+        printed = item.read_name or item.name
+        if normalise_name(new_name) == normalise_name(printed):
+            item.read_name = None
+            return
+        item.read_name = printed
+        await NameCorrectionRepository(self.repository.session).remember(
+            user_id, merchant_name, printed, new_name
+        )
+
+    async def undo_extracted_correction(
+        self, job_id: uuid.UUID, user_id: uuid.UUID, request_data: UndoExtractedCorrectionRequest
+    ) -> UploadJobStatusResponse:
+        """Put back what was printed on one extracted line, and maybe forget why (F15.3.2).
+
+        With `forget`, later receipts from the shop are no longer corrected this way.
+        Raises ValueError when the job, extraction or line is unknown, or the line was
+        never corrected.
+        """
+        assert self.repository is not None
+        job, extractions, extraction = await self._extraction(
+            job_id, user_id, request_data.extraction_index
+        )
+        items = extraction.get("line_items", [])
+        if not 0 <= request_data.item_index < len(items):
+            raise ValueError("Invalid item index")
+        line = items[request_data.item_index]
+        printed = line.get("read_name")
+        if not printed:
+            raise ValueError("This line was not corrected")
+        if request_data.forget:
+            await NameCorrectionRepository(self.repository.session).forget(
+                user_id, extraction.get("merchant_name"), printed
+            )
+        items[request_data.item_index] = {**line, "name": printed, "read_name": None}
+        return self._recheck(job, extractions, request_data.extraction_index, extraction)
+
+    async def undo_line_correction(
+        self, receipt_id: uuid.UUID, item_id: uuid.UUID, forget: bool
+    ) -> Receipt | None:
+        """Put back what was printed on one stored line, and maybe forget why (F15.3.2).
+
+        Returns None for a receipt or line that is not the caller's (N2). Raises
+        ValueError when the line was never corrected.
+        """
+        assert self.repository is not None
+        receipt = await self.repository.get_with_items(receipt_id)
+        item = next((i for i in receipt.line_items if i.id == item_id), None) if receipt else None
+        if receipt is None or item is None:
+            return None
+        if not item.read_name:
+            raise ValueError("This line was not corrected")
+        if forget:
+            await NameCorrectionRepository(self.repository.session).forget(
+                receipt.user_id, receipt.merchant_name, item.read_name
+            )
+        item.name, item.read_name = item.read_name, None
+        await self.repository.session.flush()
+        return receipt
 
     async def add_extracted_discount(
         self, job_id: uuid.UUID, user_id: uuid.UUID, request_data: AddDiscountRequest
@@ -746,6 +850,10 @@ class ReceiptService:
                 existing = existing_by_id[line.id]
                 if _corrected(existing, line):
                     existing.read_confidence = None
+                if line.name != existing.name:
+                    await self._remember_stored_name(
+                        receipt.user_id, request_data.merchant_name, existing, line.name
+                    )
                 existing.name = line.name
                 existing.quantity = line.quantity
                 existing.unit_price = line.unit_price

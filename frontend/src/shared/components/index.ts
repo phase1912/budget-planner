@@ -19,3 +19,4 @@ export * from "./Pagination/Pagination";
 export * from "./Meter";
 export * from "./TotalsGapNote";
 export * from "./DoubtfulLines";
+export * from "./CorrectedName";
