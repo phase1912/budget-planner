@@ -28,6 +28,7 @@ from app.domain.budget import ReceiptOrder
 from app.domain.categories import ItemView
 from app.domain.fiscal_identity import fiscal_identity, is_left_out
 from app.domain.periods import DateRange
+from app.domain.reading_accuracy import mark_corrected
 from app.models.receipt import ReceiptChannel, ReceiptStatus
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
@@ -628,6 +629,7 @@ async def resolve_total(
 
     extraction["receipt_total"] = request_data.receipt_total
     extraction["receipt_total_confidence"] = 100
+    mark_corrected(extraction)
 
     parsed = ExtractedReceipt(**extraction)
 
@@ -685,6 +687,7 @@ async def resolve_date(
         "transaction_date_confidence": 100,
         "transaction_date_assumed": False,
     }
+    mark_corrected(extraction)
     parsed = ExtractedReceipt(**extraction)
     extraction["requires_manual_review"] = parsed.requires_manual_review
     extractions[idx] = extraction

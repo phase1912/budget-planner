@@ -14,6 +14,7 @@ from app.domain.categories import UNCATEGORIZED, ItemView
 from app.domain.fiscal_identity import fiscal_identity
 from app.domain.periods import DateRange
 from app.domain.read_confidence import read_confidence
+from app.domain.reading_accuracy import ReceiptReading, corrected_lines
 from app.models.category import Category
 from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
@@ -704,6 +705,8 @@ class ReceiptRepository(BaseRepository[Receipt]):
         items_data = extraction.get("line_items", [])
         if not isinstance(items_data, list):
             items_data = []
+        receipt.user_corrected = bool(extraction.get("user_corrected"))
+        corrected = corrected_lines(extraction)
 
         duplicate_indices = set()
         matches = extraction.get("position_matches", [])
@@ -744,6 +747,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
                         category_confidence=category_confidence,
                         read_confidence=read_confidence(item_data),
                         read_name=_read_name(item_data),
+                        user_corrected=i in corrected,
                     )
                 )
             except (InvalidOperation, TypeError, ValueError):
@@ -766,6 +770,31 @@ class ReceiptRepository(BaseRepository[Receipt]):
         receipt.line_items = line_items
         self.add(receipt)
         return receipt
+
+    async def readings_since(self, user_id: uuid.UUID, since: datetime) -> list[ReceiptReading]:
+        """Each of the user's receipts read since `since`, with its corrections counted (F15.4).
+
+        Only the user's own receipts, never their household's (N2).
+        """
+        stmt = (
+            select(
+                Receipt.merchant_name,
+                Receipt.created_at,
+                Receipt.user_corrected,
+                func.count(LineItem.id),
+                func.count(case((LineItem.user_corrected, 1))),
+                func.count(case((LineItem.read_name.is_not(None), 1))),
+            )
+            .outerjoin(LineItem, LineItem.receipt_id == Receipt.id)
+            .where(Receipt.user_id == user_id, Receipt.created_at >= since)
+            .group_by(Receipt.id)
+        )
+        return [
+            ReceiptReading(merchant, created.date(), corrected, lines, fixed, remembered)
+            for merchant, created, corrected, lines, fixed, remembered in (
+                await self.session.execute(stmt)
+            ).all()
+        ]
 
     async def get_upload_job(self, job_id: uuid.UUID, user_id: uuid.UUID) -> UploadJob | None:
         stmt = select(UploadJob).where(UploadJob.id == job_id, UploadJob.user_id == user_id)

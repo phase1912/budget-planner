@@ -101,6 +101,7 @@ async def test_a_typed_total_is_saved_and_the_receipt_can_then_be_stored(
     stored = await _stored_extraction(db_session, job)
     assert stored["receipt_total"] == "37.00"
     assert stored["requires_manual_review"] is False
+    assert stored["user_corrected"] is True  # F15.4: a total the user typed is a correction
 
     committed = await _post(
         db_session, user, f"/receipts/upload/{job.id}/commit", {"indices_to_store": [0]}
@@ -184,6 +185,7 @@ async def test_a_date_set_in_the_wizard_replaces_the_assumed_one_and_is_stored(
         await db_session.execute(select(Receipt).where(Receipt.user_id == user.id))
     ).scalar_one()
     assert receipt.transaction_date is not None and receipt.transaction_date.day == 3
+    assert receipt.user_corrected is True  # F15.4
 
 
 @pytest.mark.asyncio

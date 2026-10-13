@@ -10,6 +10,7 @@ import { HouseholdCard } from "../components/HouseholdCard";
 import { ReceiptUsageCard } from "../components/ReceiptUsageCard";
 import { InstallAppCard } from "@/features/install/InstallAppCard";
 import { LanguageCard } from "../components/LanguageCard";
+import { ReadingAccuracyCard } from "../components/ReadingAccuracyCard";
 import { useTranslation } from "react-i18next";
 
 export const ProfilePage = observer(function ProfilePage() {
@@ -149,6 +150,8 @@ export const ProfilePage = observer(function ProfilePage() {
         <LanguageCard />
 
         <ReceiptUsageCard />
+
+        <ReadingAccuracyCard />
 
         <ForwardingAddressCard />
 
