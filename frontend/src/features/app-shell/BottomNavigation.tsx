@@ -1,9 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import { ChartColumn, House, Plus, ReceiptText, Target } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 interface Tab {
-  name: string;
+  name: "home" | "receipts" | "stats" | "goals";
   path: string;
   icon: LucideIcon;
   /** Further routes this tab stands for, beyond its own. */
@@ -12,12 +13,12 @@ interface Tab {
 
 // Categories has no tab of its own: it is reached from Receipts, whose tab it lights.
 const LEFT: Tab[] = [
-  { name: "Home", path: "/", icon: House },
-  { name: "Receipts", path: "/receipts", icon: ReceiptText, alsoFor: ["/categories"] },
+  { name: "home", path: "/", icon: House },
+  { name: "receipts", path: "/receipts", icon: ReceiptText, alsoFor: ["/categories"] },
 ];
 const RIGHT: Tab[] = [
-  { name: "Stats", path: "/statistics", icon: ChartColumn },
-  { name: "Goals", path: "/goals", icon: Target },
+  { name: "stats", path: "/statistics", icon: ChartColumn },
+  { name: "goals", path: "/goals", icon: Target },
 ];
 
 function isActive(tab: Tab, pathname: string): boolean {
@@ -36,6 +37,7 @@ function isActive(tab: Tab, pathname: string): boolean {
  */
 export function BottomNavigation() {
   const { pathname } = useLocation();
+  const { t } = useTranslation();
   const tab = (item: Tab) => {
     const active = isActive(item, pathname);
     const Icon = item.icon;
@@ -49,20 +51,20 @@ export function BottomNavigation() {
         }`}
       >
         <Icon size={22} aria-hidden="true" />
-        {item.name}
+        {t(`nav.${item.name}`)}
       </Link>
     );
   };
   return (
     <nav
-      aria-label="Main"
+      aria-label={t("nav.main")}
       className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-surface md:hidden"
     >
       <div className="flex items-center gap-1 px-3 pt-2 pb-3.5">
         {LEFT.map(tab)}
         <Link
           to="/upload"
-          aria-label="Upload a receipt"
+          aria-label={t("header.uploadReceipt")}
           className="flex h-14 w-14 shrink-0 items-center justify-center rounded-pill bg-primary text-primary-foreground shadow-card"
         >
           <Plus size={24} aria-hidden="true" />

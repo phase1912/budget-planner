@@ -5,9 +5,11 @@ import { Link } from "react-router-dom";
 
 import { IconButton, Note } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
+import { numberFormat, dateFormat } from "@/i18n/format";
+import { useTranslation, Trans } from "react-i18next";
 
-const MONTH = new Intl.DateTimeFormat("en-GB", { month: "long" });
-const MONEY = new Intl.NumberFormat("en-US", {
+const MONTH = dateFormat({ month: "long" });
+const MONEY = numberFormat({
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
@@ -25,6 +27,7 @@ export const AtRiskWarnings = observer(function AtRiskWarnings({
   linkToGoals?: boolean;
 }) {
   const { adviceStore, authStore } = useStores();
+  const { t } = useTranslation("goals");
   const currency = authStore.user?.currency ?? "PLN";
   const money = (amount: string | number) => `${MONEY.format(Number(amount))} ${currency}`;
   const month = MONTH.format(new Date());
@@ -36,28 +39,37 @@ export const AtRiskWarnings = observer(function AtRiskWarnings({
   if (adviceStore.warnings.length === 0) return null;
 
   return (
-    <ul aria-label="Goals at risk" className="m-0 flex list-none flex-col gap-3 p-0">
+    <ul aria-label={t("risk.list")} className="m-0 flex list-none flex-col gap-3 p-0">
       {adviceStore.warnings.map((pace) => (
         <li key={pace.goal_id}>
           <Note tone="warning">
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 flex-col gap-1">
-                <span className="font-semibold">{pace.goal_name} is heading over its limit</span>
+                <span className="font-semibold">{t("risk.heading", { name: pace.goal_name })}</span>
                 <span>
-                  Spent so far: {money(pace.spent)} of {money(pace.target)}. Estimate: at this pace{" "}
-                  {month} would end at about <strong>{money(pace.projected)}</strong>,{" "}
-                  {money(-Number(pace.margin))} over your limit.
+                  <Trans
+                    t={t}
+                    i18nKey="risk.body"
+                    values={{
+                      spent: money(pace.spent),
+                      target: money(pace.target),
+                      month,
+                      projected: money(pace.projected),
+                      over: money(-Number(pace.margin)),
+                    }}
+                    components={{ b: <strong /> }}
+                  />
                 </span>
                 {linkToGoals ? (
                   <Link to="/goals" className="font-semibold text-inherit underline">
-                    See how to cut back
+                    {t("risk.seeHow")}
                   </Link>
                 ) : (
-                  <span>Advice to cut back is in the goal&apos;s card below.</span>
+                  <span>{t("risk.below")}</span>
                 )}
               </div>
               <IconButton
-                aria-label={`Set aside the warning for ${pace.goal_name} until next month`}
+                aria-label={t("risk.dismiss", { name: pace.goal_name })}
                 className="h-11 w-11 shrink-0 md:h-auto md:w-auto"
                 onClick={() => void adviceStore.dismissWarning(pace.goal_id)}
               >

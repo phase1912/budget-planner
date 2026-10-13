@@ -1,15 +1,17 @@
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export const Navigation = () => {
   const location = useLocation();
   const currentPath = location.pathname;
+  const { t } = useTranslation();
 
   const links = [
-    { name: "Dashboard", path: "/" },
-    { name: "Receipts", path: "/receipts" },
-    { name: "Categories", path: "/categories" },
-    { name: "Statistics", path: "/statistics" },
-    { name: "Goals", path: "/goals" },
+    { name: t("nav.dashboard"), path: "/" },
+    { name: t("nav.receipts"), path: "/receipts" },
+    { name: t("nav.categories"), path: "/categories" },
+    { name: t("nav.statistics"), path: "/statistics" },
+    { name: t("nav.goals"), path: "/goals" },
   ];
 
   return (
@@ -23,7 +25,7 @@ export const Navigation = () => {
             : currentPath === link.path || currentPath.startsWith(`${link.path}/`);
         return (
           <Link
-            key={link.name}
+            key={link.path}
             to={link.path}
             className={`px-3 py-2 rounded-control text-[14px] transition-colors ${
               isActive

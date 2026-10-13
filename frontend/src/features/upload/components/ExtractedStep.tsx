@@ -10,6 +10,10 @@ import { Button } from "@/shared/components/Button/Button";
 import { SecureImage, Note, IconTile, Pill, TotalsGapNote } from "@/shared/components";
 import type { PillProps } from "@/shared/components";
 import { Card, CardHeader, CardFooter } from "@/shared/components/Card/Card";
+import { dateFormat } from "@/i18n/format";
+import { Trans, useTranslation } from "react-i18next";
+import i18n from "@/i18n";
+import { categoryName } from "@/shared/categoryName";
 
 interface ExtractedLineItem {
   name: string;
@@ -94,15 +98,16 @@ interface ExtractedDataPayload {
  * receipt's Edit dialog, since this step has no date field.
  */
 function missingFieldsMessage(data: ExtractedData): string {
-  const missing = [!data.receipt_total && "total", !data.transaction_date && "date"].filter(
-    Boolean,
-  );
-  const what = missing.length === 2 ? "No total or date" : `No ${String(missing[0] ?? "total")}`;
-  const after = data.receipt_total ? " Set it from the receipt's Edit once it is stored." : "";
-  return `${what} could be read, so it is excluded from budget calculation until you fill it in.${after}`;
+  const what =
+    !data.receipt_total && !data.transaction_date
+      ? i18n.t("upload:read.missingBoth")
+      : !data.receipt_total
+        ? i18n.t("upload:read.missingTotal")
+        : i18n.t("upload:read.missingDate");
+  return data.receipt_total ? `${what} ${i18n.t("upload:read.setLater")}` : what;
 }
 
-const PURCHASE_DAY = new Intl.DateTimeFormat("en-GB", {
+const PURCHASE_DAY = dateFormat({
   day: "numeric",
   month: "long",
   year: "numeric",
@@ -110,6 +115,7 @@ const PURCHASE_DAY = new Intl.DateTimeFormat("en-GB", {
 
 export const ExtractedStep = observer(function ExtractedStep() {
   const { uploadStore } = useStores();
+  const { t } = useTranslation("upload");
   const [enteringTotalFor, setEnteringTotalFor] = useState<number | null>(null);
 
   const handleBack = () => {
@@ -148,38 +154,37 @@ export const ExtractedStep = observer(function ExtractedStep() {
                 <path d="M20 6 9 17l-5-5" />
               </svg>
             </span>
-            <span className="text-[14px] font-semibold text-foreground">Photos</span>
+            <span className="text-[14px] font-semibold text-foreground">{t("steps.photos")}</span>
           </button>
           <span className="grow h-[2px] rounded-[1px] bg-primary mx-4"></span>
           <span className="inline-flex items-center gap-2.5">
             <span className="inline-flex items-center justify-center w-[28px] h-[28px] border border-transparent rounded-pill bg-primary text-primary-foreground text-[13px] font-bold">
               2
             </span>
-            <span className="text-[14px] font-semibold text-foreground">What we read</span>
+            <span className="text-[14px] font-semibold text-foreground">{t("steps.read")}</span>
           </span>
           <span className="grow h-[2px] rounded-[1px] bg-border mx-4"></span>
           <span className="inline-flex items-center gap-2.5">
             <span className="inline-flex items-center justify-center w-[28px] h-[28px] border border-border rounded-pill bg-background text-border-strong text-[13px] font-bold">
               3
             </span>
-            <span className="text-[14px] font-semibold text-border-strong">Resolve</span>
+            <span className="text-[14px] font-semibold text-border-strong">
+              {t("steps.resolve")}
+            </span>
           </span>
         </div>
 
         <div className="flex flex-col gap-1">
-          <h1 className="m-0 text-[30px] font-bold tracking-tight">What we read</h1>
+          <h1 className="m-0 text-[30px] font-bold tracking-tight">{t("read.title")}</h1>
           <p className="m-0 text-[15px] text-muted-foreground mt-1">
-            {uploadStore.lines.length} receipt{uploadStore.lines.length === 1 ? "" : "s"},{" "}
-            {totalItems} items, from {uploadStore.totalFilesCount} photos. Nothing is stored yet.
+            {t("read.summaryReceipts", { count: uploadStore.lines.length })},{" "}
+            {t("read.summaryItems", { count: totalItems })},{" "}
+            {t("read.summaryPhotos", { count: uploadStore.totalFilesCount })}. {t("read.notStored")}
           </p>
         </div>
 
         {uploadStore.conflictsCount > 0 && (
-          <Note tone="warning">
-            {uploadStore.conflictsCount} thing{uploadStore.conflictsCount !== 1 ? "s" : ""} need
-            {uploadStore.conflictsCount === 1 ? "s" : ""} a decision from you — you will get to them
-            on the next step. Read through first and fix anything obviously wrong here.
-          </Note>
+          <Note tone="warning">{t("read.conflicts", { count: uploadStore.conflictsCount })}</Note>
         )}
 
         {extractions.map((data, index) => {
@@ -193,9 +198,9 @@ export const ExtractedStep = observer(function ExtractedStep() {
               </Note>
             );
           }
-          const merchantName = data.merchant_name ?? "Unknown merchant";
+          const merchantName = data.merchant_name ?? t("read.unknownMerchant");
           const merchantNameLowConf = (data.merchant_name_confidence ?? 100) < 80;
-          const transactionDate = data.transaction_date ?? "Unknown date";
+          const transactionDate = data.transaction_date ?? t("read.unknownDate");
           const transactionDateLowConf = (data.transaction_date_confidence ?? 100) < 80;
           const receiptTotalLowConf = (data.receipt_total_confidence ?? 100) < 80;
           const isNotReceipt = (data.is_receipt_confidence ?? 100) < 50;
@@ -223,7 +228,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                         <SecureImage
                           key={id}
                           fileId={id}
-                          alt="receipt thumb"
+                          alt={t("read.thumb")}
                           className="w-9 h-11 object-cover rounded-md opacity-50 grayscale"
                         />
                       ))}
@@ -235,10 +240,10 @@ export const ExtractedStep = observer(function ExtractedStep() {
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-base font-bold text-tone-error-text">
-                        Failed to process this receipt
+                        {t("read.failedTitle")}
                       </span>
                       <span className="text-[13px] text-tone-error-text opacity-90">
-                        The AI service was temporarily overloaded or unavailable.
+                        {t("read.failedText")}
                       </span>
                     </div>
                   </div>
@@ -260,7 +265,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                       <SecureImage
                         key={id}
                         fileId={id}
-                        alt="receipt thumb"
+                        alt={t("read.thumb")}
                         className="w-9 h-11 object-cover rounded-md"
                       />
                     ))}
@@ -279,8 +284,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                     <span
                       className={`text-[13px] ${transactionDateLowConf ? "text-tone-warning-text" : "text-muted-foreground"}`}
                     >
-                      {transactionDate} &middot; {fileIds.length} photo
-                      {fileIds.length === 1 ? "" : "s"}
+                      {transactionDate} &middot; {t("read.photos", { count: fileIds.length })}
                     </span>
                   </div>
                 </div>
@@ -288,12 +292,12 @@ export const ExtractedStep = observer(function ExtractedStep() {
                   <div className="flex flex-col items-end gap-0.5">
                     {matchesTotal === null && (
                       <span className="text-[11px] font-semibold text-tone-warning-text">
-                        Total &middot; unsure
+                        {t("read.totalUnsure")}
                       </span>
                     )}
                     {matchesTotal === false && (
                       <span className="text-[11px] font-semibold text-tone-error-text">
-                        Total &middot; does not match
+                        {t("read.totalMismatch")}
                       </span>
                     )}
                     <span
@@ -306,7 +310,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                   </div>
                   <button
                     className="inline-flex items-center justify-center w-11 h-11 md:w-8 md:h-8 rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors ml-1"
-                    aria-label="Edit this receipt"
+                    aria-label={t("read.edit")}
                     onClick={() => {
                       uploadStore.startEditingExtraction(index);
                     }}
@@ -339,9 +343,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                     }}
                     className="h-5 w-5 cursor-pointer rounded border-border accent-primary"
                   />
-                  {uploadStore.selectedIndices.has(index)
-                    ? "Save this receipt"
-                    : "Leave this receipt out"}
+                  {uploadStore.selectedIndices.has(index) ? t("read.save") : t("read.leaveOut")}
                 </label>
               )}
 
@@ -349,11 +351,14 @@ export const ExtractedStep = observer(function ExtractedStep() {
                 <Note tone="info" className="rounded-none border-x-0 border-t-0 px-5 py-3.5">
                   <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                     <span>
-                      No date on the receipt, so it is dated the day you uploaded it:{" "}
-                      <strong>
-                        {PURCHASE_DAY.format(new Date(`${data.transaction_date}T00:00:00`))}
-                      </strong>
-                      .
+                      <Trans
+                        t={t}
+                        i18nKey="read.undated"
+                        values={{
+                          date: PURCHASE_DAY.format(new Date(`${data.transaction_date}T00:00:00`)),
+                        }}
+                        components={{ b: <strong /> }}
+                      />
                     </span>
                     <Button
                       variant="secondary"
@@ -363,7 +368,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                         uploadStore.startEditingExtraction(index);
                       }}
                     >
-                      Change date
+                      {t("read.changeDate")}
                     </Button>
                   </div>
                 </Note>
@@ -393,11 +398,8 @@ export const ExtractedStep = observer(function ExtractedStep() {
                   className="rounded-none border-x-0 border-t-0 px-5 py-3.5 items-start"
                 >
                   <div className="flex flex-col gap-0.5">
-                    <span className="font-bold">This doesn't look like a receipt</span>
-                    <span className="opacity-90">
-                      Please review carefully. You can proceed to resolve it manually or go back to
-                      upload a different photo.
-                    </span>
+                    <span className="font-bold">{t("read.notReceiptTitle")}</span>
+                    <span className="opacity-90">{t("read.notReceiptText")}</span>
                   </div>
                 </Note>
               )}
@@ -423,11 +425,15 @@ export const ExtractedStep = observer(function ExtractedStep() {
                     </IconTile>
                     <div className="flex flex-col gap-1">
                       <span className="text-[13px] font-bold text-foreground">
-                        You may already have this one
+                        {t("read.duplicateTitle")}
                       </span>
                       <span className="text-[12px] leading-relaxed text-muted-foreground prose tabular-nums">
-                        {merchantName}, {transactionDate}, {data.receipt_total} {data.currency} is
-                        already stored. Two trips on one day are perfectly normal — you decide.
+                        {t("read.duplicateText", {
+                          merchant: merchantName,
+                          date: transactionDate,
+                          total: data.receipt_total,
+                          currency: data.currency ?? "",
+                        })}
                       </span>
                     </div>
                   </div>
@@ -440,7 +446,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                         void uploadStore.resolveDuplicate(index, "skip");
                       }}
                     >
-                      Skip it
+                      {t("read.skip")}
                     </Button>
                     <Button
                       variant="primary"
@@ -450,7 +456,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                         void uploadStore.resolveDuplicate(index, "store");
                       }}
                     >
-                      Store as new
+                      {t("read.storeNew")}
                     </Button>
                   </div>
                 </div>
@@ -477,7 +483,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                     </IconTile>
                     <div className="flex flex-col gap-1">
                       <span className="text-[13px] font-bold text-foreground">
-                        {merchantName || "Receipt"} needs you
+                        {t("read.needsYou", { merchant: merchantName || t("read.receipt") })}
                       </span>
                       <span className="text-[12px] leading-relaxed text-muted-foreground prose">
                         {missingFieldsMessage(data)}
@@ -501,18 +507,18 @@ export const ExtractedStep = observer(function ExtractedStep() {
                           setEnteringTotalFor(index);
                         }}
                       >
-                        Enter the total
+                        {t("read.enterTotal")}
                       </Button>
                     ))}
                 </div>
               )}
 
               <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_48px_84px_92px_148px] items-center gap-3 px-5 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">
-                <span>Item</span>
-                <span className="text-right">Qty</span>
-                <span className="text-right">Unit</span>
-                <span className="text-right">Total</span>
-                <span>Category</span>
+                <span>{t("cols.item")}</span>
+                <span className="text-right">{t("cols.qty")}</span>
+                <span className="text-right">{t("cols.unit")}</span>
+                <span className="text-right">{t("cols.total")}</span>
+                <span>{t("cols.category")}</span>
               </div>
 
               {deduplicatedItems.map(({ item, idx }) => {
@@ -577,7 +583,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                       {item.total_price}
                       {item.discount && (
                         <span className="text-sm font-medium text-tone-primary-text whitespace-nowrap">
-                          incl. −{item.discount} off
+                          {t("read.discount", { amount: item.discount })}
                         </span>
                       )}
                     </span>
@@ -592,10 +598,10 @@ export const ExtractedStep = observer(function ExtractedStep() {
                         size="sm"
                         tone={categoryTone(item)}
                         title={
-                          item.category_is_low_confidence ? "Low confidence category" : undefined
+                          item.category_is_low_confidence ? t("read.lowConfidence") : undefined
                         }
                       >
-                        {item.category_name ?? "Uncategorized"}
+                        {categoryName(item.category_name ?? "Uncategorized")}
                       </Pill>
                     </span>
                   </div>
@@ -611,10 +617,10 @@ export const ExtractedStep = observer(function ExtractedStep() {
               >
                 <div className="flex items-center justify-between w-full">
                   <span className="text-[13px] text-muted-foreground tabular-nums">
-                    {deduplicatedItems.length} items &middot;{" "}
+                    {t("read.itemsCount", { count: deduplicatedItems.length })} &middot;{" "}
                     {data.computed_total
-                      ? `lines add up to ${data.computed_total}`
-                      : "a line has no price, so these cannot be added up"}
+                      ? t("read.linesAddUp", { total: data.computed_total })
+                      : t("read.cannotAdd")}
                   </span>
                   {matchesTotal === true && (
                     <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary">
@@ -630,7 +636,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                       >
                         <path d="M20 6 9 17l-5-5" />
                       </svg>
-                      Matches the printed total
+                      {t("read.matches")}
                     </span>
                   )}
                   {matchesTotal === false && (
@@ -649,9 +655,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                         <path d="M12 9v4" />
                         <path d="M12 17h.01" />
                       </svg>
-                      {!data.receipt_total
-                        ? "Nothing to check them against"
-                        : "Lines do not match printed total"}
+                      {!data.receipt_total ? t("read.nothingToCheck") : t("read.mismatch")}
                     </span>
                   )}
                 </div>
@@ -675,12 +679,11 @@ export const ExtractedStep = observer(function ExtractedStep() {
             >
               <path d="m15 18-6-6 6-6" />
             </svg>
-            Back to photos
+            {t("read.back")}
           </Button>
           {uploadStore.conflictsCount > 0 ? (
             <Button variant="primary" onClick={() => (uploadStore.currentStep = 3)}>
-              Resolve {uploadStore.conflictsCount}{" "}
-              {uploadStore.conflictsCount === 1 ? "thing" : "things"}
+              {t("read.resolve", { count: uploadStore.conflictsCount })}
               <svg
                 width="16"
                 height="16"
@@ -705,8 +708,8 @@ export const ExtractedStep = observer(function ExtractedStep() {
               }}
             >
               {uploadStore.selectedIndices.size === 0
-                ? "Nothing to store"
-                : `Store ${String(uploadStore.selectedIndices.size)} receipt${uploadStore.selectedIndices.size !== 1 ? "s" : ""}`}
+                ? t("read.nothingToStore")
+                : t("read.store", { count: uploadStore.selectedIndices.size })}
               <svg
                 width="16"
                 height="16"
@@ -736,13 +739,15 @@ export const ExtractedStep = observer(function ExtractedStep() {
  * corrected in the wizard; or, with no rate to be had, that it will wait in review.
  */
 function ConversionNote({ conversion, total }: { conversion: Conversion; total?: string | null }) {
+  const { t } = useTranslation("upload");
   const className = "rounded-none border-x-0 border-t-0 px-5 py-3.5";
   if (conversion.unavailable || !conversion.rate) {
     return (
       <Note tone="warning" className={className}>
-        No {conversion.currency} to {conversion.account_currency} rate could be found for this date.
-        It will be stored in {conversion.currency} and wait in review, not counted, until you enter
-        the amounts in {conversion.account_currency}.
+        {t("conversion.unavailable", {
+          currency: conversion.currency,
+          account: conversion.account_currency,
+        })}
       </Note>
     );
   }
@@ -755,7 +760,10 @@ function ConversionNote({ conversion, total }: { conversion: Conversion; total?:
             rateDate: conversion.rate_date ?? "",
             source: conversion.source ?? "",
           })
-        : `Paid in ${conversion.currency}; it will be counted in ${conversion.account_currency}.`}
+        : t("conversion.paidIn", {
+            currency: conversion.currency,
+            account: conversion.account_currency,
+          })}
     </Note>
   );
 }

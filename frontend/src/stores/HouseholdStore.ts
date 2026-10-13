@@ -5,6 +5,7 @@ import { apiClient } from "@/api/client";
 import { errorMessage, settle } from "@/api/errors";
 import { AsyncState } from "@/stores/AsyncState";
 import type { ToastStore } from "@/stores/ToastStore";
+import i18n from "@/i18n";
 
 export type Household = components["schemas"]["HouseholdRead"];
 export type HouseholdMember = components["schemas"]["HouseholdMemberRead"];
@@ -77,7 +78,7 @@ export class HouseholdStore {
       if (request !== this.monthRequest) return;
       if (response.error) {
         this.monthState.fail(
-          errorMessage(response.error, "The household's month could not be loaded"),
+          errorMessage(response.error, i18n.t("messages:household.monthFailed")),
         );
         return;
       }
@@ -97,7 +98,7 @@ export class HouseholdStore {
       if (request !== this.statisticsRequest) return;
       if (response.error) {
         this.statisticsState.fail(
-          errorMessage(response.error, "The household's statistics could not be loaded"),
+          errorMessage(response.error, i18n.t("messages:household.statisticsFailed")),
         );
         return;
       }
@@ -110,8 +111,10 @@ export class HouseholdStore {
   async setBudget(limit: string | null): Promise<boolean> {
     return this.save(
       () => apiClient.PUT("/api/v1/household/budget", { body: { budget_limit: limit } }),
-      "Could not save the household budget",
-      limit === null ? "Household budget removed." : "Household budget saved.",
+      i18n.t("messages:household.budgetFailed"),
+      limit === null
+        ? i18n.t("messages:household.budgetRemoved")
+        : i18n.t("messages:household.budgetSaved"),
     );
   }
 
@@ -128,8 +131,8 @@ export class HouseholdStore {
   async create(name: string): Promise<boolean> {
     return this.save(
       () => apiClient.POST("/api/v1/household", { body: { name } }),
-      "Could not create the household",
-      "Household created.",
+      i18n.t("messages:household.createFailed"),
+      i18n.t("messages:household.created"),
     );
   }
 
@@ -137,8 +140,8 @@ export class HouseholdStore {
   async rename(name: string): Promise<boolean> {
     return this.save(
       () => apiClient.PATCH("/api/v1/household", { body: { name } }),
-      "Could not rename the household",
-      "Household renamed.",
+      i18n.t("messages:household.renameFailed"),
+      i18n.t("messages:household.renamed"),
     );
   }
 
@@ -149,8 +152,8 @@ export class HouseholdStore {
         apiClient.DELETE("/api/v1/household/members/{user_id}", {
           params: { path: { user_id: userId } },
         }),
-      "Could not remove the member",
-      "Member removed.",
+      i18n.t("messages:household.removeFailed"),
+      i18n.t("messages:household.removed"),
     );
   }
 
@@ -159,10 +162,11 @@ export class HouseholdStore {
     this.saveState.start();
     const response = await settle(() => apiClient.POST("/api/v1/household/leave"));
     return runInAction(() => {
-      if (response.error) return this.failed(response.error, "Could not leave the household");
+      if (response.error)
+        return this.failed(response.error, i18n.t("messages:household.leaveFailed"));
       this.household = null;
       this.saveState.succeed();
-      this.toastStore.showSuccess("You left the household.");
+      this.toastStore.showSuccess(i18n.t("messages:household.left"));
       return true;
     });
   }
@@ -171,8 +175,8 @@ export class HouseholdStore {
   async regenerateInvite(): Promise<boolean> {
     return this.save(
       () => apiClient.POST("/api/v1/household/invite/regenerate"),
-      "Could not make a new invite link",
-      "New invite link made. The old one no longer works.",
+      i18n.t("messages:household.inviteFailed"),
+      i18n.t("messages:household.inviteMade"),
     );
   }
 
@@ -191,7 +195,7 @@ export class HouseholdStore {
       apiClient.GET("/api/v1/household/invites/{code}", { params: { path: { code } } }),
     );
     if (response.error) {
-      return { error: errorMessage(response.error, "This invite link is not valid.") };
+      return { error: errorMessage(response.error, i18n.t("messages:household.inviteInvalid")) };
     }
     return { invite: response.data };
   }
@@ -203,8 +207,8 @@ export class HouseholdStore {
   async join(code: string): Promise<boolean> {
     return this.save(
       () => apiClient.POST("/api/v1/household/join", { body: { code } }),
-      "Could not join the household",
-      "Welcome to the household.",
+      i18n.t("messages:household.joinFailed"),
+      i18n.t("messages:household.joined"),
       { toastErrors: false },
     );
   }

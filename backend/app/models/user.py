@@ -27,6 +27,9 @@ class User(Model):
         String(3), default="USD", server_default="USD", nullable=False
     )
     budget_limit: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    # The language the user chose to read the product in (F9.9); None until they choose,
+    # when the client goes by the browser's language instead.
+    language: Mapped[str | None] = mapped_column(String(2), nullable=True)
 
     role: Mapped[str] = mapped_column(String, default="user", server_default="user", nullable=False)
     # The secret part of the user's receipt forwarding address (F11.2); the domain

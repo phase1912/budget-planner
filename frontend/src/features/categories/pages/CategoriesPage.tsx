@@ -11,6 +11,8 @@ import { CreateCategoryDialog } from "../components/CreateCategoryDialog";
 import { CustomCategoryRow } from "../components/CustomCategoryRow";
 import { DeleteCategoryDialog } from "../components/DeleteCategoryDialog";
 import { formatCategoryTotals, formatItemCount } from "../components/formatCategoryTotals";
+import { useTranslation } from "react-i18next";
+import { categoryName } from "@/shared/categoryName";
 
 /**
  * The taxonomy: built-in categories with their totals, and the user's own,
@@ -22,6 +24,7 @@ import { formatCategoryTotals, formatItemCount } from "../components/formatCateg
 export const CategoriesPage = observer(function CategoriesPage() {
   const { categoriesStore, toastStore } = useStores();
   const [creating, setCreating] = useState(false);
+  const { t } = useTranslation("categories");
   const [deleting, setDeleting] = useState<Category | null>(null);
 
   useEffect(() => {
@@ -44,11 +47,9 @@ export const CategoriesPage = observer(function CategoriesPage() {
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-col gap-1">
             <h1 className="m-0 text-[24px] md:text-[28px] font-bold tracking-[-0.02em] text-foreground">
-              The taxonomy
+              {t("taxonomy.title")}
             </h1>
-            <p className="m-0 text-lg text-muted-foreground">
-              Both the agent and you assign from this list.
-            </p>
+            <p className="m-0 text-lg text-muted-foreground">{t("taxonomy.subtitle")}</p>
           </div>
           <Button
             onClick={() => {
@@ -56,12 +57,12 @@ export const CategoriesPage = observer(function CategoriesPage() {
             }}
           >
             <Plus size={16} aria-hidden="true" />
-            New category
+            {t("taxonomy.new")}
           </Button>
         </header>
 
         {categoriesStore.isLoading && categoriesStore.categories.length === 0 ? (
-          <div className="p-4.5 text-center text-muted-foreground">Loading…</div>
+          <div className="p-4.5 text-center text-muted-foreground">{t("taxonomy.loading")}</div>
         ) : categoriesStore.error ? (
           <div className="p-4.5 text-center text-tone-error-text">{categoriesStore.error}</div>
         ) : (
@@ -69,11 +70,9 @@ export const CategoriesPage = observer(function CategoriesPage() {
             <Card flush>
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 px-4.5 py-3.25 border-b border-border">
                 <h2 className="m-0 text-md font-bold text-foreground whitespace-nowrap">
-                  Built in
+                  {t("taxonomy.builtIn")}
                 </h2>
-                <span className="text-base text-muted-foreground">
-                  Cannot be renamed or removed
-                </span>
+                <span className="text-base text-muted-foreground">{t("taxonomy.builtInNote")}</span>
               </div>
               <ul className="m-0 p-0 list-none">
                 {categoriesStore.builtInCategories.map((cat) => (
@@ -84,12 +83,12 @@ export const CategoriesPage = observer(function CategoriesPage() {
                     <span className="flex items-center gap-2.5 text-lg font-semibold text-foreground whitespace-nowrap">
                       <CategoryDot name={cat.name} />
                       <span className={cat.name === "Uncategorized" ? "text-muted-foreground" : ""}>
-                        {cat.name}
+                        {categoryName(cat.name)}
                       </span>
                     </span>
                     <span className="tabular-nums text-md text-muted-foreground whitespace-nowrap">
                       {cat.name === "Uncategorized" && cat.item_count > 0
-                        ? `${formatItemCount(cat.item_count)} · awaiting your review`
+                        ? t("taxonomy.awaiting", { items: formatItemCount(cat.item_count) })
                         : formatCategoryTotals(cat)}
                     </span>
                   </li>
@@ -100,10 +99,10 @@ export const CategoriesPage = observer(function CategoriesPage() {
             {showYours && (
               <Card flush>
                 <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 px-4.5 py-3.25 border-b border-border">
-                  <h2 className="m-0 text-md font-bold text-foreground whitespace-nowrap">Yours</h2>
-                  <span className="text-base text-muted-foreground">
-                    Available to the agent from the moment you create them
-                  </span>
+                  <h2 className="m-0 text-md font-bold text-foreground whitespace-nowrap">
+                    {t("taxonomy.yours")}
+                  </h2>
+                  <span className="text-base text-muted-foreground">{t("taxonomy.yoursNote")}</span>
                 </div>
                 <ul className="m-0 p-0 list-none">
                   {customCategories.map((cat) => (

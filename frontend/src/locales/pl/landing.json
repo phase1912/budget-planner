@@ -1,0 +1,22 @@
+{
+  "title1": "Zrób zdjęcie paragonu.",
+  "title2": "Dostań budżet.",
+  "lead": "Każdą pozycję odczytujemy ze zdjęcia, przypisujemy do kategorii i liczymy w miesiącu, w którym naprawdę ją kupiono.",
+  "createAccount": "Załóż konto",
+  "haveOne": "Mam już konto",
+  "steps": {
+    "shoot": {
+      "title": "Zrób zdjęcie",
+      "text": "Jedno zdjęcie albo kilka zachodzących na siebie przy długim paragonie."
+    },
+    "check": {
+      "title": "Sprawdź, co odczytaliśmy",
+      "text": "Wszystko, co niepewne, oznaczamy dla Ciebie zamiast po cichu zgadywać."
+    },
+    "see": {
+      "title": "Zobacz, na co poszło",
+      "text": "Wydatki od początku miesiąca według kategorii, w porównaniu z Twoim limitem."
+    }
+  },
+  "privacy": "Zdjęcia paragonów i odczytane z nich dane są przechowywane w postaci zaszyfrowanej i widoczne tylko dla Ciebie."
+}

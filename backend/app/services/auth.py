@@ -5,7 +5,7 @@ from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.errors import AuthenticationError, RegistrationError
+from app.api.errors import AuthenticationError, ProblemCode, RegistrationError
 from app.core.config import get_settings
 from app.core.security import (
     create_access_token,
@@ -52,7 +52,9 @@ class AuthService:
     async def register(self, request: RegisterRequest) -> tuple[UserResponse, str, str]:
         problems = password_problems(request.password)
         if problems:
-            raise RegistrationError(f"The password needs {', '.join(problems)}.")
+            raise RegistrationError(
+                f"The password needs {', '.join(problems)}.", code=ProblemCode.WEAK_PASSWORD
+            )
 
         existing_user = await self.repo.get_by_email(request.email)
         if existing_user:
@@ -82,10 +84,14 @@ class AuthService:
 
         if not user:
             verify_password(request.password, get_dummy_hash())
-            raise AuthenticationError("Invalid email or password.")
+            raise AuthenticationError(
+                "Invalid email or password.", code=ProblemCode.INVALID_CREDENTIALS
+            )
 
         if not verify_password(request.password, user.password_hash):
-            raise AuthenticationError("Invalid email or password.")
+            raise AuthenticationError(
+                "Invalid email or password.", code=ProblemCode.INVALID_CREDENTIALS
+            )
 
         access_token, refresh_token = await self._create_session(user.id)
         return UserResponse.model_validate(user), access_token, refresh_token
@@ -109,7 +115,9 @@ class AuthService:
                 )
                 await self.session.execute(revoke_stmt)
                 await self.session.flush()
-            raise AuthenticationError("Session expired. Please log in again.")
+            raise AuthenticationError(
+                "Session expired. Please log in again.", code=ProblemCode.SESSION_EXPIRED
+            )
 
         rt.is_used = True
         rt.revoked_at = now

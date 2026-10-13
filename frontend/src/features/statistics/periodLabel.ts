@@ -1,6 +1,8 @@
-const DAY = new Intl.DateTimeFormat("en-GB", { day: "numeric" });
-const DAY_MONTH = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" });
-const DAY_MONTH_YEAR = new Intl.DateTimeFormat("en-GB", {
+import { dateFormat } from "@/i18n/format";
+import i18n from "@/i18n";
+const DAY = dateFormat({ day: "numeric" });
+const DAY_MONTH = dateFormat({ day: "numeric", month: "short" });
+const DAY_MONTH_YEAR = dateFormat({
   day: "numeric",
   month: "short",
   year: "numeric",
@@ -25,7 +27,7 @@ export function periodLabel(start: string, end: string): string {
   return `${first} – ${DAY_MONTH_YEAR.format(to)}`;
 }
 
-const MONTH = new Intl.DateTimeFormat("en-GB", { month: "long" });
+const MONTH = dateFormat({ month: "long" });
 
 /**
  * The note a comparison stopping partway through a month carries (BRD D4, E3):
@@ -41,19 +43,19 @@ export function likeForLikeNote(
   const to = localDay(current.end);
   if (from.getFullYear() === to.getFullYear() && from.getMonth() === to.getMonth()) {
     const days = to.getDate();
-    return (
-      `${MONTH.format(to)} is still running, so it is compared against the same ` +
-      `${days === 1 ? "day" : `${String(days)} days`} of ${MONTH.format(localDay(previous.start))} ` +
-      "rather than the whole month."
-    );
+    return i18n.t("statistics:likeForLike.month", {
+      count: days,
+      month: MONTH.format(to),
+      previous: MONTH.format(localDay(previous.start)),
+    });
   }
-  return (
-    `${periodLabel(current.start, current.end)} stops partway through a month, so it is ` +
-    `compared against ${periodLabel(previous.start, previous.end)} rather than whole months.`
-  );
+  return i18n.t("statistics:likeForLike.range", {
+    current: periodLabel(current.start, current.end),
+    previous: periodLabel(previous.start, previous.end),
+  });
 }
 
-const MONTH_YEAR = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" });
+const MONTH_YEAR = dateFormat({ month: "long", year: "numeric" });
 
 /**
  * A period as a phrase to name it by: "March 2025" for one whole calendar month,

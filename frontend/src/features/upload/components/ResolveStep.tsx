@@ -44,6 +44,8 @@ interface ExtractedDataPayload {
 }
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { formatAmount } from "@/i18n/format";
 
 /**
  * Inline component for resolving a missing or low-confidence receipt total.
@@ -59,6 +61,7 @@ function ResolveTotalInline({
   merchantName: string;
   isMissing: boolean;
 }) {
+  const { t } = useTranslation("upload");
   return (
     <Card flush>
       <div className="flex flex-col gap-4 p-4 border-b border-border">
@@ -81,7 +84,7 @@ function ResolveTotalInline({
           </span>
           <div className="flex flex-col gap-[2px]">
             <span className="text-[15px] font-bold">
-              {isMissing ? "No total anywhere on the photos" : "The printed total was hard to read"}
+              {isMissing ? t("resolve.noTotal") : t("resolve.hardTotal")}
             </span>
           </div>
           <span className="inline-flex items-center px-2 py-0.5 rounded-pill bg-muted text-[12px] font-semibold">
@@ -104,6 +107,7 @@ function ResolveTotalInline({
 export const ResolveStep = observer(function ResolveStep() {
   const [expandedMatches, setExpandedMatches] = useState<Set<string>>(new Set());
   const { uploadStore } = useStores();
+  const { t } = useTranslation("upload");
 
   const handleBack = () => {
     uploadStore.currentStep = 2;
@@ -162,7 +166,7 @@ export const ResolveStep = observer(function ResolveStep() {
                 <path d="M20 6 9 17l-5-5" />
               </svg>
             </span>
-            <span className="text-[14px] font-semibold text-foreground">Photos</span>
+            <span className="text-[14px] font-semibold text-foreground">{t("steps.photos")}</span>
           </span>
           <span className="grow h-[2px] rounded-[1px] bg-primary mx-4"></span>
           <button
@@ -184,29 +188,27 @@ export const ResolveStep = observer(function ResolveStep() {
                 <path d="M20 6 9 17l-5-5" />
               </svg>
             </span>
-            <span className="text-[14px] font-semibold text-foreground">What we read</span>
+            <span className="text-[14px] font-semibold text-foreground">{t("steps.read")}</span>
           </button>
           <span className="grow h-[2px] rounded-[1px] bg-primary mx-4"></span>
           <span className="inline-flex items-center gap-2.5">
             <span className="inline-flex items-center justify-center w-[28px] h-[28px] border border-transparent rounded-pill bg-primary text-primary-foreground text-[13px] font-bold">
               3
             </span>
-            <span className="text-[14px] font-semibold text-foreground">Resolve</span>
+            <span className="text-[14px] font-semibold text-foreground">{t("steps.resolve")}</span>
           </span>
         </div>
 
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col gap-1">
             <h1 className="m-0 text-[22px] font-bold tracking-tight md:text-[30px]">
-              Your call on {conflictsCount} things
+              {t("resolve.title", { count: conflictsCount })}
             </h1>
-            <p className="m-0 text-[15px] text-muted-foreground mt-1">
-              Nothing is stored until this list is empty.
-            </p>
+            <p className="m-0 text-[15px] text-muted-foreground mt-1">{t("resolve.untilEmpty")}</p>
           </div>
           <div className="flex w-full flex-col items-start gap-[7px] md:w-[240px] md:items-end">
             <span className="text-[13px] font-semibold text-muted-foreground">
-              {settledCount} of {conflictsCount} settled
+              {t("resolve.settled", { done: settledCount, total: conflictsCount })}
             </span>
             <span className="relative w-full h-[8px] bg-muted overflow-hidden rounded-pill">
               <span
@@ -224,7 +226,7 @@ export const ResolveStep = observer(function ResolveStep() {
           if (data.is_skipped || data.already_stored) return null;
           const matches = data.position_matches ?? [];
           const items = data.line_items ?? [];
-          const merchantName = data.merchant_name ?? "Unknown merchant";
+          const merchantName = data.merchant_name ?? t("read.unknownMerchant");
 
           const cards: React.ReactNode[] = [];
 
@@ -271,11 +273,15 @@ export const ResolveStep = observer(function ResolveStep() {
                     </span>
                     <div className="flex flex-col gap-[2px]">
                       <span className="text-[15px] font-bold">
-                        {isSettled ? "Duplicate resolved" : "You may already have this receipt"}
+                        {isSettled ? t("resolve.dupResolved") : t("resolve.dupTitle")}
                       </span>
                       <span className="text-[13px] font-semibold text-muted-foreground">
-                        {merchantName}, {data.transaction_date ?? "unknown date"},{" "}
-                        {data.receipt_total ?? "?"} {data.currency ?? "PLN"} is already stored
+                        {t("resolve.dupText", {
+                          merchant: merchantName,
+                          date: data.transaction_date ?? t("resolve.unknownDate"),
+                          total: data.receipt_total ?? "?",
+                          currency: data.currency ?? "PLN",
+                        })}
                       </span>
                     </div>
                     <span className="inline-flex items-center px-2 py-0.5 rounded-pill bg-muted text-[12px] font-semibold">
@@ -291,7 +297,7 @@ export const ResolveStep = observer(function ResolveStep() {
                           void uploadStore.resolveDuplicate(eIdx, "skip");
                         }}
                       >
-                        Skip
+                        {t("resolve.skip")}
                       </Button>
                       <Button
                         variant="primary"
@@ -300,13 +306,15 @@ export const ResolveStep = observer(function ResolveStep() {
                           void uploadStore.resolveDuplicate(eIdx, "store");
                         }}
                       >
-                        Store anyway
+                        {t("resolve.storeAnyway")}
                       </Button>
                     </div>
                   )}
                   {isSettled && (
                     <span className="text-[13px] font-semibold text-muted-foreground">
-                      {data.duplicate_resolved === "stored" ? "Stored" : "Skipped"}
+                      {data.duplicate_resolved === "stored"
+                        ? t("resolve.stored")
+                        : t("resolve.skipped")}
                     </span>
                   )}
                 </div>
@@ -361,14 +369,14 @@ export const ResolveStep = observer(function ResolveStep() {
                         </svg>
                       </span>
                       <span className="text-[15px] font-bold">
-                        &ldquo;{itemA.name}&rdquo; appears in both photos
+                        {t("resolve.inBoth", { name: itemA.name })}
                       </span>
                       <span className="inline-flex items-center px-2 py-0.5 rounded-pill bg-muted text-[12px] font-medium text-foreground">
                         {merchantName}
                       </span>
                     </div>
                     <span className="text-[13px] font-semibold text-muted-foreground">
-                      {mIdx + 1} of {conflictsCount}
+                      {t("resolve.position", { n: mIdx + 1, total: conflictsCount })}
                     </span>
                   </div>
 
@@ -390,11 +398,10 @@ export const ResolveStep = observer(function ResolveStep() {
                       </svg>
                       <div className="flex flex-col gap-1">
                         <span className="text-[13px] font-bold text-foreground">
-                          Comparison not possible
+                          {t("resolve.notPossible")}
                         </span>
                         <span className="text-[12px] leading-relaxed">
-                          {match.reason ??
-                            "Overlap checking is skipped rather than guessed. Retake that frame and it runs again."}
+                          {match.reason ?? t("resolve.notPossibleText")}
                         </span>
                       </div>
                     </div>
@@ -428,13 +435,14 @@ export const ResolveStep = observer(function ResolveStep() {
                       </span>
                       <div className="flex flex-col gap-0.5">
                         <span className="text-[15px] font-bold text-muted-foreground">
-                          &ldquo;{itemA.name}&rdquo; kept as{" "}
-                          {match.result === "same" ? "one purchase" : "two purchases"}
+                          {match.result === "same"
+                            ? t("resolve.keptOne", { name: itemA.name })
+                            : t("resolve.keptTwo", { name: itemA.name })}
                         </span>
                         <span className="text-[13px] font-semibold text-muted-foreground">
                           {match.result === "same"
-                            ? "Counted once in the total."
-                            : "Counted twice in the total."}
+                            ? t("resolve.countedOnce")
+                            : t("resolve.countedTwice")}
                         </span>
                       </div>
                       <span className="inline-flex items-center px-2 py-0.5 rounded-pill bg-muted text-[12px] font-medium text-foreground ml-2">
@@ -452,7 +460,7 @@ export const ResolveStep = observer(function ResolveStep() {
                           setExpandedMatches(next);
                         }}
                       >
-                        Change
+                        {t("resolve.change")}
                       </Button>
                       <svg
                         width="17"
@@ -495,22 +503,20 @@ export const ResolveStep = observer(function ResolveStep() {
                       </svg>
                     </span>
                     <span className="text-[15px] font-bold">
-                      &ldquo;{itemA.name}&rdquo; appears in both photos
+                      {t("resolve.inBoth", { name: itemA.name })}
                     </span>
                     <span className="inline-flex items-center px-2 py-0.5 rounded-pill bg-muted text-[12px] font-medium text-foreground">
                       {merchantName}
                     </span>
                   </div>
                   <span className="text-[13px] font-semibold text-muted-foreground">
-                    {mIdx + 1} of {conflictsCount}
+                    {t("resolve.position", { n: mIdx + 1, total: conflictsCount })}
                   </span>
                 </div>
 
                 <div className="p-4 md:p-[18px]">
                   <p className="text-[15px] leading-relaxed text-foreground mb-4">
-                    The receipt was shot in two overlapping frames. This line sits at the bottom of
-                    the first and the top of the second &mdash; one purchase caught twice, or two
-                    identical purchases?
+                    {t("resolve.overlapQuestion")}
                   </p>
 
                   <div className="flex flex-col md:flex-row gap-[14px] mb-[18px]">
@@ -562,7 +568,7 @@ export const ResolveStep = observer(function ResolveStep() {
                               </svg>
                             )}
                           </span>
-                          One item, counted once
+                          {t("resolve.oneItem")}
                         </span>
                       </div>
                       <div className="flex items-baseline justify-between border-t border-dashed border-border pt-2.5 mt-1">
@@ -622,14 +628,14 @@ export const ResolveStep = observer(function ResolveStep() {
                             </svg>
                           )}
                         </span>
-                        Two items, counted twice
+                        {t("resolve.twoItems")}
                       </span>
                       <div className="flex items-baseline justify-between border-t border-dashed border-border pt-2.5 mt-1">
                         <span className="text-[13px] font-semibold text-muted-foreground">
                           2 &times; {itemA.unit_price}
                         </span>
                         <span className="text-[17px] font-bold">
-                          {(parseFloat(itemA.total_price) * 2).toFixed(2)} {data.currency ?? "PLN"}
+                          {formatAmount(parseFloat(itemA.total_price) * 2)} {data.currency ?? "PLN"}
                         </span>
                       </div>
                     </div>
@@ -639,17 +645,19 @@ export const ResolveStep = observer(function ResolveStep() {
                     <div className="grid grid-cols-[108px_1fr_1fr_24px] items-center gap-3 py-2 text-[13px]">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground"></span>
                       <span className="flex items-center gap-2 text-[12px] font-semibold text-primary">
-                        <span className="w-2 h-2 rounded-full bg-primary"></span>Photo 1, bottom
+                        <span className="w-2 h-2 rounded-full bg-primary"></span>
+                        {t("resolve.photo1")}
                       </span>
                       <span className="flex items-center gap-2 text-[12px] font-semibold text-accent">
-                        <span className="w-2 h-2 rounded-full bg-accent"></span>Photo 2, top
+                        <span className="w-2 h-2 rounded-full bg-accent"></span>
+                        {t("resolve.photo2")}
                       </span>
                       <span></span>
                     </div>
 
                     <div className="grid grid-cols-[108px_1fr_1fr_24px] items-center gap-3 py-2 text-[13px] border-t border-border/50">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                        Name
+                        {t("resolve.name")}
                       </span>
                       <span>{itemA.name}</span>
                       <span>{itemB.name}</span>
@@ -672,7 +680,7 @@ export const ResolveStep = observer(function ResolveStep() {
                     </div>
                     <div className="grid grid-cols-[108px_1fr_1fr_24px] items-center gap-3 py-2 text-[13px] border-t border-border/50">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                        Quantity
+                        {t("resolve.quantity")}
                       </span>
                       <span className="font-mono">{itemA.quantity}</span>
                       <span className="font-mono">{itemB.quantity}</span>
@@ -695,7 +703,7 @@ export const ResolveStep = observer(function ResolveStep() {
                     </div>
                     <div className="grid grid-cols-[108px_1fr_1fr_24px] items-center gap-3 py-2 text-[13px] border-t border-border/50">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                        Unit price
+                        {t("resolve.unitPrice")}
                       </span>
                       <span className="font-mono">
                         {itemA.unit_price} {data.currency ?? "PLN"}
@@ -722,7 +730,7 @@ export const ResolveStep = observer(function ResolveStep() {
                     </div>
                     <div className="grid grid-cols-[108px_1fr_1fr_24px] items-center gap-3 py-2 text-[13px] border-t border-border/50">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                        Line total
+                        {t("resolve.lineTotal")}
                       </span>
                       <span className="font-mono">
                         {itemA.total_price} {data.currency ?? "PLN"}
@@ -771,14 +779,14 @@ export const ResolveStep = observer(function ResolveStep() {
             >
               <path d="m15 18-6-6 6-6" />
             </svg>
-            Back to what we read
+            {t("resolve.back")}
           </Button>
           <div className="flex items-center gap-3.5">
             <span className="text-[13px] font-semibold text-muted-foreground">
-              {conflictsCount - settledCount} still open
+              {t("resolve.open", { count: conflictsCount - settledCount })}
             </span>
             <Button variant="primary" disabled={settledCount < conflictsCount}>
-              Store {extractions.length} receipts
+              {t("resolve.store", { count: extractions.length })}
               <svg
                 width="16"
                 height="16"

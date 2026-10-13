@@ -4,8 +4,11 @@ import { Card } from "@/shared/components";
 import type { CategorySpend } from "@/stores/CategoriesStore";
 import { CategoryDot } from "./CategoryDot";
 import { categoryColor } from "./categoryColor";
+import { numberFormat } from "@/i18n/format";
+import { useTranslation } from "react-i18next";
+import { categoryName } from "@/shared/categoryName";
 
-const AMOUNT = new Intl.NumberFormat("en-US", {
+const AMOUNT = numberFormat({
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
@@ -34,6 +37,7 @@ export const CategorySpendList = observer(function CategorySpendList({
   onSelect,
   hint,
 }: CategorySpendListProps) {
+  const { t } = useTranslation(["categories", "dashboard"]);
   if (spend.length === 0) return null;
   const largest = Math.max(...spend.map((c) => Number(c.total_amount)), 0);
   const overall = spend.reduce((sum, c) => sum + Number(c.total_amount), 0);
@@ -41,15 +45,15 @@ export const CategorySpendList = observer(function CategorySpendList({
   return (
     <Card className="flex flex-col gap-3 px-4.5 py-4 md:px-6 md:py-5.5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-        <h2 className="m-0 text-[16px] font-bold">Where it went</h2>
+        <h2 className="m-0 text-[16px] font-bold">{t("dashboard:top.title")}</h2>
         <span className="text-base text-muted-foreground">
-          {hint ?? (selectedId ? "Showing one category" : "Highest first · pick one to filter")}
+          {hint ?? (selectedId ? t("spend.showingOne") : t("spend.pickOne"))}
         </span>
       </div>
       <ul className="m-0 p-0 list-none flex flex-col gap-0.5">
         {spend.map((category) => {
           const amount = Number(category.total_amount);
-          const name = category.name ?? "No category";
+          const name = category.name ?? "";
           const selected = category.category_id !== null && category.category_id === selectedId;
           const share = overall > 0 ? Math.round((amount / overall) * 100) : 0;
           return (
@@ -67,7 +71,7 @@ export const CategorySpendList = observer(function CategorySpendList({
               >
                 <span className="flex min-w-0 items-center gap-2.5 text-md font-semibold">
                   <CategoryDot name={name} />
-                  <span className="truncate">{name}</span>
+                  <span className="truncate">{categoryName(category.name)}</span>
                 </span>
                 <span className="col-span-2 row-start-2 block h-2 rounded-[4px] bg-muted md:col-span-1 md:row-start-auto">
                   <span

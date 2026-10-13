@@ -4,6 +4,7 @@ import { CalendarDays } from "lucide-react";
 import { Button } from "../Button/Button";
 import { Input } from "../Input/Input";
 import { Modal, ModalBody, ModalFooter, ModalHeader } from "../Modal/Modal";
+import { useTranslation } from "react-i18next";
 
 export interface DateRangeFilterProps {
   /** Current bounds as days (YYYY-MM-DD), both included, or undefined for "all dates". */
@@ -36,6 +37,7 @@ export function DateRangeFilter({
   onOpenChange,
 }: DateRangeFilterProps) {
   const id = useId();
+  const { t } = useTranslation();
   const [openHere, setOpenHere] = useState(false);
   const isOpen = openFromOutside ?? openHere;
   const setIsOpen = (open: boolean) => {
@@ -101,7 +103,7 @@ export function DateRangeFilter({
             isFilterActive && !label ? "text-primary-foreground mr-1" : "text-muted-foreground mr-1"
           }
         />
-        {label ?? (isFilterActive ? "Filtered dates" : "All dates")}
+        {label ?? (isFilterActive ? t("dates.filtered") : t("dates.all"))}
       </Button>
 
       <Modal
@@ -112,12 +114,12 @@ export function DateRangeFilter({
         className="w-full max-w-[400px]"
       >
         <ModalHeader>
-          <h2 className="text-xl font-bold">Filter by date</h2>
+          <h2 className="text-xl font-bold">{t("dates.title")}</h2>
         </ModalHeader>
         <ModalBody className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <label htmlFor={`${id}-mode`} className="text-sm font-medium text-muted-foreground">
-              Mode
+              {t("dates.mode")}
             </label>
             <select
               id={`${id}-mode`}
@@ -127,17 +129,17 @@ export function DateRangeFilter({
                 setMode(e.target.value as "all" | "date" | "month" | "range");
               }}
             >
-              {allowAll && <option value="all">All dates</option>}
-              <option value="date">Specific date</option>
-              <option value="month">Specific month</option>
-              <option value="range">Date range</option>
+              {allowAll && <option value="all">{t("dates.all")}</option>}
+              <option value="date">{t("dates.specificDate")}</option>
+              <option value="month">{t("dates.specificMonth")}</option>
+              <option value="range">{t("dates.range")}</option>
             </select>
           </div>
 
           {mode === "date" && (
             <div className="flex flex-col gap-1.5">
               <label htmlFor={`${id}-date`} className="text-sm font-medium text-muted-foreground">
-                Date
+                {t("dates.date")}
               </label>
               <Input
                 id={`${id}-date`}
@@ -153,7 +155,7 @@ export function DateRangeFilter({
           {mode === "month" && (
             <div className="flex flex-col gap-1.5">
               <label htmlFor={`${id}-month`} className="text-sm font-medium text-muted-foreground">
-                Month
+                {t("dates.month")}
               </label>
               <Input
                 id={`${id}-month`}
@@ -170,7 +172,7 @@ export function DateRangeFilter({
             <div className="flex gap-4">
               <div className="flex flex-col gap-1.5 flex-1">
                 <label htmlFor={`${id}-from`} className="text-sm font-medium text-muted-foreground">
-                  From
+                  {t("dates.from")}
                 </label>
                 <Input
                   id={`${id}-from`}
@@ -183,7 +185,7 @@ export function DateRangeFilter({
               </div>
               <div className="flex flex-col gap-1.5 flex-1">
                 <label htmlFor={`${id}-to`} className="text-sm font-medium text-muted-foreground">
-                  To
+                  {t("dates.to")}
                 </label>
                 <Input
                   id={`${id}-to`}
@@ -206,10 +208,10 @@ export function DateRangeFilter({
                 setIsOpen(false);
               }}
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <Button variant="primary" onClick={applyFilter}>
-              Apply filter
+              {t("dates.apply")}
             </Button>
           </div>
         </ModalFooter>

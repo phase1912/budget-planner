@@ -5,7 +5,7 @@ import secrets
 import uuid
 from decimal import Decimal
 
-from app.api.errors import DomainError, NotFoundError, PermissionDeniedError
+from app.api.errors import DomainError, NotFoundError, PermissionDeniedError, ProblemCode
 from app.models.household import Household, HouseholdMember, HouseholdRole
 from app.models.user import User
 from app.repository.household import HouseholdRepository
@@ -36,7 +36,10 @@ class HouseholdService:
         so every receipt counts towards one shared budget at most (ADR-0017).
         """
         if await self.households.membership_of(user.id):
-            raise DomainError("You already belong to a household; leave it first.")
+            raise DomainError(
+                "You already belong to a household; leave it first.",
+                code=ProblemCode.ALREADY_IN_HOUSEHOLD,
+            )
         household = Household(
             name=name, members=[HouseholdMember(user_id=user.id, role=HouseholdRole.OWNER)]
         )
@@ -62,7 +65,10 @@ class HouseholdService:
             await self.households.delete(household)
             return
         if membership.role == HouseholdRole.OWNER:
-            raise DomainError("Remove the other members before leaving the household you own.")
+            raise DomainError(
+                "Remove the other members before leaving the household you own.",
+                code=ProblemCode.OWNER_CANNOT_LEAVE,
+            )
         await self.households.remove_member(membership)
 
     async def remove_member(self, user: User, member_user_id: uuid.UUID) -> Household:
@@ -73,12 +79,17 @@ class HouseholdService:
         """
         membership = await self._owned_by(user)
         if member_user_id == user.id:
-            raise DomainError("Leave the household instead of removing yourself.")
+            raise DomainError(
+                "Leave the household instead of removing yourself.",
+                code=ProblemCode.CANNOT_REMOVE_SELF,
+            )
         target = next(
             (m for m in membership.household.members if m.user_id == member_user_id), None
         )
         if target is None:
-            raise NotFoundError("No such member in your household.")
+            raise NotFoundError(
+                "No such member in your household.", code=ProblemCode.MEMBER_NOT_FOUND
+            )
         await self.households.remove_member(target)
         membership.household.members.remove(target)
         return membership.household
@@ -118,7 +129,10 @@ class HouseholdService:
         """
         household = await self.households.by_invite_code(code)
         if household is None:
-            raise NotFoundError("This invite link is not valid. Ask for a new one.")
+            raise NotFoundError(
+                "This invite link is not valid. Ask for a new one.",
+                code=ProblemCode.INVITE_INVALID,
+            )
         return household
 
     async def join(self, user: User, code: str) -> Household:
@@ -131,7 +145,10 @@ class HouseholdService:
         """
         household = await self.invited_to(code)
         if await self.households.membership_of(user.id):
-            raise DomainError("You already belong to a household; leave it to join another.")
+            raise DomainError(
+                "You already belong to a household; leave it to join another.",
+                code=ProblemCode.ALREADY_IN_HOUSEHOLD,
+            )
         currency = _currency_of(household)
         if currency is not None and user.currency != currency:
             # A new account has had no reason to pick a currency yet; it takes the
@@ -141,7 +158,9 @@ class HouseholdService:
             else:
                 raise DomainError(
                     f"This household keeps its budget in {currency} and your account is in "
-                    f"{user.currency}. Only accounts in the same currency can share a budget."
+                    f"{user.currency}. Only accounts in the same currency can share a budget.",
+                    code=ProblemCode.HOUSEHOLD_CURRENCY_MISMATCH,
+                    params={"household_currency": currency, "account_currency": user.currency},
                 )
         await self.households.add_member(
             household, HouseholdMember(user_id=user.id, role=HouseholdRole.MEMBER)
@@ -154,13 +173,17 @@ class HouseholdService:
     async def _membership(self, user: User) -> HouseholdMember:
         membership = await self.households.membership_of(user.id)
         if membership is None:
-            raise NotFoundError("You do not belong to a household.")
+            raise NotFoundError(
+                "You do not belong to a household.", code=ProblemCode.NOT_IN_HOUSEHOLD
+            )
         return membership
 
     async def _owned_by(self, user: User) -> HouseholdMember:
         membership = await self._membership(user)
         if membership.role != HouseholdRole.OWNER:
-            raise PermissionDeniedError("Only the household's owner can do this.")
+            raise PermissionDeniedError(
+                "Only the household's owner can do this.", code=ProblemCode.OWNER_ONLY
+            )
         return membership
 
 

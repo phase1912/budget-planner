@@ -47,6 +47,7 @@ def _mock_user() -> User:
     user.last_name = "User"
     user.currency = "USD"
     user.budget_limit = None
+    user.language = None
     user.forwarding_token = "0123456789abcdef"
     return user
 

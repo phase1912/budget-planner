@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useStores } from "@/stores/StoreContext";
 import { API_BASE_URL } from "@/api/client";
+import { useTranslation } from "react-i18next";
 
 interface SecureImageProps {
   fileId: string;
@@ -10,6 +11,7 @@ interface SecureImageProps {
 
 export function SecureImage({ fileId, className, alt }: SecureImageProps) {
   const { authStore } = useStores();
+  const { t } = useTranslation();
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
 
@@ -28,7 +30,7 @@ export function SecureImage({ fileId, className, alt }: SecureImageProps) {
         <div
           className={`bg-muted flex items-center justify-center text-xs text-muted-foreground ${className ?? ""}`}
         >
-          Failed to load
+          {t("imageFailed")}
         </div>
       )}
       {!error && (

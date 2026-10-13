@@ -103,7 +103,7 @@ describe("household views (F12.5)", () => {
     renderWith(store, <HouseholdMonthView year={2026} month={10} currency="PLN" />);
 
     expect(await screen.findByText("250.00")).toBeInTheDocument();
-    expect(screen.getByText(/25% of/)).toBeInTheDocument();
+    expect(screen.getByText(/25% of the household.s 1,000.00 PLN limit/)).toBeInTheDocument();
     expect(screen.getByText("Anna")).toBeInTheDocument();
     expect(screen.getByText("60%")).toBeInTheDocument();
     expect(screen.getByText("of which private: 120.00 PLN")).toBeInTheDocument();

@@ -198,7 +198,8 @@ async def test_a_name_already_in_the_taxonomy_is_refused(
         response = await client.post("/api/v1/categories", json={"name": name})
 
     assert response.status_code == 409
-    assert response.json()["code"] == "domain_error"
+    assert response.json()["code"] == "category_exists"
+    assert response.json()["params"] == {"name": name}
 
 
 @pytest.mark.asyncio

@@ -1,0 +1,107 @@
+{
+  "advice": {
+    "loadFailed": "Your advice could not be loaded",
+    "failed": "Advice could not be worked out",
+    "nothing": "Your receipts show nothing specific to act on for this goal yet."
+  },
+  "month": {
+    "loadFailed": "Could not load the month"
+  },
+  "auth": {
+    "failed": "Authentication failed",
+    "registerFailed": "Registration failed"
+  },
+  "unknown": "Unknown error",
+  "export": {
+    "startFailed": "The export could not be started",
+    "downloadFailed": "The export could not be downloaded",
+    "done": "Exported {{file}}",
+    "failed": "The export failed",
+    "tooLong": "The export is taking too long. Try again.",
+    "lost": "The export was lost"
+  },
+  "categories": {
+    "changeFailed": "Could not change the category",
+    "loadFailed": "Failed to fetch categories",
+    "queueFailed": "Failed to fetch review queue",
+    "createFailed": "Could not create category",
+    "renameFailed": "Could not rename category",
+    "deleteFailed": "Could not delete category"
+  },
+  "goals": {
+    "loadFailed": "Your goals could not be loaded",
+    "added": "Goal added",
+    "updated": "Goal updated",
+    "removeFailed": "The goal could not be removed",
+    "removed": "Goal removed",
+    "saveFailed": "The goal could not be saved"
+  },
+  "profile": {
+    "updateFailed": "Failed to update profile",
+    "updated": "Profile updated successfully",
+    "addressFailed": "Failed to regenerate address",
+    "addressReady": "New forwarding address ready"
+  },
+  "household": {
+    "monthFailed": "The household's month could not be loaded",
+    "statisticsFailed": "The household's statistics could not be loaded",
+    "budgetFailed": "Could not save the household budget",
+    "budgetRemoved": "Household budget removed.",
+    "budgetSaved": "Household budget saved.",
+    "createFailed": "Could not create the household",
+    "created": "Household created.",
+    "renameFailed": "Could not rename the household",
+    "renamed": "Household renamed.",
+    "removeFailed": "Could not remove the member",
+    "removed": "Member removed.",
+    "leaveFailed": "Could not leave the household",
+    "left": "You left the household.",
+    "inviteFailed": "Could not make a new invite link",
+    "inviteMade": "New invite link made. The old one no longer works.",
+    "inviteInvalid": "This invite link is not valid.",
+    "joinFailed": "Could not join the household",
+    "joined": "Welcome to the household."
+  },
+  "receipts": {
+    "privacyFailed": "Could not change who sees it",
+    "madePrivate": "Private: the household sees only its amount.",
+    "madeShared": "Shared with the household.",
+    "loadFailed": "Failed to fetch receipts",
+    "detailFailed": "Failed to fetch receipt detail",
+    "refreshFailed": "Failed to refresh the receipt",
+    "recategoriseFailed": "Could not re-run categorisation",
+    "recategorised": "Categories updated. Your own choices were kept.",
+    "keepFailed": "Could not keep this receipt",
+    "kept": "Kept as a separate purchase.",
+    "saveFailed": "Failed to save the receipt",
+    "updated": "Receipt updated",
+    "deleteFailed": "Failed to delete receipt",
+    "deleted": "Receipt deleted",
+    "recalculated": "{{done}}. {{months}} recalculated"
+  },
+  "statistics": {
+    "loadFailed": "Could not load the statistics"
+  },
+  "upload": {
+    "failed": "Upload failed",
+    "errorTitle": "Upload error",
+    "errorDetails": "An unexpected error occurred during upload.",
+    "network": "Network error",
+    "networkTitle": "Network error",
+    "networkDetails": "Failed to communicate with the server.",
+    "processingFailed": "Background processing failed",
+    "processingTitle": "Processing error",
+    "processingDetails": "An error occurred while reading the receipt.",
+    "pollingFailed": "Polling failed",
+    "pollingDetails": "Failed to fetch job status.",
+    "duplicateFailed": "Failed to resolve the duplicate",
+    "matchFailed": "Failed to resolve match",
+    "totalFailed": "Failed to resolve total",
+    "dateFailed": "Failed to set the date",
+    "lineFailed": "Failed to update the line",
+    "discountFailed": "Failed to add the discount",
+    "storeFailed": "Failed to store the receipts",
+    "stored_one": "{{count}} receipt stored",
+    "stored_other": "{{count}} receipts stored"
+  }
+}

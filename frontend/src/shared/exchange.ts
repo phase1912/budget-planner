@@ -1,3 +1,5 @@
+import { dateFormat } from "@/i18n/format";
+import i18n from "@/i18n";
 /**
  * How a receipt in another currency was, or will be, converted into the account's
  * (F11.7, ADR-0016). Rate dates are calendar days, so they are formatted in UTC.
@@ -10,7 +12,7 @@ export interface RateNote {
 }
 
 function day(iso: string): string {
-  return new Intl.DateTimeFormat("en-GB", {
+  return dateFormat({
     day: "numeric",
     month: "long",
     timeZone: "UTC",
@@ -19,8 +21,8 @@ function day(iso: string): string {
 
 /** "NBP rate, 2 October", or "converted by you" for a rate the owner typed amounts at. */
 export function rateLabel(note: RateNote): string {
-  if (note.source === "manual") return "converted by you";
-  return `${note.source} rate, ${day(note.rateDate)}`;
+  if (note.source === "manual") return i18n.t("exchange.manual");
+  return i18n.t("exchange.rate", { source: note.source, date: day(note.rateDate) });
 }
 
 /** The amount in the account's currency at `rate`, to the cent, or null when unknown. */

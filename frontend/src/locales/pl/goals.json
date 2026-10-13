@@ -1,0 +1,134 @@
+{
+  "title": "Cele",
+  "subtitle": "Powiedz, do czego dążysz, a każdy cel dostanie porady oparte na Twoich własnych paragonach.",
+  "newGoal": "Nowy cel",
+  "adviceLoadFailed": "Nie udało się wczytać porad.",
+  "loadFailed": "Nie udało się wczytać celów",
+  "loading": "Wczytujemy Twoje cele…",
+  "empty": {
+    "title": "Nie masz jeszcze celów",
+    "message": "Limit wydatków, kwota do odłożenia, mniej wydawane na jedną kategorię albo zmiana stylu życia — porady powstają wokół tego."
+  },
+  "kinds": {
+    "spending_ceiling": {
+      "label": "Utrzymać miesięczne wydatki poniżej kwoty",
+      "meta": "Limit wydatków"
+    },
+    "savings_target": {
+      "label": "Odłożyć kwotę",
+      "meta": "Cel oszczędnościowy"
+    },
+    "category_reduction": {
+      "label": "Wydawać mniej na jedną kategorię",
+      "meta": "Ograniczenie kategorii"
+    },
+    "lifestyle": {
+      "label": "Coś o moim stylu życia",
+      "meta": "Cel dotyczący stylu życia"
+    },
+    "fallback": "Cel"
+  },
+  "impact": {
+    "saving": "−{{amount}} {{currency}} miesięcznie",
+    "avoided_one": "o {{formatted}} zakup mniej",
+    "avoided_few": "o {{formatted}} zakupy mniej",
+    "avoided_many": "o {{formatted}} zakupów mniej",
+    "avoided_other": "o {{formatted}} zakupu mniej"
+  },
+  "card": {
+    "savings": "Odłożyć {{amount}}",
+    "category": "Utrzymać „{{category}}” poniżej {{amount}} miesięcznie",
+    "removedCategory": "usuniętą kategorię",
+    "ceiling": "Nie więcej niż {{amount}} miesięcznie",
+    "set": "{{meta}} · ustawiono {{date}}",
+    "edit": "Edytuj „{{name}}”",
+    "lifestyleNote": "To nie cel pieniężny, więc śledzimy go przez to, co kupujesz.",
+    "watches": "Oto, co śledzi:",
+    "watchesNothing": "Na razie nic nie jest śledzone.",
+    "adjustLabel": "Zmień, co śledzi „{{name}}”",
+    "adjust": "Zmień"
+  },
+  "risk": {
+    "list": "Zagrożone cele",
+    "heading": "„{{name}}” zmierza ponad limit",
+    "body": "Wydano dotąd: {{spent}} z {{target}}. Szacunek: w tym tempie {{month}} skończy się na około <b>{{projected}}</b>, {{over}} ponad limit.",
+    "seeHow": "Zobacz, jak ograniczyć",
+    "below": "Porady, jak ograniczyć, są w karcie celu poniżej.",
+    "dismiss": "Odłóż ostrzeżenie dla „{{name}}” do przyszłego miesiąca"
+  },
+  "watched": {
+    "legend": "Co śledzi",
+    "categories": "Kategorie",
+    "items": "Produkty",
+    "stop": "Przestań śledzić „{{item}}”",
+    "addLabel": "Dodaj produkt",
+    "placeholder": "słodkie napoje",
+    "add": "Dodaj"
+  },
+  "dialog": {
+    "edit": "Edytuj cel",
+    "new": "Nowy cel",
+    "kind": "Jaki to cel",
+    "name": "Nazwa",
+    "namePlaceholderLifestyle": "Schudnąć",
+    "namePlaceholder": "Nie więcej niż 3 000 PLN miesięcznie",
+    "amount": {
+      "spending_ceiling": "Limit miesięczny",
+      "savings_target": "Kwota do odłożenia",
+      "category_reduction": "Miesięczny limit dla tej kategorii"
+    },
+    "amountLabel": "{{label}}, {{currency}}",
+    "category": "Kategoria",
+    "pickCategory": "Wybierz kategorię",
+    "ownWords": "Własnymi słowami",
+    "why": "Dlaczego to ważne (opcjonalnie)",
+    "descriptionPlaceholder": "Mniej przekąsek i słodkich napojów",
+    "confirmRemove": "Tak, usuń ten cel",
+    "remove": "Usuń cel",
+    "saving": "Zapisujemy…",
+    "save": "Zapisz zmiany",
+    "add": "Dodaj cel"
+  },
+  "advice": {
+    "section": "Porady dla „{{name}}”",
+    "heading": "Porady z Twoich paragonów",
+    "reading": "Czytamy Twoje paragony…",
+    "why": "Dlaczego?",
+    "prompt": "Zapytaj, a porady wskażą to, co naprawdę kupujesz, a nie ogólniki.",
+    "refresh": "Odśwież porady",
+    "get": "Uzyskaj porady",
+    "buttonLabel": "{{verb}}: „{{name}}”",
+    "working": "Opracowujemy…",
+    "updated": "Zaktualizowano {{ago}}",
+    "justNow": "przed chwilą"
+  },
+  "feedback": {
+    "not_followed": "Nie zastosujesz tego",
+    "not_helpful": "To nie było pomocne",
+    "undoLabel": "Cofnij: {{action}}",
+    "undo": "Cofnij",
+    "wontFollowLabel": "Nie zastosuję: {{action}}",
+    "wontFollow": "Nie zastosuję",
+    "notHelpfulLabel": "Niepomocne: {{action}}",
+    "notHelpful": "Niepomocne"
+  },
+  "history": {
+    "receipts_one": "{{count}} paragon to jeszcze nie wzorzec",
+    "receipts_few": "{{count}} paragony to jeszcze nie wzorzec",
+    "receipts_many": "{{count}} paragonów to jeszcze nie wzorzec",
+    "receipts_other": "{{count}} paragonu to jeszcze nie wzorzec",
+    "days_one": "{{count}} dzień to jeszcze nie wzorzec",
+    "days_few": "{{count}} dni to jeszcze nie wzorzec",
+    "days_many": "{{count}} dni to jeszcze nie wzorzec",
+    "days_other": "{{count}} dnia to jeszcze nie wzorzec",
+    "note": "Porady potrzebują około miesiąca zakupów. Dodawaj dalej paragony, a włączą się same.",
+    "progress": "{{receipts}} z {{requiredReceipts}} paragonów · {{days}} z {{requiredDays}} dni"
+  },
+  "onTrack": {
+    "heading": "W tym miesiącu nie ma czego ciąć",
+    "spent": "Wydano dotąd: <b>{{spent}}</b> z {{target}}",
+    "left": " · zostało {{left}}",
+    "estimate": "Szacunek: jeśli utrzymasz to samo dzienne tempo, {{month}} skończy się na około <b>{{projected}}</b>, {{margin}} poniżej limitu. To prognoza, nie obietnica: jedne duże zakupy mogą ją zmienić.",
+    "early": "To dopiero dzień {{day}} z {{days}}, więc szacunek jest jeszcze przybliżony."
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "title1": "Photograph a receipt.",
+  "title2": "Get a budget.",
+  "lead": "Every line item read off the photo, sorted into categories, and totalled by the month it was actually bought in.",
+  "createAccount": "Create an account",
+  "haveOne": "I already have one",
+  "steps": {
+    "shoot": {
+      "title": "Shoot it",
+      "text": "One photo, or several overlapping ones for a long receipt."
+    },
+    "check": {
+      "title": "Check what we read",
+      "text": "Anything unclear is flagged for you rather than quietly guessed."
+    },
+    "see": {
+      "title": "See where it went",
+      "text": "Month-to-date spend by category, against a limit you set."
+    }
+  },
+  "privacy": "Receipt photos and their extracted data are encrypted at rest and visible only to you."
+}

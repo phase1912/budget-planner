@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import rate_limit
 from app.api.dependencies import get_current_user, get_storage_service
-from app.api.errors import DomainError, InvalidPeriodError, NotFoundError
+from app.api.errors import DomainError, InvalidPeriodError, NotFoundError, ProblemCode
 from app.api.rate_limit import limiter
 from app.db.session import get_db_session
 from app.domain.periods import DateRange
@@ -108,7 +108,7 @@ async def download_export(
     """
     job = await _owned(job_id, session)
     if job.status is not ExportStatus.READY or job.object_name is None:
-        raise DomainError("The export is not ready yet.")
+        raise DomainError("The export is not ready yet.", code=ProblemCode.EXPORT_NOT_READY)
     content = await storage.download_file(job.object_name)
     return Response(
         content=content,

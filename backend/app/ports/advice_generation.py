@@ -11,8 +11,13 @@ class AdviceUnavailable(Exception):
 class AdviceGeneratorPort(Protocol):
     """Proposes recommendations for a goal from the evidence gathered for it (BRD F3)."""
 
-    async def propose(self, analysis: GoalAnalysis, currency: str) -> list[Advice]:
+    async def propose(
+        self, analysis: GoalAnalysis, currency: str, *, language: str = "en"
+    ) -> list[Advice]:
         """Recommendations built only from `analysis`, amounts in `currency`.
+
+        The action and rationale are written in `language` (an ISO 639-1 code the
+        product offers, F9.9.5); target names stay as the receipts spell them.
 
         What comes back is a proposal: the caller keeps only what cites the
         evidence (`app.domain.advice.keep_specific`). Raises AdviceUnavailable

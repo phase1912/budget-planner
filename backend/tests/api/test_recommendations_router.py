@@ -45,9 +45,13 @@ class StubAdviceGenerator:
     def __init__(self, proposals: list[Advice] | None = None) -> None:
         self.proposals = proposals
         self.asked: list[tuple[GoalAnalysis, str]] = []
+        self.languages: list[str] = []
 
-    async def propose(self, analysis: GoalAnalysis, currency: str) -> list[Advice]:
+    async def propose(
+        self, analysis: GoalAnalysis, currency: str, *, language: str = "en"
+    ) -> list[Advice]:
         self.asked.append((analysis, currency))
+        self.languages.append(language)
         if self.proposals is None:
             raise AdviceUnavailable
         return self.proposals
@@ -134,6 +138,17 @@ async def test_advice_naming_a_purchase_from_the_receipts_is_kept_and_fed(
     ]
     analysis, currency = generator.asked[0]
     assert (analysis.recurring_items[0].receipt_count, currency) == (2, "EUR")
+
+
+@pytest.mark.asyncio
+async def test_advice_is_asked_for_in_the_users_language(db_session: AsyncSession) -> None:
+    """F9.9.5: a Ukrainian speaker reads their advice in Ukrainian."""
+    user, goal = await _cookie_eater(language="uk")
+    generator = StubAdviceGenerator([COOKIES])
+
+    await _call(db_session, user, "POST", f"/goals/{goal.id}/recommendations", generator)
+
+    assert generator.languages == ["uk"]
 
 
 @pytest.mark.asyncio

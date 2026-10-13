@@ -15,3 +15,5 @@ class UserFactory(ModelFactory[User]):
     email = Use(lambda: f"user-{uuid.uuid4().hex}@example.com")
     # An admin has no receipt quota (F10.6); a random role would make that random.
     role = "user"
+    # Not chosen, as on a new account, unless a test about languages says otherwise (F9.9).
+    language = None

@@ -230,7 +230,7 @@ def user_uploads_11_photos(client: TestClient, auth_user: User) -> Response:
 @then("the agent should reject the 11th photo")
 def agent_rejects_11th_photo(upload_response: Response) -> None:
     assert upload_response.status_code == 400
-    assert upload_response.json()["code"] == "upload_limit_exceeded"
+    assert upload_response.json()["code"] == "too_many_photos"
 
 
 @then("inform the user of the 10-photo limit")
@@ -357,7 +357,7 @@ def uploads_12_photos_to_first_line(client: TestClient, auth_user: User) -> Resp
 @then("the agent should reject the additional photos on that line")
 def agent_rejects_additional_photos(upload_response: Response) -> None:
     assert upload_response.status_code == 400
-    assert upload_response.json()["code"] == "upload_limit_exceeded"
+    assert upload_response.json()["code"] == "too_many_photos"
 
 
 @then("the second line should remain unaffected")

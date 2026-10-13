@@ -4,8 +4,10 @@ import { observer } from "mobx-react-lite";
 import { Card, ErrorState, LoadingState, Meter, Note } from "@/shared/components";
 import { LimitStatus } from "@/features/dashboard/components/LimitStatus";
 import { useStores } from "@/stores/StoreContext";
+import { numberFormat } from "@/i18n/format";
+import { useTranslation } from "react-i18next";
 
-const AMOUNT = new Intl.NumberFormat("en-US", {
+const AMOUNT = numberFormat({
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
@@ -25,6 +27,7 @@ export const HouseholdMonthView = observer(function HouseholdMonthView({
   currency: string;
 }) {
   const { householdStore } = useStores();
+  const { t } = useTranslation("dashboard");
   const summary = householdStore.month;
   const { error, isLoading } = householdStore.monthState;
 
@@ -34,13 +37,9 @@ export const HouseholdMonthView = observer(function HouseholdMonthView({
 
   if (!summary) {
     return error ? (
-      <ErrorState
-        layout="banner"
-        title="The household's month could not be loaded"
-        message={error}
-      />
+      <ErrorState layout="banner" title={t("household.loadFailed")} message={error} />
     ) : (
-      <LoadingState title="Loading the household's month…" />
+      <LoadingState title={t("household.loading")} />
     );
   }
 
@@ -48,10 +47,11 @@ export const HouseholdMonthView = observer(function HouseholdMonthView({
   const wide = (text: string) => <span className="hidden md:inline">{text}</span>;
   const meta = (
     <span className="tabular-nums text-sm text-muted-foreground md:text-md">
-      {summary.is_complete
-        ? `${String(summary.days)} of ${String(summary.days)} days`
-        : `${String(summary.days_elapsed)} of ${String(summary.days)} days`}{" "}
-      · {summary.receipt_count === 1 ? "1 receipt" : `${String(summary.receipt_count)} receipts`}
+      {t("days", {
+        elapsed: summary.is_complete ? summary.days : summary.days_elapsed,
+        days: summary.days,
+      })}{" "}
+      · {t("receipts", { count: summary.receipt_count })}
     </span>
   );
 
@@ -63,8 +63,8 @@ export const HouseholdMonthView = observer(function HouseholdMonthView({
         className={`flex flex-col gap-3 p-5 md:gap-2.5 md:px-8 md:py-7 transition-opacity ${isLoading ? "opacity-60" : ""}`}
       >
         <span className="text-base font-medium text-muted-foreground md:text-md">
-          {summary.is_complete ? "Spent together" : "Spent together so far"}
-          {wide(" this month")}
+          {summary.is_complete ? t("household.spentTogether") : t("household.spentTogetherSoFar")}
+          {wide(t("household.thisMonth"))}
         </span>
         <p className="m-0 flex flex-wrap items-baseline gap-2 md:gap-3">
           <span className="tabular-nums text-[36px] font-bold leading-none tracking-[-0.025em] md:text-[46px]">
@@ -80,7 +80,7 @@ export const HouseholdMonthView = observer(function HouseholdMonthView({
             percent={summary.limit.percent}
             remaining={summary.limit.remaining}
             currency={currency}
-            whose="the household's"
+            household
           >
             {meta}
           </LimitStatus>
@@ -91,17 +91,16 @@ export const HouseholdMonthView = observer(function HouseholdMonthView({
 
       {summary.excluded_count > 0 && (
         <Note tone="warning">
-          {summary.excluded_count === 1
-            ? "1 receipt"
-            : `${String(summary.excluded_count)} receipts`}{" "}
-          worth {AMOUNT.format(Number(summary.excluded_amount))} {currency}{" "}
-          {summary.excluded_count === 1 ? "is" : "are"} under review and not in this total. Each
-          member resolves their own.
+          {t("household.underReview", {
+            count: summary.excluded_count,
+            amount: AMOUNT.format(Number(summary.excluded_amount)),
+            currency,
+          })}
         </Note>
       )}
 
       <Card variant="surface" className="flex flex-col gap-4 p-5 md:px-8 md:py-6">
-        <h2 className="m-0 text-lg font-semibold">Who spent what</h2>
+        <h2 className="m-0 text-lg font-semibold">{t("household.who")}</h2>
         <ul className="m-0 flex list-none flex-col gap-4 p-0">
           {summary.members.map((member) => {
             const memberTotal = Number(member.total);
@@ -120,7 +119,7 @@ export const HouseholdMonthView = observer(function HouseholdMonthView({
                 <Meter value={share} />
                 {privateTotal > 0 && (
                   <span className="tabular-nums text-sm text-muted-foreground">
-                    of which private: {AMOUNT.format(privateTotal)} {currency}
+                    {t("household.private", { amount: AMOUNT.format(privateTotal), currency })}
                   </span>
                 )}
               </li>

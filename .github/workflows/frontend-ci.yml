@@ -56,6 +56,10 @@ jobs:
       - name: phone layout guard
         run: npm run lint:responsive
 
+      # Ukrainian and Polish have every key, placeholder and plural form English has (F9.9).
+      - name: translations complete
+        run: npm run lint:locales
+
       - name: prettier --check
         run: npm run format
 

@@ -1,9 +1,11 @@
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { useStores } from "@/stores/StoreContext";
+import { useTranslation } from "react-i18next";
 
 export const ToastContainer = observer(function ToastContainer() {
   const { toastStore } = useStores();
+  const { t } = useTranslation();
   const { toast } = toastStore;
 
   useEffect(() => {
@@ -51,7 +53,7 @@ export const ToastContainer = observer(function ToastContainer() {
               toastStore.clearToast();
             }}
             className="opacity-70 hover:opacity-100 transition-opacity"
-            aria-label="Close"
+            aria-label={t("close")}
           >
             ✕
           </button>

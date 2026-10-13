@@ -217,7 +217,7 @@ def generic_auth_error(auth_state):
     assert resp_e.status_code == status.HTTP_401_UNAUTHORIZED
     assert resp_p.status_code == status.HTTP_401_UNAUTHORIZED
     assert resp_e.json() == resp_p.json()
-    assert resp_e.json()["code"] == "authentication_failed"
+    assert resp_e.json()["code"] == "invalid_credentials"
 
 
 # --- G5: Refresh an expired access token ---
@@ -323,7 +323,7 @@ def family_revoked(auth_state):
 def must_log_in_again(auth_state):
     """Confirm the error code signals an expired/revoked session."""
     data = auth_state["reuse_response"].json()
-    assert data.get("code") in ("token_revoked", "authentication_failed", "invalid_token")
+    assert data.get("code") == "session_expired"
 
 
 # --- G7: Log out revokes the session ---

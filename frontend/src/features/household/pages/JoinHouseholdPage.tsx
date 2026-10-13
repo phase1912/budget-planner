@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button, Card, Note } from "@/shared/components";
 import type { HouseholdInvite } from "@/stores/HouseholdStore";
 import { useStores } from "@/stores/StoreContext";
+import { Trans, useTranslation } from "react-i18next";
 
 /**
  * Where an invite link lands (E12 — F12.3, ADR-0017): whose household it is, what joining
@@ -13,6 +14,7 @@ import { useStores } from "@/stores/StoreContext";
  */
 export const JoinHouseholdPage = observer(function JoinHouseholdPage() {
   const { householdStore } = useStores();
+  const { t } = useTranslation("household");
   const { code = "" } = useParams();
   const navigate = useNavigate();
   const [invite, setInvite] = useState<HouseholdInvite | null>(null);
@@ -38,29 +40,31 @@ export const JoinHouseholdPage = observer(function JoinHouseholdPage() {
   return (
     <main className="flex flex-grow items-center justify-center py-6 md:py-10">
       <Card className="flex w-full max-w-md flex-col gap-5 p-5 md:p-8">
-        <h1 className="m-0 text-xl font-semibold">Join a household</h1>
+        <h1 className="m-0 text-xl font-semibold">{t("join.title")}</h1>
         {error ? (
           <>
             <Note tone="error">{error}</Note>
             <Link to="/" className="font-medium text-primary hover:underline">
-              Go to your dashboard
+              {t("join.dashboard")}
             </Link>
           </>
         ) : !invite ? (
-          <p className="m-0 text-md text-muted-foreground">Opening the invite…</p>
+          <p className="m-0 text-md text-muted-foreground">{t("join.opening")}</p>
         ) : (
           <>
             <p className="m-0 text-base text-foreground">
-              <strong>{invite.owner_name}</strong> invites you to{" "}
-              <strong className="break-words">{invite.name}</strong>
-              {invite.member_count > 1 ? `, with ${String(invite.member_count)} members` : ""}.
+              <Trans
+                t={t}
+                i18nKey={invite.member_count > 1 ? "join.invitesWithMembers" : "join.invites"}
+                values={{ owner: invite.owner_name, name: invite.name }}
+                count={invite.member_count > 1 ? invite.member_count : undefined}
+                components={{ b: <strong className="break-words" /> }}
+              />
             </p>
             <ul className="m-0 flex list-disc flex-col gap-2 pl-5 text-md leading-relaxed text-muted-foreground">
-              <li>You will keep one budget together and see each other&apos;s receipts.</li>
-              <li>
-                Mark a receipt private and the household sees only its amount, in a monthly sum.
-              </li>
-              <li>Only you can change your receipts, and you can leave at any time.</li>
+              <li>{t("join.shared")}</li>
+              <li>{t("join.private")}</li>
+              <li>{t("join.yours")}</li>
             </ul>
             {householdStore.saveState.error && (
               <Note tone="error">{householdStore.saveState.error}</Note>
@@ -72,7 +76,7 @@ export const JoinHouseholdPage = observer(function JoinHouseholdPage() {
                 className="min-h-11 w-full md:w-auto"
                 onClick={() => void navigate("/")}
               >
-                Not now
+                {t("join.notNow")}
               </Button>
               <Button
                 type="button"
@@ -81,7 +85,7 @@ export const JoinHouseholdPage = observer(function JoinHouseholdPage() {
                 disabled={householdStore.saveState.isLoading}
                 onClick={() => void join()}
               >
-                Join {invite.name}
+                {t("join.join", { name: invite.name })}
               </Button>
             </div>
           </>

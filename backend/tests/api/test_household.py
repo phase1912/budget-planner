@@ -91,6 +91,7 @@ async def test_a_user_belongs_to_one_household_at_most(db_session: AsyncSession)
     response = await _call(db_session, member, "POST", URL, {"name": "Second"})
 
     assert response.status_code == 409
+    assert response.json()["code"] == "already_in_household"
     assert await _households(db_session) == 1
 
 
@@ -153,6 +154,7 @@ async def test_the_owner_cannot_leave_others_behind(db_session: AsyncSession) ->
     response = await _call(db_session, owner, "POST", f"{URL}/leave")
 
     assert response.status_code == 409
+    assert response.json()["code"] == "owner_cannot_leave"
     assert (await _call(db_session, owner, "GET", URL)).json()["my_role"] == "owner"
 
 
@@ -307,6 +309,8 @@ async def test_an_account_with_receipts_in_another_currency_cannot_join(
 
     assert response.status_code == 409
     assert "PLN" in response.json()["detail"] and "USD" in response.json()["detail"]
+    assert response.json()["code"] == "household_currency_mismatch"
+    assert response.json()["params"] == {"household_currency": "PLN", "account_currency": "USD"}
     assert (await _call(db_session, guest, "GET", URL)).json() is None
 
 
@@ -342,6 +346,7 @@ async def test_a_made_up_code_leads_nowhere(db_session: AsyncSession) -> None:
     response = await _call(db_session, guest, "POST", f"{URL}/join", {"code": "0" * 32})
 
     assert response.status_code == 404
+    assert response.json()["code"] == "invite_invalid"
 
 
 @pytest.mark.asyncio

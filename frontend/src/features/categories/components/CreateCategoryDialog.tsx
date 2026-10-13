@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import { Plus } from "lucide-react";
 
 import { Button, IconTile, Input, Modal } from "@/shared/components";
+import { useTranslation } from "react-i18next";
 
 interface CreateCategoryDialogProps {
   /** Resolves to null on success, or to the reason the server refused the name. */
@@ -25,6 +26,7 @@ export const CreateCategoryDialog = observer(function CreateCategoryDialog({
   const titleId = useId();
   const input = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
+  const { t } = useTranslation("categories");
   const [error, setError] = useState<string | undefined>();
   const [isSaving, setIsSaving] = useState(false);
 
@@ -57,19 +59,17 @@ export const CreateCategoryDialog = observer(function CreateCategoryDialog({
           </IconTile>
           <div className="flex flex-col gap-1.25">
             <h2 id={titleId} className="m-0 text-[17px] font-bold text-foreground">
-              New category
+              {t("create.title")}
             </h2>
-            <p className="m-0 text-lg text-muted-foreground">
-              You and the agent can file items under it as soon as it is created.
-            </p>
+            <p className="m-0 text-lg text-muted-foreground">{t("create.text")}</p>
           </div>
         </div>
 
         <Input
           ref={input}
           id={`${titleId}-name`}
-          label="Name"
-          placeholder="e.g. Pet Supplies"
+          label={t("create.name")}
+          placeholder={t("create.placeholder")}
           maxLength={100}
           value={name}
           error={error}
@@ -81,10 +81,10 @@ export const CreateCategoryDialog = observer(function CreateCategoryDialog({
 
         <div className="flex flex-wrap items-center justify-end gap-2.5">
           <Button type="button" variant="ghost" onClick={onClose}>
-            Cancel
+            {t("create.cancel")}
           </Button>
           <Button type="submit" disabled={!name.trim() || isSaving}>
-            Create category
+            {t("create.submit")}
           </Button>
         </div>
       </form>

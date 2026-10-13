@@ -1,0 +1,112 @@
+{
+  "builtIn": {
+    "Groceries": "Groceries",
+    "Dining": "Dining",
+    "Transport": "Transport",
+    "Utilities": "Utilities",
+    "Health": "Health",
+    "Entertainment": "Entertainment",
+    "Other": "Other",
+    "Uncategorized": "Uncategorized"
+  },
+  "noCategory": "No category",
+  "items_one": "{{count}} item",
+  "items_other": "{{count}} items",
+  "queue": {
+    "title": "Categories",
+    "subtitle": {
+      "needs_review": "Items the agent was not confident about, oldest first.",
+      "corrected": "Items you filed by hand, oldest first.",
+      "all": "Everything you bought and what it cost, oldest first."
+    },
+    "empty": {
+      "needs_review": {
+        "title": "Nothing needs review",
+        "message": "Every item the agent has seen was placed with confidence."
+      },
+      "corrected": {
+        "title": "No corrections yet",
+        "message": "Items you file under a category by hand will be listed here."
+      },
+      "all": {
+        "title": "No items yet",
+        "message": "Upload a receipt and its items will appear here."
+      },
+      "filtered": {
+        "title": "No matching items",
+        "message": "Nothing in this view matches these filters."
+      }
+    },
+    "manage": "Manage the taxonomy",
+    "which": "Which items to show",
+    "views": {
+      "needsReview": "Needs review",
+      "needsReviewShort": "To review",
+      "corrected": "Corrected by you",
+      "correctedShort": "Corrected",
+      "all": "All items",
+      "allShort": "All"
+    },
+    "find": "Find an item",
+    "loading": "Loading the review queue…",
+    "loadFailed": "The review queue could not be loaded",
+    "cols": {
+      "item": "Item",
+      "merchant": "Merchant",
+      "date": "Date",
+      "amount": "Amount",
+      "category": "Category"
+    },
+    "underReviewTitle": "Its receipt is under review, so it is not counted in the total",
+    "underReview": "Under review",
+    "excluded": " · {{count}} under review, worth {{amount}} {{currency}}, not counted",
+    "rule": "Each correction you make can become a rule: with “Apply to future items” ticked, the same item from the same merchant is categorised your way next time, and automatic passes leave it alone."
+  },
+  "spend": {
+    "pickOne": "Highest first · pick one to filter",
+    "showingOne": "Showing one category"
+  },
+  "picker": {
+    "label": "Category for {{item}}",
+    "yours": "Yours",
+    "applyTitle": "Also apply to future {{item}}",
+    "applyTitleFrom": "Also apply to future {{item}} from {{merchant}}",
+    "apply": "Apply to future items"
+  },
+  "taxonomy": {
+    "title": "The taxonomy",
+    "subtitle": "Both the agent and you assign from this list.",
+    "new": "New category",
+    "loading": "Loading…",
+    "builtIn": "Built in",
+    "builtInNote": "Cannot be renamed or removed",
+    "awaiting": "{{items}} · awaiting your review",
+    "yours": "Yours",
+    "yoursNote": "Available to the agent from the moment you create them"
+  },
+  "row": {
+    "newName": "New name for {{name}}",
+    "save": "Save the new name",
+    "cancel": "Cancel renaming",
+    "rename": "Rename {{name}}",
+    "delete": "Delete {{name}}"
+  },
+  "create": {
+    "title": "New category",
+    "text": "You and the agent can file items under it as soon as it is created.",
+    "name": "Name",
+    "placeholder": "e.g. Pet Supplies",
+    "cancel": "Cancel",
+    "submit": "Create category"
+  },
+  "delete": {
+    "title": "Delete “{{name}}”?",
+    "empty": "Nothing is filed under it yet.",
+    "filed_one": "{{count}} item is filed under it, worth {{amount}} {{currency}}. It keeps its amount — choose where it lands.",
+    "filed_other": "{{count}} items are filed under it, worth {{amount}} {{currency}}. They keep their amounts — choose where they land.",
+    "moveTo": "Move those items to",
+    "finalised": "Finalised months keep the totals they were closed with. Only the category breakdown is rewritten.",
+    "keep": "Keep it",
+    "confirm": "Delete and move"
+  }
+}

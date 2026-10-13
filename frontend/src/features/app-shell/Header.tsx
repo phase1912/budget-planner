@@ -5,9 +5,12 @@ import { useStores } from "@/stores/StoreContext";
 import { Button } from "@/shared/components";
 import { Navigation } from "./Navigation";
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/features/language/LanguageSwitcher";
 
 export const Header = observer(() => {
   const { themeStore, authStore } = useStores();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -48,20 +51,20 @@ export const Header = observer(() => {
         <div className="flex items-center gap-2 md:hidden">
           <Link
             to="/"
-            aria-label="Back"
+            aria-label={t("header.back")}
             className="-ml-2 inline-flex h-11 w-11 items-center justify-center rounded-chip text-foreground hover:bg-muted"
           >
             <ArrowLeft size={20} aria-hidden="true" />
           </Link>
-          <h1 className="m-0 text-[17px] font-bold">New receipt</h1>
+          <h1 className="m-0 text-[17px] font-bold">{t("header.newReceipt")}</h1>
         </div>
       )}
       <div className={`items-center gap-7 ${uploading ? "hidden md:flex" : "flex"}`}>
         <Link
           to="/"
-          className="text-[17px] md:text-[20px] font-bold bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent"
+          className="whitespace-nowrap text-[17px] md:text-[20px] font-bold bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent"
         >
-          Budget Agent
+          {t("appName")}
         </Link>
         {/* A phone navigates from the bottom bar instead (BottomNavigation). */}
         {authStore.isAuthenticated && (
@@ -76,9 +79,9 @@ export const Header = observer(() => {
             {/* A phone uploads from the bottom bar's centre button; a tablet has room for
                 the icon only, next to five links. */}
             <Link to="/upload" className="hidden md:contents">
-              <Button size="compact" aria-label="Upload">
+              <Button size="compact" aria-label={t("header.upload")}>
                 <Upload size={16} className="lg:mr-2" aria-hidden="true" />
-                <span className="hidden lg:inline">Upload</span>
+                <span className="hidden lg:inline">{t("header.upload")}</span>
               </Button>
             </Link>
             <Button
@@ -87,7 +90,7 @@ export const Header = observer(() => {
               onClick={() => {
                 themeStore.toggleTheme();
               }}
-              aria-label="Toggle theme"
+              aria-label={t("header.toggleTheme")}
               className="h-11 w-11 justify-center px-2 md:h-auto md:w-auto"
             >
               {themeStore.theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
@@ -98,7 +101,7 @@ export const Header = observer(() => {
                   setMenuOpen(!menuOpen);
                 }}
                 className={`inline-flex h-11 w-11 items-center justify-center border rounded-full bg-surface p-[5px] cursor-pointer md:h-auto md:w-auto transition-colors ${menuOpen ? "border-primary" : "border-border"}`}
-                aria-label="Account menu"
+                aria-label={t("header.accountMenu")}
               >
                 <span className="inline-flex items-center justify-center w-[30px] h-[30px] rounded-full bg-primary/10 text-primary text-[13px] font-semibold">
                   {getInitials()}
@@ -117,7 +120,7 @@ export const Header = observer(() => {
                     }}
                     className="flex items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-[14px] text-foreground hover:bg-surface-hover transition-colors"
                   >
-                    Preferences
+                    {t("header.preferences")}
                     <Settings size={16} className="text-muted-foreground" />
                   </Link>
                   <button
@@ -126,7 +129,7 @@ export const Header = observer(() => {
                     }}
                     className="flex items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-[14px] text-error hover:bg-tone-error-bg transition-colors"
                   >
-                    Log out
+                    {t("header.logOut")}
                     <LogOut size={16} />
                   </button>
                 </div>
@@ -135,24 +138,33 @@ export const Header = observer(() => {
           </>
         ) : (
           <>
+            <LanguageSwitcher compact />
             <Button
               variant="ghost"
               size="compact"
               onClick={() => {
                 themeStore.toggleTheme();
               }}
-              aria-label="Toggle theme"
+              aria-label={t("header.toggleTheme")}
               className="h-11 w-11 justify-center px-2 md:h-auto md:w-auto"
             >
               {themeStore.theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             </Button>
             <Link to="/login" className="contents">
-              <Button variant="ghost" size="compact">
-                Sign in
+              <Button
+                variant="ghost"
+                size="compact"
+                className="min-h-11 whitespace-nowrap md:min-h-0"
+              >
+                {t("header.signIn")}
               </Button>
             </Link>
-            <Link to="/register" className="contents">
-              <Button size="compact">Create an account</Button>
+            {/* A phone has the landing page's own "Create an account" right below; the
+                header keeps to the logo, the language and signing in. */}
+            <Link to="/register" className="hidden md:contents">
+              <Button size="compact" className="whitespace-nowrap">
+                {t("header.createAccount")}
+              </Button>
             </Link>
           </>
         )}

@@ -7,27 +7,83 @@ both require a reason to accompany a rejection, not a bare status code;
 this is the one place that reason gets attached, not each route for itself.
 """
 
+import enum
 import logging
+from collections.abc import Mapping
 from typing import cast
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException
 
 logger = logging.getLogger(__name__)
 
 
+class ProblemCode(enum.StrEnum):
+    """Every `code` an error response can carry, so the client can word each one (F9.9.5).
+
+    The client shows its own translation of the code, filled from `params`, and falls
+    back to the English `detail` for a code it does not know; a test checks every code
+    here has a translation. A refusal the user reads gets its own code, not a generic one.
+    """
+
+    INTERNAL_ERROR = "internal_error"
+    NOT_FOUND = "not_found"
+    PERMISSION_DENIED = "permission_denied"
+    BAD_REQUEST = "bad_request"
+    UNAUTHORIZED = "unauthorized"
+    HTTP_ERROR = "http_error"
+    VALIDATION_ERROR = "validation_error"
+    RATE_LIMITED = "rate_limited"
+    DOMAIN_ERROR = "domain_error"
+    REGISTRATION_FAILED = "registration_failed"
+    WEAK_PASSWORD = "weak_password"
+    AUTHENTICATION_FAILED = "authentication_failed"
+    INVALID_CREDENTIALS = "invalid_credentials"
+    SESSION_EXPIRED = "session_expired"
+    INVALID_PERIOD = "invalid_period"
+    INVALID_GOAL = "invalid_goal"
+    INSUFFICIENT_DATA = "insufficient_data"
+    UNSUPPORTED_MEDIA_TYPE = "unsupported_media_type"
+    UPLOAD_LIMIT_EXCEEDED = "upload_limit_exceeded"
+    TOO_MANY_PHOTOS = "too_many_photos"
+    PHOTOS_TOO_LARGE = "photos_too_large"
+    QUOTA_EXCEEDED = "quota_exceeded"
+    SERVICE_BUSY = "service_busy"
+    MESSAGE_TOO_LARGE = "message_too_large"
+    CATEGORISER_UNAVAILABLE = "categoriser_unavailable"
+    ADVICE_UNAVAILABLE = "advice_unavailable"
+    CURRENCY_LOCKED = "currency_locked"
+    CATEGORY_EXISTS = "category_exists"
+    CATEGORY_MOVE_TARGET = "category_move_target"
+    CATEGORY_NOT_YOURS = "category_not_yours"
+    EXPORT_NOT_READY = "export_not_ready"
+    ALREADY_IN_HOUSEHOLD = "already_in_household"
+    NOT_IN_HOUSEHOLD = "not_in_household"
+    OWNER_CANNOT_LEAVE = "owner_cannot_leave"
+    CANNOT_REMOVE_SELF = "cannot_remove_self"
+    MEMBER_NOT_FOUND = "member_not_found"
+    INVITE_INVALID = "invite_invalid"
+    HOUSEHOLD_CURRENCY_MISMATCH = "household_currency_mismatch"
+    OWNER_ONLY = "owner_only"
+
+
 class ProblemDetail(BaseModel):
-    """RFC 7807 problem+json body, extended with a stable machine-readable `code`."""
+    """RFC 7807 problem+json body, extended with a stable machine-readable `code`.
+
+    `params` holds the values `detail` was worded with — a limit, a currency — so the
+    client can say the same thing in the user's language (F9.9.5).
+    """
 
     type: str = "about:blank"
     title: str
     status: int
     detail: str
-    code: str
+    code: ProblemCode
+    params: dict[str, str | int] = Field(default_factory=dict)
 
 
 class AppError(Exception):
@@ -39,12 +95,22 @@ class AppError(Exception):
     """
 
     status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
-    code: str = "internal_error"
+    code: ProblemCode = ProblemCode.INTERNAL_ERROR
     title: str = "Internal Server Error"
 
-    def __init__(self, detail: str) -> None:
+    def __init__(
+        self,
+        detail: str,
+        *,
+        code: ProblemCode | None = None,
+        params: Mapping[str, str | int] | None = None,
+    ) -> None:
+        """`code` narrows the class's own code for one refusal; `params` fill its wording."""
         super().__init__(detail)
         self.detail = detail
+        if code is not None:
+            self.code = code
+        self.params = dict(params or {})
 
 
 class NotFoundError(AppError):
@@ -55,7 +121,7 @@ class NotFoundError(AppError):
     """
 
     status_code = status.HTTP_404_NOT_FOUND
-    code = "not_found"
+    code = ProblemCode.NOT_FOUND
     title = "Not Found"
 
 
@@ -67,7 +133,7 @@ class PermissionDeniedError(AppError):
     """
 
     status_code = status.HTTP_403_FORBIDDEN
-    code = "permission_denied"
+    code = ProblemCode.PERMISSION_DENIED
     title = "Permission Denied"
 
 
@@ -75,7 +141,7 @@ class RegistrationError(AppError):
     """Raised when registration fails, hiding the reason from the response (G2)."""
 
     status_code = status.HTTP_400_BAD_REQUEST
-    code = "registration_failed"
+    code = ProblemCode.REGISTRATION_FAILED
     title = "Registration Failed"
 
 
@@ -83,7 +149,7 @@ class AuthenticationError(AppError):
     """Raised on any login failure, generic by design (G4)."""
 
     status_code = status.HTTP_401_UNAUTHORIZED
-    code = "authentication_failed"
+    code = ProblemCode.AUTHENTICATION_FAILED
     title = "Authentication Failed"
 
 
@@ -91,7 +157,7 @@ class DomainError(AppError):
     """Raised for business logic rule violations (e.g., F1.4.2 currency lock)."""
 
     status_code = status.HTTP_409_CONFLICT
-    code = "domain_error"
+    code = ProblemCode.DOMAIN_ERROR
     title = "Domain Rule Violation"
 
 
@@ -99,7 +165,7 @@ class InvalidPeriodError(AppError):
     """Raised for a statistics period that ends before it starts (BRD E2)."""
 
     status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
-    code = "invalid_period"
+    code = ProblemCode.INVALID_PERIOD
     title = "Invalid Period"
 
 
@@ -107,7 +173,7 @@ class InvalidGoalError(AppError):
     """Raised for a goal whose fields do not fit its type (BRD F1)."""
 
     status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
-    code = "invalid_goal"
+    code = ProblemCode.INVALID_GOAL
     title = "Invalid Goal"
 
 
@@ -115,7 +181,7 @@ class InsufficientDataError(AppError):
     """Raised when there is not enough history to generate reliable advice (BRD F5)."""
 
     status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
-    code = "insufficient_data"
+    code = ProblemCode.INSUFFICIENT_DATA
     title = "Insufficient Data"
 
 
@@ -123,7 +189,7 @@ class UnsupportedFileFormatError(AppError):
     """Raised when an uploaded file is not a supported format (BRD A2)."""
 
     status_code = status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
-    code = "unsupported_media_type"
+    code = ProblemCode.UNSUPPORTED_MEDIA_TYPE
     title = "Unsupported File Format"
 
 
@@ -131,7 +197,7 @@ class UploadLimitExceededError(AppError):
     """Raised when an upload exceeds photo count or size limits (BRD A4, A8)."""
 
     status_code = status.HTTP_400_BAD_REQUEST
-    code = "upload_limit_exceeded"
+    code = ProblemCode.UPLOAD_LIMIT_EXCEEDED
     title = "Upload Limit Exceeded"
 
 
@@ -139,7 +205,7 @@ class ReceiptQuotaExceededError(AppError):
     """Raised when an account has used its receipt reads for the month (F10.6)."""
 
     status_code = status.HTTP_429_TOO_MANY_REQUESTS
-    code = "quota_exceeded"
+    code = ProblemCode.QUOTA_EXCEEDED
     title = "Monthly Receipt Limit Reached"
 
 
@@ -147,7 +213,7 @@ class ServiceBusyError(AppError):
     """Raised when the service has read as many receipts today as it will (F10.6)."""
 
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    code = "service_busy"
+    code = ProblemCode.SERVICE_BUSY
     title = "Service Busy"
 
 
@@ -155,7 +221,7 @@ class MessageTooLargeError(AppError):
     """Raised for an inbound email larger than receipt intake accepts (F11.2)."""
 
     status_code = status.HTTP_413_CONTENT_TOO_LARGE
-    code = "message_too_large"
+    code = ProblemCode.MESSAGE_TOO_LARGE
     title = "Message Too Large"
 
 
@@ -167,7 +233,7 @@ class CategoriserUnavailableError(AppError):
     """
 
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    code = "categoriser_unavailable"
+    code = ProblemCode.CATEGORISER_UNAVAILABLE
     title = "Categoriser Unavailable"
 
 
@@ -179,20 +245,29 @@ class AdviceUnavailableError(AppError):
     """
 
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    code = "advice_unavailable"
+    code = ProblemCode.ADVICE_UNAVAILABLE
     title = "Advice Unavailable"
 
 
-_HTTP_STATUS_PROBLEMS: dict[int, tuple[str, str]] = {
-    status.HTTP_400_BAD_REQUEST: ("bad_request", "Bad Request"),
-    status.HTTP_401_UNAUTHORIZED: ("unauthorized", "Unauthorized"),
-    status.HTTP_403_FORBIDDEN: ("permission_denied", "Permission Denied"),
-    status.HTTP_404_NOT_FOUND: ("not_found", "Not Found"),
+_HTTP_STATUS_PROBLEMS: dict[int, tuple[ProblemCode, str]] = {
+    status.HTTP_400_BAD_REQUEST: (ProblemCode.BAD_REQUEST, "Bad Request"),
+    status.HTTP_401_UNAUTHORIZED: (ProblemCode.UNAUTHORIZED, "Unauthorized"),
+    status.HTTP_403_FORBIDDEN: (ProblemCode.PERMISSION_DENIED, "Permission Denied"),
+    status.HTTP_404_NOT_FOUND: (ProblemCode.NOT_FOUND, "Not Found"),
 }
 
 
-def _problem_response(*, status_code: int, code: str, title: str, detail: str) -> JSONResponse:
-    problem = ProblemDetail(status=status_code, code=code, title=title, detail=detail)
+def _problem_response(
+    *,
+    status_code: int,
+    code: ProblemCode,
+    title: str,
+    detail: str,
+    params: Mapping[str, str | int] | None = None,
+) -> JSONResponse:
+    problem = ProblemDetail(
+        status=status_code, code=code, title=title, detail=detail, params=dict(params or {})
+    )
     return JSONResponse(
         status_code=status_code,
         content=problem.model_dump(),
@@ -203,7 +278,11 @@ def _problem_response(*, status_code: int, code: str, title: str, detail: str) -
 async def _handle_app_error(request: Request, exc: Exception) -> JSONResponse:
     error = cast(AppError, exc)
     return _problem_response(
-        status_code=error.status_code, code=error.code, title=error.title, detail=error.detail
+        status_code=error.status_code,
+        code=error.code,
+        title=error.title,
+        detail=error.detail,
+        params=error.params,
     )
 
 
@@ -217,10 +296,11 @@ async def _handle_rate_limited(request: Request, exc: Exception) -> JSONResponse
     retry_after = int(error.limit.limit.get_expiry()) if error.limit else 60
     response = _problem_response(
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-        code="rate_limited",
+        code=ProblemCode.RATE_LIMITED,
         title="Too Many Requests",
         detail=f"Too many requests from this address ({error.detail}). "
         f"Try again in {retry_after} seconds.",
+        params={"seconds": retry_after},
     )
     response.headers["Retry-After"] = str(retry_after)
     return response
@@ -233,7 +313,7 @@ async def _handle_validation_error(request: Request, exc: Exception) -> JSONResp
     )
     return _problem_response(
         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-        code="validation_error",
+        code=ProblemCode.VALIDATION_ERROR,
         title="Validation Error",
         detail=detail or "The request could not be validated.",
     )
@@ -241,7 +321,9 @@ async def _handle_validation_error(request: Request, exc: Exception) -> JSONResp
 
 async def _handle_http_exception(request: Request, exc: Exception) -> JSONResponse:
     error = cast(HTTPException, exc)
-    code, title = _HTTP_STATUS_PROBLEMS.get(error.status_code, ("http_error", "HTTP Error"))
+    code, title = _HTTP_STATUS_PROBLEMS.get(
+        error.status_code, (ProblemCode.HTTP_ERROR, "HTTP Error")
+    )
     detail = error.detail if isinstance(error.detail, str) else str(error.detail)
     return _problem_response(status_code=error.status_code, code=code, title=title, detail=detail)
 
@@ -250,7 +332,7 @@ async def _handle_unexpected_error(request: Request, exc: Exception) -> JSONResp
     logger.exception("Unhandled exception while processing %s %s", request.method, request.url.path)
     return _problem_response(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        code="internal_error",
+        code=ProblemCode.INTERNAL_ERROR,
         title="Internal Server Error",
         detail="An unexpected error occurred.",
     )

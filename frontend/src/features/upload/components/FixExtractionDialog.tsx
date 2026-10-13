@@ -2,6 +2,7 @@ import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
+import { useTranslation } from "react-i18next";
 
 interface EditableItem {
   name: string;
@@ -29,6 +30,7 @@ interface ExtractionPayload {
 export const FixExtractionDialog = observer(function FixExtractionDialog() {
   const { uploadStore } = useStores();
   const index = uploadStore.editingExtractionIndex;
+  const { t } = useTranslation("upload");
 
   const payload = uploadStore.extractedData as { extractions?: ExtractionPayload[] } | null;
   const extraction = index === null ? undefined : payload?.extractions?.[index];
@@ -96,11 +98,12 @@ export const FixExtractionDialog = observer(function FixExtractionDialog() {
       <ModalHeader>
         <div className="flex flex-col gap-1">
           <h2 id="fix-extraction-title" className="text-lg font-bold tracking-[-0.01em]">
-            Fix what we read
+            {t("fix.title")}
           </h2>
           <span className="text-[13px] text-muted-foreground">
-            {extraction.merchant_name ?? "This receipt"} · leave a price empty if the receipt does
-            not show one.
+            {t("fix.subtitle", {
+              merchant: extraction.merchant_name ?? t("already.thisReceipt"),
+            })}
           </span>
         </div>
       </ModalHeader>
@@ -110,7 +113,7 @@ export const FixExtractionDialog = observer(function FixExtractionDialog() {
           <Input
             id="purchase-date"
             type="date"
-            label="Purchase date"
+            label={t("fix.date")}
             value={dateDraft ?? parsedDate}
             max={new Date().toISOString().slice(0, 10)}
             onChange={(e) => {
@@ -118,22 +121,20 @@ export const FixExtractionDialog = observer(function FixExtractionDialog() {
             }}
           />
           {extraction.transaction_date_assumed && dateDraft === null && (
-            <span className="text-base text-muted-foreground">
-              Not on the receipt — this is the day you uploaded it.
-            </span>
+            <span className="text-base text-muted-foreground">{t("fix.dateAssumed")}</span>
           )}
         </div>
         <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_80px_110px_110px] gap-3 text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground">
-          <span>Item</span>
-          <span className="text-right">Qty</span>
-          <span className="text-right">Unit</span>
-          <span className="text-right">Total</span>
+          <span>{t("cols.item")}</span>
+          <span className="text-right">{t("cols.qty")}</span>
+          <span className="text-right">{t("cols.unit")}</span>
+          <span className="text-right">{t("cols.total")}</span>
         </div>
         {/* A phone lays each line over two rows; this names the amounts in the second. */}
         <div className="grid grid-cols-3 gap-2 text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground md:hidden">
-          <span className="text-right">Qty</span>
-          <span className="text-right">Unit</span>
-          <span className="text-right">Total</span>
+          <span className="text-right">{t("cols.qty")}</span>
+          <span className="text-right">{t("cols.unit")}</span>
+          <span className="text-right">{t("cols.total")}</span>
         </div>
 
         {items.map((item, row) => (
@@ -143,14 +144,14 @@ export const FixExtractionDialog = observer(function FixExtractionDialog() {
           >
             <Input
               containerClassName="col-span-3 md:col-span-1"
-              aria-label={`Name of line ${(row + 1).toString()}`}
+              aria-label={t("fix.lineName", { n: row + 1 })}
               value={item.name}
               onChange={(e) => {
                 update(row, "name", e.target.value);
               }}
             />
             <Input
-              aria-label={`Quantity of line ${(row + 1).toString()}`}
+              aria-label={t("fix.lineQty", { n: row + 1 })}
               className="text-right tabular-nums"
               value={item.quantity}
               onChange={(e) => {
@@ -158,7 +159,7 @@ export const FixExtractionDialog = observer(function FixExtractionDialog() {
               }}
             />
             <Input
-              aria-label={`Unit price of line ${(row + 1).toString()}`}
+              aria-label={t("fix.lineUnit", { n: row + 1 })}
               className="text-right tabular-nums"
               value={item.unit_price}
               onChange={(e) => {
@@ -166,7 +167,7 @@ export const FixExtractionDialog = observer(function FixExtractionDialog() {
               }}
             />
             <Input
-              aria-label={`Total price of line ${(row + 1).toString()}`}
+              aria-label={t("fix.lineTotal", { n: row + 1 })}
               className="text-right tabular-nums"
               value={item.total_price}
               onChange={(e) => {
@@ -179,11 +180,11 @@ export const FixExtractionDialog = observer(function FixExtractionDialog() {
 
       <ModalFooter>
         <span className="hidden text-[13px] text-muted-foreground md:inline">
-          Nothing is stored until you finish the last step.
+          {t("fix.notStored")}
         </span>
         <div className="flex w-full items-center gap-[10px] md:w-auto [&>*]:flex-1 md:[&>*]:flex-none">
           <Button variant="ghost" onClick={close}>
-            Cancel
+            {t("fix.cancel")}
           </Button>
           <Button
             variant="primary"
@@ -192,7 +193,7 @@ export const FixExtractionDialog = observer(function FixExtractionDialog() {
               void save();
             }}
           >
-            {isSaving ? "Saving…" : "Save changes"}
+            {isSaving ? t("fix.saving") : t("fix.save")}
           </Button>
         </div>
       </ModalFooter>

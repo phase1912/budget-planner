@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 
 import { Button, Input } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
+import { Trans, useTranslation } from "react-i18next";
 
 /** "37", "37.5", "37,50", "1 214,60": what people type for an amount. */
 const AMOUNT = /^\d[\d\s]*([.,]\d{1,2})?$/;
@@ -30,6 +31,7 @@ export const ResolveTotalForm = observer(function ResolveTotalForm({
   autoFocusField = false,
 }: ResolveTotalFormProps) {
   const { uploadStore } = useStores();
+  const { t } = useTranslation("upload");
   const fieldId = useId();
   const field = useRef<HTMLInputElement>(null);
   const [total, setTotal] = useState(computedTotal ?? "");
@@ -58,9 +60,13 @@ export const ResolveTotalForm = observer(function ResolveTotalForm({
     >
       {computedTotal && (
         <p className="m-0 text-md text-muted-foreground">
-          {lineCount} {lineCount === 1 ? "line adds" : "lines add"} up to{" "}
-          <span className="tabular-nums font-semibold text-foreground">{computedTotal}</span> —
-          accept that or enter the printed total.
+          <Trans
+            t={t}
+            i18nKey="total.linesAdd"
+            count={lineCount}
+            values={{ total: computedTotal }}
+            components={{ b: <span className="tabular-nums font-semibold text-foreground" /> }}
+          />
         </p>
       )}
       <div className="flex flex-wrap items-start gap-2.5">
@@ -74,20 +80,20 @@ export const ResolveTotalForm = observer(function ResolveTotalForm({
                 void save(computedTotal);
               }}
             >
-              {computedTotal} is right
+              {t("total.right", { total: computedTotal })}
             </Button>
-            <span className="py-2 text-md text-muted-foreground">or</span>
+            <span className="py-2 text-md text-muted-foreground">{t("total.or")}</span>
           </>
         )}
         <div className="w-40">
           <Input
             ref={field}
             id={fieldId}
-            aria-label="Printed total"
+            aria-label={t("total.printed")}
             inputMode="decimal"
             placeholder="0.00"
             className="w-full py-2 text-md tabular-nums"
-            error={invalid ? "Enter a number, e.g. 37.00" : undefined}
+            error={invalid ? t("total.invalid") : undefined}
             value={total}
             onChange={(e) => {
               setTotal(e.target.value);
@@ -100,7 +106,7 @@ export const ResolveTotalForm = observer(function ResolveTotalForm({
           size="sm"
           disabled={!typed || invalid || isSaving}
         >
-          Save total
+          {t("total.save")}
         </Button>
       </div>
     </form>

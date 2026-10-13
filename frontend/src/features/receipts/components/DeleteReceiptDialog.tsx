@@ -1,6 +1,8 @@
 import { observer } from "mobx-react-lite";
 import { Button, IconTile, Modal, ModalBody } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
+import { useTranslation } from "react-i18next";
+import { formatAmount } from "@/i18n/format";
 
 /**
  * Confirms erasing a receipt, naming exactly what is about to be lost.
@@ -12,13 +14,14 @@ import { useStores } from "@/stores/StoreContext";
 export const DeleteReceiptDialog = observer(function DeleteReceiptDialog() {
   const { receiptStore } = useStores();
   const receipt = receiptStore.receiptDetail;
+  const { t } = useTranslation("receipts");
   const isOpen = receiptStore.pendingDeleteId !== null;
 
   if (!isOpen || !receipt) return null;
 
   const itemCount = receipt.line_items.length;
   const photoCount = receipt.file_ids.length;
-  const total = receipt.total_amount ? Number(receipt.total_amount).toFixed(2) : null;
+  const total = receipt.total_amount ? formatAmount(receipt.total_amount) : null;
 
   return (
     <Modal
@@ -49,12 +52,16 @@ export const DeleteReceiptDialog = observer(function DeleteReceiptDialog() {
           </IconTile>
           <div className="flex flex-col gap-[5px]">
             <h2 id="delete-receipt-title" className="text-[17px] font-bold tracking-[-0.01em]">
-              Delete {receipt.merchant_name ? `“${receipt.merchant_name}”` : "this receipt"}?
+              {receipt.merchant_name
+                ? t("delete.title", { name: receipt.merchant_name })
+                : t("delete.titleUnnamed")}
             </h2>
             <p className="text-[13px] leading-relaxed text-muted-foreground">
-              {itemCount} item{itemCount === 1 ? "" : "s"}
-              {total ? ` worth ${total}` : ""} and {photoCount} photo{photoCount === 1 ? "" : "s"}{" "}
-              will be erased. This cannot be undone.
+              {t(total ? "delete.bodyWorth" : "delete.body", {
+                items: t("delete.items", { count: itemCount }),
+                photos: t("delete.photos", { count: photoCount }),
+                total,
+              })}
             </p>
           </div>
         </div>
@@ -66,7 +73,7 @@ export const DeleteReceiptDialog = observer(function DeleteReceiptDialog() {
               receiptStore.cancelDelete();
             }}
           >
-            Keep it
+            {t("delete.keep")}
           </Button>
           <Button
             variant="danger-solid"
@@ -75,7 +82,7 @@ export const DeleteReceiptDialog = observer(function DeleteReceiptDialog() {
               void receiptStore.deleteReceipt(receipt.id);
             }}
           >
-            {receiptStore.isDeleting ? "Deleting…" : "Delete receipt"}
+            {receiptStore.isDeleting ? t("delete.deleting") : t("delete.confirm")}
           </Button>
         </div>
       </ModalBody>

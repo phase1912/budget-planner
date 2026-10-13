@@ -1,3 +1,4 @@
+import { dateFormat } from "@/i18n/format";
 /**
  * When a receipt's items were bought, as the shop printed it.
  *
@@ -7,7 +8,7 @@
  * offset, and near midnight onto the wrong day or even month.
  */
 export function formatPurchase(iso: string, options: Intl.DateTimeFormatOptions): string {
-  return new Intl.DateTimeFormat("en-GB", { ...options, timeZone: "UTC" }).format(new Date(iso));
+  return dateFormat({ ...options, timeZone: "UTC" }).format(new Date(iso));
 }
 
 export interface YearMonth {

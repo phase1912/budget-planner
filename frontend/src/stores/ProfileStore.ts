@@ -4,6 +4,8 @@ import type { components } from "@/api/schema";
 import { AsyncState } from "@/stores/AsyncState";
 import type { AuthStore } from "@/stores/AuthStore";
 import type { ToastStore } from "@/stores/ToastStore";
+import i18n from "@/i18n";
+import { errorMessage } from "@/api/errors";
 
 export type UserUpdateRequest = components["schemas"]["UserUpdateRequest"];
 
@@ -48,7 +50,7 @@ export class ProfileStore {
 
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (error || !data) {
-        const detail = (error as { detail?: string }).detail ?? "Failed to update profile";
+        const detail = errorMessage(error, i18n.t("messages:profile.updateFailed"));
         this.updateState.fail(detail);
         this.toastStore.showError(detail);
         return false;
@@ -65,10 +67,10 @@ export class ProfileStore {
         }
       });
       this.updateState.succeed();
-      this.toastStore.showSuccess("Profile updated successfully");
+      this.toastStore.showSuccess(i18n.t("messages:profile.updated"));
       return true;
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : "Unknown error";
+      const errMsg = err instanceof Error ? err.message : i18n.t("messages:unknown");
       this.updateState.fail(errMsg);
       this.toastStore.showError(errMsg);
       return false;
@@ -85,7 +87,7 @@ export class ProfileStore {
 
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (error || !data) {
-        const detail = (error as { detail?: string }).detail ?? "Failed to regenerate address";
+        const detail = errorMessage(error, i18n.t("messages:profile.addressFailed"));
         this.regenerateState.fail(detail);
         this.toastStore.showError(detail);
         return false;
@@ -101,10 +103,10 @@ export class ProfileStore {
         }
       });
       this.regenerateState.succeed();
-      this.toastStore.showSuccess("New forwarding address ready");
+      this.toastStore.showSuccess(i18n.t("messages:profile.addressReady"));
       return true;
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : "Unknown error";
+      const errMsg = err instanceof Error ? err.message : i18n.t("messages:unknown");
       this.regenerateState.fail(errMsg);
       this.toastStore.showError(errMsg);
       return false;

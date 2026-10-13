@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/vitest";
+import "@/i18n";
 
 // jsdom does not implement matchMedia. Default to "no dark preference" so any store
 // or component that reads it (e.g. ThemeStore, F9.2.3) has a stable baseline; tests

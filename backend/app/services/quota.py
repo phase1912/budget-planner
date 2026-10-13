@@ -50,7 +50,13 @@ class QuotaService:
             raise ReceiptQuotaExceededError(
                 f"Your account can have {quota.limit} receipts read a month and has "
                 f"{left} left; this would need {receipts}. It resets on "
-                f"{quota.resets_on:%-d %B %Y}."
+                f"{quota.resets_on:%-d %B %Y}.",
+                params={
+                    "limit": quota.limit or 0,
+                    "left": left,
+                    "needed": receipts,
+                    "resets_on": quota.resets_on.isoformat(),
+                },
             )
         admins = await self.usage.admin_ids(self.settings.admin_emails)
         today = await self.usage.receipts_read_since(start_of(now.date()), excluding=admins)

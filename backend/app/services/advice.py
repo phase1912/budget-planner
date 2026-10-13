@@ -108,7 +108,9 @@ class AdviceService:
         goal.warning_dismissed_for = as_of.replace(day=1)
         await self.goals.session.flush()
 
-    async def prepare_for_goals_at_risk(self, as_of: date, currency: str) -> int:
+    async def prepare_for_goals_at_risk(
+        self, as_of: date, currency: str, *, language: str = "en"
+    ) -> int:
         """Have cut advice waiting on every goal heading over its cap (BRD F7 — F8.8).
 
         Runs unasked, in the background. A goal at risk that has no advice from
@@ -125,7 +127,9 @@ class AdviceService:
             if await self.recommendations.has_advice_since(goal.id, month_start):
                 continue
             try:
-                fresh = await self.advise(goal.id, as_of=as_of, currency=currency)
+                fresh = await self.advise(
+                    goal.id, as_of=as_of, currency=currency, language=language
+                )
             except InsufficientDataError:
                 return prepared  # the user's history, not this goal: no other goal will do better
             except AdviceUnavailableError:
@@ -153,11 +157,12 @@ class AdviceService:
         return recommendation
 
     async def advise(
-        self, goal_id: uuid.UUID, *, as_of: date, currency: str
+        self, goal_id: uuid.UUID, *, as_of: date, currency: str, language: str = "en"
     ) -> Sequence[Recommendation]:
         """Replace a goal's advice with fresh advice drawn from the history to `as_of`.
 
-        Only proposals naming a category or purchase the analysis found are kept
+        The advice is written in `language`, the user's (F9.9.5). Only proposals
+        naming a category or purchase the analysis found are kept
         (`keep_specific`, constraint 11.3); none may survive, and then the goal
         has no advice rather than generic advice. What each is worth comes from
         the same history, never from the model (`project_impact`, F4).
@@ -179,7 +184,14 @@ class AdviceService:
             raise NotFoundError("Goal not found")
         readiness = await self.readiness(as_of)
         if not readiness.ready:
-            raise InsufficientDataError(_not_enough(readiness))
+            raise InsufficientDataError(
+                _not_enough(readiness),
+                params={
+                    "receipts": readiness.receipts,
+                    "days": readiness.history_days,
+                    "required_receipts": readiness.required_receipts,
+                },
+            )
         goal_pace = await self.pace(goal, as_of)
         if goal_pace is not None and goal_pace.on_track:
             # Nothing to cut (F6): earlier cut advice would now be wrong, so it goes too.
@@ -194,7 +206,7 @@ class AdviceService:
         analysis = await self.analysis.analyse(goal, as_of, dismissed=dismissed)
 
         try:
-            proposed = await self.generator.propose(analysis, currency)
+            proposed = await self.generator.propose(analysis, currency, language=language)
         except AdviceUnavailable as error:
             raise AdviceUnavailableError(
                 "Advice could not be worked out just now. Try again in a moment."

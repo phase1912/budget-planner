@@ -105,7 +105,10 @@ status itself — that would violate the service layer's "must not know about HT
 codes" rule above. Global exception handlers, registered once in `create_app()`, turn
 every `AppError`, validation failure, `HTTPException` and unhandled exception into the
 same RFC 7807 problem+json shape, carrying a stable `code` the client can branch on
-(BRD A2, B6). No router builds its own error response.
+(BRD A2, B6). No router builds its own error response. Every code is a member of
+`ProblemCode`; a refusal the user reads gets its own (`household_currency_mismatch`, not
+`domain_error`), and the values it was worded with travel as `params`, so the client can
+say it in the user's language (F9.9.5).
 
 ## The ingestion pipeline
 
@@ -278,6 +281,18 @@ page, never API responses, which are financial data and live on another origin.
 Pages are fetched network-first, so every deploy reaches installed copies on their next
 launch; there is no app store build to keep in step. The worker registers in production
 builds only.
+
+Every word the user reads comes from `frontend/src/locales/{en,uk,pl}/<area>.json` through
+i18next (F9.9); English is the source the keys are typed against and the fallback, and
+`npm run lint:locales` (in CI) fails when Ukrainian or Polish lacks a key, a placeholder
+or a plural form. The language is the account's (`users.language`) once signed in, else
+the one chosen on this browser, else the browser's own — never the user's location.
+`LanguageStore` applies it; dates and amounts go through `numberFormat`/`dateFormat`
+(`src/i18n/format.ts`), which format in the current language at the moment they are
+called. Receipt contents stay as printed. A server refusal is shown by its `code` from
+the `errors` namespace, filled from its `params`, with the English `detail` as the fallback
+for a code the client has no words for; a backend test fails when a `ProblemCode` has no
+translation. Goal advice is written by the model in the account's language.
 
 ## Repository layout and the frontend/backend boundary
 

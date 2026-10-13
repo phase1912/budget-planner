@@ -6,13 +6,15 @@ this task is about the envelope every future route gets for free, not any
 particular route's behaviour.
 """
 
+import json
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
-from app.api.errors import NotFoundError, PermissionDeniedError
+from app.api.errors import DomainError, NotFoundError, PermissionDeniedError, ProblemCode
 from app.main import create_app
 
 
@@ -27,6 +29,14 @@ def app() -> Iterator[FastAPI]:
     @application.get("/testing/permission-denied")
     async def raise_permission_denied() -> None:
         raise PermissionDeniedError("You may not edit this budget.")
+
+    @application.get("/testing/refused-with-values")
+    async def raise_with_values() -> None:
+        raise DomainError(
+            "This household keeps its budget in PLN and your account is in USD.",
+            code=ProblemCode.HOUSEHOLD_CURRENCY_MISMATCH,
+            params={"household_currency": "PLN", "account_currency": "USD"},
+        )
 
     @application.get("/testing/http-exception")
     async def raise_http_exception() -> None:
@@ -59,6 +69,7 @@ def test_not_found_error_produces_a_problem_json_response(client: TestClient) ->
         "status": 404,
         "detail": "Receipt not found.",
         "code": "not_found",
+        "params": {},
     }
 
 
@@ -105,4 +116,30 @@ def test_unexpected_exception_returns_a_generic_internal_error(client: TestClien
         "status": 500,
         "detail": "An unexpected error occurred.",
         "code": "internal_error",
+        "params": {},
     }
+
+
+def test_a_refusal_carries_its_own_code_and_the_values_it_was_worded_with(
+    client: TestClient,
+) -> None:
+    """F9.9.5: the client words the refusal in the user's language from these."""
+    response = client.get("/testing/refused-with-values")
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "household_currency_mismatch"
+    assert response.json()["params"] == {"household_currency": "PLN", "account_currency": "USD"}
+
+
+LOCALES = Path(__file__).resolve().parents[3] / "frontend" / "src" / "locales"
+
+
+@pytest.mark.skipif(not LOCALES.exists(), reason="the frontend is not checked out beside it")
+def test_every_code_the_server_sends_has_a_translation() -> None:
+    """F9.9.5: a code without one would reach a Ukrainian or Polish user in English.
+
+    English is checked; `npm run lint:locales` then holds Ukrainian and Polish to it.
+    """
+    translated = json.loads((LOCALES / "en" / "errors.json").read_text())
+
+    assert sorted(code.value for code in ProblemCode if code.value not in translated) == []

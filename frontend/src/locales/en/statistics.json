@@ -1,0 +1,52 @@
+{
+  "title": "Statistics",
+  "subtitle": "Category totals over any stretch of days, not just whole months.",
+  "export": "Export",
+  "period": "Period",
+  "presets": {
+    "thisMonth": "This month",
+    "lastMonth": "Last month",
+    "last3": "Last 3 months",
+    "last3Short": "3 months",
+    "custom": "Custom",
+    "thisMonthShort": "This month",
+    "lastMonthShort": "Last month"
+  },
+  "compareWith": "Compare with {{period}}",
+  "previousPeriod": "the previous period",
+  "noPrevious": "No receipts in {{period}}, so every category is new against it.",
+  "loadFailed": "The statistics could not be loaded",
+  "loading": "Adding up your categories…",
+  "empty": {
+    "title": "No receipts in {{period}}",
+    "message": "Nothing was recorded for that period. This is not a zero — there is simply nothing to total.",
+    "pick": "Pick another period"
+  },
+  "excluded_one": "{{count}} item worth {{amount}} {{currency}} is left out — its receipt is waiting for review.",
+  "excluded_other": "{{count}} items worth {{amount}} {{currency}} are left out — their receipts are waiting for review.",
+  "reviewThem": "Review them",
+  "nothingCounted": "Nothing is counted in {{period}} until those receipts are reviewed.",
+  "caption": "Spending by category, {{period}}, highest first",
+  "cols": {
+    "category": "Category",
+    "spent": "Spent",
+    "share": "Share",
+    "items": "Items",
+    "change": "Change"
+  },
+  "noCategory": "No category",
+  "items_one": "{{count}} item",
+  "items_other": "{{count}} items",
+  "new": "new",
+  "chart": {
+    "title": "Category by category",
+    "hidden_one": "One more category is in the table below.",
+    "hidden_other": "{{count}} more categories are in the table below."
+  },
+  "likeForLike": {
+    "month_one": "{{month}} is still running, so it is compared against the same day of {{previous}} rather than the whole month.",
+    "month_other": "{{month}} is still running, so it is compared against the same {{count}} days of {{previous}} rather than the whole month.",
+    "range": "{{current}} stops partway through a month, so it is compared against {{previous}} rather than whole months."
+  },
+  "noChange": "no change"
+}

@@ -10,9 +10,11 @@ import { ExtractedStep } from "../components/ExtractedStep";
 
 import { ResolveStep } from "../components/ResolveStep";
 import { ReceiptQuotaNote } from "../components/ReceiptQuotaNote";
+import { useTranslation } from "react-i18next";
 
 export const UploadPage = observer(function UploadPage() {
   const { uploadStore, quotaStore } = useStores();
+  const { t } = useTranslation("upload");
 
   useEffect(() => {
     void quotaStore.load();
@@ -60,31 +62,31 @@ export const UploadPage = observer(function UploadPage() {
             <span className="inline-flex items-center justify-center w-[28px] h-[28px] border border-transparent rounded-pill bg-primary text-primary-foreground text-[13px] font-bold">
               1
             </span>
-            <span className="text-[14px] font-semibold text-foreground">Photos</span>
+            <span className="text-[14px] font-semibold text-foreground">{t("steps.photos")}</span>
           </span>
           <span className="grow h-[2px] rounded-[1px] bg-border mx-4"></span>
           <span className="inline-flex items-center gap-2.5">
             <span className="inline-flex items-center justify-center w-[28px] h-[28px] border border-border rounded-pill bg-background text-border-strong text-[13px] font-bold">
               2
             </span>
-            <span className="text-[14px] font-semibold text-border-strong">What we read</span>
+            <span className="text-[14px] font-semibold text-border-strong">{t("steps.read")}</span>
           </span>
           <span className="grow h-[2px] rounded-[1px] bg-border mx-4"></span>
           <span className="inline-flex items-center gap-2.5">
             <span className="inline-flex items-center justify-center w-[28px] h-[28px] border border-border rounded-pill bg-background text-border-strong text-[13px] font-bold">
               3
             </span>
-            <span className="text-[14px] font-semibold text-border-strong">Resolve</span>
+            <span className="text-[14px] font-semibold text-border-strong">
+              {t("steps.resolve")}
+            </span>
           </span>
         </div>
 
         <div>
           <h1 className="m-0 text-[22px] font-bold tracking-tight md:text-[30px]">
-            Add the photos
+            {t("add.title")}
           </h1>
-          <p className="m-0 text-[15px] text-muted-foreground mt-1">
-            JPEG, PNG, HEIC or a PDF scan. Up to 10 photos and 50&nbsp;MB per receipt.
-          </p>
+          <p className="m-0 text-[15px] text-muted-foreground mt-1">{t("add.formats")}</p>
         </div>
 
         <ReceiptQuotaNote needed={uploadStore.lines.length} />
@@ -119,7 +121,7 @@ export const UploadPage = observer(function UploadPage() {
               <path d="M16 8H8" />
               <path d="M16 12H8" />
             </svg>
-            One receipt
+            {t("add.one")}
           </button>
           <button
             className={`inline-flex flex-1 items-center justify-center gap-2 border-none rounded-[9px] px-4 py-[9px] text-sm cursor-pointer transition-colors md:flex-none ${
@@ -147,7 +149,8 @@ export const UploadPage = observer(function UploadPage() {
               <polyline points="2 17 12 22 22 17" />
               <polyline points="2 12 17 22 12" />
             </svg>
-            Several<span className="hidden md:inline"> receipts</span>
+            {t("add.several")}
+            <span className="hidden md:inline">{t("add.severalWide")}</span>
           </button>
         </div>
 
@@ -199,7 +202,7 @@ export const UploadPage = observer(function UploadPage() {
                   <path d="M5 12h14" />
                   <path d="M12 5v14" />
                 </svg>
-                Add a receipt
+                {t("add.receipt")}
               </button>
               <input
                 type="file"
@@ -232,7 +235,7 @@ export const UploadPage = observer(function UploadPage() {
                 <path d="M5 12h14" />
                 <path d="M12 5v14" />
               </svg>
-              Add another receipt
+              {t("add.another")}
             </button>
           )}
 
@@ -262,7 +265,7 @@ export const UploadPage = observer(function UploadPage() {
                     <path d="M12 16h.01" />
                   </svg>
                   <div className="flex flex-col gap-1">
-                    <span className="text-[13px] font-bold">Upload failed</span>
+                    <span className="text-[13px] font-bold">{t("add.failed")}</span>
                     <span className="text-xs leading-relaxed">{uploadStore.errorDetails}</span>
                   </div>
                 </div>
@@ -274,9 +277,9 @@ export const UploadPage = observer(function UploadPage() {
         {uploadStore.totalFilesCount > 0 && (
           <div className="flex flex-col gap-3 border-t border-border pt-5 md:flex-row md:items-center md:justify-between md:gap-4">
             <span className="text-[13px] text-muted-foreground">
-              {uploadStore.lines.length} receipt{uploadStore.lines.length === 1 ? "" : "s"} &middot;{" "}
-              {uploadStore.totalFilesCount} photos &middot; {uploadStore.allLinesTotalSizeMB}
-              &nbsp;MB total
+              {t("add.receipts", { count: uploadStore.lines.length })} &middot;{" "}
+              {t("add.photos", { count: uploadStore.totalFilesCount })} &middot;{" "}
+              {t("add.size", { size: uploadStore.allLinesTotalSizeMB })}
             </span>
             <div className="flex flex-col-reverse gap-2 md:flex-row md:items-center md:gap-3">
               <Button
@@ -285,7 +288,7 @@ export const UploadPage = observer(function UploadPage() {
                   uploadStore.startOver();
                 }}
               >
-                Cancel
+                {t("add.cancel")}
               </Button>
               <Button
                 variant="primary"
@@ -298,9 +301,12 @@ export const UploadPage = observer(function UploadPage() {
               >
                 {uploadStore.uploadState.status === "loading"
                   ? uploadStore.totalItems > 0
-                    ? `Processed ${uploadStore.processedItems.toString()} of ${uploadStore.totalItems.toString()}...`
-                    : "Sending..."
-                  : "Read these photos"}
+                    ? t("add.processed", {
+                        done: uploadStore.processedItems,
+                        total: uploadStore.totalItems,
+                      })
+                    : t("add.sending")
+                  : t("add.read")}
                 {uploadStore.uploadState.status !== "loading" && (
                   <svg
                     width="16"

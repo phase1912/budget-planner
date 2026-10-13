@@ -4,12 +4,10 @@ import type { Middleware } from "openapi-fetch";
 import { apiClient, type ApiClient } from "@/api/client";
 import type { components } from "@/api/schema";
 import { AsyncState } from "@/stores/AsyncState";
+import i18n from "@/i18n";
+import { errorMessage } from "@/api/errors";
 
 export type User = components["schemas"]["UserResponse"];
-
-interface ProblemDetail {
-  detail?: string | unknown[];
-}
 
 export class AuthStore {
   user: User | null = null;
@@ -149,8 +147,7 @@ export class AuthStore {
       });
 
       if (error || !data) {
-        const detail = (error as ProblemDetail | undefined)?.detail;
-        const msg = typeof detail === "string" ? detail : "Authentication failed";
+        const msg = errorMessage(error, i18n.t("messages:auth.failed"));
         this.authState.fail(msg);
         return false;
       }
@@ -159,7 +156,7 @@ export class AuthStore {
       this.authState.succeed();
       return true;
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : "Unknown error";
+      const errMsg = err instanceof Error ? err.message : i18n.t("messages:unknown");
       this.authState.fail(errMsg);
       return false;
     }
@@ -174,8 +171,7 @@ export class AuthStore {
 
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (error || !data) {
-        const detail = (error as ProblemDetail | undefined)?.detail;
-        const msg = typeof detail === "string" ? detail : "Registration failed";
+        const msg = errorMessage(error, i18n.t("messages:auth.registerFailed"));
         this.authState.fail(msg);
         return false;
       }
@@ -184,7 +180,7 @@ export class AuthStore {
       this.authState.succeed();
       return true;
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : "Unknown error";
+      const errMsg = err instanceof Error ? err.message : i18n.t("messages:unknown");
       this.authState.fail(errMsg);
       return false;
     }

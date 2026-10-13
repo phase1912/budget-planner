@@ -1,7 +1,7 @@
 import uuid
 from collections.abc import Sequence
 
-from app.api.errors import InvalidGoalError, NotFoundError
+from app.api.errors import InvalidGoalError, NotFoundError, ProblemCode
 from app.domain.goals import GoalShape, GoalType, InvalidGoal, check_goal, clean_item_names
 from app.models.goal import Goal
 from app.ports.goal_mapping import GoalMapperPort
@@ -120,8 +120,12 @@ class GoalService:
             raise InvalidGoalError(str(error)) from error
         # Another user's custom category is not theirs to aim at or to watch (N2).
         if goal.category_id and not await self.categories.get_available(goal.category_id, user_id):
-            raise InvalidGoalError("That category is not one of yours.")
+            raise InvalidGoalError(
+                "That category is not one of yours.", code=ProblemCode.CATEGORY_NOT_YOURS
+            )
         if watched_categories:
             available = {c.id for c in await self.categories.list_available(user_id)}
             if not set(watched_categories) <= available:
-                raise InvalidGoalError("That category is not one of yours.")
+                raise InvalidGoalError(
+                    "That category is not one of yours.", code=ProblemCode.CATEGORY_NOT_YOURS
+                )

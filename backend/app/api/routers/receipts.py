@@ -19,7 +19,7 @@ from app.api.dependencies import (
     get_quota_service,
     get_storage_service,
 )
-from app.api.errors import NotFoundError, UploadLimitExceededError
+from app.api.errors import NotFoundError, ProblemCode, UploadLimitExceededError
 from app.api.periods import optional_period
 from app.api.rate_limit import limiter
 from app.core.config import get_settings
@@ -114,7 +114,11 @@ async def upload_receipt(
     Returns immediately with a tracking handle (F2.5).
     """
     if len(files) > 10:
-        raise UploadLimitExceededError("You can upload at most 10 photos per receipt.")
+        raise UploadLimitExceededError(
+            "You can upload at most 10 photos per receipt.",
+            code=ProblemCode.TOO_MANY_PHOTOS,
+            params={"max": 10},
+        )
 
     total_size = 0
     files_data: list[dict[str, str | bytes]] = []
@@ -131,7 +135,11 @@ async def upload_receipt(
         )
 
     if total_size > 50 * 1024 * 1024:
-        raise UploadLimitExceededError("The photos on this line add up to more than 50 MB.")
+        raise UploadLimitExceededError(
+            "The photos on this line add up to more than 50 MB.",
+            code=ProblemCode.PHOTOS_TOO_LARGE,
+            params={"max_mb": 50},
+        )
 
     await quota.ensure_can_read(current_user, 1, datetime.now(UTC))
     job = UploadJob(user_id=current_user.id, total_items=1, channel=PhotoIngestionAdapter.channel)
@@ -198,7 +206,11 @@ async def upload_receipts_batch(
             continue
 
         if len(files) > 10:
-            raise UploadLimitExceededError("You can upload at most 10 photos per receipt.")
+            raise UploadLimitExceededError(
+                "You can upload at most 10 photos per receipt.",
+                code=ProblemCode.TOO_MANY_PHOTOS,
+                params={"max": 10},
+            )
 
         total_size = 0
         receipt_data: list[dict[str, str | bytes]] = []
@@ -217,7 +229,11 @@ async def upload_receipts_batch(
             )
 
         if total_size > 50 * 1024 * 1024:
-            raise UploadLimitExceededError("The photos on this line add up to more than 50 MB.")
+            raise UploadLimitExceededError(
+                "The photos on this line add up to more than 50 MB.",
+                code=ProblemCode.PHOTOS_TOO_LARGE,
+                params={"max_mb": 50},
+            )
 
         receipts_data.append(receipt_data)
 
@@ -429,7 +445,9 @@ async def list_receipts(
     if scope is ReceiptScope.HOUSEHOLD:
         readers = await HouseholdService(HouseholdRepository(session)).readers(current_user)
         if readers is None:
-            raise NotFoundError("You do not belong to a household.")
+            raise NotFoundError(
+                "You do not belong to a household.", code=ProblemCode.NOT_IN_HOUSEHOLD
+            )
     if page < 1:
         page = 1
     if size < 1:

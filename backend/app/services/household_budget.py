@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 
-from app.api.errors import NotFoundError
+from app.api.errors import NotFoundError, ProblemCode
 from app.domain.budget import BudgetMonth, LimitUsage, MonthProgress, limit_usage
 from app.domain.periods import DateRange
 from app.models.household import Household
@@ -124,7 +124,9 @@ class HouseholdBudgetService:
     async def _household(self, user: User) -> Household:
         household = await self.households.mine(user)
         if household is None:
-            raise NotFoundError("You do not belong to a household.")
+            raise NotFoundError(
+                "You do not belong to a household.", code=ProblemCode.NOT_IN_HOUSEHOLD
+            )
         return household
 
 

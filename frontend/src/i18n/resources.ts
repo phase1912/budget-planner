@@ -1,0 +1,94 @@
+import enAuth from "@/locales/en/auth.json";
+import enCategories from "@/locales/en/categories.json";
+import enCommon from "@/locales/en/common.json";
+import enDashboard from "@/locales/en/dashboard.json";
+import enErrors from "@/locales/en/errors.json";
+import enGoals from "@/locales/en/goals.json";
+import enHousehold from "@/locales/en/household.json";
+import enLanding from "@/locales/en/landing.json";
+import enMessages from "@/locales/en/messages.json";
+import enProfile from "@/locales/en/profile.json";
+import enReceipts from "@/locales/en/receipts.json";
+import enStatistics from "@/locales/en/statistics.json";
+import enUpload from "@/locales/en/upload.json";
+import plAuth from "@/locales/pl/auth.json";
+import plCategories from "@/locales/pl/categories.json";
+import plCommon from "@/locales/pl/common.json";
+import plDashboard from "@/locales/pl/dashboard.json";
+import plErrors from "@/locales/pl/errors.json";
+import plGoals from "@/locales/pl/goals.json";
+import plHousehold from "@/locales/pl/household.json";
+import plLanding from "@/locales/pl/landing.json";
+import plMessages from "@/locales/pl/messages.json";
+import plProfile from "@/locales/pl/profile.json";
+import plReceipts from "@/locales/pl/receipts.json";
+import plStatistics from "@/locales/pl/statistics.json";
+import plUpload from "@/locales/pl/upload.json";
+import ukAuth from "@/locales/uk/auth.json";
+import ukCategories from "@/locales/uk/categories.json";
+import ukCommon from "@/locales/uk/common.json";
+import ukDashboard from "@/locales/uk/dashboard.json";
+import ukErrors from "@/locales/uk/errors.json";
+import ukGoals from "@/locales/uk/goals.json";
+import ukHousehold from "@/locales/uk/household.json";
+import ukLanding from "@/locales/uk/landing.json";
+import ukMessages from "@/locales/uk/messages.json";
+import ukProfile from "@/locales/uk/profile.json";
+import ukReceipts from "@/locales/uk/receipts.json";
+import ukStatistics from "@/locales/uk/statistics.json";
+import ukUpload from "@/locales/uk/upload.json";
+
+/**
+ * Every translation, one file per screen area (F9.9). English is the source: its files
+ * are what the keys are typed against, and `npm run lint:locales` fails the build when
+ * Ukrainian or Polish lacks one of them. Generated from the files in src/locales/en.
+ */
+export const en = {
+  auth: enAuth,
+  categories: enCategories,
+  common: enCommon,
+  dashboard: enDashboard,
+  errors: enErrors,
+  goals: enGoals,
+  household: enHousehold,
+  landing: enLanding,
+  messages: enMessages,
+  profile: enProfile,
+  receipts: enReceipts,
+  statistics: enStatistics,
+  upload: enUpload,
+};
+
+export const resources = {
+  en,
+  uk: {
+    auth: ukAuth,
+    categories: ukCategories,
+    common: ukCommon,
+    dashboard: ukDashboard,
+    errors: ukErrors,
+    goals: ukGoals,
+    household: ukHousehold,
+    landing: ukLanding,
+    messages: ukMessages,
+    profile: ukProfile,
+    receipts: ukReceipts,
+    statistics: ukStatistics,
+    upload: ukUpload,
+  },
+  pl: {
+    auth: plAuth,
+    categories: plCategories,
+    common: plCommon,
+    dashboard: plDashboard,
+    errors: plErrors,
+    goals: plGoals,
+    household: plHousehold,
+    landing: plLanding,
+    messages: plMessages,
+    profile: plProfile,
+    receipts: plReceipts,
+    statistics: plStatistics,
+    upload: plUpload,
+  },
+} as const;

@@ -1,0 +1,60 @@
+{
+  "title": "Statystyki",
+  "subtitle": "Sumy według kategorii za dowolny okres, nie tylko za pełne miesiące.",
+  "export": "Eksport",
+  "period": "Okres",
+  "presets": {
+    "thisMonth": "Ten miesiąc",
+    "lastMonth": "Poprzedni miesiąc",
+    "last3": "Ostatnie 3 miesiące",
+    "last3Short": "3 miesiące",
+    "custom": "Własny",
+    "thisMonthShort": "Bieżący",
+    "lastMonthShort": "Poprzedni"
+  },
+  "compareWith": "Porównaj z: {{period}}",
+  "previousPeriod": "poprzednim okresem",
+  "noPrevious": "W okresie {{period}} nie ma paragonów, więc każda kategoria jest względem niego nowa.",
+  "loadFailed": "Nie udało się wczytać statystyk",
+  "loading": "Sumujemy kategorie…",
+  "empty": {
+    "title": "Brak paragonów: {{period}}",
+    "message": "W tym okresie nic nie zapisano. To nie zero — po prostu nie ma czego sumować.",
+    "pick": "Wybierz inny okres"
+  },
+  "excluded_one": "{{count}} pozycja o wartości {{amount}} {{currency}} jest pominięta — jej paragon czeka na sprawdzenie.",
+  "excluded_few": "{{count}} pozycje o wartości {{amount}} {{currency}} są pominięte — ich paragony czekają na sprawdzenie.",
+  "excluded_many": "{{count}} pozycji o wartości {{amount}} {{currency}} jest pominiętych — ich paragony czekają na sprawdzenie.",
+  "excluded_other": "{{count}} pozycji o wartości {{amount}} {{currency}} jest pominiętych — ich paragony czekają na sprawdzenie.",
+  "reviewThem": "Sprawdź je",
+  "nothingCounted": "W okresie {{period}} nic nie jest liczone, dopóki te paragony nie zostaną sprawdzone.",
+  "caption": "Wydatki według kategorii, {{period}}, od największych",
+  "cols": {
+    "category": "Kategoria",
+    "spent": "Wydano",
+    "share": "Udział",
+    "items": "Pozycje",
+    "change": "Zmiana"
+  },
+  "noCategory": "Bez kategorii",
+  "items_one": "{{count}} pozycja",
+  "items_few": "{{count}} pozycje",
+  "items_many": "{{count}} pozycji",
+  "items_other": "{{count}} pozycji",
+  "new": "nowe",
+  "chart": {
+    "title": "Według kategorii",
+    "hidden_one": "Jeszcze {{count}} kategoria jest w tabeli poniżej.",
+    "hidden_few": "Jeszcze {{count}} kategorie są w tabeli poniżej.",
+    "hidden_many": "Jeszcze {{count}} kategorii jest w tabeli poniżej.",
+    "hidden_other": "Jeszcze {{count}} kategorii jest w tabeli poniżej."
+  },
+  "likeForLike": {
+    "month_one": "{{month}} jeszcze trwa, więc porównujemy go z tym samym {{count}} dniem miesiąca {{previous}}, a nie z całym miesiącem.",
+    "month_few": "{{month}} jeszcze trwa, więc porównujemy go z tymi samymi {{count}} dniami miesiąca {{previous}}, a nie z całym miesiącem.",
+    "month_many": "{{month}} jeszcze trwa, więc porównujemy go z tymi samymi {{count}} dniami miesiąca {{previous}}, a nie z całym miesiącem.",
+    "month_other": "{{month}} jeszcze trwa, więc porównujemy go z tymi samymi {{count}} dniami miesiąca {{previous}}, a nie z całym miesiącem.",
+    "range": "{{current}} kończy się w połowie miesiąca, więc porównujemy go z {{previous}}, a nie z pełnymi miesiącami."
+  },
+  "noChange": "bez zmian"
+}

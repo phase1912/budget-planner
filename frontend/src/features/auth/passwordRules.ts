@@ -3,7 +3,8 @@
  * backend/app/domain/passwords.py so the checklist and the refusal never disagree.
  */
 export interface PasswordRule {
-  label: string;
+  /** The rule's key under `auth:password` (F9.9). */
+  label: "length" | "letter" | "digit" | "special" | "common";
   met: (password: string) => boolean;
 }
 
@@ -17,11 +18,11 @@ const COMMON = new Set([
 ]);
 
 export const PASSWORD_RULES: PasswordRule[] = [
-  { label: "At least 8 characters", met: (p) => p.length >= 8 },
-  { label: "A letter", met: (p) => /\p{L}/u.test(p) },
-  { label: "A digit", met: (p) => /\p{Nd}/u.test(p) },
-  { label: "A special character, such as @, ! or #", met: (p) => /[^\p{L}\p{N}]/u.test(p) },
-  { label: "Not a common password", met: (p) => p === "" || !COMMON.has(p.toLowerCase()) },
+  { label: "length", met: (p) => p.length >= 8 },
+  { label: "letter", met: (p) => /\p{L}/u.test(p) },
+  { label: "digit", met: (p) => /\p{Nd}/u.test(p) },
+  { label: "special", met: (p) => /[^\p{L}\p{N}]/u.test(p) },
+  { label: "common", met: (p) => p === "" || !COMMON.has(p.toLowerCase()) },
 ];
 
 /** Whether the password meets every rule. */

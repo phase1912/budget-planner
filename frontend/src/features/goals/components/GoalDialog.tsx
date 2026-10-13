@@ -13,15 +13,11 @@ import {
 } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
 import type { Goal, GoalUpdate } from "@/stores/GoalsStore";
-import { GOAL_CHOICES, choiceOf, typeOf } from "../goalKinds";
+import { goalChoices, choiceOf, typeOf } from "../goalKinds";
 import type { GoalChoice } from "../goalKinds";
 import { WatchedLinesEditor } from "./WatchedLinesEditor";
-
-const AMOUNT_LABELS: Record<Exclude<GoalChoice, "lifestyle">, string> = {
-  spending_ceiling: "Monthly ceiling",
-  savings_target: "Amount to put aside",
-  category_reduction: "Monthly limit for that category",
-};
+import { useTranslation } from "react-i18next";
+import { categoryName } from "@/shared/categoryName";
 
 function sameItems(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((x, i) => x === b[i]);
@@ -45,6 +41,7 @@ interface GoalDialogProps {
  */
 export const GoalDialog = observer(function GoalDialog({ goal, onClose }: GoalDialogProps) {
   const { goalsStore, categoriesStore, authStore } = useStores();
+  const { t } = useTranslation(["goals", "common"]);
   const titleId = useId();
   const currency = authStore.user?.currency ?? "PLN";
   const [choice, setChoice] = useState<GoalChoice>(goal ? choiceOf(goal) : "spending_ceiling");
@@ -58,8 +55,8 @@ export const GoalDialog = observer(function GoalDialog({ goal, onClose }: GoalDi
 
   const lifestyle = choice === "lifestyle";
   const choices = goal
-    ? GOAL_CHOICES.filter((c) => (goal.type === "lifestyle") === (c.value === "lifestyle"))
-    : GOAL_CHOICES;
+    ? goalChoices().filter((c) => (goal.type === "lifestyle") === (c.value === "lifestyle"))
+    : goalChoices();
   const categories = [...categoriesStore.assignableBuiltIns, ...categoriesStore.customCategories];
   // A category the model chose stays on offer even when it is not one the picker lists.
   const watchable = [
@@ -119,12 +116,12 @@ export const GoalDialog = observer(function GoalDialog({ goal, onClose }: GoalDi
       >
         <ModalHeader>
           <h2 id={titleId} className="m-0 text-[17px] font-bold">
-            {goal ? "Edit goal" : "New goal"}
+            {goal ? t("dialog.edit") : t("dialog.new")}
           </h2>
         </ModalHeader>
         <ModalBody className="flex flex-col gap-4">
           <Select
-            label="What kind of goal"
+            label={t("dialog.kind")}
             value={choice}
             disabled={choices.length === 1}
             onChange={(e) => {
@@ -138,18 +135,20 @@ export const GoalDialog = observer(function GoalDialog({ goal, onClose }: GoalDi
             ))}
           </Select>
           <Input
-            label="Name"
+            label={t("dialog.name")}
             value={name}
             required
             maxLength={120}
-            placeholder={lifestyle ? "Lose weight" : "Stay under 3 000 PLN a month"}
+            placeholder={
+              lifestyle ? t("dialog.namePlaceholderLifestyle") : t("dialog.namePlaceholder")
+            }
             onChange={(e) => {
               setName(e.target.value);
             }}
           />
           {!lifestyle && (
             <Input
-              label={`${AMOUNT_LABELS[choice]}, ${currency}`}
+              label={t("dialog.amountLabel", { label: t(`dialog.amount.${choice}`), currency })}
               value={amount}
               inputMode="decimal"
               required
@@ -161,30 +160,30 @@ export const GoalDialog = observer(function GoalDialog({ goal, onClose }: GoalDi
           )}
           {choice === "category_reduction" && (
             <Select
-              label="Category"
+              label={t("dialog.category")}
               value={categoryId}
               required
               onChange={(e) => {
                 setCategoryId(e.target.value);
               }}
             >
-              <option value="">Pick a category</option>
+              <option value="">{t("dialog.pickCategory")}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {categoryName(c.name)}
                 </option>
               ))}
             </Select>
           )}
           <label className="flex flex-col gap-1.5">
             <span className="text-base font-medium text-muted-foreground">
-              {lifestyle ? "In your own words" : "Why it matters (optional)"}
+              {lifestyle ? t("dialog.ownWords") : t("dialog.why")}
             </span>
             <textarea
               value={description}
               maxLength={1000}
               rows={3}
-              placeholder={lifestyle ? "Fewer snacks and sugary drinks" : ""}
+              placeholder={lifestyle ? t("dialog.descriptionPlaceholder") : ""}
               className="resize-y rounded-control border border-border bg-background px-3 py-2.75 text-lg text-foreground transition-shadow focus:border-primary focus:shadow-[var(--ring-primary)] focus:outline-none"
               onChange={(e) => {
                 setDescription(e.target.value);
@@ -215,17 +214,17 @@ export const GoalDialog = observer(function GoalDialog({ goal, onClose }: GoalDi
                 else setConfirmingRemoval(true);
               }}
             >
-              {confirmingRemoval ? "Yes, remove this goal" : "Remove goal"}
+              {confirmingRemoval ? t("dialog.confirmRemove") : t("dialog.remove")}
             </Button>
           ) : (
             <span className="hidden md:block" />
           )}
           <div className="flex w-full items-center gap-2.5 md:w-auto [&>*]:flex-1 md:[&>*]:flex-none">
             <Button type="button" variant="ghost" onClick={close}>
-              Cancel
+              {t("common:cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={goalsStore.isSaving}>
-              {goalsStore.isSaving ? "Saving…" : goal ? "Save changes" : "Add goal"}
+              {goalsStore.isSaving ? t("dialog.saving") : goal ? t("dialog.save") : t("dialog.add")}
             </Button>
           </div>
         </ModalFooter>

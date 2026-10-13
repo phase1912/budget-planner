@@ -2537,6 +2537,8 @@ export interface components {
             currency: string;
             /** Budget Limit */
             budget_limit?: string | null;
+            /** Language */
+            language?: ("en" | "uk" | "pl") | null;
             /**
              * Forwarding Address
              * @description Where the user forwards e-receipts (F11.2); only ever shown to its owner.
@@ -2552,6 +2554,8 @@ export interface components {
             currency?: string | null;
             /** Budget Limit */
             budget_limit?: number | string | null;
+            /** Language */
+            language?: ("en" | "uk" | "pl") | null;
         };
         /** ValidationError */
         ValidationError: {
