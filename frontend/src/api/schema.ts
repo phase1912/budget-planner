@@ -1948,6 +1948,16 @@ export interface components {
              * @default false
              */
             is_category_manual: boolean;
+            /** Read Confidence */
+            read_confidence?: number | null;
+            /**
+             * Is Doubtful
+             * @description Whether the reader was unsure of this line and nobody has corrected it (BRD A10).
+             *
+             *     Kept with the stored receipt so the mark outlives the upload wizard (F15.2);
+             *     decided against `Settings.ocr_confidence_threshold` (ADR-0005).
+             */
+            readonly is_doubtful: boolean;
             /**
              * Category Is Low Confidence
              * @description Whether the category needs a human look before it is trusted (BRD C3).
@@ -2412,6 +2422,8 @@ export interface components {
              * @default false
              */
             is_category_manual: boolean;
+            /** Read Confidence */
+            read_confidence?: number | null;
             /**
              * Receipt Id
              * Format: uuid
@@ -2422,6 +2434,14 @@ export interface components {
             /** Transaction Date */
             transaction_date?: string | null;
             receipt_status: components["schemas"]["ReceiptStatus"];
+            /**
+             * Is Doubtful
+             * @description Whether the reader was unsure of this line and nobody has corrected it (BRD A10).
+             *
+             *     Kept with the stored receipt so the mark outlives the upload wizard (F15.2);
+             *     decided against `Settings.ocr_confidence_threshold` (ADR-0005).
+             */
+            readonly is_doubtful: boolean;
             /**
              * Category Is Low Confidence
              * @description Whether the category needs a human look before it is trusted (BRD C3).

@@ -13,6 +13,7 @@ from app.domain.budget import ReceiptOrder
 from app.domain.categories import UNCATEGORIZED, ItemView
 from app.domain.fiscal_identity import fiscal_identity
 from app.domain.periods import DateRange
+from app.domain.read_confidence import read_confidence
 from app.models.category import Category
 from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
@@ -735,6 +736,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
                         total_price=tp,
                         category_id=category_id,
                         category_confidence=category_confidence,
+                        read_confidence=read_confidence(item_data),
                     )
                 )
             except (InvalidOperation, TypeError, ValueError):
@@ -750,6 +752,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
                         total_price=Decimal("0"),
                         category_id=category_id,
                         category_confidence=category_confidence,
+                        read_confidence=0,
                     )
                 )
 

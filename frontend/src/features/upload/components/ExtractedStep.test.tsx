@@ -239,6 +239,36 @@ describe("ExtractedStep", () => {
     expect(screen.getByText("incl. −10.04 off")).toBeInTheDocument();
   });
 
+  it("marks the lines the reader doubted and shows just those beside the photos (F15.2)", () => {
+    withExtraction({
+      file_ids: ["file-1"],
+      line_items: [
+        {
+          name: "Clear",
+          quantity: "1",
+          unit_price: "50.00",
+          total_price: "50.00",
+          is_doubtful: false,
+        },
+        {
+          name: "Faded",
+          quantity: "1",
+          unit_price: "100.00",
+          total_price: "100.00",
+          is_doubtful: true,
+        },
+      ],
+    });
+    renderComponent();
+
+    expect(screen.getByText("Check this")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Only lines to check" }));
+
+    expect(screen.queryByText("Clear")).not.toBeInTheDocument();
+    expect(screen.getByText("Faded")).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Receipt photos" })).toBeInTheDocument();
+  });
+
   it("asks nothing about storing a receipt when it is the only one", () => {
     renderComponent();
     expect(screen.queryByRole("checkbox")).toBeNull();

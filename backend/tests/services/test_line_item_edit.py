@@ -158,3 +158,28 @@ async def test_correcting_a_categorised_line_is_stored_not_just_answered(
         EditLineItemRequest(extraction_index=0, item_index=1, total_price="13,99"),
     )
     await db_session.flush()
+
+
+@pytest.mark.asyncio
+async def test_a_doubtful_line_the_user_corrects_is_no_longer_marked(
+    db_session: AsyncSession,
+) -> None:
+    """F15.2: the user has now looked at the line, so the wizard drops its mark (BRD A10)."""
+    user = await UserFactory.create_async()
+    lines = cast(list[dict[str, object]], EXTRACTION["line_items"])
+    doubtful = {**EXTRACTION, "line_items": [{**line, "confidence": 40} for line in lines]}
+    job = await UploadJobFactory.create_async(
+        user_id=user.id,
+        status=JobStatus.COMPLETED,
+        file_ids=[],
+        result_data={"extractions": [doubtful]},
+    )
+    service = ReceiptService(repository=ReceiptRepository(db_session))
+
+    response = await service.edit_extracted_line_item(
+        job.id, user.id, EditLineItemRequest(extraction_index=0, item_index=1, total_price="13,99")
+    )
+
+    assert response.extracted_data is not None
+    lines = response.extracted_data["extractions"][0]["line_items"]
+    assert [line["is_doubtful"] for line in lines] == [True, False]

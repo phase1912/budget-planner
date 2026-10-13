@@ -9,6 +9,7 @@ from app.domain.periods import DateRange
 from app.models.line_item import LineItem
 from app.models.receipt import Receipt, ReceiptStatus
 from app.repository.receipt import ReceiptRepository
+from app.schemas.receipt import LineItemResponse
 from tests.factories.user import UserFactory
 
 
@@ -114,6 +115,47 @@ async def test_create_from_extraction(db_session: AsyncSession) -> None:
     assert len(fetched.line_items) == 1
     assert fetched.line_items[0].name == "Item 1"
     assert fetched.line_items[0].total_price == Decimal("10.00")
+
+
+@pytest.mark.asyncio
+async def test_each_line_keeps_how_sure_the_reader_was_of_it(db_session: AsyncSession) -> None:
+    """F15.2.1: the doubtful-line mark outlives the upload wizard (BRD A10)."""
+    user = await UserFactory.create_async()
+    current_user_id.set(user.id)
+    repo = ReceiptRepository(db_session)
+    extraction = {
+        "merchant_name": "Biedronka",
+        "receipt_total": "9.00",
+        "line_items": [
+            {
+                "name": "Faded",
+                "quantity": "1",
+                "unit_price": "4.00",
+                "total_price": "4.00",
+                "confidence": 55,
+            },
+            {
+                "name": "Clear",
+                "quantity": "1",
+                "unit_price": "5.00",
+                "total_price": "5.00",
+                "confidence": 97,
+            },
+        ],
+    }
+
+    receipt = repo.create_from_extraction(
+        user_id=user.id, file_ids=["f1"], extraction=extraction, parser_version="1.0"
+    )
+    await db_session.flush()
+
+    fetched = await repo.get_with_items(receipt.id)
+    assert fetched is not None
+    lines = [LineItemResponse.model_validate(i) for i in fetched.line_items]
+    assert [(i.name, i.read_confidence, i.is_doubtful) for i in lines] == [
+        ("Faded", 55, True),
+        ("Clear", 97, False),
+    ]
 
 
 @pytest.mark.asyncio

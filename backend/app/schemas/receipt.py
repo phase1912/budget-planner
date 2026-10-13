@@ -8,6 +8,7 @@ from pydantic import AliasPath, BaseModel, ConfigDict, Field, computed_field, fi
 
 from app.core.config import get_settings
 from app.domain.categories import is_low_confidence
+from app.domain.read_confidence import is_doubtful
 from app.models.receipt import ReceiptChannel, ReceiptStatus
 from app.models.upload_job import JobStatus
 
@@ -173,8 +174,19 @@ class LineItemResponse(BaseModel):
     category: CategoryResponse | None = None
     category_confidence: int | None = None
     is_category_manual: bool = False
+    read_confidence: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_doubtful(self) -> bool:
+        """Whether the reader was unsure of this line and nobody has corrected it (BRD A10).
+
+        Kept with the stored receipt so the mark outlives the upload wizard (F15.2);
+        decided against `Settings.ocr_confidence_threshold` (ADR-0005).
+        """
+        return is_doubtful(self.read_confidence, get_settings().ocr_confidence_threshold)
 
     @computed_field  # type: ignore[prop-decorator]
     @property

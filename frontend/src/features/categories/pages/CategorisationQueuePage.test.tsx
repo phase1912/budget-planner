@@ -19,6 +19,7 @@ const queueItem: ReviewQueueItem = {
   category_confidence: 40,
   category_is_low_confidence: true,
   is_category_manual: false,
+  is_doubtful: false,
   merchant_name: "Fresh Market",
   transaction_date: "2026-07-20T14:32:00Z",
   receipt_status: "parsed",

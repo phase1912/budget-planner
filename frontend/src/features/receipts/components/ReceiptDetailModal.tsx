@@ -12,6 +12,8 @@ import {
   IconTile,
   SecureImage,
   TotalsGapNote,
+  DoubtfulLinesNote,
+  DoubtfulMark,
 } from "@/shared/components";
 import { RefreshCw } from "lucide-react";
 import { InlineCategoryPicker } from "@/features/categories/components/InlineCategoryPicker";
@@ -41,6 +43,7 @@ export const ReceiptDetailModal = observer(() => {
   const { t } = useTranslation("receipts");
   const receipt = receiptStore.receiptDetail;
   const [showPhotos, setShowPhotos] = useState(false);
+  const [onlyDoubtful, setOnlyDoubtful] = useState(false);
 
   const handleClose = () => {
     receiptStore.clearSelection();
@@ -63,6 +66,10 @@ export const ReceiptDetailModal = observer(() => {
   const waitsForRate = Boolean(receipt.original_currency) && !receipt.exchange_rate;
   // Another household member's receipt: theirs to change, ours only to read (ADR-0017).
   const readOnly = receipt.user_id !== authStore.user?.id;
+  const doubtfulLines = receipt.line_items.filter((item) => item.is_doubtful);
+  const doubtfulCount = doubtfulLines.length;
+  const showingDoubtful = onlyDoubtful && doubtfulCount > 0;
+  const shownLines = showingDoubtful ? doubtfulLines : receipt.line_items;
   const addedBy = householdStore.household?.members.find((m) => m.user_id === receipt.user_id);
   const inSharedHousehold = (householdStore.household?.members.length ?? 0) > 1;
 
@@ -256,6 +263,18 @@ export const ReceiptDetailModal = observer(() => {
             </Button>
           </div>
         )}
+        <DoubtfulLinesNote
+          className="mb-3"
+          count={doubtfulCount}
+          only={showingDoubtful}
+          onToggle={() => {
+            setOnlyDoubtful(!showingDoubtful);
+          }}
+          fileIds={receipt.file_ids}
+          photoAlt={t("detail.photoAlt", {
+            merchant: receipt.merchant_name ?? t("detail.thisMerchant"),
+          })}
+        />
         <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_36px_70px_86px_156px] items-center gap-[12px] pb-1 border-b border-border">
           <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
             {t("cols.item")}
@@ -274,12 +293,15 @@ export const ReceiptDetailModal = observer(() => {
           </span>
         </div>
 
-        {receipt.line_items.map((item) => (
+        {shownLines.map((item) => (
           <div
             key={item.id}
             className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 gap-y-1.5 py-3 border-b border-border min-h-[44px] last:border-0 md:grid-cols-[minmax(0,1fr)_36px_70px_86px_156px] md:items-center md:gap-[12px] md:py-[11px]"
           >
-            <span className="text-[13px] font-medium">{item.name}</span>
+            <span className="flex flex-wrap items-center gap-2 text-[13px] font-medium">
+              {item.name}
+              {item.is_doubtful && <DoubtfulMark />}
+            </span>
             <span className="hidden md:block tabular-nums text-muted-foreground text-right text-[13px]">
               {formatAmount(item.quantity, 0)}
             </span>

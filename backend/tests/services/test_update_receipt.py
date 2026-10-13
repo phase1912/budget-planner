@@ -308,3 +308,50 @@ async def test_correcting_a_receipt_keeps_the_time_printed_on_it(
 
     assert updated is not None
     assert updated.transaction_date == datetime(2026, 8, 5, 11, 26, tzinfo=UTC)
+
+
+@pytest.mark.asyncio
+async def test_a_line_the_user_corrects_is_no_longer_doubtful(db_session: AsyncSession) -> None:
+    """F15.2: correcting a doubtful line settles it; an untouched one keeps its mark (A10)."""
+    user = await UserFactory.create_async()
+    current_user_id.set(user.id)
+    receipt = await _stored_receipt(db_session, user.id)
+    receipt.line_items[0].read_confidence = 40
+    untouched = LineItem(
+        id=uuid.uuid4(),
+        name="BULKA",
+        quantity=Decimal("1"),
+        unit_price=Decimal("1.00"),
+        total_price=Decimal("1.00"),
+        read_confidence=30,
+    )
+    receipt.line_items.append(untouched)
+    await db_session.flush()
+
+    updated = await ReceiptService(repository=ReceiptRepository(db_session)).update_receipt(
+        receipt.id,
+        UpdateReceiptRequest(
+            merchant_name="euro sklep",
+            transaction_date=None,
+            total_amount=Decimal("8.99"),
+            line_items=[
+                LineItemInput(
+                    id=receipt.line_items[0].id,
+                    name="MILKA",
+                    quantity=Decimal("1"),
+                    unit_price=Decimal("7.99"),
+                    total_price=Decimal("7.99"),
+                ),
+                LineItemInput(
+                    id=untouched.id,
+                    name="BULKA",
+                    quantity=Decimal("1"),
+                    unit_price=Decimal("1.00"),
+                    total_price=Decimal("1.00"),
+                ),
+            ],
+        ),
+    )
+
+    assert updated is not None
+    assert {i.name: i.read_confidence for i in updated.line_items} == {"MILKA": None, "BULKA": 30}

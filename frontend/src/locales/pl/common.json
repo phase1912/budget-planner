@@ -73,5 +73,16 @@
     "preparing": "Przygotowujemy plik…",
     "csvHint": "Do arkusza kalkulacyjnego",
     "jsonHint": "Dla innego programu"
+  },
+  "doubtful": {
+    "summary_one": "Odczyt nie jest pewny {{count}} pozycji — sprawdź ją ze zdjęciem.",
+    "summary_few": "Odczyt nie jest pewny {{count}} pozycji — sprawdź je ze zdjęciem.",
+    "summary_many": "Odczyt nie jest pewny {{count}} pozycji — sprawdź je ze zdjęciem.",
+    "summary_other": "Odczyt nie jest pewny {{count}} pozycji — sprawdź je ze zdjęciem.",
+    "showOnly": "Tylko do sprawdzenia",
+    "showAll": "Wszystkie pozycje",
+    "photos": "Zdjęcia paragonu",
+    "mark": "Sprawdź",
+    "title": "Odczyt tej pozycji nie jest pewny"
   }
 }

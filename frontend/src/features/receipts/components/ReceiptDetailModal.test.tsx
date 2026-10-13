@@ -206,6 +206,40 @@ describe("ReceiptDetailModal", () => {
     });
   });
 
+  it("marks the lines the reader was unsure of and narrows the list to them (F15.2)", () => {
+    const line = PHOTO_RECEIPT.line_items[0];
+    detail.receipt = {
+      ...PHOTO_RECEIPT,
+      line_items: [
+        { ...line, id: "i1", name: "Milk", is_doubtful: false },
+        { ...line, id: "i2", name: "Faded bread", is_doubtful: true },
+      ],
+    };
+    render(<ReceiptDetailModal />);
+
+    expect(
+      screen.getByText("The reader was unsure of 1 line — check it against the photo."),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("Check this")).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Only lines to check" }));
+
+    expect(screen.queryByText("Milk")).not.toBeInTheDocument();
+    expect(screen.getByText("Faded bread")).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Receipt photos" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "All lines" }));
+
+    expect(screen.getByText("Milk")).toBeInTheDocument();
+  });
+
+  it("says nothing about doubt when the reader was sure of every line", () => {
+    render(<ReceiptDetailModal />);
+
+    expect(screen.queryByText("Check this")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Only lines to check" })).not.toBeInTheDocument();
+  });
+
   it("offers no privacy outside a household", () => {
     render(<ReceiptDetailModal />);
 
