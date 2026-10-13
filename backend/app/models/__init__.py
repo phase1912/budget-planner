@@ -16,6 +16,7 @@ from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
 from app.models.monthly_snapshot import MonthlySnapshot
 from app.models.name_correction import NameCorrection
+from app.models.product import Product, ProductAlias
 from app.models.receipt import Receipt
 from app.models.recommendation import Recommendation
 from app.models.refresh_token import RefreshToken
@@ -36,6 +37,8 @@ __all__ = [
     "MonthlySnapshot",
     "NameCorrection",
     "PositionMatchOverride",
+    "Product",
+    "ProductAlias",
     "Receipt",
     "Recommendation",
     "RefreshToken",

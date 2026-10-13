@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 
 import { CategoryDot } from "@/features/categories/components/CategoryDot";
 import { ExportMenu } from "@/features/exports/components/ExportMenu";
+import { StatisticsTabs } from "../components/StatisticsTabs";
 import {
   Button,
   Card,
@@ -90,6 +91,8 @@ export const StatisticsPage = observer(function StatisticsPage() {
             />
           )}
         </header>
+
+        <StatisticsTabs />
 
         <HouseholdViewSwitch />
 

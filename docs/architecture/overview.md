@@ -69,6 +69,15 @@ Bank of Poland's rates, the ECB's (Frankfurter) as fallback (`app/adapters/excha
 each rate cached in the `exchange_rates` table by pair and date. The wizard is shown the
 rate before storing; budget and statistics only ever see the account's currency.
 
+Products (F16.1) match the user's purchase lines across receipts and shops
+(`app/services/product.py`, behind `/api/v1/products`). A printed name is reduced to a key
+— words and package size — by `app/domain/products.py`; a known key or an abbreviation of
+one of the same size is matched by rule, and only names merely alike go to the model, in
+one batch, through `ProductMatcherPort` (`app/ports/product_matching.py`). Matching runs
+when the products list is asked for, so receipts stored before products existed join too.
+Every way a product is printed is kept as an alias, so the user's merges and splits hold
+for later receipts.
+
 Households (E12, ADR-0017) live in `app/services/household.py` behind `/api/v1/household`.
 They have no `user_id`, so `HouseholdRepository` does not use the ownership filter: every
 lookup starts from the caller's own membership row, which is what keeps one household out

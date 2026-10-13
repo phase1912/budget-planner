@@ -16,6 +16,7 @@ import { GoalsStore } from "@/stores/GoalsStore";
 import { AdviceStore } from "@/stores/AdviceStore";
 import { QuotaStore } from "@/stores/QuotaStore";
 import { AccuracyStore } from "@/stores/AccuracyStore";
+import { ProductsStore } from "@/stores/ProductsStore";
 import { InstallStore } from "@/stores/InstallStore";
 import { HouseholdStore } from "@/stores/HouseholdStore";
 import { LanguageStore } from "@/stores/LanguageStore";
@@ -41,6 +42,7 @@ export class RootStore {
   readonly adviceStore: AdviceStore;
   readonly quotaStore: QuotaStore;
   readonly accuracyStore: AccuracyStore;
+  readonly productsStore: ProductsStore;
   readonly installStore: InstallStore;
   readonly householdStore: HouseholdStore;
   readonly languageStore: LanguageStore;
@@ -56,6 +58,7 @@ export class RootStore {
     const refreshMonth = () => void this.budgetStore.refresh();
     this.quotaStore = new QuotaStore();
     this.accuracyStore = new AccuracyStore();
+    this.productsStore = new ProductsStore(this.toastStore);
     this.installStore = new InstallStore();
     this.householdStore = new HouseholdStore(this.toastStore);
     // Every upload started uses up receipt reads (F10.6), whether or not it is stored.
@@ -90,6 +93,7 @@ export class RootStore {
         this.adviceStore.reset();
         this.quotaStore.reset();
         this.accuracyStore.reset();
+        this.productsStore.reset();
         this.householdStore.reset();
         this.receiptStore.resetScope();
       },

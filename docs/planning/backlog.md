@@ -3,9 +3,9 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-17 epics · 112 features · 248 tasks written so far.
+20 epics · 126 features · 275 tasks written so far.
 
-14 epics are in the diploma project's scope; 3 are planned but out of it.
+15 epics are in the diploma project's scope; 5 are planned but out of it.
 
 | Epic | Title | BRD | Features | Groomed | Phase | Scope |
 |---|---|---|---|---|---|---|
@@ -26,6 +26,9 @@
 | E14 | B2B Export & Accounting Integrations | — | 6 | no | 2 | Out of scope |
 | E15 | Receipt Accuracy & Trust | — | 4 | yes | 2 | Diploma |
 | E16 | Personal Price History | — | 4 | yes | 2 | Diploma |
+| E17 | Landing, Search and Analytics | — | 7 | yes | 2 | Diploma |
+| E18 | Subscriptions and Payments | — | 5 | yes | 2 | Out of scope |
+| E19 | Own Domain and Advertising | — | 2 | yes | 2 | Out of scope |
 
 ---
 
@@ -1219,27 +1222,29 @@ The same product printed differently on different receipts and shops ("Jogurt Na
 - **F16.1.1** Product model and matcher — A per-user product entity, line items linked to it, and a matcher that normalises names, sizes and units, behind a port so a model can help with ambiguous names.
 - **F16.1.2** Products list with merge and split — A products screen listing what the user buys, with merge and split of wrongly matched lines.
 
-### F16.2 — Price history of a product
+### F16.2 — Exploring what I buy
 
 *Requirements: —* · *Blocked by: F16.1*
 
-The unit price of a product the user buys, over time and per shop, with how much it has risen or fallen, computed per kilogram or litre where the receipt gives a weight.
+The user picks one product or several ("chips and croutons") and a period, and sees how often they bought them, how much — in pieces, or kilograms and litres where the receipt gives a size — what it cost, and how that went month by month; for each product, what it cost in each shop and how much more one shop charged than another; and for one product, how its price moved. A selection can be saved under a name and opened again. Only the user's own receipts (N2). Lives as a "Products" tab beside categories on Statistics.
 
-**Demonstrated by:** Open "Jogurt naturalny 330 ml" and read that it went from 4.99 to 5.49 at Biedronka since June, +10%, on a chart of every purchase.
+**Demonstrated by:** Pick "Chipsy Lay's 140 g" and "Sucharki 150 g", this month: bought 7 times, 0.98 kg, 41.30 PLN, more than last month; Lay's cost 6.99 at Biedronka and 8.49 at Żabka, 1.50 (21%) more; save the selection as "Snacks" and open it next month.
 
-- **F16.2.1** Unit price series per product — Endpoint returning each purchase's unit price, normalised by weight or volume where known, and the change over a period, from the user's own receipts only (N2).
-- **F16.2.2** Product page with the price chart — A product page charting unit price per purchase, coloured by shop, with the change stated in words.
+- **F16.2.1** Purchases of a selection over a period — Endpoint taking product ids and a period (whole days, inclusive, ADR-0012): times bought, quantity in pieces and in kg/l where known (never adding pieces to kilograms), amount spent, and the same per calendar month; for each product, each purchase's unit price (per kg/l where known) with its shop and date, and the change over the period. The caller's own receipts only, with a cross-user test (N2).
+- **F16.2.2** Price per shop — For each selected product bought in more than one shop within the period: its average and latest unit price per shop, the cheapest shop, and how much more each other shop charged, absolute and in percent. Shops grouped ignoring case and spacing. Products of different sizes are compared per kg/l, or not at all when no size is known.
+- **F16.2.3** Saved selections — Save a selection of products under a name per user, rename it, delete it; a product merged or split later (F16.1) keeps the selection pointing at what the user meant. Cross-user test (N2).
+- **F16.2.4** Products tab on Statistics — A "Products" tab beside categories on Statistics: search products by name, tick one or several, pick the period with the existing period control; totals, month-by-month bars, a price-per-shop table and, for one product, the unit-price chart coloured by shop with the change stated in words. Saved selections one tap away. Checked at 375, 768 and 1280 px; on a phone the shop table becomes stacked rows.
 
 ### F16.3 — Where it costs less
 
 *Requirements: —* · *Blocked by: F16.2*
 
-For products bought in more than one shop, which shop the user paid less in recently and by how much, only from their own receipts and only when both prices are recent enough to compare.
+Without the user asking, products bought in more than one shop say where the user recently paid less and by how much, only from their own receipts and only when both prices are recent enough to compare.
 
 **Demonstrated by:** The products list says "cheaper at Lidl" next to five products, with the difference per unit, and none for a product last bought at Lidl a year ago.
 
-- **F16.3.1** Shop comparison per product — Compare the latest unit prices per shop within a freshness window and report the cheaper shop and the difference.
-- **F16.3.2** Cheaper-shop marks — Mark products with a cheaper shop in the products list and on the product page.
+- **F16.3.1** Cheaper shop for every product — Using the price-per-shop comparison of F16.2.2, find the cheaper shop for each of the user's products, counting only prices within a freshness window, and report the difference per unit.
+- **F16.3.2** Cheaper-shop marks — Mark products with a cheaper shop in the products list and in the Products tab.
 
 ### F16.4 — Price signals in advice
 
@@ -1251,4 +1256,179 @@ Price rises and cheaper shops become evidence advice can cite, so a recommendati
 
 - **F16.4.1** Price evidence in goal analysis — Add price rises and cheaper shops for the goal's products to the analysis the advice model reads.
 - **F16.4.2** Saving from a shop switch — Compute the monthly saving of buying a product in the cheaper shop from the price gap and the user's purchase rate, the same way projected impact is computed for F8.5.
+
+---
+
+## E17 — Landing, Search and Analytics
+
+**BRD sections:** — · **Phase:** 2 · **Scope:** Diploma
+
+The product has no public face and no way to tell whether anyone comes: the only page before signing in is a short welcome under a hosting address nobody remembers, search engines cannot read a client-rendered app, and nothing counts visitors, sign-ups or who stays. This epic gives the service a memorable free address and a landing page that explains it, then measures traffic and use without cookies — before anything is done to bring visitors, so each later step can be judged by its effect — adds an interactive demo on sample data and short how-to videos, makes it findable by search engines, and publishes the privacy policy, terms and cookie consent. Nothing here is bought: a domain and advertising wait for traffic (E19).
+
+### F17.1 — A name worth remembering
+
+*Requirements: —* · *Blocked by: F0.9*
+
+The service is served at budget-agent.web.app instead of the project-derived hosting address, for free. A Firebase site name cannot change, so a new site is created and the old address redirects to it, path and query kept; everything that names the address — CORS, links, documentation — follows.
+
+**Demonstrated by:** Open budget-agent.web.app and sign in; open the old address with a path and land on the same page at the new one.
+
+- **F17.1.1** New hosting site with a redirect from the old one — A second Firebase Hosting site in Terraform as the one deployed to, the old site kept serving only a permanent redirect, the Deploy workflow and FIREBASE_SITE_ID switched, CORS and deployment documentation updated. Fails safe if the name is already taken by another project.
+
+### F17.2 — Landing page that explains the product
+
+*Requirements: —* · *Blocked by: F9.9, F17.1*
+
+A visitor learns in one screen what the service does — receipts read from a photo, spending by category and product, goals with advice from their own purchases, households — and finds the way to try it or sign up. Served as prerendered HTML, so search engines and link previews see the content without running the app; in English, Ukrainian and Polish.
+
+**Demonstrated by:** Open the site logged out on a phone: a hero with the promise and a "Try the demo" button, sections per feature with real screens, a short FAQ, and the same page in Ukrainian and Polish at their own addresses.
+
+- **F17.2.1** Landing content and design — Sections for the main features with screens from the product, a FAQ and calls to action, written in all three languages through the locales, designed against docs/design and checked at 375, 768 and 1280 px.
+- **F17.2.2** Prerendered public pages per language — Build the landing and the other public pages as static HTML at build time, one address per language, so they render without JavaScript; the app takes over after load. Lighthouse performance and accessibility at least 90 on a phone.
+
+### F17.3 — Knowing who comes and who stays
+
+*Requirements: —* · *Blocked by: F17.2*
+
+The author can see whether the service has an audience: visitors, where they come from and which pages they read, measured without cookies so no consent banner is needed; and from the service's own data, sign-ups, active users by week and month, who returns, and receipts read — counted, never exposing one user's data. Free tools only.
+
+**Demonstrated by:** Open the analytics dashboard and read last week's visitors by source; open the admin metrics page and read 3 sign-ups, 2 users active this week, 1 returning from last week, 14 receipts read.
+
+- **F17.3.1** Cookieless visitor analytics — Umami (cloud free tier, self-hosting kept possible) on the public pages and the app, without cookies or personal data, page views and the visit-to-sign-up path as events; the choice and its limits recorded in an ADR, and the privacy policy (F17.7) states it.
+- **F17.3.2** Usage metrics for the admin — An admin-only endpoint and page with sign-ups per day, weekly and monthly active users, returning users and receipts read, as aggregate counts only; refused to anyone but an admin, with a test. Checked at 375, 768 and 1280 px.
+
+### F17.4 — Interactive demo on sample data
+
+*Requirements: —* · *Blocked by: F17.2, F16.2*
+
+A visitor clicks through the real screens — month, categories, products and prices, a goal with its advice — filled with a realistic sample household, without an account and without a single model call, and is invited to sign up from it. Nothing a visitor does in the demo is stored or reaches another user's data.
+
+**Demonstrated by:** Press "Try the demo" on the landing page: the dashboard opens on a sample month with a "This is a demo" banner; open products, compare a price between shops, open a goal's advice; nothing can be uploaded or saved, and "Create an account" is one tap away.
+
+- **F17.4.1** Sample data and a read-only demo session — A fixed sample account built from anonymised receipts, reachable through a short-lived read-only demo session that refuses every write and every model call, rate limited per client. Tests that the demo can neither write nor read real users' data (N2).
+- **F17.4.2** Demo mode in the app — Entering the demo from the landing page, a banner saying it is a demo, writes disabled with a reason, and sign-up offered from it. Checked at 375, 768 and 1280 px.
+
+### F17.5 — How-to videos
+
+*Requirements: —* · *Blocked by: F17.4*
+
+Short videos show the main flows on the real app with the sample data — photographing a receipt, fixing a doubtful line, watching a product's price, setting a goal — with captions in each language, recorded by script so they can be made again when the screens change.
+
+**Demonstrated by:** Play "Upload a receipt" on the landing page: 30 seconds from the photo to the month, captioned in the page's language, without loading anything until played.
+
+- **F17.5.1** Scripted recordings of the main flows — Browser-automation scripts that drive the demo and record each flow at phone and desktop size; captions per language; output small enough for the landing page.
+- **F17.5.2** Videos on the landing page — Embed the videos with a poster image, loaded only when played, with captions and a text alternative.
+
+### F17.6 — Found by search engines
+
+*Requirements: —* · *Blocked by: F17.3*
+
+Search engines can find, read and present the service: they are told what to crawl and what not to, the public pages carry titles, descriptions and previews, each language is linked to the others, and the site is registered with Google Search Console as a URL-prefix property, which a web.app address allows. The signed-in app is never indexed. Comes after analytics, so the effect of being indexed can be measured.
+
+**Demonstrated by:** Search Console shows the landing page in three languages indexed with no coverage errors; sharing the link in a messenger shows the title, description and image.
+
+- **F17.6.1** robots.txt, sitemap and page metadata — robots.txt allowing the public pages and excluding the app and the API, a sitemap.xml of the public pages per language, titles, descriptions, canonical and hreflang links, Open Graph and Twitter cards, and SoftwareApplication structured data; Lighthouse SEO at least 90.
+- **F17.6.2** Search Console verification — Verify budget-agent.web.app in Google Search Console as a URL-prefix property through an HTML file or meta tag, submit the sitemap, and document how to read its reports.
+
+### F17.7 — Privacy policy, terms and cookie consent
+
+*Requirements: —* · *Blocked by: F17.2*
+
+The service states what it collects and why — including the cookieless analytics — and the terms it is offered under, in all three languages, linked from every public page and from sign-up; and it asks before setting any cookie that is not strictly needed, through a consent platform Google accepts in the EEA, so anything added later that needs consent — advertising (E19), other analytics — only runs once given. Wording to be checked against the E18 legal investigation.
+
+**Demonstrated by:** Open the landing page for the first time on a phone: a consent banner offers accept, reject and choose; rejecting leaves only strictly needed cookies; "Privacy" in the footer opens the policy in the page's language, and the choice can be changed there.
+
+- **F17.7.1** Privacy policy and terms pages — Public, prerendered pages for the privacy policy (GDPR) and the terms of service, in three languages, linked from the footer and from sign-up. Checked at 375, 768 and 1280 px.
+- **F17.7.2** Cookie consent with Google Consent Mode — A Google-certified consent platform with accept, reject and per-purpose choices in three languages, Consent Mode v2 signals, nothing beyond strictly needed cookies before consent, the choice kept and changeable from the privacy page, and a test that no optional script loads before consent. Checked at 375, 768 and 1280 px.
+
+---
+
+## E18 — Subscriptions and Payments
+
+**BRD sections:** — · **Phase:** 2 · **Scope:** Out of scope
+
+A free account reads ten receipts a month (and, once E19 brings them, sees ads). Paying raises the limit, and removes ads when there are any, priced from what a receipt read actually costs, so the service covers its model calls. The author sells through a Polish sole-proprietorship (JDG); how that may lawfully take card payments for a subscription — VAT on EU consumers, invoices and receipts, consumer withdrawal rights, the terms — is investigated before any code, and the payment provider is chosen from it. Payments run in the provider's test mode until the legal checklist is closed. Out of the diploma's scope while traffic is unproven: it needs paid services and legal work the author will not spend on before there are users.
+
+### F18.1 — Selling a subscription as a Polish JDG
+
+*Requirements: —*
+
+What a JDG must have and do to sell a monthly subscription to consumers in Poland and the EU: where the money is paid out to, VAT for EU consumers (OSS) or a merchant of record taking it on, invoices and receipts (including whether a cash register is required for online payments, and KSeF), the consumer's right of withdrawal for a digital service, and what the terms must say. Answered with sources in an ADR and a checklist for the author's accountant; not legal advice.
+
+**Demonstrated by:** Read the ADR: it recommends selling directly or through a merchant of record, lists what the JDG needs (business bank account, VAT registration status, documents), and the open points for the accountant.
+
+- **F18.1.1** Legal and tax investigation — Research the questions above from official sources (podatki.gov.pl, EU OSS, UOKiK, the act on providing services electronically) and the providers' own terms; write the ADR with sources and the accountant checklist.
+- **F18.1.2** Choose the payment provider — Compare a direct processor (Stripe) with merchants of record (Paddle, Lemon Squeezy) on fees, VAT handling, payout to a Polish account, JDG eligibility, Polish payment methods (BLIK, Przelewy24) and test mode; record the choice in an ADR.
+
+### F18.2 — Plans and prices
+
+*Requirements: —* · *Blocked by: F10.6*
+
+Plans priced from what a receipt read costs: the free plan keeps its limit (and the ads E19 may bring); a paid plan raises the limit and is ad-free; a larger one raises it further. The figures — cost per read, limits, prices, margin — are worked out and recorded, and the plans live in configuration, not code.
+
+**Demonstrated by:** Read the pricing ADR: cost per read from the model's measured tokens, three plans with limits and prices, and the margin at each.
+
+- **F18.2.1** Cost per read and the plans — Measure tokens per receipt read and per advice call, cost them at the model's prices and the hosting costs, and set the plans' limits and prices in an ADR.
+- **F18.2.2** Plans in configuration — Plans with their monthly receipt limit and ad-free flag in settings, replacing the single free limit; the free plan unchanged for existing accounts.
+
+### F18.3 — Paying for a subscription
+
+*Requirements: —* · *Blocked by: F18.1, F18.2*
+
+A user subscribes, changes plan or cancels through the provider's hosted checkout and customer portal — card details never touch the service — and the service learns of every change from the provider's signed webhooks, idempotently, so a retried or late event never double-charges or misstates a plan.
+
+**Demonstrated by:** In test mode, choose the paid plan, pay with the provider's test card on its checkout page, return to the app with the plan active; cancel in the portal and see it end at the period's close.
+
+- **F18.3.1** Checkout and customer portal — Endpoints creating a checkout session and a portal session for the signed-in user, behind a port so the provider can be swapped; test keys only in development and CI; secrets in Secret Manager.
+- **F18.3.2** Signed webhooks and subscription state — A webhook endpoint verifying the provider's signature, storing each event once, and keeping the user's subscription — plan, status, period end — current; tests for replayed, out-of-order and forged events, and a cross-user test (N2).
+
+### F18.4 — What a plan gives
+
+*Requirements: —* · *Blocked by: F18.3*
+
+The plan sets the month's receipt limit and whether ads may show (E19), from the subscription state; a cancelled plan lasts until its period ends, then the free plan applies.
+
+**Demonstrated by:** On the paid plan, the profile shows 30 receipts a month; after the period of a cancelled plan ends, 10 again.
+
+- **F18.4.1** Limits and ads from the plan — The receipt quota (F10.6) and an ad-free flag on the user read from the active plan, falling back to free at period end.
+- **F18.4.2** Plan on the profile — The current plan, its limit, renewal or end date and the portal link on Profile. Checked at 375, 768 and 1280 px.
+
+### F18.5 — Pricing page
+
+*Requirements: —* · *Blocked by: F18.2, F17.2*
+
+A public page comparing the plans in each language, from the same configuration the service enforces, leading signed-out visitors to sign up and signed-in ones to checkout.
+
+**Demonstrated by:** Open "Pricing" from the landing page on a phone: three plans side by side as stacked cards, the current plan marked when signed in.
+
+- **F18.5.1** Plans comparison page — Public, prerendered pricing page per language from the plans endpoint, with calls to action by state. Checked at 375, 768 and 1280 px.
+
+---
+
+## E19 — Own Domain and Advertising
+
+**BRD sections:** — · **Phase:** 2 · **Scope:** Out of scope
+
+Advertising is the free plan's way to pay for itself, but Google AdSense needs a domain the service owns — ads.txt must sit at the root of the domain, which a web.app address does not give — and a domain is bought only once analytics (F17.3) show real traffic. Out of the diploma's scope until then; the diploma describes it as the first of the two ways the service earns its keep, beside subscriptions (E18).
+
+### F19.1 — The service's own domain
+
+*Requirements: —* · *Blocked by: F17.3*
+
+Once traffic justifies it, the service moves to a domain of its own, bought by the author, with HTTPS and the API under the same name; budget-agent.web.app redirects to it.
+
+**Demonstrated by:** Open the service at its own domain over HTTPS; the web.app address redirects to it.
+
+- **F19.1.1** Domain on hosting and API, in Terraform — Point the domain at Firebase Hosting and the API at Cloud Run through Terraform, with managed certificates; redirect the web.app address; update CORS, Search Console (as a domain property) and the deployment documentation.
+
+### F19.3 — Advertising for accounts without a subscription
+
+*Requirements: —* · *Blocked by: F19.1, F17.7*
+
+Google AdSense shows ads on the public pages and in one or two places in the app that never sit inside a task — never in the upload wizard, a dialog or a form — and only for accounts whose plan is not ad-free (F18.4). Ads respect consent, do not shift the layout as they load, and fit a phone.
+
+**Demonstrated by:** Signed in on the free plan, scroll the dashboard to its foot and see one ad block that did not move the page as it loaded; on a paid account the block is not there.
+
+- **F19.3.1** AdSense account and site approval — Create the AdSense account for the business, add ads.txt at the domain's root, request site approval, and document the policies the placements must keep to.
+- **F19.3.2** Ad placements — Reserved-size ad slots on the landing page and at the foot of the dashboard and statistics, loaded after consent, hidden for an ad-free plan, and a test that no slot appears in the upload wizard or any dialog. Checked at 375, 768 and 1280 px.
 

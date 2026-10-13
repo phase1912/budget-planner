@@ -15,6 +15,7 @@ import { CategoriesPage } from "@/features/categories/pages/CategoriesPage";
 import { CategorisationQueuePage } from "@/features/categories/pages/CategorisationQueuePage";
 import { GoalsPage } from "@/features/goals/pages/GoalsPage";
 import { StatisticsPage } from "@/features/statistics/pages/StatisticsPage";
+import { ProductsPage } from "@/features/products/pages/ProductsPage";
 import { JoinHouseholdPage } from "@/features/household/pages/JoinHouseholdPage";
 
 export const App = observer(function App() {
@@ -41,6 +42,7 @@ export const App = observer(function App() {
             <Route path="/categories" element={<CategorisationQueuePage />} />
             {/* Placeholders for upcoming features (prevents 404s on navigation) */}
             <Route path="/statistics" element={<StatisticsPage />} />
+            <Route path="/statistics/products" element={<ProductsPage />} />
             <Route path="/goals" element={<GoalsPage />} />
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/profile" element={<ProfilePage />} />

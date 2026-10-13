@@ -109,5 +109,12 @@
   "corrections": {
     "undoFailed": "Nie udało się cofnąć poprawki. Spróbuj ponownie.",
     "forgotten": "Paragony z tego sklepu nie będą już tak poprawiane."
+  },
+  "products": {
+    "loadFailed": "Nie udało się wczytać produktów.",
+    "mergeFailed": "Nie udało się połączyć produktów. Spróbuj ponownie.",
+    "merged": "Połączono w jeden produkt.",
+    "splitFailed": "Nie udało się rozdzielić produktu. Spróbuj ponownie.",
+    "split": "Teraz to osobny produkt."
   }
 }

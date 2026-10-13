@@ -56,5 +56,10 @@
     "month_other": "{{month}} jeszcze trwa, więc porównujemy go z tymi samymi {{count}} dniami miesiąca {{previous}}, a nie z całym miesiącem.",
     "range": "{{current}} kończy się w połowie miesiąca, więc porównujemy go z {{previous}}, a nie z pełnymi miesiącami."
   },
-  "noChange": "bez zmian"
+  "noChange": "bez zmian",
+  "tabs": {
+    "label": "Co przeglądać",
+    "categories": "Kategorie",
+    "products": "Produkty"
+  }
 }

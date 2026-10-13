@@ -1,0 +1,40 @@
+{
+  "title": "Products",
+  "subtitle": "What you buy, one product however each shop prints it.",
+  "search": "Find a product",
+  "loading": "Gathering products from your receipts…",
+  "loadFailed": "Your products could not be loaded",
+  "noMatch": "No product matches that",
+  "empty": {
+    "title": "No products yet",
+    "message": "Products appear as your receipts are read."
+  },
+  "select": "Select {{name}}",
+  "bought_one": "bought {{count}} time",
+  "bought_other": "bought {{count}} times",
+  "shops_one": "{{count}} shop",
+  "shops_other": "{{count}} shops",
+  "last": "last {{date}}",
+  "variants_one": "How receipts print it ({{count}})",
+  "variants_other": "How receipts print it ({{count}})",
+  "split": "Split off",
+  "splitLabel": "Make “{{name}}” a product of its own",
+  "pickAnother": "Tick another product to merge it with this one.",
+  "picked_one": "{{count}} product selected",
+  "picked_other": "{{count}} products selected",
+  "clear": "Clear",
+  "merge": {
+    "open": "Merge",
+    "title_one": "Merge {{count}} product",
+    "title_other": "Merge {{count}} products",
+    "hint": "Their purchases become one product, and later receipts printed any of these ways join it too.",
+    "keep": "Which name to keep",
+    "confirm": "Merge"
+  },
+  "units": {
+    "g": "g",
+    "kg": "kg",
+    "ml": "ml",
+    "l": "l"
+  }
+}

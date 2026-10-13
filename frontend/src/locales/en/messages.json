@@ -107,5 +107,12 @@
   "corrections": {
     "undoFailed": "The correction could not be undone. Try again.",
     "forgotten": "This shop's receipts will no longer be corrected this way."
+  },
+  "products": {
+    "loadFailed": "Your products could not be loaded.",
+    "mergeFailed": "The products could not be merged. Try again.",
+    "merged": "Merged into one product.",
+    "splitFailed": "The product could not be split. Try again.",
+    "split": "Now a product of its own."
   }
 }

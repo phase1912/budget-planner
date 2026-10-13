@@ -1,0 +1,50 @@
+{
+  "title": "Produkty",
+  "subtitle": "Co kupujesz: jeden produkt, jakkolwiek drukuje go każdy sklep.",
+  "search": "Znajdź produkt",
+  "loading": "Zbieramy produkty z Twoich paragonów…",
+  "loadFailed": "Nie udało się wczytać produktów",
+  "noMatch": "Nic nie pasuje",
+  "empty": {
+    "title": "Nie ma jeszcze produktów",
+    "message": "Produkty pojawią się, gdy Twoje paragony zostaną odczytane."
+  },
+  "select": "Wybierz „{{name}}”",
+  "bought_one": "kupiono {{count}} raz",
+  "bought_few": "kupiono {{count}} razy",
+  "bought_many": "kupiono {{count}} razy",
+  "bought_other": "kupiono {{count}} razy",
+  "shops_one": "{{count}} sklep",
+  "shops_few": "{{count}} sklepy",
+  "shops_many": "{{count}} sklepów",
+  "shops_other": "{{count}} sklepu",
+  "last": "ostatnio {{date}}",
+  "variants_one": "Jak zapisano na paragonach ({{count}})",
+  "variants_few": "Jak zapisano na paragonach ({{count}})",
+  "variants_many": "Jak zapisano na paragonach ({{count}})",
+  "variants_other": "Jak zapisano na paragonach ({{count}})",
+  "split": "Odłącz",
+  "splitLabel": "Zrób z „{{name}}” osobny produkt",
+  "pickAnother": "Zaznacz jeszcze jeden produkt, aby je połączyć.",
+  "picked_one": "Wybrano {{count}} produkt",
+  "picked_few": "Wybrano {{count}} produkty",
+  "picked_many": "Wybrano {{count}} produktów",
+  "picked_other": "Wybrano {{count}} produktu",
+  "clear": "Wyczyść",
+  "merge": {
+    "open": "Połącz",
+    "title_one": "Połącz {{count}} produkt",
+    "title_few": "Połącz {{count}} produkty",
+    "title_many": "Połącz {{count}} produktów",
+    "title_other": "Połącz {{count}} produktu",
+    "hint": "Ich zakupy staną się jednym produktem, a kolejne paragony z dowolnym z tych zapisów też do niego dołączą.",
+    "keep": "Którą nazwę zostawić",
+    "confirm": "Połącz"
+  },
+  "units": {
+    "g": "g",
+    "kg": "kg",
+    "ml": "ml",
+    "l": "l"
+  }
+}
