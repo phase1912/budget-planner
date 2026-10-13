@@ -17,6 +17,7 @@ import { AdviceStore } from "@/stores/AdviceStore";
 import { QuotaStore } from "@/stores/QuotaStore";
 import { InstallStore } from "@/stores/InstallStore";
 import { HouseholdStore } from "@/stores/HouseholdStore";
+import { LanguageStore } from "@/stores/LanguageStore";
 
 /**
  * Single instantiation point for every MobX store in the client (F9.2.1). Feature
@@ -40,11 +41,13 @@ export class RootStore {
   readonly quotaStore: QuotaStore;
   readonly installStore: InstallStore;
   readonly householdStore: HouseholdStore;
+  readonly languageStore: LanguageStore;
 
   constructor() {
     this.themeStore = new ThemeStore();
     this.toastStore = new ToastStore();
     this.authStore = new AuthStore(apiClient);
+    this.languageStore = new LanguageStore(this.authStore);
     this.profileStore = new ProfileStore(apiClient, this.authStore, this.toastStore);
     this.budgetStore = new BudgetStore();
     // Any receipt change may have recalculated the month on screen (BRD D6, F6.5).
@@ -65,6 +68,16 @@ export class RootStore {
     this.goalsStore = new GoalsStore(this.toastStore, () => void this.adviceStore.loadProgress());
     // The month view remembers where it was left; a new account starts afresh,
     // and never sees the previous one's figures while its own load.
+    // Signing in brings the account's language with it (F9.9).
+    reaction(
+      () => `${this.authStore.user?.id ?? ""}:${this.authStore.user?.language ?? ""}`,
+      () => {
+        const user = this.authStore.user;
+        if (user) this.languageStore.adoptAccount(user.language);
+      },
+      // Keyed by value: the user object is replaced on every profile load, its language is not.
+      { fireImmediately: true },
+    );
     reaction(
       () => this.authStore.user?.id,
       () => {

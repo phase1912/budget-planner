@@ -2,7 +2,7 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.errors import DomainError
+from app.api.errors import DomainError, ProblemCode
 from app.domain.email_intake import new_forwarding_token
 from app.models.user import User
 from app.repository.receipt import ReceiptRepository
@@ -29,7 +29,10 @@ class UserService:
             # F1.4.2: explicit guard rejecting a currency change once receipts exist
             has_receipts = await self.receipt_repository.exists_for_user(user.id)
             if has_receipts:
-                raise DomainError("Cannot change currency once receipts exist.")
+                raise DomainError(
+                    "Cannot change currency once receipts exist.",
+                    code=ProblemCode.CURRENCY_LOCKED,
+                )
 
         self.repository.update(user, data)
         await self.session.commit()

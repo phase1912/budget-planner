@@ -36,7 +36,9 @@ class StubAdviceGenerator:
         self.proposals = proposals
         self.asked = 0
 
-    async def propose(self, analysis: GoalAnalysis, currency: str) -> list[Advice]:
+    async def propose(
+        self, analysis: GoalAnalysis, currency: str, *, language: str = "en"
+    ) -> list[Advice]:
         self.asked += 1
         if self.proposals is None:
             raise AdviceUnavailable

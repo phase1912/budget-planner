@@ -6,6 +6,7 @@ import { errorMessage } from "@/api/errors";
 import type { YearMonth } from "@/shared/purchaseDate";
 import type { CategorySpend } from "./CategoriesStore";
 import type { Receipt } from "./ReceiptStore";
+import i18n from "@/i18n";
 
 export type MonthSummary = components["schemas"]["MonthSummaryResponse"];
 
@@ -159,7 +160,7 @@ export class BudgetStore {
         params: { path: { year, month }, query: { today: this.today } },
       });
       if (response.error) {
-        throw new Error(errorMessage(response.error, "Could not load the month"));
+        throw new Error(errorMessage(response.error, i18n.t("messages:month.loadFailed")));
       }
       if (request !== this.request) return;
       const { summary, receipts, categories, receipts_in_month } = response.data;
@@ -173,7 +174,7 @@ export class BudgetStore {
     } catch (error) {
       if (request !== this.request) return;
       runInAction(() => {
-        this.error = error instanceof Error ? error.message : "Could not load the month";
+        this.error = error instanceof Error ? error.message : i18n.t("messages:month.loadFailed");
         this.isLoading = false;
       });
     }

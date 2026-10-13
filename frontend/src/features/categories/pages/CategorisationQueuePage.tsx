@@ -21,29 +21,14 @@ import { formatPurchase } from "@/shared/purchaseDate";
 import type { ItemView, ReviewQueueItem } from "@/stores/CategoriesStore";
 import { CategorySpendList } from "../components/CategorySpendList";
 import { InlineCategoryPicker } from "../components/InlineCategoryPicker";
+import { numberFormat } from "@/i18n/format";
+import { useTranslation } from "react-i18next";
+import { formatAmount } from "@/i18n/format";
 
-const AMOUNT = new Intl.NumberFormat("en-US", {
+const AMOUNT = numberFormat({
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
-
-const SUBTITLES: Record<ItemView, string> = {
-  needs_review: "Items the agent was not confident about, oldest first.",
-  corrected: "Items you filed by hand, oldest first.",
-  all: "Everything you bought and what it cost, oldest first.",
-};
-
-const EMPTY_MESSAGES: Record<ItemView, { title: string; message: string }> = {
-  needs_review: {
-    title: "Nothing needs review",
-    message: "Every item the agent has seen was placed with confidence.",
-  },
-  corrected: {
-    title: "No corrections yet",
-    message: "Items you file under a category by hand will be listed here.",
-  },
-  all: { title: "No items yet", message: "Upload a receipt and its items will appear here." },
-};
 
 function purchaseDate(item: ReviewQueueItem): string {
   return item.transaction_date
@@ -83,15 +68,18 @@ function selectionFrom(params: URLSearchParams) {
  */
 export const CategorisationQueuePage = observer(function CategorisationQueuePage() {
   const { categoriesStore, authStore } = useStores();
+  const { t } = useTranslation("categories");
   const { reviewQueue, isLoadingQueue, queueError, queueView, queueSearch } = categoriesStore;
   const filtered =
     queueSearch.trim() !== "" ||
     categoriesStore.queueStartDate !== undefined ||
     categoriesStore.queueCategoryId !== null;
   const currency = authStore.user?.currency ?? "PLN";
-  const empty = filtered
-    ? { title: "No matching items", message: "Nothing in this view matches these filters." }
-    : EMPTY_MESSAGES[queueView];
+  const emptyKind = filtered ? "filtered" : queueView;
+  const empty = {
+    title: t(`queue.empty.${emptyKind}.title`),
+    message: t(`queue.empty.${emptyKind}.message`),
+  };
 
   const [searchParams] = useSearchParams();
   const query = searchParams.toString();
@@ -112,22 +100,22 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
         <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col gap-1">
             <h1 className="m-0 text-[24px] md:text-[28px] font-bold tracking-[-0.02em] text-foreground">
-              Categories
+              {t("queue.title")}
             </h1>
-            <p className="m-0 text-lg text-muted-foreground">{SUBTITLES[queueView]}</p>
+            <p className="m-0 text-lg text-muted-foreground">{t(`queue.subtitle.${queueView}`)}</p>
           </div>
           <Link
             to="/categories/manage"
             className="inline-flex items-center gap-2 text-lg font-semibold text-primary hover:text-primary-hover"
           >
             <SlidersHorizontal size={16} aria-hidden="true" />
-            Manage the taxonomy
+            {t("queue.manage")}
           </Link>
         </header>
 
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <SegmentedControl<ItemView>
-            label="Which items to show"
+            label={t("queue.which")}
             size="sm"
             fill
             value={queueView}
@@ -137,12 +125,20 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
             options={[
               {
                 value: "needs_review",
-                label: "Needs review",
-                shortLabel: "To review",
+                label: t("queue.views.needsReview"),
+                shortLabel: t("queue.views.needsReviewShort"),
                 badge: categoriesStore.needsReviewCount,
               },
-              { value: "corrected", label: "Corrected by you", shortLabel: "Corrected" },
-              { value: "all", label: "All items", shortLabel: "All" },
+              {
+                value: "corrected",
+                label: t("queue.views.corrected"),
+                shortLabel: t("queue.views.correctedShort"),
+              },
+              {
+                value: "all",
+                label: t("queue.views.all"),
+                shortLabel: t("queue.views.allShort"),
+              },
             ]}
           />
           <div className="flex items-center gap-2.5">
@@ -153,7 +149,7 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
                 categoriesStore.setQueueDates(start, end);
               }}
             />
-            <div className="relative w-full md:w-60">
+            <div className="relative w-full lg:w-60">
               <Search
                 size={16}
                 aria-hidden="true"
@@ -162,8 +158,8 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
               <Input
                 className="pl-9 py-2.25 text-md"
                 type="search"
-                placeholder="Find an item"
-                aria-label="Find an item"
+                placeholder={t("queue.find")}
+                aria-label={t("queue.find")}
                 value={queueSearch}
                 onChange={(e) => {
                   categoriesStore.setQueueSearch(e.target.value);
@@ -184,13 +180,9 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
         )}
 
         {isLoadingQueue && reviewQueue.length === 0 ? (
-          <LoadingState title="Loading the review queue…" />
+          <LoadingState title={t("queue.loading")} />
         ) : queueError ? (
-          <ErrorState
-            layout="banner"
-            title="The review queue could not be loaded"
-            message={queueError}
-          />
+          <ErrorState layout="banner" title={t("queue.loadFailed")} message={queueError} />
         ) : reviewQueue.length === 0 ? (
           <Card className="py-12 px-6">
             <EmptyState
@@ -204,43 +196,39 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
           <Card flush>
             <div
               aria-hidden="true"
-              className="hidden md:grid md:grid-cols-[minmax(0,1fr)_150px_110px_100px_210px] gap-x-4 px-4.5 py-3 bg-surface border-b border-border text-sm font-semibold uppercase tracking-[0.05em] text-muted-foreground"
+              className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_150px_110px_100px_210px] gap-x-4 px-4.5 py-3 bg-surface border-b border-border text-sm font-semibold uppercase tracking-[0.05em] text-muted-foreground"
             >
-              <span>Item</span>
-              <span>Merchant</span>
-              <span>Date</span>
-              <span className="text-right">Amount</span>
-              <span>Category</span>
+              <span>{t("queue.cols.item")}</span>
+              <span>{t("queue.cols.merchant")}</span>
+              <span>{t("queue.cols.date")}</span>
+              <span className="text-right">{t("queue.cols.amount")}</span>
+              <span>{t("queue.cols.category")}</span>
             </div>
             <ul className="m-0 p-0 list-none">
               {reviewQueue.map((item) => (
                 <li
                   key={item.id}
-                  className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 px-4 py-3.5 border-t border-border first:border-t-0 md:grid-cols-[minmax(0,1fr)_150px_110px_100px_210px] md:items-center md:px-4.5"
+                  className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 px-4 py-3.5 border-t border-border first:border-t-0 lg:grid-cols-[minmax(0,1fr)_150px_110px_100px_210px] lg:items-center md:px-4.5"
                 >
                   <span className="flex flex-wrap items-center gap-2 text-lg font-semibold">
                     {item.name}
                     {item.receipt_status === "manual_review" && (
-                      <Pill
-                        tone="warning"
-                        size="sm"
-                        title="Its receipt is under review, so it is not counted in the total"
-                      >
-                        Under review
+                      <Pill tone="warning" size="sm" title={t("queue.underReviewTitle")}>
+                        {t("queue.underReview")}
                       </Pill>
                     )}
                   </span>
-                  <span className="order-3 col-span-2 text-md text-muted-foreground md:order-none md:col-span-1">
+                  <span className="order-3 col-span-2 text-md text-muted-foreground lg:order-none lg:col-span-1">
                     {item.merchant_name ?? "—"}
-                    <span className="md:hidden"> · {purchaseDate(item)}</span>
+                    <span className="lg:hidden"> · {purchaseDate(item)}</span>
                   </span>
-                  <span className="hidden md:block tabular-nums text-md text-muted-foreground">
+                  <span className="hidden lg:block tabular-nums text-md text-muted-foreground">
                     {purchaseDate(item)}
                   </span>
-                  <span className="order-2 tabular-nums text-right text-lg font-semibold md:order-none">
-                    {Number(item.total_price).toFixed(2)}
+                  <span className="order-2 tabular-nums text-right text-lg font-semibold lg:order-none">
+                    {formatAmount(item.total_price)}
                   </span>
-                  <div className="order-4 col-span-2 md:order-none md:col-span-1">
+                  <div className="order-4 col-span-2 lg:order-none lg:col-span-1">
                     <InlineCategoryPicker
                       itemId={item.id}
                       itemName={item.name}
@@ -257,11 +245,13 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
             </ul>
             <p className="m-0 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-4 py-3.5 border-t border-border bg-surface md:px-4.5">
               <span className="text-md text-muted-foreground">
-                {categoriesStore.queueTotal === 1
-                  ? "1 item"
-                  : `${String(categoriesStore.queueTotal)} items`}
+                {t("items", { count: categoriesStore.queueTotal })}
                 {categoriesStore.queueExcludedCount > 0 &&
-                  ` · ${String(categoriesStore.queueExcludedCount)} under review, worth ${AMOUNT.format(Number(categoriesStore.queueExcludedAmount))} ${currency}, not counted`}
+                  t("queue.excluded", {
+                    count: categoriesStore.queueExcludedCount,
+                    amount: AMOUNT.format(Number(categoriesStore.queueExcludedAmount)),
+                    currency,
+                  })}
               </span>
               <span className="tabular-nums text-lg font-bold">
                 {AMOUNT.format(Number(categoriesStore.queueTotalAmount))} {currency}
@@ -282,11 +272,7 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
           />
         )}
 
-        <Note tone="accent">
-          Each correction you make can become a rule: with “Apply to future items” ticked, the same
-          item from the same merchant is categorised your way next time, and automatic passes leave
-          it alone.
-        </Note>
+        <Note tone="accent">{t("queue.rule")}</Note>
       </div>
     </div>
   );

@@ -1,11 +1,13 @@
 import { TrendingDown, TrendingUp } from "lucide-react";
+import { numberFormat } from "@/i18n/format";
+import i18n from "@/i18n";
 
-const AMOUNT = new Intl.NumberFormat("en-US", {
+const AMOUNT = numberFormat({
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
   signDisplay: "exceptZero",
 });
-const PERCENT = new Intl.NumberFormat("en-US", {
+const PERCENT = numberFormat({
   minimumFractionDigits: 1,
   maximumFractionDigits: 1,
   signDisplay: "exceptZero",
@@ -31,7 +33,8 @@ interface ChangeProps {
  */
 export function Change({ change, percent, compact = false }: ChangeProps) {
   const amount = Number(change);
-  if (amount === 0) return <span className="text-muted-foreground">no change</span>;
+  if (amount === 0)
+    return <span className="text-muted-foreground">{i18n.t("statistics:noChange")}</span>;
   const up = amount > 0;
   const Arrow = up ? TrendingUp : TrendingDown;
   return (
@@ -40,7 +43,9 @@ export function Change({ change, percent, compact = false }: ChangeProps) {
     >
       <Arrow size={14} aria-hidden="true" className="shrink-0" />
       {!compact && `${AMOUNT.format(amount).replace("-", "−")} · `}
-      {percent == null ? "new" : `${PERCENT.format(Number(percent)).replace("-", "−")}%`}
+      {percent == null
+        ? i18n.t("statistics:new")
+        : `${PERCENT.format(Number(percent)).replace("-", "−")}%`}
     </span>
   );
 }

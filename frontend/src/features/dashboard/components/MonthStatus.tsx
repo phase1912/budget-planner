@@ -1,6 +1,7 @@
 import { CircleCheck, Clock } from "lucide-react";
 
 import { Pill } from "@/shared/components";
+import { useTranslation } from "react-i18next";
 
 interface MonthStatusProps {
   isComplete: boolean;
@@ -17,16 +18,17 @@ interface MonthStatusProps {
  * compact form reads "Still running" or "Finalised", as on a phone.
  */
 export function MonthStatus({ isComplete, compact = false }: MonthStatusProps) {
+  const { t } = useTranslation("dashboard");
   const size = compact ? "sm" : "default";
   return isComplete ? (
     <Pill size={size}>
       <CircleCheck size={compact ? 12 : 14} aria-hidden="true" />
-      {compact ? "Finalised" : "Finalised · complete month"}
+      {compact ? t("status.finalised") : t("status.finalisedLong")}
     </Pill>
   ) : (
     <Pill tone="info" size={size}>
       <Clock size={compact ? 12 : 14} aria-hidden="true" />
-      {compact ? "Still running" : "Month-to-date · still running"}
+      {compact ? t("status.running") : t("status.runningLong")}
     </Pill>
   );
 }

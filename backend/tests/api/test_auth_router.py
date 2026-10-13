@@ -97,6 +97,7 @@ class TestRegister:
         user.last_name = "User"
         user.currency = "PLN"
         user.budget_limit = None
+        user.language = None
         user.forwarding_token = "0123456789abcdef"
 
         # First execute: no existing user; second: flush creates the RT
@@ -213,6 +214,7 @@ class TestLogin:
         user.last_name = "Name"
         user.currency = "PLN"
         user.budget_limit = None
+        user.language = None
         user.forwarding_token = "0123456789abcdef"
         user.password_hash = get_password_hash("SecurePass123!")
 

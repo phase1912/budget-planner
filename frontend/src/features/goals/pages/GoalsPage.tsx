@@ -9,6 +9,8 @@ import { AtRiskWarnings } from "../components/AtRiskWarnings";
 import { GoalAdvice } from "../components/GoalAdvice";
 import { GoalCard } from "../components/GoalCard";
 import { GoalDialog } from "../components/GoalDialog";
+import { useTranslation } from "react-i18next";
+import { categoryName } from "@/shared/categoryName";
 
 /**
  * Goals (docs/design/screens/goals.html), first slice: the goals the user has
@@ -17,6 +19,7 @@ import { GoalDialog } from "../components/GoalDialog";
  */
 export const GoalsPage = observer(function GoalsPage() {
   const { goalsStore, categoriesStore, authStore, adviceStore } = useStores();
+  const { t } = useTranslation("goals");
   const { goals, isLoading, loadError } = goalsStore;
   const currency = authStore.user?.currency ?? "PLN";
   // null: closed; "new": stating a goal; a goal: editing it.
@@ -28,8 +31,10 @@ export const GoalsPage = observer(function GoalsPage() {
     categoriesStore.ensureCategories();
   }, [goalsStore, adviceStore, categoriesStore]);
 
-  const categoryName = (id: string | null | undefined) =>
-    categoriesStore.categories.find((c) => c.id === id)?.name ?? null;
+  const nameOf = (id: string | null | undefined) => {
+    const name = categoriesStore.categories.find((c) => c.id === id)?.name;
+    return name ? categoryName(name) : null;
+  };
 
   const newGoal = (
     <Button
@@ -39,7 +44,7 @@ export const GoalsPage = observer(function GoalsPage() {
       }}
     >
       <Plus size={16} aria-hidden="true" />
-      New goal
+      {t("newGoal")}
     </Button>
   );
 
@@ -48,10 +53,10 @@ export const GoalsPage = observer(function GoalsPage() {
       <div className="w-full max-w-[1000px] flex flex-col gap-4 md:gap-5.5">
         <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col gap-1">
-            <h1 className="m-0 text-[24px] font-bold tracking-[-0.02em] md:text-[28px]">Goals</h1>
-            <p className="m-0 text-lg text-muted-foreground">
-              Say what you are aiming at, and each goal gets advice built from your own receipts.
-            </p>
+            <h1 className="m-0 text-[24px] font-bold tracking-[-0.02em] md:text-[28px]">
+              {t("title")}
+            </h1>
+            <p className="m-0 text-lg text-muted-foreground">{t("subtitle")}</p>
           </div>
           {goals.length > 0 && newGoal}
         </header>
@@ -59,20 +64,22 @@ export const GoalsPage = observer(function GoalsPage() {
         <AtRiskWarnings />
 
         {adviceStore.loadError && goals.length > 0 && (
-          <Note tone="error">Your advice could not be loaded. {adviceStore.loadError}</Note>
+          <Note tone="error">
+            {t("adviceLoadFailed")} {adviceStore.loadError}
+          </Note>
         )}
 
         {loadError ? (
-          <ErrorState layout="banner" title="Your goals could not be loaded" message={loadError} />
+          <ErrorState layout="banner" title={t("loadFailed")} message={loadError} />
         ) : isLoading && goals.length === 0 ? (
-          <LoadingState title="Loading your goals…" />
+          <LoadingState title={t("loading")} />
         ) : goals.length === 0 ? (
           <Card variant="surface" className="px-5 py-10">
             <EmptyState
               icon={Target}
               iconTone="primary"
-              title="No goals yet"
-              message="A spending ceiling, an amount to save, less spent on one category, or a change in how you live — the advice is built around it."
+              title={t("empty.title")}
+              message={t("empty.message")}
               action={newGoal}
             />
           </Card>
@@ -83,7 +90,7 @@ export const GoalsPage = observer(function GoalsPage() {
                 <GoalCard
                   goal={goal}
                   currency={currency}
-                  categoryName={categoryName}
+                  categoryName={nameOf}
                   onEdit={() => {
                     setEditing(goal);
                   }}

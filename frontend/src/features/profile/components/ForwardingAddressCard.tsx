@@ -5,6 +5,7 @@ import { Check, Copy, RefreshCw } from "lucide-react";
 import { Button } from "@/shared/components/Button/Button";
 import { Card, CardBody, CardHeader } from "@/shared/components/Card/Card";
 import { useStores } from "@/stores/StoreContext";
+import { useTranslation } from "react-i18next";
 
 /**
  * The user's receipt forwarding address (BRD F11 — F11.2): copy it, or replace it when
@@ -13,6 +14,7 @@ import { useStores } from "@/stores/StoreContext";
  */
 export const ForwardingAddressCard = observer(function ForwardingAddressCard() {
   const { authStore, profileStore } = useStores();
+  const { t } = useTranslation("profile");
   const [copied, setCopied] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const address = authStore.user?.forwarding_address ?? "";
@@ -32,16 +34,16 @@ export const ForwardingAddressCard = observer(function ForwardingAddressCard() {
 
   return (
     <Card variant="surface" flush>
-      <CardHeader>Receipts by email</CardHeader>
+      <CardHeader>{t("forwarding.title")}</CardHeader>
       <CardBody className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
           <label htmlFor="forwarding-address" className="font-semibold text-lg text-foreground">
-            Your forwarding address
+            {t("forwarding.label")}
           </label>
           <p className="m-0 text-md leading-relaxed text-muted-foreground">
-            Forward a shop&apos;s e-receipt here from{" "}
-            {authStore.user?.email ?? "your account email"}. It is read like a photo and appears on
-            Receipts marked as from email. Mail from any other address is ignored.
+            {t("forwarding.hint", {
+              email: authStore.user?.email ?? t("forwarding.yourEmail"),
+            })}
           </p>
         </div>
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
@@ -62,18 +64,16 @@ export const ForwardingAddressCard = observer(function ForwardingAddressCard() {
             ) : (
               <Copy size={16} aria-hidden="true" />
             )}
-            {copied ? "Copied" : "Copy address"}
+            {copied ? t("forwarding.copied") : t("forwarding.copy")}
           </Button>
         </div>
         {confirming ? (
           <div
             role="alertdialog"
-            aria-label="Replace forwarding address"
+            aria-label={t("forwarding.replaceLabel")}
             className="flex flex-col gap-3 rounded-control border border-border p-3 md:flex-row md:items-center md:justify-between"
           >
-            <p className="m-0 text-md text-foreground">
-              The current address stops working at once. Replace it?
-            </p>
+            <p className="m-0 text-md text-foreground">{t("forwarding.replaceQuestion")}</p>
             <div className="flex flex-col gap-2 md:flex-row">
               <Button
                 type="button"
@@ -83,7 +83,7 @@ export const ForwardingAddressCard = observer(function ForwardingAddressCard() {
                   setConfirming(false);
                 }}
               >
-                Keep it
+                {t("forwarding.keep")}
               </Button>
               <Button
                 type="button"
@@ -92,7 +92,7 @@ export const ForwardingAddressCard = observer(function ForwardingAddressCard() {
                 disabled={regenerating}
                 onClick={() => void regenerate()}
               >
-                {regenerating ? "Replacing…" : "Replace address"}
+                {regenerating ? t("forwarding.replacing") : t("forwarding.replace")}
               </Button>
             </div>
           </div>
@@ -106,7 +106,7 @@ export const ForwardingAddressCard = observer(function ForwardingAddressCard() {
             }}
           >
             <RefreshCw size={16} aria-hidden="true" />
-            Get a new address
+            {t("forwarding.new")}
           </Button>
         )}
       </CardBody>

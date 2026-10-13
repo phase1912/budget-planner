@@ -3,6 +3,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 import type { components } from "@/api/schema";
 import { apiClient } from "@/api/client";
 import { errorMessage } from "@/api/errors";
+import i18n from "@/i18n";
 
 const UNCATEGORIZED = "Uncategorized";
 
@@ -102,7 +103,9 @@ export class CategoriesStore {
       params: { path: { item_id: itemId } },
       body: { category_id: categoryId, apply_to_future: applyToFuture },
     });
-    return response.error ? errorMessage(response.error, "Could not change the category") : null;
+    return response.error
+      ? errorMessage(response.error, i18n.t("messages:categories.changeFailed"))
+      : null;
   }
 
   /**
@@ -120,7 +123,7 @@ export class CategoriesStore {
       const response = await apiClient.GET("/api/v1/categories");
 
       if (response.error) {
-        throw new Error(errorMessage(response.error, "Failed to fetch categories"));
+        throw new Error(errorMessage(response.error, i18n.t("messages:categories.loadFailed")));
       }
 
       runInAction(() => {
@@ -128,7 +131,7 @@ export class CategoriesStore {
         this.isLoading = false;
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
+      const message = error instanceof Error ? error.message : i18n.t("messages:unknown");
       runInAction(() => {
         this.error = message;
         this.isLoading = false;
@@ -163,7 +166,7 @@ export class CategoriesStore {
         },
       });
       if (response.error) {
-        throw new Error(errorMessage(response.error, "Failed to fetch review queue"));
+        throw new Error(errorMessage(response.error, i18n.t("messages:categories.queueFailed")));
       }
       if (request !== this.queueRequest) return;
       const { items, pages } = response.data;
@@ -186,7 +189,7 @@ export class CategoriesStore {
       });
     } catch (error) {
       if (request !== this.queueRequest) return;
-      const message = error instanceof Error ? error.message : "Unknown error";
+      const message = error instanceof Error ? error.message : i18n.t("messages:unknown");
       runInAction(() => {
         this.queueError = message;
         this.isLoadingQueue = false;
@@ -261,7 +264,7 @@ export class CategoriesStore {
       body: { name },
     });
     if (response.error) {
-      return errorMessage(response.error, "Could not create category");
+      return errorMessage(response.error, i18n.t("messages:categories.createFailed"));
     }
     void this.fetchCategories();
     return null;
@@ -274,7 +277,7 @@ export class CategoriesStore {
       body: { name },
     });
     if (response.error) {
-      return errorMessage(response.error, "Could not rename category");
+      return errorMessage(response.error, i18n.t("messages:categories.renameFailed"));
     }
     void this.fetchCategories();
     return null;
@@ -286,7 +289,7 @@ export class CategoriesStore {
       params: { path: { category_id: id }, query: { move_to_id: moveToId } },
     });
     if (response.error) {
-      return errorMessage(response.error, "Could not delete category");
+      return errorMessage(response.error, i18n.t("messages:categories.deleteFailed"));
     }
     void this.fetchCategories();
     return null;

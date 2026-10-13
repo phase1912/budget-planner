@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Plus, X } from "lucide-react";
 
 import { Button, Input } from "@/shared/components";
+import { useTranslation } from "react-i18next";
+import { categoryName } from "@/shared/categoryName";
 
 /** How many categories, and how many items, one goal can watch — as the API allows. */
 const WATCHED_LINES_MAX = 20;
@@ -30,6 +32,7 @@ export function WatchedLinesEditor({
   onCategoryIdsChange,
   onItemsChange,
 }: WatchedLinesEditorProps) {
+  const { t } = useTranslation("goals");
   const [draft, setDraft] = useState("");
   const newItem = draft.trim().toLowerCase();
   const canAdd = newItem.length > 0 && !items.includes(newItem) && items.length < WATCHED_LINES_MAX;
@@ -48,10 +51,13 @@ export function WatchedLinesEditor({
   return (
     <fieldset className="m-0 flex min-w-0 flex-col gap-3 border-0 p-0">
       <legend className="mb-1.5 p-0 text-base font-medium text-muted-foreground">
-        What it watches
+        {t("watched.legend")}
       </legend>
 
-      <ul aria-label="Categories" className="m-0 flex list-none flex-wrap gap-1.75 p-0">
+      <ul
+        aria-label={t("watched.categories")}
+        className="m-0 flex list-none flex-wrap gap-1.75 p-0"
+      >
         {categories.map((category) => {
           const watched = categoryIds.includes(category.id);
           return (
@@ -69,7 +75,7 @@ export function WatchedLinesEditor({
                     : "border border-border bg-background text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {category.name}
+                {categoryName(category.name)}
               </button>
             </li>
           );
@@ -77,12 +83,12 @@ export function WatchedLinesEditor({
       </ul>
 
       {items.length > 0 && (
-        <ul aria-label="Items" className="m-0 flex list-none flex-wrap gap-1.75 p-0">
+        <ul aria-label={t("watched.items")} className="m-0 flex list-none flex-wrap gap-1.75 p-0">
           {items.map((item) => (
             <li key={item}>
               <button
                 type="button"
-                aria-label={`Stop watching ${item}`}
+                aria-label={t("watched.stop", { item })}
                 onClick={() => {
                   onItemsChange(items.filter((i) => i !== item));
                 }}
@@ -98,11 +104,11 @@ export function WatchedLinesEditor({
 
       <div className="flex items-end gap-2">
         <Input
-          label="Add an item"
+          label={t("watched.addLabel")}
           containerClassName="min-w-0 flex-1"
           value={draft}
           maxLength={ITEM_MAX_LENGTH}
-          placeholder="sugary drinks"
+          placeholder={t("watched.placeholder")}
           onChange={(e) => {
             setDraft(e.target.value);
           }}
@@ -122,7 +128,7 @@ export function WatchedLinesEditor({
           onClick={add}
         >
           <Plus size={16} aria-hidden="true" />
-          Add
+          {t("watched.add")}
         </Button>
       </div>
     </fieldset>

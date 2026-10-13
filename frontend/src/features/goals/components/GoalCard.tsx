@@ -4,12 +4,15 @@ import { Heart, Pencil, Plus, Target } from "lucide-react";
 import { Card, IconButton, IconTile, Pill } from "@/shared/components";
 import type { Goal } from "@/stores/GoalsStore";
 import { metaOf } from "../goalKinds";
+import { numberFormat, dateFormat } from "@/i18n/format";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 
-const AMOUNT = new Intl.NumberFormat("en-US", {
+const AMOUNT = numberFormat({
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
-const SET_ON = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" });
+const SET_ON = dateFormat({ day: "numeric", month: "long", year: "numeric" });
 
 interface GoalCardProps {
   goal: Goal;
@@ -26,11 +29,14 @@ function target(goal: Goal, currency: string, categoryName: string | null): stri
   const amount = `${AMOUNT.format(Number(goal.target_amount))} ${currency}`;
   switch (goal.financial_kind) {
     case "savings_target":
-      return `Put ${amount} aside`;
+      return i18n.t("goals:card.savings", { amount });
     case "category_reduction":
-      return `Keep ${categoryName ?? "a removed category"} under ${amount} a month`;
+      return i18n.t("goals:card.category", {
+        category: categoryName ?? i18n.t("goals:card.removedCategory"),
+        amount,
+      });
     default:
-      return `Stay under ${amount} a month`;
+      return i18n.t("goals:card.ceiling", { amount });
   }
 }
 
@@ -42,6 +48,7 @@ function target(goal: Goal, currency: string, categoryName: string | null): stri
  * asked for; progress arrives with later E8 features.
  */
 export function GoalCard({ goal, currency, categoryName, onEdit, children }: GoalCardProps) {
+  const { t } = useTranslation("goals");
   const lifestyle = goal.type === "lifestyle";
   const Icon = lifestyle ? Heart : Target;
   const watched = [
@@ -58,12 +65,15 @@ export function GoalCard({ goal, currency, categoryName, onEdit, children }: Goa
           <div className="flex min-w-0 flex-col gap-0.5">
             <h2 className="m-0 truncate text-[15px] font-bold">{goal.name}</h2>
             <span className="text-base text-muted-foreground">
-              {metaOf(goal)} · set {SET_ON.format(new Date(goal.created_at))}
+              {t("card.set", {
+                meta: metaOf(goal),
+                date: SET_ON.format(new Date(goal.created_at)),
+              })}
             </span>
           </div>
         </div>
         <IconButton
-          aria-label={`Edit ${goal.name}`}
+          aria-label={t("card.edit", { name: goal.name })}
           className="h-11 w-11 shrink-0 md:h-auto md:w-auto"
           onClick={onEdit}
         >
@@ -77,8 +87,8 @@ export function GoalCard({ goal, currency, categoryName, onEdit, children }: Goa
             <p className="m-0 text-md text-muted-foreground">{goal.description}</p>
           )}
           <p className="m-0 text-md text-muted-foreground">
-            Not a money target, so it is read through the things you buy.{" "}
-            {watched.length > 0 ? "These are the lines it watches:" : "Nothing is watched yet."}
+            {t("card.lifestyleNote")}{" "}
+            {watched.length > 0 ? t("card.watches") : t("card.watchesNothing")}
           </p>
           <ul className="m-0 flex list-none flex-wrap items-center gap-1.75 p-0">
             {watched.map((line) => (
@@ -89,12 +99,12 @@ export function GoalCard({ goal, currency, categoryName, onEdit, children }: Goa
             <li>
               <button
                 type="button"
-                aria-label={`Adjust what ${goal.name} watches`}
+                aria-label={t("card.adjustLabel", { name: goal.name })}
                 onClick={onEdit}
                 className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-pill border border-dashed border-border-strong bg-background px-2.75 text-base text-muted-foreground transition-colors hover:text-foreground md:min-h-0 md:py-1"
               >
                 <Plus size={12} aria-hidden="true" />
-                Adjust
+                {t("card.adjust")}
               </button>
             </li>
           </ul>

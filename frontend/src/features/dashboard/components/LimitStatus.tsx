@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
 
 import { Meter } from "@/shared/components";
+import { numberFormat } from "@/i18n/format";
+import { useTranslation } from "react-i18next";
 
-const AMOUNT = new Intl.NumberFormat("en-US", {
+const AMOUNT = numberFormat({
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
@@ -14,8 +16,8 @@ interface LimitStatusProps {
   /** What is left of the limit, negative by the amount over it. */
   remaining: string;
   currency: string;
-  /** Whose limit it is, as the wide text says it: "your" by default, or the household's (F12.5). */
-  whose?: string;
+  /** Whose limit it is: the user's own, or the household's (F12.5). */
+  household?: boolean;
   /** The line beneath the bar: the month's days and receipts. */
   children?: ReactNode;
 }
@@ -34,37 +36,51 @@ export function LimitStatus({
   percent,
   remaining,
   currency,
-  whose = "your",
+  household = false,
   children,
 }: LimitStatusProps) {
+  const { t } = useTranslation("dashboard");
   const left = Number(remaining);
   const over = left < 0;
   const tone = over ? "text-error" : "text-primary";
   // Past the limit the bar is the whole spend, so the limit sits limit/spend along it.
   const mark = over ? (Number(limit) / (Number(limit) - left)) * 100 : undefined;
-  const wide = (text: string) => <span className="hidden md:inline">{text}</span>;
+  const amount = AMOUNT.format(Number(limit));
+  const gap = AMOUNT.format(Math.abs(left));
+  // A phone shows the short form and drops the currency (dashboard-mobile.html).
+  const either = (phone: string, wider: string, className = "") => (
+    <>
+      <span className={`md:hidden ${className}`}>{phone}</span>
+      <span className={`hidden md:inline ${className}`}>{wider}</span>
+    </>
+  );
   return (
     <div className="flex flex-col gap-1.75 md:mt-1.5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
         <span className={`tabular-nums text-base font-semibold md:text-md ${tone}`}>
-          {percent}% of {wide(`${whose} `)}
-          {AMOUNT.format(Number(limit))}
-          {wide(` ${currency} limit`)}
+          {either(
+            t("limit.of", { percent, limit: amount }),
+            t(household ? "limit.ofHousehold" : "limit.ofYours", {
+              percent,
+              limit: amount,
+              currency,
+            }),
+            tone,
+          )}
         </span>
         <span
           className={`tabular-nums text-base md:text-md ${over ? "font-semibold text-error" : "text-muted-foreground"}`}
         >
-          {over ? (
-            <>
-              Over by {AMOUNT.format(-left)}
-              {wide(` ${currency}`)}
-            </>
-          ) : (
-            <>
-              {AMOUNT.format(left)}
-              {wide(` ${currency}`)} left
-            </>
-          )}
+          {over
+            ? either(
+                t("limit.over", { amount: gap }),
+                t("limit.overWide", { amount: gap, currency }),
+                "text-error",
+              )
+            : either(
+                t("limit.left", { amount: gap }),
+                t("limit.leftWide", { amount: gap, currency }),
+              )}
         </span>
       </div>
       {/* A phone draws the bar above the figures (dashboard-mobile.html). */}

@@ -3,8 +3,12 @@ import { observer } from "mobx-react-lite";
 
 import { Card, ErrorState, LoadingState, Meter } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
+import { numberFormat } from "@/i18n/format";
+import { useTranslation } from "react-i18next";
+import { categoryName } from "@/shared/categoryName";
 
-const AMOUNT = new Intl.NumberFormat("en-US", {
+const SHARE = numberFormat({ style: "percent", maximumFractionDigits: 1 });
+const AMOUNT = numberFormat({
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
@@ -24,6 +28,7 @@ export const HouseholdStatisticsView = observer(function HouseholdStatisticsView
   currency: string;
 }) {
   const { householdStore } = useStores();
+  const { t } = useTranslation("household");
   const stats = householdStore.statistics;
   const { error, isLoading } = householdStore.statisticsState;
   const members = householdStore.household?.members ?? [];
@@ -34,20 +39,16 @@ export const HouseholdStatisticsView = observer(function HouseholdStatisticsView
 
   if (!stats) {
     return error ? (
-      <ErrorState
-        layout="banner"
-        title="The household's statistics could not be loaded"
-        message={error}
-      />
+      <ErrorState layout="banner" title={t("stats.loadFailed")} message={error} />
     ) : (
-      <LoadingState title="Loading the household's statistics…" />
+      <LoadingState title={t("stats.loading")} />
     );
   }
 
   if (Number(stats.total) === 0) {
     return (
       <Card variant="surface" className="p-5 text-muted-foreground md:px-8">
-        No receipts from anyone in the household in this period.
+        {t("stats.empty")}
       </Card>
     );
   }
@@ -57,7 +58,7 @@ export const HouseholdStatisticsView = observer(function HouseholdStatisticsView
   const rows = [
     ...stats.categories.map((c) => ({
       key: c.category_id ?? "none",
-      name: c.name ?? "Uncategorized",
+      name: categoryName(c.name ?? "Uncategorized"),
       owner: ownerName(c.owner_id),
       total: Number(c.total),
       share: Number(c.share),
@@ -66,7 +67,7 @@ export const HouseholdStatisticsView = observer(function HouseholdStatisticsView
       ? [
           {
             key: "private",
-            name: "Private",
+            name: t("stats.private"),
             owner: undefined,
             total: Number(stats.private_total),
             share: Number(stats.private_share),
@@ -82,7 +83,7 @@ export const HouseholdStatisticsView = observer(function HouseholdStatisticsView
       className={`flex flex-col gap-4 p-5 md:px-8 md:py-6 transition-opacity ${isLoading ? "opacity-60" : ""}`}
     >
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="m-0 text-lg font-semibold">Spent together</h2>
+        <h2 className="m-0 text-lg font-semibold">{t("stats.spentTogether")}</h2>
         <span className="tabular-nums font-semibold">
           {AMOUNT.format(Number(stats.total))} {currency}
         </span>
@@ -95,13 +96,15 @@ export const HouseholdStatisticsView = observer(function HouseholdStatisticsView
                 {row.name}
                 {row.owner && (
                   <span className="ml-2 text-md font-normal text-muted-foreground">
-                    {row.owner}&apos;s
+                    {t("stats.owner", { name: row.owner })}
                   </span>
                 )}
               </span>
               <span className="shrink-0 tabular-nums">
                 {AMOUNT.format(row.total)}
-                <span className="ml-2 text-md text-muted-foreground">{row.share}%</span>
+                <span className="ml-2 text-md text-muted-foreground">
+                  {SHARE.format(row.share / 100)}
+                </span>
               </span>
             </div>
             <Meter value={row.share} />
@@ -109,9 +112,7 @@ export const HouseholdStatisticsView = observer(function HouseholdStatisticsView
         ))}
       </ul>
       {Number(stats.private_total) > 0 && (
-        <p className="m-0 text-sm text-muted-foreground">
-          Private is everyone&apos;s receipts marked private, added up: only the amount is shared.
-        </p>
+        <p className="m-0 text-sm text-muted-foreground">{t("stats.privateNote")}</p>
       )}
     </Card>
   );

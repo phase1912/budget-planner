@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface FilePreviewProps {
   file: File;
@@ -9,6 +10,7 @@ interface FilePreviewProps {
 
 export function FilePreview({ file, index, onRemove, isLoading }: FilePreviewProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const { t } = useTranslation("upload");
 
   useEffect(() => {
     // Only create object URL for web-safe images
@@ -28,7 +30,7 @@ export function FilePreview({ file, index, onRemove, isLoading }: FilePreviewPro
       {previewUrl ? (
         <img
           src={previewUrl}
-          alt={`Preview ${String(index + 1)}`}
+          alt={t("file.preview", { n: index + 1 })}
           className="w-full h-full object-cover"
         />
       ) : (
@@ -43,7 +45,7 @@ export function FilePreview({ file, index, onRemove, isLoading }: FilePreviewPro
         <button
           onClick={onRemove}
           className="absolute top-1 left-1 bg-background border border-border rounded-full w-[18px] h-[18px] flex items-center justify-center cursor-pointer z-10 hover:bg-muted text-foreground shadow-sm"
-          aria-label="Remove photo"
+          aria-label={t("file.remove")}
         >
           <svg
             width="10"

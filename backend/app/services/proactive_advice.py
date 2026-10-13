@@ -37,10 +37,10 @@ async def prepare_advice_for_everyone(
     failure is logged rather than stopping the others.
     """
     async with session_factory() as session:
-        users = (await session.execute(select(User.id, User.currency))).all()
+        users = (await session.execute(select(User.id, User.currency, User.language))).all()
 
     prepared = 0
-    for user_id, currency in users:
+    for user_id, currency, language in users:
         token = current_user_id.set(user_id)
         try:
             async with session_factory() as session:
@@ -50,7 +50,9 @@ async def prepare_advice_for_everyone(
                     required_receipts=required_receipts,
                     required_days=required_days,
                 )
-                prepared += await service.prepare_for_goals_at_risk(as_of, currency)
+                prepared += await service.prepare_for_goals_at_risk(
+                    as_of, currency, language=language or "en"
+                )
                 await session.commit()
         except Exception:
             logger.exception("Preparing advice for user %s failed", user_id)

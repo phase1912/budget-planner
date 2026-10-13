@@ -6,6 +6,7 @@ import { IconButton, Input } from "@/shared/components";
 import type { Category } from "@/stores/CategoriesStore";
 import { CategoryDot } from "./CategoryDot";
 import { formatCategoryTotals } from "./formatCategoryTotals";
+import { useTranslation } from "react-i18next";
 
 interface CustomCategoryRowProps {
   category: Category;
@@ -25,6 +26,7 @@ export const CustomCategoryRow = observer(function CustomCategoryRow({
   onDelete,
 }: CustomCategoryRowProps) {
   const [draft, setDraft] = useState<string | null>(null);
+  const { t } = useTranslation("categories");
   const input = useRef<HTMLInputElement>(null);
   const editing = draft !== null;
 
@@ -51,7 +53,7 @@ export const CustomCategoryRow = observer(function CustomCategoryRow({
         <div className="flex-grow">
           <Input
             ref={input}
-            aria-label={`New name for ${category.name}`}
+            aria-label={t("row.newName", { name: category.name })}
             className="w-full py-1.75 text-lg"
             value={draft}
             maxLength={100}
@@ -63,11 +65,11 @@ export const CustomCategoryRow = observer(function CustomCategoryRow({
             }}
           />
         </div>
-        <IconButton type="submit" aria-label="Save the new name">
+        <IconButton type="submit" aria-label={t("row.save")}>
           <Check size={16} />
         </IconButton>
         <IconButton
-          aria-label="Cancel renaming"
+          aria-label={t("row.cancel")}
           onClick={() => {
             setDraft(null);
           }}
@@ -89,14 +91,18 @@ export const CustomCategoryRow = observer(function CustomCategoryRow({
       </span>
       <div className="col-start-2 row-span-2 row-start-1 flex items-center gap-1 md:col-start-3 md:row-span-1">
         <IconButton
-          aria-label={`Rename ${category.name}`}
+          aria-label={t("row.rename", { name: category.name })}
           onClick={() => {
             setDraft(category.name);
           }}
         >
           <Pencil size={15} />
         </IconButton>
-        <IconButton tone="danger" aria-label={`Delete ${category.name}`} onClick={onDelete}>
+        <IconButton
+          tone="danger"
+          aria-label={t("row.delete", { name: category.name })}
+          onClick={onDelete}
+        >
           <Trash2 size={15} />
         </IconButton>
       </div>

@@ -11,7 +11,7 @@ describe("NotFoundPage", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole("heading", { name: "404 - Page Not Found" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Return Home" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "404 — Page not found" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Return home" })).toBeInTheDocument();
   });
 });

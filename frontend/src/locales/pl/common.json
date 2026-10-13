@@ -1,0 +1,77 @@
+{
+  "appName": "Budget Agent",
+  "nav": {
+    "dashboard": "Pulpit",
+    "receipts": "Paragony",
+    "categories": "Kategorie",
+    "statistics": "Statystyki",
+    "goals": "Cele",
+    "home": "Pulpit",
+    "stats": "Statystyki",
+    "main": "Menu główne",
+    "receiptsAndCategories": "Paragony i kategorie"
+  },
+  "header": {
+    "back": "Wstecz",
+    "newReceipt": "Nowy paragon",
+    "upload": "Dodaj",
+    "uploadReceipt": "Dodaj paragon",
+    "toggleTheme": "Zmień motyw",
+    "accountMenu": "Menu konta",
+    "preferences": "Ustawienia",
+    "logOut": "Wyloguj",
+    "signIn": "Zaloguj się",
+    "createAccount": "Załóż konto"
+  },
+  "language": {
+    "label": "Język",
+    "hint": "Język aplikacji. Paragony są pokazywane tak, jak zostały wydrukowane."
+  },
+  "notFound": {
+    "title": "404 — Nie znaleziono strony",
+    "message": "Taka strona nie istnieje.",
+    "home": "Strona główna"
+  },
+  "close": "Zamknij",
+  "cancel": "Anuluj",
+  "imageFailed": "Nie udało się wczytać",
+  "pagination": {
+    "label": "Strony",
+    "previous": "Poprzednia strona",
+    "next": "Następna strona",
+    "range": "{{from}}–{{to}} z {{total}}"
+  },
+  "whoseFigures": "Czyje dane",
+  "mine": "Moje",
+  "household": "Gospodarstwo",
+  "totals": {
+    "triedToFix": "Przeczytaliśmy ten paragon jeszcze raz i nadal się nie sumuje — zerknij na niego.",
+    "over": "Pozycje dają <b>{{lines}}</b> — o <b>{{gap}}</b> więcej niż <b>{{total}}</b> na paragonie. Najpewniej nie odczytano rabatu. Dodaj go, a paragon wliczy się do Twojego miesiąca.",
+    "under": "Pozycje dają <b>{{lines}}</b> — o <b>{{gap}}</b> mniej niż <b>{{total}}</b> na paragonie. Brakuje pozycji albo odczytano ją błędnie. Popraw ją, a paragon wliczy się do Twojego miesiąca.",
+    "addDiscount": "Dodaj rabat −{{gap}}",
+    "fix": "Popraw paragon"
+  },
+  "dates": {
+    "all": "Wszystkie daty",
+    "filtered": "Wybrane daty",
+    "title": "Filtruj według daty",
+    "mode": "Tryb",
+    "specificDate": "Konkretny dzień",
+    "specificMonth": "Konkretny miesiąc",
+    "range": "Zakres dat",
+    "date": "Data",
+    "month": "Miesiąc",
+    "from": "Od",
+    "to": "Do",
+    "apply": "Zastosuj"
+  },
+  "exchange": {
+    "manual": "przeliczone przez Ciebie",
+    "rate": "kurs {{source}}, {{date}}"
+  },
+  "export": {
+    "preparing": "Przygotowujemy plik…",
+    "csvHint": "Do arkusza kalkulacyjnego",
+    "jsonHint": "Dla innego programu"
+  }
+}

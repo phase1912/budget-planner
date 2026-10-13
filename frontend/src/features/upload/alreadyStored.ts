@@ -1,3 +1,5 @@
+import { dateFormat } from "@/i18n/format";
+import i18n from "@/i18n";
 /** The receipt a photo turned out to be a copy of, as the server reported it (F11.5). */
 export interface AlreadyStored {
   receipt_id: string;
@@ -11,9 +13,7 @@ export interface AlreadyStored {
  * `created_at` is a real instant, so it is shown in the browser's own timezone.
  */
 export function alreadyStoredText(stored: AlreadyStored, merchant?: string | null): string {
-  const name = merchant ?? stored.merchant_name ?? "This receipt";
-  const added = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long" }).format(
-    new Date(stored.created_at),
-  );
-  return `${name} is already stored — you added it on ${added}. It will not be stored again.`;
+  const name = merchant ?? stored.merchant_name ?? i18n.t("upload:already.thisReceipt");
+  const added = dateFormat({ day: "numeric", month: "long" }).format(new Date(stored.created_at));
+  return i18n.t("upload:already.stored", { name, date: added });
 }

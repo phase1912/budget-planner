@@ -3,6 +3,7 @@ import type { ToastStore } from "./ToastStore";
 import { errorMessage } from "../api/errors";
 import type { ApiClient } from "@/api/client";
 import { AsyncState } from "@/stores/AsyncState";
+import i18n from "@/i18n";
 
 /**
  * Whether a receipt's printed total still needs the user (BRD A11): none was
@@ -225,28 +226,18 @@ export class UploadStore {
 
       const startedJobId = runInAction(() => {
         if (error) {
-          type ApiError =
-            { detail?: { msg: string }[]; title?: string } | { detail?: string; title?: string };
-          const typedError = error as ApiError;
+          const { title } = error as { title?: string };
+          this.uploadState.fail(errorMessage(error, i18n.t("messages:upload.failed")));
 
-          let errorMsg = "Upload failed";
-          if (Array.isArray(typedError.detail) && typedError.detail[0]?.msg) {
-            errorMsg = typedError.detail[0].msg;
-          } else if (typeof typedError.detail === "string") {
-            errorMsg = typedError.detail;
-          }
-
-          this.uploadState.fail(errorMsg);
-
-          // A refusal the server explains (unsupported file, a limit reached) is shown as
-          // it was written; anything else gets the generic message.
-          if ([400, 415, 429, 503].includes(response.status) && typedError.title) {
-            this.errorTitle = typedError.title;
-            this.errorDetails =
-              typeof typedError.detail === "string" ? typedError.detail : "Unknown error";
+          // A refusal the server explains (unsupported file, a limit reached) is shown with
+          // its reason; anything else gets the generic message. The server's title is
+          // English, so another language keeps the product's own heading.
+          if ([400, 415, 429, 503].includes(response.status) && title) {
+            this.errorTitle = i18n.language === "en" ? title : i18n.t("messages:upload.errorTitle");
+            this.errorDetails = errorMessage(error, i18n.t("messages:unknown"));
           } else {
-            this.errorTitle = "Upload Error";
-            this.errorDetails = "An unexpected error occurred during upload.";
+            this.errorTitle = i18n.t("messages:upload.errorTitle");
+            this.errorDetails = i18n.t("messages:upload.errorDetails");
           }
           return null;
         } else {
@@ -266,9 +257,9 @@ export class UploadStore {
       return startedJobId !== null;
     } catch {
       runInAction(() => {
-        this.uploadState.fail("Network error");
-        this.errorTitle = "Network Error";
-        this.errorDetails = "Failed to communicate with the server.";
+        this.uploadState.fail(i18n.t("messages:upload.network"));
+        this.errorTitle = i18n.t("messages:upload.networkTitle");
+        this.errorDetails = i18n.t("messages:upload.networkDetails");
       });
       return false;
     }
@@ -308,18 +299,18 @@ export class UploadStore {
               polling = false;
             } else if (res.data.status === "failed") {
               this.isProcessing = false;
-              this.uploadState.fail("Background processing failed");
-              this.errorTitle = "Processing Error";
-              this.errorDetails = "An error occurred while reading the receipt.";
+              this.uploadState.fail(i18n.t("messages:upload.processingFailed"));
+              this.errorTitle = i18n.t("messages:upload.processingTitle");
+              this.errorDetails = i18n.t("messages:upload.processingDetails");
               polling = false;
             }
           });
         } else {
           runInAction(() => {
             this.isProcessing = false;
-            this.uploadState.fail("Polling failed");
-            this.errorTitle = "Network Error";
-            this.errorDetails = "Failed to fetch job status.";
+            this.uploadState.fail(i18n.t("messages:upload.pollingFailed"));
+            this.errorTitle = i18n.t("messages:upload.networkTitle");
+            this.errorDetails = i18n.t("messages:upload.pollingDetails");
           });
           polling = false;
         }
@@ -391,13 +382,14 @@ export class UploadStore {
         params: { path: { job_id: this.jobId } },
         body: { extraction_index: index, action },
       });
-      if (res.error) throw new Error(errorMessage(res.error, "Failed to resolve the duplicate"));
+      if (res.error)
+        throw new Error(errorMessage(res.error, i18n.t("messages:upload.duplicateFailed")));
       runInAction(() => {
         this.extractedData = res.data.extracted_data ?? null;
       });
       return true;
     } catch (err) {
-      return this.report(err, "Failed to resolve the duplicate");
+      return this.report(err, i18n.t("messages:upload.duplicateFailed"));
     }
   }
 
@@ -415,7 +407,8 @@ export class UploadStore {
         params: { path: { job_id: this.jobId } },
         body: { extraction_index: extractionIndex, match_index: matchIndex, action },
       });
-      if (res.error) throw new Error(errorMessage(res.error, "Failed to resolve match"));
+      if (res.error)
+        throw new Error(errorMessage(res.error, i18n.t("messages:upload.matchFailed")));
       runInAction(() => {
         if (res.data.extracted_data) {
           this.extractedData = res.data.extracted_data;
@@ -423,7 +416,7 @@ export class UploadStore {
       });
       return true;
     } catch (err) {
-      return this.report(err, "Failed to resolve match");
+      return this.report(err, i18n.t("messages:upload.matchFailed"));
     }
   }
   get conflictsCount(): number {
@@ -460,7 +453,8 @@ export class UploadStore {
         params: { path: { job_id: this.jobId } },
         body: { extraction_index: extractionIndex, receipt_total: receiptTotal },
       });
-      if (res.error) throw new Error(errorMessage(res.error, "Failed to resolve total"));
+      if (res.error)
+        throw new Error(errorMessage(res.error, i18n.t("messages:upload.totalFailed")));
       runInAction(() => {
         if (res.data.extracted_data) {
           this.extractedData = res.data.extracted_data;
@@ -468,7 +462,7 @@ export class UploadStore {
       });
       return true;
     } catch (err) {
-      return this.report(err, "Failed to resolve total");
+      return this.report(err, i18n.t("messages:upload.totalFailed"));
     }
   }
 
@@ -484,7 +478,7 @@ export class UploadStore {
         params: { path: { job_id: this.jobId } },
         body: { extraction_index: extractionIndex, transaction_date: date },
       });
-      if (res.error) throw new Error(errorMessage(res.error, "Failed to set the date"));
+      if (res.error) throw new Error(errorMessage(res.error, i18n.t("messages:upload.dateFailed")));
       runInAction(() => {
         if (res.data.extracted_data) {
           this.extractedData = res.data.extracted_data;
@@ -492,7 +486,7 @@ export class UploadStore {
       });
       return true;
     } catch (err) {
-      return this.report(err, "Failed to set the date");
+      return this.report(err, i18n.t("messages:upload.dateFailed"));
     }
   }
 
@@ -515,7 +509,7 @@ export class UploadStore {
         params: { path: { job_id: this.jobId } },
         body: { extraction_index: extractionIndex, item_index: itemIndex, ...values },
       });
-      if (res.error) throw new Error(errorMessage(res.error, "Failed to update the line"));
+      if (res.error) throw new Error(errorMessage(res.error, i18n.t("messages:upload.lineFailed")));
       runInAction(() => {
         if (res.data.extracted_data) {
           this.extractedData = res.data.extracted_data;
@@ -523,7 +517,7 @@ export class UploadStore {
       });
       return true;
     } catch (err) {
-      return this.report(err, "Failed to update the line");
+      return this.report(err, i18n.t("messages:upload.lineFailed"));
     }
   }
 
@@ -539,7 +533,8 @@ export class UploadStore {
         params: { path: { job_id: this.jobId } },
         body: { extraction_index: extractionIndex, amount: (-amount).toFixed(2) },
       });
-      if (res.error) throw new Error(errorMessage(res.error, "Failed to add the discount"));
+      if (res.error)
+        throw new Error(errorMessage(res.error, i18n.t("messages:upload.discountFailed")));
       runInAction(() => {
         if (res.data.extracted_data) {
           this.extractedData = res.data.extracted_data;
@@ -547,7 +542,7 @@ export class UploadStore {
       });
       return true;
     } catch (err) {
-      return this.report(err, "Failed to add the discount");
+      return this.report(err, i18n.t("messages:upload.discountFailed"));
     } finally {
       runInAction(() => {
         this.isAddingDiscount = false;
@@ -571,17 +566,16 @@ export class UploadStore {
         params: { path: { job_id: this.jobId } },
         body: { indices_to_store: Array.from(this.selectedIndices) },
       });
-      if (res.error) throw new Error(errorMessage(res.error, "Failed to store the receipts"));
+      if (res.error)
+        throw new Error(errorMessage(res.error, i18n.t("messages:upload.storeFailed")));
       runInAction(() => {
         this.startOver();
       });
-      this.toastStore?.showSuccess(
-        stored === 1 ? "1 receipt stored" : `${String(stored)} receipts stored`,
-      );
+      this.toastStore?.showSuccess(i18n.t("messages:upload.stored", { count: stored }));
       this.onReceiptsStored();
       return true;
     } catch (err) {
-      return this.report(err, "Failed to store the receipts");
+      return this.report(err, i18n.t("messages:upload.storeFailed"));
     } finally {
       runInAction(() => {
         this.isCommitting = false;

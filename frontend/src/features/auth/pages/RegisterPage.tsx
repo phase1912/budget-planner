@@ -5,9 +5,11 @@ import { useStores } from "@/stores/StoreContext";
 import { Button, Input, Card, Note } from "@/shared/components";
 import { PasswordChecklist } from "../components/PasswordChecklist";
 import { passwordIsValid } from "../passwordRules";
+import { useTranslation } from "react-i18next";
 
 export const RegisterPage = observer(() => {
   const { authStore } = useStores();
+  const { t } = useTranslation("auth");
   const navigate = useNavigate();
   const location = useLocation();
   // Where the visitor was going before being asked to sign in — an invite link (F12.3).
@@ -25,7 +27,7 @@ export const RegisterPage = observer(() => {
     setPasswordError("");
 
     if (password !== confirmPassword) {
-      setPasswordError("Passwords do not match");
+      setPasswordError(t("register.mismatch"));
       return;
     }
 
@@ -44,8 +46,8 @@ export const RegisterPage = observer(() => {
     <div className="flex-grow flex items-center justify-center py-10">
       <Card className="w-full max-w-md p-8 flex flex-col gap-6">
         <div className="text-center">
-          <h1 className="text-xl font-semibold mb-2">Create Account</h1>
-          <p className="text-base text-muted-foreground">Start tracking your budget today</p>
+          <h1 className="text-xl font-semibold mb-2">{t("register.title")}</h1>
+          <p className="text-base text-muted-foreground">{t("register.subtitle")}</p>
         </div>
 
         {authStore.authState.error && <Note tone="error">{authStore.authState.error}</Note>}
@@ -60,7 +62,7 @@ export const RegisterPage = observer(() => {
             <Input
               id="firstName"
               type="text"
-              label="First Name"
+              label={t("fields.firstName")}
               value={firstName}
               onChange={(e) => {
                 setFirstName(e.target.value);
@@ -70,7 +72,7 @@ export const RegisterPage = observer(() => {
             <Input
               id="lastName"
               type="text"
-              label="Last Name"
+              label={t("fields.lastName")}
               value={lastName}
               onChange={(e) => {
                 setLastName(e.target.value);
@@ -81,18 +83,18 @@ export const RegisterPage = observer(() => {
           <Input
             id="email"
             type="email"
-            label="Email address"
+            label={t("fields.email")}
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
             }}
             required
-            placeholder="you@example.com"
+            placeholder={t("fields.emailPlaceholder")}
           />
           <Input
             id="password"
             type="password"
-            label="Password"
+            label={t("fields.password")}
             value={password}
             onChange={(e) => {
               setPassword(e.target.value);
@@ -103,7 +105,7 @@ export const RegisterPage = observer(() => {
           <Input
             id="confirmPassword"
             type="password"
-            label="Confirm Password"
+            label={t("fields.confirmPassword")}
             value={confirmPassword}
             onChange={(e) => {
               setConfirmPassword(e.target.value);
@@ -124,18 +126,18 @@ export const RegisterPage = observer(() => {
             }
             className="mt-2"
           >
-            {authStore.authState.isLoading ? "Creating account..." : "Register"}
+            {authStore.authState.isLoading ? t("register.submitting") : t("register.submit")}
           </Button>
         </form>
 
         <div className="text-center text-base mt-2">
-          <span className="text-muted-foreground">Already have an account? </span>
+          <span className="text-muted-foreground">{t("register.haveAccount")} </span>
           <Link
             to="/login"
             state={location.state as unknown}
             className="text-primary hover:underline font-medium"
           >
-            Sign in
+            {t("register.signIn")}
           </Link>
         </div>
       </Card>

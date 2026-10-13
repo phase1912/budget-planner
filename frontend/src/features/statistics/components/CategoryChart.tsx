@@ -1,14 +1,17 @@
 import type { components } from "@/api/schema";
 import { Card } from "@/shared/components";
+import { numberFormat } from "@/i18n/format";
+import i18n from "@/i18n";
+import { categoryName } from "@/shared/categoryName";
 
 type Chart = components["schemas"]["ChartResponse"];
 type BarGroup = components["schemas"]["BarGroupResponse"];
 
-const AMOUNT = new Intl.NumberFormat("en-US", {
+const AMOUNT = numberFormat({
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
-const TICK = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
+const TICK = numberFormat({ maximumFractionDigits: 2 });
 
 // Previous period recedes, the one asked about stands out (statistics.html). Both come
 // from tokens and were run through the dataviz palette validator in light and dark.
@@ -39,7 +42,7 @@ export function CategoryChart({ chart, current, previous }: CategoryChartProps) 
   return (
     <Card className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-5.5">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <h2 className="m-0 text-[16px] font-bold">Category by category</h2>
+        <h2 className="m-0 text-[16px] font-bold">{i18n.t("statistics:chart.title")}</h2>
         {compared && (
           <ul className="m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-base text-muted-foreground">
             <li className="inline-flex items-center gap-1.75">
@@ -59,9 +62,7 @@ export function CategoryChart({ chart, current, previous }: CategoryChartProps) 
 
       {chart.hidden > 0 && (
         <p className="m-0 text-base text-muted-foreground">
-          {chart.hidden === 1
-            ? "One more category is in the table below."
-            : `${String(chart.hidden)} more categories are in the table below.`}
+          {i18n.t("statistics:chart.hidden", { count: chart.hidden })}
         </p>
       )}
     </Card>
@@ -69,7 +70,7 @@ export function CategoryChart({ chart, current, previous }: CategoryChartProps) 
 }
 
 function summary(group: BarGroup, current: string, previous: string | null): string {
-  const name = group.name ?? "No category";
+  const name = categoryName(group.name);
   const now = `${current}: ${AMOUNT.format(Number(group.current.value))}`;
   return group.previous && previous
     ? `${name}, ${now}; ${previous}: ${AMOUNT.format(Number(group.previous.value))}`
@@ -129,7 +130,7 @@ function Columns({ chart, current, previous }: CategoryChartProps) {
               key={group.category_id ?? "none"}
               className="flex-1 truncate text-center text-base font-semibold text-muted-foreground"
             >
-              {group.name ?? "No category"}
+              {categoryName(group.name)}
             </span>
           ))}
         </div>
@@ -149,7 +150,7 @@ function Tooltip({
       aria-hidden="true"
       className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1 hidden -translate-x-1/2 flex-col gap-1 whitespace-nowrap rounded-control border border-border bg-background px-3 py-2 text-left shadow-modal group-hover:flex"
     >
-      <span className="text-base font-semibold">{group.name ?? "No category"}</span>
+      <span className="text-base font-semibold">{categoryName(group.name)}</span>
       <span className="flex items-center gap-2 text-base">
         <span className={`h-0.5 w-3 ${CURRENT}`} />
         <strong className="tabular-nums">{AMOUNT.format(Number(group.current.value))}</strong>
@@ -173,7 +174,7 @@ function Rows({ chart }: { chart: Chart }) {
       {chart.groups.map((group) => (
         <li key={group.category_id ?? "none"} className="flex flex-col gap-1">
           <span className="flex items-baseline justify-between gap-3 text-base">
-            <span className="truncate font-semibold">{group.name ?? "No category"}</span>
+            <span className="truncate font-semibold">{categoryName(group.name)}</span>
             <span className="tabular-nums text-muted-foreground">
               {AMOUNT.format(Number(group.current.value))}
             </span>

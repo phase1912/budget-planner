@@ -14,6 +14,8 @@ import { Card, Input, IconTile, Pagination, SegmentedControl } from "@/shared/co
 import { SectionTabs } from "@/features/app-shell/SectionTabs";
 import { ExportMenu } from "@/features/exports/components/ExportMenu";
 import { formatPurchase } from "@/shared/purchaseDate";
+import { useTranslation } from "react-i18next";
+import { formatAmount } from "@/i18n/format";
 
 type ReceiptStatus = components["schemas"]["ReceiptStatus"];
 
@@ -33,6 +35,7 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 export const ReceiptsPage = observer(() => {
   const { receiptStore, exportStore, householdStore, authStore } = useStores();
+  const { t } = useTranslation(["receipts", "common"]);
   const household = householdStore.household;
   // A household of one has nothing to share yet, so the switch waits for a second member.
   const shared = household !== null && household.members.length > 1;
@@ -40,7 +43,8 @@ export const ReceiptsPage = observer(() => {
   const ownerName = (userId: string): string | null =>
     userId === authStore.user?.id
       ? null
-      : (household?.members.find((m) => m.user_id === userId)?.first_name ?? "Former member");
+      : (household?.members.find((m) => m.user_id === userId)?.first_name ??
+        t("list.formerMember"));
 
   useEffect(() => {
     void householdStore.load();
@@ -83,16 +87,16 @@ export const ReceiptsPage = observer(() => {
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
           <div className="flex flex-col gap-1">
             <h1 className="m-0 text-[24px] md:text-[28px] font-bold tracking-[-0.02em] text-foreground">
-              Receipts
+              {t("list.title")}
             </h1>
             <p className="m-0 text-[15px] text-muted-foreground tabular-nums">
-              {String(receiptStore.total)} stored &middot; newest first
+              {t("list.stored", { count: receiptStore.total })}
             </p>
           </div>
           {/* An export is the user's own data (N6); the household view has none to offer. */}
           {!showingHousehold && (
             <ExportMenu
-              label="Export this list"
+              label={t("list.export")}
               busy={Boolean(exportStore.busy.receipts)}
               onExport={(format) => {
                 // The file holds the list as filtered on screen (BRD N6).
@@ -111,15 +115,15 @@ export const ReceiptsPage = observer(() => {
         </div>
         {shared && (
           <SegmentedControl
-            label="Whose receipts"
+            label={t("list.whose")}
             value={receiptStore.scope}
             onChange={(scope) => {
               receiptStore.setScope(scope);
             }}
             fill
             options={[
-              { value: "mine", label: "Mine" },
-              { value: "household", label: household.name, shortLabel: "Household" },
+              { value: "mine", label: t("common:mine") },
+              { value: "household", label: household.name, shortLabel: t("common:household") },
             ]}
           />
         )}
@@ -148,8 +152,8 @@ export const ReceiptsPage = observer(() => {
             <Input
               className="pl-9 py-[9px] text-[13px]"
               type="search"
-              placeholder="Merchant or item"
-              aria-label="Search receipts"
+              placeholder={t("list.search")}
+              aria-label={t("list.searchLabel")}
               value={receiptStore.searchQuery ?? ""}
               onChange={(e) => {
                 receiptStore.setFilters({ searchQuery: e.target.value || undefined });
@@ -161,27 +165,27 @@ export const ReceiptsPage = observer(() => {
         <Card flush>
           <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_120px_92px_120px_170px_28px] items-center gap-4 px-[18px] py-[12px] bg-surface border-b border-border">
             <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
-              Merchant
+              {t("list.cols.merchant")}
             </span>
             <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
-              Date
+              {t("list.cols.date")}
             </span>
             <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-right">
-              Items
+              {t("list.cols.items")}
             </span>
             <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-right">
-              Total
+              {t("list.cols.total")}
             </span>
             <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
-              Status
+              {t("list.cols.status")}
             </span>
             <span></span>
           </div>
 
           {receiptStore.isLoadingList ? (
-            <div className="p-[18px] text-center text-muted-foreground">Loading...</div>
+            <div className="p-[18px] text-center text-muted-foreground">{t("list.loading")}</div>
           ) : receiptStore.receipts.length === 0 ? (
-            <div className="p-[18px] text-center text-muted-foreground">No receipts found.</div>
+            <div className="p-[18px] text-center text-muted-foreground">{t("list.empty")}</div>
           ) : (
             receiptStore.receipts.map((receipt) => {
               const isParsed = receipt.status === "parsed";
@@ -223,7 +227,7 @@ export const ReceiptsPage = observer(() => {
                           <path d="M12 17h.01" />
                         </svg>
                       ) : receipt.channel === "email" ? (
-                        <Mail size={15} role="img" aria-label="From email" />
+                        <Mail size={15} role="img" aria-label={t("list.fromEmail")} />
                       ) : (
                         <svg
                           width="15"
@@ -241,7 +245,9 @@ export const ReceiptsPage = observer(() => {
                         </svg>
                       )}
                     </IconTile>
-                    <span className="truncate">{receipt.merchant_name ?? "Unknown Merchant"}</span>
+                    <span className="truncate">
+                      {receipt.merchant_name ?? t("list.unknownMerchant")}
+                    </span>
                     {/* F12.4: in the household view, whose each receipt is, and which of mine it does not see. */}
                     {showingHousehold && ownerName(receipt.user_id) && (
                       <span className="shrink-0 text-[12px] font-normal text-muted-foreground">
@@ -250,13 +256,13 @@ export const ReceiptsPage = observer(() => {
                     )}
                     {showingHousehold && receipt.is_private && (
                       <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[12px] font-semibold text-muted-foreground">
-                        Private
+                        {t("list.private")}
                       </span>
                     )}
                     {/* F11.5: an emailed receipt alike to a stored one waits for the user. */}
                     {receipt.possible_duplicate_of_id && (
                       <span className="shrink-0 rounded-full bg-tone-warning-bg px-2 py-0.5 text-[12px] font-semibold text-tone-warning-text">
-                        Duplicate?
+                        {t("list.duplicate")}
                       </span>
                     )}
                   </span>
@@ -271,25 +277,25 @@ export const ReceiptsPage = observer(() => {
                           hour: "2-digit",
                           minute: "2-digit",
                         })
-                      : "Unknown"}
+                      : t("list.unknownDate")}
                     {/* Below lg there is no items column; the count joins the date. */}
                     <span className="lg:hidden">
                       {" · "}
-                      {receipt.line_items.length === 1
-                        ? "1 item"
-                        : `${String(receipt.line_items.length)} items`}
+                      {t("list.items", { count: receipt.line_items.length })}
                     </span>
                   </span>
                   <span className="hidden lg:block tabular-nums text-muted-foreground text-right text-[13px]">
                     {receipt.line_items.length}
                   </span>
                   <span className="order-1 flex flex-col items-end tabular-nums text-right text-[14px] font-semibold text-foreground lg:order-none">
-                    {receipt.total_amount ? Number(receipt.total_amount).toFixed(2) : "—"}
+                    {receipt.total_amount ? formatAmount(receipt.total_amount) : "—"}
                     {/* F11.7: converted from another currency, which the row names. */}
                     {receipt.original_currency && receipt.original_total && (
                       <span className="text-[12px] font-normal text-muted-foreground">
-                        {receipt.exchange_rate ? "from " : "in "}
-                        {Number(receipt.original_total).toFixed(2)} {receipt.original_currency}
+                        {t(receipt.exchange_rate ? "list.convertedFrom" : "list.unconvertedIn", {
+                          amount: formatAmount(receipt.original_total),
+                          currency: receipt.original_currency,
+                        })}
                       </span>
                     )}
                   </span>
@@ -352,11 +358,11 @@ export const ReceiptsPage = observer(() => {
                         </svg>
                       )}
                       {isParsed
-                        ? "In the total"
+                        ? t("status.inTotal")
                         : isFailed
-                          ? "Out of the total"
+                          ? t("status.outOfTotal")
                           : isReview
-                            ? "Needs review"
+                            ? t("status.review")
                             : receipt.status}
                     </span>
                   </span>

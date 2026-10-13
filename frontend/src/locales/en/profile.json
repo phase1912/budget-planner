@@ -1,0 +1,56 @@
+{
+  "title": "Preferences",
+  "subtitle": "Account-level settings that every figure in the product is expressed in.",
+  "money": {
+    "title": "Money",
+    "currency": "Currency",
+    "currencyHint": "Locked once a receipt exists — every figure is kept in this one currency, and receipts in another are converted into it.",
+    "locked": "{{currency}} — Locked",
+    "recorded": "{{count}} receipts recorded in {{currency}}",
+    "limit": "Monthly budget limit",
+    "limitHint": "Optional. When set, spend is also shown as a percentage of it. Changing it affects presentation only — finalised months are never rewritten.",
+    "removeLimit": "Remove the limit"
+  },
+  "account": {
+    "title": "Account",
+    "email": "Email",
+    "change": "Change",
+    "sessions": "Active sessions",
+    "sessionsHint": "Signing out everywhere revokes every refresh token, including this one.",
+    "signOutEverywhere": "Sign out everywhere"
+  },
+  "discard": "Discard",
+  "saving": "Saving...",
+  "save": "Save preferences",
+  "forwarding": {
+    "title": "Receipts by email",
+    "label": "Your forwarding address",
+    "hint": "Forward a shop's e-receipt here from {{email}}. It is read like a photo and appears on Receipts marked as from email. Mail from any other address is ignored.",
+    "yourEmail": "your account email",
+    "copied": "Copied",
+    "copy": "Copy address",
+    "replaceLabel": "Replace forwarding address",
+    "replaceQuestion": "The current address stops working at once. Replace it?",
+    "keep": "Keep it",
+    "replacing": "Replacing…",
+    "replace": "Replace address",
+    "new": "Get a new address"
+  },
+  "usage": {
+    "title": "Receipts this month",
+    "unlimited": "No limit on this account. {{used}} read so far this month.",
+    "used": "{{used}} of {{limit}} read",
+    "note": "Each receipt read by photo or by email counts. The count starts again on {{date}}."
+  },
+  "install": {
+    "title": "App",
+    "body": "Budget Agent installs on this device and opens full screen, like any other app. No app store needed, and it always runs the latest version.",
+    "button": "Install app",
+    "share": "Share",
+    "ios": "In Safari, tap <icon></icon> Share, then <b>Add to Home Screen</b>.",
+    "hintTitle": "Put Budget Agent on your home screen",
+    "hintBody": "It opens full screen like an app, straight to your receipts.",
+    "hintIos": "Tap <icon></icon> Share in Safari, then <b>Add to Home Screen</b>. It then opens full screen like an app.",
+    "dismiss": "Dismiss the install hint"
+  }
+}

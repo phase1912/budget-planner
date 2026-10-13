@@ -124,7 +124,10 @@ async def advise_on_goal(
     `insufficient_data` (F5); a model that gives no answer is 503.
     """
     return await service.advise(
-        goal_id, as_of=datetime.now(UTC).date(), currency=current_user.currency
+        goal_id,
+        as_of=datetime.now(UTC).date(),
+        currency=current_user.currency,
+        language=current_user.language or "en",
     )
 
 

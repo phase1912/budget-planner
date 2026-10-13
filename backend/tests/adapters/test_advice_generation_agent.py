@@ -52,6 +52,19 @@ async def test_the_model_is_given_the_evidence_in_the_users_currency(agent: Asyn
 
 
 @pytest.mark.asyncio
+async def test_the_model_writes_in_the_users_language_but_keeps_names_as_printed(
+    agent: AsyncMock,
+) -> None:
+    agent.run_structured.return_value = _AdviceResponse(recommendations=[])
+
+    await AdviceGenerationAdapter(agent).propose(ANALYSIS, "PLN", language="uk")
+
+    prompt = agent.run_structured.call_args.args[0][0].content[0]["text"]
+    assert "Write `action` and `rationale` in Ukrainian" in prompt
+    assert "`target_name` exactly as the evidence spells it" in prompt
+
+
+@pytest.mark.asyncio
 async def test_a_failing_model_is_reported_as_unavailable(agent: AsyncMock) -> None:
     agent.run_structured.side_effect = RuntimeError("API error")
 

@@ -9,9 +9,12 @@ import { ForwardingAddressCard } from "../components/ForwardingAddressCard";
 import { HouseholdCard } from "../components/HouseholdCard";
 import { ReceiptUsageCard } from "../components/ReceiptUsageCard";
 import { InstallAppCard } from "@/features/install/InstallAppCard";
+import { LanguageCard } from "../components/LanguageCard";
+import { useTranslation } from "react-i18next";
 
 export const ProfilePage = observer(function ProfilePage() {
   const { authStore, profileStore, quotaStore } = useStores();
+  const { t } = useTranslation("profile");
 
   const [currency, setCurrency] = useState("USD");
   const [budgetLimit, setBudgetLimit] = useState("");
@@ -54,10 +57,8 @@ export const ProfilePage = observer(function ProfilePage() {
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-4 py-4 md:gap-6 md:py-10 md:px-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-[24px] font-bold text-foreground md:text-3xl">Preferences</h1>
-        <p className="text-lg text-muted-foreground md:text-xl">
-          Account-level settings that every figure in the product is expressed in.
-        </p>
+        <h1 className="text-[24px] font-bold text-foreground md:text-3xl">{t("title")}</h1>
+        <p className="text-lg text-muted-foreground md:text-xl">{t("subtitle")}</p>
       </div>
 
       <form
@@ -67,19 +68,22 @@ export const ProfilePage = observer(function ProfilePage() {
         className="flex flex-col gap-6"
       >
         <Card variant="surface" flush>
-          <CardHeader>Money</CardHeader>
+          <CardHeader>{t("money.title")}</CardHeader>
           <CardBody className="flex flex-col gap-5.5">
             <div className="flex flex-col md:flex-row items-start justify-between gap-6 md:gap-8">
               <div className="flex flex-col gap-1 w-full max-w-sm">
-                <span className="font-semibold text-lg text-foreground">Currency</span>
+                <span className="font-semibold text-lg text-foreground">{t("money.currency")}</span>
                 <span className="text-md leading-relaxed text-muted-foreground">
-                  Locked once a receipt exists &mdash; the product records one currency per account
-                  and does not convert between them.
+                  {t("money.currencyHint")}
                 </span>
               </div>
               <div className="w-full md:w-64 flex-shrink-0 flex flex-col gap-2">
                 {isCurrencyLocked ? (
-                  <Input value={`${currency} — Locked`} disabled aria-label="Currency" />
+                  <Input
+                    value={t("money.locked", { currency })}
+                    disabled
+                    aria-label={t("money.currency")}
+                  />
                 ) : (
                   <CurrencySelect
                     id="currency"
@@ -87,13 +91,13 @@ export const ProfilePage = observer(function ProfilePage() {
                     onChange={(e) => {
                       setCurrency(e.target.value);
                     }}
-                    aria-label="Currency"
+                    aria-label={t("money.currency")}
                     required
                   />
                 )}
                 {isCurrencyLocked && (
                   <span className="text-sm text-muted-foreground">
-                    {receiptCount} receipts recorded in {currency}
+                    {t("money.recorded", { count: receiptCount, currency })}
                   </span>
                 )}
               </div>
@@ -103,10 +107,9 @@ export const ProfilePage = observer(function ProfilePage() {
 
             <div className="flex flex-col md:flex-row items-start justify-between gap-6 md:gap-8">
               <div className="flex flex-col gap-1 w-full max-w-sm">
-                <span className="font-semibold text-lg text-foreground">Monthly budget limit</span>
+                <span className="font-semibold text-lg text-foreground">{t("money.limit")}</span>
                 <span className="text-md leading-relaxed text-muted-foreground">
-                  Optional. When set, spend is also shown as a percentage of it. Changing it affects
-                  presentation only &mdash; finalised months are never rewritten.
+                  {t("money.limitHint")}
                 </span>
               </div>
               <div className="w-full md:w-64 flex-shrink-0 flex flex-col gap-2">
@@ -119,7 +122,7 @@ export const ProfilePage = observer(function ProfilePage() {
                     onChange={(e) => {
                       setBudgetLimit(e.target.value);
                     }}
-                    aria-label="Monthly budget limit"
+                    aria-label={t("money.limit")}
                     containerClassName="w-full"
                     className="pr-12 w-full"
                   />
@@ -135,13 +138,15 @@ export const ProfilePage = observer(function ProfilePage() {
                     className="self-start p-0 h-auto text-md underline text-muted-foreground hover:bg-transparent hover:text-foreground"
                     onClick={handleRemoveLimit}
                   >
-                    Remove the limit
+                    {t("money.removeLimit")}
                   </Button>
                 )}
               </div>
             </div>
           </CardBody>
         </Card>
+
+        <LanguageCard />
 
         <ReceiptUsageCard />
 
@@ -152,15 +157,15 @@ export const ProfilePage = observer(function ProfilePage() {
         <InstallAppCard />
 
         <Card variant="surface" flush>
-          <CardHeader>Account</CardHeader>
+          <CardHeader>{t("account.title")}</CardHeader>
           <CardBody className="flex flex-col gap-5.5">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 md:gap-8">
               <div className="flex flex-col gap-1 w-full max-w-md">
-                <span className="font-semibold text-lg text-foreground">Email</span>
+                <span className="font-semibold text-lg text-foreground">{t("account.email")}</span>
                 <span className="text-md text-muted-foreground">{authStore.user?.email}</span>
               </div>
               <Button type="button" variant="secondary" disabled className="w-full md:w-auto">
-                Change
+                {t("account.change")}
               </Button>
             </div>
 
@@ -168,9 +173,11 @@ export const ProfilePage = observer(function ProfilePage() {
 
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 md:gap-8">
               <div className="flex flex-col gap-1 w-full max-w-md">
-                <span className="font-semibold text-lg text-foreground">Active sessions</span>
+                <span className="font-semibold text-lg text-foreground">
+                  {t("account.sessions")}
+                </span>
                 <span className="text-md leading-relaxed text-muted-foreground">
-                  Signing out everywhere revokes every refresh token, including this one.
+                  {t("account.sessionsHint")}
                 </span>
               </div>
               <Button
@@ -181,7 +188,7 @@ export const ProfilePage = observer(function ProfilePage() {
                   void authStore.logout();
                 }}
               >
-                Sign out everywhere
+                {t("account.signOutEverywhere")}
               </Button>
             </div>
           </CardBody>
@@ -197,14 +204,14 @@ export const ProfilePage = observer(function ProfilePage() {
               setBudgetLimit(originalBudgetLimit);
             }}
           >
-            Discard
+            {t("discard")}
           </Button>
           <Button
             type="submit"
             variant="primary"
             disabled={!isDirty || profileStore.updateState.isLoading}
           >
-            {profileStore.updateState.isLoading ? "Saving..." : "Save preferences"}
+            {profileStore.updateState.isLoading ? t("saving") : t("save")}
           </Button>
         </div>
       </form>

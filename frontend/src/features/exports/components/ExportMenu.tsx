@@ -4,10 +4,11 @@ import { Download } from "lucide-react";
 
 import { Button } from "@/shared/components";
 import type { ExportFormat } from "@/stores/ExportStore";
+import { useTranslation } from "react-i18next";
 
-const FORMATS: { format: ExportFormat; label: string; hint: string }[] = [
-  { format: "csv", label: "CSV", hint: "For a spreadsheet" },
-  { format: "json", label: "JSON", hint: "For another program" },
+const FORMATS: { format: ExportFormat; label: string; hint: "csvHint" | "jsonHint" }[] = [
+  { format: "csv", label: "CSV", hint: "csvHint" },
+  { format: "json", label: "JSON", hint: "jsonHint" },
 ];
 
 interface ExportMenuProps {
@@ -26,6 +27,7 @@ interface ExportMenuProps {
  * or a click elsewhere. On a phone it takes the full width, as buttons do there.
  */
 export const ExportMenu = observer(function ExportMenu({ label, busy, onExport }: ExportMenuProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const menu = useRef<HTMLDivElement>(null);
   const id = useId();
@@ -64,7 +66,7 @@ export const ExportMenu = observer(function ExportMenu({ label, busy, onExport }
         }}
       >
         <Download size={15} aria-hidden="true" />
-        {busy ? "Preparing the file…" : label}
+        {busy ? t("export.preparing") : label}
       </Button>
       {open && (
         <ul
@@ -84,7 +86,7 @@ export const ExportMenu = observer(function ExportMenu({ label, busy, onExport }
                 }}
               >
                 <span className="text-md font-semibold">{name}</span>
-                <span className="text-base text-muted-foreground">{hint}</span>
+                <span className="text-base text-muted-foreground">{t(`export.${hint}`)}</span>
               </button>
             </li>
           ))}

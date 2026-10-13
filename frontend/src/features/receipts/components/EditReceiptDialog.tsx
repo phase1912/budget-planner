@@ -12,6 +12,7 @@ import {
 import { totalsGap } from "@/shared/receiptTotals";
 import { useStores } from "@/stores/StoreContext";
 import type { ReceiptDetail } from "@/stores/ReceiptStore";
+import { useTranslation } from "react-i18next";
 
 interface DraftLineItem {
   id: string | null;
@@ -58,6 +59,7 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
   receipt: ReceiptDetail;
 }) {
   const { receiptStore } = useStores();
+  const { t } = useTranslation("receipts");
 
   const [merchantName, setMerchantName] = useState(receipt.merchant_name ?? "");
   const [transactionDate, setTransactionDate] = useState(
@@ -87,7 +89,7 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
     const off = (-amount).toFixed(2);
     setItems((current) => [
       ...current,
-      { id: null, name: "Rabat", quantity: "1", unit_price: off, total_price: off },
+      { id: null, name: t("edit.discountLine"), quantity: "1", unit_price: off, total_price: off },
     ]);
   };
 
@@ -125,21 +127,21 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
     >
       <ModalHeader>
         <h2 id="edit-receipt-title" className="text-lg font-bold tracking-[-0.01em]">
-          Edit receipt
+          {t("edit.title")}
         </h2>
       </ModalHeader>
 
       <ModalBody className="flex flex-col gap-5">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Input
-            label="Merchant"
+            label={t("edit.merchant")}
             value={merchantName}
             onChange={(e) => {
               setMerchantName(e.target.value);
             }}
           />
           <Input
-            label="Date"
+            label={t("edit.date")}
             type="date"
             value={transactionDate}
             onChange={(e) => {
@@ -150,18 +152,18 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
 
         <div className="flex flex-col gap-3">
           <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_70px_90px_90px_32px] gap-3 text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground">
-            <span>Item</span>
-            <span className="text-right">Qty</span>
-            <span className="text-right">Unit</span>
-            <span className="text-right">Total</span>
+            <span>{t("cols.item")}</span>
+            <span className="text-right">{t("cols.qty")}</span>
+            <span className="text-right">{t("cols.unit")}</span>
+            <span className="text-right">{t("cols.total")}</span>
             <span />
           </div>
 
           {/* A phone lays each line over two rows; this names the amounts in the second. */}
           <div className="grid grid-cols-[repeat(3,minmax(0,1fr))_32px] gap-2 text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground md:hidden">
-            <span className="text-right">Qty</span>
-            <span className="text-right">Unit</span>
-            <span className="text-right">Total</span>
+            <span className="text-right">{t("cols.qty")}</span>
+            <span className="text-right">{t("cols.unit")}</span>
+            <span className="text-right">{t("cols.total")}</span>
             <span />
           </div>
 
@@ -173,15 +175,15 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
               {/* A phone gives the name its own row, the three amounts the next. */}
               <Input
                 containerClassName="col-span-3 md:col-span-1"
-                aria-label={`Name of line ${(row + 1).toString()}`}
+                aria-label={t("edit.lineName", { n: row + 1 })}
                 value={item.name}
                 onChange={(e) => {
                   updateItem(row, "name", e.target.value);
                 }}
               />
               <Input
-                aria-label={`Quantity of line ${(row + 1).toString()}`}
-                placeholder="Qty"
+                aria-label={t("edit.lineQty", { n: row + 1 })}
+                placeholder={t("cols.qty")}
                 type="number"
                 step="0.001"
                 containerClassName="order-2 md:order-none"
@@ -192,8 +194,8 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
                 }}
               />
               <Input
-                aria-label={`Unit price of line ${(row + 1).toString()}`}
-                placeholder="Unit"
+                aria-label={t("edit.lineUnit", { n: row + 1 })}
+                placeholder={t("cols.unit")}
                 type="number"
                 step="0.01"
                 containerClassName="order-2 md:order-none"
@@ -204,8 +206,8 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
                 }}
               />
               <Input
-                aria-label={`Total price of line ${(row + 1).toString()}`}
-                placeholder="Total"
+                aria-label={t("edit.lineTotal", { n: row + 1 })}
+                placeholder={t("cols.total")}
                 type="number"
                 step="0.01"
                 containerClassName="order-2 md:order-none"
@@ -217,7 +219,7 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
               />
               <button
                 type="button"
-                aria-label={`Remove line ${(row + 1).toString()}`}
+                aria-label={t("edit.removeLine", { n: row + 1 })}
                 className="order-1 inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground md:order-none hover:bg-muted hover:text-tone-error-text transition-colors"
                 onClick={() => {
                   removeItem(row);
@@ -241,15 +243,17 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
           ))}
 
           <Button variant="secondary" size="sm" className="self-start" onClick={addItem}>
-            Add line
+            {t("edit.addLine")}
           </Button>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
           <div className="flex items-center gap-2">
-            <span className="text-[13px] font-medium text-muted-foreground">Total</span>
+            <span className="text-[13px] font-medium text-muted-foreground">
+              {t("detail.total")}
+            </span>
             <Input
-              aria-label="Total amount"
+              aria-label={t("edit.totalAmount")}
               type="number"
               step="0.01"
               className="w-28 text-right tabular-nums"
@@ -260,7 +264,7 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
             />
           </div>
           {matches && (
-            <span className="text-[13px] font-semibold text-primary">Lines match the total</span>
+            <span className="text-[13px] font-semibold text-primary">{t("edit.matches")}</span>
           )}
         </div>
         <TotalsGapNote linesSum={computed} printedTotal={printed} onAddDiscount={addDiscount} />
@@ -272,11 +276,11 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
 
       <ModalFooter>
         <span className="hidden text-[13px] text-muted-foreground md:inline">
-          Saving corrects the stored receipt immediately.
+          {t("edit.immediate")}
         </span>
         <div className="flex w-full items-center gap-[10px] md:w-auto [&>*]:flex-1 md:[&>*]:flex-none">
           <Button variant="ghost" onClick={close}>
-            Cancel
+            {t("edit.cancel")}
           </Button>
           <Button
             variant="primary"
@@ -285,7 +289,7 @@ const EditReceiptDialogContent = observer(function EditReceiptDialogContent({
               void save();
             }}
           >
-            {receiptStore.isSavingReceipt ? "Saving…" : "Save changes"}
+            {receiptStore.isSavingReceipt ? t("edit.saving") : t("edit.save")}
           </Button>
         </div>
       </ModalFooter>

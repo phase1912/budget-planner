@@ -1,4 +1,5 @@
 import type { components } from "@/api/schema";
+import i18n from "@/i18n";
 
 type Receipt = Pick<
   components["schemas"]["ReceiptResponse"],
@@ -14,10 +15,10 @@ export function receiptSource(receipt: Receipt): { label: string; reference: str
   const photos = receipt.file_ids.length;
   const label =
     receipt.channel === "email"
-      ? "Added from email"
+      ? i18n.t("receipts:source.email")
       : receipt.channel === "qr"
-        ? "Added from a QR code"
-        : `Added from ${String(photos)} photo${photos === 1 ? "" : "s"}`;
+        ? i18n.t("receipts:source.qr")
+        : i18n.t("receipts:source.photos", { count: photos });
   const reference = receipt.source_reference?.replace(/^<|>$/g, "").trim() ?? "";
   return { label, reference: reference === "" ? null : reference };
 }

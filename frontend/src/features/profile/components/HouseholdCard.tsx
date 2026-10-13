@@ -8,6 +8,8 @@ import { Input } from "@/shared/components/Input/Input";
 import { Pill } from "@/shared/components";
 import type { HouseholdMember } from "@/stores/HouseholdStore";
 import { useStores } from "@/stores/StoreContext";
+import { useTranslation } from "react-i18next";
+import { formatAmount } from "@/i18n/format";
 
 /**
  * The user's household on Profile (E12 — F12.2, ADR-0017): start one, see who is in it,
@@ -19,6 +21,7 @@ import { useStores } from "@/stores/StoreContext";
  */
 export const HouseholdCard = observer(function HouseholdCard() {
   const { householdStore } = useStores();
+  const { t } = useTranslation("household");
 
   useEffect(() => {
     void householdStore.load();
@@ -26,10 +29,10 @@ export const HouseholdCard = observer(function HouseholdCard() {
 
   return (
     <Card variant="surface" flush>
-      <CardHeader>Household</CardHeader>
+      <CardHeader>{t("card.title")}</CardHeader>
       <CardBody className="flex flex-col gap-4">
         {!householdStore.loaded ? (
-          <p className="m-0 text-md text-muted-foreground">Loading…</p>
+          <p className="m-0 text-md text-muted-foreground">{t("card.loading")}</p>
         ) : householdStore.household ? (
           <HouseholdDetails />
         ) : (
@@ -42,6 +45,7 @@ export const HouseholdCard = observer(function HouseholdCard() {
 
 const StartHousehold = observer(function StartHousehold() {
   const { householdStore } = useStores();
+  const { t } = useTranslation("household");
   const [name, setName] = useState("");
   const create = () => {
     if (name.trim()) void householdStore.create(name.trim());
@@ -49,16 +53,13 @@ const StartHousehold = observer(function StartHousehold() {
 
   return (
     <>
-      <p className="m-0 text-md leading-relaxed text-muted-foreground">
-        Keep one budget with your partner or family. Members see each other&apos;s receipts, except
-        the ones marked private, and only the person who added a receipt can change it.
-      </p>
+      <p className="m-0 text-md leading-relaxed text-muted-foreground">{t("card.intro")}</p>
       <div className="flex flex-col gap-2 md:flex-row md:items-end">
         <Input
-          label="Household name"
+          label={t("card.name")}
           value={name}
           maxLength={60}
-          placeholder="Home"
+          placeholder={t("card.namePlaceholder")}
           containerClassName="w-full md:flex-1"
           onChange={(e) => {
             setName(e.target.value);
@@ -77,7 +78,7 @@ const StartHousehold = observer(function StartHousehold() {
           disabled={!name.trim() || householdStore.saveState.isLoading}
           onClick={create}
         >
-          Create household
+          {t("card.create")}
         </Button>
       </div>
     </>
@@ -86,6 +87,7 @@ const StartHousehold = observer(function StartHousehold() {
 
 const HouseholdDetails = observer(function HouseholdDetails() {
   const { householdStore, authStore } = useStores();
+  const { t } = useTranslation(["household", "common"]);
   const household = householdStore.household;
   const [renaming, setRenaming] = useState(false);
   const [name, setName] = useState("");
@@ -103,7 +105,7 @@ const HouseholdDetails = observer(function HouseholdDetails() {
       {renaming ? (
         <div className="flex flex-col gap-2 md:flex-row md:items-end">
           <Input
-            label="Household name"
+            label={t("card.name")}
             value={name}
             maxLength={60}
             containerClassName="w-full md:flex-1"
@@ -126,7 +128,7 @@ const HouseholdDetails = observer(function HouseholdDetails() {
                 setRenaming(false);
               }}
             >
-              Cancel
+              {t("common:cancel")}
             </Button>
             <Button
               type="button"
@@ -135,7 +137,7 @@ const HouseholdDetails = observer(function HouseholdDetails() {
               disabled={!name.trim() || busy}
               onClick={() => void saveName()}
             >
-              Save name
+              {t("card.saveName")}
             </Button>
           </div>
         </div>
@@ -154,7 +156,7 @@ const HouseholdDetails = observer(function HouseholdDetails() {
                 setRenaming(true);
               }}
             >
-              Rename
+              {t("card.rename")}
             </Button>
           )}
         </div>
@@ -175,18 +177,12 @@ const HouseholdDetails = observer(function HouseholdDetails() {
       {householdStore.isOwner && <InviteLink />}
 
       {householdStore.isOwner && others > 0 ? (
-        <p className="m-0 text-md text-muted-foreground">
-          To leave, remove the other members first: a household needs its owner.
-        </p>
+        <p className="m-0 text-md text-muted-foreground">{t("card.ownerStays")}</p>
       ) : confirmingLeave ? (
         <Confirm
-          label="Leave household"
-          question={
-            others === 0
-              ? "You are the only member, so the household will be deleted. Your receipts stay yours."
-              : "You will no longer see the household's receipts, and it will no longer see yours."
-          }
-          action={others === 0 ? "Delete household" : "Leave"}
+          label={t("card.leaveLabel")}
+          question={others === 0 ? t("card.deleteQuestion") : t("card.leaveQuestion")}
+          action={others === 0 ? t("card.delete") : t("card.leave")}
           busy={busy}
           onCancel={() => {
             setConfirmingLeave(false);
@@ -202,7 +198,7 @@ const HouseholdDetails = observer(function HouseholdDetails() {
             setConfirmingLeave(true);
           }}
         >
-          {others === 0 ? "Delete household" : "Leave household"}
+          {others === 0 ? t("card.delete") : t("card.leaveLabel")}
         </Button>
       )}
     </>
@@ -215,6 +211,7 @@ const HouseholdDetails = observer(function HouseholdDetails() {
  */
 const HouseholdBudget = observer(function HouseholdBudget() {
   const { householdStore, authStore } = useStores();
+  const { t } = useTranslation("household");
   const current = householdStore.household?.budget_limit ?? null;
   const currency = authStore.user?.currency ?? "";
   const [value, setValue] = useState(current ?? "");
@@ -229,23 +226,23 @@ const HouseholdBudget = observer(function HouseholdBudget() {
     return (
       <p className="m-0 text-md text-muted-foreground">
         {current
-          ? `Household budget: ${Number(current).toFixed(2)} ${currency} a month, set by the owner.`
-          : "The household has no monthly budget yet; its owner can set one."}
+          ? t("card.budgetSet", { amount: formatAmount(current), currency })
+          : t("card.budgetNone")}
       </p>
     );
   }
   return (
     <div className="flex flex-col gap-2 md:flex-row md:items-end">
       <Input
-        label={`Household budget a month, ${currency}`}
+        label={t("card.budgetLabel", { currency })}
         type="number"
         min="0.01"
         step="0.01"
         inputMode="decimal"
         value={value}
-        placeholder="No budget"
+        placeholder={t("card.budgetPlaceholder")}
         containerClassName="w-full md:flex-1"
-        error={valid ? undefined : "Enter an amount above zero, or leave it empty."}
+        error={valid ? undefined : t("card.budgetInvalid")}
         onChange={(e) => {
           setValue(e.target.value);
         }}
@@ -263,7 +260,7 @@ const HouseholdBudget = observer(function HouseholdBudget() {
         disabled={!valid || householdStore.saveState.isLoading || unchanged}
         onClick={save}
       >
-        {value.trim() === "" && current ? "Remove budget" : "Save budget"}
+        {value.trim() === "" && current ? t("card.removeBudget") : t("card.saveBudget")}
       </Button>
     </div>
   );
@@ -275,6 +272,7 @@ const HouseholdBudget = observer(function HouseholdBudget() {
  */
 const InviteLink = observer(function InviteLink() {
   const { householdStore } = useStores();
+  const { t } = useTranslation("household");
   const [copied, setCopied] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const link = householdStore.inviteLink(window.location.origin) ?? "";
@@ -293,12 +291,9 @@ const InviteLink = observer(function InviteLink() {
   return (
     <div className="flex flex-col gap-2">
       <label htmlFor="household-invite" className="font-semibold text-foreground">
-        Invite link
+        {t("card.invite")}
       </label>
-      <p className="m-0 text-md leading-relaxed text-muted-foreground">
-        Send it to the person you want to share a budget with. Anyone with the link can ask to join,
-        so get a new one if it reaches someone else.
-      </p>
+      <p className="m-0 text-md leading-relaxed text-muted-foreground">{t("card.inviteHint")}</p>
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
         <output
           id="household-invite"
@@ -313,14 +308,14 @@ const InviteLink = observer(function InviteLink() {
           onClick={() => void copy()}
         >
           {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
-          {copied ? "Copied" : "Copy link"}
+          {copied ? t("card.copied") : t("card.copyLink")}
         </Button>
       </div>
       {confirming ? (
         <Confirm
-          label="Replace invite link"
-          question="The current link stops working at once. Members already in stay."
-          action="Get a new link"
+          label={t("card.replaceLabel")}
+          question={t("card.replaceQuestion")}
+          action={t("card.newLink")}
           busy={householdStore.saveState.isLoading}
           onCancel={() => {
             setConfirming(false);
@@ -337,7 +332,7 @@ const InviteLink = observer(function InviteLink() {
           }}
         >
           <RefreshCw size={16} aria-hidden="true" />
-          Get a new link
+          {t("card.newLink")}
         </Button>
       )}
     </div>
@@ -352,6 +347,7 @@ const MemberRow = observer(function MemberRow({
   isMe: boolean;
 }) {
   const { householdStore } = useStores();
+  const { t } = useTranslation("household");
   const [confirming, setConfirming] = useState(false);
   const fullName = `${member.first_name} ${member.last_name}`.trim();
 
@@ -363,10 +359,10 @@ const MemberRow = observer(function MemberRow({
             {fullName}
             {member.role === "owner" && (
               <Pill size="sm" tone="success">
-                Owner
+                {t("card.owner")}
               </Pill>
             )}
-            {isMe && <Pill size="sm">You</Pill>}
+            {isMe && <Pill size="sm">{t("card.you")}</Pill>}
           </span>
           <span className="break-all text-md text-muted-foreground">{member.email}</span>
         </div>
@@ -379,15 +375,15 @@ const MemberRow = observer(function MemberRow({
               setConfirming(true);
             }}
           >
-            Remove
+            {t("card.remove")}
           </Button>
         )}
       </div>
       {confirming && (
         <Confirm
-          label={`Remove ${fullName}`}
-          question={`${fullName} will no longer see the household's receipts, and it will no longer see theirs.`}
-          action="Remove"
+          label={t("card.removeLabel", { name: fullName })}
+          question={t("card.removeQuestion", { name: fullName })}
+          action={t("card.remove")}
           busy={householdStore.saveState.isLoading}
           onCancel={() => {
             setConfirming(false);
@@ -414,6 +410,7 @@ function Confirm({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       role="alertdialog"
@@ -428,7 +425,7 @@ function Confirm({
           className="min-h-11 w-full md:min-h-0 md:w-auto"
           onClick={onCancel}
         >
-          Cancel
+          {t("cancel")}
         </Button>
         <Button
           type="button"

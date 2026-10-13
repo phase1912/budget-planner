@@ -2,8 +2,11 @@ import { Link } from "react-router-dom";
 
 import { CategoryDot } from "@/features/categories/components/CategoryDot";
 import type { CategorySpend } from "@/stores/CategoriesStore";
+import { numberFormat } from "@/i18n/format";
+import { useTranslation } from "react-i18next";
+import { categoryName } from "@/shared/categoryName";
 
-const AMOUNT = new Intl.NumberFormat("en-US", {
+const AMOUNT = numberFormat({
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
@@ -23,27 +26,28 @@ interface TopCategoriesProps {
  * shares are of the month's whole spend, as on the desktop breakdown.
  */
 export function TopCategories({ spend, hrefFor }: TopCategoriesProps) {
+  const { t } = useTranslation("dashboard");
   if (spend.length === 0) return null;
   const overall = spend.reduce((sum, c) => sum + Number(c.total_amount), 0);
   return (
     <section aria-labelledby="top-categories" className="flex flex-col">
       <div className="mb-1 flex items-baseline justify-between">
         <h2 id="top-categories" className="m-0 text-[15px] font-bold">
-          Where it went
+          {t("top.title")}
         </h2>
-        <Link to="/statistics" className="text-md" aria-label="All statistics">
-          All
+        <Link to="/statistics" className="text-md" aria-label={t("top.allLabel")}>
+          {t("top.all")}
         </Link>
       </div>
       <ul className="m-0 list-none p-0">
         {spend.slice(0, SHOWN).map((category) => {
-          const name = category.name ?? "No category";
+          const name = categoryName(category.name);
           const amount = Number(category.total_amount);
           const share = overall > 0 ? Math.round((amount / overall) * 100) : 0;
           const row = (
             <>
               <span className="flex min-w-0 items-center gap-2.25 text-md font-semibold">
-                <CategoryDot name={name} />
+                <CategoryDot name={category.name ?? ""} />
                 <span className="truncate">{name}</span>
               </span>
               <span className="text-right text-md font-semibold tabular-nums">

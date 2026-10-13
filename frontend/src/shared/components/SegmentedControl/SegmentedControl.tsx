@@ -3,7 +3,7 @@ import * as React from "react";
 export interface SegmentedOption<T extends string> {
   value: T;
   label: string;
-  /** What a phone shows instead of `label`, when the full one would not fit. */
+  /** What a phone or tablet shows instead of `label`, when the full one would not fit. */
   shortLabel?: string;
   /** A count shown beside the label, e.g. how many items wait in a queue. */
   badge?: number;
@@ -70,8 +70,8 @@ export function SegmentedControl<T extends string>({
           >
             {option.shortLabel ? (
               <>
-                <span className="md:hidden">{option.shortLabel}</span>
-                <span className="hidden md:inline">{option.label}</span>
+                <span className="lg:hidden">{option.shortLabel}</span>
+                <span className="hidden lg:inline">{option.label}</span>
               </>
             ) : (
               option.label

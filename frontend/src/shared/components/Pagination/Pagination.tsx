@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export interface PaginationProps {
   page: number;
@@ -13,17 +14,18 @@ const PAGE_BUTTON =
 
 /** "21–40 of 132" and previous/next buttons (docs/design/design.css, `.page-btn`). */
 export function Pagination({ page, pages, size, total, onPageChange }: PaginationProps) {
+  const { t } = useTranslation();
   const from = total > 0 ? (page - 1) * size + 1 : 0;
   const to = Math.min(page * size, total);
   return (
-    <nav aria-label="Pagination" className="flex items-center justify-between gap-4">
+    <nav aria-label={t("pagination.label")} className="flex items-center justify-between gap-4">
       <span className="tabular-nums text-md text-muted-foreground">
-        {total > 0 ? `${String(from)}–${String(to)} of ${String(total)}` : "0 of 0"}
+        {t("pagination.range", { from, to, total })}
       </span>
       <div className="flex items-center gap-1.5">
         <button
           type="button"
-          aria-label="Previous page"
+          aria-label={t("pagination.previous")}
           disabled={page <= 1}
           onClick={() => {
             onPageChange(page - 1);
@@ -40,7 +42,7 @@ export function Pagination({ page, pages, size, total, onPageChange }: Paginatio
         </span>
         <button
           type="button"
-          aria-label="Next page"
+          aria-label={t("pagination.next")}
           disabled={page >= pages}
           onClick={() => {
             onPageChange(page + 1);

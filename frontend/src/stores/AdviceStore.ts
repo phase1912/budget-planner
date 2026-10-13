@@ -3,6 +3,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 import type { components } from "@/api/schema";
 import { apiClient } from "@/api/client";
 import { errorMessage, settle } from "@/api/errors";
+import i18n from "@/i18n";
 
 export type Recommendation = components["schemas"]["RecommendationRead"];
 export type AdviceReadiness = components["schemas"]["AdviceReadinessRead"];
@@ -67,7 +68,7 @@ export class AdviceStore {
     runInAction(() => {
       this.isLoading = false;
       if (response.error) {
-        this.loadError = errorMessage(response.error, "Your advice could not be loaded");
+        this.loadError = errorMessage(response.error, i18n.t("messages:advice.loadFailed"));
         return;
       }
       this.recommendations = response.data;
@@ -93,7 +94,7 @@ export class AdviceStore {
         }
         this.outcomes.set(goalId, {
           kind: "failed",
-          message: errorMessage(response.error, "Advice could not be worked out"),
+          message: errorMessage(response.error, i18n.t("messages:advice.failed")),
         });
         return;
       }
@@ -107,7 +108,7 @@ export class AdviceStore {
       if (fresh.length === 0 && !this.progress.get(goalId)?.on_track) {
         this.outcomes.set(goalId, {
           kind: "nothing_specific",
-          message: "Your receipts show nothing specific to act on for this goal yet.",
+          message: i18n.t("messages:advice.nothing"),
         });
       }
     });

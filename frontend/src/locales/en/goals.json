@@ -1,0 +1,128 @@
+{
+  "title": "Goals",
+  "subtitle": "Say what you are aiming at, and each goal gets advice built from your own receipts.",
+  "newGoal": "New goal",
+  "adviceLoadFailed": "Your advice could not be loaded.",
+  "loadFailed": "Your goals could not be loaded",
+  "loading": "Loading your goals…",
+  "empty": {
+    "title": "No goals yet",
+    "message": "A spending ceiling, an amount to save, less spent on one category, or a change in how you live — the advice is built around it."
+  },
+  "kinds": {
+    "spending_ceiling": {
+      "label": "Keep a month's spending under an amount",
+      "meta": "Spending ceiling"
+    },
+    "savings_target": {
+      "label": "Put an amount aside",
+      "meta": "Savings target"
+    },
+    "category_reduction": {
+      "label": "Spend less on one category",
+      "meta": "Category reduction"
+    },
+    "lifestyle": {
+      "label": "Something about how I live",
+      "meta": "Lifestyle goal"
+    },
+    "fallback": "Goal"
+  },
+  "impact": {
+    "saving": "−{{amount}} {{currency}} a month",
+    "avoided_one": "{{formatted}} fewer purchase",
+    "avoided_other": "{{formatted}} fewer purchases"
+  },
+  "card": {
+    "savings": "Put {{amount}} aside",
+    "category": "Keep {{category}} under {{amount}} a month",
+    "removedCategory": "a removed category",
+    "ceiling": "Stay under {{amount}} a month",
+    "set": "{{meta}} · set {{date}}",
+    "edit": "Edit {{name}}",
+    "lifestyleNote": "Not a money target, so it is read through the things you buy.",
+    "watches": "These are the lines it watches:",
+    "watchesNothing": "Nothing is watched yet.",
+    "adjustLabel": "Adjust what {{name}} watches",
+    "adjust": "Adjust"
+  },
+  "risk": {
+    "list": "Goals at risk",
+    "heading": "{{name}} is heading over its limit",
+    "body": "Spent so far: {{spent}} of {{target}}. Estimate: at this pace {{month}} would end at about <b>{{projected}}</b>, {{over}} over your limit.",
+    "seeHow": "See how to cut back",
+    "below": "Advice to cut back is in the goal's card below.",
+    "dismiss": "Set aside the warning for {{name}} until next month"
+  },
+  "watched": {
+    "legend": "What it watches",
+    "categories": "Categories",
+    "items": "Items",
+    "stop": "Stop watching {{item}}",
+    "addLabel": "Add an item",
+    "placeholder": "sugary drinks",
+    "add": "Add"
+  },
+  "dialog": {
+    "edit": "Edit goal",
+    "new": "New goal",
+    "kind": "What kind of goal",
+    "name": "Name",
+    "namePlaceholderLifestyle": "Lose weight",
+    "namePlaceholder": "Stay under 3 000 PLN a month",
+    "amount": {
+      "spending_ceiling": "Monthly ceiling",
+      "savings_target": "Amount to put aside",
+      "category_reduction": "Monthly limit for that category"
+    },
+    "amountLabel": "{{label}}, {{currency}}",
+    "category": "Category",
+    "pickCategory": "Pick a category",
+    "ownWords": "In your own words",
+    "why": "Why it matters (optional)",
+    "descriptionPlaceholder": "Fewer snacks and sugary drinks",
+    "confirmRemove": "Yes, remove this goal",
+    "remove": "Remove goal",
+    "saving": "Saving…",
+    "save": "Save changes",
+    "add": "Add goal"
+  },
+  "advice": {
+    "section": "Advice on {{name}}",
+    "heading": "Advice from your receipts",
+    "reading": "Reading your receipts…",
+    "why": "Why?",
+    "prompt": "Ask and the advice names things you actually buy, not general tips.",
+    "refresh": "Refresh advice",
+    "get": "Get advice",
+    "buttonLabel": "{{verb}} on {{name}}",
+    "working": "Working it out…",
+    "updated": "Updated {{ago}}",
+    "justNow": "just now"
+  },
+  "feedback": {
+    "not_followed": "You won't follow this",
+    "not_helpful": "You found this not helpful",
+    "undoLabel": "Undo: {{action}}",
+    "undo": "Undo",
+    "wontFollowLabel": "Won't follow: {{action}}",
+    "wontFollow": "Won't follow",
+    "notHelpfulLabel": "Not helpful: {{action}}",
+    "notHelpful": "Not helpful"
+  },
+  "history": {
+    "receipts_one": "{{count}} receipt is not a pattern yet",
+    "receipts_other": "{{count}} receipts is not a pattern yet",
+    "days_one": "{{count}} day is not a pattern yet",
+    "days_other": "{{count}} days is not a pattern yet",
+    "note": "Advice needs about a month of shopping behind it. Keep uploading and it turns on by itself.",
+    "progress": "{{receipts}} of {{requiredReceipts}} receipts · {{days}} of {{requiredDays}} days"
+  },
+  "onTrack": {
+    "heading": "Nothing to cut this month",
+    "spent": "Spent so far: <b>{{spent}}</b> of {{target}}",
+    "left": " · {{left}} left",
+    "estimate": "Estimate: if you keep spending at the same daily rate, {{month}} would end at about <b>{{projected}}</b>, {{margin}} under your limit. It is a forecast, not a promise: one big shop can change it.",
+    "early": "It is only day {{day}} of {{days}}, so the estimate is still rough."
+  }
+}

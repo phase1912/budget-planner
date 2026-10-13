@@ -1,8 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const SECTIONS = [
-  { name: "Receipts", path: "/receipts" },
-  { name: "Categories", path: "/categories" },
+  { name: "receipts", path: "/receipts" },
+  { name: "categories", path: "/categories" },
 ] as const;
 
 /**
@@ -15,9 +16,10 @@ const SECTIONS = [
  */
 export function SectionTabs() {
   const { pathname } = useLocation();
+  const { t } = useTranslation();
   return (
     <nav
-      aria-label="Receipts and categories"
+      aria-label={t("nav.receiptsAndCategories")}
       className="flex w-full gap-1 rounded-control border border-border bg-muted p-1 md:hidden"
     >
       {SECTIONS.map((section) => {
@@ -33,7 +35,7 @@ export function SectionTabs() {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {section.name}
+            {t(`nav.${section.name}`)}
           </Link>
         );
       })}

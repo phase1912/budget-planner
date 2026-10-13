@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-17 epics · 111 features · 243 tasks written so far.
+17 epics · 112 features · 248 tasks written so far.
 
 14 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -18,7 +18,7 @@
 | E6 | Monthly Budget Calculation | BR-4 | 7 | no | 1 | Diploma |
 | E7 | Statistics, Comparison & Export | BR-5 | 6 | no | 1 | Diploma |
 | E8 | Goals & AI Optimization Advice | BR-6 | 9 | yes | 1 | Diploma |
-| E9 | Web Client Foundation | — | 7 | yes | 1 | Diploma |
+| E9 | Web Client Foundation | — | 8 | yes | 1 | Diploma |
 | E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 7 | no | 1 | Out of scope |
 | E11 | Alternative Receipt Intake | — | 6 | yes | 2 | Diploma |
 | E12 | Household & Shared Budgets | — | 6 | yes | 2 | Diploma |
@@ -814,6 +814,20 @@ The web client installs on a phone's home screen and opens full screen like an a
 - **F9.8.1** Web app manifest and icons — A manifest naming the app, its start URL, standalone display and theme colours from the design tokens; an app icon (also maskable) and an Apple touch icon, added to docs/design; the iOS meta tags that make the installed app full screen. The browser tab gets the same icon.
 - **F9.8.2** Service worker for the app shell — Caches the built app so an installed copy opens fast and, without a network, shows an offline page rather than a browser error. Never caches API responses — receipts and figures are financial data and must not linger on the device. A new deploy is picked up on the next launch. Firebase Hosting serves the worker and manifest uncached.
 - **F9.8.3** Install hint — Where a browser offers installing (Android Chrome), an "Install app" action in the profile; on iPhone Safari, which never offers it, a short dismissible hint how to add the app to the Home Screen. Nothing shown once installed. Checked at 375, 768 and 1280 px.
+
+### F9.9 — Localization (English, Ukrainian, Polish)
+
+*Requirements: —* · *Blocked by: F9.2*
+
+The product speaks the user's language: English, Ukrainian or Polish, chosen on first visit from the browser's language — never from where the user is, since a Ukrainian living in Poland reads Ukrainian — and changed any time on Profile or, before signing in, on the public pages. The choice is kept with the account, so it follows the user to another device and the server answers in it too. Dates, amounts and plural forms follow the language. Receipts are not translated: merchants and items stay as printed.
+
+**Demonstrated by:** Open the app in a browser set to Ukrainian: the landing page and sign-in are in Ukrainian. Switch to Polish on Profile: every screen follows, "2 paragony" and "5 paragonów" included, and signing in on a phone shows Polish there as well.
+
+- **F9.9.1** Language infrastructure and switchers — i18next with one JSON resource file per screen area under frontend/src/locales/{en,uk,pl}/, English the source whose keys type-check the others; plural forms through Intl.PluralRules. The language is the account's (`users.language`, add-only migration, read and changed through /users/me) or, before signing in, the browser's own choice kept in localStorage; on a first visit, the browser's languages, else English. A switcher on Profile and a compact one on the public pages. Dates and amounts formatted in the chosen language instead of the hard-coded en-GB / en-US. A check in CI fails when a key is missing from uk or pl. Checked at 375, 768 and 1280 px.
+- **F9.9.2** Public and sign-in screens in three languages — Landing, sign in, register, the password checklist, the invite page and the app shell (navigation, toasts, not-found) read from the resources, translated into Ukrainian and Polish. Checked at 375, 768 and 1280 px in each language.
+- **F9.9.3** Upload and receipts in three languages — The upload wizard, the receipts list, the receipt view and its dialogs, read from the resources and translated. Checked at 375, 768 and 1280 px in each language.
+- **F9.9.4** Dashboard, statistics, categories, goals and profile in three languages — The remaining screens, read from the resources and translated; built-in category names translated by key, the user's own as they named them. Checked at 375, 768 and 1280 px in each language.
+- **F9.9.5** Server messages and advice in the user's language — Refusals the user reads get their own problem codes and their values as `params` beside the English `detail`; the client shows its translation of the code and falls back to `detail` for a code it does not know. Goal advice is written in the user's language. Tests that every code the server can send has a translation.
 
 ---
 

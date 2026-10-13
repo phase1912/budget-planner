@@ -3,6 +3,7 @@ import { Download, Share, X } from "lucide-react";
 
 import { Button, IconButton, Note } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
+import { useTranslation, Trans } from "react-i18next";
 
 /**
  * Offer to put the app on the home screen (BRD — F9.8.3). On Android Chrome it opens the
@@ -11,6 +12,7 @@ import { useStores } from "@/stores/StoreContext";
  */
 export const InstallHint = observer(function InstallHint() {
   const { installStore } = useStores();
+  const { t } = useTranslation("profile");
   if (installStore.dismissed) return null;
   if (!installStore.offersInstall && !installStore.showsIosHint) return null;
 
@@ -18,10 +20,10 @@ export const InstallHint = observer(function InstallHint() {
     <Note tone="info">
       <div className="flex items-start gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <p className="m-0 font-semibold">Put Budget Agent on your home screen</p>
+          <p className="m-0 font-semibold">{t("install.hintTitle")}</p>
           {installStore.offersInstall ? (
             <>
-              <p className="m-0">It opens full screen like an app, straight to your receipts.</p>
+              <p className="m-0">{t("install.hintBody")}</p>
               <Button
                 variant="secondary"
                 size="sm"
@@ -29,19 +31,30 @@ export const InstallHint = observer(function InstallHint() {
                 onClick={() => void installStore.install()}
               >
                 <Download size={15} aria-hidden="true" />
-                Install app
+                {t("install.button")}
               </Button>
             </>
           ) : (
             <p className="m-0">
-              Tap <Share size={14} aria-label="Share" className="inline align-text-bottom" /> Share
-              in Safari, then <strong>Add to Home Screen</strong>. It then opens full screen like an
-              app.
+              <Trans
+                t={t}
+                i18nKey="install.hintIos"
+                components={{
+                  icon: (
+                    <Share
+                      size={14}
+                      aria-label={t("install.share")}
+                      className="inline align-text-bottom"
+                    />
+                  ),
+                  b: <strong />,
+                }}
+              />
             </p>
           )}
         </div>
         <IconButton
-          aria-label="Dismiss the install hint"
+          aria-label={t("install.dismiss")}
           className="shrink-0"
           onClick={() => {
             installStore.dismiss();

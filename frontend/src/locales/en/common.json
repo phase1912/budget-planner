@@ -1,0 +1,77 @@
+{
+  "appName": "Budget Agent",
+  "nav": {
+    "dashboard": "Dashboard",
+    "receipts": "Receipts",
+    "categories": "Categories",
+    "statistics": "Statistics",
+    "goals": "Goals",
+    "home": "Home",
+    "stats": "Stats",
+    "main": "Main",
+    "receiptsAndCategories": "Receipts and categories"
+  },
+  "header": {
+    "back": "Back",
+    "newReceipt": "New receipt",
+    "upload": "Upload",
+    "uploadReceipt": "Upload a receipt",
+    "toggleTheme": "Toggle theme",
+    "accountMenu": "Account menu",
+    "preferences": "Preferences",
+    "logOut": "Log out",
+    "signIn": "Sign in",
+    "createAccount": "Create an account"
+  },
+  "language": {
+    "label": "Language",
+    "hint": "The language the app is shown in. Receipts stay as printed."
+  },
+  "notFound": {
+    "title": "404 — Page not found",
+    "message": "The page you are looking for doesn't exist.",
+    "home": "Return home"
+  },
+  "close": "Close",
+  "cancel": "Cancel",
+  "imageFailed": "Failed to load",
+  "pagination": {
+    "label": "Pagination",
+    "previous": "Previous page",
+    "next": "Next page",
+    "range": "{{from}}–{{to}} of {{total}}"
+  },
+  "whoseFigures": "Whose figures",
+  "mine": "Mine",
+  "household": "Household",
+  "totals": {
+    "triedToFix": "We read this receipt again and still could not make it add up, so it needs a look.",
+    "over": "The lines come to <b>{{lines}}</b>, <b>{{gap}}</b> more than the <b>{{total}}</b> on the receipt. Most likely a discount was not read. Add it and the receipt counts toward your month.",
+    "under": "The lines come to <b>{{lines}}</b>, <b>{{gap}}</b> less than the <b>{{total}}</b> on the receipt. A line is missing or misread. Correct it and the receipt counts toward your month.",
+    "addDiscount": "Add a −{{gap}} discount",
+    "fix": "Fix the receipt"
+  },
+  "dates": {
+    "all": "All dates",
+    "filtered": "Filtered dates",
+    "title": "Filter by date",
+    "mode": "Mode",
+    "specificDate": "Specific date",
+    "specificMonth": "Specific month",
+    "range": "Date range",
+    "date": "Date",
+    "month": "Month",
+    "from": "From",
+    "to": "To",
+    "apply": "Apply filter"
+  },
+  "exchange": {
+    "manual": "converted by you",
+    "rate": "{{source}} rate, {{date}}"
+  },
+  "export": {
+    "preparing": "Preparing the file…",
+    "csvHint": "For a spreadsheet",
+    "jsonHint": "For another program"
+  }
+}

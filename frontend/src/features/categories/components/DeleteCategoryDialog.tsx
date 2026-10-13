@@ -4,7 +4,9 @@ import { ChevronDown, Trash2 } from "lucide-react";
 
 import { Button, IconTile, Modal, Note, Select } from "@/shared/components";
 import type { Category } from "@/stores/CategoriesStore";
-import { formatCategoryAmount, formatItemCount } from "./formatCategoryTotals";
+import { formatCategoryAmount } from "./formatCategoryTotals";
+import { useTranslation } from "react-i18next";
+import { categoryName } from "@/shared/categoryName";
 
 interface DeleteCategoryDialogProps {
   category: Category;
@@ -32,6 +34,7 @@ export const DeleteCategoryDialog = observer(function DeleteCategoryDialog({
     () => (options.find((target) => target.name === "Other") ?? options[0])?.id ?? "",
   );
   const [isDeleting, setIsDeleting] = useState(false);
+  const { t } = useTranslation("categories");
 
   const confirm = async () => {
     setIsDeleting(true);
@@ -54,12 +57,16 @@ export const DeleteCategoryDialog = observer(function DeleteCategoryDialog({
           </IconTile>
           <div className="flex flex-col gap-1.25">
             <h2 id="delete-category-title" className="m-0 text-[17px] font-bold text-foreground">
-              Delete “{category.name}”?
+              {t("delete.title", { name: category.name })}
             </h2>
             <p className="m-0 text-lg text-muted-foreground">
               {category.item_count === 0
-                ? "Nothing is filed under it yet."
-                : `${formatItemCount(category.item_count)} ${category.item_count === 1 ? "is" : "are"} filed under it, worth ${formatCategoryAmount(category)} PLN. They keep their amounts — choose where they land.`}
+                ? t("delete.empty")
+                : t("delete.filed", {
+                    count: category.item_count,
+                    amount: formatCategoryAmount(category),
+                    currency: "PLN",
+                  })}
             </p>
           </div>
         </div>
@@ -67,7 +74,7 @@ export const DeleteCategoryDialog = observer(function DeleteCategoryDialog({
         <div className="relative">
           <Select
             id="move-to"
-            label="Move those items to"
+            label={t("delete.moveTo")}
             className="w-full pr-9"
             value={moveToId}
             onChange={(e) => {
@@ -76,7 +83,7 @@ export const DeleteCategoryDialog = observer(function DeleteCategoryDialog({
           >
             {options.map((target) => (
               <option key={target.id} value={target.id}>
-                {target.name}
+                {categoryName(target.name)}
               </option>
             ))}
           </Select>
@@ -88,13 +95,12 @@ export const DeleteCategoryDialog = observer(function DeleteCategoryDialog({
         </div>
 
         <Note tone="warning" className="text-base">
-          Finalised months keep the totals they were closed with. Only the category breakdown is
-          rewritten.
+          {t("delete.finalised")}
         </Note>
 
         <div className="flex flex-wrap items-center justify-end gap-2.5">
           <Button variant="ghost" onClick={onClose}>
-            Keep it
+            {t("delete.keep")}
           </Button>
           <Button
             variant="danger-solid"
@@ -103,7 +109,7 @@ export const DeleteCategoryDialog = observer(function DeleteCategoryDialog({
               void confirm();
             }}
           >
-            Delete and move
+            {t("delete.confirm")}
           </Button>
         </div>
       </div>

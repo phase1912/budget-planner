@@ -1,0 +1,116 @@
+{
+  "builtIn": {
+    "Groceries": "Spożywcze",
+    "Dining": "Jedzenie na mieście",
+    "Transport": "Transport",
+    "Utilities": "Rachunki",
+    "Health": "Zdrowie",
+    "Entertainment": "Rozrywka",
+    "Other": "Inne",
+    "Uncategorized": "Bez kategorii"
+  },
+  "noCategory": "Bez kategorii",
+  "items_one": "{{count}} pozycja",
+  "items_few": "{{count}} pozycje",
+  "items_many": "{{count}} pozycji",
+  "items_other": "{{count}} pozycji",
+  "queue": {
+    "title": "Kategorie",
+    "subtitle": {
+      "needs_review": "Pozycje, których agent nie był pewien — najpierw najstarsze.",
+      "corrected": "Pozycje przypisane przez Ciebie ręcznie — najpierw najstarsze.",
+      "all": "Wszystko, co kupiono, i ile kosztowało — najpierw najstarsze."
+    },
+    "empty": {
+      "needs_review": {
+        "title": "Nic nie wymaga sprawdzenia",
+        "message": "Agent przypisał każdą pozycję z pewnością."
+      },
+      "corrected": {
+        "title": "Nie ma jeszcze poprawek",
+        "message": "Tu pojawią się pozycje przypisane przez Ciebie ręcznie."
+      },
+      "all": {
+        "title": "Nie ma jeszcze pozycji",
+        "message": "Dodaj paragon, a jego pozycje pojawią się tutaj."
+      },
+      "filtered": {
+        "title": "Brak pasujących pozycji",
+        "message": "W tym widoku nic nie pasuje do tych filtrów."
+      }
+    },
+    "manage": "Zarządzaj kategoriami",
+    "which": "Które pozycje pokazać",
+    "views": {
+      "needsReview": "Do sprawdzenia",
+      "needsReviewShort": "Do sprawdz.",
+      "corrected": "Poprawione przez Ciebie",
+      "correctedShort": "Poprawione",
+      "all": "Wszystkie pozycje",
+      "allShort": "Wszystkie"
+    },
+    "find": "Znajdź pozycję",
+    "loading": "Wczytujemy pozycje do sprawdzenia…",
+    "loadFailed": "Nie udało się wczytać pozycji do sprawdzenia",
+    "cols": {
+      "item": "Pozycja",
+      "merchant": "Sklep",
+      "date": "Data",
+      "amount": "Kwota",
+      "category": "Kategoria"
+    },
+    "underReviewTitle": "Jej paragon jest sprawdzany, więc nie liczy się do sumy",
+    "underReview": "Do sprawdzenia",
+    "excluded": " · {{count}} do sprawdzenia, o wartości {{amount}} {{currency}}, nie liczone",
+    "rule": "Każda poprawka może stać się regułą: z zaznaczonym „Stosuj w przyszłości” ta sama pozycja z tego samego sklepu następnym razem trafi do Twojej kategorii, a automatyczne przypisywanie jej nie ruszy."
+  },
+  "spend": {
+    "pickOne": "Od największych · wybierz, by filtrować",
+    "showingOne": "Pokazana jedna kategoria"
+  },
+  "picker": {
+    "label": "Kategoria dla {{item}}",
+    "yours": "Twoje",
+    "applyTitle": "Stosuj też w przyszłości dla {{item}}",
+    "applyTitleFrom": "Stosuj też w przyszłości dla {{item}} ze sklepu {{merchant}}",
+    "apply": "Stosuj w przyszłości"
+  },
+  "taxonomy": {
+    "title": "Kategorie",
+    "subtitle": "Z tej listy wybierasz Ty i agent.",
+    "new": "Nowa kategoria",
+    "loading": "Wczytywanie…",
+    "builtIn": "Wbudowane",
+    "builtInNote": "Nie można zmienić ich nazwy ani usunąć",
+    "awaiting": "{{items}} · czekają na Twoje sprawdzenie",
+    "yours": "Twoje",
+    "yoursNote": "Agent może z nich korzystać od chwili utworzenia"
+  },
+  "row": {
+    "newName": "Nowa nazwa dla {{name}}",
+    "save": "Zapisz nową nazwę",
+    "cancel": "Anuluj zmianę nazwy",
+    "rename": "Zmień nazwę: {{name}}",
+    "delete": "Usuń: {{name}}"
+  },
+  "create": {
+    "title": "Nowa kategoria",
+    "text": "Po utworzeniu Ty i agent możecie przypisywać do niej pozycje.",
+    "name": "Nazwa",
+    "placeholder": "np. Dla zwierząt",
+    "cancel": "Anuluj",
+    "submit": "Utwórz kategorię"
+  },
+  "delete": {
+    "title": "Usunąć „{{name}}”?",
+    "empty": "Nic jeszcze do niej nie przypisano.",
+    "filed_one": "Przypisano do niej {{count}} pozycję o wartości {{amount}} {{currency}}. Kwota zostanie — wybierz, gdzie ją przenieść.",
+    "filed_few": "Przypisano do niej {{count}} pozycje o wartości {{amount}} {{currency}}. Kwoty zostaną — wybierz, gdzie je przenieść.",
+    "filed_many": "Przypisano do niej {{count}} pozycji o wartości {{amount}} {{currency}}. Kwoty zostaną — wybierz, gdzie je przenieść.",
+    "filed_other": "Przypisano do niej {{count}} pozycji o wartości {{amount}} {{currency}}. Kwoty zostaną — wybierz, gdzie je przenieść.",
+    "moveTo": "Przenieś te pozycje do",
+    "finalised": "Zamknięte miesiące zachowują swoje sumy. Zmienia się tylko podział na kategorie.",
+    "keep": "Zostaw",
+    "confirm": "Usuń i przenieś"
+  }
+}

@@ -7,6 +7,7 @@ vi.mock("@/stores/StoreContext", () => ({
     authStore: {
       isAuthenticated: false,
     },
+    languageStore: { language: "en", choose: vi.fn() },
     themeStore: {
       theme: "light",
       toggleTheme: vi.fn(),

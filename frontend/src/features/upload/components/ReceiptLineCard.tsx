@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import { Card } from "@/shared/components/Card/Card";
 import { Stack } from "@/shared/components/Layout/Layout";
 import { FilePreview } from "./FilePreview";
+import { useTranslation } from "react-i18next";
 
 interface ReceiptLineCardProps {
   index: number;
@@ -31,6 +32,7 @@ export function ReceiptLineCard({
   isLoading,
 }: ReceiptLineCardProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation("upload");
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newFiles = Array.from(event.target.files ?? []);
@@ -59,13 +61,13 @@ export function ReceiptLineCard({
           >
             {index + 1}
           </span>
-          <span className="text-[15px] font-semibold">Receipt</span>
+          <span className="text-[15px] font-semibold">{t("line.receipt")}</span>
         </div>
         {!isLoading && showRemoveLine && onRemoveLine && (
           <button
             onClick={onRemoveLine}
             className="text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted transition-colors cursor-pointer"
-            aria-label="Remove receipt line"
+            aria-label={t("line.remove")}
           >
             <svg
               width="16"
@@ -115,7 +117,7 @@ export function ReceiptLineCard({
               <path d="M5 12h14" />
               <path d="M12 5v14" />
             </svg>
-            <span className="text-xs">Add</span>
+            <span className="text-xs">{t("line.add")}</span>
           </button>
         )}
       </div>
@@ -139,8 +141,8 @@ export function ReceiptLineCard({
           </svg>
           <span className="text-[13px] font-medium text-tone-error-text">
             {isOverCount
-              ? `${String(files.length - 10)} photos were not added — a receipt takes at most 10.`
-              : `The photos add up to ${totalSizeMB} MB, exceeding the 50 MB limit.`}
+              ? t("line.tooMany", { count: files.length - 10 })
+              : t("line.tooBig", { size: totalSizeMB })}
           </span>
         </div>
       )}
@@ -150,12 +152,12 @@ export function ReceiptLineCard({
           <span
             className={`text-xs ${isOverCount ? "font-semibold text-error" : "text-muted-foreground"}`}
           >
-            {files.length} of 10 photos
+            {t("line.count", { count: files.length })}
           </span>
           <span
             className={`text-xs ${isOverSize ? "font-semibold text-error" : "text-muted-foreground"}`}
           >
-            {totalSizeMB} of 50&nbsp;MB
+            {t("line.weight", { size: totalSizeMB })}
           </span>
         </div>
         <span className="block h-[4px] rounded-[2px] bg-border overflow-hidden">

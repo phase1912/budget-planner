@@ -1,11 +1,15 @@
 from datetime import date
 from decimal import Decimal
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field
 
 from app.core.config import get_settings
 from app.domain.email_intake import forwarding_address
+
+Language = Literal["en", "uk", "pl"]
+"""The languages the product is written in (F9.9)."""
 
 
 class UserResponse(BaseModel):
@@ -17,6 +21,7 @@ class UserResponse(BaseModel):
     last_name: str
     currency: str
     budget_limit: Decimal | None = None
+    language: Language | None = None
     forwarding_token: str = Field(exclude=True)
 
     model_config = ConfigDict(from_attributes=True)
@@ -34,6 +39,7 @@ class UserUpdateRequest(BaseModel):
     currency: str | None = Field(None, min_length=3, max_length=3, pattern=r"^[A-Z]{3}$")
     # Spend is shown as a share of it (D7), so zero or less is not a limit; null removes it.
     budget_limit: Decimal | None = Field(None, gt=0, max_digits=12, decimal_places=2)
+    language: Language | None = None
 
 
 class ReceiptQuotaRead(BaseModel):

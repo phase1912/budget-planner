@@ -18,10 +18,14 @@ class TaxonomyService:
         one of the user's own: two "Groceries" in the picker would be two
         different buckets nobody could tell apart.
         """
-        from app.api.errors import DomainError
+        from app.api.errors import DomainError, ProblemCode
 
         if await self.categories.name_taken(user_id, name):
-            raise DomainError(f"A category named “{name}” already exists.")
+            raise DomainError(
+                f"A category named “{name}” already exists.",
+                code=ProblemCode.CATEGORY_EXISTS,
+                params={"name": name},
+            )
         return await self.categories.create_custom(user_id, name)
 
     async def rename(self, category_id: uuid.UUID, user_id: uuid.UUID, name: str) -> Category:
@@ -30,13 +34,17 @@ class TaxonomyService:
         Raises NotFoundError for a built-in or another user's category, and
         DomainError for a name already in use.
         """
-        from app.api.errors import DomainError, NotFoundError
+        from app.api.errors import DomainError, NotFoundError, ProblemCode
 
         category = await self.categories.get_owned(category_id, user_id)
         if category is None:
             raise NotFoundError("Category not found")
         if await self.categories.name_taken(user_id, name, ignoring=category.id):
-            raise DomainError(f"A category named “{name}” already exists.")
+            raise DomainError(
+                f"A category named “{name}” already exists.",
+                code=ProblemCode.CATEGORY_EXISTS,
+                params={"name": name},
+            )
         category.name = name
         return category
 
@@ -52,13 +60,15 @@ class TaxonomyService:
         Raises NotFoundError for a category or target the user cannot see, and
         DomainError when asked to move the items into the category being deleted.
         """
-        from app.api.errors import DomainError, NotFoundError
+        from app.api.errors import DomainError, NotFoundError, ProblemCode
 
         category = await self.categories.get_owned(category_id, user_id)
         if category is None:
             raise NotFoundError("Category not found")
         if move_to_id == category.id:
-            raise DomainError("Choose another category for its items.")
+            raise DomainError(
+                "Choose another category for its items.", code=ProblemCode.CATEGORY_MOVE_TARGET
+            )
         target = await self.categories.get_available(move_to_id, user_id)
         if target is None:
             raise NotFoundError("Target category not found")

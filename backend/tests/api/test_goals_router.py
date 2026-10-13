@@ -136,7 +136,7 @@ async def test_a_goal_cutting_one_category_names_one_the_user_can_use(
     refused = await _call(db_session, user, "POST", "", {**cut, "category_id": str(theirs.id)})
 
     assert (ok.status_code, ok.json()["category_id"]) == (201, str(mine.id))
-    assert (refused.status_code, refused.json()["code"]) == (422, "invalid_goal")
+    assert (refused.status_code, refused.json()["code"]) == (422, "category_not_yours")
     assert refused.json()["detail"] == "That category is not one of yours."
 
 

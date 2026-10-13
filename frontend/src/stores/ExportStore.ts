@@ -4,6 +4,7 @@ import type { components } from "@/api/schema";
 import { apiClient } from "@/api/client";
 import { errorMessage } from "@/api/errors";
 import type { ToastStore } from "./ToastStore";
+import i18n from "@/i18n";
 
 export type ExportRequest = components["schemas"]["ExportRequest"];
 export type ExportKind = ExportRequest["kind"];
@@ -52,7 +53,7 @@ export class ExportStore {
     try {
       const started = await apiClient.POST("/api/v1/exports", { body: request });
       if (started.error) {
-        throw new Error(errorMessage(started.error, "The export could not be started"));
+        throw new Error(errorMessage(started.error, i18n.t("messages:export.startFailed")));
       }
       const job = await this.follow(started.data);
       const file = await apiClient.GET("/api/v1/exports/{job_id}/file", {
@@ -60,12 +61,14 @@ export class ExportStore {
         parseAs: "blob",
       });
       if (file.error) {
-        throw new Error(errorMessage(file.error, "The export could not be downloaded"));
+        throw new Error(errorMessage(file.error, i18n.t("messages:export.downloadFailed")));
       }
       this.save(file.data, job.filename);
-      this.toastStore.showSuccess(`Exported ${job.filename}`);
+      this.toastStore.showSuccess(i18n.t("messages:export.done", { file: job.filename }));
     } catch (error) {
-      this.toastStore.showError(error instanceof Error ? error.message : "The export failed");
+      this.toastStore.showError(
+        error instanceof Error ? error.message : i18n.t("messages:export.failed"),
+      );
     } finally {
       runInAction(() => {
         this.busy[request.kind] = false;
@@ -77,13 +80,14 @@ export class ExportStore {
   private async follow(job: ExportJob): Promise<ExportJob> {
     let current = job;
     for (let asked = 0; current.status !== "ready"; asked++) {
-      if (current.status === "failed") throw new Error(current.error ?? "The export failed");
-      if (asked >= GIVE_UP_AFTER) throw new Error("The export is taking too long. Try again.");
+      if (current.status === "failed")
+        throw new Error(current.error ?? i18n.t("messages:export.failed"));
+      if (asked >= GIVE_UP_AFTER) throw new Error(i18n.t("messages:export.tooLong"));
       await wait(POLL_MS);
       const polled = await apiClient.GET("/api/v1/exports/{job_id}", {
         params: { path: { job_id: current.id } },
       });
-      if (polled.error) throw new Error(errorMessage(polled.error, "The export was lost"));
+      if (polled.error) throw new Error(errorMessage(polled.error, i18n.t("messages:export.lost")));
       current = polled.data;
     }
     return current;

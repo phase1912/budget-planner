@@ -4,6 +4,7 @@ import type { components } from "@/api/schema";
 import { apiClient } from "@/api/client";
 import { errorMessage, settle } from "@/api/errors";
 import type { ToastStore } from "./ToastStore";
+import i18n from "@/i18n";
 
 export type Goal = components["schemas"]["GoalRead"];
 export type GoalCreate = components["schemas"]["GoalCreate"];
@@ -51,7 +52,7 @@ export class GoalsStore {
     runInAction(() => {
       this.isLoading = false;
       if (response.error) {
-        this.loadError = errorMessage(response.error, "Your goals could not be loaded");
+        this.loadError = errorMessage(response.error, i18n.t("messages:goals.loadFailed"));
         return;
       }
       this.goals = response.data;
@@ -65,7 +66,7 @@ export class GoalsStore {
       (saved) => {
         this.goals.unshift(saved);
       },
-      "Goal added",
+      i18n.t("messages:goals.added"),
     );
   }
 
@@ -80,7 +81,7 @@ export class GoalsStore {
       (saved) => {
         this.goals = this.goals.map((g) => (g.id === id ? saved : g));
       },
-      "Goal updated",
+      i18n.t("messages:goals.updated"),
     );
   }
 
@@ -94,11 +95,11 @@ export class GoalsStore {
     return runInAction(() => {
       this.isSaving = false;
       if (response.error) {
-        this.saveError = errorMessage(response.error, "The goal could not be removed");
+        this.saveError = errorMessage(response.error, i18n.t("messages:goals.removeFailed"));
         return false;
       }
       this.goals = this.goals.filter((g) => g.id !== id);
-      this.toastStore.showSuccess("Goal removed");
+      this.toastStore.showSuccess(i18n.t("messages:goals.removed"));
       this.onGoalsChanged();
       return true;
     });
@@ -129,7 +130,7 @@ export class GoalsStore {
     return runInAction(() => {
       this.isSaving = false;
       if (response.error || !response.data) {
-        this.saveError = errorMessage(response.error, "The goal could not be saved");
+        this.saveError = errorMessage(response.error, i18n.t("messages:goals.saveFailed"));
         return false;
       }
       apply(response.data);

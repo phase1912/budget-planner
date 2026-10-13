@@ -17,6 +17,9 @@ import { RefreshCw } from "lucide-react";
 import { InlineCategoryPicker } from "@/features/categories/components/InlineCategoryPicker";
 import { formatPurchase } from "@/shared/purchaseDate";
 import { conversionLine } from "@/shared/exchange";
+import { useTranslation } from "react-i18next";
+import { numberFormat } from "@/i18n/format";
+import { categoryName } from "@/shared/categoryName";
 
 /**
  * Render an amount, or an em dash when there is nothing to render.
@@ -25,14 +28,17 @@ import { conversionLine } from "@/shared/exchange";
  * user spent nothing on that line — the "renders zeros instead of saying there
  * is no data" defect docs/design/README.md calls out.
  */
-function formatAmount(value: string | null | undefined, digits: number): string {
+function formatAmount(value: string | null | undefined, digits = 2): string {
   if (value === null || value === undefined || value === "") return "—";
   const parsed = Number(value);
-  return Number.isNaN(parsed) ? "—" : parsed.toFixed(digits);
+  return Number.isNaN(parsed)
+    ? "—"
+    : numberFormat({ minimumFractionDigits: digits, maximumFractionDigits: digits }).format(parsed);
 }
 
 export const ReceiptDetailModal = observer(() => {
   const { receiptStore, authStore, householdStore } = useStores();
+  const { t } = useTranslation("receipts");
   const receipt = receiptStore.receiptDetail;
   const [showPhotos, setShowPhotos] = useState(false);
 
@@ -43,7 +49,7 @@ export const ReceiptDetailModal = observer(() => {
   if (receiptStore.isLoadingDetail) {
     return (
       <Modal isOpen={true} onClose={handleClose} className="md:w-[660px]">
-        <div className="p-6 text-center text-muted-foreground">Loading...</div>
+        <div className="p-6 text-center text-muted-foreground">{t("list.loading")}</div>
       </Modal>
     );
   }
@@ -83,7 +89,7 @@ export const ReceiptDetailModal = observer(() => {
           </IconTile>
           <div className="flex flex-col gap-[3px]">
             <h2 className="m-0 text-[17px] font-bold md:text-[19px]">
-              {receipt.merchant_name ?? "Unknown Merchant"}
+              {receipt.merchant_name ?? t("detail.unknownMerchant")}
             </h2>
             <span className="tabular-nums text-[13px] text-muted-foreground">
               {receipt.transaction_date
@@ -94,18 +100,18 @@ export const ReceiptDetailModal = observer(() => {
                   }) +
                   " · " +
                   formatPurchase(receipt.transaction_date, { hour: "2-digit", minute: "2-digit" })
-                : "Unknown Date"}
+                : t("detail.unknownDate")}
               {" · "}
               {source.label}
             </span>
             {source.reference && (
               <span className="break-all text-base text-muted-foreground">
-                Reference: {source.reference}
+                {t("detail.reference", { reference: source.reference })}
               </span>
             )}
             {readOnly && (
               <span className="text-[13px] text-muted-foreground">
-                Added by {addedBy?.first_name ?? "another member"} &middot; view only
+                {t("detail.addedBy", { name: addedBy?.first_name ?? t("detail.anotherMember") })}
               </span>
             )}
             {receipt.original_currency &&
@@ -116,7 +122,7 @@ export const ReceiptDetailModal = observer(() => {
                   {conversionLine(
                     receipt.original_total,
                     receipt.original_currency,
-                    Number(receipt.total_amount).toFixed(2),
+                    formatAmount(receipt.total_amount),
                     accountCurrency,
                     {
                       rate: receipt.exchange_rate,
@@ -128,7 +134,10 @@ export const ReceiptDetailModal = observer(() => {
               )}
             {receipt.fiscal_register_id && receipt.fiscal_receipt_number && (
               <span className="break-words text-[13px] text-muted-foreground">
-                Register {receipt.fiscal_register_id} · receipt {receipt.fiscal_receipt_number}
+                {t("detail.fiscal", {
+                  register: receipt.fiscal_register_id,
+                  number: receipt.fiscal_receipt_number,
+                })}
               </span>
             )}
           </div>
@@ -136,7 +145,7 @@ export const ReceiptDetailModal = observer(() => {
         <button
           className="inline-flex shrink-0 items-center justify-center w-11 h-11 md:w-[34px] md:h-[34px] rounded-chip text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
           onClick={handleClose}
-          aria-label="Close"
+          aria-label={t("detail.close")}
         >
           <svg
             width="18"
@@ -157,18 +166,16 @@ export const ReceiptDetailModal = observer(() => {
       <ModalBody>
         {waitsForRate && !readOnly && (
           <Note tone="warning" className="mb-3">
-            No {receipt.original_currency} rate could be found for this date, so these amounts are
-            in {receipt.original_currency} and not counted. Edit them into {accountCurrency} to
-            count this receipt.
+            {t("detail.noRate", {
+              currency: receipt.original_currency,
+              account: accountCurrency,
+            })}
           </Note>
         )}
         {receipt.possible_duplicate_of_id && !readOnly && (
           <Note tone="warning" className="mb-3">
             <span className="flex flex-col gap-3">
-              <span>
-                This looks like a receipt you already have: same shop, day and total. Is it a second
-                purchase?
-              </span>
+              <span>{t("detail.duplicate")}</span>
               <span className="flex gap-2 [&>*]:flex-1 md:[&>*]:flex-none">
                 <Button
                   variant="secondary"
@@ -178,7 +185,7 @@ export const ReceiptDetailModal = observer(() => {
                     void receiptStore.keepPossibleDuplicate();
                   }}
                 >
-                  Keep both
+                  {t("detail.keepBoth")}
                 </Button>
                 <Button
                   variant="danger"
@@ -187,8 +194,8 @@ export const ReceiptDetailModal = observer(() => {
                     receiptStore.confirmDelete(receipt.id);
                   }}
                 >
-                  <span className="hidden md:inline">Remove this one</span>
-                  <span className="md:hidden">Remove</span>
+                  <span className="hidden md:inline">{t("detail.removeThis")}</span>
+                  <span className="md:hidden">{t("detail.remove")}</span>
                 </Button>
               </span>
             </span>
@@ -222,10 +229,10 @@ export const ReceiptDetailModal = observer(() => {
                 htmlFor="receipt-private"
                 className="cursor-pointer text-[13px] font-semibold text-foreground"
               >
-                Private
+                {t("detail.private")}
               </label>
               <span id="receipt-private-hint" className="text-[13px] text-muted-foreground">
-                Your household sees only its amount, added to your private total for the month.
+                {t("detail.privateHint")}
               </span>
             </div>
           </div>
@@ -245,25 +252,25 @@ export const ReceiptDetailModal = observer(() => {
                 aria-hidden="true"
                 className={receiptStore.isRecategorising ? "animate-spin" : ""}
               />
-              Re-run categorisation
+              {t("detail.recategorise")}
             </Button>
           </div>
         )}
         <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_36px_70px_86px_156px] items-center gap-[12px] pb-1 border-b border-border">
           <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
-            Item
+            {t("cols.item")}
           </span>
           <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-right">
-            Qty
+            {t("cols.qty")}
           </span>
           <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-right">
-            Unit
+            {t("cols.unit")}
           </span>
           <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-right">
-            Total
+            {t("cols.total")}
           </span>
           <span className="text-[11px] font-semibold tracking-[0.05em] uppercase text-muted-foreground text-left">
-            Category
+            {t("cols.category")}
           </span>
         </div>
 
@@ -289,7 +296,7 @@ export const ReceiptDetailModal = observer(() => {
             <span className="col-span-2 md:col-span-1">
               {readOnly ? (
                 <span className="text-[13px] text-muted-foreground">
-                  {item.category?.name ?? "Uncategorized"}
+                  {categoryName(item.category?.name ?? "Uncategorized")}
                 </span>
               ) : (
                 <InlineCategoryPicker
@@ -310,15 +317,15 @@ export const ReceiptDetailModal = observer(() => {
         {showPhotos && (
           <div className="flex flex-wrap gap-3 pt-5 mt-5 border-t border-border">
             {receipt.file_ids.length === 0 ? (
-              <span className="text-[13px] text-muted-foreground">
-                No photos are stored for this receipt.
-              </span>
+              <span className="text-[13px] text-muted-foreground">{t("detail.noPhotos")}</span>
             ) : (
               receipt.file_ids.map((fileId) => (
                 <SecureImage
                   key={fileId}
                   fileId={fileId}
-                  alt={`Original photo of the receipt from ${receipt.merchant_name ?? "this merchant"}`}
+                  alt={t("detail.photoAlt", {
+                    merchant: receipt.merchant_name ?? t("detail.thisMerchant"),
+                  })}
                   className="w-[calc(50%-6px)] h-[176px] object-cover rounded-md border border-border md:w-[132px]"
                 />
               ))
@@ -329,9 +336,9 @@ export const ReceiptDetailModal = observer(() => {
 
       <ModalFooter>
         <div className="flex items-baseline gap-[10px]">
-          <span className="text-[13px] font-medium text-muted-foreground">Total</span>
+          <span className="text-[13px] font-medium text-muted-foreground">{t("detail.total")}</span>
           <span className="tabular-nums text-[22px] font-bold tracking-[-0.02em] text-foreground">
-            {receipt.total_amount ? Number(receipt.total_amount).toFixed(2) : "—"}
+            {formatAmount(receipt.total_amount)}
           </span>
         </div>
         {/* Another member's receipt can be read and its photos seen, never changed (F12.4). */}
@@ -358,7 +365,7 @@ export const ReceiptDetailModal = observer(() => {
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
                 <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
               </svg>
-              Delete
+              {t("detail.delete")}
             </Button>
           )}
           {/* A receipt read from an email's text has no photos to show (F11.2). */}
@@ -386,11 +393,11 @@ export const ReceiptDetailModal = observer(() => {
                 <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
               </svg>
               {showPhotos ? (
-                "Hide photos"
+                t("detail.hidePhotos")
               ) : (
                 <>
-                  <span className="hidden md:inline">Original photos</span>
-                  <span className="md:hidden">Photos</span>
+                  <span className="hidden md:inline">{t("detail.originalPhotos")}</span>
+                  <span className="md:hidden">{t("detail.photos")}</span>
                 </>
               )}
             </Button>
@@ -416,7 +423,7 @@ export const ReceiptDetailModal = observer(() => {
                 <path d="M12 20h9" />
                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
               </svg>
-              Edit
+              {t("detail.edit")}
             </Button>
           )}
         </div>

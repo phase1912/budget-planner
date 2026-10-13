@@ -28,8 +28,16 @@ import { Change } from "../components/Change";
 import { likeForLikeNote, periodLabel, periodName } from "../periodLabel";
 import { HouseholdStatisticsView } from "@/features/household/components/HouseholdStatisticsView";
 import { HouseholdViewSwitch } from "@/features/household/components/HouseholdViewSwitch";
+import { numberFormat } from "@/i18n/format";
+import { useTranslation } from "react-i18next";
+import { categoryName } from "@/shared/categoryName";
 
-const AMOUNT = new Intl.NumberFormat("en-US", {
+const SHARE = numberFormat({
+  style: "percent",
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+const AMOUNT = numberFormat({
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
@@ -46,6 +54,7 @@ const AMOUNT = new Intl.NumberFormat("en-US", {
  */
 export const StatisticsPage = observer(function StatisticsPage() {
   const { statisticsStore, authStore, exportStore, householdStore } = useStores();
+  const { t } = useTranslation("statistics");
   // The household's figures replace the user's own; the period controls serve both (F12.5).
   const household = householdStore.showingHousehold;
   const { statistics, isLoading, error, start, end, preset, compare } = statisticsStore;
@@ -66,15 +75,13 @@ export const StatisticsPage = observer(function StatisticsPage() {
         <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col gap-1">
             <h1 className="m-0 text-[24px] font-bold tracking-[-0.02em] md:text-[28px]">
-              Statistics
+              {t("title")}
             </h1>
-            <p className="m-0 text-lg text-muted-foreground">
-              Category totals over any stretch of days, not just whole months.
-            </p>
+            <p className="m-0 text-lg text-muted-foreground">{t("subtitle")}</p>
           </div>
           {!household && (
             <ExportMenu
-              label="Export"
+              label={t("export")}
               busy={Boolean(exportStore.busy.statistics)}
               onExport={(format) => {
                 // The file holds this period's figures, compared if the screen is (BRD N6).
@@ -88,10 +95,10 @@ export const StatisticsPage = observer(function StatisticsPage() {
 
         <Card
           variant="surface"
-          className="flex flex-col gap-3 px-3.5 py-3.5 md:flex-row md:items-center md:px-4.5"
+          className="flex flex-col gap-3 px-3.5 py-3.5 md:px-4.5 lg:flex-row lg:items-center"
         >
           <SegmentedControl<Preset>
-            label="Period"
+            label={t("period")}
             size="sm"
             fill
             value={preset}
@@ -100,10 +107,22 @@ export const StatisticsPage = observer(function StatisticsPage() {
               else void statisticsStore.choosePreset(chosen);
             }}
             options={[
-              { value: "this_month", label: "This month" },
-              { value: "last_month", label: "Last month" },
-              { value: "last_3_months", label: "Last 3 months", shortLabel: "3 months" },
-              { value: "custom", label: "Custom" },
+              {
+                value: "this_month",
+                label: t("presets.thisMonth"),
+                shortLabel: t("presets.thisMonthShort"),
+              },
+              {
+                value: "last_month",
+                label: t("presets.lastMonth"),
+                shortLabel: t("presets.lastMonthShort"),
+              },
+              {
+                value: "last_3_months",
+                label: t("presets.last3"),
+                shortLabel: t("presets.last3Short"),
+              },
+              { value: "custom", label: t("presets.custom") },
             ]}
           />
           <DateRangeFilter
@@ -118,7 +137,7 @@ export const StatisticsPage = observer(function StatisticsPage() {
             }}
           />
           {!household && (
-            <label className="flex min-h-11 cursor-pointer items-center gap-2.25 text-md font-semibold md:ml-auto md:min-h-0">
+            <label className="flex min-h-11 cursor-pointer items-center gap-2.25 text-md font-semibold lg:ml-auto lg:min-h-0">
               <input
                 type="checkbox"
                 className="h-4 w-4 accent-primary"
@@ -127,7 +146,7 @@ export const StatisticsPage = observer(function StatisticsPage() {
                   void statisticsStore.setCompare(e.target.checked);
                 }}
               />
-              Compare with {previous ?? "the previous period"}
+              {t("compareWith", { period: previous ?? t("previousPeriod") })}
             </label>
           )}
         </Card>
@@ -140,8 +159,7 @@ export const StatisticsPage = observer(function StatisticsPage() {
               <>
                 {comparison.receipt_count === 0 ? (
                   <Note tone="info">
-                    No receipts in {periodName(comparison.start, comparison.end)}, so every category
-                    is new against it.
+                    {t("noPrevious", { period: periodName(comparison.start, comparison.end) })}
                   </Note>
                 ) : (
                   comparison.stops_mid_month && (
@@ -151,23 +169,17 @@ export const StatisticsPage = observer(function StatisticsPage() {
               </>
             )}
 
-            {error && (
-              <ErrorState
-                layout="banner"
-                title="The statistics could not be loaded"
-                message={error}
-              />
-            )}
+            {error && <ErrorState layout="banner" title={t("loadFailed")} message={error} />}
 
             {!statistics ? (
-              !error && <LoadingState title="Adding up your categories…" />
+              !error && <LoadingState title={t("loading")} />
             ) : statistics.receipt_count === 0 ? (
               // No receipts is not a spend of zero: no table of zeroes (BRD E5, states.html).
               <Card variant="surface" className="px-5 py-10">
                 <EmptyState
                   icon={CalendarX}
-                  title={`No receipts in ${periodName(start, end)}`}
-                  message="Nothing was recorded for that period. This is not a zero — there is simply nothing to total."
+                  title={t("empty.title", { period: periodName(start, end) })}
+                  message={t("empty.message")}
                   action={
                     <Button
                       variant="secondary"
@@ -177,7 +189,7 @@ export const StatisticsPage = observer(function StatisticsPage() {
                         setPicking(true);
                       }}
                     >
-                      Pick another period
+                      {t("empty.pick")}
                     </Button>
                   }
                 />
@@ -188,15 +200,14 @@ export const StatisticsPage = observer(function StatisticsPage() {
                   <Note tone="warning">
                     <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                       <span className="tabular-nums">
-                        {statistics.excluded_count === 1
-                          ? "1 item"
-                          : `${String(statistics.excluded_count)} items`}{" "}
-                        worth {AMOUNT.format(Number(statistics.excluded_amount))} {currency}{" "}
-                        {statistics.excluded_count === 1 ? "is" : "are"} left out — their receipts
-                        are waiting for review.
+                        {t("excluded", {
+                          count: statistics.excluded_count,
+                          amount: AMOUNT.format(Number(statistics.excluded_amount)),
+                          currency,
+                        })}
                       </span>
                       <Link to="/receipts?status=manual_review" className="shrink-0 underline">
-                        Review them
+                        {t("reviewThem")}
                       </Link>
                     </span>
                   </Note>
@@ -216,30 +227,30 @@ export const StatisticsPage = observer(function StatisticsPage() {
                   {statistics.categories.length === 0 ? (
                     // Receipts exist but all are held out for review, named in the note above.
                     <p className="m-0 p-5 text-md text-muted-foreground">
-                      Nothing is counted in {period} until those receipts are reviewed.
+                      {t("nothingCounted", { period })}
                     </p>
                   ) : (
                     <Table>
-                      <caption className="sr-only">
-                        Spending by category, {period}, highest first
-                      </caption>
+                      <caption className="sr-only">{t("caption", { period })}</caption>
                       <TableHeader className="bg-surface">
                         <TableRow className="hover:bg-transparent">
-                          <TableHead>Category</TableHead>
+                          <TableHead>{t("cols.category")}</TableHead>
                           <TableHead className="text-right">
                             {/* A phone has the period right above; the column just says what it is. */}
-                            <span className="md:hidden">Spent</span>
+                            <span className="md:hidden">{t("cols.spent")}</span>
                             <span className="hidden md:inline">{period}</span>
                           </TableHead>
-                          <TableHead className="text-right">Share</TableHead>
-                          <TableHead className="hidden text-right md:table-cell">Items</TableHead>
+                          <TableHead className="text-right">{t("cols.share")}</TableHead>
+                          <TableHead className="hidden text-right md:table-cell">
+                            {t("cols.items")}
+                          </TableHead>
                           {previous && (
                             <>
                               <TableHead className="hidden text-right md:table-cell">
                                 {previous}
                               </TableHead>
                               <TableHead className="hidden text-right md:table-cell">
-                                Change
+                                {t("cols.change")}
                               </TableHead>
                             </>
                           )}
@@ -247,12 +258,12 @@ export const StatisticsPage = observer(function StatisticsPage() {
                       </TableHeader>
                       <TableBody>
                         {statistics.categories.map((category) => {
-                          const name = category.name ?? "No category";
+                          const name = categoryName(category.name);
                           return (
                             <TableRow key={category.category_id ?? "none"}>
                               <TableCell>
                                 <span className="flex min-w-0 items-center gap-2.25 font-semibold">
-                                  <CategoryDot name={name} />
+                                  <CategoryDot name={category.name ?? ""} />
                                   {category.category_id ? (
                                     <Link
                                       to={`/categories?view=all&category=${encodeURIComponent(category.category_id)}&start=${start}&end=${end}`}
@@ -266,9 +277,7 @@ export const StatisticsPage = observer(function StatisticsPage() {
                                 </span>
                                 {/* A phone has no items column; the count goes under the name. */}
                                 <span className="block pl-4.5 text-base tabular-nums text-muted-foreground md:hidden">
-                                  {category.item_count === 1
-                                    ? "1 item"
-                                    : `${String(category.item_count)} items`}
+                                  {t("items", { count: category.item_count })}
                                 </span>
                               </TableCell>
                               <TableCell className="text-right font-semibold tabular-nums">
@@ -285,7 +294,7 @@ export const StatisticsPage = observer(function StatisticsPage() {
                                 )}
                               </TableCell>
                               <TableCell className="text-right tabular-nums text-muted-foreground">
-                                {Number(category.share).toFixed(1)}%
+                                {SHARE.format(Number(category.share) / 100)}
                               </TableCell>
                               <TableCell className="hidden text-right tabular-nums text-muted-foreground md:table-cell">
                                 {category.item_count}

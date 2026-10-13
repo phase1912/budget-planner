@@ -2,11 +2,13 @@ import { ChevronDown, Lightbulb, Loader2, RefreshCw, Undo2 } from "lucide-react"
 import { observer } from "mobx-react-lite";
 
 import { Button, IconTile, Meter, Note, Pill } from "@/shared/components";
-import type { AdviceReadiness, Feedback, GoalProgress, Recommendation } from "@/stores/AdviceStore";
+import type { AdviceReadiness, GoalProgress, Recommendation } from "@/stores/AdviceStore";
 import type { Goal } from "@/stores/GoalsStore";
 import { useStores } from "@/stores/StoreContext";
 import { impactOf } from "../adviceImpact";
 import { timeAgo } from "../timeAgo";
+import { numberFormat, dateFormat } from "@/i18n/format";
+import { useTranslation, Trans } from "react-i18next";
 
 /**
  * The advice on one goal, inside the goal's card (BRD F3, F4 — F8.4, F8.5).
@@ -21,6 +23,7 @@ import { timeAgo } from "../timeAgo";
  */
 export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal }) {
   const { adviceStore, authStore } = useStores();
+  const { t } = useTranslation("goals");
   const currency = authStore.user?.currency ?? "PLN";
   const advice = adviceStore.forGoal(goal.id);
   const outcome = adviceStore.outcomes.get(goal.id);
@@ -28,19 +31,19 @@ export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal })
   const readiness = adviceStore.readiness;
   const waiting = readiness !== null && !readiness.ready && advice.length === 0;
   const pace = adviceStore.progress.get(goal.id);
-  const verb = advice.length > 0 ? "Refresh advice" : "Get advice";
+  const verb = advice.length > 0 ? t("advice.refresh") : t("advice.get");
   const latest = advice.find((item) => !item.feedback) ?? advice[0];
 
   return (
     <section
-      aria-label={`Advice on ${goal.name}`}
+      aria-label={t("advice.section", { name: goal.name })}
       className="flex flex-col gap-3 border-t border-border pt-4"
     >
       <div className="flex items-center gap-2">
         <IconTile tone="accent" size="sm">
           <Lightbulb size={14} aria-hidden="true" />
         </IconTile>
-        <h3 className="m-0 text-md font-bold">Advice from your receipts</h3>
+        <h3 className="m-0 text-md font-bold">{t("advice.heading")}</h3>
       </div>
 
       {waiting ? (
@@ -53,7 +56,7 @@ export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal })
             {advising && (
               <p className="m-0 inline-flex items-center gap-2 text-md text-muted-foreground">
                 <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-                Reading your receipts…
+                {t("advice.reading")}
               </p>
             )}
             {!advising && outcome && (
@@ -76,7 +79,7 @@ export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal })
                     </p>
                     <details className="group">
                       <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-1 text-base font-medium text-muted-foreground transition-colors hover:text-foreground md:min-h-0 md:py-0.5 [&::-webkit-details-marker]:hidden">
-                        Why?
+                        {t("advice.why")}
                         <ChevronDown
                           size={13}
                           aria-hidden="true"
@@ -94,11 +97,7 @@ export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal })
               </ol>
             ) : (
               !advising &&
-              !outcome && (
-                <p className="m-0 text-md text-muted-foreground">
-                  Ask and the advice names things you actually buy, not general tips.
-                </p>
-              )
+              !outcome && <p className="m-0 text-md text-muted-foreground">{t("advice.prompt")}</p>
             )}
           </div>
 
@@ -107,7 +106,7 @@ export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal })
               variant="secondary"
               size="sm"
               className="min-h-11 w-full md:min-h-0 md:w-auto"
-              aria-label={`${verb} on ${goal.name}`}
+              aria-label={t("advice.buttonLabel", { verb, name: goal.name })}
               disabled={adviceStore.advisingGoalId !== null}
               onClick={() => void adviceStore.advise(goal.id)}
             >
@@ -120,11 +119,11 @@ export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal })
               ) : (
                 <Lightbulb size={14} aria-hidden="true" />
               )}
-              {advising ? "Working it out…" : verb}
+              {advising ? t("advice.working") : verb}
             </Button>
             {latest && (
               <span className="text-base text-muted-foreground">
-                Updated {timeAgo(latest.created_at)}
+                {t("advice.updated", { ago: timeAgo(latest.created_at) })}
               </span>
             )}
           </div>
@@ -134,11 +133,6 @@ export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal })
   );
 });
 
-const FEEDBACK_LABEL: Record<Feedback, string> = {
-  not_followed: "You won't follow this",
-  not_helpful: "You found this not helpful",
-};
-
 /**
  * The user's say on one piece of advice (BRD F8 — F8.9): won't follow it, or not helpful.
  * Marked advice stays on the card, struck through with an undo, and the next ask for
@@ -146,19 +140,20 @@ const FEEDBACK_LABEL: Record<Feedback, string> = {
  */
 const FeedbackControls = observer(function FeedbackControls({ item }: { item: Recommendation }) {
   const { adviceStore } = useStores();
+  const { t } = useTranslation("goals");
   if (item.feedback) {
     return (
       <div className="flex items-center justify-between gap-2">
-        <span className="text-base text-muted-foreground">{FEEDBACK_LABEL[item.feedback]}</span>
+        <span className="text-base text-muted-foreground">{t(`feedback.${item.feedback}`)}</span>
         <Button
           variant="ghost"
           size="sm"
           className="min-h-11 md:min-h-0"
-          aria-label={`Undo: ${item.action}`}
+          aria-label={t("feedback.undoLabel", { action: item.action })}
           onClick={() => void adviceStore.updateFeedback(item.id, null)}
         >
           <Undo2 size={14} aria-hidden="true" />
-          Undo
+          {t("feedback.undo")}
         </Button>
       </div>
     );
@@ -169,19 +164,19 @@ const FeedbackControls = observer(function FeedbackControls({ item }: { item: Re
         variant="secondary"
         size="sm"
         className="min-h-11 flex-1 md:min-h-0 md:flex-none"
-        aria-label={`Won't follow: ${item.action}`}
+        aria-label={t("feedback.wontFollowLabel", { action: item.action })}
         onClick={() => void adviceStore.updateFeedback(item.id, "not_followed")}
       >
-        Won&apos;t follow
+        {t("feedback.wontFollow")}
       </Button>
       <Button
         variant="secondary"
         size="sm"
         className="min-h-11 flex-1 md:min-h-0 md:flex-none"
-        aria-label={`Not helpful: ${item.action}`}
+        aria-label={t("feedback.notHelpfulLabel", { action: item.action })}
         onClick={() => void adviceStore.updateFeedback(item.id, "not_helpful")}
       >
-        Not helpful
+        {t("feedback.notHelpful")}
       </Button>
     </div>
   );
@@ -193,32 +188,33 @@ const FeedbackControls = observer(function FeedbackControls({ item }: { item: Re
  * refused. It turns into the advice block by itself once the history is there.
  */
 function NotEnoughHistory({ readiness }: { readiness: AdviceReadiness }) {
+  const { t } = useTranslation("goals");
   const fewReceipts = readiness.receipts < readiness.required_receipts;
-  const receipts = readiness.receipts === 1 ? "receipt" : "receipts";
-  const days = readiness.history_days === 1 ? "day" : "days";
   return (
     <div className="flex flex-col gap-2">
       <p className="m-0 text-md font-semibold">
         {fewReceipts
-          ? `${String(readiness.receipts)} ${receipts} is not a pattern yet`
-          : `${String(readiness.history_days)} ${days} is not a pattern yet`}
+          ? t("history.receipts", { count: readiness.receipts })
+          : t("history.days", { count: readiness.history_days })}
       </p>
-      <p className="m-0 text-md text-muted-foreground">
-        Advice needs about a month of shopping behind it. Keep uploading and it turns on by itself.
-      </p>
+      <p className="m-0 text-md text-muted-foreground">{t("history.note")}</p>
       <div className="flex flex-col gap-1.5 md:max-w-60">
         <Meter value={readiness.progress} />
         <span className="text-base text-muted-foreground tabular-nums">
-          {readiness.receipts} of {readiness.required_receipts} receipts · {readiness.history_days}{" "}
-          of {readiness.required_days} days
+          {t("history.progress", {
+            receipts: readiness.receipts,
+            requiredReceipts: readiness.required_receipts,
+            days: readiness.history_days,
+            requiredDays: readiness.required_days,
+          })}
         </span>
       </div>
     </div>
   );
 }
 
-const MONTH = new Intl.DateTimeFormat("en-GB", { month: "long" });
-const MONEY = new Intl.NumberFormat("en-US", {
+const MONTH = dateFormat({ month: "long" });
+const MONEY = numberFormat({
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
@@ -230,25 +226,34 @@ const EARLY_DAYS = 7;
  * says "on track" after the month has turned.
  */
 function NothingToCut({ pace, currency }: { pace: GoalProgress; currency: string }) {
+  const { t } = useTranslation("goals");
   const month = MONTH.format(new Date());
   const money = (amount: number | string) => `${MONEY.format(Number(amount))} ${currency}`;
   const left = Number(pace.target) - Number(pace.spent);
   return (
     <Note tone="success">
       <div className="flex flex-col gap-1.5">
-        <span className="font-semibold">Nothing to cut this month</span>
+        <span className="font-semibold">{t("onTrack.heading")}</span>
         <span>
-          Spent so far: <strong>{money(pace.spent)}</strong> of {money(pace.target)}
-          {left > 0 && ` · ${money(left)} left`}.
+          <Trans
+            t={t}
+            i18nKey="onTrack.spent"
+            values={{ spent: money(pace.spent), target: money(pace.target) }}
+            components={{ b: <strong /> }}
+          />
+          {left > 0 && t("onTrack.left", { left: money(left) })}.
         </span>
         <span>
-          Estimate: if you keep spending at the same daily rate, {month} would end at about{" "}
-          <strong>{money(pace.projected)}</strong>, {money(pace.margin)} under your limit. It is a
-          forecast, not a promise: one big shop can change it.
+          <Trans
+            t={t}
+            i18nKey="onTrack.estimate"
+            values={{ month, projected: money(pace.projected), margin: money(pace.margin) }}
+            components={{ b: <strong /> }}
+          />
         </span>
         {pace.day <= EARLY_DAYS && (
           <span className="opacity-80">
-            It is only day {pace.day} of {pace.days_in_month}, so the estimate is still rough.
+            {t("onTrack.early", { day: pace.day, days: pace.days_in_month })}
           </span>
         )}
       </div>

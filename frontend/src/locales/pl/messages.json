@@ -1,0 +1,109 @@
+{
+  "advice": {
+    "loadFailed": "Nie udało się wczytać porad",
+    "failed": "Nie udało się przygotować porad",
+    "nothing": "Twoje paragony nie pokazują jeszcze nic konkretnego dla tego celu."
+  },
+  "month": {
+    "loadFailed": "Nie udało się wczytać miesiąca"
+  },
+  "auth": {
+    "failed": "Logowanie nie powiodło się",
+    "registerFailed": "Rejestracja nie powiodła się"
+  },
+  "unknown": "Nieznany błąd",
+  "export": {
+    "startFailed": "Nie udało się rozpocząć eksportu",
+    "downloadFailed": "Nie udało się pobrać eksportu",
+    "done": "Wyeksportowano {{file}}",
+    "failed": "Eksport nie powiódł się",
+    "tooLong": "Eksport trwa zbyt długo. Spróbuj ponownie.",
+    "lost": "Eksport został utracony"
+  },
+  "categories": {
+    "changeFailed": "Nie udało się zmienić kategorii",
+    "loadFailed": "Nie udało się wczytać kategorii",
+    "queueFailed": "Nie udało się wczytać pozycji do sprawdzenia",
+    "createFailed": "Nie udało się utworzyć kategorii",
+    "renameFailed": "Nie udało się zmienić nazwy kategorii",
+    "deleteFailed": "Nie udało się usunąć kategorii"
+  },
+  "goals": {
+    "loadFailed": "Nie udało się wczytać celów",
+    "added": "Dodano cel",
+    "updated": "Zaktualizowano cel",
+    "removeFailed": "Nie udało się usunąć celu",
+    "removed": "Usunięto cel",
+    "saveFailed": "Nie udało się zapisać celu"
+  },
+  "profile": {
+    "updateFailed": "Nie udało się zaktualizować profilu",
+    "updated": "Zaktualizowano profil",
+    "addressFailed": "Nie udało się utworzyć nowego adresu",
+    "addressReady": "Nowy adres do przekazywania jest gotowy"
+  },
+  "household": {
+    "monthFailed": "Nie udało się wczytać miesiąca gospodarstwa",
+    "statisticsFailed": "Nie udało się wczytać statystyk gospodarstwa",
+    "budgetFailed": "Nie udało się zapisać budżetu gospodarstwa",
+    "budgetRemoved": "Usunięto budżet gospodarstwa.",
+    "budgetSaved": "Zapisano budżet gospodarstwa.",
+    "createFailed": "Nie udało się utworzyć gospodarstwa",
+    "created": "Utworzono gospodarstwo.",
+    "renameFailed": "Nie udało się zmienić nazwy gospodarstwa",
+    "renamed": "Zmieniono nazwę gospodarstwa.",
+    "removeFailed": "Nie udało się usunąć członka",
+    "removed": "Usunięto członka.",
+    "leaveFailed": "Nie udało się opuścić gospodarstwa",
+    "left": "Opuszczono gospodarstwo.",
+    "inviteFailed": "Nie udało się utworzyć nowego linku",
+    "inviteMade": "Nowy link jest gotowy. Stary już nie działa.",
+    "inviteInvalid": "Ten link z zaproszeniem jest nieprawidłowy.",
+    "joinFailed": "Nie udało się dołączyć do gospodarstwa",
+    "joined": "Witaj w gospodarstwie."
+  },
+  "receipts": {
+    "privacyFailed": "Nie udało się zmienić, kto go widzi",
+    "madePrivate": "Prywatny: gospodarstwo widzi tylko kwotę.",
+    "madeShared": "Widoczny dla gospodarstwa.",
+    "loadFailed": "Nie udało się wczytać paragonów",
+    "detailFailed": "Nie udało się otworzyć paragonu",
+    "refreshFailed": "Nie udało się odświeżyć paragonu",
+    "recategoriseFailed": "Nie udało się ponownie przypisać kategorii",
+    "recategorised": "Kategorie zaktualizowane. Twoje wybory zostały zachowane.",
+    "keepFailed": "Nie udało się zachować tego paragonu",
+    "kept": "Zachowano jako osobny zakup.",
+    "saveFailed": "Nie udało się zapisać paragonu",
+    "updated": "Zaktualizowano paragon",
+    "deleteFailed": "Nie udało się usunąć paragonu",
+    "deleted": "Usunięto paragon",
+    "recalculated": "{{done}}. Przeliczono: {{months}}"
+  },
+  "statistics": {
+    "loadFailed": "Nie udało się wczytać statystyk"
+  },
+  "upload": {
+    "failed": "Przesyłanie nie powiodło się",
+    "errorTitle": "Błąd przesyłania",
+    "errorDetails": "Podczas przesyłania wystąpił nieoczekiwany błąd.",
+    "network": "Błąd sieci",
+    "networkTitle": "Błąd sieci",
+    "networkDetails": "Nie udało się połączyć z serwerem.",
+    "processingFailed": "Przetwarzanie nie powiodło się",
+    "processingTitle": "Błąd przetwarzania",
+    "processingDetails": "Podczas odczytywania paragonu wystąpił błąd.",
+    "pollingFailed": "Nie udało się pobrać statusu",
+    "pollingDetails": "Nie udało się sprawdzić postępu przetwarzania.",
+    "duplicateFailed": "Nie udało się rozstrzygnąć duplikatu",
+    "matchFailed": "Nie udało się rozstrzygnąć dopasowania",
+    "totalFailed": "Nie udało się zapisać sumy",
+    "dateFailed": "Nie udało się ustawić daty",
+    "lineFailed": "Nie udało się zaktualizować pozycji",
+    "discountFailed": "Nie udało się dodać rabatu",
+    "storeFailed": "Nie udało się zapisać paragonów",
+    "stored_one": "Zapisano {{count}} paragon",
+    "stored_few": "Zapisano {{count}} paragony",
+    "stored_many": "Zapisano {{count}} paragonów",
+    "stored_other": "Zapisano {{count}} paragonu"
+  }
+}

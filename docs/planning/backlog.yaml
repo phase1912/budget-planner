@@ -2209,6 +2209,64 @@ epics:
               add the app to the Home Screen. Nothing shown once installed. Checked at 375, 768
               and 1280 px.
 
+      - key: F9.9
+        title: Localization (English, Ukrainian, Polish)
+        labels: [frontend, backend]
+        depends_on: [F9.2]
+        intent: >
+          The product speaks the user's language: English, Ukrainian or Polish, chosen on first
+          visit from the browser's language — never from where the user is, since a Ukrainian
+          living in Poland reads Ukrainian — and changed any time on Profile or, before signing
+          in, on the public pages. The choice is kept with the account, so it follows the user to
+          another device and the server answers in it too. Dates, amounts and plural forms follow
+          the language. Receipts are not translated: merchants and items stay as printed.
+        demo: >
+          Open the app in a browser set to Ukrainian: the landing page and sign-in are in
+          Ukrainian. Switch to Polish on Profile: every screen follows, "2 paragony" and
+          "5 paragonów" included, and signing in on a phone shows Polish there as well.
+        tasks:
+          - key: F9.9.1
+            title: Language infrastructure and switchers
+            labels: [frontend, backend, database]
+            detail: >
+              i18next with one JSON resource file per screen area under
+              frontend/src/locales/{en,uk,pl}/, English the source whose keys type-check the
+              others; plural forms through Intl.PluralRules. The language is the account's
+              (`users.language`, add-only migration, read and changed through /users/me) or, before
+              signing in, the browser's own choice kept in localStorage; on a first visit, the
+              browser's languages, else English. A switcher on Profile and a compact one on the
+              public pages. Dates and amounts formatted in the chosen language instead of the
+              hard-coded en-GB / en-US. A check in CI fails when a key is missing from uk or pl.
+              Checked at 375, 768 and 1280 px.
+          - key: F9.9.2
+            title: Public and sign-in screens in three languages
+            labels: [frontend]
+            detail: >
+              Landing, sign in, register, the password checklist, the invite page and the app
+              shell (navigation, toasts, not-found) read from the resources, translated into
+              Ukrainian and Polish. Checked at 375, 768 and 1280 px in each language.
+          - key: F9.9.3
+            title: Upload and receipts in three languages
+            labels: [frontend]
+            detail: >
+              The upload wizard, the receipts list, the receipt view and its dialogs, read from
+              the resources and translated. Checked at 375, 768 and 1280 px in each language.
+          - key: F9.9.4
+            title: Dashboard, statistics, categories, goals and profile in three languages
+            labels: [frontend]
+            detail: >
+              The remaining screens, read from the resources and translated; built-in category
+              names translated by key, the user's own as they named them. Checked at 375, 768 and
+              1280 px in each language.
+          - key: F9.9.5
+            title: Server messages and advice in the user's language
+            labels: [backend, frontend]
+            detail: >
+              Refusals the user reads get their own problem codes and their values as `params`
+              beside the English `detail`; the client shows its translation of the code and falls
+              back to `detail` for a code it does not know. Goal advice is written in the user's
+              language. Tests that every code the server can send has a translation.
+
   - key: E10
     title: Security, Privacy & Observability
     br: [N1, N2, N3, N5]

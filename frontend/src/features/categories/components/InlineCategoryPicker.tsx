@@ -4,6 +4,8 @@ import { ChevronDown } from "lucide-react";
 
 import { useStores } from "@/stores/StoreContext";
 import { Select } from "@/shared/components";
+import { useTranslation } from "react-i18next";
+import { categoryName } from "@/shared/categoryName";
 
 interface InlineCategoryPickerProps {
   itemId: string;
@@ -33,6 +35,7 @@ export const InlineCategoryPicker = observer(function InlineCategoryPicker({
   onCategoryChanged,
 }: InlineCategoryPickerProps) {
   const { categoriesStore, toastStore } = useStores();
+  const { t } = useTranslation("categories");
   const [isUpdating, setIsUpdating] = useState(false);
   // Ticked by default, as in docs/design/screens/categorisation.html: a correction
   // is normally meant for next time too (BRD C5).
@@ -61,7 +64,7 @@ export const InlineCategoryPicker = observer(function InlineCategoryPicker({
     <div className="flex flex-col gap-1.5">
       <div className="relative">
         <Select
-          aria-label={`Category for ${itemName}`}
+          aria-label={t("picker.label", { item: itemName })}
           value={undecided ? "" : (currentCategoryId ?? "")}
           onChange={(e) => {
             void handleChange(e.target.value);
@@ -71,15 +74,15 @@ export const InlineCategoryPicker = observer(function InlineCategoryPicker({
           className="w-full cursor-pointer pr-9 py-2.25 text-md font-semibold disabled:cursor-not-allowed"
         >
           <option value="" disabled>
-            Uncategorized
+            {categoryName("Uncategorized")}
           </option>
           {categoriesStore.assignableBuiltIns.map((c) => (
             <option key={c.id} value={c.id}>
-              {c.name}
+              {categoryName(c.name)}
             </option>
           ))}
           {categoriesStore.customCategories.length > 0 && (
-            <optgroup label="Yours">
+            <optgroup label={t("picker.yours")}>
               {categoriesStore.customCategories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -96,7 +99,11 @@ export const InlineCategoryPicker = observer(function InlineCategoryPicker({
       </div>
       <label
         className="flex items-center gap-2 pl-1 text-sm text-muted-foreground"
-        title={`Also apply to future ${itemName}${merchantName ? ` from ${merchantName}` : ""}`}
+        title={
+          merchantName
+            ? t("picker.applyTitleFrom", { item: itemName, merchant: merchantName })
+            : t("picker.applyTitle", { item: itemName })
+        }
       >
         <input
           type="checkbox"
@@ -106,7 +113,7 @@ export const InlineCategoryPicker = observer(function InlineCategoryPicker({
           }}
           className="size-4 m-0 accent-primary"
         />
-        Apply to future items
+        {t("picker.apply")}
       </label>
     </div>
   );

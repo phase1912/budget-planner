@@ -4,6 +4,8 @@ import { apiClient } from "../api/client";
 import type { ToastStore } from "./ToastStore";
 import { errorMessage } from "../api/errors";
 import { purchaseMonth } from "@/shared/purchaseDate";
+import { currentLocale, dateFormat } from "@/i18n/format";
+import i18n from "@/i18n";
 
 export type Receipt = components["schemas"]["ReceiptResponse"];
 export type ReceiptDetail = components["schemas"]["ReceiptDetailResponse"];
@@ -11,7 +13,7 @@ export type UpdateReceiptRequest = components["schemas"]["UpdateReceiptRequest"]
 
 type Dated = Pick<Receipt, "transaction_date" | "created_at">;
 
-const MONTH_AND_YEAR = new Intl.DateTimeFormat("en-GB", {
+const MONTH_AND_YEAR = dateFormat({
   month: "long",
   year: "numeric",
   timeZone: "UTC",
@@ -37,7 +39,8 @@ export function changeMessage(done: string, receipts: Dated[], now: Date): strin
   }
   if (closed.size === 0) return done;
   const months = [...closed.entries()].sort(([a], [b]) => a - b).map(([, label]) => label);
-  return `${done}. ${months.join(" and ")} recalculated`;
+  const list = new Intl.ListFormat(currentLocale(), { type: "conjunction" }).format(months);
+  return i18n.t("messages:receipts.recalculated", { done, months: list });
 }
 
 export class ReceiptStore {
@@ -178,14 +181,18 @@ export class ReceiptStore {
     runInAction(() => {
       this.isSavingPrivacy = false;
       if (response.error) {
-        this.toastStore.showError(errorMessage(response.error, "Could not change who sees it"));
+        this.toastStore.showError(
+          errorMessage(response.error, i18n.t("messages:receipts.privacyFailed")),
+        );
         return;
       }
       if (this.selectedReceiptId === id) this.receiptDetail = response.data;
       const listed = this.receipts.find((r) => r.id === id);
       if (listed) listed.is_private = isPrivate;
       this.toastStore.showSuccess(
-        isPrivate ? "Private: the household sees only its amount." : "Shared with the household.",
+        isPrivate
+          ? i18n.t("messages:receipts.madePrivate")
+          : i18n.t("messages:receipts.madeShared"),
       );
     });
   }
@@ -210,7 +217,7 @@ export class ReceiptStore {
       });
 
       if (response.error) {
-        throw new Error(errorMessage(response.error, "Failed to fetch receipts"));
+        throw new Error(errorMessage(response.error, i18n.t("messages:receipts.loadFailed")));
       }
 
       runInAction(() => {
@@ -222,7 +229,7 @@ export class ReceiptStore {
         this.isLoadingList = false;
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : i18n.t("messages:unknown");
       runInAction(() => {
         this.listError = errorMessage;
         this.isLoadingList = false;
@@ -245,7 +252,7 @@ export class ReceiptStore {
       });
 
       if (response.error) {
-        throw new Error(errorMessage(response.error, "Failed to fetch receipt detail"));
+        throw new Error(errorMessage(response.error, i18n.t("messages:receipts.detailFailed")));
       }
 
       runInAction(() => {
@@ -253,7 +260,7 @@ export class ReceiptStore {
         this.isLoadingDetail = false;
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : i18n.t("messages:unknown");
       runInAction(() => {
         this.detailError = errorMessage;
         this.isLoadingDetail = false;
@@ -275,7 +282,9 @@ export class ReceiptStore {
       params: { path: { receipt_id: id } },
     });
     if (response.error) {
-      this.toastStore.showError(errorMessage(response.error, "Failed to refresh the receipt"));
+      this.toastStore.showError(
+        errorMessage(response.error, i18n.t("messages:receipts.refreshFailed")),
+      );
       return;
     }
     runInAction(() => {
@@ -298,11 +307,13 @@ export class ReceiptStore {
     runInAction(() => {
       this.isRecategorising = false;
       if (response.error) {
-        this.toastStore.showError(errorMessage(response.error, "Could not re-run categorisation"));
+        this.toastStore.showError(
+          errorMessage(response.error, i18n.t("messages:receipts.recategoriseFailed")),
+        );
         return;
       }
       if (this.selectedReceiptId === id) this.receiptDetail = response.data;
-      this.toastStore.showSuccess("Categories updated. Your own choices were kept.");
+      this.toastStore.showSuccess(i18n.t("messages:receipts.recategorised"));
     });
   }
 
@@ -320,13 +331,15 @@ export class ReceiptStore {
     runInAction(() => {
       this.isKeepingDuplicate = false;
       if (response.error) {
-        this.toastStore.showError(errorMessage(response.error, "Could not keep this receipt"));
+        this.toastStore.showError(
+          errorMessage(response.error, i18n.t("messages:receipts.keepFailed")),
+        );
         return;
       }
       if (this.selectedReceiptId === id) this.receiptDetail = response.data;
       const listed = this.receipts.find((r) => r.id === id);
       if (listed) listed.possible_duplicate_of_id = null;
-      this.toastStore.showSuccess("Kept as a separate purchase.");
+      this.toastStore.showSuccess(i18n.t("messages:receipts.kept"));
     });
   }
 
@@ -367,7 +380,7 @@ export class ReceiptStore {
       });
 
       if (response.error) {
-        throw new Error(errorMessage(response.error, "Failed to save the receipt"));
+        throw new Error(errorMessage(response.error, i18n.t("messages:receipts.saveFailed")));
       }
 
       const before = this.receiptDetail;
@@ -378,12 +391,14 @@ export class ReceiptStore {
       });
 
       const touched = before ? [before, response.data] : [response.data];
-      this.toastStore.showSuccess(changeMessage("Receipt updated", touched, this.now()));
+      this.toastStore.showSuccess(
+        changeMessage(i18n.t("messages:receipts.updated"), touched, this.now()),
+      );
       this.onReceiptsChanged();
       await this.fetchReceipts(this.page, this.size);
       return true;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
+      const message = error instanceof Error ? error.message : i18n.t("messages:unknown");
       runInAction(() => {
         this.editReceiptError = message;
         this.isSavingReceipt = false;
@@ -415,7 +430,7 @@ export class ReceiptStore {
       });
 
       if (response.error) {
-        throw new Error(errorMessage(response.error, "Failed to delete receipt"));
+        throw new Error(errorMessage(response.error, i18n.t("messages:receipts.deleteFailed")));
       }
 
       const wasLastOnPage = this.receipts.length === 1 && this.page > 1;
@@ -428,11 +443,13 @@ export class ReceiptStore {
         if (this.selectedReceiptId === id) this.clearSelection();
       });
 
-      this.toastStore.showSuccess(changeMessage("Receipt deleted", gone ? [gone] : [], this.now()));
+      this.toastStore.showSuccess(
+        changeMessage(i18n.t("messages:receipts.deleted"), gone ? [gone] : [], this.now()),
+      );
       this.onReceiptsChanged();
       await this.fetchReceipts(wasLastOnPage ? this.page - 1 : this.page, this.size);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
+      const message = error instanceof Error ? error.message : i18n.t("messages:unknown");
       runInAction(() => {
         this.isDeleting = false;
       });

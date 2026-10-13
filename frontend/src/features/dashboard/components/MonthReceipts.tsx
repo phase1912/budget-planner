@@ -4,8 +4,10 @@ import { Link } from "react-router-dom";
 import { Card } from "@/shared/components";
 import { formatPurchase } from "@/shared/purchaseDate";
 import type { Receipt } from "@/stores/ReceiptStore";
+import { numberFormat } from "@/i18n/format";
+import { useTranslation } from "react-i18next";
 
-const AMOUNT = new Intl.NumberFormat("en-US", {
+const AMOUNT = numberFormat({
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
@@ -31,18 +33,19 @@ interface MonthReceiptsProps {
  * figure until resolved (D3).
  */
 export function MonthReceipts({ title, receipts, total, allHref, onOpen }: MonthReceiptsProps) {
+  const { t } = useTranslation("dashboard");
   return (
     <Card variant="default" className="flex h-full flex-col px-6 py-5.5">
       <div className="mb-3.5 flex items-baseline justify-between gap-4">
         <h2 className="m-0 text-[16px] font-bold">{title}</h2>
         {total > 0 && (
           <Link to={allHref} className="text-md">
-            All {total}
+            {t("receiptsCard.all", { count: total })}
           </Link>
         )}
       </div>
       {receipts.length === 0 ? (
-        <p className="m-0 py-3 text-md text-muted-foreground">No receipts in this month.</p>
+        <p className="m-0 py-3 text-md text-muted-foreground">{t("receiptsCard.none")}</p>
       ) : (
         <ul className="m-0 flex list-none flex-col p-0">
           {receipts.map((receipt) => (
@@ -62,12 +65,12 @@ export function MonthReceipts({ title, receipts, total, allHref, onOpen }: Month
 }
 
 function ReceiptRow({ receipt, onOpen }: { receipt: Receipt; onOpen: () => void }) {
+  const { t } = useTranslation("dashboard");
   const underReview = receipt.status === "manual_review";
-  const items =
-    receipt.line_items.length === 1 ? "1 item" : `${String(receipt.line_items.length)} items`;
+  const items = t("receiptsCard.items", { count: receipt.line_items.length });
   const bought = receipt.transaction_date
     ? formatPurchase(receipt.transaction_date, { day: "numeric", month: "short" })
-    : "No date";
+    : t("receiptsCard.noDate");
   return (
     <button
       type="button"
@@ -76,7 +79,7 @@ function ReceiptRow({ receipt, onOpen }: { receipt: Receipt; onOpen: () => void 
     >
       <span className="flex min-w-0 flex-grow flex-col gap-0.75">
         <span className="flex items-center gap-1.75 truncate text-md font-semibold">
-          {receipt.merchant_name ?? "Unknown merchant"}
+          {receipt.merchant_name ?? t("receiptsCard.unknownMerchant")}
           {underReview && (
             <TriangleAlert
               size={13}
@@ -86,7 +89,7 @@ function ReceiptRow({ receipt, onOpen }: { receipt: Receipt; onOpen: () => void 
           )}
         </span>
         {underReview ? (
-          <span className="text-base text-tone-warning-text">Needs your review</span>
+          <span className="text-base text-tone-warning-text">{t("receiptsCard.review")}</span>
         ) : (
           <span className="tabular-nums text-base text-muted-foreground">
             {bought} · {items}

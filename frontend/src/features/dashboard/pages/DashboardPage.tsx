@@ -21,10 +21,12 @@ import { TopCategories } from "../components/TopCategories";
 import { WelcomePanel } from "../components/WelcomePanel";
 import { HouseholdMonthView } from "@/features/household/components/HouseholdMonthView";
 import { HouseholdViewSwitch } from "@/features/household/components/HouseholdViewSwitch";
+import { numberFormat, dateFormat } from "@/i18n/format";
+import { useTranslation } from "react-i18next";
 
-const MONTH_AND_YEAR = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" });
-const MONTH = new Intl.DateTimeFormat("en-GB", { month: "long" });
-const AMOUNT = new Intl.NumberFormat("en-US", {
+const MONTH_AND_YEAR = dateFormat({ month: "long", year: "numeric" });
+const MONTH = dateFormat({ month: "long" });
+const AMOUNT = numberFormat({
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
@@ -54,6 +56,7 @@ export const DashboardPage = observer(function DashboardPage() {
   const { budgetStore, authStore, receiptStore, householdStore } = useStores();
   const { summary, isLoading, error } = budgetStore;
   const navigate = useNavigate();
+  const { t } = useTranslation("dashboard");
 
   useEffect(() => {
     void budgetStore.open();
@@ -65,9 +68,9 @@ export const DashboardPage = observer(function DashboardPage() {
       <div className="flex-grow flex flex-col items-center py-10 px-4 md:px-8">
         <div className="w-full max-w-[960px]">
           {error ? (
-            <ErrorState layout="banner" title="The month could not be loaded" message={error} />
+            <ErrorState layout="banner" title={t("loadFailed")} message={error} />
           ) : (
-            <LoadingState title="Loading your month…" />
+            <LoadingState title={t("loading")} />
           )}
         </div>
       </div>
@@ -87,29 +90,30 @@ export const DashboardPage = observer(function DashboardPage() {
   const wide = (text: string) => <span className="hidden md:inline">{text}</span>;
   const heading = (
     <>
-      {summary.is_complete ? "Spent" : "Spent so far"}
-      {wide(` in ${MONTH.format(figureMonth)}`)}
+      {summary.is_complete ? t("spent") : t("spentSoFar")}
+      {wide(t("inMonth", { month: MONTH.format(figureMonth) }))}
     </>
   );
   const limit = limitOf(summary);
   const overLimit = limit !== null && Number(limit.remaining) < 0;
   const days = summary.is_complete ? (
-    `${String(summary.days_in_month)} of ${String(summary.days_in_month)} days`
+    t("days", { elapsed: summary.days_in_month, days: summary.days_in_month })
   ) : (
     <>
-      {`${String(summary.days_elapsed)} of ${String(summary.days_in_month)} days`}
-      {wide(" recorded")}
+      {t("days", { elapsed: summary.days_elapsed, days: summary.days_in_month })}
+      {wide(t("recorded"))}
     </>
   );
-  const heldOut =
-    summary.excluded_count === 1 ? "1 receipt" : `${String(summary.excluded_count)} receipts`;
-  const heldOutWorth = `${heldOut} worth ${AMOUNT.format(Number(summary.excluded_amount))} ${currency}`;
+  const heldOutWorth = t("heldOutWorth", {
+    receipts: t("receipts", { count: summary.excluded_count }),
+    amount: AMOUNT.format(Number(summary.excluded_amount)),
+    currency,
+  });
 
   const meta = (
     <span className="tabular-nums text-sm text-muted-foreground md:text-md">
-      {days} ·{" "}
-      {summary.receipt_count === 1 ? "1 receipt" : `${String(summary.receipt_count)} receipts`}
-      {overLimit && " · the mark is where the limit sat"}
+      {days} · {t("receipts", { count: summary.receipt_count })}
+      {overLimit && t("markNote")}
     </span>
   );
 
@@ -134,7 +138,7 @@ export const DashboardPage = observer(function DashboardPage() {
             </span>
           </div>
           <Link to="/statistics" className="hidden items-center gap-1.75 text-lg md:inline-flex">
-            Full statistics
+            {t("fullStatistics")}
             <ArrowRight size={16} aria-hidden="true" />
           </Link>
         </div>
@@ -153,9 +157,7 @@ export const DashboardPage = observer(function DashboardPage() {
           />
         ) : (
           <>
-            {error && (
-              <ErrorState layout="banner" title="The month could not be loaded" message={error} />
-            )}
+            {error && <ErrorState layout="banner" title={t("loadFailed")} message={error} />}
 
             <Card
               variant="surface"
@@ -188,8 +190,7 @@ export const DashboardPage = observer(function DashboardPage() {
                   <Note tone="warning">
                     <span className="flex items-center justify-between gap-3">
                       <span className="tabular-nums">
-                        {heldOutWorth} {summary.excluded_count === 1 ? "sits" : "sit"} outside this
-                        total.
+                        {t("heldOutPhone", { count: summary.excluded_count, worth: heldOutWorth })}
                       </span>
                       <ChevronRight size={16} aria-hidden="true" className="shrink-0" />
                     </span>
@@ -199,11 +200,10 @@ export const DashboardPage = observer(function DashboardPage() {
                   <Note tone="warning">
                     <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                       <span className="tabular-nums">
-                        {heldOutWorth} {summary.excluded_count === 1 ? "is" : "are"} not in this
-                        total — the date or total could not be read.
+                        {t("heldOut", { count: summary.excluded_count, worth: heldOutWorth })}
                       </span>
                       <Link to="/receipts?status=manual_review" className="shrink-0 underline">
-                        {summary.excluded_count === 1 ? "Resolve it" : "Resolve them"}
+                        {t("resolve", { count: summary.excluded_count })}
                       </Link>
                     </span>
                   </Note>
@@ -221,13 +221,13 @@ export const DashboardPage = observer(function DashboardPage() {
             <div className="hidden gap-5 md:grid md:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
               <CategorySpendList
                 spend={budgetStore.spend}
-                hint="Highest first"
+                hint={t("highestFirst")}
                 onSelect={(categoryId) => {
                   if (categoryId) void navigate(categoryItemsHref(summary, categoryId));
                 }}
               />
               <MonthReceipts
-                title={summary.is_complete ? "Biggest receipts" : "Latest receipts"}
+                title={summary.is_complete ? t("biggest") : t("latest")}
                 receipts={budgetStore.receipts}
                 total={budgetStore.receiptsInMonth}
                 allHref={`/receipts?${monthQuery(summary)}`}

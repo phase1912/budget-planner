@@ -31,6 +31,9 @@ Rules:
 """
 
 
+LANGUAGE_NAMES = {"en": "English", "uk": "Ukrainian", "pl": "Polish"}
+
+
 class _Recommendation(BaseModel):
     target_kind: AdviceTarget = Field(
         description="'category' for a spending category, 'item' for a recurring purchase."
@@ -62,15 +65,17 @@ class AdviceGenerationAdapter(AdviceGeneratorPort):
         self._agent = agent
         self._timeout_seconds = timeout_seconds
 
-    async def propose(self, analysis: GoalAnalysis, currency: str) -> list[Advice]:
+    async def propose(
+        self, analysis: GoalAnalysis, currency: str, *, language: str = "en"
+    ) -> list[Advice]:
         """Ask the model; see AdviceGeneratorPort.propose. Raises AdviceUnavailable."""
         evidence = render_advice_context(analysis, currency)
-        messages = [
-            Message(
-                role="user",
-                content=[{"type": "text", "text": f"{SYSTEM_PROMPT}\nEvidence:\n{evidence}"}],
-            )
-        ]
+        written_in = (
+            f"- Write `action` and `rationale` in {LANGUAGE_NAMES.get(language, 'English')}. "
+            "Keep `target_name` exactly as the evidence spells it, untranslated.\n"
+        )
+        prompt = f"{SYSTEM_PROMPT}{written_in}\nEvidence:\n{evidence}"
+        messages = [Message(role="user", content=[{"type": "text", "text": prompt}])]
         try:
             async with asyncio.timeout(self._timeout_seconds):
                 answer = await self._agent.run_structured(

@@ -2,8 +2,10 @@ import { observer } from "mobx-react-lite";
 
 import { Note } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
+import { dateFormat } from "@/i18n/format";
+import { useTranslation } from "react-i18next";
 
-const DAY = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long" });
+const DAY = dateFormat({ day: "numeric", month: "long" });
 
 /**
  * How many receipts this account may still have read this month, against what the
@@ -12,11 +14,12 @@ const DAY = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long" });
  */
 export const ReceiptQuotaNote = observer(function ReceiptQuotaNote({ needed }: { needed: number }) {
   const { quotaStore } = useStores();
+  const { t } = useTranslation("upload");
   const quota = quotaStore.quota;
   if (!quota) return null;
 
   if (quota.unlimited) {
-    return <p className="m-0 text-md text-muted-foreground">No receipt limit on this account.</p>;
+    return <p className="m-0 text-md text-muted-foreground">{t("quota.unlimited")}</p>;
   }
 
   const left = quota.remaining ?? 0;
@@ -24,15 +27,15 @@ export const ReceiptQuotaNote = observer(function ReceiptQuotaNote({ needed }: {
   if (quotaStore.allows(needed)) {
     return (
       <p className="m-0 text-md text-muted-foreground tabular-nums">
-        {left} of {quota.limit} receipts left this month.
+        {t("quota.left", { left, limit: quota.limit })}
       </p>
     );
   }
   return (
     <Note tone="warning">
       {left === 0
-        ? `You have used all ${String(quota.limit)} receipts this month. More can be read from ${resets}.`
-        : `Only ${String(left)} receipt${left === 1 ? "" : "s"} left this month, and this upload has ${String(needed)}. Remove ${String(needed - left)} to read the rest, or wait until ${resets}.`}
+        ? t("quota.used", { limit: quota.limit, resets })
+        : t("quota.short", { count: left, needed, extra: needed - left, resets })}
     </Note>
   );
 });

@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { IconButton } from "@/shared/components";
+import { useTranslation } from "react-i18next";
 
 interface MonthSwitcherProps {
   label: string;
@@ -31,12 +32,18 @@ export const MonthSwitcher = observer(function MonthSwitcher({
   onNext,
   status,
 }: MonthSwitcherProps) {
+  const { t } = useTranslation("dashboard");
   return (
     <nav
-      aria-label="Month"
+      aria-label={t("switcher.month")}
       className="flex w-full items-center justify-between gap-2 md:inline-flex md:w-auto md:self-start md:gap-0.5 md:rounded-control md:border md:border-border md:p-0.75"
     >
-      <IconButton aria-label="Previous month" onClick={onPrevious} bordered className={ARROW}>
+      <IconButton
+        aria-label={t("switcher.previous")}
+        onClick={onPrevious}
+        bordered
+        className={ARROW}
+      >
         <ChevronLeft size={16} />
       </IconButton>
       <div className="flex flex-col items-center gap-1">
@@ -49,7 +56,7 @@ export const MonthSwitcher = observer(function MonthSwitcher({
         {status && <div className="md:hidden">{status}</div>}
       </div>
       <IconButton
-        aria-label="Next month"
+        aria-label={t("switcher.next")}
         bordered
         disabled={!canGoForward}
         onClick={onNext}

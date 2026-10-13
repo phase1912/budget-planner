@@ -3,6 +3,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 import type { components } from "@/api/schema";
 import { apiClient } from "@/api/client";
 import { errorMessage } from "@/api/errors";
+import i18n from "@/i18n";
 
 export type CategoryStatistics = components["schemas"]["CategoryStatisticsResponse"];
 
@@ -87,7 +88,7 @@ export class StatisticsStore {
         params: { query: { start: this.start, end: this.end, compare: this.compare, chart: true } },
       });
       if (response.error) {
-        throw new Error(errorMessage(response.error, "Could not load the statistics"));
+        throw new Error(errorMessage(response.error, i18n.t("messages:statistics.loadFailed")));
       }
       if (request !== this.request) return;
       runInAction(() => {
@@ -97,7 +98,8 @@ export class StatisticsStore {
     } catch (error) {
       if (request !== this.request) return;
       runInAction(() => {
-        this.error = error instanceof Error ? error.message : "Could not load the statistics";
+        this.error =
+          error instanceof Error ? error.message : i18n.t("messages:statistics.loadFailed");
         this.isLoading = false;
       });
     }

@@ -1,6 +1,8 @@
 import { Note } from "../Note";
 import { Button } from "../Button/Button";
 import { totalsGap } from "../../receiptTotals";
+import { Trans, useTranslation } from "react-i18next";
+import { formatAmount } from "@/i18n/format";
 
 export interface TotalsGapNoteProps {
   linesSum: number;
@@ -15,7 +17,7 @@ export interface TotalsGapNoteProps {
   className?: string;
 }
 
-const money = (amount: number) => amount.toFixed(2);
+const money = (amount: number) => formatAmount(amount);
 
 /**
  * Why a receipt's lines disagree with its printed total, and the way out (BRD A9, A11).
@@ -36,6 +38,7 @@ export function TotalsGapNote({
   triedToFix = false,
   className,
 }: TotalsGapNoteProps) {
+  const { t } = useTranslation();
   const totals = totalsGap(linesSum, printedTotal);
   if (totals.kind === "match") return null;
 
@@ -43,18 +46,14 @@ export function TotalsGapNote({
   return (
     <Note tone="warning" className={className}>
       <div className="flex flex-col gap-2.5">
-        {triedToFix && (
-          <p className="m-0 font-semibold">
-            We read this receipt again and still could not make it add up, so it needs a look.
-          </p>
-        )}
+        {triedToFix && <p className="m-0 font-semibold">{t("totals.triedToFix")}</p>}
         <p className="m-0">
-          The lines come to <strong className="tabular-nums">{money(linesSum)}</strong>,{" "}
-          <strong className="tabular-nums">{money(totals.gap)}</strong> {over ? "more" : "less"}{" "}
-          than the <strong className="tabular-nums">{money(printedTotal)}</strong> on the receipt.{" "}
-          {over
-            ? "Most likely a discount was not read. Add it and the receipt counts toward your month."
-            : "A line is missing or misread. Correct it and the receipt counts toward your month."}
+          <Trans
+            t={t}
+            i18nKey={over ? "totals.over" : "totals.under"}
+            values={{ lines: money(linesSum), gap: money(totals.gap), total: money(printedTotal) }}
+            components={{ b: <strong className="tabular-nums" /> }}
+          />
         </p>
         <div className="flex flex-col gap-2 md:flex-row">
           {over && onAddDiscount && (
@@ -67,7 +66,7 @@ export function TotalsGapNote({
                 onAddDiscount(totals.gap);
               }}
             >
-              Add a −{money(totals.gap)} discount
+              {t("totals.addDiscount", { gap: money(totals.gap) })}
             </Button>
           )}
           {onFix && (
@@ -77,7 +76,7 @@ export function TotalsGapNote({
               className="min-h-11 w-full md:min-h-0 md:w-auto"
               onClick={onFix}
             >
-              Fix the receipt
+              {t("totals.fix")}
             </Button>
           )}
         </div>

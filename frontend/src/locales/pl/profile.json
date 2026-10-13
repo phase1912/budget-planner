@@ -1,0 +1,56 @@
+{
+  "title": "Ustawienia",
+  "subtitle": "Ustawienia konta, w których wyrażona jest każda kwota w aplikacji.",
+  "money": {
+    "title": "Pieniądze",
+    "currency": "Waluta",
+    "currencyHint": "Blokowana po dodaniu pierwszego paragonu: wszystkie kwoty są w jednej walucie, a paragony w innej są na nią przeliczane.",
+    "locked": "{{currency}} — zablokowana",
+    "recorded": "Paragonów w {{currency}}: {{count}}",
+    "limit": "Miesięczny limit budżetu",
+    "limitHint": "Opcjonalnie. Gdy jest ustawiony, wydatki są też pokazywane jako jego procent. Zmiana wpływa tylko na prezentację — zamknięte miesiące nigdy nie są przepisywane.",
+    "removeLimit": "Usuń limit"
+  },
+  "account": {
+    "title": "Konto",
+    "email": "E-mail",
+    "change": "Zmień",
+    "sessions": "Aktywne sesje",
+    "sessionsHint": "Wylogowanie wszędzie unieważnia wszystkie sesje, łącznie z tą.",
+    "signOutEverywhere": "Wyloguj wszędzie"
+  },
+  "discard": "Odrzuć",
+  "saving": "Zapisujemy…",
+  "save": "Zapisz ustawienia",
+  "forwarding": {
+    "title": "Paragony e-mailem",
+    "label": "Twój adres do przekazywania",
+    "hint": "Przekaż tu e-paragon ze sklepu z adresu {{email}}. Zostanie odczytany jak zdjęcie i pojawi się w „Paragonach” z oznaczeniem „z e-maila”. Poczta z innych adresów jest ignorowana.",
+    "yourEmail": "adresu e-mail Twojego konta",
+    "copied": "Skopiowano",
+    "copy": "Kopiuj adres",
+    "replaceLabel": "Zmień adres do przekazywania",
+    "replaceQuestion": "Obecny adres od razu przestanie działać. Zmienić go?",
+    "keep": "Zostaw",
+    "replacing": "Zmieniamy…",
+    "replace": "Zmień adres",
+    "new": "Uzyskaj nowy adres"
+  },
+  "usage": {
+    "title": "Paragony w tym miesiącu",
+    "unlimited": "To konto nie ma limitu. W tym miesiącu odczytano: {{used}}.",
+    "used": "Odczytano {{used}} z {{limit}}",
+    "note": "Liczy się każdy paragon odczytany ze zdjęcia lub e-maila. Licznik zacznie się od nowa {{date}}."
+  },
+  "install": {
+    "title": "Aplikacja",
+    "body": "Budget Agent instaluje się na tym urządzeniu i otwiera na pełnym ekranie jak każda aplikacja. Sklep z aplikacjami nie jest potrzebny, a wersja jest zawsze najnowsza.",
+    "button": "Zainstaluj aplikację",
+    "share": "Udostępnij",
+    "ios": "W Safari stuknij <icon></icon> „Udostępnij”, a potem <b>„Do ekranu początkowego”</b>.",
+    "hintTitle": "Dodaj Budget Agent do ekranu początkowego",
+    "hintBody": "Otwiera się na pełnym ekranie jak aplikacja, od razu z Twoimi paragonami.",
+    "hintIos": "Stuknij <icon></icon> „Udostępnij” w Safari, a potem <b>„Do ekranu początkowego”</b>. Potem otworzy się na pełnym ekranie jak aplikacja.",
+    "dismiss": "Ukryj podpowiedź o instalacji"
+  }
+}

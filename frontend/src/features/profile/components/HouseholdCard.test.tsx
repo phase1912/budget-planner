@@ -211,7 +211,7 @@ describe("HouseholdCard", () => {
     api.GET.mockResolvedValue({ data: { ...household("member"), budget_limit: "1500.00" } });
     renderCard();
 
-    expect(await screen.findByText(/1500.00 PLN a month, set by the owner/)).toBeInTheDocument();
+    expect(await screen.findByText(/1,500.00 PLN a month, set by the owner/)).toBeInTheDocument();
     expect(screen.queryByLabelText(/Household budget a month/)).not.toBeInTheDocument();
   });
 });

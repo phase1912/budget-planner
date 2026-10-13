@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { App } from "@/App";
+import "@/i18n";
 import "@/shared/styles/index.css";
 import { StoreProvider } from "@/stores/StoreContext";
 import { registerServiceWorker } from "@/pwa/registerServiceWorker";
