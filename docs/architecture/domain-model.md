@@ -224,6 +224,11 @@ Rules that must hold at all times. Each is a candidate for a test.
 11k. An account with no receipts yet takes the household's currency when it joins, as it
     could on Profile; one with receipts in another currency is refused (F12.3, D1).
 
+11l. Each line keeps the reader's confidence in it. A line below
+    `ocr_confidence_threshold` is doubtful: marked "check this" in the wizard and on the
+    stored receipt, never silently accepted (A10, F15.2). A line the user corrects is no
+    longer doubtful; one stored before scores were kept, or typed by hand, has none.
+
 **Categorisation**
 
 12. Every line item has a category. Below the confidence threshold it is `Uncategorized`

@@ -31,6 +31,7 @@ from pydantic import (
 from app.core.config import get_settings
 from app.domain.categories import is_low_confidence
 from app.domain.position_matching import MatchResult
+from app.domain.read_confidence import is_doubtful
 from app.domain.receipt_totals import lines_match_total
 
 _TRAILING_LETTERS = re.compile(r"(?<=\d)\s*[A-Za-z]+\.?$")
@@ -134,6 +135,15 @@ class ExtractedLineItem(BaseModel):
             self.category_confidence,
             get_settings().categorization_confidence_threshold,
         )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_doubtful(self) -> bool:
+        """Whether the reader was unsure of this line, so the user should check it (BRD A10).
+
+        Decided against `Settings.ocr_confidence_threshold` (ADR-0005), never in the browser.
+        """
+        return is_doubtful(self.confidence, get_settings().ocr_confidence_threshold)
 
     @field_validator("quantity", "unit_price", "total_price", mode="after")
     @classmethod

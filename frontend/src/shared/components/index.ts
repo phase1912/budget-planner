@@ -18,3 +18,4 @@ export * from "./DateRangeFilter/DateRangeFilter";
 export * from "./Pagination/Pagination";
 export * from "./Meter";
 export * from "./TotalsGapNote";
+export * from "./DoubtfulLines";

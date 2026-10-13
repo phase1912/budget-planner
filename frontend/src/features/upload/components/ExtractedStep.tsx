@@ -7,7 +7,15 @@ import { alreadyStoredText, type AlreadyStored } from "../alreadyStored";
 import { conversionLine, converted } from "@/shared/exchange";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
 import { Button } from "@/shared/components/Button/Button";
-import { SecureImage, Note, IconTile, Pill, TotalsGapNote } from "@/shared/components";
+import {
+  SecureImage,
+  Note,
+  IconTile,
+  Pill,
+  TotalsGapNote,
+  DoubtfulLinesNote,
+  DoubtfulMark,
+} from "@/shared/components";
 import type { PillProps } from "@/shared/components";
 import { Card, CardHeader, CardFooter } from "@/shared/components/Card/Card";
 import { dateFormat } from "@/i18n/format";
@@ -21,6 +29,8 @@ interface ExtractedLineItem {
   unit_price: string;
   total_price: string;
   confidence?: number;
+  /** The reader was unsure of this line — decided by the backend (BRD A10, ADR-0005). */
+  is_doubtful?: boolean;
   file_id?: string | null;
   category_id?: string | null;
   category_name?: string | null;
@@ -117,6 +127,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
   const { uploadStore } = useStores();
   const { t } = useTranslation("upload");
   const [enteringTotalFor, setEnteringTotalFor] = useState<number | null>(null);
+  const [doubtfulOnly, setDoubtfulOnly] = useState<number[]>([]);
 
   const handleBack = () => {
     uploadStore.resetError();
@@ -217,6 +228,9 @@ export const ExtractedStep = observer(function ExtractedStep() {
           const deduplicatedItems = lineItems
             .map((item, idx) => ({ item, idx }))
             .filter(({ idx }) => !duplicateIndices.has(idx));
+          const doubtfulItems = deduplicatedItems.filter(({ item }) => item.is_doubtful);
+          const showingDoubtful = doubtfulOnly.includes(index) && doubtfulItems.length > 0;
+          const shownItems = showingDoubtful ? doubtfulItems : deduplicatedItems;
 
           if (data.error) {
             return (
@@ -513,6 +527,20 @@ export const ExtractedStep = observer(function ExtractedStep() {
                 </div>
               )}
 
+              <DoubtfulLinesNote
+                className="border-b border-border px-4 py-3.5 md:px-5"
+                count={doubtfulItems.length}
+                only={showingDoubtful}
+                onToggle={() => {
+                  setDoubtfulOnly(
+                    showingDoubtful
+                      ? doubtfulOnly.filter((i) => i !== index)
+                      : [...doubtfulOnly, index],
+                  );
+                }}
+                fileIds={fileIds}
+                photoAlt={t("read.thumb")}
+              />
               <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_48px_84px_92px_148px] items-center gap-3 px-5 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">
                 <span>{t("cols.item")}</span>
                 <span className="text-right">{t("cols.qty")}</span>
@@ -521,8 +549,8 @@ export const ExtractedStep = observer(function ExtractedStep() {
                 <span>{t("cols.category")}</span>
               </div>
 
-              {deduplicatedItems.map(({ item, idx }) => {
-                const itemLowConf = (item.confidence ?? 100) < 80;
+              {shownItems.map(({ item, idx }) => {
+                const itemLowConf = item.is_doubtful === true;
                 const fileIndex = item.file_id ? fileIds.indexOf(item.file_id) + 1 : 0;
                 const matchesForThisItem = (data.position_matches ?? []).filter(
                   (m) => m.item_a_index === idx && m.result === "same",
@@ -566,6 +594,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                       >
                         {item.name}
                       </span>
+                      {itemLowConf && <DoubtfulMark className="shrink-0" />}
                     </div>
                     <span
                       className={`hidden md:block text-right tabular-nums ${itemLowConf ? "text-tone-warning-text" : "text-muted-foreground"}`}

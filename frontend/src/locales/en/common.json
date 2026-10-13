@@ -73,5 +73,14 @@
     "preparing": "Preparing the file…",
     "csvHint": "For a spreadsheet",
     "jsonHint": "For another program"
+  },
+  "doubtful": {
+    "summary_one": "The reader was unsure of {{count}} line — check it against the photo.",
+    "summary_other": "The reader was unsure of {{count}} lines — check them against the photo.",
+    "showOnly": "Only lines to check",
+    "showAll": "All lines",
+    "photos": "Receipt photos",
+    "mark": "Check this",
+    "title": "The reader was unsure of this line"
   }
 }

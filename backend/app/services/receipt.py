@@ -58,6 +58,7 @@ from app.schemas.extraction import ExtractedLineItem, ExtractedReceipt
 from app.schemas.receipt import (
     AddDiscountRequest,
     EditLineItemRequest,
+    LineItemInput,
     ResolvePositionMatchRequest,
     UpdateReceiptRequest,
     UploadJobStatusResponse,
@@ -104,6 +105,16 @@ def _redated(stored: datetime | None, day: date | None) -> datetime | None:
         return None
     time_of_day = stored.timetz() if stored is not None else time(tzinfo=UTC)
     return datetime.combine(day, time_of_day)
+
+
+def _corrected(stored: LineItem, sent: LineItemInput) -> bool:
+    """Whether the user changed what was read for this line, which settles any doubt (A10)."""
+    return (stored.name, stored.quantity, stored.unit_price, stored.total_price) != (
+        sent.name,
+        sent.quantity,
+        sent.unit_price,
+        sent.total_price,
+    )
 
 
 class ReceiptService:
@@ -583,7 +594,8 @@ class ReceiptService:
         if not changes:
             raise ValueError("No fields to update")
 
-        items[item_idx] = {**items[item_idx], **changes}
+        # The user has now looked at this line, so it no longer needs checking (BRD A10).
+        items[item_idx] = {**items[item_idx], **changes, "confidence": 100}
         extraction["line_items"] = items
         return self._recheck(job, extractions, request_data.extraction_index, extraction)
 
@@ -732,6 +744,8 @@ class ReceiptService:
         for line in request_data.line_items:
             if line.id is not None:
                 existing = existing_by_id[line.id]
+                if _corrected(existing, line):
+                    existing.read_confidence = None
                 existing.name = line.name
                 existing.quantity = line.quantity
                 existing.unit_price = line.unit_price
