@@ -94,6 +94,13 @@ class ExtractedLineItem(BaseModel):
         le=100,
         description="Extraction confidence for this line item (0-100, e.g. 100) (BRD A10)",
     )
+    read_name: str | None = Field(
+        default=None,
+        description=(
+            "What was printed, when `name` is the user's remembered correction of it "
+            "(F15.3). Populated by the backend, not the LLM."
+        ),
+    )
     file_id: str | None = Field(
         default=None,
         description=(

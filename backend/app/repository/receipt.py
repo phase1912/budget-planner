@@ -40,6 +40,12 @@ def _read_category(item_data: dict[str, typing.Any]) -> tuple[uuid.UUID | None, 
     return category_id, confidence if isinstance(confidence, int) else None
 
 
+def _read_name(item_data: dict[str, typing.Any]) -> str | None:
+    """What was printed for a line whose name is a remembered correction (F15.3)."""
+    value = item_data.get("read_name")
+    return value if isinstance(value, str) and value else None
+
+
 def _needs_review() -> ColumnElement[bool]:
     """An item the owner still has to decide on: Uncategorized, or no category at all."""
     return or_(LineItem.category_id.is_(None), Category.name == UNCATEGORIZED)
@@ -737,6 +743,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
                         category_id=category_id,
                         category_confidence=category_confidence,
                         read_confidence=read_confidence(item_data),
+                        read_name=_read_name(item_data),
                     )
                 )
             except (InvalidOperation, TypeError, ValueError):

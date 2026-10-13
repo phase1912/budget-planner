@@ -42,6 +42,7 @@ export class UploadStore {
   isCommitting = false;
   /** A missed discount is being added; holds the button so one click adds one. */
   isAddingDiscount = false;
+  isUndoingCorrection = false;
   private readonly toastStore: ToastStore | undefined;
   private readonly onReceiptsStored: () => void;
   private readonly onUploadSent: () => void;
@@ -546,6 +547,37 @@ export class UploadStore {
     } finally {
       runInAction(() => {
         this.isAddingDiscount = false;
+      });
+    }
+  }
+
+  /**
+   * Put back what was printed on a line the user's memory corrected (F15.3.2);
+   * `forget` also stops the shop's later receipts being corrected that way.
+   */
+  async undoCorrection(
+    extractionIndex: number,
+    itemIndex: number,
+    forget: boolean,
+  ): Promise<boolean> {
+    if (!this.jobId || this.isUndoingCorrection) return false;
+    this.isUndoingCorrection = true;
+    try {
+      const res = await this.api.POST("/receipts/upload/{job_id}/undo-correction", {
+        params: { path: { job_id: this.jobId } },
+        body: { extraction_index: extractionIndex, item_index: itemIndex, forget },
+      });
+      if (res.error)
+        throw new Error(errorMessage(res.error, i18n.t("messages:corrections.undoFailed")));
+      runInAction(() => {
+        if (res.data.extracted_data) this.extractedData = res.data.extracted_data;
+      });
+      return true;
+    } catch (err) {
+      return this.report(err, i18n.t("messages:corrections.undoFailed"));
+    } finally {
+      runInAction(() => {
+        this.isUndoingCorrection = false;
       });
     }
   }

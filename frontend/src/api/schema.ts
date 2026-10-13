@@ -604,6 +604,28 @@ export interface paths {
         patch: operations["update_receipt_receipts__receipt_id__patch"];
         trace?: never;
     };
+    "/receipts/{receipt_id}/line-items/{item_id}/undo-correction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo Line Correction
+         * @description Put back what was printed on a stored line, and maybe forget the correction (F15.3).
+         *
+         *     Another user's receipt or line is not found (N2).
+         */
+        post: operations["undo_line_correction_receipts__receipt_id__line_items__item_id__undo_correction_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts/{receipt_id}/keep-duplicate": {
         parameters: {
             query?: never;
@@ -704,6 +726,26 @@ export interface paths {
          * @description Correct a line item the parser misread, before the batch is stored (BRD A9).
          */
         post: operations["edit_line_item_receipts_upload__job_id__line_item_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/receipts/upload/{job_id}/undo-correction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo Extracted Correction
+         * @description Put back what was printed on a corrected line, and maybe forget the correction (F15.3).
+         */
+        post: operations["undo_extracted_correction_receipts_upload__job_id__undo_correction_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1950,6 +1992,8 @@ export interface components {
             is_category_manual: boolean;
             /** Read Confidence */
             read_confidence?: number | null;
+            /** Read Name */
+            read_name?: string | null;
             /**
              * Is Doubtful
              * @description Whether the reader was unsure of this line and nobody has corrected it (BRD A10).
@@ -2424,6 +2468,8 @@ export interface components {
             is_category_manual: boolean;
             /** Read Confidence */
             read_confidence?: number | null;
+            /** Read Name */
+            read_name?: string | null;
             /**
              * Receipt Id
              * Format: uuid
@@ -2452,6 +2498,34 @@ export interface components {
              *     the owner chose by hand is never flagged, whatever the agent scored (C4).
              */
             readonly category_is_low_confidence: boolean;
+        };
+        /**
+         * UndoExtractedCorrectionRequest
+         * @description Put back what was printed on one line of an extracted receipt (F15.3.2).
+         *
+         *     `forget` also stops the shop's later receipts being corrected the same way.
+         */
+        UndoExtractedCorrectionRequest: {
+            /** Extraction Index */
+            extraction_index: number;
+            /** Item Index */
+            item_index: number;
+            /**
+             * Forget
+             * @default false
+             */
+            forget: boolean;
+        };
+        /**
+         * UndoLineCorrectionRequest
+         * @description Put back what was printed on one stored line; `forget` drops the correction (F15.3.2).
+         */
+        UndoLineCorrectionRequest: {
+            /**
+             * Forget
+             * @default false
+             */
+            forget: boolean;
         };
         /**
          * UpdateLineItemCategoryRequest
@@ -3672,6 +3746,44 @@ export interface operations {
             };
         };
     };
+    undo_line_correction_receipts__receipt_id__line_items__item_id__undo_correction_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                receipt_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UndoLineCorrectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     keep_possible_duplicate_receipts__receipt_id__keep_duplicate_post: {
         parameters: {
             query?: {
@@ -3830,6 +3942,43 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EditLineItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadJobStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    undo_extracted_correction_receipts_upload__job_id__undo_correction_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UndoExtractedCorrectionRequest"];
             };
         };
         responses: {

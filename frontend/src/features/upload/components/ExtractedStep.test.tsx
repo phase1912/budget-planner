@@ -269,6 +269,27 @@ describe("ExtractedStep", () => {
     expect(screen.getByRole("list", { name: "Receipt photos" })).toBeInTheDocument();
   });
 
+  it("says a line was corrected from memory and undoes it on request (F15.3)", () => {
+    withExtraction({
+      line_items: [
+        {
+          name: "Masło 200g",
+          read_name: "MastoZPolsk",
+          quantity: "1",
+          unit_price: "150.00",
+          total_price: "150.00",
+        },
+      ],
+    });
+    const undo = vi.spyOn(mockStore.uploadStore, "undoCorrection").mockResolvedValue(true);
+    renderComponent();
+
+    expect(screen.getByText("Corrected from “MastoZPolsk”")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Forget for this shop" }));
+
+    expect(undo).toHaveBeenCalledWith(0, 0, true);
+  });
+
   it("asks nothing about storing a receipt when it is the only one", () => {
     renderComponent();
     expect(screen.queryByRole("checkbox")).toBeNull();

@@ -68,6 +68,7 @@ export class ReceiptStore {
   detailError: string | null = null;
   isRecategorising = false;
   isKeepingDuplicate = false;
+  isUndoingCorrection = false;
 
   pendingDeleteId: string | null = null;
   isDeleting = false;
@@ -340,6 +341,31 @@ export class ReceiptStore {
       const listed = this.receipts.find((r) => r.id === id);
       if (listed) listed.possible_duplicate_of_id = null;
       this.toastStore.showSuccess(i18n.t("messages:receipts.kept"));
+    });
+  }
+
+  /**
+   * Put back what was printed on a stored line the user's memory corrected (F15.3.2);
+   * `forget` also stops the shop's later receipts being corrected that way.
+   */
+  async undoLineCorrection(itemId: string, forget: boolean): Promise<void> {
+    const id = this.selectedReceiptId;
+    if (!id || this.isUndoingCorrection) return;
+    this.isUndoingCorrection = true;
+    const response = await apiClient.POST(
+      "/receipts/{receipt_id}/line-items/{item_id}/undo-correction",
+      { params: { path: { receipt_id: id, item_id: itemId } }, body: { forget } },
+    );
+    runInAction(() => {
+      this.isUndoingCorrection = false;
+      if (response.error) {
+        this.toastStore.showError(
+          errorMessage(response.error, i18n.t("messages:corrections.undoFailed")),
+        );
+        return;
+      }
+      if (this.selectedReceiptId === id) this.receiptDetail = response.data;
+      if (forget) this.toastStore.showSuccess(i18n.t("messages:corrections.forgotten"));
     });
   }
 

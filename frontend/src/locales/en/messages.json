@@ -103,5 +103,9 @@
     "storeFailed": "Failed to store the receipts",
     "stored_one": "{{count}} receipt stored",
     "stored_other": "{{count}} receipts stored"
+  },
+  "corrections": {
+    "undoFailed": "The correction could not be undone. Try again.",
+    "forgotten": "This shop's receipts will no longer be corrected this way."
   }
 }

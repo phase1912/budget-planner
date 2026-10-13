@@ -14,6 +14,7 @@ import {
   TotalsGapNote,
   DoubtfulLinesNote,
   DoubtfulMark,
+  CorrectedName,
 } from "@/shared/components";
 import { RefreshCw } from "lucide-react";
 import { InlineCategoryPicker } from "@/features/categories/components/InlineCategoryPicker";
@@ -298,9 +299,25 @@ export const ReceiptDetailModal = observer(() => {
             key={item.id}
             className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 gap-y-1.5 py-3 border-b border-border min-h-[44px] last:border-0 md:grid-cols-[minmax(0,1fr)_36px_70px_86px_156px] md:items-center md:gap-[12px] md:py-[11px]"
           >
-            <span className="flex flex-wrap items-center gap-2 text-[13px] font-medium">
-              {item.name}
-              {item.is_doubtful && <DoubtfulMark />}
+            <span className="flex min-w-0 flex-col gap-0.5">
+              <span className="flex flex-wrap items-center gap-2 text-[13px] font-medium">
+                {item.name}
+                {item.is_doubtful && <DoubtfulMark />}
+              </span>
+              {item.read_name && (
+                <CorrectedName
+                  readName={item.read_name}
+                  busy={receiptStore.isUndoingCorrection}
+                  onUndo={
+                    readOnly
+                      ? undefined
+                      : () => void receiptStore.undoLineCorrection(item.id, false)
+                  }
+                  onForget={
+                    readOnly ? undefined : () => void receiptStore.undoLineCorrection(item.id, true)
+                  }
+                />
+              )}
             </span>
             <span className="hidden md:block tabular-nums text-muted-foreground text-right text-[13px]">
               {formatAmount(item.quantity, 0)}

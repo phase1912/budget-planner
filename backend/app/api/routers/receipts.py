@@ -56,6 +56,8 @@ from app.schemas.receipt import (
     ResolvePositionMatchRequest,
     ResolveTotalRequest,
     ReviewQueueItemResponse,
+    UndoExtractedCorrectionRequest,
+    UndoLineCorrectionRequest,
     UpdateLineItemCategoryRequest,
     UpdateReceiptRequest,
     UploadJobStatusResponse,
@@ -520,6 +522,33 @@ async def update_receipt(
     return ReceiptDetailResponse.model_validate(receipt)
 
 
+@router.post(
+    "/{receipt_id}/line-items/{item_id}/undo-correction", response_model=ReceiptDetailResponse
+)
+async def undo_line_correction(
+    receipt_id: uuid.UUID,
+    item_id: uuid.UUID,
+    request_data: UndoLineCorrectionRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> ReceiptDetailResponse:
+    """Put back what was printed on a stored line, and maybe forget the correction (F15.3).
+
+    Another user's receipt or line is not found (N2).
+    """
+    receipt_service = ReceiptService(repository=ReceiptRepository(session))
+    try:
+        receipt = await receipt_service.undo_line_correction(
+            receipt_id, item_id, request_data.forget
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+    await session.commit()
+    return ReceiptDetailResponse.model_validate(receipt)
+
+
 @router.post("/{receipt_id}/keep-duplicate", response_model=ReceiptDetailResponse)
 async def keep_possible_duplicate(
     receipt_id: uuid.UUID,
@@ -691,6 +720,27 @@ async def edit_line_item(
         if "not found" in str(e).lower():
             raise HTTPException(status_code=404, detail=str(e)) from e
         raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.post("/upload/{job_id}/undo-correction", response_model=UploadJobStatusResponse)
+async def undo_extracted_correction(
+    job_id: uuid.UUID,
+    request_data: UndoExtractedCorrectionRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> UploadJobStatusResponse:
+    """Put back what was printed on a corrected line, and maybe forget the correction (F15.3)."""
+    receipt_service = ReceiptService(repository=ReceiptRepository(session))
+    try:
+        response = await receipt_service.undo_extracted_correction(
+            job_id, current_user.id, request_data
+        )
+    except ValueError as e:
+        if "not found" in str(e).lower():
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    await session.commit()
+    return response
 
 
 @router.post("/upload/{job_id}/discount", response_model=UploadJobStatusResponse)

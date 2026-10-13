@@ -105,5 +105,9 @@
     "stored_few": "Zapisano {{count}} paragony",
     "stored_many": "Zapisano {{count}} paragonów",
     "stored_other": "Zapisano {{count}} paragonu"
+  },
+  "corrections": {
+    "undoFailed": "Nie udało się cofnąć poprawki. Spróbuj ponownie.",
+    "forgotten": "Paragony z tego sklepu nie będą już tak poprawiane."
   }
 }
