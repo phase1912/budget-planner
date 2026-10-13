@@ -38,6 +38,7 @@ from app.domain.discounts import (
 )
 from app.domain.fiscal_identity import fiscal_identity
 from app.domain.name_corrections import apply_corrections, printed_name
+from app.domain.reading_accuracy import mark_corrected
 from app.domain.receipt_dates import with_upload_date
 from app.domain.receipt_reconciliation import (
     Reconciliation,
@@ -612,6 +613,7 @@ class ReceiptService:
             )
         # The user has now looked at this line, so it no longer needs checking (BRD A10).
         items[item_idx] = line
+        mark_corrected(extraction, item_idx)
         extraction["line_items"] = items
         return self._recheck(job, extractions, request_data.extraction_index, extraction)
 
@@ -741,6 +743,7 @@ class ReceiptService:
             }
         )
         extraction["line_items"] = items
+        mark_corrected(extraction, len(items) - 1)
         return self._recheck(job, extractions, request_data.extraction_index, extraction)
 
     async def _extraction(
@@ -772,6 +775,8 @@ class ReceiptService:
         updated = ExtractedReceipt(**extraction).model_dump(mode="json")
         updated["is_duplicate"] = extraction.get("is_duplicate")
         updated["duplicate_resolved"] = extraction.get("duplicate_resolved")
+        updated["user_corrected"] = extraction.get("user_corrected", False)
+        updated["corrected_line_indices"] = extraction.get("corrected_line_indices", [])
         extractions[index] = updated
         assert job.result_data is not None
         job.result_data["extractions"] = extractions
@@ -832,6 +837,7 @@ class ReceiptService:
             else ReceiptStatus.MANUAL_REVIEW
         )
 
+        header_before = (receipt.merchant_name, receipt.transaction_date, receipt.total_amount)
         receipt.merchant_name = request_data.merchant_name
         receipt.transaction_date = _redated(receipt.transaction_date, request_data.transaction_date)
         receipt.total_amount = request_data.total_amount
@@ -850,6 +856,7 @@ class ReceiptService:
                 existing = existing_by_id[line.id]
                 if _corrected(existing, line):
                     existing.read_confidence = None
+                    existing.user_corrected = True
                 if line.name != existing.name:
                     await self._remember_stored_name(
                         receipt.user_id, request_data.merchant_name, existing, line.name
@@ -865,6 +872,7 @@ class ReceiptService:
                     quantity=line.quantity,
                     unit_price=line.unit_price,
                     total_price=line.total_price,
+                    user_corrected=True,
                 )
                 new_items.append(added)
                 updated_items.append(added)
@@ -875,6 +883,15 @@ class ReceiptService:
         for item in new_items:
             if item.total_price < 0 and item.category_id is None:
                 item.category_id = category
+
+        header_after = (receipt.merchant_name, receipt.transaction_date, receipt.total_amount)
+        if (
+            header_after != header_before
+            or new_items
+            or len(updated_items) != len(existing_by_id)
+            or any(item.user_corrected for item in updated_items)
+        ):
+            receipt.user_corrected = True
 
         # Reassigning the collection is what lets delete-orphan drop any
         # existing line the caller did not resend.

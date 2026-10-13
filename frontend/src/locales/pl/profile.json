@@ -52,5 +52,28 @@
     "hintBody": "Otwiera się na pełnym ekranie jak aplikacja, od razu z Twoimi paragonami.",
     "hintIos": "Stuknij <icon></icon> „Udostępnij” w Safari, a potem <b>„Do ekranu początkowego”</b>. Potem otworzy się na pełnym ekranie jak aplikacja.",
     "dismiss": "Ukryj podpowiedź o instalacji"
+  },
+  "accuracy": {
+    "title": "Dokładność odczytu",
+    "empty": "W ostatnich 6 miesiącach nie odczytano żadnego paragonu, więc nie ma jeszcze czego mierzyć.",
+    "headline_one": "Poprawki wymagało {{corrected}} z {{count}} paragonu odczytanego w ostatnich 6 miesiącach ({{share}}).",
+    "headline_few": "Poprawki wymagało {{corrected}} z {{count}} paragonów odczytanych w ostatnich 6 miesiącach ({{share}}).",
+    "headline_many": "Poprawki wymagało {{corrected}} z {{count}} paragonów odczytanych w ostatnich 6 miesiącach ({{share}}).",
+    "headline_other": "Poprawki wymagało {{corrected}} z {{count}} paragonu odczytanego w ostatnich 6 miesiącach ({{share}}).",
+    "lines_one": "Zmieniono {{corrected}} z {{count}} pozycji.",
+    "lines_few": "Zmieniono {{corrected}} z {{count}} pozycji.",
+    "lines_many": "Zmieniono {{corrected}} z {{count}} pozycji.",
+    "lines_other": "Zmieniono {{corrected}} z {{count}} pozycji.",
+    "remembered_one": "Jeszcze {{count}} pozycję poprawiły same Twoje zapamiętane poprawki.",
+    "remembered_few": "Jeszcze {{count}} pozycje poprawiły same Twoje zapamiętane poprawki.",
+    "remembered_many": "Jeszcze {{count}} pozycji poprawiły same Twoje zapamiętane poprawki.",
+    "remembered_other": "Jeszcze {{count}} pozycji poprawiły same Twoje zapamiętane poprawki.",
+    "shops": "Sklepy z największą liczbą poprawek",
+    "trend": "Miesiąc po miesiącu",
+    "ofReceipts_one": "{{corrected}} z {{count}} paragonu",
+    "ofReceipts_few": "{{corrected}} z {{count}} paragonów",
+    "ofReceipts_many": "{{corrected}} z {{count}} paragonów",
+    "ofReceipts_other": "{{corrected}} z {{count}} paragonu",
+    "noReceipts": "brak paragonów"
   }
 }

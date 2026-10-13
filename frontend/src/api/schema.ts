@@ -958,6 +958,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/statistics/reading-accuracy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Reading Accuracy
+         * @description How often the caller's receipts needed correcting after reading (F15.4).
+         *
+         *     Counts receipts read in the last `months` months — the share the user had to correct,
+         *     the shops behind most corrections, and the month-by-month trend. Only the caller's
+         *     own receipts (N2).
+         */
+        get: operations["get_reading_accuracy_api_v1_statistics_reading_accuracy_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/exports": {
         parameters: {
             query?: never;
@@ -2054,6 +2078,21 @@ export interface components {
             message: string;
         };
         /**
+         * MonthAccuracyResponse
+         * @description One month's receipts, by the day they were read, and how many needed correcting.
+         */
+        MonthAccuracyResponse: {
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Receipts */
+            receipts: number;
+            /** Corrected */
+            corrected: number;
+        };
+        /**
          * MonthDashboardResponse
          * @description Everything the landing view shows for one month, in one response (F6.7).
          *
@@ -2129,6 +2168,29 @@ export interface components {
             size: number;
             /** Pages */
             pages: number;
+        };
+        /**
+         * ReadingAccuracyResponse
+         * @description How often reading needed the user's correction, by shop and over time (F15.4).
+         *
+         *     `remembered_lines` are lines a remembered correction fixed by itself (F15.3), counted
+         *     apart from the ones the user had to change.
+         */
+        ReadingAccuracyResponse: {
+            /** Receipts */
+            receipts: number;
+            /** Corrected Receipts */
+            corrected_receipts: number;
+            /** Lines */
+            lines: number;
+            /** Corrected Lines */
+            corrected_lines: number;
+            /** Remembered Lines */
+            remembered_lines: number;
+            /** Shops */
+            shops: components["schemas"]["ShopAccuracyResponse"][];
+            /** Months */
+            months: components["schemas"]["MonthAccuracyResponse"][];
         };
         /**
          * ReceiptChannel
@@ -2498,6 +2560,18 @@ export interface components {
              *     the owner chose by hand is never flagged, whatever the agent scored (C4).
              */
             readonly category_is_low_confidence: boolean;
+        };
+        /**
+         * ShopAccuracyResponse
+         * @description One shop behind corrections: its receipts and how many needed correcting.
+         */
+        ShopAccuracyResponse: {
+            /** Merchant */
+            merchant: string;
+            /** Receipts */
+            receipts: number;
+            /** Corrected */
+            corrected: number;
         };
         /**
          * UndoExtractedCorrectionRequest
@@ -4377,6 +4451,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CategoryStatisticsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_reading_accuracy_api_v1_statistics_reading_accuracy_get: {
+        parameters: {
+            query?: {
+                /** @description How many months back */
+                months?: number;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadingAccuracyResponse"];
                 };
             };
             /** @description Validation Error */

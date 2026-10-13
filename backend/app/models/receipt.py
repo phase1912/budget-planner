@@ -88,6 +88,11 @@ class Receipt(Model):
     is_private: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=text("false"), nullable=False
     )
+    # The user changed what was read — a line, the total, the date — before or after
+    # storing it: what the reading-accuracy report counts (F15.4).
+    user_corrected: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=text("false"), nullable=False
+    )
     merchant_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     transaction_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True

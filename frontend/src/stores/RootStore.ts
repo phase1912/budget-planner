@@ -15,6 +15,7 @@ import { ExportStore } from "@/stores/ExportStore";
 import { GoalsStore } from "@/stores/GoalsStore";
 import { AdviceStore } from "@/stores/AdviceStore";
 import { QuotaStore } from "@/stores/QuotaStore";
+import { AccuracyStore } from "@/stores/AccuracyStore";
 import { InstallStore } from "@/stores/InstallStore";
 import { HouseholdStore } from "@/stores/HouseholdStore";
 import { LanguageStore } from "@/stores/LanguageStore";
@@ -39,6 +40,7 @@ export class RootStore {
   readonly goalsStore: GoalsStore;
   readonly adviceStore: AdviceStore;
   readonly quotaStore: QuotaStore;
+  readonly accuracyStore: AccuracyStore;
   readonly installStore: InstallStore;
   readonly householdStore: HouseholdStore;
   readonly languageStore: LanguageStore;
@@ -53,6 +55,7 @@ export class RootStore {
     // Any receipt change may have recalculated the month on screen (BRD D6, F6.5).
     const refreshMonth = () => void this.budgetStore.refresh();
     this.quotaStore = new QuotaStore();
+    this.accuracyStore = new AccuracyStore();
     this.installStore = new InstallStore();
     this.householdStore = new HouseholdStore(this.toastStore);
     // Every upload started uses up receipt reads (F10.6), whether or not it is stored.
@@ -86,6 +89,7 @@ export class RootStore {
         this.goalsStore.reset();
         this.adviceStore.reset();
         this.quotaStore.reset();
+        this.accuracyStore.reset();
         this.householdStore.reset();
         this.receiptStore.resetScope();
       },

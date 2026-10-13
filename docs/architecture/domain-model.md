@@ -236,6 +236,12 @@ Rules that must hold at all times. Each is a candidate for a test.
     be put back, or the correction forgotten for the shop. A near match is never renamed:
     it may be another product (F15.3).
 
+11n. A receipt is user-corrected when the user changed what was read — a line, the
+    total, the date, the shop — or added a line the reader missed, in the wizard or after
+    storing it; such lines are marked too. A name fixed by a remembered correction is not
+    a user correction: it is counted apart as reading that worked. The reading-accuracy
+    report counts these over the months receipts were read in, never across users (F15.4).
+
 **Categorisation**
 
 12. Every line item has a category. Below the confidence threshold it is `Uncategorized`

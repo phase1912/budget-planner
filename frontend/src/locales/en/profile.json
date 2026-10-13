@@ -52,5 +52,20 @@
     "hintBody": "It opens full screen like an app, straight to your receipts.",
     "hintIos": "Tap <icon></icon> Share in Safari, then <b>Add to Home Screen</b>. It then opens full screen like an app.",
     "dismiss": "Dismiss the install hint"
+  },
+  "accuracy": {
+    "title": "Reading accuracy",
+    "empty": "No receipts were read in the last 6 months, so there is nothing to measure yet.",
+    "headline_one": "{{corrected}} of {{count}} receipt read in the last 6 months needed a correction ({{share}}).",
+    "headline_other": "{{corrected}} of {{count}} receipts read in the last 6 months needed a correction ({{share}}).",
+    "lines_one": "You changed {{corrected}} of {{count}} line.",
+    "lines_other": "You changed {{corrected}} of {{count}} lines.",
+    "remembered_one": "Your remembered corrections fixed {{count}} more line by themselves.",
+    "remembered_other": "Your remembered corrections fixed {{count}} more lines by themselves.",
+    "shops": "Shops behind most corrections",
+    "trend": "Month by month",
+    "ofReceipts_one": "{{corrected}} of {{count}} receipt",
+    "ofReceipts_other": "{{corrected}} of {{count}} receipts",
+    "noReceipts": "no receipts"
   }
 }

@@ -32,6 +32,8 @@ class LineItem(Model):
     """The reader's 0-100 score for this line (BRD A10); None once the user corrects it."""
     read_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     """What was printed, when the name shown is a remembered correction of it (F15.3)."""
+    user_corrected: Mapped[bool] = mapped_column(default=False, server_default="false")
+    """The user changed or added this line after it was read (F15.4)."""
     is_category_manual: Mapped[bool] = mapped_column(default=False, server_default="false")
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 

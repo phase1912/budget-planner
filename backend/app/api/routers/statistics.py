@@ -1,3 +1,5 @@
+from dataclasses import asdict
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
@@ -9,7 +11,9 @@ from app.db.session import get_db_session
 from app.domain.periods import DateRange
 from app.models.user import User
 from app.repository.receipt import ReceiptRepository
+from app.schemas.reading_accuracy import ReadingAccuracyResponse
 from app.schemas.statistics import CategoryStatisticsResponse
+from app.services.reading_accuracy import reading_accuracy
 from app.services.statistics import StatisticsService, statistics_response
 
 router = APIRouter(prefix="/api/v1/statistics", tags=["statistics"])
@@ -39,3 +43,21 @@ async def get_category_statistics(
         period, compare=compare, chart=chart
     )
     return statistics_response(stats)
+
+
+@router.get("/reading-accuracy", response_model=ReadingAccuracyResponse)
+async def get_reading_accuracy(
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    months: Annotated[int, Query(ge=1, le=12, description="How many months back")] = 6,
+) -> ReadingAccuracyResponse:
+    """How often the caller's receipts needed correcting after reading (F15.4).
+
+    Counts receipts read in the last `months` months — the share the user had to correct,
+    the shops behind most corrections, and the month-by-month trend. Only the caller's
+    own receipts (N2).
+    """
+    report = await reading_accuracy(
+        ReceiptRepository(session), current_user.id, datetime.now(UTC).date(), months
+    )
+    return ReadingAccuracyResponse.model_validate(asdict(report))
