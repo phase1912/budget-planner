@@ -20,6 +20,7 @@ from app.models.product import Product, ProductAlias
 from app.models.receipt import Receipt
 from app.models.recommendation import Recommendation
 from app.models.refresh_token import RefreshToken
+from app.models.selection import ProductSelection
 from app.models.upload_job import UploadJob
 from app.models.user import User
 
@@ -39,6 +40,7 @@ __all__ = [
     "PositionMatchOverride",
     "Product",
     "ProductAlias",
+    "ProductSelection",
     "Receipt",
     "Recommendation",
     "RefreshToken",

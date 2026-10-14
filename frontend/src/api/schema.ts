@@ -982,6 +982,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products/explore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Explore Products
+         * @description How much of these products the caller bought, at what prices, and where (F16.2).
+         *
+         *     `start` and `end` bound the period, both days included (ADR-0012); without them, all
+         *     time. Only counted receipts of the caller's own (N2): another user's product is 404.
+         */
+        get: operations["explore_products_api_v1_products_explore_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/selections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Selections
+         * @description The caller's saved selections, by name (F16.2).
+         */
+        get: operations["list_selections_api_v1_products_selections_get"];
+        put?: never;
+        /**
+         * Create Selection
+         * @description Save products under a name (F16.2). Another user's product is 404 (N2).
+         */
+        post: operations["create_selection_api_v1_products_selections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/selections/{selection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Selection
+         * @description Rename a saved selection or change its products (F16.2). Another user's is 404 (N2).
+         */
+        put: operations["update_selection_api_v1_products_selections__selection_id__put"];
+        post?: never;
+        /**
+         * Delete Selection
+         * @description Forget a saved selection (F16.2). Another user's is 404 (N2).
+         */
+        delete: operations["delete_selection_api_v1_products_selections__selection_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products": {
         parameters: {
             query?: never;
@@ -1365,6 +1436,20 @@ export interface components {
          */
         AdviceTarget: "category" | "item";
         /**
+         * AmountsResponse
+         * @description How much was bought: times, money, and quantity by kind — `pc`, `g` or `ml` (F16.2).
+         */
+        AmountsResponse: {
+            /** Times */
+            times: number;
+            /** Spent */
+            spent: string;
+            /** Quantities */
+            quantities: {
+                [key: string]: string;
+            };
+        };
+        /**
          * AuthResponse
          * @description Response containing the authenticated user and their access token.
          */
@@ -1607,6 +1692,17 @@ export interface components {
             unit_price?: string | null;
             /** Total Price */
             total_price?: string | null;
+        };
+        /**
+         * ExplorationResponse
+         * @description What a selection of products was bought, over a period and month by month (F16.2).
+         */
+        ExplorationResponse: {
+            totals: components["schemas"]["AmountsResponse"];
+            /** Months */
+            months: components["schemas"]["MonthPurchasesResponse"][];
+            /** Products */
+            products: components["schemas"]["ProductPurchasesResponse"][];
         };
         /**
          * ExportFormat
@@ -2187,6 +2283,18 @@ export interface components {
             receipts_in_month: number;
         };
         /**
+         * MonthPurchasesResponse
+         * @description The selection's purchases in one calendar month (`month` is its first day).
+         */
+        MonthPurchasesResponse: {
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            amounts: components["schemas"]["AmountsResponse"];
+        };
+        /**
          * MonthSummaryResponse
          * @description One calendar month's spend, as the month view shows it (BRD D1-D7).
          *
@@ -2244,6 +2352,67 @@ export interface components {
             size: number;
             /** Pages */
             pages: number;
+        };
+        /**
+         * PriceChangeResponse
+         * @description The move from the first purchase's price to the last, per kg/l where known.
+         */
+        PriceChangeResponse: {
+            /** First */
+            first: string;
+            /** Last */
+            last: string;
+            /** Difference */
+            difference: string;
+            /** Percent */
+            percent: string | null;
+        };
+        /**
+         * PricePointResponse
+         * @description What one purchase cost a unit, and per kg or l where the size is known.
+         */
+        PricePointResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Shop */
+            shop: string | null;
+            /** Unit Price */
+            unit_price: string;
+            /** Base Price */
+            base_price: string | null;
+        };
+        /**
+         * ProductFactsResponse
+         * @description A selected product's identity and size.
+         */
+        ProductFactsResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Size Amount */
+            size_amount: string | null;
+            /** Size Unit */
+            size_unit: string | null;
+        };
+        /**
+         * ProductPurchasesResponse
+         * @description One selected product over the period: amounts, prices, change and shops.
+         */
+        ProductPurchasesResponse: {
+            product: components["schemas"]["ProductFactsResponse"];
+            amounts: components["schemas"]["AmountsResponse"];
+            /** Prices */
+            prices: components["schemas"]["PricePointResponse"][];
+            change: components["schemas"]["PriceChangeResponse"] | null;
+            /** Shops */
+            shops: components["schemas"]["ShopPriceResponse"][];
         };
         /**
          * ProductResponse
@@ -2682,6 +2851,31 @@ export interface components {
             readonly category_is_low_confidence: boolean;
         };
         /**
+         * SelectionRequest
+         * @description Products to keep together under a name (F16.2).
+         */
+        SelectionRequest: {
+            /** Name */
+            name: string;
+            /** Product Ids */
+            product_ids: string[];
+        };
+        /**
+         * SelectionResponse
+         * @description A saved selection of products.
+         */
+        SelectionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Product Ids */
+            product_ids: string[];
+        };
+        /**
          * ShopAccuracyResponse
          * @description One shop behind corrections: its receipts and how many needed correcting.
          */
@@ -2692,6 +2886,29 @@ export interface components {
             receipts: number;
             /** Corrected */
             corrected: number;
+        };
+        /**
+         * ShopPriceResponse
+         * @description A product's price in one shop, and how much above the cheapest shop it is (F16.2.2).
+         */
+        ShopPriceResponse: {
+            /** Shop */
+            shop: string;
+            /** Purchases */
+            purchases: number;
+            /** Average */
+            average: string;
+            /** Latest */
+            latest: string;
+            /**
+             * Latest Day
+             * Format: date
+             */
+            latest_day: string;
+            /** Above Cheapest */
+            above_cheapest: string;
+            /** Above Percent */
+            above_percent: string | null;
         };
         /**
          * SplitProductRequest
@@ -4616,6 +4833,176 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ReadingAccuracyResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    explore_products_api_v1_products_explore_get: {
+        parameters: {
+            query: {
+                product_ids: string[];
+                token?: string | null;
+                /** @description First day of the period, included */
+                start?: string | null;
+                /** @description Last day of the period, included */
+                end?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExplorationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_selections_api_v1_products_selections_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelectionResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_selection_api_v1_products_selections_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelectionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_selection_api_v1_products_selections__selection_id__put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                selection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelectionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_selection_api_v1_products_selections__selection_id__delete: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                selection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

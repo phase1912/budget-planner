@@ -113,6 +113,10 @@
     "mergeFailed": "The products could not be merged. Try again.",
     "merged": "Merged into one product.",
     "splitFailed": "The product could not be split. Try again.",
-    "split": "Now a product of its own."
+    "split": "Now a product of its own.",
+    "exploreFailed": "These purchases could not be loaded.",
+    "saveSelectionFailed": "The selection could not be saved. Try again.",
+    "selectionSaved": "Selection saved.",
+    "deleteSelectionFailed": "The selection could not be deleted. Try again."
   }
 }

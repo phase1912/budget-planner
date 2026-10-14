@@ -70,6 +70,11 @@ export class ProductsStore {
       : [...this.selected, id];
   }
 
+  /** Tick exactly these products, as a saved selection asks. */
+  select(ids: string[]): void {
+    this.selected = [...ids];
+  }
+
   clearSelection(): void {
     this.selected = [];
   }

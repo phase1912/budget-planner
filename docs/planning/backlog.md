@@ -3,9 +3,9 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-20 epics · 126 features · 275 tasks written so far.
+21 epics · 131 features · 287 tasks written so far.
 
-15 epics are in the diploma project's scope; 5 are planned but out of it.
+16 epics are in the diploma project's scope; 5 are planned but out of it.
 
 | Epic | Title | BRD | Features | Groomed | Phase | Scope |
 |---|---|---|---|---|---|---|
@@ -29,6 +29,7 @@
 | E17 | Landing, Search and Analytics | — | 7 | yes | 2 | Diploma |
 | E18 | Subscriptions and Payments | — | 5 | yes | 2 | Out of scope |
 | E19 | Own Domain and Advertising | — | 2 | yes | 2 | Out of scope |
+| E20 | Trips | — | 5 | yes | 2 | Diploma |
 
 ---
 
@@ -1277,9 +1278,9 @@ The service is served at budget-agent.web.app instead of the project-derived hos
 
 ### F17.2 — Landing page that explains the product
 
-*Requirements: —* · *Blocked by: F9.9, F17.1*
+*Requirements: —* · *Blocked by: F9.9, F17.1, F20.3, F20.5*
 
-A visitor learns in one screen what the service does — receipts read from a photo, spending by category and product, goals with advice from their own purchases, households — and finds the way to try it or sign up. Served as prerendered HTML, so search engines and link previews see the content without running the app; in English, Ukrainian and Polish.
+A visitor learns in one screen what the service does — receipts read from a photo, spending by category and product, goals with advice from their own purchases, households, trips — a holiday's budget, a business trip settled with its per diem — and finds the way to try it or sign up. Served as prerendered HTML, so search engines and link previews see the content without running the app; in English, Ukrainian and Polish.
 
 **Demonstrated by:** Open the site logged out on a phone: a hero with the promise and a "Try the demo" button, sections per feature with real screens, a short FAQ, and the same page in Ukrainian and Polish at their own addresses.
 
@@ -1431,4 +1432,69 @@ Google AdSense shows ads on the public pages and in one or two places in the app
 
 - **F19.3.1** AdSense account and site approval — Create the AdSense account for the business, add ads.txt at the domain's root, request site approval, and document the policies the placements must keep to.
 - **F19.3.2** Ad placements — Reserved-size ad slots on the landing page and at the foot of the dashboard and statistics, loaded after consent, hidden for an ad-free plan, and a test that no slot appears in the upload wizard or any dialog. Checked at 375, 768 and 1280 px.
+
+---
+
+## E20 — Trips
+
+**BRD sections:** — · **Phase:** 2 · **Scope:** Diploma
+
+A trip is spending with a shape of its own — a week in Egypt, a weekend in the mountains, a client visit in Berlin — that a month's total hides. A user marks a trip, and its receipts gather on it, foreign ones already converted at NBP rates (ADR-0016). A personal trip is the user's own money: it stays in the month, shown apart, with a budget of its own and what it cost by day and category. A business trip is the employer's money: it stays out of the personal budget, and the service works out the per diem owed under Polish rules and produces the settlement to hand in — the service's small step towards business use, without accounts for companies. One kind of record serves both; only how a trip counts and what comes with it differ.
+
+### F20.1 — Trips and their receipts
+
+*Requirements: —* · *Blocked by: F3.9, F11.7*
+
+A user records a trip — personal or business, a name, where to (country and city), when it started and ended, and why — and its receipts gather on it: those dated within it join by themselves, any can be added or taken out by hand, and a run of foreign receipts on consecutive days prompts "was this a trip?". A personal trip's receipts stay in the month and its limit, marked as the trip's; a business trip's are the employer's money and stay out of the personal month, its limit, statistics, goals and advice, and the household's totals. The dashboard says how much went on trips, apart.
+
+**Demonstrated by:** Create "Egypt, holiday, 1–8 Oct" as personal and "Berlin, client visit, 13–15 Oct" as business: October still counts the Egypt receipts, with "of which Egypt: 2 840.00 PLN" beside the total; the Berlin ones are out of it, shown as "Business trips, to be repaid: 612.40 PLN".
+
+- **F20.1.1** Trips and receipt assignment — Trip entity per user with its kind (personal or business), destination, dates and purpose; receipts within its dates joined automatically, manual add and remove that later automatic passes respect; one trip per receipt; the suggestion from consecutive foreign receipts. Endpoints for trips and their receipts, cross-user tests (N2).
+- **F20.1.2** How a trip counts in the budget — Business trip receipts excluded from the month, its limit and snapshots, statistics, goal progress and advice, and the household's totals; personal trip receipts counted as before and marked with their trip; the month's summary carries both amounts apart. Tests for each, domain model updated.
+- **F20.1.3** Trips screen and trip page — A trips list and a trip page with its receipts, creating and editing a trip of either kind, moving a receipt in or out from the receipt view, the suggestion as a dismissible note, and the dashboard's trip lines. Checked at 375, 768 and 1280 px.
+
+### F20.2 — What a trip cost, by kind
+
+*Requirements: —* · *Blocked by: F20.1*
+
+A trip's spending splits into transport, accommodation, meals and other — what a settlement asks for and what a holiday is remembered by — each receipt filed under one, guessed from its shop and lines and corrected by the user, with totals per kind in the account's currency and in each currency paid.
+
+**Demonstrated by:** Open the Egypt trip: transport 1 900.00, accommodation 0.00 (all-inclusive), meals 310.00, other 630.00 PLN; the souvenirs paid in Egyptian pounds show their own amount beside the converted one; move a taxi receipt from "other" to "transport" and the totals follow.
+
+- **F20.2.1** Expense kind per trip receipt — Each trip receipt filed under transport, accommodation, meals or other, guessed from the merchant and its categories behind a port, the user's choice kept over later guesses; totals per kind and per currency paid.
+- **F20.2.2** Trip spending by kind on the trip page — Totals per kind and per currency, each receipt's kind changeable in place. Checked at 375, 768 and 1280 px.
+
+### F20.3 — A personal trip's budget and story
+
+*Requirements: —* · *Blocked by: F20.2*
+
+A personal trip can have a budget of its own — "3 000 zł for the mountains" — and the trip page says how much of it is left, what each day cost and where the money went by category, during the trip and after it. The month it falls in still counts it; the trip page is where it is read as one story.
+
+**Demonstrated by:** Give "Mountains, 10–12 Oct" a 3 000 PLN budget: day by day 1 120, 860 and 640 PLN, 380 PLN left, most of it on accommodation; the month's dashboard counts the 2 620 PLN and links to the trip.
+
+- **F20.3.1** Trip budget and daily spending — An optional budget on a personal trip, what is left of it, spending per day of the trip and per category, from the trip's receipts only; the user's own trips (N2).
+- **F20.3.2** Budget and days on the trip page — Setting the trip budget, a meter of it, the days and categories, and the link from the dashboard's trip line. Checked at 375, 768 and 1280 px.
+
+### F20.4 — Per diem under Polish rules
+
+*Requirements: —* · *Blocked by: F20.1*
+
+For a business trip, the per diem an employer owes, as the Polish regulation on employees' business travel sets it: the domestic rate, or the destination country's rate in its currency for a trip abroad, by the hours away, reduced for meals that were provided — worked out from the departure and return times the user gives, never guessed, and showing how it was reached.
+
+**Demonstrated by:** A business trip from 13 Oct 06:00 to 15 Oct 21:00 in Germany with two hotel breakfasts: the trip page shows the per diem in euros and in złoty, each day and each reduction itemised, with the regulation it follows named.
+
+- **F20.4.1** Per diem rules and rates — Research the current regulation and its annex from official sources: the domestic rate, rates per country, how hours away become days and parts of days at home and abroad, meal reductions, and when the rate in force is read; an ADR with sources, and the rates in configuration with the date they apply from.
+- **F20.4.2** Per diem calculation — A pure calculation from departure and return times, destination and meals provided, itemised per day, tested against the regulation's own worked cases; converted to złoty at the NBP rate the rules name; stored with the trip. Business trips only.
+- **F20.4.3** Per diem on the trip page — Departure and return times and meals provided entered on a business trip, the per diem shown itemised with the rule behind each line. Checked at 375, 768 and 1280 px.
+
+### F20.5 — Business trip settlement to hand in
+
+*Requirements: N6* · *Blocked by: F20.2, F20.4, F7.6*
+
+The settlement an employee gives the employer for a business trip: its details, spending by kind and currency, the per diem, any advance already received, and what remains to be paid back to them — as a PDF with every receipt's photo attached, and as CSV, in the user's language.
+
+**Demonstrated by:** Enter a 500 PLN advance on the Berlin trip and download the settlement: one PDF with the summary, "to reimburse 612.40 + 207.00 − 500.00 = 319.40 PLN", and the receipts' photos on the pages after.
+
+- **F20.5.1** Settlement export — PDF and CSV of a business trip's settlement through the export jobs of F7.6, with the receipts' photos in the PDF, in the user's language; the advance stored on the trip; the user's own trips only (N2).
+- **F20.5.2** Advance and download on the trip page — The advance received, the amount to reimburse, and the settlement download on a business trip. Checked at 375, 768 and 1280 px.
 

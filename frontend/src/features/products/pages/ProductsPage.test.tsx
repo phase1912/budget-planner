@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { Exploration } from "@/stores/ExplorationStore";
 import type { Product } from "@/stores/ProductsStore";
 import { ProductsPage } from "./ProductsPage";
 
@@ -50,10 +51,35 @@ const store = vi.hoisted(() => ({
   clearSelection: vi.fn(),
   merge: vi.fn().mockResolvedValue(true),
   split: vi.fn(),
+  select: vi.fn((ids: string[]) => {
+    store.selected = [...ids];
+  }),
+}));
+
+const exploration = vi.hoisted(() => ({
+  productIds: [] as string[],
+  preset: "this_month",
+  start: "2026-10-01",
+  end: "2026-10-31",
+  result: null as Exploration | null,
+  isLoading: false,
+  error: null as string | null,
+  selections: [] as { id: string; name: string; product_ids: string[] }[],
+  isSaving: false,
+  setProducts: vi.fn(),
+  loadSelections: vi.fn(),
+  choosePreset: vi.fn(),
+  chooseRange: vi.fn(),
+  saveSelection: vi.fn().mockResolvedValue(true),
+  deleteSelection: vi.fn(),
 }));
 
 vi.mock("@/stores/StoreContext", () => ({
-  useStores: () => ({ productsStore: store, authStore: { user: { currency: "PLN" } } }),
+  useStores: () => ({
+    productsStore: store,
+    explorationStore: exploration,
+    authStore: { user: { currency: "PLN" } },
+  }),
 }));
 
 const renderPage = () =>
@@ -68,6 +94,8 @@ describe("ProductsPage (F16.1)", () => {
     vi.clearAllMocks();
     store.products = [YOGHURT, BREAD];
     store.selected = [];
+    exploration.result = null;
+    exploration.selections = [];
   });
 
   it("lists each product once, with how often, where and how it was printed", () => {
@@ -106,6 +134,78 @@ describe("ProductsPage (F16.1)", () => {
 
     await vi.waitFor(() => {
       expect(store.merge).toHaveBeenCalledWith("p2");
+    });
+  });
+
+  it("explores what is ticked: amounts, prices per shop and the change (F16.2)", () => {
+    store.selected = ["p1"];
+    exploration.result = {
+      totals: { times: 3, spent: "14.97", quantities: { g: "990.000" } },
+      months: [
+        { month: "2026-09-01", amounts: { times: 1, spent: "4.49", quantities: {} } },
+        { month: "2026-10-01", amounts: { times: 2, spent: "10.48", quantities: {} } },
+      ],
+      products: [
+        {
+          product: YOGHURT,
+          amounts: { times: 3, spent: "14.97", quantities: { g: "990.000" } },
+          prices: [
+            { day: "2026-09-02", shop: "Lidl", unit_price: "4.49", base_price: "13.61" },
+            { day: "2026-10-02", shop: "Biedronka", unit_price: "4.99", base_price: "15.12" },
+            { day: "2026-10-05", shop: "Lidl", unit_price: "5.49", base_price: "16.64" },
+          ],
+          change: { first: "13.61", last: "16.64", difference: "3.03", percent: "22.3" },
+          shops: [
+            {
+              shop: "Biedronka",
+              purchases: 1,
+              average: "15.12",
+              latest: "15.12",
+              latest_day: "2026-10-02",
+              above_cheapest: "0.00",
+              above_percent: "0.0",
+            },
+            {
+              shop: "Lidl",
+              purchases: 2,
+              average: "15.13",
+              latest: "16.64",
+              latest_day: "2026-10-05",
+              above_cheapest: "1.52",
+              above_percent: "10.1",
+            },
+          ],
+        },
+      ],
+    };
+    renderPage();
+
+    expect(exploration.setProducts).toHaveBeenCalledWith(["p1"]);
+    expect(screen.getByText("990 g")).toBeInTheDocument();
+    expect(
+      screen.getByText("Price per l went from 13.61 to 16.64 PLN (+22.3%)."),
+    ).toBeInTheDocument();
+    const shops = screen.getByRole("list", { name: "Prices of Jogurt Natural 330ml by shop" });
+    expect(within(shops).getByText("Cheapest")).toBeInTheDocument();
+    expect(within(shops).getByText("+1.52 PLN (10.1%)")).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "By month" })).toBeInTheDocument();
+    expect(screen.getByRole("figure")).toBeInTheDocument();
+  });
+
+  it("opens a saved selection and saves the ticked products as a new one (F16.2)", async () => {
+    exploration.selections = [{ id: "s1", name: "Snacks", product_ids: ["p1", "p2"] }];
+    store.selected = ["p1"];
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "Snacks" }));
+    expect(store.select).toHaveBeenCalledWith(["p1", "p2"]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Save as a selection" }));
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Breakfast" } });
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Save" }));
+
+    await vi.waitFor(() => {
+      expect(exploration.saveSelection).toHaveBeenCalledWith("Breakfast");
     });
   });
 });
