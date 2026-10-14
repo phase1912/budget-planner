@@ -16,15 +16,20 @@ from app.domain.goal_analysis import DismissedRecommendation, GoalAnalysis
 ADVICE_MAX = 3
 """How many recommendations one request for advice keeps."""
 
+AVERAGE_MONTH_DAYS = Decimal("30.4375")
+"""A calendar month on average (365.25 / 12), to turn a window of days into months."""
+
 TARGET_MAX_LENGTH = 255
 ACTION_MAX_LENGTH = 255
 
 
 class AdviceTarget(enum.StrEnum):
-    """What a recommendation is about: a whole category, or one recurring purchase."""
+    """What a recommendation is about: a whole category, one recurring purchase, or one
+    product whose price the analysis cites — bought cheaper elsewhere, or risen (F16.4)."""
 
     CATEGORY = "category"
     ITEM = "item"
+    PRODUCT = "product"
 
 
 @dataclass(frozen=True)
@@ -60,6 +65,12 @@ def _evidence(analysis: GoalAnalysis) -> dict[tuple[AdviceTarget, str], tuple[De
             evidence[(AdviceTarget.CATEGORY, c.name.casefold())] = (c.total, None)
     for item in analysis.recurring_items:
         evidence[(AdviceTarget.ITEM, item.name.casefold())] = (item.total, item.receipt_count)
+    months = Decimal(analysis.window.days) / AVERAGE_MONTH_DAYS
+    for signal in analysis.price_signals:
+        evidence[(AdviceTarget.PRODUCT, signal.product.casefold())] = (
+            signal.monthly_spend * months,
+            None,
+        )
     return evidence
 
 
@@ -97,10 +108,6 @@ def keep_specific(proposed: list[Advice], analysis: GoalAnalysis) -> list[Advice
     return kept[:ADVICE_MAX]
 
 
-AVERAGE_MONTH_DAYS = Decimal("30.4375")
-"""A calendar month on average (365.25 / 12), to turn a window of days into months."""
-
-
 @dataclass(frozen=True)
 class ProjectedImpact:
     """What following one recommendation is worth each month (BRD F4).
@@ -120,8 +127,23 @@ def project_impact(advice: Advice, analysis: GoalAnalysis) -> ProjectedImpact:
 
     `advice` must be one `keep_specific` kept from this analysis, so its target
     is in the evidence; raises KeyError otherwise. A target whose net spend is
-    negative (refunds) saves nothing rather than costing money.
+    negative (refunds) saves nothing rather than costing money. A product with a
+    cheaper shop saves the price gap on the share of its purchases moved there, at the
+    user's own rate (F16.4); buying it less saves like any purchase.
     """
+    if advice.target_kind is AdviceTarget.PRODUCT:
+        signal = next(
+            s
+            for s in analysis.price_signals
+            if s.product.casefold() == advice.target_name.casefold()
+        )
+        if signal.cheaper is not None:
+            share = Decimal(advice.reduction_percent) / 100
+            saving = signal.cheaper.difference * signal.monthly_items * share
+            return ProjectedImpact(
+                monthly_saving=saving.quantize(Decimal("0.01"), ROUND_HALF_UP),
+                purchases_avoided=None,
+            )
     spend, receipts = _evidence(analysis)[(advice.target_kind, advice.target_name.casefold())]
     months = Decimal(analysis.window.days) / AVERAGE_MONTH_DAYS
     share = Decimal(advice.reduction_percent) / 100

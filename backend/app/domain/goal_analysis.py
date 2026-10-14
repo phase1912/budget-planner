@@ -14,6 +14,7 @@ from decimal import Decimal
 
 from app.domain.goals import FinancialKind, GoalType
 from app.domain.periods import DateRange
+from app.domain.purchases import PriceSignal
 from app.domain.statistics import CategoryChange, CategoryStanding
 
 ANALYSIS_MONTHS = 3
@@ -137,7 +138,8 @@ class GoalAnalysis:
     `largest_increases` are measured against. `receipt_count` is how many receipts
     the window holds, for the insufficient-data guard (F5, F8.6) to judge.
     `recurring_items` come from all spending when the goal names none in particular
-    (`scope.whole_spend`), otherwise only from what it concerns.
+    (`scope.whole_spend`), otherwise only from what it concerns; so do `price_signals`,
+    the products a cheaper shop or a price rise makes worth citing (F16.4).
     """
 
     goal: GoalBrief
@@ -150,6 +152,7 @@ class GoalAnalysis:
     goal_categories: list[CategoryStanding]
     recurring_items: list[RecurringItem]
     dismissed_recommendations: list[DismissedRecommendation] = field(default_factory=list)
+    price_signals: list[PriceSignal] = field(default_factory=list)
 
 
 def render_advice_context(analysis: GoalAnalysis, currency: str) -> str:
@@ -209,6 +212,11 @@ def render_advice_context(analysis: GoalAnalysis, currency: str) -> str:
         "- no purchase recurs in this period"
     ]
 
+    lines += ["", "## Prices of what the user buys"]
+    lines += [_price(signal, money) for signal in analysis.price_signals] or [
+        "- no cheaper shop or price rise found"
+    ]
+
     if analysis.dismissed_recommendations:
         lines += [
             "",
@@ -251,6 +259,22 @@ def _recurring(item: RecurringItem, money: Callable[[Decimal], str]) -> str:
             f"receipts from {item.merchant}"
         )
     return line
+
+
+def _price(signal: PriceSignal, money: Callable[[Decimal], str]) -> str:
+    parts = []
+    if signal.cheaper:
+        parts.append(
+            f"{money(signal.cheaper.difference)} less each at {signal.cheaper.shop} than at "
+            f"{signal.cheaper.instead_of}, where it was last bought"
+        )
+    if signal.rise:
+        parts.append(
+            f"its price rose from {money(signal.rise.first)} to {money(signal.rise.last)} "
+            f"each (+{signal.rise.percent}%) over the period"
+        )
+    parts.append(f"bought about {signal.monthly_items} a month for {money(signal.monthly_spend)}")
+    return f"- {signal.product}: " + "; ".join(parts)
 
 
 def _day(day: date) -> str:

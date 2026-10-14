@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -14,6 +14,11 @@ from app.models.line_item import LineItem
 from app.models.product import Product, ProductAlias
 from app.models.receipt import Receipt, ReceiptStatus
 from app.models.selection import ProductSelection
+
+
+def _escaped(text: str) -> str:
+    """A keyword matched literally in LIKE: its % and _ are not wildcards."""
+    return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
 class ProductRepository:
@@ -169,3 +174,36 @@ class ProductRepository:
             )
         )
         return bool(result.rowcount)  # type: ignore[attr-defined]
+
+    async def products_in_scope(
+        self,
+        user_id: uuid.UUID,
+        period: DateRange,
+        category_ids: Sequence[uuid.UUID],
+        keywords: Sequence[str],
+    ) -> list[uuid.UUID]:
+        """The user's products bought in `period` that a goal concerns (F16.4).
+
+        A line counts when it is in one of `category_ids` or its name contains one of
+        `keywords`, ignoring case; with neither, every line counts.
+        """
+        purchased = func.coalesce(Receipt.transaction_date, Receipt.created_at)
+        stmt = (
+            select(LineItem.product_id)
+            .join(Receipt, Receipt.id == LineItem.receipt_id)
+            .where(
+                Receipt.user_id == user_id,
+                Receipt.status == ReceiptStatus.PARSED,
+                LineItem.product_id.is_not(None),
+                purchased >= period.lower,
+                purchased < period.upper,
+            )
+            .distinct()
+        )
+        narrowed = [LineItem.category_id.in_(category_ids)] if category_ids else []
+        narrowed += [
+            LineItem.name.ilike(f"%{_escaped(keyword)}%", escape="\\") for keyword in keywords
+        ]
+        if narrowed:
+            stmt = stmt.where(or_(*narrowed))
+        return [pid for (pid,) in (await self.session.execute(stmt)).all() if pid is not None]

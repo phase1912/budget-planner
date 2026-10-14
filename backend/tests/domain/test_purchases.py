@@ -11,6 +11,7 @@ from app.domain.purchases import (
     cheaper_elsewhere,
     explore,
     months_between,
+    price_signals,
 )
 
 CHIPS = ProductFacts(uuid.uuid4(), "Chipsy Lay's 140g", Decimal(140), "g")
@@ -156,3 +157,24 @@ def test_nothing_is_said_when_the_last_purchase_was_already_the_cheapest() -> No
     )
 
     assert found is None
+
+
+def test_price_signals_name_cheaper_shops_and_real_rises_most_saving_first() -> None:
+    """F16.4: chips bought cheaper elsewhere, croutons up 20%, a bag steady."""
+    purchases = [
+        _bought(CHIPS, date(2026, 10, 1), "Biedronka", "6.99"),
+        _bought(CHIPS, date(2026, 10, 10), "Zabka", "8.49", "2"),
+        _bought(CROUTONS, date(2026, 8, 1), "Lidl", "3.00"),
+        _bought(CROUTONS, date(2026, 10, 1), "Lidl", "3.60"),
+        _bought(BAG, date(2026, 8, 1), "Lidl", "0.50"),
+        _bought(BAG, date(2026, 10, 1), "Lidl", "0.51"),
+    ]
+
+    signals = price_signals([CHIPS, CROUTONS, BAG], purchases, Decimal(3), TODAY, FRESH)
+
+    assert [s.product for s in signals] == ["Chipsy Lay's 140g", "Sucharki 150g"]
+    chips, croutons = signals
+    assert chips.cheaper is not None and chips.cheaper.difference == Decimal("1.50")
+    assert chips.monthly_items == Decimal("1.0")
+    assert croutons.cheaper is None
+    assert croutons.rise is not None and croutons.rise.percent == Decimal("20.0")

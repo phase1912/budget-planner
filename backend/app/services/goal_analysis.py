@@ -1,5 +1,8 @@
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
 
+from app.core.config import get_settings
+from app.domain.advice import AVERAGE_MONTH_DAYS
 from app.domain.goal_analysis import (
     RECURRING_ITEMS_MAX,
     RECURRING_MIN_RECEIPTS,
@@ -15,8 +18,10 @@ from app.domain.goal_analysis import (
     scope_of,
 )
 from app.domain.periods import DateRange
+from app.domain.purchases import PriceSignal, ProductFacts, price_signals
 from app.models.goal import Goal
 from app.repository.category import CategoryRepository
+from app.repository.product import ProductRepository
 from app.repository.receipt import ReceiptRepository
 from app.services.statistics import StatisticsService
 
@@ -66,6 +71,32 @@ class GoalAnalysisService:
             goal_categories=[c for c in stats.categories if c.category_id in scope.category_ids],
             recurring_items=await self._recurring(scope, window),
             dismissed_recommendations=dismissed or [],
+            price_signals=await self._price_signals(goal, scope, window),
+        )
+
+    async def _price_signals(
+        self, goal: Goal, scope: GoalScope, window: DateRange
+    ) -> list[PriceSignal]:
+        """The goal's products a cheaper shop or a price rise makes worth citing (F16.4)."""
+        if scope.is_empty:
+            return []
+        products = ProductRepository(self.receipts.session)
+        ids = await products.products_in_scope(
+            goal.user_id, window, scope.category_ids, scope.keywords
+        )
+        if not ids:
+            return []
+        facts = [
+            ProductFacts(p.id, p.name, p.size_amount, p.size_unit)
+            for p in await products.owned(goal.user_id, ids)
+        ]
+        bought = await products.purchases_of(goal.user_id, ids, window)
+        return price_signals(
+            facts,
+            bought,
+            Decimal(window.days) / AVERAGE_MONTH_DAYS,
+            datetime.now(UTC).date(),
+            timedelta(days=get_settings().price_freshness_days),
         )
 
     async def _brief(self, goal: Goal) -> GoalBrief:
