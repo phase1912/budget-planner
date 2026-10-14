@@ -15,6 +15,19 @@ class ProductVariantResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class CheaperShopResponse(BaseModel):
+    """Where a product recently cost less than where it was last bought (F16.3).
+
+    `difference` is for one item — every purchase of a product is one size — and `percent`
+    is of the price at `instead_of`.
+    """
+
+    shop: str
+    instead_of: str
+    difference: Decimal
+    percent: Decimal | None
+
+
 class ProductResponse(BaseModel):
     """A product the user buys, as the products list shows it (F16.1).
 
@@ -30,6 +43,7 @@ class ProductResponse(BaseModel):
     last_bought: datetime | None
     spent: Decimal
     variants: list[ProductVariantResponse]
+    cheaper: CheaperShopResponse | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

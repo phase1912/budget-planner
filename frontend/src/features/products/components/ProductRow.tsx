@@ -7,12 +7,13 @@ import { dateFormat, formatAmount } from "@/i18n/format";
 import type { Product } from "@/stores/ProductsStore";
 import { useStores } from "@/stores/StoreContext";
 import { productSize } from "../productSize";
+import { CheaperMark } from "./CheaperMark";
 
 const DAY = dateFormat({ day: "numeric", month: "short" });
 
 /**
  * One product on the products list (F16.1): how often and where it was bought, what it
- * cost, and — opened — every way receipts printed it, each of which can be taken out
+ * cost, where it recently cost less (F16.3), and — opened — every way receipts printed it, each of which can be taken out
  * into a product of its own when the matcher joined it wrongly.
  */
 export const ProductRow = observer(function ProductRow({
@@ -60,6 +61,7 @@ export const ProductRow = observer(function ProductRow({
           {product.last_bought &&
             ` · ${t("last", { date: DAY.format(new Date(product.last_bought)) })}`}
         </span>
+        <CheaperMark product={product} currency={currency} />
         <details className="group">
           <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-1 text-base font-medium text-muted-foreground hover:text-foreground md:min-h-0 md:py-0.5 [&::-webkit-details-marker]:hidden">
             {t("variants", { count: product.variants.length })}

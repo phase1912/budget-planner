@@ -242,6 +242,14 @@ class Settings(BaseSettings):
             "accuracy data exists."
         ),
     )
+    price_freshness_days: int = Field(
+        default=90,
+        ge=1,
+        description=(
+            "How recent a shop's price must be to say another shop is cheaper (F16.3): an "
+            "older price may no longer hold."
+        ),
+    )
     build_sha: str = Field(
         default="dev",
         description="Set by CI/CD at deploy time; 'dev' outside a built image.",

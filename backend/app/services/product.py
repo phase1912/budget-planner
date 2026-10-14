@@ -2,15 +2,24 @@ import uuid
 from collections import Counter, defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import NotFoundError
+from app.core.config import get_settings
 from app.domain.periods import DateRange
 from app.domain.products import ProductKey, abbreviates, candidates, product_key
-from app.domain.purchases import Exploration, ProductFacts, explore
+from app.domain.purchases import (
+    CheaperShop,
+    Exploration,
+    PricePoint,
+    ProductFacts,
+    base_price,
+    cheaper_elsewhere,
+    explore,
+)
 from app.models.product import Product, ProductAlias
 from app.models.selection import ProductSelection
 from app.ports.product_matching import MatchQuestion, ProductMatcherPort
@@ -42,6 +51,7 @@ class ProductSummary:
     last_bought: datetime | None
     spent: Decimal
     variants: list[Variant]
+    cheaper: CheaperShop | None = None
 
 
 class ProductService:
@@ -180,6 +190,7 @@ class ProductService:
             (product_id, product_key(name).text) for _, product_id, name in lines
         )
         wanted = " ".join(product_key(search).words) if search.strip() else ""
+        cheaper = await self._cheaper_shops(user_id, products)
         summaries = []
         for product in products:
             names = [product.name, *(a.printed_name for a in product.aliases)]
@@ -203,9 +214,33 @@ class ProductService:
                         ),
                         key=lambda v: (-v.purchases, v.printed_name),
                     ),
+                    cheaper=cheaper.get(product.id),
                 )
             )
         return sorted(summaries, key=lambda s: (-s.purchases, s.name.lower()))
+
+    async def _cheaper_shops(
+        self, user_id: uuid.UUID, products: Sequence[Product]
+    ) -> dict[uuid.UUID, CheaperShop]:
+        """Each product's cheaper shop, from recent counted purchases only (F16.3)."""
+        facts = {p.id: ProductFacts(p.id, p.name, p.size_amount, p.size_unit) for p in products}
+        points: dict[uuid.UUID, list[PricePoint]] = defaultdict(list)
+        for purchase in sorted(
+            await self.products.purchases_of(user_id, list(facts), None), key=lambda p: p.day
+        ):
+            product = facts[purchase.product_id]
+            points[product.id].append(
+                PricePoint(
+                    purchase.day,
+                    purchase.shop,
+                    purchase.unit_price,
+                    base_price(product, purchase.unit_price),
+                )
+            )
+        freshness = timedelta(days=get_settings().price_freshness_days)
+        today = datetime.now(UTC).date()
+        found = {pid: cheaper_elsewhere(pts, today, freshness) for pid, pts in points.items()}
+        return {pid: shop for pid, shop in found.items() if shop is not None}
 
     async def merge(
         self, user_id: uuid.UUID, target_id: uuid.UUID, source_ids: Sequence[uuid.UUID]

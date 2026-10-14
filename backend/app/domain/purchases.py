@@ -9,7 +9,7 @@ import uuid
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
 from app.domain.categories import normalise_name
@@ -248,4 +248,48 @@ def explore(
             ProductPurchases(facts[pid], amounts, points, price_change(points), shop_prices(points))
             for pid, (amounts, points) in per_product.items()
         ],
+    )
+
+
+@dataclass(frozen=True)
+class CheaperShop:
+    """Where a product recently cost less than at the shop it was last bought in (F16.3)."""
+
+    shop: str
+    instead_of: str
+    difference: Decimal
+    percent: Decimal | None
+
+
+def cheaper_elsewhere(
+    points: Sequence[PricePoint], today: date, freshness: timedelta
+) -> CheaperShop | None:
+    """The cheaper shop for a product, if the user did not last buy it there (F16.3).
+
+    Only prices within `freshness` of `today` count, so a price from long ago never makes
+    a shop look cheaper. Measured on each shop's latest price for one item against the one
+    where the last purchase was; None with fewer than two such shops, or
+    when the last purchase already was the cheapest.
+    """
+    # Every purchase of one product is the same size, so the price of one is the plainest
+    # measure: "1.00 less", not "50.00 less per kg" for a 20 g egg.
+    fresh = [
+        PricePoint(p.day, p.shop, p.unit_price, None) for p in points if p.day >= today - freshness
+    ]
+    shops = shop_prices(fresh)
+    if len(shops) < 2:
+        return None
+    last = normalise_name(max(fresh, key=lambda p: p.day).shop)
+    current = next((s for s in shops if normalise_name(s.shop) == last), None)
+    cheapest = shops[0]
+    if current is None or normalise_name(cheapest.shop) == last:
+        return None
+    difference = current.latest - cheapest.latest
+    if difference <= 0:
+        return None
+    return CheaperShop(
+        shop=cheapest.shop,
+        instead_of=current.shop,
+        difference=difference,
+        percent=_percent(difference, current.latest),
     )
