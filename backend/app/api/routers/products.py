@@ -2,16 +2,25 @@ import uuid
 from dataclasses import asdict
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.product_matching_agent import ProductMatchingAdapter
 from app.agent.factory import agent_from_settings
 from app.api.dependencies import get_current_user
+from app.api.periods import optional_period
 from app.db.session import get_db_session
+from app.domain.periods import DateRange
 from app.models.user import User
 from app.ports.product_matching import ProductMatcherPort
-from app.schemas.product import MergeProductsRequest, ProductResponse, SplitProductRequest
+from app.schemas.product import (
+    ExplorationResponse,
+    MergeProductsRequest,
+    ProductResponse,
+    SelectionRequest,
+    SelectionResponse,
+    SplitProductRequest,
+)
 from app.services.product import ProductService
 
 router = APIRouter(prefix="/api/v1/products", tags=["products"])
@@ -38,6 +47,63 @@ async def _listed(service: ProductService, user: User, search: str) -> list[Prod
     summaries = await service.list_products(user.id, search)
     await service.session.commit()
     return [ProductResponse.model_validate(asdict(s)) for s in summaries]
+
+
+@router.get("/explore", response_model=ExplorationResponse)
+async def explore_products(
+    current_user: CurrentUser,
+    service: Service,
+    product_ids: Annotated[list[uuid.UUID], Query(min_length=1, max_length=20)],
+    period: Annotated[DateRange | None, Depends(optional_period)],
+) -> ExplorationResponse:
+    """How much of these products the caller bought, at what prices, and where (F16.2).
+
+    `start` and `end` bound the period, both days included (ADR-0012); without them, all
+    time. Only counted receipts of the caller's own (N2): another user's product is 404.
+    """
+    exploration = await service.explore(current_user.id, product_ids, period)
+    return ExplorationResponse.model_validate(asdict(exploration))
+
+
+@router.get("/selections", response_model=list[SelectionResponse])
+async def list_selections(current_user: CurrentUser, service: Service) -> list[SelectionResponse]:
+    """The caller's saved selections, by name (F16.2)."""
+    return [
+        SelectionResponse.model_validate(s)
+        for s in await service.products.selections(current_user.id)
+    ]
+
+
+@router.post("/selections", response_model=SelectionResponse, status_code=status.HTTP_201_CREATED)
+async def create_selection(
+    request: SelectionRequest, current_user: CurrentUser, service: Service
+) -> SelectionResponse:
+    """Save products under a name (F16.2). Another user's product is 404 (N2)."""
+    selection = await service.save_selection(current_user.id, request.name, request.product_ids)
+    await service.session.commit()
+    return SelectionResponse.model_validate(selection)
+
+
+@router.put("/selections/{selection_id}", response_model=SelectionResponse)
+async def update_selection(
+    selection_id: uuid.UUID, request: SelectionRequest, current_user: CurrentUser, service: Service
+) -> SelectionResponse:
+    """Rename a saved selection or change its products (F16.2). Another user's is 404 (N2)."""
+    selection = await service.save_selection(
+        current_user.id, request.name, request.product_ids, selection_id
+    )
+    await service.session.commit()
+    return SelectionResponse.model_validate(selection)
+
+
+@router.delete("/selections/{selection_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_selection(
+    selection_id: uuid.UUID, current_user: CurrentUser, service: Service
+) -> Response:
+    """Forget a saved selection (F16.2). Another user's is 404 (N2)."""
+    await service.delete_selection(current_user.id, selection_id)
+    await service.session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("", response_model=list[ProductResponse])

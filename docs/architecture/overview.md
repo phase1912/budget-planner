@@ -77,6 +77,9 @@ one batch, through `ProductMatcherPort` (`app/ports/product_matching.py`). Match
 when the products list is asked for, so receipts stored before products existed join too.
 Every way a product is printed is kept as an alias, so the user's merges and splits hold
 for later receipts.
+`GET /api/v1/products/explore` answers for a selection of products and a period: totals,
+month by month, each purchase's price, and prices per shop (`app/domain/purchases.py`);
+selections can be saved under a name (`/api/v1/products/selections`).
 
 Households (E12, ADR-0017) live in `app/services/household.py` behind `/api/v1/household`.
 They have no `user_id`, so `HouseholdRepository` does not use the ownership filter: every

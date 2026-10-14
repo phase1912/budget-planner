@@ -27,6 +27,7 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | **LineItem** | One position on a receipt: product, quantity, unit price, total. Keeps the reader's confidence in it (F15.2) and, when its name is a remembered correction, what was printed (F15.3). | Receipt |
 | **Product** | One thing the user buys, however each shop prints it: a name and, when printed, a package size in grams or millilitres (F16.1). Purchase lines link to it. | User |
 | **ProductAlias** | One way a product is printed, as its matching key with an example; merging and splitting move these (F16.1). | Product |
+| **ProductSelection** | Products the user explores together, saved under a name; follows merges and splits (F16.2). | User |
 | **NameCorrection** | A line name the user corrected on one shop's receipt — the printed name and what it means — applied to that shop's later receipts (F15.3). | User |
 | **Category** | A spending classification. Either a system default or user-defined. | User (nullable for defaults) |
 | **PositionMatch** | A decision that two line items are, or are not, the same physical purchase. | Receipt |
@@ -252,6 +253,13 @@ Rules that must hold at all times. Each is a candidate for a test.
     Merging folds products into one that keeps its name; splitting takes one way of
     printing, with its lines, into a product of its own. Both hold for later receipts
     (F16.1).
+
+11p. Exploring products counts only counted receipts — the month's own rule (D3) — by the
+    purchase day, else the upload day, over whole days (ADR-0012). Quantities are kept
+    apart by kind and never added across: pieces, grams, millilitres. A price is per kg or
+    l where the product's size is printed, else per piece. A shop's price is compared with
+    the cheapest on the latest prices; shops are one ignoring case and spacing. A price
+    change runs from the period's first purchase to its last (F16.2).
 
 **Categorisation**
 

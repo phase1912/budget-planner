@@ -8,8 +8,11 @@ from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import NotFoundError
+from app.domain.periods import DateRange
 from app.domain.products import ProductKey, abbreviates, candidates, product_key
+from app.domain.purchases import Exploration, ProductFacts, explore
 from app.models.product import Product, ProductAlias
+from app.models.selection import ProductSelection
 from app.ports.product_matching import MatchQuestion, ProductMatcherPort
 from app.repository.product import ProductRepository
 
@@ -226,6 +229,7 @@ class ProductService:
                 alias.product = target  # moved, not orphaned: deleting the source keeps it
             await self.session.flush()
             await self.session.delete(source)
+        await self._follow(user_id, {str(src.id) for src in sources if src}, [str(target.id)])
         await self.session.flush()
 
     async def split(self, user_id: uuid.UUID, product_id: uuid.UUID, alias_id: uuid.UUID) -> None:
@@ -251,4 +255,74 @@ class ProductService:
         ]
         alias.product_id = new_id
         await self.products.link(moved, new_id)
+        # The user picked the product as it was: the part split off stays in their selections.
+        await self._follow(user_id, set(), [str(new_id)], keeping=str(product.id))
         await self.session.flush()
+
+    async def _follow(
+        self,
+        user_id: uuid.UUID,
+        gone: set[str],
+        added: list[str],
+        keeping: str | None = None,
+    ) -> None:
+        """Keep saved selections meaning what the user picked after a merge or split."""
+        for selection in await self.products.selections(user_id):
+            ids = list(selection.product_ids)
+            touched = bool(gone & set(ids)) or (keeping is not None and keeping in ids)
+            if not touched:
+                continue
+            ids = [i for i in ids if i not in gone]
+            selection.product_ids = list(dict.fromkeys([*ids, *added]))
+
+    async def explore(
+        self, user_id: uuid.UUID, product_ids: Sequence[uuid.UUID], period: DateRange | None
+    ) -> Exploration:
+        """How much of these products the user bought over `period`, and at what prices (F16.2).
+
+        `period` None is all time. Raises NotFoundError when any product is not the user's
+        (N2) — another user's product is indistinguishable from none.
+        """
+        wanted = list(dict.fromkeys(product_ids))
+        products = await self.products.owned(user_id, wanted)
+        if not wanted or len(products) != len(wanted):
+            raise NotFoundError("Product not found")
+        order = {pid: i for i, pid in enumerate(wanted)}
+        facts = [
+            ProductFacts(p.id, p.name, p.size_amount, p.size_unit)
+            for p in sorted(products, key=lambda p: order[p.id])
+        ]
+        purchases = await self.products.purchases_of(user_id, wanted, period)
+        return explore(facts, purchases, (period.start, period.end) if period else None)
+
+    async def save_selection(
+        self,
+        user_id: uuid.UUID,
+        name: str,
+        product_ids: Sequence[uuid.UUID],
+        selection_id: uuid.UUID | None = None,
+    ) -> ProductSelection:
+        """Save products under a name, or change a saved selection (F16.2).
+
+        Raises NotFoundError for a selection or product that is not the user's (N2).
+        """
+        wanted = list(dict.fromkeys(product_ids))
+        if len(await self.products.owned(user_id, wanted)) != len(wanted):
+            raise NotFoundError("Product not found")
+        if selection_id is None:
+            selection = ProductSelection(user_id=user_id)
+            self.session.add(selection)
+        else:
+            found = await self.products.selection(user_id, selection_id)
+            if found is None:
+                raise NotFoundError("Selection not found")
+            selection = found
+        selection.name = name.strip()
+        selection.product_ids = [str(p) for p in wanted]
+        await self.session.flush()
+        return selection
+
+    async def delete_selection(self, user_id: uuid.UUID, selection_id: uuid.UUID) -> None:
+        """Forget a saved selection. Raises NotFoundError when it is not the user's (N2)."""
+        if not await self.products.delete_selection(user_id, selection_id):
+            raise NotFoundError("Selection not found")
