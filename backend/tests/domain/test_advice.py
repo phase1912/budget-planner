@@ -25,6 +25,7 @@ from app.domain.goal_analysis import (
 )
 from app.domain.goals import GoalType
 from app.domain.periods import DateRange
+from app.domain.purchases import CheaperShop, PriceSignal
 from app.domain.statistics import CategoryStanding
 
 GOAL = GoalBrief(
@@ -175,3 +176,39 @@ def test_fresh_advice_on_a_target_the_user_turned_down_is_ranked_last_not_droppe
     ranked = demote_dismissed([dining, cookies], [turned_down])
 
     assert [a.target_name for a in ranked] == ["Cookies Choco 300g", "Dining"]
+
+
+YOGHURT_SIGNAL = PriceSignal(
+    product="Jogurt naturalny 330ml",
+    cheaper=CheaperShop("Lidl", "Biedronka", Decimal("0.80"), Decimal("16.0")),
+    rise=None,
+    monthly_items=Decimal("9.0"),
+    monthly_spend=Decimal("44.91"),
+)
+
+
+def test_buying_a_product_where_it_costs_less_saves_the_gap_at_the_users_rate() -> None:
+    """F16.4, the demo: 0.80 less each, about 9 a month, so about 7.20 a month."""
+    analysis = replace(ANALYSIS, price_signals=[YOGHURT_SIGNAL])
+    switch = _advice(AdviceTarget.PRODUCT, "Jogurt naturalny 330ml", "Buy it at Lidl")
+
+    kept = keep_specific([switch], analysis)
+
+    assert [a.target_name for a in kept] == ["Jogurt naturalny 330ml"]
+    assert project_impact(kept[0], analysis) == ProjectedImpact(Decimal("7.20"), None)
+
+
+def test_moving_half_the_purchases_saves_half() -> None:
+    analysis = replace(ANALYSIS, price_signals=[YOGHURT_SIGNAL])
+
+    impact = project_impact(
+        _advice(AdviceTarget.PRODUCT, "jogurt naturalny 330ml", "Buy half at Lidl", 50), analysis
+    )
+
+    assert impact.monthly_saving == Decimal("3.60")
+
+
+def test_a_product_with_no_price_signal_is_not_a_target() -> None:
+    kept = keep_specific([_advice(AdviceTarget.PRODUCT, "Jogurt naturalny 330ml")], ANALYSIS)
+
+    assert kept == []

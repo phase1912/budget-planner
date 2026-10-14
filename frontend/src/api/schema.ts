@@ -1431,10 +1431,11 @@ export interface components {
         };
         /**
          * AdviceTarget
-         * @description What a recommendation is about: a whole category, or one recurring purchase.
+         * @description What a recommendation is about: a whole category, one recurring purchase, or one
+         *     product whose price the analysis cites — bought cheaper elsewhere, or risen (F16.4).
          * @enum {string}
          */
-        AdviceTarget: "category" | "item";
+        AdviceTarget: "category" | "item" | "product";
         /**
          * AmountsResponse
          * @description How much was bought: times, money, and quantity by kind — `pc`, `g` or `ml` (F16.2).

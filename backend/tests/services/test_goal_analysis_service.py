@@ -9,7 +9,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.context import current_user_id
-from app.domain.goal_analysis import GoalAnalysis
+from app.domain.goal_analysis import GoalAnalysis, render_advice_context
 from app.domain.goals import FinancialKind, GoalType
 from app.models.category import Category
 from app.models.receipt import ReceiptStatus
@@ -17,6 +17,7 @@ from app.models.user import User
 from app.repository.category import CategoryRepository
 from app.repository.receipt import ReceiptRepository
 from app.services.goal_analysis import GoalAnalysisService
+from app.services.product import ProductService
 from app.services.statistics import StatisticsService
 from tests.factories.category import CategoryFactory
 from tests.factories.goal import GoalFactory
@@ -195,3 +196,37 @@ async def test_another_users_receipts_are_never_evidence(db_session: AsyncSessio
     [item] = analysis.recurring_items
     assert (item.receipt_count, item.merchant_receipts, item.merchant_receipt_total) == (2, 2, 2)
     assert analysis.receipt_count == 2
+
+
+@pytest.mark.asyncio
+async def test_the_goals_products_carry_their_cheaper_shop_into_the_evidence(
+    db_session: AsyncSession,
+) -> None:
+    """F16.4: chips last bought at Zabka were cheaper at Biedronka; the bread is not cited."""
+    user = await UserFactory.create_async()
+    for shop, price, day in [
+        ("Biedronka", "6.99", date(2026, 9, 5)),
+        ("Zabka", "8.49", date(2026, 9, 20)),
+    ]:
+        receipt = await ReceiptFactory.create_async(
+            user_id=user.id,
+            merchant_name=shop,
+            transaction_date=datetime(day.year, day.month, day.day, 12, tzinfo=UTC),
+            status=ReceiptStatus.PARSED,
+        )
+        await LineItemFactory.create_async(
+            receipt=receipt,
+            name="Chipsy Lays 140g",
+            quantity=Decimal(1),
+            unit_price=Decimal(price),
+            total_price=Decimal(price),
+            category=None,
+        )
+    await _receipt(user, "Lidl", [("Chleb 300g", "4.00", None)])
+    await ProductService(db_session).link_unmatched(user.id)
+
+    analysis = await _analyse(db_session, user, **_lifestyle(["chips"]))
+    context = render_advice_context(analysis, "PLN")
+
+    assert [s.product for s in analysis.price_signals] == ["Chipsy Lays 140g"]
+    assert "1.50 PLN less each at Biedronka than at Zabka, where it was last bought" in context

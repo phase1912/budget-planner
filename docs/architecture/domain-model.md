@@ -37,7 +37,7 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | **Goal** | A financial or lifestyle objective the user declared. A financial goal is one of three kinds: a monthly spending ceiling, a savings target, or a cap on one category (F1). | User |
 | **Household** | A group of users keeping one budget (E12, ADR-0017): a name, an invite code, an optional monthly budget. Reads its members' receipts, never owns them. | Its owner |
 | **HouseholdMember** | A user's place in a household, as `owner` or `member`. One household per user. | Household |
-| **Recommendation** | Advice on one goal: the category or recurring purchase it targets, what to do and why. Asking again replaces the goal's advice, except advice the user marked won't-follow or not helpful (F8.9), which stays. Carries its projected impact (F8.5). | User |
+| **Recommendation** | Advice on one goal: the category, recurring purchase or priced product it targets, what to do and why. Asking again replaces the goal's advice, except advice the user marked won't-follow or not helpful (F8.9), which stays. Carries its projected impact (F8.5). | User |
 
 Relationships: a User has many Receipts and belongs to at most one Household; a Receipt has many LineItems; a LineItem has one
 Category; a Goal produces many Recommendations; a User has many IdentityLinks; a User has many PositionMatchOverrides.
@@ -310,8 +310,12 @@ Rules that must hold at all times. Each is a candidate for a test.
     categories and keywords (a keyword matches any name containing it), a category
     reduction's one category, or all spending for a ceiling or savings target. A
     lifestyle goal watching nothing has no purchases to cite.
-15b. A recommendation is kept only when its target is a category or recurring purchase
-    the analysis names (`app/domain/advice.py`, F3). The model's wording is not
+15b. The evidence also names the prices of the products the goal concerns (F16.4): where
+    one recently cost less than at the shop it was last bought in (11q), and a rise of 5%
+    or more over the window, each with how many a month the user buys. At most ten,
+    those a shop switch saves most on first.
+15c. A recommendation is kept only when its target is a category, recurring purchase or
+    priced product the analysis names (`app/domain/advice.py`, F3). The model's wording is not
     trusted to be specific: a target outside the evidence is generic by definition and
     is dropped, so a goal may end up with no advice rather than generic advice. A
     model that gives no answer leaves the goal's earlier advice in place and is
@@ -322,8 +326,9 @@ Rules that must hold at all times. Each is a candidate for a test.
     monthly saving is that share of the target's spend in the analysis window, divided
     by the window's length in average months (`app/domain/advice.py`,
     `project_impact`). For a recurring purchase, the purchases avoided a month are
-    worked out the same way from the receipts that carried it. The model is told never
-    to state a saving.
+    worked out the same way from the receipts that carried it. A product with a cheaper
+    shop saves the price gap for one item times the items bought a month, on the share
+    of purchases moved there (F16.4). The model is told never to state a saving.
 17. Below the minimum history threshold, the system says more data is needed and produces
     no recommendation (F5). The threshold has two parts and both must be met: at least
     `min_receipts_for_advice` parsed receipts (4 by default), and at least

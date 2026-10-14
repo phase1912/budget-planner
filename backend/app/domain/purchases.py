@@ -293,3 +293,71 @@ def cheaper_elsewhere(
         difference=difference,
         percent=_percent(difference, current.latest),
     )
+
+
+RISE_MIN_PERCENT = Decimal(5)
+"""A price that moved less than this is noise, not a rise worth citing."""
+SIGNALS_MAX = 10
+
+
+@dataclass(frozen=True)
+class PriceSignal:
+    """What advice may cite about one product's price (F16.4).
+
+    `cheaper` is where it recently cost less than where it was last bought; `rise` how its
+    price for one item moved over the window, kept only from RISE_MIN_PERCENT up. `monthly_items` is
+    how many were bought a month on average, `monthly_spend` what they cost a month.
+    """
+
+    product: str
+    cheaper: CheaperShop | None
+    rise: PriceChange | None
+    monthly_items: Decimal
+    monthly_spend: Decimal
+
+
+def price_signals(
+    products: Iterable[ProductFacts],
+    purchases: Iterable[Purchase],
+    months: Decimal,
+    today: date,
+    freshness: timedelta,
+) -> list[PriceSignal]:
+    """The products whose price is worth citing: a cheaper shop or a real rise (F16.4).
+
+    `purchases` are the window's, `months` its length in months. Ordered by what a switch
+    would save a month, then by the size of the rise; at most SIGNALS_MAX.
+    """
+    facts = {p.id: p for p in products}
+    bought: dict[uuid.UUID, list[Purchase]] = defaultdict(list)
+    for purchase in sorted(purchases, key=lambda p: p.day):
+        if purchase.product_id in facts:
+            bought[purchase.product_id].append(purchase)
+    signals = []
+    for product_id, lines in bought.items():
+        product = facts[product_id]
+        # Per item, like the cheaper shop: one product is one size, and "6.49 to 7.49 each"
+        # reads plainer to the model and the user than the same move per kilogram.
+        points = [PricePoint(p.day, p.shop, p.unit_price, None) for p in lines]
+        change = price_change(points)
+        rise = change if change and change.percent and change.percent >= RISE_MIN_PERCENT else None
+        cheaper = cheaper_elsewhere(points, today, freshness)
+        if cheaper is None and rise is None:
+            continue
+        items = sum((p.quantity for p in lines), Decimal(0))
+        spend = sum((p.total for p in lines), Decimal(0))
+        signals.append(
+            PriceSignal(
+                product=product.name,
+                cheaper=cheaper,
+                rise=rise,
+                monthly_items=(items / months).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP),
+                monthly_spend=(spend / months).quantize(CENT, rounding=ROUND_HALF_UP),
+            )
+        )
+
+    def saving(s: PriceSignal) -> Decimal:
+        return s.cheaper.difference * s.monthly_items if s.cheaper else Decimal(0)
+
+    signals.sort(key=lambda s: (-saving(s), -(s.rise.percent or 0) if s.rise else 0, s.product))
+    return signals[:SIGNALS_MAX]

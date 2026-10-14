@@ -28,6 +28,10 @@ Rules:
 - Say what share of the spending on the target the action removes: 100 to stop
   buying it, 50 to halve it. Never state what it saves; the app works that out
   from the receipts.
+- A product in "Prices of what the user buys" may be the target (target_kind
+  "product", its name exactly as written there). Where it costs less in another
+  shop, the advice may be to buy it there, naming the shop; the share is then how
+  many of its purchases to move there, 100 for all of them.
 """
 
 
@@ -36,7 +40,10 @@ LANGUAGE_NAMES = {"en": "English", "uk": "Ukrainian", "pl": "Polish"}
 
 class _Recommendation(BaseModel):
     target_kind: AdviceTarget = Field(
-        description="'category' for a spending category, 'item' for a recurring purchase."
+        description=(
+            "'category' for a spending category, 'item' for a recurring purchase, "
+            "'product' for a product from the prices section."
+        )
     )
     target_name: str = Field(
         description="The category or purchase, exactly as the evidence names it."
