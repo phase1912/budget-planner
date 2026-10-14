@@ -261,6 +261,11 @@ Rules that must hold at all times. Each is a candidate for a test.
     the cheapest on the latest prices; shops are one ignoring case and spacing. A price
     change runs from the period's first purchase to its last (F16.2).
 
+11q. A product is cheaper elsewhere when, among prices no older than
+    `price_freshness_days`, another shop's latest price for one item is below the latest at
+    the shop it was last bought in; nothing is said when that shop already was the cheapest, or when
+    fewer than two shops have a recent price (F16.3).
+
 **Categorisation**
 
 12. Every line item has a category. Below the confidence threshold it is `Uncategorized`

@@ -111,6 +111,22 @@ describe("ProductsPage (F16.1)", () => {
     expect(screen.getByText("How receipts print it (2)")).toBeInTheDocument();
   });
 
+  it("says where a product recently cost less than where it was last bought (F16.3)", () => {
+    store.products = [
+      {
+        ...YOGHURT,
+        cheaper: { shop: "Lidl", instead_of: "Biedronka", difference: "1.52", percent: "9.1" },
+      },
+      BREAD,
+    ];
+    renderPage();
+
+    expect(
+      screen.getByText("Cheaper at Lidl: 1.52 PLN/piece less (9%) than at Biedronka"),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/Cheaper at/)).toHaveLength(1);
+  });
+
   it("splits a wrongly joined way of printing off its product", () => {
     renderPage();
 

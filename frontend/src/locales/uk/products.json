@@ -100,5 +100,8 @@
     "placeholder": "Снеки",
     "save": "Зберегти",
     "delete": "Видалити набір «{{name}}»"
+  },
+  "cheaper": {
+    "mark": "Дешевше в {{shop}}: на {{amount}} {{currency}}/{{unit}} ({{percent}}%), ніж у {{instead}}"
   }
 }

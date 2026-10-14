@@ -2,7 +2,7 @@
 
 import uuid
 from collections.abc import AsyncGenerator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -180,3 +180,27 @@ async def test_a_saved_selection_follows_a_merge_and_another_user_cannot_touch_i
         {"id": selection["id"], "name": "Snacks", "product_ids": [ids["Chipsy Lays 140g"]]}
     ]
     assert (foreign.status_code, mine.status_code) == (404, 204)
+
+
+@pytest.mark.asyncio
+async def test_the_products_list_says_where_a_product_recently_cost_less(
+    db_session: AsyncSession,
+) -> None:
+    """F16.3: last bought at Zabka, cheaper at Biedronka the week before."""
+    user = await UserFactory.create_async()
+    now = datetime.now(UTC)
+    await _bought(
+        db_session, user.id, "Biedronka", "Chipsy Lays 140g", "6.99", now - timedelta(days=7)
+    )
+    await _bought(db_session, user.id, "Zabka", "Chipsy Lays 140g", "8.49", now - timedelta(days=1))
+    await _bought(db_session, user.id, "Lidl", "Sucharki 150g", "3.49", now - timedelta(days=1))
+
+    listed = {p["name"]: p for p in (await _call(db_session, user, "GET", "")).json()}
+
+    assert listed["Chipsy Lays 140g"]["cheaper"] == {
+        "shop": "Biedronka",
+        "instead_of": "Zabka",
+        "difference": "1.50",
+        "percent": "17.7",
+    }
+    assert listed["Sucharki 150g"]["cheaper"] is None

@@ -100,5 +100,8 @@
     "placeholder": "Przekąski",
     "save": "Zapisz",
     "delete": "Usuń zestaw „{{name}}”"
+  },
+  "cheaper": {
+    "mark": "Taniej w {{shop}}: o {{amount}} {{currency}}/{{unit}} ({{percent}}%) niż w {{instead}}"
   }
 }

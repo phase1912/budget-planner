@@ -1634,6 +1634,23 @@ export interface components {
             hidden: number;
         };
         /**
+         * CheaperShopResponse
+         * @description Where a product recently cost less than where it was last bought (F16.3).
+         *
+         *     `difference` is for one item — every purchase of a product is one size — and `percent`
+         *     is of the price at `instead_of`.
+         */
+        CheaperShopResponse: {
+            /** Shop */
+            shop: string;
+            /** Instead Of */
+            instead_of: string;
+            /** Difference */
+            difference: string;
+            /** Percent */
+            percent: string | null;
+        };
+        /**
          * CommitJobRequest
          * @description Request to commit selected extractions to the database.
          */
@@ -2442,6 +2459,7 @@ export interface components {
             spent: string;
             /** Variants */
             variants: components["schemas"]["ProductVariantResponse"][];
+            cheaper?: components["schemas"]["CheaperShopResponse"] | null;
         };
         /**
          * ProductVariantResponse

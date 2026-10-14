@@ -80,5 +80,8 @@
     "placeholder": "Snacks",
     "save": "Save",
     "delete": "Delete the selection {{name}}"
+  },
+  "cheaper": {
+    "mark": "Cheaper at {{shop}}: {{amount}} {{currency}}/{{unit}} less ({{percent}}%) than at {{instead}}"
   }
 }

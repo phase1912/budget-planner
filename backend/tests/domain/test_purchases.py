@@ -1,10 +1,17 @@
 """Exploring a selection of products: amounts, prices and shops (F16.2)."""
 
 import uuid
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
-from app.domain.purchases import ProductFacts, Purchase, explore, months_between
+from app.domain.purchases import (
+    PricePoint,
+    ProductFacts,
+    Purchase,
+    cheaper_elsewhere,
+    explore,
+    months_between,
+)
 
 CHIPS = ProductFacts(uuid.uuid4(), "Chipsy Lay's 140g", Decimal(140), "g")
 CROUTONS = ProductFacts(uuid.uuid4(), "Sucharki 150g", Decimal(150), "g")
@@ -98,3 +105,54 @@ def test_the_months_between_two_days_cross_a_new_year() -> None:
         date(2025, 12, 1),
         date(2026, 1, 1),
     ]
+
+
+def _point(day: date, shop: str, price: str) -> PricePoint:
+    return PricePoint(day, shop, Decimal(price), None)
+
+
+TODAY = date(2026, 10, 14)
+FRESH = timedelta(days=90)
+
+
+def test_a_cheaper_shop_is_named_against_where_it_was_last_bought() -> None:
+    """F16.3: last bought at Biedronka for 4.99; Lidl had it for 4.49 last week."""
+    found = cheaper_elsewhere(
+        [
+            _point(date(2026, 10, 7), "Lidl", "4.49"),
+            _point(date(2026, 10, 12), "Biedronka", "4.99"),
+        ],
+        TODAY,
+        FRESH,
+    )
+
+    assert found is not None
+    assert (found.shop, found.instead_of, found.difference, found.percent) == (
+        "Lidl",
+        "Biedronka",
+        Decimal("0.50"),
+        Decimal("10.0"),
+    )
+
+
+def test_a_price_from_long_ago_never_makes_a_shop_cheaper() -> None:
+    found = cheaper_elsewhere(
+        [_point(date(2025, 9, 1), "Lidl", "3.99"), _point(date(2026, 10, 12), "Biedronka", "4.99")],
+        TODAY,
+        FRESH,
+    )
+
+    assert found is None
+
+
+def test_nothing_is_said_when_the_last_purchase_was_already_the_cheapest() -> None:
+    found = cheaper_elsewhere(
+        [
+            _point(date(2026, 10, 7), "Biedronka", "4.99"),
+            _point(date(2026, 10, 12), "Lidl", "4.49"),
+        ],
+        TODAY,
+        FRESH,
+    )
+
+    assert found is None

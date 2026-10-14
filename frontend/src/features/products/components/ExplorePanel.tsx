@@ -14,6 +14,7 @@ import type { ExplorePreset } from "@/stores/ExplorationStore";
 import { useStores } from "@/stores/StoreContext";
 import { periodLabel } from "@/features/statistics/periodLabel";
 import { priceUnit, quantityLabel } from "../quantity";
+import { CheaperMark } from "./CheaperMark";
 import { MonthBars } from "./MonthBars";
 import { PriceChart } from "./PriceChart";
 import { ShopPrices } from "./ShopPrices";
@@ -26,7 +27,8 @@ const PERCENT = numberFormat({ maximumFractionDigits: 1, signDisplay: "always" }
  * product, how its price moved. Shown above the products list while anything is ticked.
  */
 export const ExplorePanel = observer(function ExplorePanel({ currency }: { currency: string }) {
-  const { explorationStore } = useStores();
+  const { explorationStore, productsStore } = useStores();
+  const listed = (id: string) => productsStore.products.find((p) => p.id === id);
   const { t } = useTranslation(["products", "statistics"]);
   const [picking, setPicking] = useState(false);
   const { result, isLoading, error, preset, start, end } = explorationStore;
@@ -121,6 +123,7 @@ export const ExplorePanel = observer(function ExplorePanel({ currency }: { curre
                   {formatAmount(product.amounts.spent)} {currency}
                 </span>
               </h3>
+              <CheaperMark product={listed(product.product.id)} currency={currency} />
               {product.change && (
                 <p className="m-0 text-md">
                   {t("explore.change", {
