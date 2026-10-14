@@ -881,8 +881,12 @@ def test_updating_a_receipt_returns_the_new_state(app: FastAPI) -> None:
     # Server-generated in production; this object never touches the database.
     updated.created_at = datetime.now(UTC)
 
-    with patch("app.api.routers.receipts.ReceiptService") as service_cls:
+    with (
+        patch("app.api.routers.receipts.ReceiptService") as service_cls,
+        patch("app.api.routers.receipts.TripRepository") as trips_cls,
+    ):
         service_cls.return_value.update_receipt = AsyncMock(return_value=updated)
+        trips_cls.return_value.trip_of = AsyncMock(return_value=None)
 
         # When
         response = client.patch(

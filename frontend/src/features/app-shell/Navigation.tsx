@@ -10,6 +10,7 @@ export const Navigation = () => {
     { name: t("nav.dashboard"), path: "/" },
     { name: t("nav.receipts"), path: "/receipts" },
     { name: t("nav.categories"), path: "/categories" },
+    { name: t("nav.trips"), path: "/trips" },
     { name: t("nav.statistics"), path: "/statistics" },
     { name: t("nav.goals"), path: "/goals" },
   ];
@@ -27,7 +28,7 @@ export const Navigation = () => {
           <Link
             key={link.path}
             to={link.path}
-            className={`px-3 py-2 rounded-control text-[14px] transition-colors ${
+            className={`px-2 py-2 rounded-control text-[14px] whitespace-nowrap transition-colors lg:px-3 ${
               isActive
                 ? "bg-primary/10 text-primary font-semibold"
                 : "text-muted-foreground hover:bg-surface-hover hover:text-foreground font-medium"

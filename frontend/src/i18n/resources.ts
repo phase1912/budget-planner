@@ -11,6 +11,7 @@ import enProducts from "@/locales/en/products.json";
 import enProfile from "@/locales/en/profile.json";
 import enReceipts from "@/locales/en/receipts.json";
 import enStatistics from "@/locales/en/statistics.json";
+import enTrips from "@/locales/en/trips.json";
 import enUpload from "@/locales/en/upload.json";
 import plAuth from "@/locales/pl/auth.json";
 import plCategories from "@/locales/pl/categories.json";
@@ -25,6 +26,7 @@ import plProducts from "@/locales/pl/products.json";
 import plProfile from "@/locales/pl/profile.json";
 import plReceipts from "@/locales/pl/receipts.json";
 import plStatistics from "@/locales/pl/statistics.json";
+import plTrips from "@/locales/pl/trips.json";
 import plUpload from "@/locales/pl/upload.json";
 import ukAuth from "@/locales/uk/auth.json";
 import ukCategories from "@/locales/uk/categories.json";
@@ -39,6 +41,7 @@ import ukProducts from "@/locales/uk/products.json";
 import ukProfile from "@/locales/uk/profile.json";
 import ukReceipts from "@/locales/uk/receipts.json";
 import ukStatistics from "@/locales/uk/statistics.json";
+import ukTrips from "@/locales/uk/trips.json";
 import ukUpload from "@/locales/uk/upload.json";
 
 /**
@@ -57,6 +60,7 @@ export const en = {
   landing: enLanding,
   messages: enMessages,
   products: enProducts,
+  trips: enTrips,
   profile: enProfile,
   receipts: enReceipts,
   statistics: enStatistics,
@@ -76,6 +80,7 @@ export const resources = {
     landing: ukLanding,
     messages: ukMessages,
     products: ukProducts,
+    trips: ukTrips,
     profile: ukProfile,
     receipts: ukReceipts,
     statistics: ukStatistics,
@@ -92,6 +97,7 @@ export const resources = {
     landing: plLanding,
     messages: plMessages,
     products: plProducts,
+    trips: plTrips,
     profile: plProfile,
     receipts: plReceipts,
     statistics: plStatistics,

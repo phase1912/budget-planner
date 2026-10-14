@@ -9,10 +9,11 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.periods import DateRange
+from app.domain.trips import TripKind
 from app.models.category import Category
 from app.models.line_item import LineItem
 from app.models.receipt import Receipt, ReceiptStatus
-from app.repository.receipt import _within
+from app.repository.receipt import _within, counted_in_budget, on_trip
 
 
 @dataclass(frozen=True)
@@ -66,7 +67,7 @@ class HouseholdSpendRepository:
             .outerjoin(LineItem, LineItem.receipt_id == Receipt.id)
             .where(
                 Receipt.user_id.in_(member_ids),
-                Receipt.status == ReceiptStatus.PARSED,
+                counted_in_budget(),
                 _within(period),
             )
             .group_by(Receipt.user_id, Receipt.is_private)
@@ -93,6 +94,7 @@ class HouseholdSpendRepository:
         held = select(Receipt.id).where(
             Receipt.user_id.in_(member_ids),
             Receipt.status == ReceiptStatus.MANUAL_REVIEW,
+            ~on_trip(TripKind.BUSINESS),
             _within(period),
         )
         count = await self.session.scalar(select(func.count()).select_from(held.subquery()))
@@ -123,7 +125,7 @@ class HouseholdSpendRepository:
             .outerjoin(Category, LineItem.category_id == Category.id)
             .where(
                 Receipt.user_id.in_(member_ids),
-                Receipt.status == ReceiptStatus.PARSED,
+                counted_in_budget(),
                 Receipt.is_private.is_(False),
                 _within(period),
             )

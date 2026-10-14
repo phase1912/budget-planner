@@ -16,6 +16,8 @@ import { CategorisationQueuePage } from "@/features/categories/pages/Categorisat
 import { GoalsPage } from "@/features/goals/pages/GoalsPage";
 import { StatisticsPage } from "@/features/statistics/pages/StatisticsPage";
 import { ProductsPage } from "@/features/products/pages/ProductsPage";
+import { TripPage } from "@/features/trips/pages/TripPage";
+import { TripsPage } from "@/features/trips/pages/TripsPage";
 import { JoinHouseholdPage } from "@/features/household/pages/JoinHouseholdPage";
 
 export const App = observer(function App() {
@@ -43,6 +45,8 @@ export const App = observer(function App() {
             {/* Placeholders for upcoming features (prevents 404s on navigation) */}
             <Route path="/statistics" element={<StatisticsPage />} />
             <Route path="/statistics/products" element={<ProductsPage />} />
+            <Route path="/trips" element={<TripsPage />} />
+            <Route path="/trips/:id" element={<TripPage />} />
             <Route path="/goals" element={<GoalsPage />} />
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/profile" element={<ProfilePage />} />

@@ -38,5 +38,6 @@
   "invite_invalid": "This invite link is not valid. Ask for a new one.",
   "household_currency_mismatch": "This household keeps its budget in {{household_currency}} and your account is in {{account_currency}}. Only accounts in the same currency can share a budget.",
   "owner_only": "Only the household's owner can do this.",
-  "unreachable": "The server could not be reached. Try again in a moment."
+  "unreachable": "The server could not be reached. Try again in a moment.",
+  "trips_overlap": "These dates meet the trip “{{name}}” ({{start_on}} to {{end_on}}). Trips cannot share a day."
 }

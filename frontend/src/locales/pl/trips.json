@@ -1,0 +1,63 @@
+{
+  "title": "Podróże",
+  "subtitle": "Wydatki poza domem, oddzielone od zwykłego miesiąca.",
+  "new": "Nowa podróż",
+  "empty": "Nie ma jeszcze podróży. Dodaj jedną, a paragony z jej dni dołączą same.",
+  "kind": {
+    "personal": "Prywatna",
+    "business": "Służbowa"
+  },
+  "kindHint": {
+    "personal": "Wliczana do miesiąca, pokazywana osobno.",
+    "business": "Nie wliczana do budżetu: pracodawca zwróci koszty."
+  },
+  "dates": "{{start}} – {{end}}",
+  "receipts_one": "{{count}} paragon",
+  "receipts_few": "{{count}} paragony",
+  "receipts_many": "{{count}} paragonów",
+  "receipts_other": "{{count}} paragonu",
+  "total": "Wydano",
+  "toReimburse": "Do zwrotu",
+  "suggestions": {
+    "title": "Wygląda na podróż",
+    "text": "{{start}} – {{end}}: paragony w {{currency}}: {{count}}, na {{amount}}.",
+    "record": "Dodaj podróż",
+    "dismiss": "To nie podróż"
+  },
+  "form": {
+    "newTitle": "Nowa podróż",
+    "editTitle": "Zmień podróż",
+    "kind": "Rodzaj",
+    "name": "Nazwa",
+    "namePlaceholder": "Urlop w Egipcie",
+    "country": "Kraj",
+    "noCountry": "Nie podano",
+    "city": "Miasto",
+    "start": "Od",
+    "end": "Do",
+    "purpose": "Cel",
+    "purposePlaceholder": "Konferencja, wizyta u klienta…",
+    "save": "Zapisz podróż",
+    "endBeforeStart": "Podróż nie może skończyć się przed początkiem."
+  },
+  "detail": {
+    "back": "Wszystkie podróże",
+    "edit": "Zmień",
+    "delete": "Usuń podróż",
+    "deleteConfirm": "Usunąć podróż «{{name}}»? Paragony zostaną i wrócą do miesiąca.",
+    "receipts": "Paragony",
+    "noReceipts": "W tej podróży nie ma jeszcze paragonów. Paragony z jej dni dołączają same albo przenieś paragon tutaj z jego szczegółów.",
+    "remove": "Usuń z podróży",
+    "notFound": "Nie znaleziono tej podróży."
+  },
+  "receipt": {
+    "label": "Podróż",
+    "auto": "Według daty",
+    "none": "Poza podróżą"
+  },
+  "dashboard": {
+    "personal": "w tym podróż «{{name}}»: {{amount}} {{currency}}",
+    "business": "podróż służbowa «{{name}}», do zwrotu: {{amount}} {{currency}}",
+    "open": "Otwórz podróż"
+  }
+}

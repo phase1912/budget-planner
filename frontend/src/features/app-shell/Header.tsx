@@ -46,7 +46,7 @@ export const Header = observer(() => {
   const uploading = authStore.isAuthenticated && pathname.startsWith("/upload");
 
   return (
-    <header className="flex-shrink-0 border-b border-border bg-surface px-4 py-3 md:px-8 md:py-3.5 flex items-center justify-between">
+    <header className="flex-shrink-0 border-b border-border bg-surface px-4 py-3 md:px-5 md:py-3.5 lg:px-8 flex items-center justify-between">
       {uploading && (
         <div className="flex items-center gap-2 md:hidden">
           <Link
@@ -59,7 +59,7 @@ export const Header = observer(() => {
           <h1 className="m-0 text-[17px] font-bold">{t("header.newReceipt")}</h1>
         </div>
       )}
-      <div className={`items-center gap-7 ${uploading ? "hidden md:flex" : "flex"}`}>
+      <div className={`items-center gap-4 lg:gap-7 ${uploading ? "hidden md:flex" : "flex"}`}>
         <Link
           to="/"
           className="whitespace-nowrap text-[17px] md:text-[20px] font-bold bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent"
@@ -77,7 +77,7 @@ export const Header = observer(() => {
         {authStore.isAuthenticated ? (
           <>
             {/* A phone uploads from the bottom bar's centre button; a tablet has room for
-                the icon only, next to five links. */}
+                the icon only, next to six links. */}
             <Link to="/upload" className="hidden md:contents">
               <Button size="compact" aria-label={t("header.upload")}>
                 <Upload size={16} className="lg:mr-2" aria-hidden="true" />

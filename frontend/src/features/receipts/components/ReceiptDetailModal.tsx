@@ -23,6 +23,7 @@ import { conversionLine } from "@/shared/exchange";
 import { useTranslation } from "react-i18next";
 import { numberFormat } from "@/i18n/format";
 import { categoryName } from "@/shared/categoryName";
+import { ReceiptTripSelect } from "@/features/trips/components/ReceiptTripSelect";
 
 /**
  * Render an amount, or an em dash when there is nothing to render.
@@ -245,6 +246,7 @@ export const ReceiptDetailModal = observer(() => {
             </div>
           </div>
         )}
+        {!readOnly && <ReceiptTripSelect receipt={receipt} />}
         {!readOnly && (
           <div className="flex justify-end pb-2">
             <Button

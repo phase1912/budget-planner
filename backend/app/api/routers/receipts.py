@@ -29,7 +29,7 @@ from app.domain.categories import ItemView
 from app.domain.fiscal_identity import fiscal_identity, is_left_out
 from app.domain.periods import DateRange
 from app.domain.reading_accuracy import mark_corrected
-from app.models.receipt import ReceiptChannel, ReceiptStatus
+from app.models.receipt import Receipt, ReceiptChannel, ReceiptStatus
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.ports.categorisation import ItemCategoriserPort
@@ -39,6 +39,7 @@ from app.ports.storage import StoragePort
 from app.repository.category import CategoryRepository
 from app.repository.household import HouseholdRepository
 from app.repository.receipt import ReceiptRepository
+from app.repository.trip import TripRepository
 from app.schemas.extraction import ExtractedReceipt
 from app.schemas.receipt import (
     AddDiscountRequest,
@@ -57,6 +58,7 @@ from app.schemas.receipt import (
     ResolvePositionMatchRequest,
     ResolveTotalRequest,
     ReviewQueueItemResponse,
+    TripRef,
     UndoExtractedCorrectionRequest,
     UndoLineCorrectionRequest,
     UpdateLineItemCategoryRequest,
@@ -71,6 +73,25 @@ from app.services.receipt import ReceiptService
 from app.services.storage import ObjectNotFoundError
 
 router = APIRouter(prefix="/receipts", tags=["receipts"])
+
+
+async def receipt_detail(
+    session: AsyncSession, receipt: Receipt, user: User
+) -> ReceiptDetailResponse:
+    """A receipt's detail, with the trip it is on when the reader owns it (F20.1).
+
+    A household member reading another's receipt is not told about the owner's trips.
+    """
+    detail = ReceiptDetailResponse.model_validate(receipt)
+    if receipt.user_id != user.id:
+        return detail
+    trip = await TripRepository(session).trip_of(receipt)
+    return detail.model_copy(
+        update={
+            "trip": TripRef.model_validate(trip) if trip else None,
+            "trip_manual": receipt.trip_manual,
+        }
+    )
 
 
 def get_item_categoriser() -> ItemCategoriserPort:
@@ -499,7 +520,7 @@ async def get_receipt(
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
 
-    return ReceiptDetailResponse.model_validate(receipt)
+    return await receipt_detail(session, receipt, current_user)
 
 
 @router.patch("/{receipt_id}", response_model=ReceiptDetailResponse)
@@ -520,7 +541,7 @@ async def update_receipt(
         raise HTTPException(status_code=404, detail="Receipt not found")
 
     await session.commit()
-    return ReceiptDetailResponse.model_validate(receipt)
+    return await receipt_detail(session, receipt, current_user)
 
 
 @router.post(
@@ -547,7 +568,7 @@ async def undo_line_correction(
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
     await session.commit()
-    return ReceiptDetailResponse.model_validate(receipt)
+    return await receipt_detail(session, receipt, current_user)
 
 
 @router.post("/{receipt_id}/keep-duplicate", response_model=ReceiptDetailResponse)
@@ -562,7 +583,7 @@ async def keep_possible_duplicate(
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
     await session.commit()
-    return ReceiptDetailResponse.model_validate(receipt)
+    return await receipt_detail(session, receipt, current_user)
 
 
 @router.put("/{receipt_id}/privacy", response_model=ReceiptDetailResponse)
@@ -582,7 +603,7 @@ async def set_receipt_privacy(
         raise HTTPException(status_code=404, detail="Receipt not found")
     receipt.is_private = request_data.is_private
     await session.commit()
-    return ReceiptDetailResponse.model_validate(receipt)
+    return await receipt_detail(session, receipt, current_user)
 
 
 @router.delete("/{receipt_id}", status_code=204)
@@ -886,4 +907,4 @@ async def recategorise_receipt(
     )
     receipt = await service.recategorise(receipt_id, current_user.id)
     await session.commit()
-    return ReceiptDetailResponse.model_validate(receipt)
+    return await receipt_detail(session, receipt, current_user)

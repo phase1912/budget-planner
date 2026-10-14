@@ -14,7 +14,7 @@ interface Tab {
 // Categories has no tab of its own: it is reached from Receipts, whose tab it lights.
 const LEFT: Tab[] = [
   { name: "home", path: "/", icon: House },
-  { name: "receipts", path: "/receipts", icon: ReceiptText, alsoFor: ["/categories"] },
+  { name: "receipts", path: "/receipts", icon: ReceiptText, alsoFor: ["/categories", "/trips"] },
 ];
 const RIGHT: Tab[] = [
   { name: "stats", path: "/statistics", icon: ChartColumn },

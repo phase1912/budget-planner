@@ -4,14 +4,15 @@ import { useTranslation } from "react-i18next";
 const SECTIONS = [
   { name: "receipts", path: "/receipts" },
   { name: "categories", path: "/categories" },
+  { name: "trips", path: "/trips" },
 ] as const;
 
 /**
- * "Receipts | Categories" at the top of both screens on a phone.
+ * "Receipts | Categories | Trips" at the top of these screens on a phone.
  *
  * The phone's bottom bar has room for one of them (docs/design/README.md), so
- * its Receipts tab stands for both and this switch makes the other one plain to
- * see, rather than a link lost under the title. Wider screens have both in the
+ * its Receipts tab stands for all three and this switch makes the others plain to
+ * see, rather than a link lost under the title. Wider screens have them in the
  * header already.
  */
 export function SectionTabs() {

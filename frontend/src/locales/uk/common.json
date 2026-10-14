@@ -4,12 +4,13 @@
     "dashboard": "Огляд",
     "receipts": "Чеки",
     "categories": "Категорії",
+    "trips": "Поїздки",
     "statistics": "Статистика",
     "goals": "Цілі",
     "home": "Огляд",
     "stats": "Статистика",
     "main": "Головне меню",
-    "receiptsAndCategories": "Чеки та категорії"
+    "receiptsAndCategories": "Чеки, категорії та поїздки"
   },
   "header": {
     "back": "Назад",

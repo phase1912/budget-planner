@@ -9,6 +9,7 @@ from pydantic import AliasPath, BaseModel, ConfigDict, Field, computed_field, fi
 from app.core.config import get_settings
 from app.domain.categories import is_low_confidence
 from app.domain.read_confidence import is_doubtful
+from app.domain.trips import TripKind
 from app.models.receipt import ReceiptChannel, ReceiptStatus
 from app.models.upload_job import JobStatus
 
@@ -304,10 +305,30 @@ class ReceiptResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class ReceiptDetailResponse(ReceiptResponse):
-    """Schema for a receipt with its full line items."""
+class TripRef(BaseModel):
+    """The trip a receipt is on, as its detail names it (F20.1)."""
 
-    pass
+    id: uuid.UUID
+    name: str
+    kind: TripKind
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReceiptDetailResponse(ReceiptResponse):
+    """A receipt with its full line items, and for its owner the trip it is on (F20.1).
+
+    `trip_manual` says the trip, or the lack of one, was chosen by hand rather than by date.
+    """
+
+    trip: TripRef | None = None
+    trip_manual: bool = False
+
+    @field_validator("trip_manual", mode="before")
+    @classmethod
+    def _unset_is_by_date(cls, value: object) -> bool:
+        """A receipt not yet stored has no choice by hand: it goes by its date."""
+        return bool(value)
 
 
 class PaginatedReceiptsResponse(BaseModel):

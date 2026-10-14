@@ -4,12 +4,13 @@
     "dashboard": "Dashboard",
     "receipts": "Receipts",
     "categories": "Categories",
+    "trips": "Trips",
     "statistics": "Statistics",
     "goals": "Goals",
     "home": "Home",
     "stats": "Stats",
     "main": "Main",
-    "receiptsAndCategories": "Receipts and categories"
+    "receiptsAndCategories": "Receipts, categories and trips"
   },
   "header": {
     "back": "Back",

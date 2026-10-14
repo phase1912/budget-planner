@@ -28,6 +28,7 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | **Product** | One thing the user buys, however each shop prints it: a name and, when printed, a package size in grams or millilitres (F16.1). Purchase lines link to it. | User |
 | **ProductAlias** | One way a product is printed, as its matching key with an example; merging and splitting move these (F16.1). | Product |
 | **ProductSelection** | Products the user explores together, saved under a name; follows merges and splits (F16.2). | User |
+| **Trip** | A trip the user recorded, personal or business: a name, destination, whole days and purpose. Its receipts are those dated within it, unless moved in or out by hand (F20.1). | User |
 | **NameCorrection** | A line name the user corrected on one shop's receipt — the printed name and what it means — applied to that shop's later receipts (F15.3). | User |
 | **Category** | A spending classification. Either a system default or user-defined. | User (nullable for defaults) |
 | **PositionMatch** | A decision that two line items are, or are not, the same physical purchase. | Receipt |
@@ -265,6 +266,15 @@ Rules that must hold at all times. Each is a candidate for a test.
     `price_freshness_days`, another shop's latest price for one item is below the latest at
     the shop it was last bought in; nothing is said when that shop already was the cheapest, or when
     fewer than two shops have a recent price (F16.3).
+
+11r. A receipt is on a trip when the user put it there by hand, or, unless moved by hand,
+    when its purchase day falls within the trip's days, both ends included. One user's
+    trips never share a day, so a receipt is on one trip at most. A personal trip's
+    receipts count in the month, its limit, statistics and advice as before, and are shown
+    apart; a business trip's are the employer's money and count in none of them — nor in
+    the household's totals, nor as held out for review. Deleting a trip gives its receipts
+    back to their dates. A finished month's snapshot is not recomputed when a trip is
+    recorded later (ADR-0010) (F20.1).
 
 **Categorisation**
 
