@@ -4,6 +4,7 @@ from decimal import Decimal
 from pydantic import BaseModel
 
 from app.schemas.receipt import CategorySpendResponse, ReceiptResponse
+from app.schemas.trip import TripResponse
 
 
 class MonthSummaryResponse(BaseModel):
@@ -41,10 +42,13 @@ class MonthDashboardResponse(BaseModel):
     `summary` is the month's figure (D1-D7); `categories` where it went, highest
     first, counted like the figure; `receipts` the receipts column, the newest of
     a running month or the biggest of a finished one; `receipts_in_month` how many
-    receipts the month holds in all, for "All N".
+    receipts the month holds in all, for "All N"; `trips` the trips with spending in the
+    month and how much of it fell in the month — a personal trip's is inside `total`, a
+    business trip's outside it (F20.1).
     """
 
     summary: MonthSummaryResponse
     categories: list[CategorySpendResponse]
     receipts: list[ReceiptResponse]
     receipts_in_month: int
+    trips: list[TripResponse] = []

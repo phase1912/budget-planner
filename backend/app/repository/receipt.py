@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import ColumnElement, Select, and_, case, func, or_, select
+from sqlalchemy import ColumnElement, Date, Select, and_, case, cast, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager, joinedload
 
@@ -15,10 +15,12 @@ from app.domain.fiscal_identity import fiscal_identity
 from app.domain.periods import DateRange
 from app.domain.read_confidence import read_confidence
 from app.domain.reading_accuracy import ReceiptReading, corrected_lines
+from app.domain.trips import TripKind
 from app.models.category import Category
 from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
 from app.models.receipt import Receipt, ReceiptChannel, ReceiptStatus
+from app.models.trip import Trip
 from app.models.upload_job import UploadJob
 from app.repository.base import BaseRepository
 
@@ -69,6 +71,37 @@ def _within(period: DateRange) -> ColumnElement[bool]:
     on that day falls out and nothing from the next day falls in.
     """
     return and_(_purchased() >= period.lower, _purchased() < period.upper)
+
+
+def purchase_day() -> ColumnElement[date]:
+    """The day a receipt is filed under, as a date in UTC — the shop's wall clock (ADR-0009)."""
+    return cast(func.timezone("UTC", _purchased()), Date)
+
+
+def on_trip(kind: TripKind | None = None) -> ColumnElement[bool]:
+    """Whether a receipt belongs to one of its owner's trips, of `kind` if given (F20.1).
+
+    Moved by hand, it belongs to the trip it was put in, or to none; otherwise to the trip
+    whose dates hold its purchase day.
+    """
+    by_hand = and_(Receipt.trip_manual, Trip.id == Receipt.trip_id)
+    by_date = and_(
+        ~Receipt.trip_manual,
+        purchase_day() >= Trip.start_date,
+        purchase_day() <= Trip.end_date,
+    )
+    conditions = [Trip.user_id == Receipt.user_id, or_(by_hand, by_date)]
+    if kind is not None:
+        conditions.append(Trip.kind == kind)
+    return exists(select(Trip.id).where(*conditions))
+
+
+def counted_in_budget() -> ColumnElement[bool]:
+    """A receipt the month, statistics and advice count: read, and not the employer's money.
+
+    Parsed only (D3), and never on a business trip, whose spending is repaid (F20.1).
+    """
+    return and_(Receipt.status == ReceiptStatus.PARSED, ~on_trip(TripKind.BUSINESS))
 
 
 @dataclass(frozen=True)
@@ -257,12 +290,15 @@ class ReceiptRepository(BaseRepository[Receipt]):
             period=period,
             category_id=category_id,
         ).subquery()
-        counted = Receipt.status == ReceiptStatus.PARSED
+        counted = counted_in_budget()
+        # Held out for review is not the same as left out: a business trip's receipt is
+        # neither counted nor reported as waiting (F20.1).
+        held = and_(Receipt.status != ReceiptStatus.PARSED, ~on_trip(TripKind.BUSINESS))
         stmt = (
             select(
                 func.coalesce(func.sum(case((counted, matching.c.total_price))), 0),
-                func.count().filter(~counted),
-                func.coalesce(func.sum(case((~counted, matching.c.total_price))), 0),
+                func.count().filter(held),
+                func.coalesce(func.sum(case((held, matching.c.total_price))), 0),
             )
             .select_from(matching)
             .join(Receipt, Receipt.id == matching.c.receipt_id)
@@ -283,7 +319,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         category from, so it must keep showing the other categories.
         """
         matching = self._filtered_items(view, search=search, period=period, category_id=None).where(
-            Receipt.status == ReceiptStatus.PARSED
+            counted_in_budget()
         )
         stmt = (
             matching.with_only_columns(
@@ -321,7 +357,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         spent = func.coalesce(func.sum(LineItem.total_price), 0)
         matching = self._filtered_items(
             ItemView.ALL, search=None, period=period, category_id=None
-        ).where(Receipt.status == ReceiptStatus.PARSED)
+        ).where(counted_in_budget())
         narrowed = [LineItem.category_id.in_(category_ids)] if category_ids else []
         narrowed += [
             LineItem.name.ilike(f"%{_escape_like(keyword)}%", escape="\\") for keyword in keywords
@@ -354,7 +390,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         stmt = (
             self._filtered_items(ItemView.ALL, search=None, period=period, category_id=None)
             .where(
-                Receipt.status == ReceiptStatus.PARSED,
+                counted_in_budget(),
                 Receipt.merchant_name.is_not(None),
                 key.in_(keys),
             )
@@ -373,7 +409,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         stmt = self._apply_ownership(
             select(Receipt.merchant_name, func.count(Receipt.id))
             .where(
-                Receipt.status == ReceiptStatus.PARSED,
+                counted_in_budget(),
                 Receipt.merchant_name.is_not(None),
                 _within(period),
             )
@@ -405,7 +441,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         only when it has none — the rule every other figure uses too.
         """
         in_month = select(Receipt.id).where(
-            Receipt.status == ReceiptStatus.PARSED,
+            counted_in_budget(),
             _within(period),
         )
         in_month = self._apply_ownership(in_month)
@@ -429,6 +465,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         in_month = self._apply_ownership(
             select(Receipt.id).where(
                 Receipt.status == ReceiptStatus.MANUAL_REVIEW,
+                ~on_trip(TripKind.BUSINESS),
                 _within(period),
             )
         )
@@ -456,9 +493,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         read, is no evidence advice can stand on (BRD F5, D3).
         """
         stmt = self._apply_ownership(
-            select(func.count(Receipt.id), func.min(_purchased())).where(
-                Receipt.status == ReceiptStatus.PARSED
-            )
+            select(func.count(Receipt.id), func.min(_purchased())).where(counted_in_budget())
         )
         count, first = (await self.session.execute(stmt)).one()
         return int(count), first.date() if first else None

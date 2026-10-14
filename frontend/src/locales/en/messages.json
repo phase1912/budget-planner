@@ -118,5 +118,13 @@
     "saveSelectionFailed": "The selection could not be saved. Try again.",
     "selectionSaved": "Selection saved.",
     "deleteSelectionFailed": "The selection could not be deleted. Try again."
+  },
+  "trips": {
+    "loadFailed": "Your trips could not be loaded.",
+    "saveFailed": "The trip could not be saved. Try again.",
+    "saved": "Trip saved.",
+    "deleteFailed": "The trip could not be deleted. Try again.",
+    "deleted": "Trip deleted. Its receipts are back in the month.",
+    "moveFailed": "The receipt could not be moved. Try again."
   }
 }

@@ -69,6 +69,7 @@ class ProblemCode(enum.StrEnum):
     INVITE_INVALID = "invite_invalid"
     HOUSEHOLD_CURRENCY_MISMATCH = "household_currency_mismatch"
     OWNER_ONLY = "owner_only"
+    TRIPS_OVERLAP = "trips_overlap"
 
 
 class ProblemDetail(BaseModel):

@@ -7,6 +7,8 @@ const mockKeep = vi.fn();
 const mockConfirmDelete = vi.fn();
 const mockSetPrivacy = vi.fn();
 const mockUndoCorrection = vi.fn();
+const mockPlaceReceipt = vi.fn().mockResolvedValue(true);
+const mockReload = vi.fn();
 
 const PHOTO_RECEIPT = {
   id: "r1",
@@ -48,6 +50,11 @@ vi.mock("@/stores/StoreContext", () => ({
     },
     toastStore: { showError: vi.fn() },
     authStore: { user: { id: "me", currency: "PLN" } },
+    tripsStore: {
+      trips: [{ id: "t1", name: "Egypt", kind: "personal" }],
+      load: vi.fn(),
+      placeReceipt: mockPlaceReceipt,
+    },
     householdStore: {
       get household() {
         return detail.household;
@@ -66,6 +73,7 @@ vi.mock("@/stores/StoreContext", () => ({
       setPrivacy: mockSetPrivacy,
       isUndoingCorrection: false,
       undoLineCorrection: mockUndoCorrection,
+      reloadReceiptDetail: mockReload,
     },
   }),
 }));
@@ -75,6 +83,32 @@ describe("ReceiptDetailModal", () => {
     vi.clearAllMocks();
     detail.receipt = { ...PHOTO_RECEIPT };
     detail.household = null;
+  });
+
+  it("puts a receipt in a trip by hand, or takes it out of any (F20.1)", async () => {
+    detail.receipt = { ...PHOTO_RECEIPT, trip: null, trip_manual: false };
+    render(<ReceiptDetailModal />);
+    const select = screen.getByRole("combobox", { name: "Trip" });
+    expect(select).toHaveValue("auto");
+
+    fireEvent.change(select, { target: { value: "t1" } });
+    await vi.waitFor(() => {
+      expect(mockReload).toHaveBeenCalled();
+    });
+    expect(mockPlaceReceipt).toHaveBeenCalledWith("r1", "t1");
+
+    fireEvent.change(select, { target: { value: "auto" } });
+    expect(mockPlaceReceipt).toHaveBeenLastCalledWith("r1", null, true);
+  });
+
+  it("names the trip a receipt joined by its date", () => {
+    detail.receipt = {
+      ...PHOTO_RECEIPT,
+      trip: { id: "t1", name: "Egypt", kind: "personal" },
+      trip_manual: false,
+    };
+    render(<ReceiptDetailModal />);
+    expect(screen.getByRole("option", { name: "By date: Egypt" })).toBeInTheDocument();
   });
 
   it("renders receipt details correctly", () => {

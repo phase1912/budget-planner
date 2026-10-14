@@ -4,12 +4,13 @@
     "dashboard": "Pulpit",
     "receipts": "Paragony",
     "categories": "Kategorie",
+    "trips": "Podróże",
     "statistics": "Statystyki",
     "goals": "Cele",
     "home": "Pulpit",
     "stats": "Statystyki",
     "main": "Menu główne",
-    "receiptsAndCategories": "Paragony i kategorie"
+    "receiptsAndCategories": "Paragony, kategorie i podróże"
   },
   "header": {
     "back": "Wstecz",

@@ -27,3 +27,9 @@ class ReceiptFactory(ModelFactory[Receipt]):
 
     # Shared with the household unless a test about privacy says not (F12.4).
     is_private = False
+
+    # On no trip unless a test about trips puts it on one (F20.1).
+    trip_id = None
+    trip_manual = False
+    # Read as it was, unless a test about corrections says otherwise (F15.4).
+    user_corrected = False

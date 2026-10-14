@@ -21,6 +21,7 @@ from app.models.receipt import Receipt
 from app.models.recommendation import Recommendation
 from app.models.refresh_token import RefreshToken
 from app.models.selection import ProductSelection
+from app.models.trip import Trip
 from app.models.upload_job import UploadJob
 from app.models.user import User
 
@@ -44,6 +45,7 @@ __all__ = [
     "Receipt",
     "Recommendation",
     "RefreshToken",
+    "Trip",
     "UploadJob",
     "User",
 ]

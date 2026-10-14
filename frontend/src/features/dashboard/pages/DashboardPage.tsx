@@ -7,6 +7,7 @@ import { useStores } from "@/stores/StoreContext";
 import { monthRange } from "@/stores/BudgetStore";
 import type { MonthSummary } from "@/stores/BudgetStore";
 import { Card, ErrorState, LoadingState, Note } from "@/shared/components";
+import { MonthTrips } from "@/features/trips/components/MonthTrips";
 import { DeleteReceiptDialog } from "@/features/receipts/components/DeleteReceiptDialog";
 import { EditReceiptDialog } from "@/features/receipts/components/EditReceiptDialog";
 import { ReceiptDetailModal } from "@/features/receipts/components/ReceiptDetailModal";
@@ -182,6 +183,7 @@ export const DashboardPage = observer(function DashboardPage() {
               ) : (
                 meta
               )}
+              <MonthTrips trips={budgetStore.trips} currency={currency} />
             </Card>
 
             {summary.excluded_count > 0 && (

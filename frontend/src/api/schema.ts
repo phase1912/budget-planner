@@ -1121,6 +1121,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/trips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Trips
+         * @description The caller's trips, latest first, each with its receipts' total (F20.1, N2).
+         */
+        get: operations["list_trips_api_v1_trips_get"];
+        put?: never;
+        /**
+         * Createtrip Response
+         * @description Record a trip; receipts dated within it join it (F20.1).
+         *
+         *     Dates meeting another of the caller's trips are refused (409, `trips_overlap`).
+         */
+        post: operations["createtrip_response_api_v1_trips_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Trip Suggestions
+         * @description Runs of foreign receipts outside any trip that look like an unrecorded one (F20.1).
+         */
+        get: operations["trip_suggestions_api_v1_trips_suggestions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{trip_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gettrip Response
+         * @description One trip with its receipts (F20.1). Another user's is not found (N2).
+         */
+        get: operations["gettrip_response_api_v1_trips__trip_id__get"];
+        /**
+         * Updatetrip Response
+         * @description Change a trip; its receipts follow its new dates (F20.1). Another's is 404 (N2).
+         */
+        put: operations["updatetrip_response_api_v1_trips__trip_id__put"];
+        post?: never;
+        /**
+         * Deletetrip Response
+         * @description Forget a trip; its receipts count as they did before it (F20.1). Another's is 404.
+         */
+        delete: operations["deletetrip_response_api_v1_trips__trip_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/receipts/{receipt_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Place Receipt
+         * @description Put a receipt in a trip by hand, take it out of any, or give it back to its dates.
+         *
+         *     Another user's receipt or trip is not found (N2).
+         */
+        put: operations["place_receipt_api_v1_trips_receipts__receipt_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/exports": {
         parameters: {
             query?: never;
@@ -2289,7 +2385,9 @@ export interface components {
          *     `summary` is the month's figure (D1-D7); `categories` where it went, highest
          *     first, counted like the figure; `receipts` the receipts column, the newest of
          *     a running month or the biggest of a finished one; `receipts_in_month` how many
-         *     receipts the month holds in all, for "All N".
+         *     receipts the month holds in all, for "All N"; `trips` the trips with spending in the
+         *     month and how much of it fell in the month — a personal trip's is inside `total`, a
+         *     business trip's outside it (F20.1).
          */
         MonthDashboardResponse: {
             summary: components["schemas"]["MonthSummaryResponse"];
@@ -2299,6 +2397,11 @@ export interface components {
             receipts: components["schemas"]["ReceiptResponse"][];
             /** Receipts In Month */
             receipts_in_month: number;
+            /**
+             * Trips
+             * @default []
+             */
+            trips: components["schemas"]["TripResponse"][];
         };
         /**
          * MonthPurchasesResponse
@@ -2512,7 +2615,9 @@ export interface components {
         ReceiptChannel: "photo" | "email" | "qr";
         /**
          * ReceiptDetailResponse
-         * @description Schema for a receipt with its full line items.
+         * @description A receipt with its full line items, and for its owner the trip it is on (F20.1).
+         *
+         *     `trip_manual` says the trip, or the lack of one, was chosen by hand rather than by date.
          */
         ReceiptDetailResponse: {
             /**
@@ -2569,6 +2674,12 @@ export interface components {
              * @default []
              */
             line_items: components["schemas"]["LineItemResponse"][];
+            trip?: components["schemas"]["TripRef"] | null;
+            /**
+             * Trip Manual
+             * @default false
+             */
+            trip_manual: boolean;
         };
         /**
          * ReceiptOrder
@@ -2681,6 +2792,19 @@ export interface components {
          * @enum {string}
          */
         ReceiptStatus: "uploaded" | "parsing" | "parsed" | "manual_review" | "failed";
+        /**
+         * ReceiptTripRequest
+         * @description Where a receipt goes: into `trip_id`, out of any trip (null), or back to its dates.
+         */
+        ReceiptTripRequest: {
+            /** Trip Id */
+            trip_id?: string | null;
+            /**
+             * Automatic
+             * @default false
+             */
+            automatic: boolean;
+        };
         /**
          * RecommendationFeedbackUpdate
          * @description The user's mark on one recommendation; null undoes it (F8.9).
@@ -2939,6 +3063,145 @@ export interface components {
              * Format: uuid
              */
             alias_id: string;
+        };
+        /**
+         * TripDetailResponse
+         * @description A trip with its receipts, oldest first.
+         */
+        TripDetailResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["TripKind"];
+            /** Name */
+            name: string;
+            /** Country */
+            country: string | null;
+            /** City */
+            city: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date: string;
+            /** Purpose */
+            purpose: string | null;
+            /** Receipt Count */
+            receipt_count: number;
+            /** Total */
+            total: string;
+            /** Receipts */
+            receipts: components["schemas"]["ReceiptResponse"][];
+        };
+        /**
+         * TripKind
+         * @description Whose money a trip is: the user's own, or the employer's to repay.
+         * @enum {string}
+         */
+        TripKind: "personal" | "business";
+        /**
+         * TripRef
+         * @description The trip a receipt is on, as its detail names it (F20.1).
+         */
+        TripRef: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            kind: components["schemas"]["TripKind"];
+        };
+        /**
+         * TripRequest
+         * @description A trip as the user records or changes it (F20.1).
+         *
+         *     `country` is an ISO 3166-1 alpha-2 code. The end may be the start: a one-day trip.
+         */
+        TripRequest: {
+            kind: components["schemas"]["TripKind"];
+            /** Name */
+            name: string;
+            /** Country */
+            country?: string | null;
+            /** City */
+            city?: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date: string;
+            /** Purpose */
+            purpose?: string | null;
+        };
+        /**
+         * TripResponse
+         * @description A trip with how many read receipts it holds and what they come to (F20.1).
+         */
+        TripResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["TripKind"];
+            /** Name */
+            name: string;
+            /** Country */
+            country: string | null;
+            /** City */
+            city: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date: string;
+            /** Purpose */
+            purpose: string | null;
+            /** Receipt Count */
+            receipt_count: number;
+            /** Total */
+            total: string;
+        };
+        /**
+         * TripSuggestionResponse
+         * @description Foreign receipts on consecutive days outside any trip: maybe an unrecorded one.
+         */
+        TripSuggestionResponse: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Currency */
+            currency: string;
+            /** Receipts */
+            receipts: number;
+            /** Amount */
+            amount: string;
         };
         /**
          * UndoExtractedCorrectionRequest
@@ -5127,6 +5390,241 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_trips_api_v1_trips_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createtrip_response_api_v1_trips_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TripRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trip_suggestions_api_v1_trips_suggestions_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripSuggestionResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    gettrip_response_api_v1_trips__trip_id__get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    updatetrip_response_api_v1_trips__trip_id__put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TripRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deletetrip_response_api_v1_trips__trip_id__delete: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    place_receipt_api_v1_trips_receipts__receipt_id__put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceiptTripRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetailResponse"];
                 };
             };
             /** @description Validation Error */

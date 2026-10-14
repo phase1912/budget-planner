@@ -1,0 +1,63 @@
+{
+  "title": "Trips",
+  "subtitle": "Spending away from home, kept apart from the everyday month.",
+  "new": "New trip",
+  "empty": "No trips yet. Record one, and receipts from its dates join it by themselves.",
+  "kind": {
+    "personal": "Personal",
+    "business": "Business"
+  },
+  "kindHint": {
+    "personal": "Counted in the month, shown apart.",
+    "business": "Not counted in your budget: the employer pays it back."
+  },
+  "dates": "{{start}} – {{end}}",
+  "receipts_one": "{{count}} receipt",
+  "receipts_few": "{{count}} receipts",
+  "receipts_many": "{{count}} receipts",
+  "receipts_other": "{{count}} receipts",
+  "total": "Spent",
+  "toReimburse": "To be reimbursed",
+  "suggestions": {
+    "title": "Looks like a trip",
+    "text": "{{start}} – {{end}}: {{count}} receipts in {{currency}}, {{amount}}.",
+    "record": "Record trip",
+    "dismiss": "Not a trip"
+  },
+  "form": {
+    "newTitle": "New trip",
+    "editTitle": "Edit trip",
+    "kind": "Kind",
+    "name": "Name",
+    "namePlaceholder": "Egypt holiday",
+    "country": "Country",
+    "noCountry": "Not set",
+    "city": "City",
+    "start": "From",
+    "end": "To",
+    "purpose": "Purpose",
+    "purposePlaceholder": "Conference, client visit…",
+    "save": "Save trip",
+    "endBeforeStart": "The trip cannot end before it starts."
+  },
+  "detail": {
+    "back": "All trips",
+    "edit": "Edit",
+    "delete": "Delete trip",
+    "deleteConfirm": "Delete trip «{{name}}»? Its receipts stay and go back to the month.",
+    "receipts": "Receipts",
+    "noReceipts": "No receipts in this trip yet. Receipts from its dates join it by themselves, or move one here from its details.",
+    "remove": "Take out of trip",
+    "notFound": "This trip could not be found."
+  },
+  "receipt": {
+    "label": "Trip",
+    "auto": "By date",
+    "none": "Not on a trip"
+  },
+  "dashboard": {
+    "personal": "of which trip «{{name}}»: {{amount}} {{currency}}",
+    "business": "business trip «{{name}}», to be reimbursed: {{amount}} {{currency}}",
+    "open": "Open trip"
+  }
+}

@@ -38,5 +38,6 @@
   "invite_invalid": "Ten link z zaproszeniem jest nieważny. Poproś o nowy.",
   "household_currency_mismatch": "To gospodarstwo prowadzi budżet w {{household_currency}}, a Twoje konto jest w {{account_currency}}. Wspólny budżet mogą prowadzić tylko konta w tej samej walucie.",
   "owner_only": "Może to zrobić tylko właściciel gospodarstwa.",
-  "unreachable": "Nie udało się połączyć z serwerem. Spróbuj za chwilę."
+  "unreachable": "Nie udało się połączyć z serwerem. Spróbuj za chwilę.",
+  "trips_overlap": "Te daty nachodzą na podróż „{{name}}” ({{start_on}} – {{end_on}}). Podróże nie mogą mieć wspólnych dni."
 }

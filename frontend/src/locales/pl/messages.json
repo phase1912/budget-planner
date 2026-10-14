@@ -120,5 +120,13 @@
     "saveSelectionFailed": "Nie udało się zapisać zestawu. Spróbuj ponownie.",
     "selectionSaved": "Zestaw zapisany.",
     "deleteSelectionFailed": "Nie udało się usunąć zestawu. Spróbuj ponownie."
+  },
+  "trips": {
+    "loadFailed": "Nie udało się wczytać podróży.",
+    "saveFailed": "Nie udało się zapisać podróży. Spróbuj ponownie.",
+    "saved": "Podróż zapisana.",
+    "deleteFailed": "Nie udało się usunąć podróży. Spróbuj ponownie.",
+    "deleted": "Podróż usunięta. Jej paragony wróciły do miesiąca.",
+    "moveFailed": "Nie udało się przenieść paragonu. Spróbuj ponownie."
   }
 }

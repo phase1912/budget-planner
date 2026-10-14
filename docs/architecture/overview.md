@@ -81,6 +81,12 @@ for later receipts.
 month by month, each purchase's price, and prices per shop (`app/domain/purchases.py`);
 selections can be saved under a name (`/api/v1/products/selections`).
 
+Trips (F20.1) live in `app/services/trip.py` behind `/api/v1/trips`. Which receipts a trip
+holds is worked out when asked — by date, or by the user's choice stored on the receipt —
+so no intake path has to know about trips. Every budget figure reads receipts through one
+rule, `counted_in_budget()` in `app/repository/receipt.py`: parsed, and not on a business
+trip.
+
 Households (E12, ADR-0017) live in `app/services/household.py` behind `/api/v1/household`.
 They have no `user_id`, so `HouseholdRepository` does not use the ownership filter: every
 lookup starts from the caller's own membership row, which is what keeps one household out

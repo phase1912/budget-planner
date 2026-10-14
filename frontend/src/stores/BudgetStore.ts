@@ -51,6 +51,8 @@ export class BudgetStore {
   spend: CategorySpend[] = [];
   /** How many receipts the month holds in all, whatever their status. */
   receiptsInMonth = 0;
+  /** The trips with spending in the month, and how much of it (F20.1). */
+  trips: components["schemas"]["TripResponse"][] = [];
   isLoading = false;
   error: string | null = null;
 
@@ -130,6 +132,7 @@ export class BudgetStore {
     this.receipts = [];
     this.spend = [];
     this.receiptsInMonth = 0;
+    this.trips = [];
     this.isLoading = false;
     this.error = null;
     this.opened = false;
@@ -163,12 +166,13 @@ export class BudgetStore {
         throw new Error(errorMessage(response.error, i18n.t("messages:month.loadFailed")));
       }
       if (request !== this.request) return;
-      const { summary, receipts, categories, receipts_in_month } = response.data;
+      const { summary, receipts, categories, receipts_in_month, trips } = response.data;
       runInAction(() => {
         this.summary = summary;
         this.receipts = receipts;
         this.spend = categories;
         this.receiptsInMonth = receipts_in_month;
+        this.trips = trips;
         this.isLoading = false;
       });
     } catch (error) {

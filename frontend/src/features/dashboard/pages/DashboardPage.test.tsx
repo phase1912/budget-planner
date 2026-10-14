@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MonthSummary } from "@/stores/BudgetStore";
 import type { CategorySpend } from "@/stores/CategoriesStore";
 import type { Receipt } from "@/stores/ReceiptStore";
+import type { Trip } from "@/stores/TripsStore";
 import { DashboardPage } from "./DashboardPage";
 
 const budgetStore = {
@@ -19,6 +20,7 @@ const budgetStore = {
   receipts: [] as Receipt[],
   spend: [] as CategorySpend[],
   receiptsInMonth: 0,
+  trips: [] as Trip[],
   open: vi.fn(),
   showPreviousMonth: vi.fn(),
   showNextMonth: vi.fn(),
@@ -111,6 +113,7 @@ describe("DashboardPage", () => {
       receipts: [],
       spend: [],
       receiptsInMonth: 0,
+      trips: [],
     });
     receiptStore.selectedReceiptId = null;
   });
@@ -131,6 +134,32 @@ describe("DashboardPage", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("shows a personal trip inside the total and a business trip as owed back (F20.1)", () => {
+    budgetStore.summary = summary();
+    const trip = {
+      country: "EG",
+      city: null,
+      start_date: "2026-09-03",
+      end_date: "2026-09-10",
+      purpose: null,
+      receipt_count: 4,
+    };
+    budgetStore.trips = [
+      { ...trip, id: "t1", kind: "personal", name: "Egypt", total: "800.00" },
+      { ...trip, id: "t2", kind: "business", name: "Berlin", total: "312.40" },
+    ];
+    renderPage();
+
+    expect(screen.getByText("of which trip «Egypt»: 800.00 PLN")).toBeInTheDocument();
+    expect(
+      screen.getByText("business trip «Berlin», to be reimbursed: 312.40 PLN"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open trip: Egypt" })).toHaveAttribute(
+      "href",
+      "/trips/t1",
+    );
   });
 
   it("shows what the current month adds up to so far", () => {

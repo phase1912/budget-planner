@@ -18,6 +18,7 @@ from app.api.routers.products import router as products_router
 from app.api.routers.receipts import router as receipts_router
 from app.api.routers.recommendations import router as recommendations_router
 from app.api.routers.statistics import router as statistics_router
+from app.api.routers.trips import router as trips_router
 from app.api.routers.users import router as users_router
 from app.api.routers.webhooks import router as webhooks_router
 
@@ -31,6 +32,7 @@ ROUTERS: list[APIRouter] = [
     budget_router,
     statistics_router,
     products_router,
+    trips_router,
     exports_router,
     goals_router,
     recommendations_router,
