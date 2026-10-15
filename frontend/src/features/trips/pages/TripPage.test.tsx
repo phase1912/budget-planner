@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -59,6 +59,11 @@ const tripsStore = {
   loadTrip: vi.fn(),
   chooseKind: vi.fn(),
   placeReceipt: vi.fn(),
+  setTimes: vi.fn(),
+  clearTimes: vi.fn(),
+  clearSaveError: vi.fn(),
+  isSaving: false,
+  saveError: null,
 };
 
 const PHONE = {
@@ -175,5 +180,83 @@ describe("TripPage — what a trip cost, by kind (F20.2)", () => {
     renderPage();
 
     expect(screen.getByText("100.00 PLN over")).toBeInTheDocument();
+  });
+
+  describe("a business trip's per diem (F20.4)", () => {
+    const GERMANY: TripDetail["per_diem"] = {
+      departure: "2026-10-13T04:00:00Z",
+      returned: "2026-10-15T19:00:00Z",
+      abroad_from: null,
+      abroad_to: null,
+      meals: [["breakfast"], ["breakfast"], []],
+      parts: [
+        {
+          abroad: true,
+          country: "DE",
+          currency: "EUR",
+          rate: "49",
+          total: "132.30",
+          days: [1, 2].map((number) => ({
+            number,
+            hours: "24.00",
+            share: "1",
+            rule: "§ 13 ust. 3 pkt 1",
+            amount: "49.00",
+            meals: ["breakfast" as const],
+            reduction: "7.35",
+            meals_rule: "§ 14 ust. 2",
+            due: "41.65",
+          })),
+        },
+      ],
+      to_pln: [{ currency: "EUR", rate: "4.25", effective_date: "2026-10-14", source: "NBP" }],
+      total_pln: "562.28",
+      regulation: "Dz.U. 2023 poz. 2190",
+    };
+
+    it("offers to work it out before the times are given", () => {
+      tripsStore.current = trip({ kind: "business", country: "DE", per_diem: null });
+      renderPage();
+
+      fireEvent.click(screen.getByRole("button", { name: "Work out the per diem" }));
+
+      expect(screen.getByRole("dialog")).toHaveTextContent("Trip times");
+      expect(screen.getAllByRole("group", { name: /Day \d/ })).toHaveLength(8);
+    });
+
+    it("shows each day with its rule, the meals taken off, and the sum in złoty", () => {
+      tripsStore.current = trip({ kind: "business", country: "DE", per_diem: GERMANY });
+      renderPage();
+
+      const card = screen.getByRole("heading", { name: "Per diem" }).closest("div")?.parentElement;
+      expect(card).toHaveTextContent("Abroad: Germany, 49.00 EUR a day");
+      expect(card).toHaveTextContent("24.00 h · 100% · § 13 ust. 3 pkt 1");
+      expect(card).toHaveTextContent("Breakfast · § 14 ust. 2 · −7.35 EUR");
+      expect(card).toHaveTextContent("132.30 EUR");
+      expect(card).toHaveTextContent("562.28 PLN");
+      expect(card).toHaveTextContent("EUR at the NBP rate 4.2500 of 14 Oct 2026");
+      expect(card).toHaveTextContent("Under the regulation Dz.U. 2023 poz. 2190");
+    });
+
+    it("sends the times and the meals ticked for each day", () => {
+      tripsStore.current = trip({ kind: "business", country: "DE", per_diem: GERMANY });
+      tripsStore.setTimes.mockResolvedValue(true);
+      renderPage();
+      fireEvent.click(screen.getByRole("button", { name: "Change times" }));
+
+      const thirdDay = screen.getByRole("group", { name: "Day 3" });
+      fireEvent.click(within(thirdDay).getByRole("button", { name: "Dinner" }));
+      fireEvent.click(screen.getByRole("button", { name: "Work out" }));
+
+      expect(tripsStore.setTimes).toHaveBeenCalledWith(
+        "t1",
+        expect.objectContaining({
+          departure: "2026-10-13T04:00:00.000Z",
+          returned: "2026-10-15T19:00:00.000Z",
+          abroad_from: null,
+          meals: [["breakfast"], ["breakfast"], ["dinner"]],
+        }),
+      );
+    });
   });
 });

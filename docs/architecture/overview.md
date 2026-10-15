@@ -86,7 +86,9 @@ holds is worked out when asked — by date, or by the user's choice stored on th
 so no intake path has to know about trips; the upload wizard's commit only records the
 user's answer for a receipt dated within one (`CommitJobRequest.trips`). The same placing
 rule exists twice, in SQL for figures (`on_trip`, `awaiting_answer`) and in Python for
-lists (`app.domain.trips.place`), and the two must change together. Every budget figure reads receipts through one
+lists (`app.domain.trips.place`), and the two must change together. A business trip's per diem
+(F20.4) is a pure calculation in `app/domain/per_diem.py` over the times stored on the trip,
+with the regulation's rates in `per_diem_rates_pl.json` beside it (ADR-0018). Every budget figure reads receipts through one
 rule, `counted_in_budget()` in `app/repository/receipt.py`: parsed, and not on a business
 trip.
 A receipt's kind of expense (F20.2) is one more field of the reading every intake path

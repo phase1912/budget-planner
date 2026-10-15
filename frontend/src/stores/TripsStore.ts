@@ -11,6 +11,9 @@ export type TripDetail = components["schemas"]["TripDetailResponse"];
 export type TripRequest = components["schemas"]["TripRequest"];
 export type TripSuggestion = components["schemas"]["TripSuggestionResponse"];
 export type ExpenseKind = components["schemas"]["ExpenseKind"];
+export type PerDiemTimes = components["schemas"]["PerDiemTimesRequest"];
+export type PerDiem = components["schemas"]["PerDiemResponse"];
+export type Meal = components["schemas"]["Meal"];
 
 const DISMISSED_KEY = "budget_trip_suggestions_dismissed";
 
@@ -175,6 +178,46 @@ export class TripsStore {
       return;
     }
     if (this.current) await this.loadTrip(this.current.id);
+  }
+
+  /**
+   * Give the open business trip's times and meals; its per diem comes back with the trip
+   * (F20.4). True once kept, else false with `saveError` saying why.
+   */
+  async setTimes(tripId: string, times: PerDiemTimes): Promise<boolean> {
+    this.isSaving = true;
+    this.saveError = null;
+    const response = await settle(() =>
+      apiClient.PUT("/api/v1/trips/{trip_id}/per-diem", {
+        params: { path: { trip_id: tripId } },
+        body: times,
+      }),
+    );
+    runInAction(() => {
+      this.isSaving = false;
+      if (response.error) {
+        this.saveError = errorMessage(response.error, i18n.t("messages:trips.perDiemFailed"));
+      }
+    });
+    if (response.error) return false;
+    await this.loadTrip(tripId);
+    return true;
+  }
+
+  /** Forget a business trip's times: it has no per diem until they are given again. */
+  async clearTimes(tripId: string): Promise<void> {
+    const response = await settle(() =>
+      apiClient.DELETE("/api/v1/trips/{trip_id}/per-diem", {
+        params: { path: { trip_id: tripId } },
+      }),
+    );
+    if (response.error) {
+      this.toastStore.showError(
+        errorMessage(response.error, i18n.t("messages:trips.perDiemFailed")),
+      );
+      return;
+    }
+    await this.loadTrip(tripId);
   }
 
   dismissSuggestion(suggestion: TripSuggestion): void {

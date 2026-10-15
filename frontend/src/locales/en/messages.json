@@ -126,6 +126,7 @@
     "deleteFailed": "The trip could not be deleted. Try again.",
     "deleted": "Trip deleted. Its receipts are back in the month.",
     "moveFailed": "The receipt could not be moved. Try again.",
-    "kindFailed": "The receipt's kind could not be changed. Try again."
+    "kindFailed": "The receipt's kind could not be changed. Try again.",
+    "perDiemFailed": "The per diem could not be worked out. Try again."
   }
 }

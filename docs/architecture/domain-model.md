@@ -296,6 +296,16 @@ Rules that must hold at all times. Each is a candidate for a test.
     each category took, the largest first. The month still counts the personal trip's
     spending as before (F20.3).
 
+11u. A business trip's per diem follows the Polish business-travel regulation (Dz.U. 2023
+    poz. 2190; ADR-0018), worked out only from the times the user gives — never guessed —
+    in 24-hour days from the departure: at home 45 zł a day, a day or less earning nothing
+    under 8 hours, half to 12, all over 12, and a part day after full ones half up to 8
+    hours; abroad the destination's rate in its currency, a part day a third up to 8 hours,
+    half to 12, all over 12, with the hours at home on the way counted at the domestic rate.
+    Meals provided take 25/50/25% of the rate at home and 15/30/30% abroad, never a day
+    below zero. A trip before the rates kept has none. Its złoty sum uses the NBP mid rate
+    of the last working day before the return, or is left empty without one (F20.4).
+
 **Categorisation**
 
 12. Every line item has a category. Below the confidence threshold it is `Uncategorized`

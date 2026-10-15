@@ -128,6 +128,7 @@
     "deleteFailed": "Nie udało się usunąć podróży. Spróbuj ponownie.",
     "deleted": "Podróż usunięta. Jej paragony wróciły do miesiąca.",
     "moveFailed": "Nie udało się przenieść paragonu. Spróbuj ponownie.",
-    "kindFailed": "Nie udało się zmienić rodzaju wydatku. Spróbuj ponownie."
+    "kindFailed": "Nie udało się zmienić rodzaju wydatku. Spróbuj ponownie.",
+    "perDiemFailed": "Nie udało się obliczyć diet. Spróbuj ponownie."
   }
 }

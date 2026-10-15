@@ -39,5 +39,8 @@
   "household_currency_mismatch": "This household keeps its budget in {{household_currency}} and your account is in {{account_currency}}. Only accounts in the same currency can share a budget.",
   "owner_only": "Only the household's owner can do this.",
   "unreachable": "The server could not be reached. Try again in a moment.",
-  "trips_overlap": "These dates meet the trip “{{name}}” ({{start_on}} to {{end_on}}). Trips cannot share a day."
+  "trips_overlap": "These dates meet the trip “{{name}}” ({{start_on}} to {{end_on}}). Trips cannot share a day.",
+  "per_diem_times": "These times do not make a trip: it returns after it leaves, and the time abroad falls within it.",
+  "per_diem_no_rates": "Per diem rates are kept for trips from {{start_on}} on.",
+  "per_diem_personal_trip": "A per diem is owed for a business trip only."
 }

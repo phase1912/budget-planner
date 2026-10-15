@@ -1176,9 +1176,8 @@ export interface paths {
         };
         /**
          * Gettrip Response
-         * @description One trip with its receipts and its spending by kind and currency (F20.1, F20.2).
-         *
-         *     Another user's is not found (N2).
+         * @description One trip with its receipts, its spending by kind and currency, and for a business
+         *     trip its per diem (F20.1, F20.2, F20.4). Another user's is not found (N2).
          */
         get: operations["gettrip_response_api_v1_trips__trip_id__get"];
         /**
@@ -1236,6 +1235,33 @@ export interface paths {
         put: operations["choose_expense_kind_api_v1_trips_receipts__receipt_id__kind_put"];
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{trip_id}/per-diem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Per Diem Times
+         * @description Give a business trip's times and meals; its per diem comes back itemised (F20.4).
+         *
+         *     A personal trip, times out of order, or a trip before the rates kept is 422; another
+         *     user's trip is 404 (N2).
+         */
+        put: operations["set_per_diem_times_api_v1_trips__trip_id__per_diem_put"];
+        post?: never;
+        /**
+         * Clear Per Diem Times
+         * @description Forget a business trip's times: it has no per diem until given again (F20.4).
+         */
+        delete: operations["clear_per_diem_times_api_v1_trips__trip_id__per_diem_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2416,6 +2442,12 @@ export interface components {
             password: string;
         };
         /**
+         * Meal
+         * @description A meal provided free during the trip, which reduces the per diem (§ 7 ust. 4, § 14).
+         * @enum {string}
+         */
+        Meal: "breakfast" | "lunch" | "dinner";
+        /**
          * MemberShareResponse
          * @description One member's part of the month: shared spend, and private spend as one sum.
          */
@@ -2560,6 +2592,126 @@ export interface components {
             size: number;
             /** Pages */
             pages: number;
+        };
+        /**
+         * PerDiemDayResponse
+         * @description One day of a per diem: its hours, the share they earn and why, the meals off it.
+         */
+        PerDiemDayResponse: {
+            /** Number */
+            number: number;
+            /** Hours */
+            hours: string;
+            /** Share */
+            share: string;
+            /** Rule */
+            rule: string;
+            /** Amount */
+            amount: string;
+            /** Meals */
+            meals: components["schemas"]["Meal"][];
+            /** Reduction */
+            reduction: string;
+            /** Meals Rule */
+            meals_rule: string | null;
+            /** Due */
+            due: string;
+        };
+        /**
+         * PerDiemPartResponse
+         * @description The per diem for the time abroad or at home, in the currency the regulation sets.
+         */
+        PerDiemPartResponse: {
+            /** Abroad */
+            abroad: boolean;
+            /** Country */
+            country: string;
+            /** Currency */
+            currency: string;
+            /** Rate */
+            rate: string;
+            /** Days */
+            days: components["schemas"]["PerDiemDayResponse"][];
+            /** Total */
+            total: string;
+        };
+        /**
+         * PerDiemResponse
+         * @description A business trip's per diem, itemised, with the times it was worked out from (F20.4).
+         *
+         *     `total_pln` is null when a foreign part could not be put into złoty.
+         */
+        PerDiemResponse: {
+            /**
+             * Departure
+             * Format: date-time
+             */
+            departure: string;
+            /**
+             * Returned
+             * Format: date-time
+             */
+            returned: string;
+            /** Abroad From */
+            abroad_from: string | null;
+            /** Abroad To */
+            abroad_to: string | null;
+            /** Meals */
+            meals: components["schemas"]["Meal"][][];
+            /** Parts */
+            parts: components["schemas"]["PerDiemPartResponse"][];
+            /** To Pln */
+            to_pln: components["schemas"]["PlnRateResponse"][];
+            /** Total Pln */
+            total_pln: string | null;
+            /**
+             * Regulation
+             * @default Dz.U. 2023 poz. 2190
+             */
+            regulation: string;
+        };
+        /**
+         * PerDiemTimesRequest
+         * @description A business trip's times for its per diem, as the user gives them (F20.4, ADR-0018).
+         *
+         *     Times carry their offset, so hours across a clock change are counted as lived.
+         *     `abroad_from` and `abroad_to` are the border crossings or flights out of and back into
+         *     Poland (§ 12), both or neither; `meals` the meals provided on each day, first first.
+         */
+        PerDiemTimesRequest: {
+            /**
+             * Departure
+             * Format: date-time
+             */
+            departure: string;
+            /**
+             * Returned
+             * Format: date-time
+             */
+            returned: string;
+            /** Abroad From */
+            abroad_from?: string | null;
+            /** Abroad To */
+            abroad_to?: string | null;
+            /**
+             * Meals
+             * @default []
+             */
+            meals: components["schemas"]["Meal"][][];
+        };
+        /**
+         * PlnRateResponse
+         * @description The rate a foreign per diem was put into złoty at, or null when none was had.
+         */
+        PlnRateResponse: {
+            /** Currency */
+            currency: string;
+            /** Rate */
+            rate: string | null;
+            /** Effective Date */
+            effective_date: string | null;
+            /** Source */
+            source: string | null;
         };
         /**
          * PriceChangeResponse
@@ -3225,6 +3377,7 @@ export interface components {
             by_kind: components["schemas"]["KindTotal"][];
             /** By Currency */
             by_currency: components["schemas"]["CurrencyTotal"][];
+            per_diem?: components["schemas"]["PerDiemResponse"] | null;
         };
         /**
          * TripKind
@@ -5865,6 +6018,74 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TripReceiptResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_per_diem_times_api_v1_trips__trip_id__per_diem_put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PerDiemTimesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerDiemResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_per_diem_times_api_v1_trips__trip_id__per_diem_delete: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

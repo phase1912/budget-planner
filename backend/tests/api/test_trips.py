@@ -12,11 +12,12 @@ from httpx import ASGITransport, AsyncClient, Response
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, get_exchange_rates
 from app.core.config import get_settings
 from app.core.context import current_user_id
 from app.db.session import get_db_session
 from app.domain.categories import ItemView
+from app.domain.currency import ExchangeRate
 from app.domain.periods import DateRange
 from app.domain.trips import ExpenseKind
 from app.main import create_app
@@ -24,6 +25,7 @@ from app.models.category import Category
 from app.models.line_item import LineItem
 from app.models.receipt import Receipt, ReceiptStatus
 from app.models.user import User
+from app.ports.exchange_rates import ExchangeRatePort
 from app.repository.household_spend import HouseholdSpendRepository
 from app.repository.receipt import ReceiptRepository
 from tests.api.test_upload_wizard_persistence import _job
@@ -33,7 +35,12 @@ OCTOBER = DateRange(date(2026, 10, 1), date(2026, 10, 31))
 
 
 async def _call(
-    session: AsyncSession, user: User, method: str, path: str, **kwargs: Any
+    session: AsyncSession,
+    user: User,
+    method: str,
+    path: str,
+    rates: ExchangeRatePort | None = None,
+    **kwargs: Any,
 ) -> Response:
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield session
@@ -41,6 +48,8 @@ async def _call(
     app = create_app()
     app.dependency_overrides[get_current_user] = lambda: user
     app.dependency_overrides[get_db_session] = override_get_db
+    if rates is not None:
+        app.dependency_overrides[get_exchange_rates] = lambda: rates
     token = jwt.encode(
         {"sub": str(user.id)}, get_settings().jwt_secret_key.get_secret_value(), algorithm="HS256"
     )
@@ -589,3 +598,134 @@ async def test_a_business_trip_takes_no_budget(db_session: AsyncSession) -> None
     )
 
     assert refused.status_code == 422
+
+
+class _EuroAt425:
+    """The NBP mid rate of the euro, as a stub: 4.25 zł, published the day asked for."""
+
+    async def rate(self, base: str, quote: str, on: date) -> ExchangeRate:
+        return ExchangeRate(base, quote, Decimal("4.25"), on, "NBP")
+
+
+def _times(**overrides: Any) -> dict[str, Any]:
+    return {
+        "departure": "2026-10-13T06:00:00+02:00",
+        "returned": "2026-10-15T21:00:00+02:00",
+        "meals": [["breakfast"], ["breakfast"], []],
+        **overrides,
+    }
+
+
+@pytest.mark.asyncio
+async def test_a_business_trips_per_diem_is_itemised_and_put_into_zloty(
+    db_session: AsyncSession,
+) -> None:
+    """F20.4 demo: Germany, 13 Oct 06:00 to 15 Oct 21:00, two hotel breakfasts."""
+    user = await UserFactory.create_async(currency="PLN")
+    trip = (
+        await _call(db_session, user, "POST", "/api/v1/trips", json=_trip("business", 13, 15))
+    ).json()
+
+    given = await _call(
+        db_session,
+        user,
+        "PUT",
+        f"/api/v1/trips/{trip['id']}/per-diem",
+        rates=_EuroAt425(),
+        json=_times(),
+    )
+    detail = (
+        await _call(db_session, user, "GET", f"/api/v1/trips/{trip['id']}", rates=_EuroAt425())
+    ).json()
+
+    assert given.status_code == 200, given.json()
+    [abroad] = given.json()["parts"]
+    assert (abroad["currency"], abroad["rate"], abroad["total"]) == ("EUR", "49", "132.30")
+    assert [(d["rule"], d["reduction"]) for d in abroad["days"]] == [
+        ("§ 13 ust. 3 pkt 1", "7.35"),
+        ("§ 13 ust. 3 pkt 1", "7.35"),
+        ("§ 13 ust. 3 pkt 2 lit. c", "0.00"),
+    ]
+    assert given.json()["total_pln"] == "562.28"
+    assert given.json()["to_pln"][0]["effective_date"] == "2026-10-14"
+    assert detail["per_diem"]["total_pln"] == "562.28"
+
+
+@pytest.mark.asyncio
+async def test_without_a_rate_the_per_diem_stays_in_its_own_currency(
+    db_session: AsyncSession,
+) -> None:
+    user = await UserFactory.create_async()
+    trip = (
+        await _call(db_session, user, "POST", "/api/v1/trips", json=_trip("business", 13, 15))
+    ).json()
+
+    given = await _call(
+        db_session, user, "PUT", f"/api/v1/trips/{trip['id']}/per-diem", json=_times()
+    )
+
+    assert (given.json()["parts"][0]["total"], given.json()["total_pln"]) == ("132.30", None)
+
+
+@pytest.mark.asyncio
+async def test_a_per_diem_is_refused_for_a_personal_trip_and_for_times_out_of_order(
+    db_session: AsyncSession,
+) -> None:
+    user = await UserFactory.create_async()
+    personal = (
+        await _call(db_session, user, "POST", "/api/v1/trips", json=_trip("personal", 1, 3))
+    ).json()
+    business = (
+        await _call(db_session, user, "POST", "/api/v1/trips", json=_trip("business", 13, 15))
+    ).json()
+
+    on_holiday = await _call(
+        db_session, user, "PUT", f"/api/v1/trips/{personal['id']}/per-diem", json=_times()
+    )
+    backwards = await _call(
+        db_session,
+        user,
+        "PUT",
+        f"/api/v1/trips/{business['id']}/per-diem",
+        json=_times(returned="2026-10-12T21:00:00+02:00"),
+    )
+    no_offset = await _call(
+        db_session,
+        user,
+        "PUT",
+        f"/api/v1/trips/{business['id']}/per-diem",
+        json=_times(departure="2026-10-13T06:00:00"),
+    )
+
+    assert (on_holiday.status_code, on_holiday.json()["code"]) == (422, "per_diem_personal_trip")
+    assert (backwards.status_code, backwards.json()["code"]) == (422, "per_diem_times")
+    assert no_offset.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_forgetting_the_times_takes_the_per_diem_away(db_session: AsyncSession) -> None:
+    user = await UserFactory.create_async()
+    trip = (
+        await _call(db_session, user, "POST", "/api/v1/trips", json=_trip("business", 13, 15))
+    ).json()
+    await _call(db_session, user, "PUT", f"/api/v1/trips/{trip['id']}/per-diem", json=_times())
+
+    forgotten = await _call(db_session, user, "DELETE", f"/api/v1/trips/{trip['id']}/per-diem")
+    detail = (await _call(db_session, user, "GET", f"/api/v1/trips/{trip['id']}")).json()
+
+    assert (forgotten.status_code, detail["per_diem"]) == (204, None)
+
+
+@pytest.mark.asyncio
+async def test_another_users_trip_times_are_out_of_reach(db_session: AsyncSession) -> None:
+    """N2."""
+    owner, intruder = await UserFactory.create_async(), await UserFactory.create_async()
+    trip = (
+        await _call(db_session, owner, "POST", "/api/v1/trips", json=_trip("business", 13, 15))
+    ).json()
+
+    given = await _call(
+        db_session, intruder, "PUT", f"/api/v1/trips/{trip['id']}/per-diem", json=_times()
+    )
+
+    assert given.status_code == 404

@@ -105,5 +105,40 @@
     "days": "Dzień po dniu",
     "categories": "Według kategorii",
     "noSpending": "—"
+  },
+  "perDiem": {
+    "title": "Diety",
+    "none": "Podaj godziny podróży i zapewnione posiłki, a dieta zostanie obliczona według polskich przepisów.",
+    "workOut": "Oblicz diety",
+    "edit": "Zmień godziny",
+    "remove": "Usuń",
+    "regulation": "Według rozporządzenia {{act}}",
+    "abroad": "Za granicą: {{country}}, {{rate}} {{currency}} za dobę",
+    "home": "W Polsce: {{rate}} {{currency}} za dobę",
+    "day": "Doba {{number}}",
+    "hours": "{{hours}} godz.",
+    "share": "{{percent}}%",
+    "partTotal": "Razem",
+    "meal": {
+      "breakfast": "Śniadanie",
+      "lunch": "Obiad",
+      "dinner": "Kolacja"
+    },
+    "mealsOff": "Zapewnione posiłki",
+    "totalPln": "W złotych",
+    "rate": "po kursie NBP {{rate}} z {{date}}",
+    "noRate": "Brak jeszcze kursu NBP: kwota w złotych na niego czeka.",
+    "dialog": {
+      "title": "Godziny podróży",
+      "departure": "Wyjazd",
+      "returned": "Powrót",
+      "crossed": "Przekroczyłem granicę lub wyleciałem z Polski o innej godzinie",
+      "abroadFrom": "Wyjazd z Polski",
+      "abroadTo": "Powrót do Polski",
+      "mealsTitle": "Zapewnione posiłki",
+      "mealsHint": "Śniadania wliczone w cenę hotelu też się liczą.",
+      "save": "Oblicz",
+      "order": "Powrót musi być po wyjeździe."
+    }
   }
 }

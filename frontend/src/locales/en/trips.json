@@ -101,5 +101,40 @@
     "days": "Day by day",
     "categories": "By category",
     "noSpending": "—"
+  },
+  "perDiem": {
+    "title": "Per diem",
+    "none": "Give the trip's times and the meals you were provided, and the per diem is worked out under the Polish rules.",
+    "workOut": "Work out the per diem",
+    "edit": "Change times",
+    "remove": "Remove",
+    "regulation": "Under the regulation {{act}}",
+    "abroad": "Abroad: {{country}}, {{rate}} {{currency}} a day",
+    "home": "In Poland: {{rate}} {{currency}} a day",
+    "day": "Day {{number}}",
+    "hours": "{{hours}} h",
+    "share": "{{percent}}%",
+    "partTotal": "Total",
+    "meal": {
+      "breakfast": "Breakfast",
+      "lunch": "Lunch",
+      "dinner": "Dinner"
+    },
+    "mealsOff": "Meals provided",
+    "totalPln": "In złoty",
+    "rate": "at the NBP rate {{rate}} of {{date}}",
+    "noRate": "No NBP rate yet: the złoty sum waits for it.",
+    "dialog": {
+      "title": "Trip times",
+      "departure": "Left",
+      "returned": "Came back",
+      "crossed": "I crossed the border or flew from Poland at a different time",
+      "abroadFrom": "Left Poland",
+      "abroadTo": "Back in Poland",
+      "mealsTitle": "Meals provided",
+      "mealsHint": "Breakfasts in the hotel price count too.",
+      "save": "Work out",
+      "order": "The return must come after the departure."
+    }
   }
 }
