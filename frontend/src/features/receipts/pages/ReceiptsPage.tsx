@@ -11,6 +11,7 @@ import { DateFilterModal } from "../components/DateFilterModal";
 import { StatusFilterDropdown } from "../components/StatusFilterDropdown";
 import { ChannelFilterDropdown } from "../components/ChannelFilterDropdown";
 import { Card, Input, IconTile, Pagination, SegmentedControl } from "@/shared/components";
+import { TripLabel } from "@/features/trips/components/TripLabel";
 import { SectionTabs } from "@/features/app-shell/SectionTabs";
 import { ExportMenu } from "@/features/exports/components/ExportMenu";
 import { formatPurchase } from "@/shared/purchaseDate";
@@ -191,6 +192,8 @@ export const ReceiptsPage = observer(() => {
               const isParsed = receipt.status === "parsed";
               const isFailed = receipt.status === "failed";
               const isReview = receipt.status === "manual_review";
+              // F20.1: read, but the employer's money: out of the total, owed back.
+              const isRepaid = isParsed && receipt.trip?.kind === "business";
 
               let rowBg = "hover:bg-surface";
               if (isFailed) rowBg = "bg-tone-error-bg";
@@ -245,8 +248,12 @@ export const ReceiptsPage = observer(() => {
                         </svg>
                       )}
                     </IconTile>
-                    <span className="truncate">
-                      {receipt.merchant_name ?? t("list.unknownMerchant")}
+                    {/* F20.1: under the name, the trip it is on or a business trip asking about it. */}
+                    <span className="flex min-w-0 flex-col items-start gap-0.5">
+                      <span className="max-w-full truncate">
+                        {receipt.merchant_name ?? t("list.unknownMerchant")}
+                      </span>
+                      <TripLabel trip={receipt.trip} question={receipt.trip_question} />
                     </span>
                     {/* F12.4: in the household view, whose each receipt is, and which of mine it does not see. */}
                     {showingHousehold && ownerName(receipt.user_id) && (
@@ -302,13 +309,15 @@ export const ReceiptsPage = observer(() => {
                   <span className="order-3 justify-self-end lg:order-none lg:justify-self-auto">
                     <span
                       className={`inline-flex items-center gap-[6px] rounded-full px-[11px] py-[5px] text-[12px] font-semibold whitespace-nowrap ${
-                        isParsed
-                          ? "bg-tone-primary-bg text-tone-primary-text"
-                          : isFailed
-                            ? "bg-tone-error-bg text-tone-error-text"
-                            : isReview
-                              ? "bg-tone-warning-bg text-tone-warning-text"
-                              : "bg-muted text-muted-foreground"
+                        isRepaid
+                          ? "bg-tone-info-bg text-tone-info-text"
+                          : isParsed
+                            ? "bg-tone-primary-bg text-tone-primary-text"
+                            : isFailed
+                              ? "bg-tone-error-bg text-tone-error-text"
+                              : isReview
+                                ? "bg-tone-warning-bg text-tone-warning-text"
+                                : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {isParsed && (
@@ -357,13 +366,15 @@ export const ReceiptsPage = observer(() => {
                           <path d="M12 16h.01" />
                         </svg>
                       )}
-                      {isParsed
-                        ? t("status.inTotal")
-                        : isFailed
-                          ? t("status.outOfTotal")
-                          : isReview
-                            ? t("status.review")
-                            : receipt.status}
+                      {isRepaid
+                        ? t("status.repaid")
+                        : isParsed
+                          ? t("status.inTotal")
+                          : isFailed
+                            ? t("status.outOfTotal")
+                            : isReview
+                              ? t("status.review")
+                              : receipt.status}
                     </span>
                   </span>
                   <svg

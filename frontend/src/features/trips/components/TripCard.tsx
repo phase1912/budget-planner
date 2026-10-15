@@ -6,7 +6,10 @@ import { Pill } from "@/shared/components";
 import type { Trip } from "@/stores/TripsStore";
 import { countryName, formatTripDay } from "../tripFormat";
 
-/** One trip in the list: where and when, how many receipts, and what it cost (F20.1). */
+/**
+ * One trip in the list: where and when, how many receipts, what it cost, and how many
+ * receipts a business trip still asks about (F20.1).
+ */
 export function TripCard({ trip, currency }: { trip: Trip; currency: string }) {
   const { t } = useTranslation("trips");
   const place = [trip.city, trip.country ? countryName(trip.country) : null]
@@ -23,6 +26,11 @@ export function TripCard({ trip, currency }: { trip: Trip; currency: string }) {
           <Pill size="sm" tone={trip.kind === "business" ? "info" : "accent"}>
             {t(`kind.${trip.kind}`)}
           </Pill>
+          {trip.asking_count > 0 && (
+            <Pill size="sm" tone="warning">
+              {t("asking.count", { count: trip.asking_count })}
+            </Pill>
+          )}
         </div>
         <span className="text-base text-muted-foreground">
           {t("dates", { start: formatTripDay(trip.start_date), end: formatTripDay(trip.end_date) })}

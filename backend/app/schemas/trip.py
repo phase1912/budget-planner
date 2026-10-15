@@ -5,7 +5,7 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.domain.trips import TripKind
+from app.domain.trips import ExpenseKind, TripKind
 from app.schemas.receipt import ReceiptResponse
 
 
@@ -43,14 +43,51 @@ class TripResponse(BaseModel):
     purpose: str | None
     receipt_count: int
     total: Decimal
+    asking_count: int = 0
+    """Receipts dated within a business trip that nobody has said are its own yet."""
 
     model_config = ConfigDict(from_attributes=True)
 
 
-class TripDetailResponse(TripResponse):
-    """A trip with its receipts, oldest first."""
+class TripReceiptResponse(ReceiptResponse):
+    """A receipt on a trip, with what it paid for and whether the user said so (F20.2)."""
 
-    receipts: list[ReceiptResponse]
+    expense_kind: ExpenseKind
+    expense_kind_chosen: bool
+
+
+class KindTotal(BaseModel):
+    """What a trip's read receipts of one kind come to, in the account's currency."""
+
+    kind: ExpenseKind
+    total: Decimal
+
+
+class CurrencyTotal(BaseModel):
+    """What a trip's read receipts paid in one currency come to, as printed."""
+
+    currency: str
+    total: Decimal
+
+
+class TripDetailResponse(TripResponse):
+    """A trip with its receipts, oldest first, and its spending split (F20.2).
+
+    `by_kind` holds every kind, zero ones too, in a fixed order; `by_currency` only the
+    currencies paid in, largest first.
+    """
+
+    receipts: list[TripReceiptResponse]
+    asking: list[TripReceiptResponse]
+    """A business trip's question: receipts dated within it, the employer's or the user's?"""
+    by_kind: list[KindTotal]
+    by_currency: list[CurrencyTotal]
+
+
+class ExpenseKindRequest(BaseModel):
+    """What a receipt paid for, as the user says; null gives it back to the guess."""
+
+    kind: ExpenseKind | None
 
 
 class TripSuggestionResponse(BaseModel):

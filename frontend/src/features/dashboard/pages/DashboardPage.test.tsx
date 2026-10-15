@@ -145,6 +145,7 @@ describe("DashboardPage", () => {
       end_date: "2026-09-10",
       purpose: null,
       receipt_count: 4,
+      asking_count: 0,
     };
     budgetStore.trips = [
       { ...trip, id: "t1", kind: "personal", name: "Egypt", total: "800.00" },

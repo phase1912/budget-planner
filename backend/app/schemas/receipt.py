@@ -167,10 +167,22 @@ class UpdateLineItemCategoryRequest(BaseModel):
     apply_to_future: bool = False
 
 
+class TripChoice(BaseModel):
+    """The trip one extraction goes into when stored, or none (null), as the user said."""
+
+    index: int
+    trip_id: uuid.UUID | None
+
+
 class CommitJobRequest(BaseModel):
-    """Request to commit selected extractions to the database."""
+    """Request to commit selected extractions to the database.
+
+    `trips` holds the user's answer for each receipt dated within a trip, or the trip an
+    upload started from (F20.1); a receipt left out of it follows its date.
+    """
 
     indices_to_store: list[int]
+    trips: list[TripChoice] = []
 
 
 class CategoryResponse(BaseModel):
@@ -271,8 +283,23 @@ class LineItemListResponse(BaseModel):
     categories: list[CategorySpendResponse]
 
 
+class TripRef(BaseModel):
+    """A trip as a receipt names it: the one it is on, or the one asking about it (F20.1)."""
+
+    id: uuid.UUID
+    name: str
+    kind: TripKind
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ReceiptResponse(BaseModel):
-    """Schema for a receipt list item."""
+    """A receipt as a list shows it.
+
+    For its owner, `trip` is the trip it is on and `trip_question` the business trip whose
+    dates hold it, still asking whether it is the employer's (F20.1); both are left empty
+    for another household member's receipt.
+    """
 
     id: uuid.UUID
     user_id: uuid.UUID
@@ -301,16 +328,8 @@ class ReceiptResponse(BaseModel):
     file_ids: list[str]
     created_at: datetime
     line_items: list[LineItemResponse] = []
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class TripRef(BaseModel):
-    """The trip a receipt is on, as its detail names it (F20.1)."""
-
-    id: uuid.UUID
-    name: str
-    kind: TripKind
+    trip: TripRef | None = None
+    trip_question: TripRef | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -321,7 +340,6 @@ class ReceiptDetailResponse(ReceiptResponse):
     `trip_manual` says the trip, or the lack of one, was chosen by hand rather than by date.
     """
 
-    trip: TripRef | None = None
     trip_manual: bool = False
 
     @field_validator("trip_manual", mode="before")

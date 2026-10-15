@@ -5,6 +5,7 @@ import { ExtractedStep } from "./ExtractedStep";
 import { StoreProvider } from "@/stores/StoreContext";
 import { RootStore } from "@/stores/RootStore";
 import { runInAction } from "mobx";
+import type { ApiClient } from "@/api/client";
 
 vi.mock("@/shared/components", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/shared/components")>();
@@ -331,5 +332,77 @@ describe("ExtractedStep", () => {
     expect(screen.getByText(/No date on the receipt/)).toHaveTextContent("9 October 2026");
     fireEvent.click(screen.getByRole("button", { name: "Change date" }));
     expect(mockStore.uploadStore.editingExtractionIndex).toBe(0);
+  });
+
+  describe("a receipt dated within a trip (F20.1)", () => {
+    const trip = (kind: "personal" | "business", name: string) => ({
+      id: `${kind}-trip`,
+      kind,
+      name,
+      country: null,
+      city: null,
+      start_date: "2026-08-27",
+      end_date: "2026-08-29",
+      purpose: null,
+      receipt_count: 0,
+      total: "0",
+      asking_count: 0,
+    });
+
+    beforeEach(() => {
+      runInAction(() => {
+        mockStore.uploadStore.selectedIndices = new Set([0]);
+        mockStore.uploadStore.jobId = "job-1";
+      });
+    });
+
+    it("joins a personal trip unless unticked", () => {
+      runInAction(() => {
+        mockStore.tripsStore.trips = [trip("personal", "Egypt")];
+      });
+      renderComponent();
+
+      const join = screen.getByRole("checkbox", { name: "Add to the trip «Egypt»" });
+      expect(join).toBeChecked();
+      fireEvent.click(join);
+
+      expect(mockStore.uploadStore.goesIntoTrip(0)).toBe(false);
+      expect(screen.getByRole("button", { name: /Store/ })).toBeEnabled();
+    });
+
+    it("waits for the user to say whether a business trip's receipt is the company's", () => {
+      runInAction(() => {
+        mockStore.tripsStore.trips = [trip("business", "Berlin")];
+      });
+      const post = vi.fn().mockResolvedValue({ data: {} });
+      runInAction(() => {
+        mockStore.uploadStore.api = { POST: post } as unknown as ApiClient;
+      });
+      renderComponent();
+
+      expect(screen.getByText("Is this a business expense on «Berlin»?")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Store/ })).toBeDisabled();
+
+      fireEvent.click(screen.getByRole("button", { name: "No, my own" }));
+      fireEvent.click(screen.getByRole("button", { name: /Store/ }));
+
+      expect(post).toHaveBeenCalledWith("/receipts/upload/{job_id}/commit", {
+        params: { path: { job_id: "job-1" } },
+        body: { indices_to_store: [0], trips: [{ index: 0, trip_id: null }] },
+      });
+    });
+
+    it("puts an upload begun on a trip's page into that trip without asking", () => {
+      const berlin = trip("business", "Berlin");
+      runInAction(() => {
+        mockStore.tripsStore.trips = [berlin];
+        mockStore.uploadStore.setFromTrip(berlin);
+      });
+      renderComponent();
+
+      expect(screen.getByText("This receipt goes to the trip «Berlin».")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "No, my own" })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Store/ })).toBeEnabled();
+    });
   });
 });

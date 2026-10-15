@@ -20,6 +20,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.domain.trips import ExpenseKind
 from app.models.base import Model
 
 if TYPE_CHECKING:
@@ -95,6 +96,28 @@ class Receipt(Model):
     )
     trip_manual: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=text("false"), nullable=False
+    )
+    # What the receipt paid for on a trip: the model's guess when it read the receipt, and
+    # the user's choice, which wins over it and over any later reading (F20.2).
+    expense_kind: Mapped[ExpenseKind | None] = mapped_column(
+        Enum(
+            ExpenseKind,
+            name="expense_kind",
+            native_enum=False,
+            length=16,
+            values_callable=lambda members: [m.value for m in members],
+        ),
+        nullable=True,
+    )
+    expense_kind_chosen: Mapped[ExpenseKind | None] = mapped_column(
+        Enum(
+            ExpenseKind,
+            name="expense_kind",
+            native_enum=False,
+            length=16,
+            values_callable=lambda members: [m.value for m in members],
+        ),
+        nullable=True,
     )
     # The user changed what was read — a line, the total, the date — before or after
     # storing it: what the reading-accuracy report counts (F15.4).

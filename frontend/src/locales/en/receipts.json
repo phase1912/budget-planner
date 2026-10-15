@@ -59,7 +59,8 @@
   "status": {
     "inTotal": "In the total",
     "outOfTotal": "Out of the total",
-    "review": "Needs review"
+    "review": "Needs review",
+    "repaid": "To be repaid"
   },
   "detail": {
     "unknownMerchant": "Unknown merchant",

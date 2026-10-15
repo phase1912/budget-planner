@@ -886,7 +886,7 @@ def test_updating_a_receipt_returns_the_new_state(app: FastAPI) -> None:
         patch("app.api.routers.receipts.TripRepository") as trips_cls,
     ):
         service_cls.return_value.update_receipt = AsyncMock(return_value=updated)
-        trips_cls.return_value.trip_of = AsyncMock(return_value=None)
+        trips_cls.return_value.placement = AsyncMock(return_value=(None, None))
 
         # When
         response = client.patch(

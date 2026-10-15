@@ -3698,9 +3698,11 @@ epics:
         depends_on: [F3.9, F11.7]
         intent: >
           A user records a trip — personal or business, a name, where to (country and city), when
-          it started and ended, and why — and its receipts gather on it: those dated within it
-          join by themselves, any can be added or taken out by hand, and a run of foreign receipts
-          on consecutive days prompts "was this a trip?". A personal trip's receipts stay in the
+          it started and ended, and why — and its receipts gather on it: a personal trip takes
+          those dated within it by itself, a business trip asks about each one first (a purchase
+          on a business trip may be the user's own), any can be added or taken out by hand,
+          receipts can be uploaded straight from the trip's page, and a run of foreign receipts on
+          consecutive days prompts "was this a trip?". A personal trip's receipts stay in the
           month and its limit, marked as the trip's; a business trip's are the employer's money and
           stay out of the personal month, its limit, statistics, goals and advice, and the
           household's totals. The dashboard says how much went on trips, apart.
@@ -3715,10 +3717,12 @@ epics:
             labels: [backend, database]
             detail: >
               Trip entity per user with its kind (personal or business), destination, dates and
-              purpose; receipts within its dates joined automatically, manual add and remove that
-              later automatic passes respect; one trip per receipt; the suggestion from
-              consecutive foreign receipts. Endpoints for trips and their receipts, cross-user
-              tests (N2).
+              purpose; receipts within a personal trip's dates joined automatically, those within
+              a business trip's dates only asked about and counted in the user's budget until
+              answered; manual add and remove that later automatic passes respect; the upload
+              wizard's commit records the user's answer per receipt; one trip per receipt; the
+              suggestion from consecutive foreign receipts. Endpoints for trips and their
+              receipts, cross-user tests (N2).
           - key: F20.1.2
             title: How a trip counts in the budget
             labels: [backend]
@@ -3733,7 +3737,11 @@ epics:
             detail: >
               A trips list and a trip page with its receipts, creating and editing a trip of
               either kind, moving a receipt in or out from the receipt view, the suggestion as a
-              dismissible note, and the dashboard's trip lines. Checked at 375, 768 and 1280 px.
+              dismissible note, and the dashboard's trip lines. The upload wizard asks about a
+              receipt dated within a trip — a tick for a personal one, a required "the company's
+              or mine?" for a business one — an upload started on a trip's page goes into it, a
+              business trip's page asks about receipts that arrived by email, and the receipts
+              list labels each receipt's trip. Checked at 375, 768 and 1280 px.
       - key: F20.2
         title: What a trip cost, by kind
         labels: [backend, frontend, ai]

@@ -216,6 +216,16 @@ class ExtractedReceipt(BaseModel):
         ),
     )
 
+    expense_kind: str | None = Field(
+        default=None,
+        description=(
+            "What the receipt paid for, as a trip's settlement splits it: 'transport' "
+            "(fuel, tickets, taxi, parking, tolls, car hire), 'accommodation' (hotel, "
+            "hostel, apartment), 'meals' (restaurant, café, food and drink from a shop) "
+            "or 'other' (F20.2)"
+        ),
+    )
+
     line_items: list[ExtractedLineItem] = Field(
         default_factory=list,
         description="Every line item found on the receipt",

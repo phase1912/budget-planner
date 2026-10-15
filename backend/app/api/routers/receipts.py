@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Annotated
 
@@ -30,6 +31,7 @@ from app.domain.fiscal_identity import fiscal_identity, is_left_out
 from app.domain.periods import DateRange
 from app.domain.reading_accuracy import mark_corrected
 from app.models.receipt import Receipt, ReceiptChannel, ReceiptStatus
+from app.models.trip import Trip
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.ports.categorisation import ItemCategoriserPort
@@ -71,6 +73,7 @@ from app.services.household import HouseholdService
 from app.services.quota import QuotaService
 from app.services.receipt import ReceiptService
 from app.services.storage import ObjectNotFoundError
+from app.services.trip import TripService
 
 router = APIRouter(prefix="/receipts", tags=["receipts"])
 
@@ -78,20 +81,38 @@ router = APIRouter(prefix="/receipts", tags=["receipts"])
 async def receipt_detail(
     session: AsyncSession, receipt: Receipt, user: User
 ) -> ReceiptDetailResponse:
-    """A receipt's detail, with the trip it is on when the reader owns it (F20.1).
+    """A receipt's detail, with its trip and any business trip asking about it (F20.1).
 
     A household member reading another's receipt is not told about the owner's trips.
     """
     detail = ReceiptDetailResponse.model_validate(receipt)
     if receipt.user_id != user.id:
         return detail
-    trip = await TripRepository(session).trip_of(receipt)
+    trip, asking = await TripRepository(session).placement(receipt)
     return detail.model_copy(
-        update={
-            "trip": TripRef.model_validate(trip) if trip else None,
-            "trip_manual": receipt.trip_manual,
-        }
+        update={**_trip_fields(trip, asking), "trip_manual": receipt.trip_manual}
     )
+
+
+def _trip_fields(trip: Trip | None, asking: Trip | None) -> dict[str, TripRef | None]:
+    return {
+        "trip": TripRef.model_validate(trip) if trip else None,
+        "trip_question": TripRef.model_validate(asking) if asking else None,
+    }
+
+
+async def receipt_list(
+    session: AsyncSession, receipts: Sequence[Receipt], user: User
+) -> list[ReceiptResponse]:
+    """Receipts as a list shows them, the reader's own marked with their trip (F20.1)."""
+    mine = [r for r in receipts if r.user_id == user.id]
+    placed = await TripRepository(session).placements(mine)
+    return [
+        ReceiptResponse.model_validate(r).model_copy(update=_trip_fields(*placed[r.id]))
+        if r.id in placed
+        else ReceiptResponse.model_validate(r)
+        for r in receipts
+    ]
 
 
 def get_item_categoriser() -> ItemCategoriserPort:
@@ -491,7 +512,7 @@ async def list_receipts(
     pages = (total + size - 1) // size if size else 0
 
     return PaginatedReceiptsResponse(
-        items=[ReceiptResponse.model_validate(i) for i in items],
+        items=await receipt_list(session, items, current_user),
         total=total,
         page=page,
         size=size,
@@ -840,6 +861,7 @@ async def commit_job(
 
     repo = ReceiptRepository(session).bypass_ownership()
     converter = ReceiptService(exchange_rates=exchange_rates)
+    trip_choices = {choice.index: choice.trip_id for choice in request.trips}
     stored_identities: set[tuple[str, str]] = set()
     for i, extraction in enumerate(extractions):
         if i not in selected or is_left_out(extraction):
@@ -852,7 +874,7 @@ async def commit_job(
                 continue
             stored_identities.add(identity)
 
-        repo.create_from_extraction(
+        receipt = repo.create_from_extraction(
             user_id=current_user.id,
             file_ids=extraction.get("file_ids", []),
             extraction=await converter.convert_for_account(
@@ -861,6 +883,8 @@ async def commit_job(
             parser_version=CURRENT_PARSER_VERSION,
             channel=job.channel,
         )
+        if i in trip_choices:
+            await TripService(session).place_new(current_user.id, receipt, trip_choices[i])
 
     job.status = JobStatus.STORED
     await session.commit()

@@ -69,4 +69,20 @@ describe("TripsStore (F20.1)", () => {
     expect(store.saveError).toBeTruthy();
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it("changing a receipt's kind reloads the open trip, whose totals follow (F20.2)", async () => {
+    api.PUT.mockResolvedValue({ data: {} });
+    api.GET.mockResolvedValue({ data: { id: "t1" } });
+    await store.loadTrip("t1");
+
+    await store.chooseKind("r1", "transport");
+
+    expect(api.PUT).toHaveBeenCalledWith("/api/v1/trips/receipts/{receipt_id}/kind", {
+      params: { path: { receipt_id: "r1" } },
+      body: { kind: "transport" },
+    });
+    expect(api.GET).toHaveBeenLastCalledWith("/api/v1/trips/{trip_id}", {
+      params: { path: { trip_id: "t1" } },
+    });
+  });
 });

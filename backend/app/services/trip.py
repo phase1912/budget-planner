@@ -8,8 +8,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import DomainError, NotFoundError, ProblemCode
 from app.domain.periods import DateRange
-from app.domain.trips import TripKind, TripSuggestion, suggest_trips
-from app.models.receipt import Receipt
+from app.domain.trips import (
+    ExpenseKind,
+    TripKind,
+    TripLine,
+    TripSpending,
+    TripSuggestion,
+    kind_from_categories,
+    split_spending,
+    suggest_trips,
+)
+from app.models.receipt import Receipt, ReceiptStatus
 from app.models.trip import Trip
 from app.repository.receipt import ReceiptRepository
 from app.repository.trip import TripRepository
@@ -33,11 +42,15 @@ class TripDetails:
 
 @dataclass(frozen=True)
 class TripSummary:
-    """A trip with how many receipts it holds and what they come to."""
+    """A trip with how many receipts it holds and what they come to.
+
+    `asking_count`: receipts dated within a business trip, not yet said to be its own.
+    """
 
     trip: Trip
     receipt_count: int
     total: Decimal
+    asking_count: int = 0
 
 
 class TripService:
@@ -49,17 +62,26 @@ class TripService:
 
     async def list_trips(self, user_id: uuid.UUID) -> list[TripSummary]:
         """Every trip of the user's, latest first, with its read receipts' total."""
-        return [
-            TripSummary(trip, *await self.trips.totals(trip))
-            for trip in await self.trips.list_for(user_id)
-        ]
+        return [await self._summary(trip) for trip in await self.trips.list_for(user_id)]
 
     async def get(
         self, user_id: uuid.UUID, trip_id: uuid.UUID
-    ) -> tuple[TripSummary, Sequence[Receipt]]:
-        """One trip with its receipts. Raises NotFoundError when it is not the user's (N2)."""
+    ) -> tuple[TripSummary, Sequence[Receipt], Sequence[Receipt]]:
+        """One trip, its receipts, and those a business trip still asks about (F20.1).
+
+        Raises NotFoundError when it is not the user's (N2).
+        """
         trip = await self._mine(user_id, trip_id)
-        return TripSummary(trip, *await self.trips.totals(trip)), await self.trips.receipts_of(trip)
+        return (
+            await self._summary(trip),
+            await self.trips.receipts_of(trip),
+            await self.trips.asking_about(trip),
+        )
+
+    async def _summary(self, trip: Trip) -> TripSummary:
+        return TripSummary(
+            trip, *await self.trips.totals(trip), await self.trips.asking_count(trip)
+        )
 
     async def save(
         self, user_id: uuid.UUID, details: TripDetails, trip_id: uuid.UUID | None = None
@@ -121,6 +143,32 @@ class TripService:
         await self.session.flush()
         return receipt
 
+    async def place_new(
+        self, user_id: uuid.UUID, receipt: Receipt, trip_id: uuid.UUID | None
+    ) -> None:
+        """Put a receipt being stored in `trip_id`, or in no trip, as the user answered.
+
+        The upload wizard asks whenever a receipt's date falls within a trip, and an upload
+        started from a trip's page answers for it (F20.1). Raises NotFoundError for a trip
+        that is not the user's (N2).
+        """
+        if trip_id is not None:
+            await self._mine(user_id, trip_id)
+        receipt.trip_id, receipt.trip_manual = trip_id, True
+
+    async def choose_kind(self, receipt_id: uuid.UUID, kind: ExpenseKind | None) -> Receipt:
+        """Set what a receipt paid for, or (None) give it back to the guess (F20.2).
+
+        The choice outlives any later reading of the receipt. Raises NotFoundError for a
+        receipt that is not the current user's (N2).
+        """
+        receipt = await ReceiptRepository(self.session).get_with_items(receipt_id)
+        if receipt is None:
+            raise NotFoundError("Receipt not found")
+        receipt.expense_kind_chosen = kind
+        await self.session.flush()
+        return receipt
+
     async def suggestions(self, user_id: uuid.UUID) -> list[TripSuggestion]:
         """Runs of foreign receipts outside any trip that look like an unrecorded one."""
         since = datetime.now(UTC).date() - SUGGESTION_LOOKBACK
@@ -142,3 +190,46 @@ class TripService:
         if trip is None:
             raise NotFoundError("Trip not found")
         return trip
+
+
+def kind_of(receipt: Receipt) -> ExpenseKind:
+    """What a receipt paid for on a trip: the user's choice, else the model's guess (F20.2).
+
+    A receipt read before kinds were guessed falls back to its lines' categories. Expects
+    `line_items` and their categories loaded.
+    """
+    if receipt.expense_kind_chosen is not None:
+        return receipt.expense_kind_chosen
+    if receipt.expense_kind is not None:
+        return receipt.expense_kind
+    return kind_from_categories(
+        [
+            (item.category.name if item.category else None, item.total_price)
+            for item in receipt.line_items
+        ]
+    )
+
+
+def trip_spending(receipts: Sequence[Receipt], currency: str) -> TripSpending:
+    """A trip's read receipts per kind in `currency`, the account's, and per currency paid.
+
+    A converted receipt counts its printed total in the currency it was paid in; the rest
+    were paid in the account's own. Receipts still in review count nowhere, as in the total.
+    """
+    lines = []
+    for receipt in receipts:
+        if receipt.status is not ReceiptStatus.PARSED:
+            continue
+        amount = sum((item.total_price for item in receipt.line_items), Decimal(0))
+        paid_currency, paid_amount = currency, amount
+        if receipt.original_currency and receipt.original_total is not None:
+            paid_currency, paid_amount = receipt.original_currency, receipt.original_total
+        lines.append(
+            TripLine(
+                kind=kind_of(receipt),
+                amount=amount,
+                paid_currency=paid_currency,
+                paid_amount=paid_amount,
+            )
+        )
+    return split_spending(lines)

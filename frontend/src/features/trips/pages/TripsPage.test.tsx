@@ -57,6 +57,7 @@ describe("TripsPage", () => {
         purpose: "Conference",
         receipt_count: 3,
         total: "312.40",
+        asking_count: 2,
       },
     ];
     renderPage();
@@ -67,6 +68,7 @@ describe("TripsPage", () => {
     expect(card).toHaveTextContent("Business");
     expect(card).toHaveTextContent("3 receipts");
     expect(card).toHaveTextContent("312.40 PLN");
+    expect(card).toHaveTextContent("2 receipts wait for an answer");
   });
 
   it("says there are no trips yet", () => {

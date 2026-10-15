@@ -15,7 +15,7 @@ from app.domain.fiscal_identity import fiscal_identity
 from app.domain.periods import DateRange
 from app.domain.read_confidence import read_confidence
 from app.domain.reading_accuracy import ReceiptReading, corrected_lines
-from app.domain.trips import TripKind
+from app.domain.trips import TripKind, parse_expense_kind
 from app.models.category import Category
 from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
@@ -81,12 +81,14 @@ def purchase_day() -> ColumnElement[date]:
 def on_trip(kind: TripKind | None = None) -> ColumnElement[bool]:
     """Whether a receipt belongs to one of its owner's trips, of `kind` if given (F20.1).
 
-    Moved by hand, it belongs to the trip it was put in, or to none; otherwise to the trip
-    whose dates hold its purchase day.
+    Moved by hand, it belongs to the trip it was put in, or to none; otherwise to the
+    personal trip whose dates hold its purchase day. A business trip holds only what was
+    put in it by hand (`awaiting_answer`). Python's twin: `app.domain.trips.place`.
     """
     by_hand = and_(Receipt.trip_manual, Trip.id == Receipt.trip_id)
     by_date = and_(
         ~Receipt.trip_manual,
+        Trip.kind == TripKind.PERSONAL,
         purchase_day() >= Trip.start_date,
         purchase_day() <= Trip.end_date,
     )
@@ -94,6 +96,25 @@ def on_trip(kind: TripKind | None = None) -> ColumnElement[bool]:
     if kind is not None:
         conditions.append(Trip.kind == kind)
     return exists(select(Trip.id).where(*conditions))
+
+
+def awaiting_answer() -> ColumnElement[bool]:
+    """A receipt dated within a business trip that nobody has said is the employer's (F20.1).
+
+    It counts in the user's budget until answered: hiding the user's own purchase would be
+    worse than showing a repaid one a while longer.
+    """
+    return and_(
+        ~Receipt.trip_manual,
+        exists(
+            select(Trip.id).where(
+                Trip.user_id == Receipt.user_id,
+                Trip.kind == TripKind.BUSINESS,
+                purchase_day() >= Trip.start_date,
+                purchase_day() <= Trip.end_date,
+            )
+        ),
+    )
 
 
 def counted_in_budget() -> ColumnElement[bool]:
@@ -734,6 +755,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
             fiscal_register_id=identity[0] if identity else None,
             fiscal_receipt_number=identity[1] if identity else None,
             possible_duplicate_of_id=possible_duplicate_of_id,
+            expense_kind=parse_expense_kind(extraction.get("expense_kind")),
             **_currency_fields(extraction),
         )
 

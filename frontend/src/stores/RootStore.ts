@@ -71,6 +71,7 @@ export class RootStore {
     this.uploadStore = new UploadStore(apiClient, this.toastStore, refreshMonth, () => {
       void this.quotaStore.load();
     });
+    this.uploadStore.useTrips(() => this.tripsStore.trips);
     this.receiptStore = new ReceiptStore(this.toastStore, refreshMonth);
     this.categoriesStore = new CategoriesStore();
     this.statisticsStore = new StatisticsStore();

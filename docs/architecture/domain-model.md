@@ -28,7 +28,7 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | **Product** | One thing the user buys, however each shop prints it: a name and, when printed, a package size in grams or millilitres (F16.1). Purchase lines link to it. | User |
 | **ProductAlias** | One way a product is printed, as its matching key with an example; merging and splitting move these (F16.1). | Product |
 | **ProductSelection** | Products the user explores together, saved under a name; follows merges and splits (F16.2). | User |
-| **Trip** | A trip the user recorded, personal or business: a name, destination, whole days and purpose. Its receipts are those dated within it, unless moved in or out by hand (F20.1). | User |
+| **Trip** | A trip the user recorded, personal or business: a name, destination, whole days and purpose. Its receipts are those dated within it, unless moved in or out by hand (F20.1), and its spending splits by each receipt's kind of expense (F20.2). | User |
 | **NameCorrection** | A line name the user corrected on one shop's receipt — the printed name and what it means — applied to that shop's later receipts (F15.3). | User |
 | **Category** | A spending classification. Either a system default or user-defined. | User (nullable for defaults) |
 | **PositionMatch** | A decision that two line items are, or are not, the same physical purchase. | Receipt |
@@ -268,13 +268,26 @@ Rules that must hold at all times. Each is a candidate for a test.
     fewer than two shops have a recent price (F16.3).
 
 11r. A receipt is on a trip when the user put it there by hand, or, unless moved by hand,
-    when its purchase day falls within the trip's days, both ends included. One user's
-    trips never share a day, so a receipt is on one trip at most. A personal trip's
+    when its purchase day falls within a personal trip's days, both ends included. A
+    business trip holds only what the user put in it: a purchase on one may be the user's
+    own, so its days only ask about the receipts within them — the upload wizard asks
+    before storing, an upload started on the trip's page answers for it, and one that came
+    by email waits on the trip's page — and an unanswered receipt counts in the user's
+    budget. One user's trips never share a day, so a receipt is on one trip at most. A personal trip's
     receipts count in the month, its limit, statistics and advice as before, and are shown
     apart; a business trip's are the employer's money and count in none of them — nor in
     the household's totals, nor as held out for review. Deleting a trip gives its receipts
     back to their dates. A finished month's snapshot is not recomputed when a trip is
     recorded later (ADR-0010) (F20.1).
+
+11s. Every receipt has a kind of expense — transport, accommodation, meals or other —
+    guessed by the same reading that finds its shop and lines and kept with it; one read
+    before kinds were guessed takes the kind holding most of its money by its lines'
+    categories (Transport, else Dining and Groceries as meals, else other). The user's
+    choice wins over the guess and over any later reading, until given back. A trip's
+    spending splits by kind, every kind shown even at zero, in the account's currency, and
+    by the currency each receipt was paid in, as printed; only read receipts count, as in
+    its total (F20.2).
 
 **Categorisation**
 

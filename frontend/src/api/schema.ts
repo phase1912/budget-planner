@@ -1176,7 +1176,9 @@ export interface paths {
         };
         /**
          * Gettrip Response
-         * @description One trip with its receipts (F20.1). Another user's is not found (N2).
+         * @description One trip with its receipts and its spending by kind and currency (F20.1, F20.2).
+         *
+         *     Another user's is not found (N2).
          */
         get: operations["gettrip_response_api_v1_trips__trip_id__get"];
         /**
@@ -1210,6 +1212,28 @@ export interface paths {
          *     Another user's receipt or trip is not found (N2).
          */
         put: operations["place_receipt_api_v1_trips_receipts__receipt_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/receipts/{receipt_id}/kind": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Choose Expense Kind
+         * @description Say what a receipt paid for, or (null) give it back to the guess (F20.2).
+         *
+         *     Another user's receipt is not found (N2).
+         */
+        put: operations["choose_expense_kind_api_v1_trips_receipts__receipt_id__kind_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1750,10 +1774,18 @@ export interface components {
         /**
          * CommitJobRequest
          * @description Request to commit selected extractions to the database.
+         *
+         *     `trips` holds the user's answer for each receipt dated within a trip, or the trip an
+         *     upload started from (F20.1); a receipt left out of it follows its date.
          */
         CommitJobRequest: {
             /** Indices To Store */
             indices_to_store: number[];
+            /**
+             * Trips
+             * @default []
+             */
+            trips: components["schemas"]["TripChoice"][];
         };
         /**
          * ComparisonResponse
@@ -1785,6 +1817,16 @@ export interface components {
             stops_mid_month: boolean;
         };
         /**
+         * CurrencyTotal
+         * @description What a trip's read receipts paid in one currency come to, as printed.
+         */
+        CurrencyTotal: {
+            /** Currency */
+            currency: string;
+            /** Total */
+            total: string;
+        };
+        /**
          * EditLineItemRequest
          * @description Correct one line item the parser misread, before anything is stored (BRD A9, A11).
          *
@@ -1806,6 +1848,19 @@ export interface components {
             unit_price?: string | null;
             /** Total Price */
             total_price?: string | null;
+        };
+        /**
+         * ExpenseKind
+         * @description What a trip's receipt paid for: the split a settlement asks for (F20.2).
+         * @enum {string}
+         */
+        ExpenseKind: "transport" | "accommodation" | "meals" | "other";
+        /**
+         * ExpenseKindRequest
+         * @description What a receipt paid for, as the user says; null gives it back to the guess.
+         */
+        ExpenseKindRequest: {
+            kind: components["schemas"]["ExpenseKind"] | null;
         };
         /**
          * ExplorationResponse
@@ -2200,6 +2255,15 @@ export interface components {
         JoinRequest: {
             /** Code */
             code: string;
+        };
+        /**
+         * KindTotal
+         * @description What a trip's read receipts of one kind come to, in the account's currency.
+         */
+        KindTotal: {
+            kind: components["schemas"]["ExpenseKind"];
+            /** Total */
+            total: string;
         };
         /**
          * LimitUsageResponse
@@ -2675,6 +2739,7 @@ export interface components {
              */
             line_items: components["schemas"]["LineItemResponse"][];
             trip?: components["schemas"]["TripRef"] | null;
+            trip_question?: components["schemas"]["TripRef"] | null;
             /**
              * Trip Manual
              * @default false
@@ -2722,7 +2787,11 @@ export interface components {
         };
         /**
          * ReceiptResponse
-         * @description Schema for a receipt list item.
+         * @description A receipt as a list shows it.
+         *
+         *     For its owner, `trip` is the trip it is on and `trip_question` the business trip whose
+         *     dates hold it, still asking whether it is the employer's (F20.1); both are left empty
+         *     for another household member's receipt.
          */
         ReceiptResponse: {
             /**
@@ -2779,6 +2848,8 @@ export interface components {
              * @default []
              */
             line_items: components["schemas"]["LineItemResponse"][];
+            trip?: components["schemas"]["TripRef"] | null;
+            trip_question?: components["schemas"]["TripRef"] | null;
         };
         /**
          * ReceiptScope
@@ -3065,8 +3136,21 @@ export interface components {
             alias_id: string;
         };
         /**
+         * TripChoice
+         * @description The trip one extraction goes into when stored, or none (null), as the user said.
+         */
+        TripChoice: {
+            /** Index */
+            index: number;
+            /** Trip Id */
+            trip_id: string | null;
+        };
+        /**
          * TripDetailResponse
-         * @description A trip with its receipts, oldest first.
+         * @description A trip with its receipts, oldest first, and its spending split (F20.2).
+         *
+         *     `by_kind` holds every kind, zero ones too, in a fixed order; `by_currency` only the
+         *     currencies paid in, largest first.
          */
         TripDetailResponse: {
             /**
@@ -3097,8 +3181,19 @@ export interface components {
             receipt_count: number;
             /** Total */
             total: string;
+            /**
+             * Asking Count
+             * @default 0
+             */
+            asking_count: number;
             /** Receipts */
-            receipts: components["schemas"]["ReceiptResponse"][];
+            receipts: components["schemas"]["TripReceiptResponse"][];
+            /** Asking */
+            asking: components["schemas"]["TripReceiptResponse"][];
+            /** By Kind */
+            by_kind: components["schemas"]["KindTotal"][];
+            /** By Currency */
+            by_currency: components["schemas"]["CurrencyTotal"][];
         };
         /**
          * TripKind
@@ -3107,8 +3202,73 @@ export interface components {
          */
         TripKind: "personal" | "business";
         /**
+         * TripReceiptResponse
+         * @description A receipt on a trip, with what it paid for and whether the user said so (F20.2).
+         */
+        TripReceiptResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Merchant Name */
+            merchant_name: string | null;
+            /** Transaction Date */
+            transaction_date: string | null;
+            /** Total Amount */
+            total_amount: string | null;
+            /** Status */
+            status: string;
+            channel: components["schemas"]["ReceiptChannel"];
+            /**
+             * Is Private
+             * @default false
+             */
+            is_private: boolean;
+            /** Source Reference */
+            source_reference?: string | null;
+            /** Fiscal Register Id */
+            fiscal_register_id?: string | null;
+            /** Fiscal Receipt Number */
+            fiscal_receipt_number?: string | null;
+            /** Possible Duplicate Of Id */
+            possible_duplicate_of_id?: string | null;
+            /** Original Currency */
+            original_currency?: string | null;
+            /** Original Total */
+            original_total?: string | null;
+            /** Exchange Rate */
+            exchange_rate?: string | null;
+            /** Exchange Rate Date */
+            exchange_rate_date?: string | null;
+            /** Exchange Rate Source */
+            exchange_rate_source?: string | null;
+            /** File Ids */
+            file_ids: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Line Items
+             * @default []
+             */
+            line_items: components["schemas"]["LineItemResponse"][];
+            trip?: components["schemas"]["TripRef"] | null;
+            trip_question?: components["schemas"]["TripRef"] | null;
+            expense_kind: components["schemas"]["ExpenseKind"];
+            /** Expense Kind Chosen */
+            expense_kind_chosen: boolean;
+        };
+        /**
          * TripRef
-         * @description The trip a receipt is on, as its detail names it (F20.1).
+         * @description A trip as a receipt names it: the one it is on, or the one asking about it (F20.1).
          */
         TripRef: {
             /**
@@ -3180,6 +3340,11 @@ export interface components {
             receipt_count: number;
             /** Total */
             total: string;
+            /**
+             * Asking Count
+             * @default 0
+             */
+            asking_count: number;
         };
         /**
          * TripSuggestionResponse
@@ -5625,6 +5790,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReceiptDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    choose_expense_kind_api_v1_trips_receipts__receipt_id__kind_put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpenseKindRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripReceiptResponse"];
                 };
             };
             /** @description Validation Error */
