@@ -38,6 +38,12 @@ resource "google_firebase_hosting_version" "legacy_redirect" {
   provider = google-beta
   site_id  = google_firebase_hosting_site.legacy.site_id
   config {
+    # "/:path*" needs at least one character after the slash, so the bare address has its own.
+    redirects {
+      glob        = "/"
+      status_code = 301
+      location    = "https://${google_firebase_hosting_site.app.site_id}.web.app/"
+    }
     redirects {
       glob        = "/:path*"
       status_code = 301
