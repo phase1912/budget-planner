@@ -127,7 +127,30 @@ describe("TripsPage", () => {
         start_date: "2026-09-14",
         end_date: "2026-09-17",
         purpose: "Conference",
+        budget: null,
       },
+      undefined,
+    );
+  });
+
+  it("gives a personal trip a budget and checks it is an amount (F20.3)", () => {
+    tripsStore.save.mockResolvedValue("t9");
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "New trip" }));
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Mountains" } });
+    fireEvent.change(screen.getByLabelText("From"), { target: { value: "2026-10-10" } });
+    fireEvent.change(screen.getByLabelText("To"), { target: { value: "2026-10-12" } });
+    const budget = screen.getByLabelText("Budget, PLN");
+
+    fireEvent.change(budget, { target: { value: "abc" } });
+    expect(screen.getByText("Enter an amount above zero.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save trip" })).toBeDisabled();
+
+    fireEvent.change(budget, { target: { value: "3000,50" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save trip" }));
+
+    expect(tripsStore.save).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "personal", budget: "3000.50" }),
       undefined,
     );
   });

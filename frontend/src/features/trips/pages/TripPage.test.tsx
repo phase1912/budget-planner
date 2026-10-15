@@ -36,6 +36,10 @@ function trip(overrides: Partial<TripDetail> = {}): TripDetail {
     receipt_count: 1,
     total: "2840.00",
     asking_count: 0,
+    budget: null,
+    budget_left: null,
+    days: [{ day: "2026-10-02", total: "2840.00" }],
+    categories: [{ category: "Transport", total: "2840.00" }],
     receipts: [TAXI],
     asking: [],
     by_kind: [
@@ -142,5 +146,34 @@ describe("TripPage — what a trip cost, by kind (F20.2)", () => {
       "href",
       "/upload?trip=t1",
     );
+  });
+
+  it("reads a personal trip against its budget, day by day and by category (F20.3)", () => {
+    tripsStore.current = trip({
+      total: "2620.00",
+      budget: "3000.00",
+      budget_left: "380.00",
+      days: [
+        { day: "2026-10-10", total: "1120.00" },
+        { day: "2026-10-11", total: "0.00" },
+      ],
+      categories: [{ category: "Dining", total: "2620.00" }],
+    });
+    renderPage();
+
+    expect(screen.getByText("87% of 3,000.00 PLN")).toBeInTheDocument();
+    expect(screen.getByText("380.00 PLN left")).toBeInTheDocument();
+    const days = screen.getByRole("heading", { name: "Day by day" }).parentElement;
+    expect(days).toHaveTextContent("10 Oct 2026");
+    expect(days).toHaveTextContent("0.00 PLN");
+    const categories = screen.getByRole("heading", { name: "By category" }).parentElement;
+    expect(categories).toHaveTextContent("Dining2,620.00 PLN");
+  });
+
+  it("says by how much a trip went over its budget", () => {
+    tripsStore.current = trip({ total: "3100.00", budget: "3000.00", budget_left: "-100.00" });
+    renderPage();
+
+    expect(screen.getByText("100.00 PLN over")).toBeInTheDocument();
   });
 });

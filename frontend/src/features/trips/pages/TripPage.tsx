@@ -22,14 +22,17 @@ import { useStores } from "@/stores/StoreContext";
 import type { ExpenseKind } from "@/stores/TripsStore";
 import { TripDialog } from "../components/TripDialog";
 import { TripAsking } from "../components/TripAsking";
+import { TripBudget } from "../components/TripBudget";
 import { TripSpending } from "../components/TripSpending";
+import { TripStory } from "../components/TripStory";
 import { countryName, formatTripDay } from "../tripFormat";
 
 const KINDS: ExpenseKind[] = ["transport", "accommodation", "meals", "other"];
 
 /**
  * One trip (F20.1): where and when, what it cost — to be reimbursed, for a business
- * trip — split by kind and currency paid (F20.2), and its receipts. A receipt opens to
+ * trip — against its budget and day by day (F20.3), split by kind and currency paid
+ * (F20.2), and its receipts. A receipt opens to
  * its details, its kind can be changed in place, and it can be taken out of the trip;
  * the trip can be changed or deleted, which gives its receipts back to the month.
  */
@@ -128,23 +131,28 @@ export const TripPage = observer(function TripPage() {
           </div>
         </header>
 
-        <Card className="flex items-baseline justify-between gap-3 p-4 md:p-5">
-          <div className="flex flex-col gap-0.5">
+        <Card className="flex flex-col gap-3 p-4 md:p-5">
+          <div className="flex items-baseline justify-between gap-3">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-base text-muted-foreground">
+                {t(trip.kind === "business" ? "toReimburse" : "total")}
+              </span>
+              <span className="text-[24px] font-bold tabular-nums md:text-[28px]">
+                {formatAmount(trip.total)} {currency}
+              </span>
+            </div>
             <span className="text-base text-muted-foreground">
-              {t(trip.kind === "business" ? "toReimburse" : "total")}
-            </span>
-            <span className="text-[24px] font-bold tabular-nums md:text-[28px]">
-              {formatAmount(trip.total)} {currency}
+              {t("receipts", { count: trip.receipt_count })}
             </span>
           </div>
-          <span className="text-base text-muted-foreground">
-            {t("receipts", { count: trip.receipt_count })}
-          </span>
+          <TripBudget trip={trip} currency={currency} />
         </Card>
 
         <TripAsking trip={trip} />
 
         {trip.receipt_count > 0 && <TripSpending trip={trip} currency={currency} />}
+
+        {trip.receipt_count > 0 && <TripStory trip={trip} currency={currency} />}
 
         <section aria-labelledby="trip-receipts" className="flex flex-col gap-2.5">
           <div className="flex items-center justify-between gap-3">

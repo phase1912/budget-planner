@@ -28,7 +28,7 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | **Product** | One thing the user buys, however each shop prints it: a name and, when printed, a package size in grams or millilitres (F16.1). Purchase lines link to it. | User |
 | **ProductAlias** | One way a product is printed, as its matching key with an example; merging and splitting move these (F16.1). | Product |
 | **ProductSelection** | Products the user explores together, saved under a name; follows merges and splits (F16.2). | User |
-| **Trip** | A trip the user recorded, personal or business: a name, destination, whole days and purpose. Its receipts are those dated within it, unless moved in or out by hand (F20.1), and its spending splits by each receipt's kind of expense (F20.2). | User |
+| **Trip** | A trip the user recorded, personal or business: a name, destination, whole days and purpose. Its receipts are those dated within it, unless moved in or out by hand (F20.1), its spending splits by each receipt's kind of expense (F20.2), and a personal one may have a budget (F20.3). | User |
 | **NameCorrection** | A line name the user corrected on one shop's receipt — the printed name and what it means — applied to that shop's later receipts (F15.3). | User |
 | **Category** | A spending classification. Either a system default or user-defined. | User (nullable for defaults) |
 | **PositionMatch** | A decision that two line items are, or are not, the same physical purchase. | Receipt |
@@ -288,6 +288,13 @@ Rules that must hold at all times. Each is a candidate for a test.
     spending splits by kind, every kind shown even at zero, in the account's currency, and
     by the currency each receipt was paid in, as printed; only read receipts count, as in
     its total (F20.2).
+
+11t. A personal trip may have a budget of its own, in the account's currency; a business
+    trip has none — its money is the employer's. What is left is the budget less the trip's
+    total, and goes below zero once overspent. A trip reads as a story from its read
+    receipts only: what each of its days cost, a day without spending at zero, and what
+    each category took, the largest first. The month still counts the personal trip's
+    spending as before (F20.3).
 
 **Categorisation**
 

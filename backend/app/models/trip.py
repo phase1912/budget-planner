@@ -1,7 +1,8 @@
 import uuid
 from datetime import date
+from decimal import Decimal
 
-from sqlalchemy import Date, Enum, ForeignKey, String, Text
+from sqlalchemy import Date, Enum, ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.domain.trips import TripKind
@@ -37,3 +38,5 @@ class Trip(Model):
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     purpose: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # What the user means to spend on a personal trip, in the account's currency (F20.3).
+    budget: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)

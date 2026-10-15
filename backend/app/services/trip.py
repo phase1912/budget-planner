@@ -7,16 +7,20 @@ from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import DomainError, NotFoundError, ProblemCode
+from app.domain.categories import UNCATEGORIZED
 from app.domain.periods import DateRange
 from app.domain.trips import (
     ExpenseKind,
     TripKind,
     TripLine,
+    TripPurchase,
     TripSpending,
+    TripStory,
     TripSuggestion,
     kind_from_categories,
     split_spending,
     suggest_trips,
+    trip_story,
 )
 from app.models.receipt import Receipt, ReceiptStatus
 from app.models.trip import Trip
@@ -38,6 +42,7 @@ class TripDetails:
     start_date: date
     end_date: date
     purpose: str | None
+    budget: Decimal | None = None
 
 
 @dataclass(frozen=True)
@@ -111,6 +116,8 @@ class TripService:
         trip.start_date = details.start_date
         trip.end_date = details.end_date
         trip.purpose = details.purpose.strip() if details.purpose else None
+        # Only a personal trip has a budget of its own; a business one is the employer's (F20.3).
+        trip.budget = details.budget if details.kind is TripKind.PERSONAL else None
         self.session.add(trip)
         await self.session.flush()
         return trip
@@ -233,3 +240,22 @@ def trip_spending(receipts: Sequence[Receipt], currency: str) -> TripSpending:
             )
         )
     return split_spending(lines)
+
+
+def story_of(trip: Trip, receipts: Sequence[Receipt]) -> TripStory:
+    """What each day of a trip cost and where its money went, from its read lines (F20.3).
+
+    Receipts still in review count nowhere, as in the trip's total. Expects `line_items`
+    and their categories loaded.
+    """
+    purchases = [
+        TripPurchase(
+            day=(receipt.transaction_date or receipt.created_at).astimezone(UTC).date(),
+            category=item.category.name if item.category else UNCATEGORIZED,
+            amount=item.total_price,
+        )
+        for receipt in receipts
+        if receipt.status is ReceiptStatus.PARSED
+        for item in receipt.line_items
+    ]
+    return trip_story(trip.start_date, trip.end_date, purchases)

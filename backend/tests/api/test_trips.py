@@ -9,7 +9,7 @@ from typing import Any
 import jwt
 import pytest
 from httpx import ASGITransport, AsyncClient, Response
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
@@ -537,3 +537,55 @@ async def test_a_receipt_cannot_be_stored_into_another_users_trip(
     )
 
     assert stored.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_a_personal_trip_has_a_budget_its_days_and_its_categories(
+    db_session: AsyncSession,
+) -> None:
+    """F20.3 demo: 3 000 for the mountains, day by day, 380 left."""
+    user = await UserFactory.create_async(currency="PLN")
+    await _receipt(db_session, user.id, 10, "1120.00")
+    await _receipt(db_session, user.id, 11, "860.00")
+    await _receipt(db_session, user.id, 12, "640.00")
+    dining = (await _builtin(db_session, "Dining")).id
+    created = await _call(
+        db_session,
+        user,
+        "POST",
+        "/api/v1/trips",
+        json={**_trip("personal", 10, 12, "Mountains"), "budget": "3000.00"},
+    )
+    trip_id = created.json()["id"]
+    db_session.expunge_all()
+    await db_session.execute(
+        update(LineItem)
+        .where(LineItem.receipt_id.in_(select(Receipt.id).where(Receipt.user_id == user.id)))
+        .values(category_id=dining)
+    )
+
+    detail = (await _call(db_session, user, "GET", f"/api/v1/trips/{trip_id}")).json()
+
+    assert (created.json()["budget"], created.json()["budget_left"]) == ("3000.00", "380.00")
+    assert [(d["day"], d["total"]) for d in detail["days"]] == [
+        ("2026-10-10", "1120.00"),
+        ("2026-10-11", "860.00"),
+        ("2026-10-12", "640.00"),
+    ]
+    assert detail["categories"] == [{"category": "Dining", "total": "2620.00"}]
+
+
+@pytest.mark.asyncio
+async def test_a_business_trip_takes_no_budget(db_session: AsyncSession) -> None:
+    """F20.3: the employer's money is not the user's to budget."""
+    user = await UserFactory.create_async()
+
+    refused = await _call(
+        db_session,
+        user,
+        "POST",
+        "/api/v1/trips",
+        json={**_trip("business", 13, 15), "budget": "500.00"},
+    )
+
+    assert refused.status_code == 422

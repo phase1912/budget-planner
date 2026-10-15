@@ -22,11 +22,15 @@ class TripRequest(BaseModel):
     start_date: date
     end_date: date
     purpose: str | None = Field(default=None, max_length=1000)
+    budget: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
+    """What the user means to spend on a personal trip (F20.3); a business trip has none."""
 
     @model_validator(mode="after")
     def _ends_after_it_starts(self) -> Self:
         if self.end_date < self.start_date:
             raise ValueError("A trip ends on or after the day it starts")
+        if self.budget is not None and self.kind is TripKind.BUSINESS:
+            raise ValueError("A business trip is the employer's money: it has no budget")
         return self
 
 
@@ -43,6 +47,9 @@ class TripResponse(BaseModel):
     purpose: str | None
     receipt_count: int
     total: Decimal
+    budget: Decimal | None = None
+    budget_left: Decimal | None = None
+    """What is left of the budget, negative once overspent; None without a budget (F20.3)."""
     asking_count: int = 0
     """Receipts dated within a business trip that nobody has said are its own yet."""
 
@@ -63,6 +70,20 @@ class KindTotal(BaseModel):
     total: Decimal
 
 
+class DayTotal(BaseModel):
+    """What one day of a trip cost, in the account's currency."""
+
+    day: date
+    total: Decimal
+
+
+class CategoryTotal(BaseModel):
+    """What a trip spent in one category, by its stored name, in the account's currency."""
+
+    category: str
+    total: Decimal
+
+
 class CurrencyTotal(BaseModel):
     """What a trip's read receipts paid in one currency come to, as printed."""
 
@@ -80,6 +101,10 @@ class TripDetailResponse(TripResponse):
     receipts: list[TripReceiptResponse]
     asking: list[TripReceiptResponse]
     """A business trip's question: receipts dated within it, the employer's or the user's?"""
+    days: list[DayTotal]
+    """Every day of the trip, zero ones too, oldest first (F20.3)."""
+    categories: list[CategoryTotal]
+    """Where the trip's money went, the largest first (F20.3)."""
     by_kind: list[KindTotal]
     by_currency: list[CurrencyTotal]
 

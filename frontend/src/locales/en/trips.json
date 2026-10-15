@@ -38,7 +38,10 @@
     "purpose": "Purpose",
     "purposePlaceholder": "Conference, client visit…",
     "save": "Save trip",
-    "endBeforeStart": "The trip cannot end before it starts."
+    "endBeforeStart": "The trip cannot end before it starts.",
+    "budget": "Budget",
+    "budgetHint": "Optional: what you mean to spend on this trip.",
+    "budgetInvalid": "Enter an amount above zero."
   },
   "detail": {
     "back": "All trips",
@@ -88,5 +91,15 @@
   "label": {
     "question": "Business?"
   },
-  "addReceipt": "Add receipt"
+  "addReceipt": "Add receipt",
+  "budget": {
+    "of": "{{percent}}% of {{budget}} {{currency}}",
+    "left": "{{amount}} {{currency}} left",
+    "over": "{{amount}} {{currency}} over"
+  },
+  "story": {
+    "days": "Day by day",
+    "categories": "By category",
+    "noSpending": "—"
+  }
 }
