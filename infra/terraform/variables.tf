@@ -35,6 +35,18 @@ variable "github_repository" {
 variable "hosting_site_id" {
   description = "Firebase Hosting site id; the frontend is served at https://<id>.web.app. Globally unique."
   type        = string
+  default     = "budget-agent"
+}
+
+variable "redirect_legacy" {
+  description = "Whether the legacy site redirects to the new one. Off only for the first apply of F17.1, before the app is deployed to the new site."
+  type        = bool
+  default     = true
+}
+
+variable "legacy_hosting_site_id" {
+  description = "The site the frontend was first served from; it now only redirects to hosting_site_id (F17.1)."
+  type        = string
   default     = "budget-agent-phase1912"
 }
 
