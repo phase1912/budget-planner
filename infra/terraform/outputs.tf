@@ -5,7 +5,12 @@ output "backend_url" {
 
 output "frontend_url" {
   description = "Where the app is served."
-  value       = "https://${google_firebase_hosting_site.frontend.site_id}.web.app"
+  value       = "https://${google_firebase_hosting_site.app.site_id}.web.app"
+}
+
+output "legacy_frontend_url" {
+  description = "The first address, now a permanent redirect to frontend_url."
+  value       = "https://${google_firebase_hosting_site.legacy.site_id}.web.app"
 }
 
 output "inbound_email_domain" {

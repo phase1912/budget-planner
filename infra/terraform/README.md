@@ -15,7 +15,7 @@ onto what this creates.
 | `secrets.tf` | Generated passwords and keys in Secret Manager |
 | `run.tf` | The Cloud Run service and the migrations job |
 | `appengine.tf` | The App Engine application the mail relay runs on (ADR-0013) |
-| `firebase.tf` | Firebase and the Hosting site for the frontend |
+| `firebase.tf` | Firebase, the Hosting site the frontend is served from, and the old site that redirects to it |
 | `github.tf` | Workload Identity Federation and the deployer service account |
 | `budget.tf` | A monthly budget with alerts |
 
@@ -72,6 +72,25 @@ the backend, frontend and mail relay together for the first time.
   gcloud compute ssh postgres --zone us-central1-a --tunnel-through-iap -- \
     docker exec -it postgres psql -U budget_planner budget_planner
   ```
+
+## Moving the address
+
+The app is served at `https://budget-agent.web.app` (`hosting_site_id`). It was first served
+at `https://budget-agent-phase1912.web.app` (`legacy_hosting_site_id`), which now answers every
+path with a 301 to the same path on the new address (F17.1). A Firebase site cannot be renamed,
+so the move was a second site, made in three steps, so nobody was redirected to an empty site:
+
+1. `terraform apply -var=redirect_legacy=false` — creates the new site and lets both
+   addresses call the API (CORS). The old site still serves the app.
+2. `gh variable set FIREBASE_SITE_ID --body budget-agent`, then run the Deploy workflow by
+   hand (Actions → Deploy → Run workflow): the app is now on the new address as well.
+3. `terraform apply` — `redirect_legacy` defaults to on, so the old address now redirects.
+   Check it: `curl -sI "https://budget-agent-phase1912.web.app/trips?x=1"` answers 301 with
+   `location: https://budget-agent.web.app/trips?x=1`.
+
+If the name was already taken, step 1 fails on the new site and changes nothing else. A copy of
+the app installed from the old address follows the redirect the next time it loads a page
+online; installing it again from the new address gives it the new name.
 
 ## Restoring the database from a snapshot
 

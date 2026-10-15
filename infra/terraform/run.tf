@@ -1,7 +1,11 @@
 locals {
+  # The old site's origins stay allowed: a copy of the app already open or installed there
+  # keeps working until it next loads a page, which the redirect then moves (F17.1).
   frontend_origins = [
     "https://${var.hosting_site_id}.web.app",
     "https://${var.hosting_site_id}.firebaseapp.com",
+    "https://${var.legacy_hosting_site_id}.web.app",
+    "https://${var.legacy_hosting_site_id}.firebaseapp.com",
   ]
 
   # Settings every backend process gets, service and migrations job alike.
