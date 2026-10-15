@@ -192,3 +192,43 @@ def split_spending(lines: list[TripLine]) -> TripSpending:
             by_currency.get(line.paid_currency, Decimal(0)) + line.paid_amount
         )
     return TripSpending(by_kind, by_currency)
+
+
+@dataclass(frozen=True)
+class TripPurchase:
+    """One line of a read receipt on a trip: the day it was bought, its category, its cost."""
+
+    day: date
+    category: str
+    amount: Decimal
+
+
+@dataclass(frozen=True)
+class TripStory:
+    """A trip read as one story (F20.3): what each day cost and where the money went."""
+
+    days: list[tuple[date, Decimal]]
+    """Every day of the trip, a day without spending at zero, oldest first; a receipt put
+    in the trip by hand from outside its dates adds its own day."""
+    categories: list[tuple[str, Decimal]]
+    """Each category the trip's money went on, the largest first."""
+
+
+def trip_story(start: date, end: date, purchases: Sequence[TripPurchase]) -> TripStory:
+    """Add a trip's purchases up per day of the trip and per category (F20.3)."""
+    by_day = {start + timedelta(days=n): Decimal("0.00") for n in range((end - start).days + 1)}
+    by_category: dict[str, Decimal] = {}
+    for purchase in purchases:
+        by_day[purchase.day] = by_day.get(purchase.day, Decimal("0.00")) + purchase.amount
+        by_category[purchase.category] = (
+            by_category.get(purchase.category, Decimal("0.00")) + purchase.amount
+        )
+    return TripStory(
+        days=sorted(by_day.items()),
+        categories=sorted(by_category.items(), key=lambda pair: (-pair[1], pair[0])),
+    )
+
+
+def budget_left(budget: Decimal | None, spent: Decimal) -> Decimal | None:
+    """What is left of a trip's budget, negative once it is overspent; None without one."""
+    return None if budget is None else budget - spent

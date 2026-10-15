@@ -23,7 +23,8 @@ type TripKind = TripRequest["kind"];
  *
  * `initial` prefills it — a trip being changed, or a suggested one. The dates are
  * inclusive; the server refuses a trip that overlaps another, and its message is
- * shown here. Calls `onSaved` with the trip's id once saved.
+ * shown here. A personal trip may have a budget of its own (F20.3); a business trip asks
+ * its purpose instead. Calls `onSaved` with the trip's id once saved.
  */
 export const TripDialog = observer(function TripDialog({
   initial,
@@ -36,7 +37,8 @@ export const TripDialog = observer(function TripDialog({
   onClose: () => void;
   onSaved?: (id: string) => void;
 }) {
-  const { tripsStore } = useStores();
+  const { tripsStore, authStore } = useStores();
+  const currency = authStore.user?.currency ?? "PLN";
   const { t } = useTranslation(["trips", "common"]);
   const titleId = useId();
   const [kind, setKind] = useState<TripKind>(initial?.kind ?? "personal");
@@ -46,10 +48,16 @@ export const TripDialog = observer(function TripDialog({
   const [start, setStart] = useState(initial?.start_date ?? "");
   const [end, setEnd] = useState(initial?.end_date ?? "");
   const [purpose, setPurpose] = useState(initial?.purpose ?? "");
+  const [budget, setBudget] = useState(initial?.budget == null ? "" : String(initial.budget));
   const [countries] = useState(countryOptions);
 
   const endBeforeStart = Boolean(start && end && end < start);
-  const ready = name.trim() !== "" && start !== "" && end !== "" && !endBeforeStart;
+  const budgetInvalid =
+    kind === "personal" &&
+    budget.trim() !== "" &&
+    !(/^\d+(\.\d{1,2})?$/.test(budget.trim()) && Number(budget) > 0);
+  const ready =
+    name.trim() !== "" && start !== "" && end !== "" && !endBeforeStart && !budgetInvalid;
 
   const close = () => {
     tripsStore.clearSaveError();
@@ -67,6 +75,7 @@ export const TripDialog = observer(function TripDialog({
         start_date: start,
         end_date: end,
         purpose: kind === "business" ? purpose.trim() || null : null,
+        budget: kind === "personal" ? budget.trim() || null : null,
       },
       tripId,
     );
@@ -156,6 +165,23 @@ export const TripDialog = observer(function TripDialog({
               }}
             />
           </div>
+          {kind === "personal" && (
+            <div className="flex flex-col gap-1.5">
+              <Input
+                label={`${t("form.budget")}, ${currency}`}
+                value={budget}
+                inputMode="decimal"
+                maxLength={12}
+                error={budgetInvalid ? t("form.budgetInvalid") : undefined}
+                onChange={(e) => {
+                  setBudget(e.target.value.replace(",", "."));
+                }}
+              />
+              {!budgetInvalid && (
+                <p className="m-0 text-base text-muted-foreground">{t("form.budgetHint")}</p>
+              )}
+            </div>
+          )}
           {kind === "business" && (
             <Input
               label={t("form.purpose")}

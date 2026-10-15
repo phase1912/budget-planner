@@ -1,4 +1,4 @@
-"""Trips: which days look like one nobody recorded (F20.1), and how one is split (F20.2)."""
+"""Trips: unrecorded ones found (F20.1), split by kind (F20.2), read as a story (F20.3)."""
 
 import uuid
 from datetime import date
@@ -10,13 +10,16 @@ from app.domain.trips import (
     Placement,
     TripKind,
     TripLine,
+    TripPurchase,
     TripSpan,
+    budget_left,
     kind_from_categories,
     overlaps,
     parse_expense_kind,
     place,
     split_spending,
     suggest_trips,
+    trip_story,
 )
 
 
@@ -96,3 +99,36 @@ def test_a_receipt_placed_by_hand_stays_put_whatever_its_date() -> None:
 
     assert place(date(2026, 10, 14), True, BERLIN.id, trips) == Placement(BERLIN.id, None)
     assert place(date(2026, 10, 3), True, None, trips) == Placement(None, None)
+
+
+def test_a_trip_story_shows_every_day_and_the_largest_category_first() -> None:
+    """F20.3 demo: three days in the mountains, a quiet day still on the list."""
+    story = trip_story(
+        date(2026, 10, 10),
+        date(2026, 10, 13),
+        [
+            TripPurchase(date(2026, 10, 10), "Accommodation", Decimal("900.00")),
+            TripPurchase(date(2026, 10, 10), "Dining", Decimal("220.00")),
+            TripPurchase(date(2026, 10, 12), "Dining", Decimal("640.00")),
+            TripPurchase(date(2026, 10, 20), "Transport", Decimal("50.00")),  # put in by hand
+        ],
+    )
+
+    assert story.days == [
+        (date(2026, 10, 10), Decimal("1120.00")),
+        (date(2026, 10, 11), Decimal("0.00")),
+        (date(2026, 10, 12), Decimal("640.00")),
+        (date(2026, 10, 13), Decimal("0.00")),
+        (date(2026, 10, 20), Decimal("50.00")),
+    ]
+    assert story.categories == [
+        ("Accommodation", Decimal("900.00")),
+        ("Dining", Decimal("860.00")),
+        ("Transport", Decimal("50.00")),
+    ]
+
+
+def test_what_is_left_of_a_budget_goes_below_zero_once_overspent() -> None:
+    assert budget_left(Decimal("3000.00"), Decimal("2620.00")) == Decimal("380.00")
+    assert budget_left(Decimal("3000.00"), Decimal("3100.00")) == Decimal("-100.00")
+    assert budget_left(None, Decimal("10.00")) is None

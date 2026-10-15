@@ -38,7 +38,10 @@
     "purpose": "Мета",
     "purposePlaceholder": "Конференція, зустріч з клієнтом…",
     "save": "Зберегти поїздку",
-    "endBeforeStart": "Поїздка не може закінчитися раніше, ніж почалася."
+    "endBeforeStart": "Поїздка не може закінчитися раніше, ніж почалася.",
+    "budget": "Бюджет",
+    "budgetHint": "Необов'язково: скільки ви плануєте витратити в поїздці.",
+    "budgetInvalid": "Введіть суму більше нуля."
   },
   "detail": {
     "back": "Усі поїздки",
@@ -92,5 +95,15 @@
   "label": {
     "question": "Службова?"
   },
-  "addReceipt": "Додати чек"
+  "addReceipt": "Додати чек",
+  "budget": {
+    "of": "{{percent}}% із {{budget}} {{currency}}",
+    "left": "Залишилось {{amount}} {{currency}}",
+    "over": "Перевищено на {{amount}} {{currency}}"
+  },
+  "story": {
+    "days": "По днях",
+    "categories": "За категоріями",
+    "noSpending": "—"
+  }
 }

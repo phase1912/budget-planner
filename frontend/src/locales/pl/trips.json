@@ -38,7 +38,10 @@
     "purpose": "Cel",
     "purposePlaceholder": "Konferencja, wizyta u klienta…",
     "save": "Zapisz podróż",
-    "endBeforeStart": "Podróż nie może skończyć się przed początkiem."
+    "endBeforeStart": "Podróż nie może skończyć się przed początkiem.",
+    "budget": "Budżet",
+    "budgetHint": "Opcjonalnie: ile chcesz wydać w tej podróży.",
+    "budgetInvalid": "Wpisz kwotę większą od zera."
   },
   "detail": {
     "back": "Wszystkie podróże",
@@ -92,5 +95,15 @@
   "label": {
     "question": "Służbowy?"
   },
-  "addReceipt": "Dodaj paragon"
+  "addReceipt": "Dodaj paragon",
+  "budget": {
+    "of": "{{percent}}% z {{budget}} {{currency}}",
+    "left": "Zostało {{amount}} {{currency}}",
+    "over": "Przekroczono o {{amount}} {{currency}}"
+  },
+  "story": {
+    "days": "Dzień po dniu",
+    "categories": "Według kategorii",
+    "noSpending": "—"
+  }
 }

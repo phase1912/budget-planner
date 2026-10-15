@@ -1729,6 +1729,16 @@ export interface components {
             chart?: components["schemas"]["ChartResponse"] | null;
         };
         /**
+         * CategoryTotal
+         * @description What a trip spent in one category, by its stored name, in the account's currency.
+         */
+        CategoryTotal: {
+            /** Category */
+            category: string;
+            /** Total */
+            total: string;
+        };
+        /**
          * CategoryUpdate
          * @description A new name for one of the user's own categories (BRD C6).
          */
@@ -1823,6 +1833,19 @@ export interface components {
         CurrencyTotal: {
             /** Currency */
             currency: string;
+            /** Total */
+            total: string;
+        };
+        /**
+         * DayTotal
+         * @description What one day of a trip cost, in the account's currency.
+         */
+        DayTotal: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
             /** Total */
             total: string;
         };
@@ -3181,6 +3204,10 @@ export interface components {
             receipt_count: number;
             /** Total */
             total: string;
+            /** Budget */
+            budget?: string | null;
+            /** Budget Left */
+            budget_left?: string | null;
             /**
              * Asking Count
              * @default 0
@@ -3190,6 +3217,10 @@ export interface components {
             receipts: components["schemas"]["TripReceiptResponse"][];
             /** Asking */
             asking: components["schemas"]["TripReceiptResponse"][];
+            /** Days */
+            days: components["schemas"]["DayTotal"][];
+            /** Categories */
+            categories: components["schemas"]["CategoryTotal"][];
             /** By Kind */
             by_kind: components["schemas"]["KindTotal"][];
             /** By Currency */
@@ -3306,6 +3337,8 @@ export interface components {
             end_date: string;
             /** Purpose */
             purpose?: string | null;
+            /** Budget */
+            budget?: number | string | null;
         };
         /**
          * TripResponse
@@ -3340,6 +3373,10 @@ export interface components {
             receipt_count: number;
             /** Total */
             total: string;
+            /** Budget */
+            budget?: string | null;
+            /** Budget Left */
+            budget_left?: string | null;
             /**
              * Asking Count
              * @default 0

@@ -8,11 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import get_current_user
 from app.api.routers.receipts import receipt_detail
 from app.db.session import get_db_session
+from app.domain.trips import budget_left
 from app.models.receipt import Receipt
 from app.models.user import User
 from app.schemas.receipt import ReceiptDetailResponse, ReceiptResponse
 from app.schemas.trip import (
+    CategoryTotal,
     CurrencyTotal,
+    DayTotal,
     ExpenseKindRequest,
     KindTotal,
     ReceiptTripRequest,
@@ -22,7 +25,14 @@ from app.schemas.trip import (
     TripResponse,
     TripSuggestionResponse,
 )
-from app.services.trip import TripDetails, TripService, TripSummary, kind_of, trip_spending
+from app.services.trip import (
+    TripDetails,
+    TripService,
+    TripSummary,
+    kind_of,
+    story_of,
+    trip_spending,
+)
 
 router = APIRouter(prefix="/api/v1/trips", tags=["trips"])
 
@@ -44,6 +54,8 @@ def trip_response(summary: TripSummary) -> TripResponse:
         purpose=trip.purpose,
         receipt_count=summary.receipt_count,
         total=summary.total,
+        budget=trip.budget,
+        budget_left=budget_left(trip.budget, summary.total),
         asking_count=summary.asking_count,
     )
 
@@ -103,10 +115,13 @@ async def gettrip_response(
     """
     summary, receipts, asking = await TripService(session).get(current_user.id, trip_id)
     spending = trip_spending(receipts, current_user.currency)
+    story = story_of(summary.trip, receipts)
     return TripDetailResponse(
         **trip_response(summary).model_dump(),
         receipts=[trip_receipt(r) for r in receipts],
         asking=[trip_receipt(r) for r in asking],
+        days=[DayTotal(day=d, total=t) for d, t in story.days],
+        categories=[CategoryTotal(category=c, total=t) for c, t in story.categories],
         by_kind=[KindTotal(kind=k, total=t) for k, t in spending.by_kind.items()],
         by_currency=[
             CurrencyTotal(currency=c, total=t)
