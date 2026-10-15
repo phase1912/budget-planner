@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
-import { Card, ErrorState, LoadingState, Meter } from "@/shared/components";
+import { Card, ErrorState, LoadingState, Meter, CategoryIcon } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
 import { numberFormat } from "@/i18n/format";
 import { useTranslation } from "react-i18next";
@@ -59,6 +59,7 @@ export const HouseholdStatisticsView = observer(function HouseholdStatisticsView
     ...stats.categories.map((c) => ({
       key: c.category_id ?? "none",
       name: categoryName(c.name ?? "Uncategorized"),
+      stored: c.name ?? "Uncategorized",
       owner: ownerName(c.owner_id),
       total: Number(c.total),
       share: Number(c.share),
@@ -68,6 +69,7 @@ export const HouseholdStatisticsView = observer(function HouseholdStatisticsView
           {
             key: "private",
             name: t("stats.private"),
+            stored: null,
             owner: undefined,
             total: Number(stats.private_total),
             share: Number(stats.private_share),
@@ -92,8 +94,13 @@ export const HouseholdStatisticsView = observer(function HouseholdStatisticsView
         {rows.map((row) => (
           <li key={row.key} className="flex flex-col gap-1.5">
             <div className="flex items-baseline justify-between gap-3">
-              <span className="min-w-0 truncate font-semibold">
-                {row.name}
+              <span className="flex min-w-0 items-center gap-2 font-semibold">
+                {row.stored ? (
+                  <CategoryIcon name={row.stored} />
+                ) : (
+                  <span aria-hidden="true" className="h-6 w-6 shrink-0" />
+                )}
+                <span className="truncate">{row.name}</span>
                 {row.owner && (
                   <span className="ml-2 text-md font-normal text-muted-foreground">
                     {t("stats.owner", { name: row.owner })}

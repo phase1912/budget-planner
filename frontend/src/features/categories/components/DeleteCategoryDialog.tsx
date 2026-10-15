@@ -10,6 +10,8 @@ import { categoryName } from "@/shared/categoryName";
 
 interface DeleteCategoryDialogProps {
   category: Category;
+  /** The account's currency, the category's sum is in. */
+  currency: string;
   /** Every category the items could move to; the one being deleted is filtered out here. */
   targets: Category[];
   onConfirm: (moveToId: string) => Promise<boolean>;
@@ -25,6 +27,7 @@ interface DeleteCategoryDialogProps {
  */
 export const DeleteCategoryDialog = observer(function DeleteCategoryDialog({
   category,
+  currency,
   targets,
   onConfirm,
   onClose,
@@ -65,7 +68,7 @@ export const DeleteCategoryDialog = observer(function DeleteCategoryDialog({
                 : t("delete.filed", {
                     count: category.item_count,
                     amount: formatCategoryAmount(category),
-                    currency: "PLN",
+                    currency,
                   })}
             </p>
           </div>

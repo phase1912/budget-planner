@@ -12,9 +12,9 @@ export function formatItemCount(count: number): string {
   return i18n.t("categories:items", { count });
 }
 
-/** The "9 items · 421.30 PLN" summary shown beside a category (BRD C1). */
-export function formatCategoryTotals(category: Category): string {
-  return `${formatItemCount(category.item_count)} · ${AMOUNT.format(Number(category.total_amount))} PLN`;
+/** The "9 items · 421.30 PLN" summary beside a category, in the account's `currency` (C1). */
+export function formatCategoryTotals(category: Category, currency: string): string {
+  return `${formatItemCount(category.item_count)} · ${AMOUNT.format(Number(category.total_amount))} ${currency}`;
 }
 
 /** An amount as the taxonomy screen prints it, e.g. "421.30". */

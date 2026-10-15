@@ -48,3 +48,8 @@ class Trip(Model):
     abroad_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     abroad_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     meals_provided: Mapped[list[list[str]] | None] = mapped_column(JSONB, nullable=True)
+    # What the employer paid ahead for a business trip, in the account's currency, and when:
+    # the settlement takes it off, and its day sets the rate the per diem is converted at
+    # (§ 20 of the regulation; F20.5, ADR-0018).
+    advance: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    advance_paid_on: Mapped[date | None] = mapped_column(Date, nullable=True)

@@ -18,15 +18,19 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.dependencies import get_exchange_rates
 from app.core.config import get_settings
 from app.core.context import current_user_id
 from app.db.session import get_session_factory
 from app.domain.periods import DateRange
 from app.models.export_job import ExportFormat, ExportJob, ExportKind, ExportStatus
 from app.models.receipt import Receipt, ReceiptStatus
+from app.models.user import User
+from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.storage import StoragePort
 from app.repository.receipt import ReceiptRepository
 from app.schemas.receipt import ReceiptResponse
+from app.services.settlement import gather, receipt_photos, settlement_csv, settlement_pdf
 from app.services.statistics import StatisticsService, statistics_response
 from app.services.storage import S3StorageService
 
@@ -35,7 +39,11 @@ logger = logging.getLogger(__name__)
 PAGE = 500
 """How many receipts are read from the database at a time while writing a file."""
 
-_CONTENT_TYPES = {ExportFormat.CSV: "text/csv", ExportFormat.JSON: "application/json"}
+_CONTENT_TYPES = {
+    ExportFormat.CSV: "text/csv",
+    ExportFormat.JSON: "application/json",
+    ExportFormat.PDF: "application/pdf",
+}
 _FORMULA_STARTS = ("=", "+", "-", "@", "\t", "\r")
 
 
@@ -45,7 +53,8 @@ def export_filename(
     """The name the file is saved under: what it is, the days it covers, and its format."""
     start, end = params.get("start"), params.get("end")
     days = f"{start}_{end}" if start and end else today.isoformat()
-    return f"{kind.value}-{days}.{fmt.value}"
+    name = "trip-settlement" if kind is ExportKind.TRIP else kind.value
+    return f"{name}-{days}.{fmt.value}"
 
 
 def object_name(job: ExportJob) -> str:
@@ -128,9 +137,12 @@ def receipts_json(receipts: Sequence[Receipt], params: dict[str, Any]) -> bytes:
 class ExportService:
     """Writes one export's file and records the outcome on its job (BRD N6)."""
 
-    def __init__(self, session: AsyncSession, storage: StoragePort) -> None:
+    def __init__(
+        self, session: AsyncSession, storage: StoragePort, rates: ExchangeRatePort | None = None
+    ) -> None:
         self.session = session
         self.storage = storage
+        self.rates = rates
         self.receipts = ReceiptRepository(session)
 
     async def write(self, job: ExportJob) -> None:
@@ -149,6 +161,8 @@ class ExportService:
     async def _content(self, job: ExportJob) -> bytes:
         if job.kind is ExportKind.STATISTICS:
             return await self._statistics(job)
+        if job.kind is ExportKind.TRIP:
+            return await self._settlement(job)
         receipts = await self._all_receipts(job.params)
         if job.format is ExportFormat.CSV:
             return receipts_csv(receipts)
@@ -169,6 +183,18 @@ class ExportService:
             found.extend(page)
             if not page or len(found) >= total:
                 return found
+
+    async def _settlement(self, job: ExportJob) -> bytes:
+        """A business trip's settlement, PDF with its receipts' photos or CSV (F20.5)."""
+        user = await self.session.get(User, job.user_id)
+        if user is None:
+            raise ValueError("The export's owner is gone")
+        data = await gather(self.session, user, job.params["trip_id"], self.rates)
+        language = job.params.get("language")
+        if job.format is ExportFormat.PDF:
+            photos = await receipt_photos(self.storage, data.receipts)
+            return settlement_pdf(data, language, photos)
+        return settlement_csv(data, language)
 
     async def _statistics(self, job: ExportJob) -> bytes:
         period = _period(job.params)
@@ -217,7 +243,7 @@ async def run_export(job_id: uuid.UUID) -> None:
         await session.commit()
         try:
             async with S3StorageService(get_settings()) as storage:
-                await ExportService(session, storage).write(job)
+                await ExportService(session, storage, get_exchange_rates()).write(job)
         except Exception:
             logger.exception("Export %s failed", job_id)
             await session.rollback()

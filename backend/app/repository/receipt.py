@@ -843,7 +843,11 @@ class ReceiptRepository(BaseRepository[Receipt]):
                 func.count(case((LineItem.read_name.is_not(None), 1))),
             )
             .outerjoin(LineItem, LineItem.receipt_id == Receipt.id)
-            .where(Receipt.user_id == user_id, Receipt.created_at >= since)
+            .where(
+                Receipt.user_id == user_id,
+                Receipt.created_at >= since,
+                Receipt.channel != ReceiptChannel.MANUAL,
+            )
             .group_by(Receipt.id)
         )
         return [

@@ -41,7 +41,11 @@
     "endBeforeStart": "The trip cannot end before it starts.",
     "budget": "Budget",
     "budgetHint": "Optional: what you mean to spend on this trip.",
-    "budgetInvalid": "Enter an amount above zero."
+    "budgetInvalid": "Enter an amount above zero.",
+    "advance": "Advance received",
+    "advanceHint": "Optional: what the employer paid you ahead.",
+    "advanceInvalid": "Enter an amount above zero.",
+    "advancePaidOn": "Paid on"
   },
   "detail": {
     "back": "All trips",
@@ -136,5 +140,18 @@
       "save": "Work out",
       "order": "The return must come after the departure."
     }
+  },
+  "settlement": {
+    "title": "Settlement",
+    "expenses": "Expenses",
+    "perDiem": "Per diem",
+    "perDiemNone": "not claimed",
+    "advance": "Advance",
+    "toReimburse": "To reimburse",
+    "toReturn": "To return to the employer",
+    "pending": "Waits for the NBP rate",
+    "download": "Download",
+    "pdf": "PDF with photos",
+    "csv": "CSV"
   }
 }

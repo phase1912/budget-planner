@@ -5,7 +5,8 @@
     "photos_one": "Dodano z {{count}} zdjęcia",
     "photos_few": "Dodano z {{count}} zdjęć",
     "photos_many": "Dodano z {{count}} zdjęć",
-    "photos_other": "Dodano z {{count}} zdjęcia"
+    "photos_other": "Dodano z {{count}} zdjęcia",
+    "manual": "Wpisano ręcznie, bez paragonu"
   },
   "filter": {
     "status": "Status",
@@ -15,7 +16,8 @@
     "source": "Źródło",
     "anySource": "Dowolne źródło",
     "photo": "Ze zdjęcia",
-    "email": "Z e-maila"
+    "email": "Z e-maila",
+    "manual": "Wpisane ręcznie"
   },
   "delete": {
     "title": "Usunąć „{{name}}”?",
@@ -62,7 +64,8 @@
     "items_many": "{{count}} pozycji",
     "items_other": "{{count}} pozycji",
     "convertedFrom": "z {{amount}} {{currency}}",
-    "unconvertedIn": "w {{amount}} {{currency}}"
+    "unconvertedIn": "w {{amount}} {{currency}}",
+    "manual": "Wpisano ręcznie bez paragonu"
   },
   "status": {
     "inTotal": "W sumie",
@@ -121,5 +124,21 @@
     "saving": "Zapisywanie…",
     "save": "Zapisz zmiany",
     "matches": "Pozycje zgadzają się z sumą"
+  },
+  "manual": {
+    "open": "Bez paragonu",
+    "openLong": "Dodaj wydatek bez paragonu",
+    "title": "Wydatek bez paragonu",
+    "hint": "Gotówka, napiwek, parkometr — wszystko, na co nie ma paragonu.",
+    "description": "Co to było",
+    "descriptionPlaceholder": "Wycieczka do piramid",
+    "date": "Data",
+    "amount": "Kwota",
+    "currency": "Waluta",
+    "category": "Kategoria",
+    "kind": "W podróży to było",
+    "kindAuto": "Ustal według kategorii",
+    "save": "Dodaj wydatek",
+    "amountInvalid": "Wpisz kwotę większą od zera."
   }
 }

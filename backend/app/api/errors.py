@@ -73,6 +73,7 @@ class ProblemCode(enum.StrEnum):
     PER_DIEM_TIMES = "per_diem_times"
     PER_DIEM_NO_RATES = "per_diem_no_rates"
     PER_DIEM_PERSONAL_TRIP = "per_diem_personal_trip"
+    INVALID_EXPORT = "invalid_export"
 
 
 class ProblemDetail(BaseModel):
@@ -179,6 +180,14 @@ class PerDiemError(AppError):
     status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
     code = ProblemCode.PER_DIEM_TIMES
     title = "Per Diem Not Worked Out"
+
+
+class InvalidExportError(AppError):
+    """Raised for an export whose kind and format do not go together (BRD N6, F20.5)."""
+
+    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
+    code = ProblemCode.INVALID_EXPORT
+    title = "Invalid Export"
 
 
 class InvalidGoalError(AppError):

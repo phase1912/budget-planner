@@ -232,3 +232,29 @@ def trip_story(start: date, end: date, purchases: Sequence[TripPurchase]) -> Tri
 def budget_left(budget: Decimal | None, spent: Decimal) -> Decimal | None:
     """What is left of a trip's budget, negative once it is overspent; None without one."""
     return None if budget is None else budget - spent
+
+
+@dataclass(frozen=True)
+class Settlement:
+    """What the employer owes back for a business trip, in the account's currency (F20.5).
+
+    `per_diem` is None when no per diem was claimed, and `to_reimburse` None when one was
+    claimed but could not be put into the account's currency: a sum is never guessed.
+    A negative `to_reimburse` is what the employee hands back of the advance.
+    """
+
+    expenses: Decimal
+    per_diem: Decimal | None
+    advance: Decimal
+    to_reimburse: Decimal | None
+
+
+def settle(
+    expenses: Decimal, per_diem_claimed: bool, per_diem: Decimal | None, advance: Decimal | None
+) -> Settlement:
+    """Add a business trip up: its expenses and per diem, less the advance paid (F20.5)."""
+    paid_ahead = advance or Decimal("0.00")
+    owed = (
+        None if per_diem_claimed and per_diem is None else expenses + (per_diem or 0) - paid_ahead
+    )
+    return Settlement(expenses, per_diem if per_diem_claimed else None, paid_ahead, owed)

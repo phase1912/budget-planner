@@ -28,3 +28,16 @@ export function countryOptions(): { code: string; name: string }[] {
     a.name.localeCompare(b.name, currentLocale()),
   );
 }
+
+/**
+ * Every currency an expense may have been paid in, the account's first, named in the
+ * current language: a trip abroad pays in whatever the country uses (F20.5).
+ */
+export function paidCurrencyOptions(accountCurrency: string): { code: string; name: string }[] {
+  const names = new Intl.DisplayNames([currentLocale()], { type: "currency" });
+  const codes = Intl.supportedValuesOf("currency").filter((code) => code !== accountCurrency);
+  return [accountCurrency, ...codes].map((code) => ({
+    code,
+    name: `${code} — ${names.of(code) ?? code}`,
+  }));
+}

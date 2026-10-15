@@ -42,5 +42,6 @@
   "trips_overlap": "Te daty nachodzą na podróż „{{name}}” ({{start_on}} – {{end_on}}). Podróże nie mogą mieć wspólnych dni.",
   "per_diem_times": "Te godziny nie tworzą podróży: powrót musi być po wyjeździe, a czas za granicą mieścić się w podróży.",
   "per_diem_no_rates": "Stawki diet są dostępne dla podróży od {{start_on}}.",
-  "per_diem_personal_trip": "Dieta przysługuje tylko za podróż służbową."
+  "per_diem_personal_trip": "Dieta przysługuje tylko za podróż służbową.",
+  "invalid_export": "Ten eksport nie ma takiego formatu."
 }

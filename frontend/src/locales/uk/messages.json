@@ -77,7 +77,9 @@
     "updated": "Чек оновлено",
     "deleteFailed": "Не вдалося видалити чек",
     "deleted": "Чек видалено",
-    "recalculated": "{{done}}. Перераховано: {{months}}"
+    "recalculated": "{{done}}. Перераховано: {{months}}",
+    "manualFailed": "Не вдалося додати витрату. Спробуйте ще раз.",
+    "manualAdded": "Витрату додано."
   },
   "statistics": {
     "loadFailed": "Не вдалося завантажити статистику"

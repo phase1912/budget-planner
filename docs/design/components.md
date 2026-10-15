@@ -133,6 +133,16 @@ body scrolls, the frame does not.
 **Menu** (`.menu`) — floating panel, 14px radius, `--shadow-pop`, 6px inset. Options are
 9px 12px, 13px / 500; the selected option takes the soft primary tone and a check.
 
+**Category mark** (`CategoryIcon`) — where a category is named in a list, its picture sits
+in a circle tinted its `--cat-*` colour (18% of it over the background, the glyph in the
+colour itself): 24px with a 13px glyph in rows, 32px with a 16px glyph where it leads a
+card. Built-in categories each have their own glyph — Groceries a basket, Dining a knife and
+fork, Transport a bus, Utilities a bolt, Health a heart with a pulse, Entertainment a ticket,
+Other a box, Uncategorized a question mark — and every category the user made shares a tag
+on `--cat-other`. It replaces the plain `.dot` of the screens: the colour still tells
+categories apart, the glyph says which at a glance and without colour. The name always
+stands beside it, so it is decorative.
+
 ## Icons
 
 Stroke-based on a 24px grid: `fill="none"`, `stroke="currentColor"`, `stroke-width="2"`

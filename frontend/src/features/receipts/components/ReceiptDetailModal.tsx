@@ -15,6 +15,7 @@ import {
   DoubtfulLinesNote,
   DoubtfulMark,
   CorrectedName,
+  CategoryIcon,
 } from "@/shared/components";
 import { RefreshCw } from "lucide-react";
 import { InlineCategoryPicker } from "@/features/categories/components/InlineCategoryPicker";
@@ -107,8 +108,14 @@ export const ReceiptDetailModal = observer(() => {
                     month: "long",
                     year: "numeric",
                   }) +
-                  " · " +
-                  formatPurchase(receipt.transaction_date, { hour: "2-digit", minute: "2-digit" })
+                  // An expense typed in has a day, never a time (F20.5).
+                  (receipt.channel === "manual"
+                    ? ""
+                    : " · " +
+                      formatPurchase(receipt.transaction_date, {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }))
                 : t("detail.unknownDate")}
               {" · "}
               {source.label}
@@ -336,7 +343,8 @@ export const ReceiptDetailModal = observer(() => {
             </span>
             <span className="col-span-2 md:col-span-1">
               {readOnly ? (
-                <span className="text-[13px] text-muted-foreground">
+                <span className="inline-flex items-center gap-2 text-[13px] text-muted-foreground">
+                  <CategoryIcon name={item.category?.name ?? "Uncategorized"} />
                   {categoryName(item.category?.name ?? "Uncategorized")}
                 </span>
               ) : (

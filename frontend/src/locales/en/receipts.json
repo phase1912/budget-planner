@@ -3,7 +3,8 @@
     "email": "Added from email",
     "qr": "Added from a QR code",
     "photos_one": "Added from {{count}} photo",
-    "photos_other": "Added from {{count}} photos"
+    "photos_other": "Added from {{count}} photos",
+    "manual": "Typed in, no receipt"
   },
   "filter": {
     "status": "Status",
@@ -13,7 +14,8 @@
     "source": "Source",
     "anySource": "Any source",
     "photo": "From a photo",
-    "email": "From email"
+    "email": "From email",
+    "manual": "Typed in, no receipt"
   },
   "delete": {
     "title": "Delete “{{name}}”?",
@@ -54,7 +56,8 @@
     "items_one": "{{count}} item",
     "items_other": "{{count}} items",
     "convertedFrom": "from {{amount}} {{currency}}",
-    "unconvertedIn": "in {{amount}} {{currency}}"
+    "unconvertedIn": "in {{amount}} {{currency}}",
+    "manual": "Typed in without a receipt"
   },
   "status": {
     "inTotal": "In the total",
@@ -113,5 +116,21 @@
     "saving": "Saving…",
     "save": "Save changes",
     "matches": "Lines match the total"
+  },
+  "manual": {
+    "open": "No receipt",
+    "openLong": "Add an expense without a receipt",
+    "title": "Expense without a receipt",
+    "hint": "Paid in cash, a tip, a parking meter: anything with no receipt to photograph.",
+    "description": "What was it",
+    "descriptionPlaceholder": "Pyramids tour",
+    "date": "Date",
+    "amount": "Amount",
+    "currency": "Currency",
+    "category": "Category",
+    "kind": "On a trip, it was",
+    "kindAuto": "Work it out from the category",
+    "save": "Add expense",
+    "amountInvalid": "Enter an amount above zero."
   }
 }

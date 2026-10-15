@@ -50,6 +50,7 @@ from app.schemas.receipt import (
     EditLineItemRequest,
     LineItemListResponse,
     LineItemResponse,
+    ManualExpenseRequest,
     PaginatedReceiptsResponse,
     ReceiptDetailResponse,
     ReceiptPrivacyRequest,
@@ -70,6 +71,7 @@ from app.schemas.receipt import (
 )
 from app.services.categorisation import CategorisationService
 from app.services.household import HouseholdService
+from app.services.manual_expense import ManualExpense, record_expense
 from app.services.quota import QuotaService
 from app.services.receipt import ReceiptService
 from app.services.storage import ObjectNotFoundError
@@ -463,6 +465,39 @@ async def list_line_items(
             for c in by_category
         ],
     )
+
+
+@router.post("/manual", response_model=ReceiptDetailResponse, status_code=201)
+async def add_manual_expense(
+    request: ManualExpenseRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    exchange_rates: Annotated[ExchangeRatePort | None, Depends(get_exchange_rates)],
+) -> ReceiptDetailResponse:
+    """Record an expense there was no receipt for — cash for a tour, a tip (F20.5).
+
+    It counts like any receipt; a foreign one is converted at its day's rate, or held in
+    review without one (ADR-0016). Another user's category or trip is not found (N2).
+    """
+    receipt = await record_expense(
+        session,
+        current_user,
+        ManualExpense(
+            description=request.description,
+            spent_on=request.spent_on,
+            amount=request.amount,
+            currency=request.currency,
+            category_id=request.category_id,
+            kind=request.kind,
+            trip_chosen=request.trip_chosen,
+            trip_id=request.trip_id,
+        ),
+        exchange_rates,
+    )
+    await session.commit()
+    stored = await ReceiptRepository(session).get_with_items(receipt.id)
+    assert stored is not None
+    return await receipt_detail(session, stored, current_user)
 
 
 @router.get("", response_model=PaginatedReceiptsResponse)

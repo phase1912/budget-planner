@@ -1491,10 +1491,10 @@ For a business trip, the per diem an employer owes, as the Polish regulation on 
 
 *Requirements: N6* · *Blocked by: F20.2, F20.4, F7.6*
 
-The settlement an employee gives the employer for a business trip: its details, spending by kind and currency, the per diem, any advance already received, and what remains to be paid back to them — as a PDF with every receipt's photo attached, and as CSV, in the user's language.
+The settlement an employee gives the employer for a business trip: its details, spending by kind and currency, the per diem, any advance already received, and what remains to be paid back to them — as a PDF with every receipt's photo attached, and as CSV, in the user's language. An expense with no receipt — a tour paid in cash, a tip — can be typed in, anywhere a receipt can be added, and counts like one, marked as having no document.
 
 **Demonstrated by:** Enter a 500 PLN advance on the Berlin trip and download the settlement: one PDF with the summary, "to reimburse 612.40 + 207.00 − 500.00 = 319.40 PLN", and the receipts' photos on the pages after.
 
-- **F20.5.1** Settlement export — PDF and CSV of a business trip's settlement through the export jobs of F7.6, with the receipts' photos in the PDF, in the user's language; the advance stored on the trip; the user's own trips only (N2).
-- **F20.5.2** Advance and download on the trip page — The advance received, the amount to reimburse, and the settlement download on a business trip. Checked at 375, 768 and 1280 px.
+- **F20.5.1** Settlement export — PDF and CSV of a business trip's settlement through the export jobs of F7.6, with the receipts' photos in the PDF, in the user's language; the advance stored on the trip; the user's own trips only (N2). An expense without a receipt stored as a one-line receipt of a `manual` channel — description, date, amount, currency, category, optional kind and trip — counted like any receipt, kept out of the reading-accuracy report, and marked in the settlement.
+- **F20.5.2** Advance and download on the trip page — The advance received, the amount to reimburse, and the settlement download on a business trip; adding an expense without a receipt from the receipts list, the upload page and a trip's page, asked about a trip like the wizard asks. Checked at 375, 768 and 1280 px.
 

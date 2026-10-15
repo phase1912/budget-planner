@@ -547,6 +547,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/receipts/manual": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Manual Expense
+         * @description Record an expense there was no receipt for — cash for a tour, a tip (F20.5).
+         *
+         *     It counts like any receipt; a foreign one is converted at its day's rate, or held in
+         *     review without one (ADR-0016). Another user's category or trip is not found (N2).
+         */
+        post: operations["add_manual_expense_receipts_manual_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts": {
         parameters: {
             query?: never;
@@ -1924,10 +1947,10 @@ export interface components {
         };
         /**
          * ExportFormat
-         * @description The file format asked for (BRD N6: CSV or JSON).
+         * @description The file format asked for (BRD N6: CSV or JSON; a trip's settlement also as PDF).
          * @enum {string}
          */
-        ExportFormat: "csv" | "json";
+        ExportFormat: "csv" | "json" | "pdf";
         /**
          * ExportJobResponse
          * @description An export's progress; once `status` is `ready`, its file can be downloaded.
@@ -1955,17 +1978,19 @@ export interface components {
         };
         /**
          * ExportKind
-         * @description What an export holds: the receipts list, or the statistics table (BRD N6).
+         * @description What an export holds: the receipts list, the statistics table (BRD N6), or a
+         *     business trip's settlement for the employer (F20.5).
          * @enum {string}
          */
-        ExportKind: "receipts" | "statistics";
+        ExportKind: "receipts" | "statistics" | "trip";
         /**
          * ExportRequest
          * @description What to export, in which format, filtered as the screen it came from (BRD N6).
          *
          *     For `receipts`: the list's filters — `start`/`end` (both included), `status`
          *     and the search `q` — all optional. For `statistics`: the period, which is
-         *     required, and whether it is compared with the previous one.
+         *     required, and whether it is compared with the previous one. For `trip`: the
+         *     business trip whose settlement it is, as PDF or CSV (F20.5).
          */
         ExportRequest: {
             kind: components["schemas"]["ExportKind"];
@@ -1982,6 +2007,8 @@ export interface components {
              * @default false
              */
             compare: boolean;
+            /** Trip Id */
+            trip_id?: string | null;
         };
         /**
          * ExportStatus
@@ -2442,6 +2469,39 @@ export interface components {
             password: string;
         };
         /**
+         * ManualExpenseRequest
+         * @description An expense without a receipt — cash for a tour, a tip — as the user types it (F20.5).
+         *
+         *     `currency` null is the account's. `trip_chosen` says the user picked where it goes:
+         *     into `trip_id`, or into no trip when that is null; otherwise it follows its date.
+         */
+        ManualExpenseRequest: {
+            /** Description */
+            description: string;
+            /**
+             * Spent On
+             * Format: date
+             */
+            spent_on: string;
+            /** Amount */
+            amount: number | string;
+            /** Currency */
+            currency?: string | null;
+            /**
+             * Category Id
+             * Format: uuid
+             */
+            category_id: string;
+            kind?: components["schemas"]["ExpenseKind"] | null;
+            /**
+             * Trip Chosen
+             * @default false
+             */
+            trip_chosen: boolean;
+            /** Trip Id */
+            trip_id?: string | null;
+        };
+        /**
          * Meal
          * @description A meal provided free during the trip, which reduces the per diem (§ 7 ust. 4, § 14).
          * @enum {string}
@@ -2665,6 +2725,13 @@ export interface components {
             /** Total Pln */
             total_pln: string | null;
             /**
+             * Account Currency
+             * @default PLN
+             */
+            account_currency: string;
+            /** Total Account */
+            total_account?: string | null;
+            /**
              * Regulation
              * @default Dz.U. 2023 poz. 2190
              */
@@ -2847,11 +2914,12 @@ export interface components {
          * @description How a receipt reached the user's record (F11.1, BRD A12, A15).
          *
          *     Kept on every receipt because a question about a wrong figure starts with
-         *     where the data came from. Only PHOTO has an intake today; the rest arrive
-         *     with E11's channels.
+         *     where the data came from. MANUAL is an expense the user typed in because there
+         *     was no receipt — cash for a tour, a tip (F20.5): nothing was read, so it never
+         *     counts in the reading-accuracy report.
          * @enum {string}
          */
-        ReceiptChannel: "photo" | "email" | "qr";
+        ReceiptChannel: "photo" | "email" | "qr" | "manual";
         /**
          * ReceiptDetailResponse
          * @description A receipt with its full line items, and for its owner the trip it is on (F20.1).
@@ -3265,6 +3333,25 @@ export interface components {
             product_ids: string[];
         };
         /**
+         * SettlementResponse
+         * @description What the employer owes back for a business trip, in the account's currency (F20.5).
+         *
+         *     `to_reimburse` = expenses + per diem - advance; negative when the employee hands some
+         *     of the advance back, null when a claimed per diem could not be converted.
+         */
+        SettlementResponse: {
+            /** Currency */
+            currency: string;
+            /** Expenses */
+            expenses: string;
+            /** Per Diem */
+            per_diem: string | null;
+            /** Advance */
+            advance: string;
+            /** To Reimburse */
+            to_reimburse: string | null;
+        };
+        /**
          * ShopAccuracyResponse
          * @description One shop behind corrections: its receipts and how many needed correcting.
          */
@@ -3360,6 +3447,10 @@ export interface components {
             budget?: string | null;
             /** Budget Left */
             budget_left?: string | null;
+            /** Advance */
+            advance?: string | null;
+            /** Advance Paid On */
+            advance_paid_on?: string | null;
             /**
              * Asking Count
              * @default 0
@@ -3378,6 +3469,7 @@ export interface components {
             /** By Currency */
             by_currency: components["schemas"]["CurrencyTotal"][];
             per_diem?: components["schemas"]["PerDiemResponse"] | null;
+            settlement?: components["schemas"]["SettlementResponse"] | null;
         };
         /**
          * TripKind
@@ -3492,6 +3584,10 @@ export interface components {
             purpose?: string | null;
             /** Budget */
             budget?: number | string | null;
+            /** Advance */
+            advance?: number | string | null;
+            /** Advance Paid On */
+            advance_paid_on?: string | null;
         };
         /**
          * TripResponse
@@ -3530,6 +3626,10 @@ export interface components {
             budget?: string | null;
             /** Budget Left */
             budget_left?: string | null;
+            /** Advance */
+            advance?: string | null;
+            /** Advance Paid On */
+            advance_paid_on?: string | null;
             /**
              * Asking Count
              * @default 0
@@ -4649,6 +4749,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LineItemListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_manual_expense_receipts_manual_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualExpenseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetailResponse"];
                 };
             };
             /** @description Validation Error */

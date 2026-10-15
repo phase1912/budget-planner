@@ -1,9 +1,9 @@
+import { CategoryIcon } from "@/shared/components";
+import { categoryColor } from "@/shared/categoryColor";
 import { observer } from "mobx-react-lite";
 
 import { Card } from "@/shared/components";
 import type { CategorySpend } from "@/stores/CategoriesStore";
-import { CategoryDot } from "./CategoryDot";
-import { categoryColor } from "./categoryColor";
 import { numberFormat } from "@/i18n/format";
 import { useTranslation } from "react-i18next";
 import { categoryName } from "@/shared/categoryName";
@@ -70,7 +70,7 @@ export const CategorySpendList = observer(function CategorySpendList({
                 } cursor-pointer disabled:cursor-default`}
               >
                 <span className="flex min-w-0 items-center gap-2.5 text-md font-semibold">
-                  <CategoryDot name={name} />
+                  <CategoryIcon name={name} />
                   <span className="truncate">{categoryName(category.name)}</span>
                 </span>
                 <span className="col-span-2 row-start-2 block h-2 rounded-[4px] bg-muted md:col-span-1 md:row-start-auto">

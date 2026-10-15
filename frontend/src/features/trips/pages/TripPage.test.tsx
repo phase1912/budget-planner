@@ -60,6 +60,7 @@ const tripsStore = {
   chooseKind: vi.fn(),
   placeReceipt: vi.fn(),
   setTimes: vi.fn(),
+  isLoading: false,
   clearTimes: vi.fn(),
   clearSaveError: vi.fn(),
   isSaving: false,
@@ -73,9 +74,12 @@ const PHONE = {
   total_amount: "3999.00",
 } as unknown as TripDetail["receipts"][number];
 
+const exportStore = { busy: {} as Record<string, boolean>, start: vi.fn() };
+
 vi.mock("@/stores/StoreContext", () => ({
   useStores: () => ({
     tripsStore,
+    exportStore,
     receiptStore: { selectedReceiptId: null, fetchReceiptDetail: vi.fn() },
     authStore: { user: { currency: "PLN" } },
   }),
@@ -211,6 +215,8 @@ describe("TripPage — what a trip cost, by kind (F20.2)", () => {
       ],
       to_pln: [{ currency: "EUR", rate: "4.25", effective_date: "2026-10-14", source: "NBP" }],
       total_pln: "562.28",
+      account_currency: "PLN",
+      total_account: "562.28",
       regulation: "Dz.U. 2023 poz. 2190",
     };
 
@@ -256,6 +262,53 @@ describe("TripPage — what a trip cost, by kind (F20.2)", () => {
           abroad_from: null,
           meals: [["breakfast"], ["breakfast"], ["dinner"]],
         }),
+      );
+    });
+  });
+
+  describe("a business trip's settlement (F20.5)", () => {
+    const SETTLEMENT = {
+      currency: "PLN",
+      expenses: "612.40",
+      per_diem: "207.00",
+      advance: "500.00",
+      to_reimburse: "319.40",
+    };
+
+    it("adds expenses and per diem up and takes the advance off", () => {
+      tripsStore.current = trip({ kind: "business", settlement: SETTLEMENT });
+      renderPage();
+
+      const card = screen.getByRole("heading", { name: "Settlement" }).parentElement;
+      expect(card).toHaveTextContent("Expenses612.40 PLN");
+      expect(card).toHaveTextContent("Per diem+ 207.00 PLN");
+      expect(card).toHaveTextContent("Advance− 500.00 PLN");
+      expect(card).toHaveTextContent("To reimburse319.40 PLN");
+    });
+
+    it("says what goes back to the employer when the advance was more", () => {
+      tripsStore.current = trip({
+        kind: "business",
+        settlement: { ...SETTLEMENT, to_reimburse: "-80.00" },
+      });
+      renderPage();
+
+      expect(screen.getByText("To return to the employer")).toBeInTheDocument();
+      expect(screen.getByText("80.00 PLN")).toBeInTheDocument();
+    });
+
+    it("downloads the settlement as a PDF with the photos, or as CSV", () => {
+      tripsStore.current = trip({ kind: "business", settlement: SETTLEMENT });
+      renderPage();
+
+      fireEvent.click(screen.getByRole("button", { name: /PDF with photos/ }));
+      fireEvent.click(screen.getByRole("button", { name: /CSV/ }));
+
+      expect(exportStore.start).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: "trip", format: "pdf", trip_id: "t1" }),
+      );
+      expect(exportStore.start).toHaveBeenLastCalledWith(
+        expect.objectContaining({ kind: "trip", format: "csv", trip_id: "t1" }),
       );
     });
   });

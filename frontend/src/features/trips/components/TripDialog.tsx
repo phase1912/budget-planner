@@ -18,13 +18,19 @@ import { countryOptions } from "../tripFormat";
 
 type TripKind = TripRequest["kind"];
 
+/** Whether a field holds nothing, or an amount above zero to the cent. */
+function isAmountOrEmpty(value: string): boolean {
+  const text = value.trim();
+  return text === "" || (/^\d+(\.\d{1,2})?$/.test(text) && Number(text) > 0);
+}
+
 /**
  * Recording a trip, or changing one (F20.1).
  *
  * `initial` prefills it — a trip being changed, or a suggested one. The dates are
  * inclusive; the server refuses a trip that overlaps another, and its message is
  * shown here. A personal trip may have a budget of its own (F20.3); a business trip asks
- * its purpose instead. Calls `onSaved` with the trip's id once saved.
+ * its purpose and the advance received, if any, instead (F20.5). Calls `onSaved` with the trip's id once saved.
  */
 export const TripDialog = observer(function TripDialog({
   initial,
@@ -49,15 +55,20 @@ export const TripDialog = observer(function TripDialog({
   const [end, setEnd] = useState(initial?.end_date ?? "");
   const [purpose, setPurpose] = useState(initial?.purpose ?? "");
   const [budget, setBudget] = useState(initial?.budget == null ? "" : String(initial.budget));
+  const [advance, setAdvance] = useState(initial?.advance == null ? "" : String(initial.advance));
+  const [advancePaidOn, setAdvancePaidOn] = useState(initial?.advance_paid_on ?? "");
   const [countries] = useState(countryOptions);
 
   const endBeforeStart = Boolean(start && end && end < start);
-  const budgetInvalid =
-    kind === "personal" &&
-    budget.trim() !== "" &&
-    !(/^\d+(\.\d{1,2})?$/.test(budget.trim()) && Number(budget) > 0);
+  const budgetInvalid = kind === "personal" && !isAmountOrEmpty(budget);
+  const advanceInvalid = kind === "business" && !isAmountOrEmpty(advance);
   const ready =
-    name.trim() !== "" && start !== "" && end !== "" && !endBeforeStart && !budgetInvalid;
+    name.trim() !== "" &&
+    start !== "" &&
+    end !== "" &&
+    !endBeforeStart &&
+    !budgetInvalid &&
+    !advanceInvalid;
 
   const close = () => {
     tripsStore.clearSaveError();
@@ -76,6 +87,8 @@ export const TripDialog = observer(function TripDialog({
         end_date: end,
         purpose: kind === "business" ? purpose.trim() || null : null,
         budget: kind === "personal" ? budget.trim() || null : null,
+        advance: kind === "business" ? advance.trim() || null : null,
+        advance_paid_on: kind === "business" && advance.trim() ? advancePaidOn || null : null,
       },
       tripId,
     );
@@ -179,6 +192,34 @@ export const TripDialog = observer(function TripDialog({
               />
               {!budgetInvalid && (
                 <p className="m-0 text-base text-muted-foreground">{t("form.budgetHint")}</p>
+              )}
+            </div>
+          )}
+          {kind === "business" && (
+            <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+              <Input
+                label={`${t("form.advance")}, ${currency}`}
+                value={advance}
+                inputMode="decimal"
+                maxLength={12}
+                error={advanceInvalid ? t("form.advanceInvalid") : undefined}
+                onChange={(e) => {
+                  setAdvance(e.target.value.replace(",", "."));
+                }}
+              />
+              <Input
+                type="date"
+                label={t("form.advancePaidOn")}
+                value={advancePaidOn}
+                disabled={advance.trim() === ""}
+                onChange={(e) => {
+                  setAdvancePaidOn(e.target.value);
+                }}
+              />
+              {!advanceInvalid && (
+                <p className="m-0 text-base text-muted-foreground md:col-span-2">
+                  {t("form.advanceHint")}
+                </p>
               )}
             </div>
           )}

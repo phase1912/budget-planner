@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 
 import { formatAmount } from "@/i18n/format";
 import { categoryName } from "@/shared/categoryName";
-import { Card, Meter } from "@/shared/components";
+import { Card, CategoryIcon, Meter } from "@/shared/components";
 import type { TripDetail } from "@/stores/TripsStore";
 import { formatTripDay } from "../tripFormat";
 
@@ -45,7 +45,10 @@ export function TripStory({ trip, currency }: { trip: TripDetail; currency: stri
             {trip.categories.map(({ category, total }) => (
               <li key={category} className="flex flex-col gap-1">
                 <span className="flex items-baseline justify-between gap-3 text-md">
-                  <span className="min-w-0 truncate">{categoryName(category)}</span>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <CategoryIcon name={category} />
+                    <span className="truncate">{categoryName(category)}</span>
+                  </span>
                   <span className="shrink-0 tabular-nums font-semibold">
                     {formatAmount(total)} {currency}
                   </span>

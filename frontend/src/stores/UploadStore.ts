@@ -5,6 +5,7 @@ import type { ApiClient } from "@/api/client";
 import { AsyncState } from "@/stores/AsyncState";
 import i18n from "@/i18n";
 import type { Trip } from "@/stores/TripsStore";
+import { tripOnDay } from "@/stores/tripOnDay";
 
 /**
  * Whether a receipt's printed total still needs the user (BRD A11): none was
@@ -94,7 +95,7 @@ export class UploadStore {
     const extractions = (this.extractedData?.extractions ?? []) as Record<string, unknown>[];
     const day = extractions[index]?.transaction_date;
     if (typeof day !== "string") return null;
-    return this.trips().find((t) => t.start_date <= day && day <= t.end_date) ?? null;
+    return tripOnDay(this.trips(), day);
   }
 
   /**

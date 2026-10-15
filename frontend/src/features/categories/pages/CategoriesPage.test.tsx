@@ -48,7 +48,12 @@ const store = {
 const showError = vi.fn();
 
 vi.mock("@/stores/StoreContext", () => ({
-  useStores: () => ({ categoriesStore: store, toastStore: { showError } }),
+  useStores: () => ({
+    categoriesStore: store,
+    toastStore: { showError },
+    // An account kept in dollars: every sum on the screen says so, never PLN.
+    authStore: { user: { currency: "USD" } },
+  }),
 }));
 
 function renderPage() {
@@ -69,9 +74,9 @@ describe("CategoriesPage", () => {
   it("fetches categories on mount and lists built-ins with their totals", () => {
     renderPage();
     expect(store.fetchCategories).toHaveBeenCalled();
-    expect(screen.getByText("5 items · 150.00 PLN")).toBeInTheDocument();
+    expect(screen.getByText("5 items · 150.00 USD")).toBeInTheDocument();
     expect(screen.getByText("2 items · awaiting your review")).toBeInTheDocument();
-    expect(screen.getByText("1 item · 50.00 PLN")).toBeInTheDocument();
+    expect(screen.getByText("1 item · 50.00 USD")).toBeInTheDocument();
   });
 
   it("shows loading until the first list arrives", () => {
@@ -161,7 +166,7 @@ describe("CategoriesPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Delete Pet Supplies" }));
     const dialog = screen.getByRole("dialog");
-    expect(within(dialog).getByText(/1 item is filed under it, worth 50.00 PLN/)).toBeVisible();
+    expect(within(dialog).getByText(/1 item is filed under it, worth 50.00 USD/)).toBeVisible();
     const target = within(dialog).getByLabelText("Move those items to");
     expect(target).toHaveDisplayValue("Other");
     expect(within(target).queryByRole("option", { name: "Pet Supplies" })).toBeNull();

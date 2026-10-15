@@ -41,13 +41,15 @@ class ReceiptChannel(enum.StrEnum):
     """How a receipt reached the user's record (F11.1, BRD A12, A15).
 
     Kept on every receipt because a question about a wrong figure starts with
-    where the data came from. Only PHOTO has an intake today; the rest arrive
-    with E11's channels.
+    where the data came from. MANUAL is an expense the user typed in because there
+    was no receipt — cash for a tour, a tip (F20.5): nothing was read, so it never
+    counts in the reading-accuracy report.
     """
 
     PHOTO = "photo"
     EMAIL = "email"
     QR = "qr"
+    MANUAL = "manual"
 
 
 class Receipt(Model):

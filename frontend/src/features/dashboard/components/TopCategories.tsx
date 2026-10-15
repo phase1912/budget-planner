@@ -1,6 +1,6 @@
+import { CategoryIcon } from "@/shared/components";
 import { Link } from "react-router-dom";
 
-import { CategoryDot } from "@/features/categories/components/CategoryDot";
 import type { CategorySpend } from "@/stores/CategoriesStore";
 import { numberFormat } from "@/i18n/format";
 import { useTranslation } from "react-i18next";
@@ -47,7 +47,7 @@ export function TopCategories({ spend, hrefFor }: TopCategoriesProps) {
           const row = (
             <>
               <span className="flex min-w-0 items-center gap-2.25 text-md font-semibold">
-                <CategoryDot name={category.name ?? ""} />
+                <CategoryIcon name={category.name ?? ""} />
                 <span className="truncate">{name}</span>
               </span>
               <span className="text-right text-md font-semibold tabular-nums">

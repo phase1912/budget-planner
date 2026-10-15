@@ -9,7 +9,7 @@ from pydantic import AliasPath, BaseModel, ConfigDict, Field, computed_field, fi
 from app.core.config import get_settings
 from app.domain.categories import is_low_confidence
 from app.domain.read_confidence import is_doubtful
-from app.domain.trips import TripKind
+from app.domain.trips import ExpenseKind, TripKind
 from app.models.receipt import ReceiptChannel, ReceiptStatus
 from app.models.upload_job import JobStatus
 
@@ -172,6 +172,23 @@ class TripChoice(BaseModel):
 
     index: int
     trip_id: uuid.UUID | None
+
+
+class ManualExpenseRequest(BaseModel):
+    """An expense without a receipt — cash for a tour, a tip — as the user types it (F20.5).
+
+    `currency` null is the account's. `trip_chosen` says the user picked where it goes:
+    into `trip_id`, or into no trip when that is null; otherwise it follows its date.
+    """
+
+    description: str = Field(min_length=1, max_length=255)
+    spent_on: date
+    amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
+    currency: str | None = Field(default=None, pattern=r"^[A-Z]{3}$")
+    category_id: uuid.UUID
+    kind: ExpenseKind | None = None
+    trip_chosen: bool = False
+    trip_id: uuid.UUID | None = None
 
 
 class CommitJobRequest(BaseModel):

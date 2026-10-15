@@ -10,17 +10,20 @@ from app.models.base import Model
 
 
 class ExportKind(enum.StrEnum):
-    """What an export holds: the receipts list, or the statistics table (BRD N6)."""
+    """What an export holds: the receipts list, the statistics table (BRD N6), or a
+    business trip's settlement for the employer (F20.5)."""
 
     RECEIPTS = "receipts"
     STATISTICS = "statistics"
+    TRIP = "trip"
 
 
 class ExportFormat(enum.StrEnum):
-    """The file format asked for (BRD N6: CSV or JSON)."""
+    """The file format asked for (BRD N6: CSV or JSON; a trip's settlement also as PDF)."""
 
     CSV = "csv"
     JSON = "json"
+    PDF = "pdf"
 
 
 class ExportStatus(enum.StrEnum):

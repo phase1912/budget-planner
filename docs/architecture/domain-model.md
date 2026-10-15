@@ -304,7 +304,22 @@ Rules that must hold at all times. Each is a candidate for a test.
     half to 12, all over 12, with the hours at home on the way counted at the domestic rate.
     Meals provided take 25/50/25% of the rate at home and 15/30/30% abroad, never a day
     below zero. A trip before the rates kept has none. Its złoty sum uses the NBP mid rate
-    of the last working day before the return, or is left empty without one (F20.4).
+    of the day the advance was paid (§ 20), or without an advance of the last working day
+    before the return, or is left empty without one (F20.4, F20.5).
+
+11v. A business trip may record the advance the employer paid, in the account's currency,
+    and its day; a personal trip has none. Its settlement is expenses + per diem − advance
+    in the account's currency — negative when the employee hands some back — and stays
+    open, never guessed, while a claimed per diem cannot be converted. It is written for
+    the employer as a PDF carrying each receipt's photos, or as CSV, in the user's
+    language, from the trip's read receipts only (F20.5).
+
+11w. An expense with no receipt — cash for a tour, a tip — is typed in and stored as a
+    receipt of one line through the `manual` channel: read, its category the user's, a
+    foreign one converted like a read receipt (ADR-0016). It counts wherever a receipt
+    counts — the month, its limit, statistics, goals, a trip by its date — never in the
+    reading-accuracy report, since nothing was read, and the settlement marks it as having
+    no document (F20.5).
 
 **Categorisation**
 
