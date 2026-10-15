@@ -10,6 +10,7 @@ export type Trip = components["schemas"]["TripResponse"];
 export type TripDetail = components["schemas"]["TripDetailResponse"];
 export type TripRequest = components["schemas"]["TripRequest"];
 export type TripSuggestion = components["schemas"]["TripSuggestionResponse"];
+export type ExpenseKind = components["schemas"]["ExpenseKind"];
 
 const DISMISSED_KEY = "budget_trip_suggestions_dismissed";
 
@@ -159,6 +160,21 @@ export class TripsStore {
     await this.load();
     if (this.current) await this.loadTrip(this.current.id);
     return true;
+  }
+
+  /** Say what a trip's receipt paid for (F20.2); the trip's totals by kind follow. */
+  async chooseKind(receiptId: string, kind: ExpenseKind): Promise<void> {
+    const response = await settle(() =>
+      apiClient.PUT("/api/v1/trips/receipts/{receipt_id}/kind", {
+        params: { path: { receipt_id: receiptId } },
+        body: { kind },
+      }),
+    );
+    if (response.error) {
+      this.toastStore.showError(errorMessage(response.error, i18n.t("messages:trips.kindFailed")));
+      return;
+    }
+    if (this.current) await this.loadTrip(this.current.id);
   }
 
   dismissSuggestion(suggestion: TripSuggestion): void {

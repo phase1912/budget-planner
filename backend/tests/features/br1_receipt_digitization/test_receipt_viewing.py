@@ -21,12 +21,17 @@ scenarios("receipt_viewing.feature")
 
 @pytest.fixture
 def mock_repo() -> Iterator[AsyncMock]:
-    # The users in these scenarios belong to no household, so nothing is shared (F12.4).
+    # The users in these scenarios belong to no household, so nothing is shared (F12.4),
+    # and have no trips, so no receipt is on one (F20.1).
     with (
         patch("app.api.routers.receipts.ReceiptRepository") as mock,
         patch("app.api.routers.receipts.HouseholdService") as households,
+        patch("app.api.routers.receipts.TripRepository") as trips,
     ):
         households.return_value.readers = AsyncMock(return_value=None)
+        trips.return_value.placements = AsyncMock(
+            side_effect=lambda receipts: {r.id: (None, None) for r in receipts}
+        )
         instance = mock.return_value
         yield instance
 

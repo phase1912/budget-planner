@@ -23,6 +23,8 @@ import { dateFormat } from "@/i18n/format";
 import { Trans, useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 import { categoryName } from "@/shared/categoryName";
+import { TripQuestion } from "@/features/trips/components/TripQuestion";
+import { useNavigate } from "react-router-dom";
 
 interface ExtractedLineItem {
   name: string;
@@ -128,7 +130,8 @@ const PURCHASE_DAY = dateFormat({
 
 export const ExtractedStep = observer(function ExtractedStep() {
   const { uploadStore } = useStores();
-  const { t } = useTranslation("upload");
+  const { t } = useTranslation(["upload", "trips"]);
+  const navigate = useNavigate();
   const [enteringTotalFor, setEnteringTotalFor] = useState<number | null>(null);
   const [doubtfulOnly, setDoubtfulOnly] = useState<number[]>([]);
 
@@ -363,6 +366,8 @@ export const ExtractedStep = observer(function ExtractedStep() {
                   {uploadStore.selectedIndices.has(index) ? t("read.save") : t("read.leaveOut")}
                 </label>
               )}
+
+              {uploadStore.selectedIndices.has(index) && <TripQuestion index={index} />}
 
               {data.transaction_date_assumed && data.transaction_date && (
                 <Note tone="info" className="rounded-none border-x-0 border-t-0 px-5 py-3.5">
@@ -706,6 +711,12 @@ export const ExtractedStep = observer(function ExtractedStep() {
           );
         })}
 
+        {uploadStore.unansweredTrips.length > 0 && (
+          <Note tone="warning" className="mt-4">
+            {t("trips:question.unanswered", { count: uploadStore.unansweredTrips.length })}
+          </Note>
+        )}
+
         <div className="flex items-center justify-between gap-4 mt-4">
           <Button variant="ghost" onClick={handleBack}>
             <svg
@@ -744,9 +755,16 @@ export const ExtractedStep = observer(function ExtractedStep() {
           ) : (
             <Button
               variant="primary"
-              disabled={uploadStore.selectedIndices.size === 0 || uploadStore.isCommitting}
+              disabled={
+                uploadStore.selectedIndices.size === 0 ||
+                uploadStore.isCommitting ||
+                uploadStore.unansweredTrips.length > 0
+              }
               onClick={() => {
-                void uploadStore.commitJob();
+                const backTo = uploadStore.fromTrip;
+                void uploadStore.commitJob().then((stored) => {
+                  if (stored && backTo) void navigate(`/trips/${backTo.id}`);
+                });
               }}
             >
               {uploadStore.selectedIndices.size === 0

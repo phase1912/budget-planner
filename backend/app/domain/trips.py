@@ -1,11 +1,15 @@
 """Trips: spending with a shape of its own, personal or on the employer's account (F20.1).
 
-A receipt belongs to the trip whose dates hold its purchase day, unless the user moved it
-in or out by hand. A personal trip stays in the user's month; a business trip is the
-employer's money and stays out of it.
+A receipt belongs to the personal trip whose dates hold its purchase day, unless the user
+moved it in or out by hand. A business trip holds only what the user put in it: its dates
+merely ask about the receipts within them, since a purchase on a business trip may be the
+user's own. A personal trip stays in the user's month; a business trip is the employer's
+money and stays out of it.
 """
 
 import enum
+import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal
@@ -43,6 +47,44 @@ class TripSuggestion:
     amount: Decimal
 
 
+@dataclass(frozen=True)
+class TripSpan:
+    """What placing a receipt needs to know of a trip."""
+
+    id: uuid.UUID
+    kind: TripKind
+    start_date: date
+    end_date: date
+
+
+@dataclass(frozen=True)
+class Placement:
+    """Which trip a receipt is on, and which business trip still asks about it (F20.1)."""
+
+    trip_id: uuid.UUID | None
+    asking_id: uuid.UUID | None
+
+
+def place(
+    day: date, by_hand: bool, chosen: uuid.UUID | None, trips: Sequence[TripSpan]
+) -> Placement:
+    """Place a receipt bought on `day` among the user's `trips` (F20.1).
+
+    Moved by hand, it is on `chosen`, or on none. Otherwise it is on the personal trip
+    whose dates hold `day`; a business trip whose dates hold it only asks, because a
+    purchase on a business trip may be the user's own, and until answered it stays in
+    the user's budget. The same rule as `on_trip()` and `awaiting_answer()` in SQL.
+    """
+    if by_hand:
+        return Placement(chosen, None)
+    within = next((t for t in trips if t.start_date <= day <= t.end_date), None)
+    if within is None:
+        return Placement(None, None)
+    if within.kind is TripKind.BUSINESS:
+        return Placement(None, within.id)
+    return Placement(within.id, None)
+
+
 def overlaps(a_start: date, a_end: date, b_start: date, b_end: date) -> bool:
     """Whether two runs of whole days, both ends included, share a day."""
     return a_start <= b_end and b_start <= a_end
@@ -73,3 +115,80 @@ def suggest_trips(days: list[ForeignDay]) -> list[TripSuggestion]:
         if (run[-1].day - run[0].day).days + 1 >= SUGGESTION_MIN_DAYS
     ]
     return sorted(suggestions, key=lambda s: s.start, reverse=True)
+
+
+class ExpenseKind(enum.StrEnum):
+    """What a trip's receipt paid for: the split a settlement asks for (F20.2)."""
+
+    TRANSPORT = "transport"
+    ACCOMMODATION = "accommodation"
+    MEALS = "meals"
+    OTHER = "other"
+
+
+_KIND_OF_CATEGORY = {
+    "transport": ExpenseKind.TRANSPORT,
+    "dining": ExpenseKind.MEALS,
+    "groceries": ExpenseKind.MEALS,
+}
+
+
+def parse_expense_kind(value: object) -> ExpenseKind | None:
+    """The kind a model or a client named, or None for anything that is not one."""
+    if not isinstance(value, str):
+        return None
+    try:
+        return ExpenseKind(value.strip().lower())
+    except ValueError:
+        return None
+
+
+def kind_from_categories(line_totals: Sequence[tuple[str | None, Decimal]]) -> ExpenseKind:
+    """A receipt's kind from its lines' categories, for one read before kinds were (F20.2).
+
+    The kind holding most of the money wins; a category with no kind of its own counts
+    as other, so a shop that mostly sold souvenirs is other even with a drink on it.
+    """
+    weights: dict[ExpenseKind, Decimal] = {}
+    for category, total in line_totals:
+        kind = _KIND_OF_CATEGORY.get((category or "").lower(), ExpenseKind.OTHER)
+        weights[kind] = weights.get(kind, Decimal(0)) + max(total, Decimal(0))
+    if not weights:
+        return ExpenseKind.OTHER
+    return max(weights, key=lambda kind: (weights[kind], kind is not ExpenseKind.OTHER))
+
+
+@dataclass(frozen=True)
+class TripLine:
+    """One read receipt of a trip, as its spending is split (F20.2)."""
+
+    kind: ExpenseKind
+    amount: Decimal
+    """In the account's currency."""
+    paid_currency: str
+    paid_amount: Decimal
+    """As printed, in the currency it was paid in."""
+
+
+@dataclass(frozen=True)
+class TripSpending:
+    """A trip's spending per kind in the account's currency, and per currency paid."""
+
+    by_kind: dict[ExpenseKind, Decimal]
+    by_currency: dict[str, Decimal]
+
+
+def split_spending(lines: list[TripLine]) -> TripSpending:
+    """Add a trip's receipts up per kind, every kind present even at zero, and per currency.
+
+    Zero kinds stay, because "accommodation 0.00" is an answer — the hotel was paid
+    another way — that a missing row would not give. Currencies are only those paid in.
+    """
+    by_kind = dict.fromkeys(ExpenseKind, Decimal("0.00"))
+    by_currency: dict[str, Decimal] = {}
+    for line in lines:
+        by_kind[line.kind] += line.amount
+        by_currency[line.paid_currency] = (
+            by_currency.get(line.paid_currency, Decimal(0)) + line.paid_amount
+        )
+    return TripSpending(by_kind, by_currency)

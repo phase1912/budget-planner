@@ -8,16 +8,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import get_current_user
 from app.api.routers.receipts import receipt_detail
 from app.db.session import get_db_session
+from app.models.receipt import Receipt
 from app.models.user import User
 from app.schemas.receipt import ReceiptDetailResponse, ReceiptResponse
 from app.schemas.trip import (
+    CurrencyTotal,
+    ExpenseKindRequest,
+    KindTotal,
     ReceiptTripRequest,
     TripDetailResponse,
+    TripReceiptResponse,
     TripRequest,
     TripResponse,
     TripSuggestionResponse,
 )
-from app.services.trip import TripDetails, TripService, TripSummary
+from app.services.trip import TripDetails, TripService, TripSummary, kind_of, trip_spending
 
 router = APIRouter(prefix="/api/v1/trips", tags=["trips"])
 
@@ -39,6 +44,16 @@ def trip_response(summary: TripSummary) -> TripResponse:
         purpose=trip.purpose,
         receipt_count=summary.receipt_count,
         total=summary.total,
+        asking_count=summary.asking_count,
+    )
+
+
+def trip_receipt(receipt: Receipt) -> TripReceiptResponse:
+    """A receipt on a trip with its kind; expects its lines and their categories loaded."""
+    return TripReceiptResponse(
+        **ReceiptResponse.model_validate(receipt).model_dump(),
+        expense_kind=kind_of(receipt),
+        expense_kind_chosen=receipt.expense_kind_chosen is not None,
     )
 
 
@@ -74,7 +89,7 @@ async def createtrip_response(
     service = TripService(session)
     trip = await service.save(current_user.id, _details(request))
     await session.commit()
-    summary, _ = await service.get(current_user.id, trip.id)
+    summary, *_ = await service.get(current_user.id, trip.id)
     return trip_response(summary)
 
 
@@ -82,11 +97,21 @@ async def createtrip_response(
 async def gettrip_response(
     trip_id: uuid.UUID, current_user: CurrentUser, session: Session
 ) -> TripDetailResponse:
-    """One trip with its receipts (F20.1). Another user's is not found (N2)."""
-    summary, receipts = await TripService(session).get(current_user.id, trip_id)
+    """One trip with its receipts and its spending by kind and currency (F20.1, F20.2).
+
+    Another user's is not found (N2).
+    """
+    summary, receipts, asking = await TripService(session).get(current_user.id, trip_id)
+    spending = trip_spending(receipts, current_user.currency)
     return TripDetailResponse(
         **trip_response(summary).model_dump(),
-        receipts=[ReceiptResponse.model_validate(r) for r in receipts],
+        receipts=[trip_receipt(r) for r in receipts],
+        asking=[trip_receipt(r) for r in asking],
+        by_kind=[KindTotal(kind=k, total=t) for k, t in spending.by_kind.items()],
+        by_currency=[
+            CurrencyTotal(currency=c, total=t)
+            for c, t in sorted(spending.by_currency.items(), key=lambda pair: -pair[1])
+        ],
     )
 
 
@@ -98,7 +123,7 @@ async def updatetrip_response(
     service = TripService(session)
     await service.save(current_user.id, _details(request), trip_id)
     await session.commit()
-    summary, _ = await service.get(current_user.id, trip_id)
+    summary, *_ = await service.get(current_user.id, trip_id)
     return trip_response(summary)
 
 
@@ -125,3 +150,16 @@ async def place_receipt(
     )
     await session.commit()
     return await receipt_detail(session, receipt, current_user)
+
+
+@router.put("/receipts/{receipt_id}/kind", response_model=TripReceiptResponse)
+async def choose_expense_kind(
+    receipt_id: uuid.UUID, request: ExpenseKindRequest, current_user: CurrentUser, session: Session
+) -> TripReceiptResponse:
+    """Say what a receipt paid for, or (null) give it back to the guess (F20.2).
+
+    Another user's receipt is not found (N2).
+    """
+    receipt = await TripService(session).choose_kind(receipt_id, request.kind)
+    await session.commit()
+    return trip_receipt(receipt)

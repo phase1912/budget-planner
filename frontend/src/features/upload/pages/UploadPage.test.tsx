@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { UploadPage } from "./UploadPage";
 import { StoreProvider } from "@/stores/StoreContext";
 import { UploadStore } from "@/stores/UploadStore";
@@ -17,6 +18,9 @@ function quotaStore(quota: ReceiptQuota | null = null): QuotaStore {
   return store;
 }
 
+// No trips: nothing is asked about a receipt's trip (F20.1).
+const TRIPS = { trips: [], load: () => Promise.resolve() };
+
 const QUOTA: ReceiptQuota = {
   limit: 10,
   used: 3,
@@ -30,11 +34,17 @@ describe("UploadPage", () => {
     const mockApi = { POST: vi.fn() };
     const uploadStore = new UploadStore(mockApi as unknown as ApiClient);
 
-    const mockStores = { uploadStore, quotaStore: quotaStore() } as unknown as RootStore;
+    const mockStores = {
+      uploadStore,
+      quotaStore: quotaStore(),
+      tripsStore: TRIPS,
+    } as unknown as RootStore;
 
     render(
       <StoreProvider store={mockStores}>
-        <UploadPage />
+        <MemoryRouter>
+          <UploadPage />
+        </MemoryRouter>
       </StoreProvider>,
     );
 
@@ -48,11 +58,17 @@ describe("UploadPage", () => {
     uploadStore.errorTitle = "Unsupported file";
     uploadStore.errorDetails = "This file type is not supported.";
 
-    const mockStores = { uploadStore, quotaStore: quotaStore() } as unknown as RootStore;
+    const mockStores = {
+      uploadStore,
+      quotaStore: quotaStore(),
+      tripsStore: TRIPS,
+    } as unknown as RootStore;
 
     render(
       <StoreProvider store={mockStores}>
-        <UploadPage />
+        <MemoryRouter>
+          <UploadPage />
+        </MemoryRouter>
       </StoreProvider>,
     );
 
@@ -65,10 +81,16 @@ describe("UploadPage", () => {
     uploadStore.lines = Array.from({ length: receipts }, () => [
       new File(["x"], "r.jpg", { type: "image/jpeg" }),
     ]);
-    const stores = { uploadStore, quotaStore: quotaStore(quota) } as unknown as RootStore;
+    const stores = {
+      uploadStore,
+      quotaStore: quotaStore(quota),
+      tripsStore: TRIPS,
+    } as unknown as RootStore;
     render(
       <StoreProvider store={stores}>
-        <UploadPage />
+        <MemoryRouter>
+          <UploadPage />
+        </MemoryRouter>
       </StoreProvider>,
     );
   }

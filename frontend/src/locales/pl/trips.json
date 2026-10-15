@@ -59,5 +59,38 @@
     "personal": "w tym podróż «{{name}}»: {{amount}} {{currency}}",
     "business": "podróż służbowa «{{name}}», do zwrotu: {{amount}} {{currency}}",
     "open": "Otwórz podróż"
-  }
+  },
+  "spending": {
+    "title": "Według rodzaju",
+    "transport": "Transport",
+    "accommodation": "Nocleg",
+    "meals": "Wyżywienie",
+    "other": "Inne",
+    "paidIn": "Zapłacono w walutach",
+    "kindOf": "Za co zapłacono w {{merchant}}"
+  },
+  "question": {
+    "business": "Czy to wydatek służbowy w «{{name}}»?",
+    "businessHint": "Twoje prywatne zakupy w podróży służbowej zostają w Twoim budżecie.",
+    "yes": "Tak, płaci firma",
+    "no": "Nie, prywatny",
+    "personal": "Dodaj do podróży «{{name}}»",
+    "fromTrip": "Ten paragon trafi do podróży «{{name}}».",
+    "unanswered_one": "Odpowiedz na pytanie o podróż służbową dla {{count}} paragonu, aby go zapisać.",
+    "unanswered_few": "Odpowiedz na pytanie o podróż służbową dla {{count}} paragonów, aby je zapisać.",
+    "unanswered_many": "Odpowiedz na pytanie o podróż służbową dla {{count}} paragonów, aby je zapisać.",
+    "unanswered_other": "Odpowiedz na pytanie o podróż służbową dla {{count}} paragonu, aby je zapisać."
+  },
+  "asking": {
+    "title": "Paragony z tych dni — służbowe?",
+    "text": "Dopóki nie odpowiesz, liczą się do Twojego budżetu.",
+    "count_one": "{{count}} paragon czeka na odpowiedź",
+    "count_few": "{{count}} paragony czekają na odpowiedź",
+    "count_many": "{{count}} paragonów czeka na odpowiedź",
+    "count_other": "{{count}} paragonu czeka na odpowiedź"
+  },
+  "label": {
+    "question": "Służbowy?"
+  },
+  "addReceipt": "Dodaj paragon"
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Pencil, Trash2, X } from "lucide-react";
+import { ArrowLeft, Pencil, Plus, Trash2, X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -16,15 +16,22 @@ import {
   ModalBody,
   ModalFooter,
   Pill,
+  Select,
 } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
+import type { ExpenseKind } from "@/stores/TripsStore";
 import { TripDialog } from "../components/TripDialog";
+import { TripAsking } from "../components/TripAsking";
+import { TripSpending } from "../components/TripSpending";
 import { countryName, formatTripDay } from "../tripFormat";
+
+const KINDS: ExpenseKind[] = ["transport", "accommodation", "meals", "other"];
 
 /**
  * One trip (F20.1): where and when, what it cost — to be reimbursed, for a business
- * trip — and its receipts. A receipt opens to its details and can be taken out of the
- * trip; the trip can be changed or deleted, which gives its receipts back to the month.
+ * trip — split by kind and currency paid (F20.2), and its receipts. A receipt opens to
+ * its details, its kind can be changed in place, and it can be taken out of the trip;
+ * the trip can be changed or deleted, which gives its receipts back to the month.
  */
 export const TripPage = observer(function TripPage() {
   const { id = "" } = useParams();
@@ -135,10 +142,22 @@ export const TripPage = observer(function TripPage() {
           </span>
         </Card>
 
+        <TripAsking trip={trip} />
+
+        {trip.receipt_count > 0 && <TripSpending trip={trip} currency={currency} />}
+
         <section aria-labelledby="trip-receipts" className="flex flex-col gap-2.5">
-          <h2 id="trip-receipts" className="m-0 text-lg font-bold">
-            {t("detail.receipts")}
-          </h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 id="trip-receipts" className="m-0 text-lg font-bold">
+              {t("detail.receipts")}
+            </h2>
+            <Link to={`/upload?trip=${trip.id}`} className="no-underline">
+              <Button size="sm" className="min-h-11 md:min-h-0" tabIndex={-1}>
+                <Plus size={14} aria-hidden="true" />
+                {t("addReceipt")}
+              </Button>
+            </Link>
+          </div>
           {trip.receipts.length === 0 ? (
             <p className="m-0 text-md text-muted-foreground">{t("detail.noReceipts")}</p>
           ) : (
@@ -147,11 +166,11 @@ export const TripPage = observer(function TripPage() {
                 {trip.receipts.map((receipt) => (
                   <li
                     key={receipt.id}
-                    className="flex items-center gap-2 border-b border-border last:border-b-0"
+                    className="flex flex-wrap items-center gap-x-2 border-b border-border pb-2 last:border-b-0 md:flex-nowrap md:pb-0"
                   >
                     <button
                       type="button"
-                      className="flex min-h-14 min-w-0 flex-1 cursor-pointer items-center justify-between gap-3 bg-transparent px-4 py-2.5 text-left hover:bg-surface-hover"
+                      className="flex min-h-14 min-w-0 basis-full cursor-pointer md:flex-1 md:basis-auto items-center justify-between gap-3 bg-transparent px-4 py-2.5 text-left hover:bg-surface-hover"
                       onClick={() => void receiptStore.fetchReceiptDetail(receipt.id)}
                     >
                       <span className="flex min-w-0 flex-col">
@@ -174,6 +193,25 @@ export const TripPage = observer(function TripPage() {
                         {receipt.total_amount ? formatAmount(receipt.total_amount) : "—"}
                       </span>
                     </button>
+                    <div className="ml-4 min-w-0 flex-1 md:ml-0 md:w-44 md:flex-none">
+                      <Select
+                        aria-label={t("spending.kindOf", {
+                          merchant: receipt.merchant_name ?? t("receipts:list.unknownMerchant"),
+                        })}
+                        className="w-full"
+                        value={receipt.expense_kind}
+                        onChange={(e) => {
+                          const kind = KINDS.find((k) => k === e.target.value);
+                          if (kind) void tripsStore.chooseKind(receipt.id, kind);
+                        }}
+                      >
+                        {KINDS.map((kind) => (
+                          <option key={kind} value={kind}>
+                            {t(`spending.${kind}`)}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
                     <button
                       type="button"
                       aria-label={t("detail.remove")}

@@ -67,7 +67,8 @@
   "status": {
     "inTotal": "W sumie",
     "outOfTotal": "Poza sumą",
-    "review": "Do sprawdzenia"
+    "review": "Do sprawdzenia",
+    "repaid": "Zwrot od firmy"
   },
   "detail": {
     "unknownMerchant": "Nieznany sklep",

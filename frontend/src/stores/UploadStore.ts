@@ -4,6 +4,7 @@ import { errorMessage } from "../api/errors";
 import type { ApiClient } from "@/api/client";
 import { AsyncState } from "@/stores/AsyncState";
 import i18n from "@/i18n";
+import type { Trip } from "@/stores/TripsStore";
 
 /**
  * Whether a receipt's printed total still needs the user (BRD A11): none was
@@ -43,6 +44,11 @@ export class UploadStore {
   /** A missed discount is being added; holds the button so one click adds one. */
   isAddingDiscount = false;
   isUndoingCorrection = false;
+  /** The trip whose page the upload started from: its receipts go there, unasked (F20.1). */
+  fromTrip: Trip | null = null;
+  /** The user's answer per receipt dated within a trip: that trip's id, or null for none. */
+  tripAnswers = new Map<number, string | null>();
+  private trips: () => Trip[] = () => [];
   private readonly toastStore: ToastStore | undefined;
   private readonly onReceiptsStored: () => void;
   private readonly onUploadSent: () => void;
@@ -61,9 +67,66 @@ export class UploadStore {
     this.toastStore = toastStore;
     this.onReceiptsStored = onReceiptsStored;
     this.onUploadSent = onUploadSent;
-    makeAutoObservable<this, "onReceiptsStored" | "onUploadSent">(this, {
+    makeAutoObservable<this, "onReceiptsStored" | "onUploadSent" | "trips">(this, {
       onReceiptsStored: false,
       onUploadSent: false,
+      trips: false,
+    });
+  }
+
+  /** Where the user's trips are read from, to ask about receipts dated within one. */
+  useTrips(trips: () => Trip[]) {
+    this.trips = trips;
+  }
+
+  /** Start the upload from a trip's page, or (null) from anywhere else. */
+  setFromTrip(trip: Trip | null) {
+    this.fromTrip = trip;
+    this.tripAnswers.clear();
+  }
+
+  /**
+   * The trip a read receipt's date falls within, which the wizard asks about (F20.1).
+   * None when the upload started from a trip's page: that trip is the answer.
+   */
+  tripFor(index: number): Trip | null {
+    if (this.fromTrip) return null;
+    const extractions = (this.extractedData?.extractions ?? []) as Record<string, unknown>[];
+    const day = extractions[index]?.transaction_date;
+    if (typeof day !== "string") return null;
+    return this.trips().find((t) => t.start_date <= day && day <= t.end_date) ?? null;
+  }
+
+  /**
+   * Whether a receipt is going into the trip its date falls within. A personal trip
+   * takes it unless the user unticks it; a business trip only once the user says so,
+   * and until then there is no answer (undefined).
+   */
+  goesIntoTrip(index: number): boolean | undefined {
+    const trip = this.tripFor(index);
+    if (!trip) return undefined;
+    const answer = this.tripAnswers.get(index);
+    if (answer !== undefined) return answer === trip.id;
+    return trip.kind === "personal" ? true : undefined;
+  }
+
+  answerTrip(index: number, intoTrip: boolean) {
+    const trip = this.tripFor(index);
+    if (trip) this.tripAnswers.set(index, intoTrip ? trip.id : null);
+  }
+
+  /** Selected receipts a business trip still asks about; storing waits for every answer. */
+  get unansweredTrips(): number[] {
+    return Array.from(this.selectedIndices).filter(
+      (i) => this.tripFor(i)?.kind === "business" && this.goesIntoTrip(i) === undefined,
+    );
+  }
+
+  private get tripChoices(): { index: number; trip_id: string | null }[] {
+    return Array.from(this.selectedIndices).flatMap((index) => {
+      if (this.fromTrip) return [{ index, trip_id: this.fromTrip.id }];
+      const answer = this.tripAnswers.get(index);
+      return answer === undefined ? [] : [{ index, trip_id: answer }];
     });
   }
 
@@ -337,6 +400,7 @@ export class UploadStore {
     this.totalItems = 0;
     this.processedItems = 0;
     this.selectedIndices.clear();
+    this.tripAnswers.clear();
     this.currentStep = 1;
   }
 
@@ -596,7 +660,7 @@ export class UploadStore {
     try {
       const res = await this.api.POST("/receipts/upload/{job_id}/commit", {
         params: { path: { job_id: this.jobId } },
-        body: { indices_to_store: Array.from(this.selectedIndices) },
+        body: { indices_to_store: Array.from(this.selectedIndices), trips: this.tripChoices },
       });
       if (res.error)
         throw new Error(errorMessage(res.error, i18n.t("messages:upload.storeFailed")));

@@ -59,5 +59,34 @@
     "personal": "of which trip «{{name}}»: {{amount}} {{currency}}",
     "business": "business trip «{{name}}», to be reimbursed: {{amount}} {{currency}}",
     "open": "Open trip"
-  }
+  },
+  "spending": {
+    "title": "By kind",
+    "transport": "Transport",
+    "accommodation": "Accommodation",
+    "meals": "Meals",
+    "other": "Other",
+    "paidIn": "Paid in",
+    "kindOf": "What {{merchant}} paid for"
+  },
+  "question": {
+    "business": "Is this a business expense on «{{name}}»?",
+    "businessHint": "Your own purchases on a business trip stay in your budget.",
+    "yes": "Yes, the company pays",
+    "no": "No, my own",
+    "personal": "Add to the trip «{{name}}»",
+    "fromTrip": "This receipt goes to the trip «{{name}}».",
+    "unanswered_one": "Answer the business-trip question for {{count}} receipt to store it.",
+    "unanswered_other": "Answer the business-trip question for {{count}} receipts to store them."
+  },
+  "asking": {
+    "title": "Receipts from these days — business?",
+    "text": "Until you answer, they count in your own budget.",
+    "count_one": "{{count}} receipt waits for an answer",
+    "count_other": "{{count}} receipts wait for an answer"
+  },
+  "label": {
+    "question": "Business?"
+  },
+  "addReceipt": "Add receipt"
 }

@@ -11,14 +11,28 @@ import { ExtractedStep } from "../components/ExtractedStep";
 import { ResolveStep } from "../components/ResolveStep";
 import { ReceiptQuotaNote } from "../components/ReceiptQuotaNote";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 
 export const UploadPage = observer(function UploadPage() {
-  const { uploadStore, quotaStore } = useStores();
+  const { uploadStore, quotaStore, tripsStore } = useStores();
   const { t } = useTranslation("upload");
+  const [params] = useSearchParams();
+  const tripId = params.get("trip");
 
   useEffect(() => {
     void quotaStore.load();
   }, [quotaStore]);
+
+  // Receipts dated within a trip are asked about, and an upload begun on a trip's page
+  // goes to that trip (F20.1); either needs the trips at hand.
+  useEffect(() => {
+    void tripsStore.load().then(() => {
+      uploadStore.setFromTrip(tripsStore.trips.find((trip) => trip.id === tripId) ?? null);
+    });
+    return () => {
+      uploadStore.setFromTrip(null);
+    };
+  }, [tripsStore, uploadStore, tripId]);
   const singleInputRef = useRef<HTMLInputElement>(null);
 
   const handleUploadClick = () => {

@@ -3,31 +3,40 @@ from collections.abc import Sequence
 from datetime import UTC, date
 from decimal import Decimal
 
-from sqlalchemy import ColumnElement, and_, func, or_, select, update
+from sqlalchemy import ColumnElement, and_, false, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.domain.periods import DateRange
-from app.domain.trips import ForeignDay
+from app.domain.trips import ForeignDay, TripKind, TripSpan, place
 from app.models.line_item import LineItem
 from app.models.receipt import Receipt, ReceiptStatus
 from app.models.trip import Trip
-from app.repository.receipt import _within, on_trip, purchase_day
+from app.repository.receipt import _within, awaiting_answer, on_trip, purchase_day
+
+
+def _dated_within(trip: Trip) -> ColumnElement[bool]:
+    return and_(
+        Receipt.user_id == trip.user_id,
+        ~Receipt.trip_manual,
+        purchase_day() >= trip.start_date,
+        purchase_day() <= trip.end_date,
+    )
 
 
 def in_trip(trip: Trip) -> ColumnElement[bool]:
-    """Receipts of `trip`: put in it by hand, or dated within it and not moved by hand."""
-    return and_(
-        Receipt.user_id == trip.user_id,
-        or_(
-            and_(Receipt.trip_manual, Receipt.trip_id == trip.id),
-            and_(
-                ~Receipt.trip_manual,
-                purchase_day() >= trip.start_date,
-                purchase_day() <= trip.end_date,
-            ),
-        ),
-    )
+    """Receipts of `trip`: put in it by hand, or, for a personal trip, dated within it."""
+    by_hand = and_(Receipt.user_id == trip.user_id, Receipt.trip_manual, Receipt.trip_id == trip.id)
+    if trip.kind is TripKind.BUSINESS:
+        return by_hand
+    return or_(by_hand, _dated_within(trip))
+
+
+def asked_by(trip: Trip) -> ColumnElement[bool]:
+    """Receipts a business trip asks about: dated within it, nobody said either way yet."""
+    if trip.kind is not TripKind.BUSINESS:
+        return false()
+    return _dated_within(trip)
 
 
 class TripRepository:
@@ -72,13 +81,25 @@ class TripRepository:
 
     async def receipts_of(self, trip: Trip) -> Sequence[Receipt]:
         """A trip's receipts of any status, oldest first."""
+        return await self._receipts(in_trip(trip))
+
+    async def asking_about(self, trip: Trip) -> Sequence[Receipt]:
+        """The receipts a business trip asks about, oldest first; none for a personal one."""
+        return await self._receipts(asked_by(trip))
+
+    async def _receipts(self, where: ColumnElement[bool]) -> Sequence[Receipt]:
         stmt = (
             select(Receipt)
-            .options(selectinload(Receipt.line_items))
-            .where(in_trip(trip))
+            .options(selectinload(Receipt.line_items).selectinload(LineItem.category))
+            .where(where)
             .order_by(func.coalesce(Receipt.transaction_date, Receipt.created_at))
         )
         return (await self.session.execute(stmt)).scalars().unique().all()
+
+    async def asking_count(self, trip: Trip) -> int:
+        """How many receipts a business trip still asks about."""
+        count = await self.session.scalar(select(func.count(Receipt.id)).where(asked_by(trip)))
+        return int(count or 0)
 
     async def release(self, trip: Trip) -> None:
         """Hand the receipts put in `trip` by hand back to their dates, before it is deleted."""
@@ -104,6 +125,7 @@ class TripRepository:
                 Receipt.status == ReceiptStatus.PARSED,
                 Receipt.original_currency.is_not(None),
                 ~on_trip(),
+                ~awaiting_answer(),
                 day >= since,
             )
             .group_by(day, Receipt.original_currency)
@@ -113,12 +135,25 @@ class TripRepository:
             for d, currency, count, total in (await self.session.execute(stmt)).all()
         ]
 
-    async def trip_of(self, receipt: Receipt) -> Trip | None:
-        """The trip a receipt is on: the one put in by hand, else the one its date falls in."""
-        if receipt.trip_manual:
-            return await self.get(receipt.user_id, receipt.trip_id) if receipt.trip_id else None
-        day = (receipt.transaction_date or receipt.created_at).astimezone(UTC).date()
-        stmt = select(Trip).where(
-            Trip.user_id == receipt.user_id, Trip.start_date <= day, Trip.end_date >= day
-        )
-        return (await self.session.execute(stmt.limit(1))).scalar_one_or_none()
+    async def placement(self, receipt: Receipt) -> tuple[Trip | None, Trip | None]:
+        """The trip a receipt is on, and the business trip still asking about it (F20.1)."""
+        return (await self.placements([receipt]))[receipt.id]
+
+    async def placements(
+        self, receipts: Sequence[Receipt]
+    ) -> dict[uuid.UUID, tuple[Trip | None, Trip | None]]:
+        """Each receipt's trip and asking business trip, its owner's trips read once each."""
+        trips_of: dict[uuid.UUID, dict[uuid.UUID, Trip]] = {}
+        placed = {}
+        for receipt in receipts:
+            if receipt.user_id not in trips_of:
+                trips_of[receipt.user_id] = {t.id: t for t in await self.list_for(receipt.user_id)}
+            trips = trips_of[receipt.user_id]
+            spans = [TripSpan(t.id, t.kind, t.start_date, t.end_date) for t in trips.values()]
+            day = (receipt.transaction_date or receipt.created_at).astimezone(UTC).date()
+            spot = place(day, receipt.trip_manual, receipt.trip_id, spans)
+            placed[receipt.id] = (
+                trips.get(spot.trip_id) if spot.trip_id else None,
+                trips.get(spot.asking_id) if spot.asking_id else None,
+            )
+        return placed

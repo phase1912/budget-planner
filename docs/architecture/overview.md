@@ -83,9 +83,15 @@ selections can be saved under a name (`/api/v1/products/selections`).
 
 Trips (F20.1) live in `app/services/trip.py` behind `/api/v1/trips`. Which receipts a trip
 holds is worked out when asked — by date, or by the user's choice stored on the receipt —
-so no intake path has to know about trips. Every budget figure reads receipts through one
+so no intake path has to know about trips; the upload wizard's commit only records the
+user's answer for a receipt dated within one (`CommitJobRequest.trips`). The same placing
+rule exists twice, in SQL for figures (`on_trip`, `awaiting_answer`) and in Python for
+lists (`app.domain.trips.place`), and the two must change together. Every budget figure reads receipts through one
 rule, `counted_in_budget()` in `app/repository/receipt.py`: parsed, and not on a business
 trip.
+A receipt's kind of expense (F20.2) is one more field of the reading every intake path
+already makes (`ExtractedReceipt.expense_kind`), so it costs no extra model call and is
+there whichever trip the receipt later turns out to be on.
 
 Households (E12, ADR-0017) live in `app/services/household.py` behind `/api/v1/household`.
 They have no `user_id`, so `HouseholdRepository` does not use the ownership filter: every

@@ -38,6 +38,11 @@ Extract the following into the JSON schema provided:
   EUR), from the code or symbol printed (zł, грн, $, €) or the country of the \
   shop's address; null if the receipt gives no way to tell
 - line_items: every purchased item with name, quantity, unit_price, total_price
+- expense_kind: what the receipt as a whole paid for, from the shop and its lines — \
+  "transport" (fuel station, train or bus ticket, airline, taxi, parking, tolls, car \
+  hire), "accommodation" (hotel, hostel, guesthouse, apartment rental), "meals" \
+  (restaurant, café, bar, or a shop selling mostly food and drink) or "other" \
+  (souvenirs, clothes, pharmacy, anything else)
 - receipt_total: the amount actually paid. When the footer prints both a goods \
   subtotal ("SUMA PLN") and an amount to pay ("DO ZAPŁATY", "RAZEM DO ZAPŁATY", \
   "Total due"), take the amount to pay
