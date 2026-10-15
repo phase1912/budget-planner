@@ -16,6 +16,7 @@ build/
 node_modules/
 .vite/
 frontend/dist/
+frontend/dist-ssr/
 *.tsbuildinfo
 frontend/openapi.json
 

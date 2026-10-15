@@ -1,13 +1,23 @@
 {
+  "meta": {
+    "title": "Budget Agent — a budget from your receipts",
+    "description": "Photograph your receipts: every line is read, sorted into categories and products, and turned into advice you can check. Goals, a shared household budget and trips with Polish per diem."
+  },
   "title1": "Photograph a receipt.",
   "title2": "Get a budget.",
-  "lead": "Every line item read off the photo, sorted into categories, and totalled by the month it was actually bought in.",
+  "lead": "Every line item read off the photo, sorted into categories and products, and turned into advice built from your own purchases — not generic tips.",
   "createAccount": "Create an account",
   "haveOne": "I already have one",
+  "free": "Free while in beta. No card needed.",
+  "nav": {
+    "label": "On this page",
+    "features": "What it does",
+    "faq": "Questions"
+  },
   "steps": {
     "shoot": {
       "title": "Shoot it",
-      "text": "One photo, or several overlapping ones for a long receipt."
+      "text": "One photo, several overlapping ones for a long receipt, or forward the e-receipt by email."
     },
     "check": {
       "title": "Check what we read",
@@ -15,8 +25,153 @@
     },
     "see": {
       "title": "See where it went",
-      "text": "Month-to-date spend by category, against a limit you set."
+      "text": "Month-to-date spend by category and product, against a limit you set."
     }
   },
-  "privacy": "Receipt photos and their extracted data are encrypted at rest and visible only to you."
+  "features": {
+    "title": "What it does",
+    "receipts": {
+      "eyebrow": "Receipts",
+      "title": "Every line, not just the total",
+      "text": "The receipt is read line by line — name, quantity, price — and every line lands in a category. Long receipts can be shot in parts; e-receipts arrive by email; cash without a receipt is typed in.",
+      "points": [
+        "Totals that don't add up are explained, not hidden",
+        "Foreign receipts converted at the NBP rate of their day",
+        "Your corrections are remembered for next time"
+      ]
+    },
+    "spending": {
+      "eyebrow": "Spending",
+      "title": "Where the money really goes",
+      "text": "The month by category, against your limit, and each product you buy across every shop — what it cost then and now, and where it is cheaper.",
+      "points": [
+        "One product, however each shop prints it",
+        "Price history per product and shop",
+        "A mark when another shop sells it for less"
+      ]
+    },
+    "goals": {
+      "eyebrow": "Goals",
+      "title": "Advice built from your purchases",
+      "text": "Set a goal — spend less on eating out, save for a holiday, eat fewer sweets — and get advice that names what you actually buy, with what each change would save you.",
+      "points": [
+        "Only suggestions it can point to in your receipts",
+        "A warning when the month is heading over",
+        "Advice you turn down is not repeated"
+      ]
+    },
+    "household": {
+      "eyebrow": "Household",
+      "title": "One budget for the family",
+      "text": "Invite your partner or family with a link: everyone keeps their own receipts, the household sees the shared month and its limit.",
+      "points": [
+        "Mark a receipt private: its money counts, its details stay yours",
+        "Who spent what, per category",
+        "A household limit beside your own"
+      ]
+    },
+    "trips": {
+      "eyebrow": "Trips",
+      "title": "Holidays and business trips",
+      "text": "A holiday gets its own budget and day-by-day story. A business trip stays out of your budget and is settled with the per diem under Polish rules, ready to hand in.",
+      "points": [
+        "Receipts join a trip by their dates",
+        "Per diem at home and abroad, each day and meal itemised",
+        "Settlement as PDF with receipt photos, or CSV"
+      ]
+    }
+  },
+  "preview": {
+    "receipt": {
+      "merchant": "Biedronka",
+      "date": "14 Oct, 18:42",
+      "lines": ["Milk 3.2% 1L", "Rye bread", "Bananas 1.2 kg", "Natural yoghurt"],
+      "categories": ["Groceries", "Groceries", "Groceries", "Groceries"],
+      "flag": "1 line to check"
+    },
+    "spending": {
+      "month": "October",
+      "limit": "68% of your 3,000 limit",
+      "categories": ["Groceries", "Dining", "Transport", "Entertainment"],
+      "product": "Natural yoghurt 330 g",
+      "cheaper": "0.80 cheaper at Lidl"
+    },
+    "goal": {
+      "name": "Spend less on eating out",
+      "advice": "Cook at home on weekdays instead of the 3 lunches at Pasta Bar",
+      "saves": "saves about {{amount}} a month",
+      "pace": "On pace: 420 of 600 by day 20"
+    },
+    "household": {
+      "name": "The Kowalskis",
+      "members": ["Anna", "Marek"],
+      "shared": "Spent together this month",
+      "private": "Private — Marek"
+    },
+    "trip": {
+      "name": "Berlin, client visit",
+      "kind": "Business",
+      "perDiem": "Per diem: 3 days in Germany",
+      "toReimburse": "To reimburse",
+      "holiday": "Egypt",
+      "budgetLeft": "380 left of 3,000"
+    },
+    "intake": {
+      "title": "Added this week",
+      "items": [
+        {
+          "name": "Biedronka",
+          "how": "3 photos of a long receipt"
+        },
+        {
+          "name": "Allegro",
+          "how": "e-receipt forwarded by email"
+        },
+        {
+          "name": "Pyramids tour",
+          "how": "typed in, no receipt"
+        },
+        {
+          "name": "Café in Vienna",
+          "how": "20.00 EUR at the NBP rate"
+        }
+      ]
+    }
+  },
+  "privacyTitle": "Your receipts stay yours",
+  "privacy": "Receipt photos and their extracted data are encrypted at rest and visible only to you — and to your household, unless you mark a receipt private.",
+  "faq": {
+    "title": "Questions",
+    "items": [
+      {
+        "q": "Is it free?",
+        "a": "Yes, while the service is in beta. You need no card to sign up."
+      },
+      {
+        "q": "Which receipts can it read?",
+        "a": "Printed receipts from any shop, photographed in one or several overlapping shots, and e-receipts forwarded by email. Receipts in other currencies are converted at the NBP rate of their date."
+      },
+      {
+        "q": "What if I paid in cash and have no receipt?",
+        "a": "Type the expense in: what it was, when, how much and in which currency. It counts like any receipt."
+      },
+      {
+        "q": "Who can see my receipts?",
+        "a": "Only you. If you share a household budget, its members see your receipts too — except those you mark private, whose money still counts in the shared total."
+      },
+      {
+        "q": "Does it work for business trips?",
+        "a": "Yes. A business trip stays out of your own budget; the service works out the per diem under the Polish regulation, takes off meals provided and the advance, and gives you the settlement as PDF or CSV."
+      },
+      {
+        "q": "Which languages is it in?",
+        "a": "English, Ukrainian and Polish. Amounts can be in any currency you keep your budget in."
+      }
+    ]
+  },
+  "final": {
+    "title": "Start with one receipt",
+    "text": "It takes a photo and a minute."
+  },
+  "languages": "Also in"
 }

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/StoreContext";
 import { AppShell } from "@/features/app-shell/AppShell";
@@ -19,42 +19,59 @@ import { ProductsPage } from "@/features/products/pages/ProductsPage";
 import { TripPage } from "@/features/trips/pages/TripPage";
 import { TripsPage } from "@/features/trips/pages/TripsPage";
 import { JoinHouseholdPage } from "@/features/household/pages/JoinHouseholdPage";
+import { LANGUAGES } from "@/i18n/languages";
 
+/**
+ * Every route of the product. The router itself is the caller's: the browser's in
+ * main.tsx, a static one when the public pages are prerendered (F17.2).
+ */
 export const App = observer(function App() {
   const { authStore } = useStores();
   const isAuthenticated = authStore.isAuthenticated;
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<AppShell />}>
-          <Route path="/" element={isAuthenticated ? <DashboardPage /> : <PublicLandingPage />} />
+    <Routes>
+      <Route element={<AppShell />}>
+        <Route path="/" element={isAuthenticated ? <DashboardPage /> : <PublicLandingPage />} />
+        {/* The landing at each language's own address, for search engines and links (F17.2). */}
+        {LANGUAGES.map((language) => (
           <Route
-            path="/login"
-            element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+            key={language}
+            path={`/${language}`}
+            element={
+              isAuthenticated ? (
+                <Navigate to="/" replace />
+              ) : (
+                <PublicLandingPage language={language} />
+              )
+            }
           />
-          <Route
-            path="/register"
-            element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />}
-          />
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/receipts" element={<ReceiptsPage />} />
-            <Route path="/categories/manage" element={<CategoriesPage />} />
-            <Route path="/categories" element={<CategorisationQueuePage />} />
-            {/* Placeholders for upcoming features (prevents 404s on navigation) */}
-            <Route path="/statistics" element={<StatisticsPage />} />
-            <Route path="/statistics/products" element={<ProductsPage />} />
-            <Route path="/trips" element={<TripsPage />} />
-            <Route path="/trips/:id" element={<TripPage />} />
-            <Route path="/goals" element={<GoalsPage />} />
-            <Route path="/upload" element={<UploadPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/join/:code" element={<JoinHouseholdPage />} />
-          </Route>
-          <Route path="*" element={<NotFoundPage />} />
+        ))}
+        <Route
+          path="/login"
+          element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+        />
+        <Route
+          path="/register"
+          element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />}
+        />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/receipts" element={<ReceiptsPage />} />
+          <Route path="/categories/manage" element={<CategoriesPage />} />
+          <Route path="/categories" element={<CategorisationQueuePage />} />
+          {/* Placeholders for upcoming features (prevents 404s on navigation) */}
+          <Route path="/statistics" element={<StatisticsPage />} />
+          <Route path="/statistics/products" element={<ProductsPage />} />
+          <Route path="/trips" element={<TripsPage />} />
+          <Route path="/trips/:id" element={<TripPage />} />
+          <Route path="/goals" element={<GoalsPage />} />
+          <Route path="/upload" element={<UploadPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/join/:code" element={<JoinHouseholdPage />} />
         </Route>
-      </Routes>
-    </BrowserRouter>
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    </Routes>
   );
 });

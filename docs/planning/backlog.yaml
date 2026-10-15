@@ -2395,16 +2395,9 @@ epics:
               shows the month's usage; an admin sees that there is no limit. Checked at 375,
               768 and 1280 px.
 
-      - key: F10.7
-        title: Account deletion and full data export
-        labels: [security, backend, frontend]
-        requirements: [N6]
-        intent: >
-          A user can export everything held about them and delete their account with all
-          receipts and images, which section 11 makes a compliance expectation.
-        demo: >
-          Export everything from Preferences and open the archive, then delete the account and
-          confirm sign-in fails and the stored images are gone.
+      # F10.7 "Account deletion and full data export" moved to F17.9 (data rights and
+      # retention), which brings it into the diploma's scope before the service is offered
+      # to the public. Its issue was closed by hand. The key is retired; never reuse it.
 
   # ---------------------------------------------------------------- phase 2
   # Everything below goes beyond the BRD. It was written down early because three of
@@ -3262,7 +3255,8 @@ epics:
       before signing in is a short welcome under a hosting address nobody remembers, search
       engines cannot read a client-rendered app, and nothing counts visitors, sign-ups or who
       stays. This epic gives the service a memorable free address and a landing page that
-      explains it, then measures traffic and use without cookies — before anything is done to
+      explains it, makes accounts trustworthy and the user's data rights real (F17.8, F17.9)
+      before anyone is invited in, then measures traffic and use without cookies — before anything is done to
       bring visitors, so each later step can be judged by its effect — adds an interactive demo
       on sample data and short how-to videos, makes it findable by search engines, and
       publishes the privacy policy, terms and cookie consent. Nothing here is bought: a domain and advertising wait for traffic (E19).
@@ -3324,7 +3318,7 @@ epics:
         title: Knowing who comes and who stays
         labels: [backend, frontend, infra]
         requirements: []
-        depends_on: [F17.2]
+        depends_on: [F17.2, F17.8, F17.9]
         intent: >
           The author can see whether the service has an audience: visitors, where they come
           from and which pages they read, measured without cookies so no consent banner is
@@ -3468,6 +3462,156 @@ epics:
               three languages, Consent Mode v2 signals, nothing beyond strictly needed cookies
               before consent, the choice kept and changeable from the privacy page, and a test
               that no optional script loads before consent. Checked at 375, 768 and 1280 px.
+
+      - key: F17.8
+        title: Trusted accounts
+        labels: [backend, frontend, infra, security]
+        requirements: []
+        depends_on: [F17.2]
+        intent: >
+          An account belongs to a real address its owner can read: sign-up sends a link that
+          confirms it, a forgotten password is reset and an address changed through a link sent
+          to it, and throwaway or non-existent addresses are refused at sign-up. Until the
+          address is confirmed the user may look around but not upload receipts, forward them by
+          email or invite to a household. Mail goes out through App Engine's Mail API from
+          noreply@<project>.appspotmail.com — free and needing no domain — behind a port, so a
+          provider such as Resend replaces it once a domain is bought (E19); Google recommends
+          moving off the legacy Mail API to SMTP providers, which the port makes a one-adapter
+          change.
+        demo: >
+          Sign up with a fresh address and find the confirmation letter; before following it the
+          upload button explains why it waits; follow it and upload. Ask for a password reset and
+          sign in with the new password. Try a mailinator address and a misspelt domain: both
+          are refused with a reason.
+        tasks:
+          - key: F17.8.1
+            title: Outgoing email
+            labels: [backend, infra]
+            detail: >
+              An EmailSender port with an App Engine Mail adapter (the existing mail relay app,
+              or a send endpoint beside it) and a stub for tests; letters in English, Ukrainian
+              and Polish in the user's language; the daily quota checked in the project's console
+              and recorded in an ADR with the fallback provider; sending failures logged and
+              retried, never failing the request that caused them.
+          - key: F17.8.2
+            title: Email confirmation
+            labels: [backend, frontend, security]
+            detail: >
+              A confirmed flag on the user; a single-use signed link valid 24 hours sent on
+              sign-up and on request, rate-limited; until confirmed, uploads, forwarded receipts
+              and household invites are refused with a problem code the UI explains beside a
+              banner offering to resend. Accounts created before this are marked confirmed by
+              the migration. Checked at 375, 768 and 1280 px.
+          - key: F17.8.3
+            title: Password reset and email change
+            labels: [backend, frontend, security]
+            detail: >
+              Forgot-password sends a single-use link valid one hour, the same answer whether the
+              address is known or not; setting a new password ends every session. Changing the
+              address sends a link to the new one and only then switches it, telling the old one.
+              Checked at 375, 768 and 1280 px.
+          - key: F17.8.4
+            title: Refusing throwaway and undeliverable addresses
+            labels: [backend, security]
+            detail: >
+              Sign-up and address change refuse domains on the open disposable-email-domains list,
+              kept in the repository with a script that refreshes it, and domains without an MX
+              (or A) record; each refusal with its own problem code and words in three languages.
+              No third-party validation service: no address leaves the service at sign-up.
+
+      - key: F17.9
+        title: Data rights and retention
+        labels: [backend, frontend, infra, security]
+        requirements: [N6]
+        depends_on: [F17.2]
+        intent: >
+          What GDPR requires before the service is offered to the public and before payments
+          (E18): a user can take everything held about them and delete their account with all of
+          it; receipt photos are kept 90 days — compressed when stored — and then deleted by the
+          storage itself, while the figures read from them stay; export files are deleted after
+          7 days; the acceptance of the terms is recorded at sign-up; and what is processed, why,
+          where and by whom — Google Cloud in the US, under the Data Privacy Framework and the
+          Cloud DPA — is written down for the privacy policy (F17.7) to state. Replaces F10.7,
+          which sat in an epic out of the diploma's scope.
+        demo: >
+          Download everything from the profile and open the archive; delete the account, then
+          fail to sign in and find no photo left in storage. Open a receipt older than 90 days:
+          its lines and totals are there, and the photo is marked as removed after 90 days.
+        tasks:
+          - key: F17.9.1
+            title: Account deletion
+            labels: [backend, frontend, security]
+            detail: >
+              Deleting the account, confirmed with the password, removes the user and everything
+              theirs — receipts with their photos, trips, goals, advice, categories and rules,
+              products, exports, upload jobs — and their place in a household: an owner leaving
+              hands it to another member, the last one dissolves it. Sign-in fails afterwards;
+              tests prove nothing of the user is left. Checked at 375, 768 and 1280 px.
+          - key: F17.9.2
+            title: Full data export
+            labels: [backend, frontend]
+            detail: >
+              One archive of everything held about the user — profile, receipts with lines,
+              trips, goals and advice, categories and rules, products, household membership — as
+              JSON, with the photos still kept, through the export jobs of F7.6. Checked at 375,
+              768 and 1280 px.
+          - key: F17.9.3
+            title: Photo retention and compression
+            labels: [backend, frontend, infra]
+            detail: >
+              Bucket lifecycle rules in Terraform deleting receipts/ objects after 90 days and
+              exports/ after 7; photos re-encoded on upload to about 2000 px JPEG after reading;
+              a receipt whose photo is gone says so instead of a broken image, and a business
+              trip warns before its photos expire. The settlement PDF is still produced after:
+              the summary and totals unchanged, no page for a photo that is gone — no
+              placeholder — and its receipt marked "photo removed after 90 days" in the list, as
+              a typed-in expense is marked "no receipt"; with every photo gone it is the summary
+              alone. Checked at 375, 768 and 1280 px.
+          - key: F17.9.4
+            title: Terms acceptance and the record of processing
+            labels: [backend, frontend, docs]
+            detail: >
+              Sign-up requires accepting the terms and privacy policy, storing when and which
+              version; an ADR listing the personal data held, its purpose, legal basis, storage
+              location, retention and processors (Google Cloud, Vertex AI, Firebase), and the
+              transfer to the US, for the privacy policy to rest on. Checked at 375, 768 and
+              1280 px.
+
+      - key: F17.10
+        title: Help and contact
+        labels: [frontend, backend]
+        requirements: []
+        depends_on: [F17.2, F17.8]
+        intent: >
+          A user with a question finds the answer without leaving the product, and when there is
+          none, writes to the people running it. A help page answers the usual questions by
+          area — receipts, categories, goals, the household, trips and per diem, exports, the
+          account and its data — in all three languages, public and prerendered like the
+          landing, linked from the header, the account menu and the footer. A contact form
+          sends the message to the administrators by the outgoing mail of F17.8, so no address
+          is published and no domain is needed.
+        demo: >
+          Open Help from the account menu on a phone, find how a business trip's per diem is
+          counted, then send a question through the form and see it arrive in the
+          administrators' inbox with the sender's address to reply to.
+        tasks:
+          - key: F17.10.1
+            title: Help page
+            labels: [frontend]
+            detail: >
+              /help with questions and answers grouped by area, each answer linkable, in three
+              languages through the locales, prerendered with the public pages, linked from the
+              header, the account menu, the phone's profile menu and the footer. Checked at 375,
+              768 and 1280 px.
+          - key: F17.10.2
+            title: Contact form
+            labels: [backend, frontend, security]
+            detail: >
+              A form — reply address (filled in for a signed-in user), topic, message — whose
+              submission is mailed to the administrators (admin_emails) through the EmailSender
+              port, rate-limited per address and IP, with a honeypot field against bots and a
+              length limit; the sender gets a copy confirming it was received. Checked at 375,
+              768 and 1280 px.
 
   - key: E18
     title: Subscriptions and Payments

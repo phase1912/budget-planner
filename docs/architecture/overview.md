@@ -323,6 +323,17 @@ the `errors` namespace, filled from its `params`, with the English `detail` as t
 for a code the client has no words for; a backend test fails when a `ProblemCode` has no
 translation. Goal advice is written by the model in the account's language.
 
+The public pages are prerendered (F17.2). `npm run build` also builds
+`src/entry-prerender.tsx` for Node and `scripts/prerender.mjs` renders the app's own tree —
+`App` under a `StaticRouter`, with the stores on empty stand-ins for the browser's storage,
+which is a visitor without a session — into `dist/index.html` (the landing in English, for
+"/") and `dist/{en,uk,pl}.html`, each with its language's title, description, Open Graph
+tags, canonical address and hreflang links. The browser shows that HTML at once, then
+renders its own copy in the reader's language and theme over it; it does not hydrate, so
+a reader whose language or session differs from the prerendered page never sees a mismatch.
+The untouched build output is kept as `dist/app.html`, and every other route falls back to
+it (`firebase.json`), so a signed-in page never shows the landing before the app starts.
+
 ## Repository layout and the frontend/backend boundary
 
 ```

@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-21 epics · 131 features · 287 tasks written so far.
+21 epics · 133 features · 297 tasks written so far.
 
 16 epics are in the diploma project's scope; 5 are planned but out of it.
 
@@ -19,14 +19,14 @@
 | E7 | Statistics, Comparison & Export | BR-5 | 6 | no | 1 | Diploma |
 | E8 | Goals & AI Optimization Advice | BR-6 | 9 | yes | 1 | Diploma |
 | E9 | Web Client Foundation | — | 8 | yes | 1 | Diploma |
-| E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 7 | no | 1 | Out of scope |
+| E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 6 | no | 1 | Out of scope |
 | E11 | Alternative Receipt Intake | — | 6 | yes | 2 | Diploma |
 | E12 | Household & Shared Budgets | — | 6 | yes | 2 | Diploma |
 | E13 | Aggregated Purchase Analytics | — | 7 | no | 2 | Out of scope |
 | E14 | B2B Export & Accounting Integrations | — | 6 | no | 2 | Out of scope |
 | E15 | Receipt Accuracy & Trust | — | 4 | yes | 2 | Diploma |
 | E16 | Personal Price History | — | 4 | yes | 2 | Diploma |
-| E17 | Landing, Search and Analytics | — | 7 | yes | 2 | Diploma |
+| E17 | Landing, Search and Analytics | — | 10 | yes | 2 | Diploma |
 | E18 | Subscriptions and Payments | — | 5 | yes | 2 | Out of scope |
 | E19 | Own Domain and Advertising | — | 2 | yes | 2 | Out of scope |
 | E20 | Trips | — | 5 | yes | 2 | Diploma |
@@ -895,14 +895,6 @@ Upload and AI-backed endpoints are the expensive ones; limit them per account an
 - **F10.6.4** Service-wide daily ceiling on receipt reads — At most `daily_receipt_read_ceiling` receipts are read per UTC day across all non-admin accounts, so the bill is bounded even if the per-account quota is misconfigured or many accounts are created. Over it, uploads are refused with a `service_busy` problem saying when to try again. Vertex AI quotas cannot serve this: Gemini 2.x runs on a shared dynamic quota with no per-project cap.
 - **F10.6.5** Quota on the upload screen and the profile — The upload screen shows how many receipts are left this month, and past the limit explains the limit and the reset date instead of offering to upload; the profile shows the month's usage; an admin sees that there is no limit. Checked at 375, 768 and 1280 px.
 
-### F10.7 — Account deletion and full data export
-
-*Requirements: N6*
-
-A user can export everything held about them and delete their account with all receipts and images, which section 11 makes a compliance expectation.
-
-**Demonstrated by:** Export everything from Preferences and open the archive, then delete the account and confirm sign-in fails and the stored images are gone.
-
 ---
 
 ## E11 — Alternative Receipt Intake
@@ -1264,7 +1256,7 @@ Price rises and cheaper shops become evidence advice can cite, so a recommendati
 
 **BRD sections:** — · **Phase:** 2 · **Scope:** Diploma
 
-The product has no public face and no way to tell whether anyone comes: the only page before signing in is a short welcome under a hosting address nobody remembers, search engines cannot read a client-rendered app, and nothing counts visitors, sign-ups or who stays. This epic gives the service a memorable free address and a landing page that explains it, then measures traffic and use without cookies — before anything is done to bring visitors, so each later step can be judged by its effect — adds an interactive demo on sample data and short how-to videos, makes it findable by search engines, and publishes the privacy policy, terms and cookie consent. Nothing here is bought: a domain and advertising wait for traffic (E19).
+The product has no public face and no way to tell whether anyone comes: the only page before signing in is a short welcome under a hosting address nobody remembers, search engines cannot read a client-rendered app, and nothing counts visitors, sign-ups or who stays. This epic gives the service a memorable free address and a landing page that explains it, makes accounts trustworthy and the user's data rights real (F17.8, F17.9) before anyone is invited in, then measures traffic and use without cookies — before anything is done to bring visitors, so each later step can be judged by its effect — adds an interactive demo on sample data and short how-to videos, makes it findable by search engines, and publishes the privacy policy, terms and cookie consent. Nothing here is bought: a domain and advertising wait for traffic (E19).
 
 ### F17.1 — A name worth remembering
 
@@ -1289,7 +1281,7 @@ A visitor learns in one screen what the service does — receipts read from a ph
 
 ### F17.3 — Knowing who comes and who stays
 
-*Requirements: —* · *Blocked by: F17.2*
+*Requirements: —* · *Blocked by: F17.2, F17.8, F17.9*
 
 The author can see whether the service has an audience: visitors, where they come from and which pages they read, measured without cookies so no consent banner is needed; and from the service's own data, sign-ups, active users by week and month, who returns, and receipts read — counted, never exposing one user's data. Free tools only.
 
@@ -1341,6 +1333,43 @@ The service states what it collects and why — including the cookieless analyti
 
 - **F17.7.1** Privacy policy and terms pages — Public, prerendered pages for the privacy policy (GDPR) and the terms of service, in three languages, linked from the footer and from sign-up. Checked at 375, 768 and 1280 px.
 - **F17.7.2** Cookie consent with Google Consent Mode — A Google-certified consent platform with accept, reject and per-purpose choices in three languages, Consent Mode v2 signals, nothing beyond strictly needed cookies before consent, the choice kept and changeable from the privacy page, and a test that no optional script loads before consent. Checked at 375, 768 and 1280 px.
+
+### F17.8 — Trusted accounts
+
+*Requirements: —* · *Blocked by: F17.2*
+
+An account belongs to a real address its owner can read: sign-up sends a link that confirms it, a forgotten password is reset and an address changed through a link sent to it, and throwaway or non-existent addresses are refused at sign-up. Until the address is confirmed the user may look around but not upload receipts, forward them by email or invite to a household. Mail goes out through App Engine's Mail API from noreply@<project>.appspotmail.com — free and needing no domain — behind a port, so a provider such as Resend replaces it once a domain is bought (E19); Google recommends moving off the legacy Mail API to SMTP providers, which the port makes a one-adapter change.
+
+**Demonstrated by:** Sign up with a fresh address and find the confirmation letter; before following it the upload button explains why it waits; follow it and upload. Ask for a password reset and sign in with the new password. Try a mailinator address and a misspelt domain: both are refused with a reason.
+
+- **F17.8.1** Outgoing email — An EmailSender port with an App Engine Mail adapter (the existing mail relay app, or a send endpoint beside it) and a stub for tests; letters in English, Ukrainian and Polish in the user's language; the daily quota checked in the project's console and recorded in an ADR with the fallback provider; sending failures logged and retried, never failing the request that caused them.
+- **F17.8.2** Email confirmation — A confirmed flag on the user; a single-use signed link valid 24 hours sent on sign-up and on request, rate-limited; until confirmed, uploads, forwarded receipts and household invites are refused with a problem code the UI explains beside a banner offering to resend. Accounts created before this are marked confirmed by the migration. Checked at 375, 768 and 1280 px.
+- **F17.8.3** Password reset and email change — Forgot-password sends a single-use link valid one hour, the same answer whether the address is known or not; setting a new password ends every session. Changing the address sends a link to the new one and only then switches it, telling the old one. Checked at 375, 768 and 1280 px.
+- **F17.8.4** Refusing throwaway and undeliverable addresses — Sign-up and address change refuse domains on the open disposable-email-domains list, kept in the repository with a script that refreshes it, and domains without an MX (or A) record; each refusal with its own problem code and words in three languages. No third-party validation service: no address leaves the service at sign-up.
+
+### F17.9 — Data rights and retention
+
+*Requirements: N6* · *Blocked by: F17.2*
+
+What GDPR requires before the service is offered to the public and before payments (E18): a user can take everything held about them and delete their account with all of it; receipt photos are kept 90 days — compressed when stored — and then deleted by the storage itself, while the figures read from them stay; export files are deleted after 7 days; the acceptance of the terms is recorded at sign-up; and what is processed, why, where and by whom — Google Cloud in the US, under the Data Privacy Framework and the Cloud DPA — is written down for the privacy policy (F17.7) to state. Replaces F10.7, which sat in an epic out of the diploma's scope.
+
+**Demonstrated by:** Download everything from the profile and open the archive; delete the account, then fail to sign in and find no photo left in storage. Open a receipt older than 90 days: its lines and totals are there, and the photo is marked as removed after 90 days.
+
+- **F17.9.1** Account deletion — Deleting the account, confirmed with the password, removes the user and everything theirs — receipts with their photos, trips, goals, advice, categories and rules, products, exports, upload jobs — and their place in a household: an owner leaving hands it to another member, the last one dissolves it. Sign-in fails afterwards; tests prove nothing of the user is left. Checked at 375, 768 and 1280 px.
+- **F17.9.2** Full data export — One archive of everything held about the user — profile, receipts with lines, trips, goals and advice, categories and rules, products, household membership — as JSON, with the photos still kept, through the export jobs of F7.6. Checked at 375, 768 and 1280 px.
+- **F17.9.3** Photo retention and compression — Bucket lifecycle rules in Terraform deleting receipts/ objects after 90 days and exports/ after 7; photos re-encoded on upload to about 2000 px JPEG after reading; a receipt whose photo is gone says so instead of a broken image, and a business trip warns before its photos expire. The settlement PDF is still produced after: the summary and totals unchanged, no page for a photo that is gone — no placeholder — and its receipt marked "photo removed after 90 days" in the list, as a typed-in expense is marked "no receipt"; with every photo gone it is the summary alone. Checked at 375, 768 and 1280 px.
+- **F17.9.4** Terms acceptance and the record of processing — Sign-up requires accepting the terms and privacy policy, storing when and which version; an ADR listing the personal data held, its purpose, legal basis, storage location, retention and processors (Google Cloud, Vertex AI, Firebase), and the transfer to the US, for the privacy policy to rest on. Checked at 375, 768 and 1280 px.
+
+### F17.10 — Help and contact
+
+*Requirements: —* · *Blocked by: F17.2, F17.8*
+
+A user with a question finds the answer without leaving the product, and when there is none, writes to the people running it. A help page answers the usual questions by area — receipts, categories, goals, the household, trips and per diem, exports, the account and its data — in all three languages, public and prerendered like the landing, linked from the header, the account menu and the footer. A contact form sends the message to the administrators by the outgoing mail of F17.8, so no address is published and no domain is needed.
+
+**Demonstrated by:** Open Help from the account menu on a phone, find how a business trip's per diem is counted, then send a question through the form and see it arrive in the administrators' inbox with the sender's address to reply to.
+
+- **F17.10.1** Help page — /help with questions and answers grouped by area, each answer linkable, in three languages through the locales, prerendered with the public pages, linked from the header, the account menu, the phone's profile menu and the footer. Checked at 375, 768 and 1280 px.
+- **F17.10.2** Contact form — A form — reply address (filled in for a signed-in user), topic, message — whose submission is mailed to the administrators (admin_emails) through the EmailSender port, rate-limited per address and IP, with a honeypot field against bots and a length limit; the sender gets a copy confirming it was received. Checked at 375, 768 and 1280 px.
 
 ---
 

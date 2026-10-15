@@ -4,8 +4,20 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
+        "source": "/en",
+        "destination": "/en.html"
+      },
+      {
+        "source": "/uk",
+        "destination": "/uk.html"
+      },
+      {
+        "source": "/pl",
+        "destination": "/pl.html"
+      },
+      {
         "source": "**",
-        "destination": "/index.html"
+        "destination": "/app.html"
       }
     ],
     "headers": [
@@ -19,7 +31,7 @@
         ]
       },
       {
-        "source": "/index.html",
+        "source": "**/*.html",
         "headers": [
           {
             "key": "Cache-Control",
