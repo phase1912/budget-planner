@@ -21,7 +21,8 @@
     "cancel": "Cancel",
     "processed": "Processed {{done}} of {{total}}…",
     "sending": "Sending…",
-    "read": "Read these photos"
+    "read": "Read these photos",
+    "noReceipt": "No receipt?"
   },
   "line": {
     "receipt": "Receipt",

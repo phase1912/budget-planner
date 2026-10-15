@@ -41,7 +41,11 @@
     "endBeforeStart": "Podróż nie może skończyć się przed początkiem.",
     "budget": "Budżet",
     "budgetHint": "Opcjonalnie: ile chcesz wydać w tej podróży.",
-    "budgetInvalid": "Wpisz kwotę większą od zera."
+    "budgetInvalid": "Wpisz kwotę większą od zera.",
+    "advance": "Otrzymana zaliczka",
+    "advanceHint": "Opcjonalnie: ile pracodawca wypłacił z góry.",
+    "advanceInvalid": "Wpisz kwotę większą od zera.",
+    "advancePaidOn": "Data wypłaty"
   },
   "detail": {
     "back": "Wszystkie podróże",
@@ -140,5 +144,18 @@
       "save": "Oblicz",
       "order": "Powrót musi być po wyjeździe."
     }
+  },
+  "settlement": {
+    "title": "Rozliczenie",
+    "expenses": "Wydatki",
+    "perDiem": "Diety",
+    "perDiemNone": "nie zgłoszono",
+    "advance": "Zaliczka",
+    "toReimburse": "Do zwrotu",
+    "toReturn": "Do zwrotu pracodawcy",
+    "pending": "Czeka na kurs NBP",
+    "download": "Pobierz",
+    "pdf": "PDF ze zdjęciami",
+    "csv": "CSV"
   }
 }

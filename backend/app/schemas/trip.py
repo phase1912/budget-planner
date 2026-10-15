@@ -25,6 +25,10 @@ class TripRequest(BaseModel):
     purpose: str | None = Field(default=None, max_length=1000)
     budget: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
     """What the user means to spend on a personal trip (F20.3); a business trip has none."""
+    advance: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
+    """What the employer paid ahead for a business trip, in the account's currency (F20.5)."""
+    advance_paid_on: date | None = None
+    """When the advance was paid: its NBP rate converts a foreign per diem (§ 20)."""
 
     @model_validator(mode="after")
     def _ends_after_it_starts(self) -> Self:
@@ -32,6 +36,8 @@ class TripRequest(BaseModel):
             raise ValueError("A trip ends on or after the day it starts")
         if self.budget is not None and self.kind is TripKind.BUSINESS:
             raise ValueError("A business trip is the employer's money: it has no budget")
+        if self.advance is not None and self.kind is TripKind.PERSONAL:
+            raise ValueError("Only a business trip has an advance from the employer")
         return self
 
 
@@ -51,6 +57,8 @@ class TripResponse(BaseModel):
     budget: Decimal | None = None
     budget_left: Decimal | None = None
     """What is left of the budget, negative once overspent; None without a budget (F20.3)."""
+    advance: Decimal | None = None
+    advance_paid_on: date | None = None
     asking_count: int = 0
     """Receipts dated within a business trip that nobody has said are its own yet."""
 
@@ -161,7 +169,23 @@ class PerDiemResponse(BaseModel):
     parts: list[PerDiemPartResponse]
     to_pln: list[PlnRateResponse]
     total_pln: Decimal | None
+    account_currency: str = "PLN"
+    total_account: Decimal | None = None
     regulation: str = "Dz.U. 2023 poz. 2190"
+
+
+class SettlementResponse(BaseModel):
+    """What the employer owes back for a business trip, in the account's currency (F20.5).
+
+    `to_reimburse` = expenses + per diem - advance; negative when the employee hands some
+    of the advance back, null when a claimed per diem could not be converted.
+    """
+
+    currency: str
+    expenses: Decimal
+    per_diem: Decimal | None
+    advance: Decimal
+    to_reimburse: Decimal | None
 
 
 class TripDetailResponse(TripResponse):
@@ -182,6 +206,8 @@ class TripDetailResponse(TripResponse):
     by_currency: list[CurrencyTotal]
     per_diem: PerDiemResponse | None = None
     """A business trip's per diem, once the user gave its times (F20.4)."""
+    settlement: SettlementResponse | None = None
+    """A business trip's sum to hand in (F20.5); null for a personal trip."""
 
 
 class ExpenseKindRequest(BaseModel):

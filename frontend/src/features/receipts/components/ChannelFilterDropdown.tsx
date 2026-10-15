@@ -13,6 +13,7 @@ const CHANNELS = [
   { value: undefined, label: "filter.anySource" },
   { value: "photo", label: "filter.photo" },
   { value: "email", label: "filter.email" },
+  { value: "manual", label: "filter.manual" },
 ] as const;
 
 /** Narrow Receipts to those that arrived one way (BRD F11 — F11.2). */

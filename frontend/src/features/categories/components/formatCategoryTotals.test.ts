@@ -8,15 +8,18 @@ describe("formatCategoryTotals", () => {
     expect(formatItemCount(0)).toBe("0 items");
   });
 
-  it("prints the amount with two decimals and a thousands separator", () => {
+  it("prints the amount with two decimals, a thousands separator and the account's currency", () => {
     expect(
-      formatCategoryTotals({
-        id: "x",
-        name: "Groceries",
-        is_builtin: true,
-        item_count: 312,
-        total_amount: "1214.6",
-      }),
-    ).toBe("312 items · 1,214.60 PLN");
+      formatCategoryTotals(
+        {
+          id: "x",
+          name: "Groceries",
+          is_builtin: true,
+          item_count: 312,
+          total_amount: "1214.6",
+        },
+        "USD",
+      ),
+    ).toBe("312 items · 1,214.60 USD");
   });
 });

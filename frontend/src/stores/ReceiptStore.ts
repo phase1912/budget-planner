@@ -10,6 +10,7 @@ import i18n from "@/i18n";
 export type Receipt = components["schemas"]["ReceiptResponse"];
 export type ReceiptDetail = components["schemas"]["ReceiptDetailResponse"];
 export type UpdateReceiptRequest = components["schemas"]["UpdateReceiptRequest"];
+export type ManualExpense = components["schemas"]["ManualExpenseRequest"];
 
 type Dated = Pick<Receipt, "transaction_date" | "created_at">;
 
@@ -367,6 +368,25 @@ export class ReceiptStore {
       if (this.selectedReceiptId === id) this.receiptDetail = response.data;
       if (forget) this.toastStore.showSuccess(i18n.t("messages:corrections.forgotten"));
     });
+  }
+
+  /**
+   * Record an expense there was no receipt for — cash for a tour, a tip (F20.5). It
+   * counts like a receipt, so the list and the month on screen are fetched again.
+   * Resolves to whether it was stored; a refusal is shown, not swallowed.
+   */
+  async addManualExpense(expense: ManualExpense): Promise<boolean> {
+    const response = await apiClient.POST("/receipts/manual", { body: expense });
+    if (response.error) {
+      this.toastStore.showError(
+        errorMessage(response.error, i18n.t("messages:receipts.manualFailed")),
+      );
+      return false;
+    }
+    this.toastStore.showSuccess(i18n.t("messages:receipts.manualAdded"));
+    this.onReceiptsChanged();
+    void this.fetchReceipts(1);
+    return true;
   }
 
   clearSelection() {

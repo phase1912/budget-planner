@@ -22,4 +22,10 @@ describe("receiptSource", () => {
       }),
     ).toEqual({ label: "Added from email", reference: "receipt-1@shop.example" });
   });
+
+  it("says an expense was typed in without a receipt (F20.5)", () => {
+    expect(receiptSource({ channel: "manual", source_reference: null, file_ids: [] }).label).toBe(
+      "Typed in, no receipt",
+    );
+  });
 });

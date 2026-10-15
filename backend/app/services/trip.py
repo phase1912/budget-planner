@@ -54,6 +54,8 @@ class TripDetails:
     end_date: date
     purpose: str | None
     budget: Decimal | None = None
+    advance: Decimal | None = None
+    advance_paid_on: date | None = None
 
 
 @dataclass(frozen=True)
@@ -81,6 +83,9 @@ class PerDiem:
     parts: list[PerDiemPart]
     to_pln: dict[str, ExchangeRate | None]
     total_pln: Decimal | None
+    account_currency: str = "PLN"
+    total_account: Decimal | None = None
+    """The per diem in the account's currency, what the settlement adds up (F20.5)."""
 
 
 class TripService:
@@ -143,6 +148,10 @@ class TripService:
         trip.purpose = details.purpose.strip() if details.purpose else None
         # Only a personal trip has a budget of its own; a business one is the employer's (F20.3).
         trip.budget = details.budget if details.kind is TripKind.PERSONAL else None
+        # An advance is the employer's money paid ahead: a business trip's only (F20.5).
+        business = details.kind is TripKind.BUSINESS
+        trip.advance = details.advance if business else None
+        trip.advance_paid_on = details.advance_paid_on if business and details.advance else None
         self.session.add(trip)
         await self.session.flush()
         return trip
@@ -215,12 +224,15 @@ class TripService:
         await self.session.flush()
         return trip
 
-    async def per_diem_of(self, trip: Trip, rates: ExchangeRatePort | None) -> PerDiem | None:
-        """A business trip's per diem, itemised, and in złoty (F20.4, ADR-0018).
+    async def per_diem_of(
+        self, trip: Trip, rates: ExchangeRatePort | None, account_currency: str = "PLN"
+    ) -> PerDiem | None:
+        """A business trip's per diem, itemised, in złoty and in the account's currency.
 
         None for a personal trip, one without times, or one whose times no longer give a
-        per diem. A foreign amount is put into złoty at the NBP mid rate of the last
-        working day before the return; no rate leaves `total_pln` empty, never guessed.
+        per diem (F20.4). A foreign amount is converted at the NBP mid rate of the day the
+        advance was paid (§ 20), or without an advance of the last working day before the
+        return (ADR-0018); a missing rate leaves that total empty, never guessed.
         """
         times = times_of(trip)
         if trip.kind is not TripKind.BUSINESS or times is None:
@@ -229,29 +241,38 @@ class TripService:
             parts = per_diem(trip.country, times)
         except PerDiemUnavailable:
             return None
-        rate_day = times.returned.date() - timedelta(days=1)
-        to_pln: dict[str, ExchangeRate | None] = {}
-        for currency in {p.rate.currency for p in parts if p.rate.currency != "PLN"}:
-            to_pln[currency] = None
-            if rates is not None:
-                try:
-                    to_pln[currency] = await CachedExchangeRates(rates, self.session).rate(
-                        currency, "PLN", rate_day
-                    )
-                except ExchangeRateUnavailable:
-                    to_pln[currency] = None
-        total_pln: Decimal | None = Decimal("0.00")
+        rate_day = trip.advance_paid_on or times.returned.date() - timedelta(days=1)
+        total_pln, to_pln = await self._total_in(parts, "PLN", rate_day, rates)
+        total_account, _ = await self._total_in(parts, account_currency, rate_day, rates)
+        return PerDiem(times, parts, to_pln, total_pln, account_currency, total_account)
+
+    async def _total_in(
+        self, parts: list[PerDiemPart], currency: str, day: date, rates: ExchangeRatePort | None
+    ) -> tuple[Decimal | None, dict[str, ExchangeRate | None]]:
+        """The parts added up in `currency`, and the rate each other currency took."""
+        used: dict[str, ExchangeRate | None] = {}
+        total: Decimal | None = Decimal("0.00")
         for part in parts:
-            if part.rate.currency == "PLN":
-                total_pln = None if total_pln is None else total_pln + part.total
+            source = part.rate.currency
+            if source == currency:
+                total = None if total is None else total + part.total
                 continue
-            rate = to_pln[part.rate.currency]
-            total_pln = (
+            if source not in used:
+                used[source] = None
+                if rates is not None:
+                    try:
+                        used[source] = await CachedExchangeRates(rates, self.session).rate(
+                            source, currency, day
+                        )
+                    except ExchangeRateUnavailable:
+                        used[source] = None
+            rate = used[source]
+            total = (
                 None
-                if rate is None or total_pln is None
-                else total_pln + (part.total * rate.rate).quantize(Decimal("0.01"))
+                if rate is None or total is None
+                else total + (part.total * rate.rate).quantize(Decimal("0.01"))
             )
-        return PerDiem(times, parts, to_pln, total_pln)
+        return total, used
 
     async def choose_kind(self, receipt_id: uuid.UUID, kind: ExpenseKind | None) -> Receipt:
         """Set what a receipt paid for, or (None) give it back to the guess (F20.2).

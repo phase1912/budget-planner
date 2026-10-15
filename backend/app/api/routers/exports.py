@@ -7,24 +7,46 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import rate_limit
 from app.api.dependencies import get_current_user, get_storage_service
-from app.api.errors import DomainError, InvalidPeriodError, NotFoundError, ProblemCode
+from app.api.errors import (
+    DomainError,
+    InvalidExportError,
+    InvalidPeriodError,
+    NotFoundError,
+    ProblemCode,
+)
 from app.api.rate_limit import limiter
 from app.db.session import get_db_session
 from app.domain.periods import DateRange
-from app.models.export_job import ExportJob, ExportKind, ExportStatus
+from app.domain.trips import TripKind
+from app.models.export_job import ExportFormat, ExportJob, ExportKind, ExportStatus
 from app.models.user import User
 from app.ports.storage import StoragePort
 from app.repository.export_job import ExportJobRepository
+from app.repository.trip import TripRepository
 from app.schemas.export import ExportJobResponse, ExportRequest
 from app.services.export import export_filename, run_export
 
 router = APIRouter(prefix="/api/v1/exports", tags=["exports"])
 
-_MEDIA_TYPES = {"csv": "text/csv; charset=utf-8", "json": "application/json"}
+_MEDIA_TYPES = {
+    "csv": "text/csv; charset=utf-8",
+    "json": "application/json",
+    "pdf": "application/pdf",
+}
 
 
-def _params(request: ExportRequest) -> dict[str, Any]:
-    """The request's filters as stored on the job; a period is validated as everywhere (E2)."""
+def _params(request: ExportRequest, user: User) -> dict[str, Any]:
+    """The request's filters as stored on the job; a period is validated as everywhere (E2).
+
+    A trip's settlement keeps the trip and the language to write it in (F20.5); PDF is a
+    settlement's format only, and a settlement is never JSON.
+    """
+    if request.kind is ExportKind.TRIP:
+        if request.trip_id is None or request.format is ExportFormat.JSON:
+            raise InvalidExportError("A trip settlement needs its trip, as PDF or CSV")
+        return {"trip_id": str(request.trip_id), "language": user.language or "en"}
+    if request.format is ExportFormat.PDF:
+        raise InvalidExportError("Only a trip settlement is written as PDF")
     if (request.start is None) != (request.end is None):
         raise InvalidPeriodError("Give both start and end, or neither")
     if request.start and request.end:
@@ -60,7 +82,12 @@ async def start_export(
     long history never holds the request open. Poll the job until it is ready.
     Limited per client IP (F10.6.3).
     """
-    params = _params(export_request)
+    params = _params(export_request, current_user)
+    if export_request.kind is ExportKind.TRIP:
+        trip = await TripRepository(session).get(current_user.id, uuid.UUID(params["trip_id"]))
+        if trip is None or trip.kind is not TripKind.BUSINESS:
+            raise NotFoundError("Business trip not found")
+        params["start"], params["end"] = trip.start_date.isoformat(), trip.end_date.isoformat()
     job = ExportJob(
         user_id=current_user.id,
         kind=export_request.kind,

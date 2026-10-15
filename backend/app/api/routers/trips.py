@@ -9,7 +9,7 @@ from app.api.dependencies import get_current_user, get_exchange_rates
 from app.api.routers.receipts import receipt_detail
 from app.db.session import get_db_session
 from app.domain.per_diem import TripTimes
-from app.domain.trips import budget_left
+from app.domain.trips import TripKind, budget_left, settle
 from app.models.receipt import Receipt
 from app.models.user import User
 from app.ports.exchange_rates import ExchangeRatePort
@@ -26,6 +26,7 @@ from app.schemas.trip import (
     PerDiemTimesRequest,
     PlnRateResponse,
     ReceiptTripRequest,
+    SettlementResponse,
     TripDetailResponse,
     TripReceiptResponse,
     TripRequest,
@@ -65,6 +66,8 @@ def trip_response(summary: TripSummary) -> TripResponse:
         total=summary.total,
         budget=trip.budget,
         budget_left=budget_left(trip.budget, summary.total),
+        advance=trip.advance,
+        advance_paid_on=trip.advance_paid_on,
         asking_count=summary.asking_count,
     )
 
@@ -123,6 +126,7 @@ async def gettrip_response(
     """
     service = TripService(session)
     summary, receipts, asking = await service.get(current_user.id, trip_id)
+    per_diem = await service.per_diem_of(summary.trip, rates, current_user.currency)
     spending = trip_spending(receipts, current_user.currency)
     story = story_of(summary.trip, receipts)
     return TripDetailResponse(
@@ -136,7 +140,8 @@ async def gettrip_response(
             CurrencyTotal(currency=c, total=t)
             for c, t in sorted(spending.by_currency.items(), key=lambda pair: -pair[1])
         ],
-        per_diem=per_diem_response(await service.per_diem_of(summary.trip, rates)),
+        per_diem=per_diem_response(per_diem),
+        settlement=settlement_response(summary, per_diem, current_user.currency),
     )
 
 
@@ -225,7 +230,25 @@ def per_diem_response(per_diem: PerDiem | None) -> PerDiemResponse | None:
             for currency, rate in sorted(per_diem.to_pln.items())
         ],
         total_pln=per_diem.total_pln,
+        account_currency=per_diem.account_currency,
+        total_account=per_diem.total_account,
     )
+
+
+def settlement_response(
+    summary: TripSummary, per_diem: PerDiem | None, currency: str
+) -> SettlementResponse | None:
+    """A business trip's sum to hand in, as the API shows it; None for a personal trip."""
+    trip = summary.trip
+    if trip.kind is not TripKind.BUSINESS:
+        return None
+    sums = settle(
+        summary.total,
+        per_diem is not None,
+        per_diem.total_account if per_diem else None,
+        trip.advance,
+    )
+    return SettlementResponse(currency=currency, **asdict(sums))
 
 
 @router.put("/{trip_id}/per-diem", response_model=PerDiemResponse)
@@ -251,7 +274,7 @@ async def set_per_diem_times(
     )
     trip = await service.set_times(current_user.id, trip_id, times)
     await session.commit()
-    return per_diem_response(await service.per_diem_of(trip, rates))
+    return per_diem_response(await service.per_diem_of(trip, rates, current_user.currency))
 
 
 @router.delete("/{trip_id}/per-diem", status_code=status.HTTP_204_NO_CONTENT)

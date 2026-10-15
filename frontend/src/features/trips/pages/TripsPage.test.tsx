@@ -128,6 +128,8 @@ describe("TripsPage", () => {
         end_date: "2026-09-17",
         purpose: "Conference",
         budget: null,
+        advance: null,
+        advance_paid_on: null,
       },
       undefined,
     );
@@ -151,6 +153,26 @@ describe("TripsPage", () => {
 
     expect(tripsStore.save).toHaveBeenCalledWith(
       expect.objectContaining({ kind: "personal", budget: "3000.50" }),
+      undefined,
+    );
+  });
+
+  it("records the advance a business trip was paid, and when (F20.5)", () => {
+    tripsStore.save.mockResolvedValue("t9");
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "New trip" }));
+    fireEvent.click(screen.getByRole("button", { name: "Business" }));
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Berlin" } });
+    fireEvent.change(screen.getByLabelText("From"), { target: { value: "2026-10-13" } });
+    fireEvent.change(screen.getByLabelText("To"), { target: { value: "2026-10-15" } });
+    fireEvent.change(screen.getByLabelText("Advance received, PLN"), {
+      target: { value: "500,00" },
+    });
+    fireEvent.change(screen.getByLabelText("Paid on"), { target: { value: "2026-10-10" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save trip" }));
+
+    expect(tripsStore.save).toHaveBeenCalledWith(
+      expect.objectContaining({ advance: "500.00", advance_paid_on: "2026-10-10", budget: null }),
       undefined,
     );
   });

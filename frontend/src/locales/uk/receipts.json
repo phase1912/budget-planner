@@ -5,7 +5,8 @@
     "photos_one": "Додано з {{count}} фото",
     "photos_few": "Додано з {{count}} фото",
     "photos_many": "Додано з {{count}} фото",
-    "photos_other": "Додано з {{count}} фото"
+    "photos_other": "Додано з {{count}} фото",
+    "manual": "Введено вручну, без чека"
   },
   "filter": {
     "status": "Статус",
@@ -15,7 +16,8 @@
     "source": "Джерело",
     "anySource": "Будь-яке джерело",
     "photo": "З фото",
-    "email": "З пошти"
+    "email": "З пошти",
+    "manual": "Введено вручну"
   },
   "delete": {
     "title": "Видалити «{{name}}»?",
@@ -62,7 +64,8 @@
     "items_many": "{{count}} позицій",
     "items_other": "{{count}} позиції",
     "convertedFrom": "з {{amount}} {{currency}}",
-    "unconvertedIn": "у {{amount}} {{currency}}"
+    "unconvertedIn": "у {{amount}} {{currency}}",
+    "manual": "Введено вручну без чека"
   },
   "status": {
     "inTotal": "У підсумку",
@@ -121,5 +124,21 @@
     "saving": "Зберігаємо…",
     "save": "Зберегти зміни",
     "matches": "Рядки збігаються з підсумком"
+  },
+  "manual": {
+    "open": "Без чека",
+    "openLong": "Додати витрату без чека",
+    "title": "Витрата без чека",
+    "hint": "Готівкою, чайові, паркомат — усе, на що немає чека.",
+    "description": "Що це було",
+    "descriptionPlaceholder": "Екскурсія до пірамід",
+    "date": "Дата",
+    "amount": "Сума",
+    "currency": "Валюта",
+    "category": "Категорія",
+    "kind": "У поїздці це було",
+    "kindAuto": "Визначити за категорією",
+    "save": "Додати витрату",
+    "amountInvalid": "Введіть суму більше нуля."
   }
 }

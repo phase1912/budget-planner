@@ -100,7 +100,8 @@ Sources, read on 2026-10-15:
 - **Into złoty, for now:**
   - a foreign per diem is shown in złoty at the NBP mid rate of the last working day before
     the return, through the same cached NBP port as receipts (ADR-0016);
-  - F20.5, which records the advance, switches this to the advance's day as § 20 names;
+  - once the trip records the advance's day (F20.5), its NBP rate is used instead, as
+    § 20 names;
   - no rate leaves the złoty total empty instead of guessed.
 - **Out of scope:** the overnight allowance and limits (§ 8, § 16), the local-transport lump
   sum (§ 9, § 15) and travel costs. They are reimbursed against receipts, which the trip

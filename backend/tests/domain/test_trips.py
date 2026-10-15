@@ -17,6 +17,7 @@ from app.domain.trips import (
     overlaps,
     parse_expense_kind,
     place,
+    settle,
     split_spending,
     suggest_trips,
     trip_story,
@@ -132,3 +133,19 @@ def test_what_is_left_of_a_budget_goes_below_zero_once_overspent() -> None:
     assert budget_left(Decimal("3000.00"), Decimal("2620.00")) == Decimal("380.00")
     assert budget_left(Decimal("3000.00"), Decimal("3100.00")) == Decimal("-100.00")
     assert budget_left(None, Decimal("10.00")) is None
+
+
+def test_a_settlement_adds_expenses_and_per_diem_and_takes_the_advance_off() -> None:
+    """F20.5 demo: 612.40 + 207.00 - 500.00 = 319.40."""
+    sums = settle(Decimal("612.40"), True, Decimal("207.00"), Decimal("500.00"))
+
+    assert sums.to_reimburse == Decimal("319.40")
+    assert settle(Decimal("100.00"), False, None, Decimal("300.00")).to_reimburse == Decimal(
+        "-200.00"
+    )
+
+
+def test_a_per_diem_claimed_but_not_converted_leaves_the_settlement_open() -> None:
+    sums = settle(Decimal("612.40"), True, None, None)
+
+    assert (sums.per_diem, sums.to_reimburse) == (None, None)

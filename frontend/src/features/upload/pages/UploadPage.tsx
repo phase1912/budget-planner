@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/StoreContext";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
 import { Card, CardBody } from "@/shared/components/Card/Card";
 import { Button } from "@/shared/components/Button/Button";
@@ -10,12 +10,14 @@ import { ExtractedStep } from "../components/ExtractedStep";
 
 import { ResolveStep } from "../components/ResolveStep";
 import { ReceiptQuotaNote } from "../components/ReceiptQuotaNote";
+import { ManualExpenseDialog } from "@/features/receipts/components/ManualExpenseDialog";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 
 export const UploadPage = observer(function UploadPage() {
   const { uploadStore, quotaStore, tripsStore } = useStores();
-  const { t } = useTranslation("upload");
+  const { t } = useTranslation(["upload", "receipts"]);
+  const [addingExpense, setAddingExpense] = useState(false);
   const [params] = useSearchParams();
   const tripId = params.get("trip");
 
@@ -101,6 +103,19 @@ export const UploadPage = observer(function UploadPage() {
             {t("add.title")}
           </h1>
           <p className="m-0 text-[15px] text-muted-foreground mt-1">{t("add.formats")}</p>
+          {/* F20.5: cash for a tour has nothing to photograph; it is typed in instead. */}
+          <p className="m-0 mt-1 text-[15px] text-muted-foreground">
+            {t("add.noReceipt")}{" "}
+            <button
+              type="button"
+              className="inline-flex min-h-11 cursor-pointer items-center bg-transparent p-0 font-semibold text-primary underline-offset-2 hover:underline md:min-h-0"
+              onClick={() => {
+                setAddingExpense(true);
+              }}
+            >
+              {t("receipts:manual.openLong")}
+            </button>
+          </p>
         </div>
 
         <ReceiptQuotaNote needed={uploadStore.lines.length} />
@@ -341,6 +356,14 @@ export const UploadPage = observer(function UploadPage() {
           </div>
         )}
       </Stack>
+      {addingExpense && (
+        <ManualExpenseDialog
+          fromTrip={uploadStore.fromTrip ?? undefined}
+          onClose={() => {
+            setAddingExpense(false);
+          }}
+        />
+      )}
     </Container>
   );
 });

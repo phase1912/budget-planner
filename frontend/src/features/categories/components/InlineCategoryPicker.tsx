@@ -6,6 +6,7 @@ import { useStores } from "@/stores/StoreContext";
 import { Select } from "@/shared/components";
 import { useTranslation } from "react-i18next";
 import { categoryName } from "@/shared/categoryName";
+import { CategoryIcon } from "@/shared/components";
 
 interface InlineCategoryPickerProps {
   itemId: string;
@@ -46,6 +47,9 @@ export const InlineCategoryPicker = observer(function InlineCategoryPicker({
   }, [categoriesStore]);
 
   const undecided = categoriesStore.isUncategorized(currentCategoryId);
+  const current = [...categoriesStore.assignableBuiltIns, ...categoriesStore.customCategories].find(
+    (c) => c.id === currentCategoryId,
+  );
   const needsAttention = undecided || lowConfidence;
 
   const handleChange = async (categoryId: string) => {
@@ -63,6 +67,9 @@ export const InlineCategoryPicker = observer(function InlineCategoryPicker({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="relative">
+        <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
+          <CategoryIcon name={undecided ? "Uncategorized" : (current?.name ?? "Uncategorized")} />
+        </span>
         <Select
           aria-label={t("picker.label", { item: itemName })}
           value={undecided ? "" : (currentCategoryId ?? "")}
@@ -71,7 +78,7 @@ export const InlineCategoryPicker = observer(function InlineCategoryPicker({
           }}
           disabled={isUpdating || categoriesStore.isLoading}
           tone={needsAttention ? "warning" : "default"}
-          className="w-full cursor-pointer pr-9 py-2.25 text-md font-semibold disabled:cursor-not-allowed"
+          className="w-full cursor-pointer pl-10 pr-9 py-2.25 text-md font-semibold disabled:cursor-not-allowed"
         >
           <option value="" disabled>
             {categoryName("Uncategorized")}

@@ -1,14 +1,18 @@
 """Trips, their receipts, how a trip counts in the month, and what it cost (F20.1-2, N2)."""
 
+import io
+import re
 import uuid
 from collections.abc import AsyncGenerator
 from datetime import UTC, date, datetime
 from decimal import Decimal
-from typing import Any
+from typing import Any, cast
+from unittest.mock import AsyncMock, patch
 
 import jwt
 import pytest
 from httpx import ASGITransport, AsyncClient, Response
+from PIL import Image
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,13 +26,17 @@ from app.domain.periods import DateRange
 from app.domain.trips import ExpenseKind
 from app.main import create_app
 from app.models.category import Category
+from app.models.export_job import ExportFormat, ExportJob, ExportKind
 from app.models.line_item import LineItem
 from app.models.receipt import Receipt, ReceiptStatus
 from app.models.user import User
 from app.ports.exchange_rates import ExchangeRatePort
+from app.ports.storage import StoragePort
 from app.repository.household_spend import HouseholdSpendRepository
 from app.repository.receipt import ReceiptRepository
+from app.services.export import ExportService
 from tests.api.test_upload_wizard_persistence import _job
+from tests.factories.category import CategoryFactory
 from tests.factories.user import UserFactory
 
 OCTOBER = DateRange(date(2026, 10, 1), date(2026, 10, 31))
@@ -71,8 +79,8 @@ async def _receipt(
         merchant_name="Shop",
         transaction_date=datetime(2026, 10, day, 12, tzinfo=UTC),
         total_amount=Decimal(amount),
-        status=ReceiptStatus.PARSED,
-        file_ids=[],
+        status=fields.pop("status", ReceiptStatus.PARSED),
+        file_ids=fields.pop("file_ids", []),
         line_items=[
             LineItem(
                 id=uuid.uuid4(),
@@ -729,3 +737,311 @@ async def test_another_users_trip_times_are_out_of_reach(db_session: AsyncSessio
     )
 
     assert given.status_code == 404
+
+
+def _png() -> bytes:
+    out = io.BytesIO()
+    Image.new("RGB", (40, 60), "white").save(out, format="PNG")
+    return out.getvalue()
+
+
+class _Photos:
+    """Object storage as a stub: every receipt photo is one small picture."""
+
+    def __init__(self) -> None:
+        self.uploaded: dict[str, bytes] = {}
+
+    async def download_file(self, object_name: str) -> bytes:
+        return _png()
+
+    async def upload_file(self, object_name: str, content: bytes, content_type: str) -> None:
+        self.uploaded[object_name] = content
+
+
+async def _business_trip_with_receipts(session: AsyncSession, user: User) -> str:
+    """The F20.5 demo: Berlin, a 612.40 receipt put in by hand, times given, 500 advance."""
+    berlin = await _receipt(session, user.id, 14, "612.40", file_ids=["photo-1"])
+    trip = (
+        await _call(
+            session,
+            user,
+            "POST",
+            "/api/v1/trips",
+            json={
+                **_trip("business", 13, 15, "Berlin"),
+                "advance": "500.00",
+                "advance_paid_on": "2026-10-10",
+            },
+        )
+    ).json()
+    await _answer(session, user, berlin.id, trip["id"])
+    await _call(session, user, "PUT", f"/api/v1/trips/{trip['id']}/per-diem", json=_times())
+    return str(trip["id"])
+
+
+@pytest.mark.asyncio
+async def test_a_business_trip_says_what_is_left_to_reimburse(db_session: AsyncSession) -> None:
+    """F20.5: expenses + per diem - advance, the per diem at the advance day's NBP rate."""
+    user = await UserFactory.create_async(currency="PLN")
+    trip_id = await _business_trip_with_receipts(db_session, user)
+
+    detail = (
+        await _call(db_session, user, "GET", f"/api/v1/trips/{trip_id}", rates=_EuroAt425())
+    ).json()
+
+    assert detail["settlement"] == {
+        "currency": "PLN",
+        "expenses": "612.40",
+        "per_diem": "562.28",
+        "advance": "500.00",
+        "to_reimburse": "674.68",
+    }
+    assert detail["per_diem"]["to_pln"][0]["effective_date"] == "2026-10-10"
+
+
+@pytest.mark.asyncio
+async def test_a_personal_trip_takes_no_advance_and_has_nothing_to_settle(
+    db_session: AsyncSession,
+) -> None:
+    user = await UserFactory.create_async()
+    refused = await _call(
+        db_session,
+        user,
+        "POST",
+        "/api/v1/trips",
+        json={**_trip("personal", 1, 3), "advance": "100.00"},
+    )
+    trip = await _call(db_session, user, "POST", "/api/v1/trips", json=_trip("personal", 1, 3))
+    detail = (await _call(db_session, user, "GET", f"/api/v1/trips/{trip.json()['id']}")).json()
+
+    assert refused.status_code == 422
+    assert detail["settlement"] is None
+
+
+@pytest.mark.asyncio
+async def test_a_settlement_is_written_as_pdf_with_its_photos_and_as_csv(
+    db_session: AsyncSession,
+) -> None:
+    """F20.5: the summary, then the receipts' photos; the CSV in the user's language."""
+    user = await UserFactory.create_async(currency="PLN", language="pl")
+    trip_id = await _business_trip_with_receipts(db_session, user)
+    storage = _Photos()
+    current_user_id.set(user.id)
+    jobs = []
+    for fmt in (ExportFormat.PDF, ExportFormat.CSV):
+        job = ExportJob(
+            user_id=user.id,
+            kind=ExportKind.TRIP,
+            format=fmt,
+            params={"trip_id": trip_id, "language": "pl"},
+            filename=f"trip-settlement.{fmt.value}",
+        )
+        db_session.add(job)
+        await db_session.flush()
+        await ExportService(db_session, cast(StoragePort, storage), _EuroAt425()).write(job)
+        jobs.append(job)
+
+    pdf = storage.uploaded[str(jobs[0].object_name)]
+    csv_text = storage.uploaded[str(jobs[1].object_name)].decode("utf-8")
+    assert pdf.startswith(b"%PDF")
+    assert len(re.findall(rb"/Type\s*/Page\b", pdf)) == 2  # the summary, and the one photo
+    assert "Do zwrotu pracownikowi,,,,674.68,PLN" in csv_text
+    assert "Paragony,2026-10-14,Shop,Inne,612.40,PLN,612.40,PLN" in csv_text
+
+
+@pytest.mark.asyncio
+async def test_a_settlement_export_is_for_ones_own_business_trip_only(
+    db_session: AsyncSession,
+) -> None:
+    """N2, and a settlement is never JSON nor anything else a PDF."""
+    owner, intruder = await UserFactory.create_async(), await UserFactory.create_async()
+    trip_id = await _business_trip_with_receipts(db_session, owner)
+    personal = (
+        await _call(db_session, owner, "POST", "/api/v1/trips", json=_trip("personal", 1, 3))
+    ).json()
+
+    with patch("app.api.routers.exports.run_export", new=AsyncMock()) as run:
+        mine = await _call(
+            db_session,
+            owner,
+            "POST",
+            "/api/v1/exports",
+            json={"kind": "trip", "format": "pdf", "trip_id": trip_id},
+        )
+        theirs = await _call(
+            db_session,
+            intruder,
+            "POST",
+            "/api/v1/exports",
+            json={"kind": "trip", "format": "pdf", "trip_id": trip_id},
+        )
+        holiday = await _call(
+            db_session,
+            owner,
+            "POST",
+            "/api/v1/exports",
+            json={"kind": "trip", "format": "csv", "trip_id": personal["id"]},
+        )
+        receipts_pdf = await _call(
+            db_session, owner, "POST", "/api/v1/exports", json={"kind": "receipts", "format": "pdf"}
+        )
+
+    assert (mine.status_code, mine.json()["filename"]) == (
+        202,
+        "trip-settlement-2026-10-13_2026-10-15.pdf",
+    )
+    assert run.await_count == 1
+    assert (theirs.status_code, holiday.status_code) == (404, 404)
+    assert (receipts_pdf.status_code, receipts_pdf.json()["code"]) == (422, "invalid_export")
+
+
+async def _expense(
+    session: AsyncSession, user: User, rates: ExchangeRatePort | None = None, **fields: Any
+) -> Response:
+    """Type in an expense without a receipt: a 120 PLN tour paid in cash on 3 October."""
+    dining = await _builtin(session, "Entertainment")
+    return await _call(
+        session,
+        user,
+        "POST",
+        "/receipts/manual",
+        rates=rates,
+        json={
+            "description": "Pyramids tour",
+            "spent_on": "2026-10-03",
+            "amount": "120.00",
+            "category_id": str(dining.id),
+            **fields,
+        },
+    )
+
+
+@pytest.mark.asyncio
+async def test_an_expense_without_a_receipt_counts_like_one(db_session: AsyncSession) -> None:
+    """F20.5: cash for a tour is in the month and joins the trip its day falls in."""
+    user = await UserFactory.create_async(currency="PLN")
+    trip = (
+        await _call(
+            db_session, user, "POST", "/api/v1/trips", json=_trip("personal", 1, 8, "Egypt")
+        )
+    ).json()
+
+    added = await _expense(db_session, user)
+    month = await _dashboard(db_session, user)
+    detail = (await _call(db_session, user, "GET", f"/api/v1/trips/{trip['id']}")).json()
+
+    assert added.status_code == 201, added.json()
+    body = added.json()
+    assert (body["channel"], body["status"], body["total_amount"]) == ("manual", "parsed", "120.00")
+    assert body["line_items"][0]["category"]["name"] == "Entertainment"
+    assert body["trip"]["name"] == "Egypt"
+    assert month["summary"]["total"] == "120.00"
+    assert (detail["receipt_count"], detail["total"]) == (1, "120.00")
+
+
+@pytest.mark.asyncio
+async def test_a_foreign_expense_without_a_receipt_is_converted(db_session: AsyncSession) -> None:
+    user = await UserFactory.create_async(currency="PLN")
+
+    added = await _expense(db_session, user, rates=_EuroAt425(), currency="EUR", amount="20.00")
+
+    body = added.json()
+    assert (body["total_amount"], body["original_total"], body["original_currency"]) == (
+        "85.00",
+        "20.00",
+        "EUR",
+    )
+
+
+@pytest.mark.asyncio
+async def test_an_expense_typed_in_on_a_business_trip_goes_where_the_user_said(
+    db_session: AsyncSession,
+) -> None:
+    """The same choice as the wizard's: the company's, or the user's own."""
+    user = await UserFactory.create_async()
+    trip = (
+        await _call(db_session, user, "POST", "/api/v1/trips", json=_trip("business", 1, 8))
+    ).json()
+
+    theirs = await _expense(db_session, user, trip_chosen=True, trip_id=trip["id"])
+    mine = await _expense(db_session, user, trip_chosen=True, trip_id=None)
+    asked = await _expense(db_session, user)
+
+    assert theirs.json()["trip"]["id"] == trip["id"]
+    assert (mine.json()["trip"], mine.json()["trip_question"]) == (None, None)
+    assert asked.json()["trip_question"]["id"] == trip["id"]
+
+
+@pytest.mark.asyncio
+async def test_an_expense_typed_in_is_never_counted_as_a_reading(
+    db_session: AsyncSession,
+) -> None:
+    """F15.4's accuracy report is about what the model read; nothing was read here."""
+    user = await UserFactory.create_async()
+    await _expense(db_session, user)
+
+    readings = await ReceiptRepository(db_session).readings_since(
+        user.id, datetime(2026, 1, 1, tzinfo=UTC)
+    )
+
+    assert readings == []
+
+
+@pytest.mark.asyncio
+async def test_another_users_category_or_trip_cannot_take_an_expense(
+    db_session: AsyncSession,
+) -> None:
+    """N2."""
+    owner, intruder = await UserFactory.create_async(), await UserFactory.create_async()
+    trip = (
+        await _call(db_session, owner, "POST", "/api/v1/trips", json=_trip("business", 1, 8))
+    ).json()
+    their_category = await CategoryFactory.create_async(user_id=owner.id, name="Owner's own")
+
+    into_their_trip = await _expense(db_session, intruder, trip_chosen=True, trip_id=trip["id"])
+    their_category_used = await _call(
+        db_session,
+        intruder,
+        "POST",
+        "/receipts/manual",
+        json={
+            "description": "Taxi",
+            "spent_on": "2026-10-03",
+            "amount": "10.00",
+            "category_id": str(their_category.id),
+        },
+    )
+
+    assert (into_their_trip.status_code, their_category_used.status_code) == (404, 404)
+
+
+@pytest.mark.asyncio
+async def test_a_settlement_marks_an_expense_without_a_receipt(db_session: AsyncSession) -> None:
+    """F20.5: the employer sees which line has no document; no photo page is made for it."""
+    user = await UserFactory.create_async(currency="PLN", language="pl")
+    trip_id = await _business_trip_with_receipts(db_session, user)
+    await _expense(
+        db_session,
+        user,
+        description="Parking",
+        spent_on="2026-10-14",
+        amount="12.00",
+        trip_chosen=True,
+        trip_id=trip_id,
+    )
+    storage = _Photos()
+    current_user_id.set(user.id)
+    job = ExportJob(
+        user_id=user.id,
+        kind=ExportKind.TRIP,
+        format=ExportFormat.CSV,
+        params={"trip_id": trip_id, "language": "pl"},
+        filename="trip-settlement.csv",
+    )
+    db_session.add(job)
+    await db_session.flush()
+
+    await ExportService(db_session, cast(StoragePort, storage), _EuroAt425()).write(job)
+
+    csv_text = storage.uploaded[str(job.object_name)].decode("utf-8")
+    assert "Parking (bez paragonu)" in csv_text

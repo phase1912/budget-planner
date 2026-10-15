@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, PenLine, Pencil, Plus, Trash2, X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
+import { ManualExpenseDialog } from "@/features/receipts/components/ManualExpenseDialog";
 import { ReceiptDetailModal } from "@/features/receipts/components/ReceiptDetailModal";
 import { formatAmount } from "@/i18n/format";
 import { formatPurchase } from "@/shared/purchaseDate";
@@ -22,6 +23,7 @@ import { useStores } from "@/stores/StoreContext";
 import type { ExpenseKind } from "@/stores/TripsStore";
 import { TripDialog } from "../components/TripDialog";
 import { PerDiemCard } from "../components/PerDiemCard";
+import { SettlementCard } from "../components/SettlementCard";
 import { TripAsking } from "../components/TripAsking";
 import { TripBudget } from "../components/TripBudget";
 import { TripSpending } from "../components/TripSpending";
@@ -33,7 +35,7 @@ const KINDS: ExpenseKind[] = ["transport", "accommodation", "meals", "other"];
 /**
  * One trip (F20.1): where and when, what it cost — to be reimbursed, for a business
  * trip — against its budget and day by day (F20.3), split by kind and currency paid
- * (F20.2), a business trip's per diem (F20.4), and its receipts. A receipt opens to
+ * (F20.2), a business trip's per diem (F20.4) and settlement (F20.5), and its receipts. A receipt opens to
  * its details, its kind can be changed in place, and it can be taken out of the trip;
  * the trip can be changed or deleted, which gives its receipts back to the month.
  */
@@ -44,6 +46,7 @@ export const TripPage = observer(function TripPage() {
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [addingExpense, setAddingExpense] = useState(false);
   const currency = authStore.user?.currency ?? "PLN";
   const trip = tripsStore.current?.id === id ? tripsStore.current : null;
 
@@ -153,6 +156,8 @@ export const TripPage = observer(function TripPage() {
 
         {trip.kind === "business" && <PerDiemCard trip={trip} />}
 
+        {trip.kind === "business" && <SettlementCard trip={trip} />}
+
         {trip.receipt_count > 0 && <TripSpending trip={trip} currency={currency} />}
 
         {trip.receipt_count > 0 && <TripStory trip={trip} currency={currency} />}
@@ -162,12 +167,25 @@ export const TripPage = observer(function TripPage() {
             <h2 id="trip-receipts" className="m-0 text-lg font-bold">
               {t("detail.receipts")}
             </h2>
-            <Link to={`/upload?trip=${trip.id}`} className="no-underline">
-              <Button size="sm" className="min-h-11 md:min-h-0" tabIndex={-1}>
-                <Plus size={14} aria-hidden="true" />
-                {t("addReceipt")}
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                className="min-h-11 md:min-h-0"
+                onClick={() => {
+                  setAddingExpense(true);
+                }}
+              >
+                <PenLine size={14} aria-hidden="true" />
+                {t("receipts:manual.open")}
               </Button>
-            </Link>
+              <Link to={`/upload?trip=${trip.id}`} className="no-underline">
+                <Button size="sm" className="min-h-11 md:min-h-0" tabIndex={-1}>
+                  <Plus size={14} aria-hidden="true" />
+                  {t("addReceipt")}
+                </Button>
+              </Link>
+            </div>
           </div>
           {trip.receipts.length === 0 ? (
             <p className="m-0 text-md text-muted-foreground">{t("detail.noReceipts")}</p>
@@ -241,6 +259,15 @@ export const TripPage = observer(function TripPage() {
       </div>
 
       {receiptStore.selectedReceiptId && <ReceiptDetailModal />}
+      {addingExpense && (
+        <ManualExpenseDialog
+          fromTrip={trip}
+          onClose={() => {
+            setAddingExpense(false);
+          }}
+          onAdded={() => void tripsStore.loadTrip(trip.id)}
+        />
+      )}
       {editing && (
         <TripDialog
           tripId={trip.id}

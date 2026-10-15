@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { Mail } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Mail, PenLine } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import type { components } from "@/api/schema";
 import { observer } from "mobx-react-lite";
@@ -10,7 +10,8 @@ import { ReceiptDetailModal } from "../components/ReceiptDetailModal";
 import { DateFilterModal } from "../components/DateFilterModal";
 import { StatusFilterDropdown } from "../components/StatusFilterDropdown";
 import { ChannelFilterDropdown } from "../components/ChannelFilterDropdown";
-import { Card, Input, IconTile, Pagination, SegmentedControl } from "@/shared/components";
+import { Button, Card, Input, IconTile, Pagination, SegmentedControl } from "@/shared/components";
+import { ManualExpenseDialog } from "../components/ManualExpenseDialog";
 import { TripLabel } from "@/features/trips/components/TripLabel";
 import { SectionTabs } from "@/features/app-shell/SectionTabs";
 import { ExportMenu } from "@/features/exports/components/ExportMenu";
@@ -36,6 +37,7 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 export const ReceiptsPage = observer(() => {
   const { receiptStore, exportStore, householdStore, authStore } = useStores();
+  const [addingExpense, setAddingExpense] = useState(false);
   const { t } = useTranslation(["receipts", "common"]);
   const household = householdStore.household;
   // A household of one has nothing to share yet, so the switch waits for a second member.
@@ -96,22 +98,36 @@ export const ReceiptsPage = observer(() => {
           </div>
           {/* An export is the user's own data (N6); the household view has none to offer. */}
           {!showingHousehold && (
-            <ExportMenu
-              label={t("list.export")}
-              busy={Boolean(exportStore.busy.receipts)}
-              onExport={(format) => {
-                // The file holds the list as filtered on screen (BRD N6).
-                void exportStore.start({
-                  kind: "receipts",
-                  format,
-                  start: receiptStore.startDateFilter ?? null,
-                  end: receiptStore.endDateFilter ?? null,
-                  status: receiptStore.statusFilter ?? null,
-                  q: receiptStore.searchQuery ?? null,
-                  compare: false,
-                });
-              }}
-            />
+            <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="min-h-11 w-full md:min-h-0 md:w-auto"
+                onClick={() => {
+                  setAddingExpense(true);
+                }}
+              >
+                <PenLine size={14} aria-hidden="true" />
+                <span className="md:hidden">{t("manual.openLong")}</span>
+                <span className="hidden md:inline">{t("manual.open")}</span>
+              </Button>
+              <ExportMenu
+                label={t("list.export")}
+                busy={Boolean(exportStore.busy.receipts)}
+                onExport={(format) => {
+                  // The file holds the list as filtered on screen (BRD N6).
+                  void exportStore.start({
+                    kind: "receipts",
+                    format,
+                    start: receiptStore.startDateFilter ?? null,
+                    end: receiptStore.endDateFilter ?? null,
+                    status: receiptStore.statusFilter ?? null,
+                    q: receiptStore.searchQuery ?? null,
+                    compare: false,
+                  });
+                }}
+              />
+            </div>
           )}
         </div>
         {shared && (
@@ -231,6 +247,8 @@ export const ReceiptsPage = observer(() => {
                         </svg>
                       ) : receipt.channel === "email" ? (
                         <Mail size={15} role="img" aria-label={t("list.fromEmail")} />
+                      ) : receipt.channel === "manual" ? (
+                        <PenLine size={15} role="img" aria-label={t("list.manual")} />
                       ) : (
                         <svg
                           width="15"
@@ -279,11 +297,14 @@ export const ReceiptsPage = observer(() => {
                           day: "numeric",
                           month: "short",
                         }) +
-                        ", " +
-                        formatPurchase(receipt.transaction_date, {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
+                        // An expense typed in has a day, never a time (F20.5).
+                        (receipt.channel === "manual"
+                          ? ""
+                          : ", " +
+                            formatPurchase(receipt.transaction_date, {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }))
                       : t("list.unknownDate")}
                     {/* Below lg there is no items column; the count joins the date. */}
                     <span className="lg:hidden">
@@ -409,6 +430,13 @@ export const ReceiptsPage = observer(() => {
         </div>
 
         {receiptStore.selectedReceiptId && <ReceiptDetailModal />}
+        {addingExpense && (
+          <ManualExpenseDialog
+            onClose={() => {
+              setAddingExpense(false);
+            }}
+          />
+        )}
         <DeleteReceiptDialog />
         <EditReceiptDialog />
       </div>

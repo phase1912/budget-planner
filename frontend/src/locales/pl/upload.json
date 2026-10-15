@@ -25,7 +25,8 @@
     "cancel": "Anuluj",
     "processed": "Przetworzono {{done}} z {{total}}…",
     "sending": "Wysyłanie…",
-    "read": "Odczytaj te zdjęcia"
+    "read": "Odczytaj te zdjęcia",
+    "noReceipt": "Nie masz paragonu?"
   },
   "line": {
     "receipt": "Paragon",

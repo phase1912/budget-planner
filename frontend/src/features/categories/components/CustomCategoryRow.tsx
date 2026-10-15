@@ -1,15 +1,17 @@
+import { CategoryIcon } from "@/shared/components";
 import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Check, Pencil, Trash2, X } from "lucide-react";
 
 import { IconButton, Input } from "@/shared/components";
 import type { Category } from "@/stores/CategoriesStore";
-import { CategoryDot } from "./CategoryDot";
 import { formatCategoryTotals } from "./formatCategoryTotals";
 import { useTranslation } from "react-i18next";
 
 interface CustomCategoryRowProps {
   category: Category;
+  /** The account's currency, the sums are in. */
+  currency: string;
   onRename: (name: string) => Promise<boolean>;
   onDelete: () => void;
 }
@@ -22,6 +24,7 @@ interface CustomCategoryRowProps {
  */
 export const CustomCategoryRow = observer(function CustomCategoryRow({
   category,
+  currency,
   onRename,
   onDelete,
 }: CustomCategoryRowProps) {
@@ -49,7 +52,7 @@ export const CustomCategoryRow = observer(function CustomCategoryRow({
           void save();
         }}
       >
-        <CategoryDot name={category.name} />
+        <CategoryIcon name={category.name} />
         <div className="flex-grow">
           <Input
             ref={input}
@@ -83,11 +86,11 @@ export const CustomCategoryRow = observer(function CustomCategoryRow({
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3.5 gap-y-1 md:grid-cols-[minmax(0,1fr)_auto_auto]">
       <span className="flex min-w-0 items-center gap-2.5 text-lg font-semibold text-foreground">
-        <CategoryDot name={category.name} />
+        <CategoryIcon name={category.name} />
         <span className="truncate">{category.name}</span>
       </span>
       <span className="col-start-1 row-start-2 tabular-nums text-md text-muted-foreground whitespace-nowrap md:col-start-2 md:row-start-1">
-        {formatCategoryTotals(category)}
+        {formatCategoryTotals(category, currency)}
       </span>
       <div className="col-start-2 row-span-2 row-start-1 flex items-center gap-1 md:col-start-3 md:row-span-1">
         <IconButton

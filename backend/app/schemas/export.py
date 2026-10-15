@@ -12,7 +12,8 @@ class ExportRequest(BaseModel):
 
     For `receipts`: the list's filters — `start`/`end` (both included), `status`
     and the search `q` — all optional. For `statistics`: the period, which is
-    required, and whether it is compared with the previous one.
+    required, and whether it is compared with the previous one. For `trip`: the
+    business trip whose settlement it is, as PDF or CSV (F20.5).
     """
 
     kind: ExportKind
@@ -22,6 +23,7 @@ class ExportRequest(BaseModel):
     status: ReceiptStatus | None = None
     q: str | None = Field(None, max_length=200)
     compare: bool = False
+    trip_id: uuid.UUID | None = None
 
 
 class ExportJobResponse(BaseModel):

@@ -1,3 +1,4 @@
+import { CategoryIcon } from "@/shared/components";
 import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Plus } from "lucide-react";
@@ -6,7 +7,6 @@ import { SectionTabs } from "@/features/app-shell/SectionTabs";
 import { useStores } from "@/stores/StoreContext";
 import { Button, Card } from "@/shared/components";
 import type { Category } from "@/stores/CategoriesStore";
-import { CategoryDot } from "../components/CategoryDot";
 import { CreateCategoryDialog } from "../components/CreateCategoryDialog";
 import { CustomCategoryRow } from "../components/CustomCategoryRow";
 import { DeleteCategoryDialog } from "../components/DeleteCategoryDialog";
@@ -22,7 +22,8 @@ import { categoryName } from "@/shared/categoryName";
  * dialog and are offered to the picker and the agent as soon as they are saved.
  */
 export const CategoriesPage = observer(function CategoriesPage() {
-  const { categoriesStore, toastStore } = useStores();
+  const { categoriesStore, toastStore, authStore } = useStores();
+  const currency = authStore.user?.currency ?? "PLN";
   const [creating, setCreating] = useState(false);
   const { t } = useTranslation("categories");
   const [deleting, setDeleting] = useState<Category | null>(null);
@@ -81,7 +82,7 @@ export const CategoriesPage = observer(function CategoriesPage() {
                     className="flex flex-col gap-1 px-4.5 py-3.5 border-t border-border first:border-t-0 md:flex-row md:items-center md:justify-between md:gap-3"
                   >
                     <span className="flex items-center gap-2.5 text-lg font-semibold text-foreground whitespace-nowrap">
-                      <CategoryDot name={cat.name} />
+                      <CategoryIcon name={cat.name} />
                       <span className={cat.name === "Uncategorized" ? "text-muted-foreground" : ""}>
                         {categoryName(cat.name)}
                       </span>
@@ -89,7 +90,7 @@ export const CategoriesPage = observer(function CategoriesPage() {
                     <span className="tabular-nums text-md text-muted-foreground whitespace-nowrap">
                       {cat.name === "Uncategorized" && cat.item_count > 0
                         ? t("taxonomy.awaiting", { items: formatItemCount(cat.item_count) })
-                        : formatCategoryTotals(cat)}
+                        : formatCategoryTotals(cat, currency)}
                     </span>
                   </li>
                 ))}
@@ -111,6 +112,7 @@ export const CategoriesPage = observer(function CategoriesPage() {
                       className="px-4.5 py-2.5 border-t border-border first:border-t-0"
                     >
                       <CustomCategoryRow
+                        currency={currency}
                         category={cat}
                         onRename={async (name) =>
                           report(await categoriesStore.renameCategory(cat.id, name))
@@ -139,6 +141,7 @@ export const CategoriesPage = observer(function CategoriesPage() {
 
       {deleting && (
         <DeleteCategoryDialog
+          currency={currency}
           category={deleting}
           targets={categoriesStore.categories}
           onConfirm={async (moveToId) =>

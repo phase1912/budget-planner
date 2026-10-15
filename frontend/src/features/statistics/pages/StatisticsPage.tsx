@@ -1,9 +1,9 @@
+import { CategoryIcon } from "@/shared/components";
 import { useEffect, useState } from "react";
 import { CalendarX } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { Link } from "react-router-dom";
 
-import { CategoryDot } from "@/features/categories/components/CategoryDot";
 import { ExportMenu } from "@/features/exports/components/ExportMenu";
 import { StatisticsTabs } from "../components/StatisticsTabs";
 import {
@@ -266,7 +266,7 @@ export const StatisticsPage = observer(function StatisticsPage() {
                             <TableRow key={category.category_id ?? "none"}>
                               <TableCell>
                                 <span className="flex min-w-0 items-center gap-2.25 font-semibold">
-                                  <CategoryDot name={category.name ?? ""} />
+                                  <CategoryIcon name={category.name ?? ""} />
                                   {category.category_id ? (
                                     <Link
                                       to={`/categories?view=all&category=${encodeURIComponent(category.category_id)}&start=${start}&end=${end}`}
