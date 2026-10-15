@@ -1,22 +1,177 @@
 {
+  "meta": {
+    "title": "Budget Agent — budżet z Twoich paragonów",
+    "description": "Fotografuj paragony: każda pozycja jest odczytana, przypisana do kategorii i produktu i zamieniona w porady, które można sprawdzić. Cele, wspólny budżet domowy i podróże z dietami według polskich przepisów."
+  },
   "title1": "Zrób zdjęcie paragonu.",
   "title2": "Dostań budżet.",
-  "lead": "Każdą pozycję odczytujemy ze zdjęcia, przypisujemy do kategorii i liczymy w miesiącu, w którym naprawdę ją kupiono.",
+  "lead": "Każda pozycja odczytana ze zdjęcia, przypisana do kategorii i produktu i zamieniona w porady z Twoich własnych zakupów — a nie ogólne wskazówki.",
   "createAccount": "Załóż konto",
   "haveOne": "Mam już konto",
+  "free": "Za darmo w wersji beta. Bez karty.",
+  "nav": {
+    "label": "Na tej stronie",
+    "features": "Co potrafi",
+    "faq": "Pytania"
+  },
   "steps": {
     "shoot": {
       "title": "Zrób zdjęcie",
-      "text": "Jedno zdjęcie albo kilka zachodzących na siebie przy długim paragonie."
+      "text": "Jedno zdjęcie, kilka nachodzących na siebie przy długim paragonie albo prześlij e-paragon mailem."
     },
     "check": {
-      "title": "Sprawdź, co odczytaliśmy",
-      "text": "Wszystko, co niepewne, oznaczamy dla Ciebie zamiast po cichu zgadywać."
+      "title": "Sprawdź odczyt",
+      "text": "Wszystko niejasne oznaczamy, zamiast po cichu zgadywać."
     },
     "see": {
-      "title": "Zobacz, na co poszło",
-      "text": "Wydatki od początku miesiąca według kategorii, w porównaniu z Twoim limitem."
+      "title": "Zobacz, gdzie poszły pieniądze",
+      "text": "Wydatki miesiąca według kategorii i produktów, na tle ustawionego limitu."
     }
   },
-  "privacy": "Zdjęcia paragonów i odczytane z nich dane są przechowywane w postaci zaszyfrowanej i widoczne tylko dla Ciebie."
+  "features": {
+    "title": "Co potrafi",
+    "receipts": {
+      "eyebrow": "Paragony",
+      "title": "Każda pozycja, nie tylko suma",
+      "text": "Paragon jest czytany pozycja po pozycji — nazwa, ilość, cena — i każda trafia do kategorii. Długi paragon można sfotografować w częściach, e-paragony przychodzą mailem, a gotówkę bez paragonu można wpisać ręcznie.",
+      "points": [
+        "Sumy, które się nie zgadzają, wyjaśniamy, a nie ukrywamy",
+        "Zagraniczne paragony po kursie NBP z dnia zakupu",
+        "Twoje poprawki zapamiętujemy na następny raz"
+      ]
+    },
+    "spending": {
+      "eyebrow": "Wydatki",
+      "title": "Gdzie naprawdę idą pieniądze",
+      "text": "Miesiąc według kategorii na tle limitu, a każdy produkt — we wszystkich sklepach: ile kosztował wtedy i teraz i gdzie jest taniej.",
+      "points": [
+        "Jeden produkt, jakkolwiek drukuje go sklep",
+        "Historia cen według produktu i sklepu",
+        "Znacznik, gdy inny sklep sprzedaje taniej"
+      ]
+    },
+    "goals": {
+      "eyebrow": "Cele",
+      "title": "Porady z Twoich zakupów",
+      "text": "Ustaw cel — mniej na jedzenie na mieście, odłożyć na urlop, jeść mniej słodyczy — i dostań porady, które wskazują to, co faktycznie kupujesz, i ile da każda zmiana.",
+      "points": [
+        "Tylko propozycje widoczne w Twoich paragonach",
+        "Ostrzeżenie, gdy miesiąc zmierza ponad limit",
+        "Odrzucona porada się nie powtarza"
+      ]
+    },
+    "household": {
+      "eyebrow": "Dom",
+      "title": "Jeden budżet dla rodziny",
+      "text": "Zaproś partnera lub rodzinę linkiem: każdy prowadzi swoje paragony, a dom widzi wspólny miesiąc i jego limit.",
+      "points": [
+        "Prywatny paragon: kwota się liczy, szczegóły zostają Twoje",
+        "Kto ile wydał w każdej kategorii",
+        "Limit domu obok Twojego"
+      ]
+    },
+    "trips": {
+      "eyebrow": "Podróże",
+      "title": "Urlopy i delegacje",
+      "text": "Urlop ma własny budżet i historię dzień po dniu. Delegacja nie wchodzi do Twojego budżetu i jest rozliczana z dietami według polskich przepisów — gotowa do oddania.",
+      "points": [
+        "Paragony dołączają do podróży według dat",
+        "Diety krajowe i zagraniczne, każda doba i posiłek osobno",
+        "Rozliczenie w PDF ze zdjęciami paragonów lub CSV"
+      ]
+    }
+  },
+  "preview": {
+    "receipt": {
+      "merchant": "Biedronka",
+      "date": "14 paź, 18:42",
+      "lines": ["Mleko 3,2% 1 l", "Chleb żytni", "Banany 1,2 kg", "Jogurt naturalny"],
+      "categories": ["Groceries", "Groceries", "Groceries", "Groceries"],
+      "flag": "1 pozycja do sprawdzenia"
+    },
+    "spending": {
+      "month": "Październik",
+      "limit": "68% limitu 3 000",
+      "categories": ["Groceries", "Dining", "Transport", "Entertainment"],
+      "product": "Jogurt naturalny 330 g",
+      "cheaper": "o 0,80 taniej w Lidlu"
+    },
+    "goal": {
+      "name": "Mniej na jedzenie na mieście",
+      "advice": "Gotuj w domu w dni robocze zamiast 3 obiadów w Pasta Bar",
+      "saves": "oszczędza ok. {{amount}} miesięcznie",
+      "pace": "W normie: 420 z 600 do 20. dnia"
+    },
+    "household": {
+      "name": "Kowalscy",
+      "members": ["Anna", "Marek"],
+      "shared": "Wydane razem w tym miesiącu",
+      "private": "Prywatne — Marek"
+    },
+    "trip": {
+      "name": "Berlin, wizyta u klienta",
+      "kind": "Służbowa",
+      "perDiem": "Diety: 3 doby w Niemczech",
+      "toReimburse": "Do zwrotu",
+      "holiday": "Egipt",
+      "budgetLeft": "zostało 380 z 3 000"
+    },
+    "intake": {
+      "title": "Dodane w tym tygodniu",
+      "items": [
+        {
+          "name": "Biedronka",
+          "how": "3 zdjęcia długiego paragonu"
+        },
+        {
+          "name": "Allegro",
+          "how": "e-paragon przesłany mailem"
+        },
+        {
+          "name": "Wycieczka do piramid",
+          "how": "wpisane ręcznie, bez paragonu"
+        },
+        {
+          "name": "Kawiarnia w Wiedniu",
+          "how": "20,00 EUR po kursie NBP"
+        }
+      ]
+    }
+  },
+  "privacyTitle": "Twoje paragony zostają Twoje",
+  "privacy": "Zdjęcia paragonów i odczytane dane są szyfrowane i widoczne tylko dla Ciebie — oraz dla Twojego domu, chyba że oznaczysz paragon jako prywatny.",
+  "faq": {
+    "title": "Pytania",
+    "items": [
+      {
+        "q": "Czy to jest darmowe?",
+        "a": "Tak, dopóki serwis jest w wersji beta. Do rejestracji nie potrzebujesz karty."
+      },
+      {
+        "q": "Jakie paragony potrafi odczytać?",
+        "a": "Drukowane paragony z każdego sklepu — jednym zdjęciem lub kilkoma nachodzącymi na siebie — oraz e-paragony przesłane mailem. Paragony w innej walucie są przeliczane po kursie NBP z ich dnia."
+      },
+      {
+        "q": "A jeśli zapłaciłem gotówką i nie mam paragonu?",
+        "a": "Wpisz wydatek ręcznie: co to było, kiedy, ile i w jakiej walucie. Liczy się jak każdy paragon."
+      },
+      {
+        "q": "Kto widzi moje paragony?",
+        "a": "Tylko Ty. Jeśli prowadzisz wspólny budżet domowy, jego członkowie też widzą Twoje paragony — poza oznaczonymi jako prywatne, których kwota i tak liczy się we wspólnej sumie."
+      },
+      {
+        "q": "Czy nadaje się do delegacji?",
+        "a": "Tak. Delegacja nie wchodzi do Twojego budżetu; serwis liczy diety według polskiego rozporządzenia, odejmuje zapewnione posiłki i zaliczkę i daje rozliczenie w PDF lub CSV."
+      },
+      {
+        "q": "W jakich językach jest dostępny?",
+        "a": "Po angielsku, ukraińsku i polsku. Kwoty mogą być w dowolnej walucie, w której prowadzisz budżet."
+      }
+    ]
+  },
+  "final": {
+    "title": "Zacznij od jednego paragonu",
+    "text": "Wystarczy zdjęcie i minuta."
+  },
+  "languages": "Także"
 }

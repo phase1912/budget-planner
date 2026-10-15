@@ -32,8 +32,20 @@ export function browserLanguage(preferred: readonly string[]): Language {
   return "en";
 }
 
-/** The language to start in: the one chosen on this browser before, else the browser's own. */
+/** The language a public page's address names: "/uk" is Ukrainian (F17.2), "/" none. */
+export function addressLanguage(pathname: string): Language | null {
+  const first = pathname.split("/")[1] ?? "";
+  return isLanguage(first) && pathname.replace(/\/+$/, "") === `/${first}` ? first : null;
+}
+
+/**
+ * The language to start in: the one a public page's address names, else the one chosen on
+ * this browser before, else the browser's own. Opening "/uk" from a search result reads
+ * Ukrainian, and counts as choosing it.
+ */
 export function initialLanguage(): Language {
+  const fromAddress = typeof location === "undefined" ? null : addressLanguage(location.pathname);
+  if (fromAddress) return fromAddress;
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (isLanguage(saved)) return saved;

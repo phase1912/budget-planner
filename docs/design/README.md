@@ -39,7 +39,7 @@ Sorted by the flow they belong to, not by file name.
 |---|---|---|---|
 | `design-language.html` | — | F9.6 | DS-1 |
 | `states.html` | — | F9.7 | A2, A11, A14, B6, D3, E5, F5, N2, N4 |
-| `landing.html` | `/` — no session | F9.4.2 | — |
+| `landing.html` | `/`, `/en`, `/uk`, `/pl` — no session | F9.4.2 · F17.2 | — |
 | `login.html` · `login-dark.html` | `/login` | F1.1.6 | N2 |
 | `register.html` | `/register` | F1.1.6 | N2 |
 | `profile.html` | `/profile` | F1.4.3 | D7 |

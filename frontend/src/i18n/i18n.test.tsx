@@ -7,12 +7,20 @@ import { LoginPage } from "@/features/auth/pages/LoginPage";
 import { RootStore } from "@/stores/RootStore";
 import { StoreProvider } from "@/stores/StoreContext";
 import { dateFormat, numberFormat } from "./format";
-import { browserLanguage } from "./languages";
+import { addressLanguage, browserLanguage } from "./languages";
 
 describe("the language the product opens in (F9.9)", () => {
   it("is the first of the browser's languages it is written in", () => {
     expect(browserLanguage(["de-DE", "uk-UA", "en-US"])).toBe("uk");
     expect(browserLanguage(["pl"])).toBe("pl");
+  });
+
+  it("is the one a public page's address names, and only a bare language address (F17.2)", () => {
+    expect(addressLanguage("/uk")).toBe("uk");
+    expect(addressLanguage("/pl/")).toBe("pl");
+    expect(addressLanguage("/")).toBeNull();
+    expect(addressLanguage("/uk/receipts")).toBeNull();
+    expect(addressLanguage("/de")).toBeNull();
   });
 
   it("is English when the browser asks for none of them", () => {

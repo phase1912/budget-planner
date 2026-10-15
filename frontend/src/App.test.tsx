@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import { App } from "./App";
 
 vi.mock("@/stores/StoreContext", () => ({
@@ -22,7 +23,11 @@ vi.mock("@/stores/StoreContext", () => ({
 
 describe("App Router", () => {
   it("renders PublicLandingPage by default when not authenticated", () => {
-    render(<App />);
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>,
+    );
     expect(
       screen.getByRole("heading", { name: "Photograph a receipt. Get a budget." }),
     ).toBeInTheDocument();

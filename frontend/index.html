@@ -8,6 +8,15 @@
       name="description"
       content="Photograph your receipts; see where the money goes and what to cut."
     />
+    <!-- The dark theme before the first paint, so a prerendered page (F17.2) never flashes
+         light for a reader who chose dark; ThemeStore owns it from then on. -->
+    <script>
+      try {
+        var theme = localStorage.getItem("budget-planner.theme");
+        if (theme === "dark" || (!theme && matchMedia("(prefers-color-scheme: dark)").matches))
+          document.documentElement.classList.add("dark");
+      } catch (e) {}
+    </script>
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <!-- Installable app (F9.8): the manifest for Android and desktop, the Apple tags for iOS. -->
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -20,6 +29,14 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- A signed-in reader opening "/" is going to the dashboard: the prerendered landing
+         (F17.2) is cleared before it is ever painted. -->
+    <script>
+      try {
+        if (localStorage.getItem("budget_access_token"))
+          document.getElementById("root").replaceChildren();
+      } catch (e) {}
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -12,10 +12,16 @@
 <body>
 
 <!--
-  What an unauthenticated visitor sees at /. Deliberately minimal: the BRD asks for no
-  marketing page, so this exists to keep the root from being blank and to give F9.4's
-  shell a real screen to prove itself against. Once a session exists the same route is
-  home.html, then dashboard.html.
+  What an unauthenticated visitor sees at /, and at /en, /uk and /pl. This artboard draws the
+  top of the page — header, promise, the way in and the three steps — as F9.4 first built it.
+  Since F17.2 the page goes on below, built from the same parts: "What it does" with one
+  section per area (receipts, spending, goals, household, trips), each a heading, a paragraph
+  and three checked points beside a preview card of that screen, alternating sides from lg
+  and stacked text-first on a phone; a privacy panel on --color-muted; a FAQ of <details>
+  rows in one bordered card; the way in again; and the languages in the footer. The hero
+  takes the receipt preview on its right from lg. The previews are drawn with the app's own
+  components on sample data (src/features/public-landing/components/previews). Once a
+  session exists the same route is home.html, then dashboard.html.
 -->
 <div class="screen" style="height: 860px;">
 
