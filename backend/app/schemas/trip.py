@@ -1,10 +1,11 @@
 import uuid
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
+from app.domain.per_diem import Meal
 from app.domain.trips import ExpenseKind, TripKind
 from app.schemas.receipt import ReceiptResponse
 
@@ -91,6 +92,78 @@ class CurrencyTotal(BaseModel):
     total: Decimal
 
 
+class PerDiemTimesRequest(BaseModel):
+    """A business trip's times for its per diem, as the user gives them (F20.4, ADR-0018).
+
+    Times carry their offset, so hours across a clock change are counted as lived.
+    `abroad_from` and `abroad_to` are the border crossings or flights out of and back into
+    Poland (§ 12), both or neither; `meals` the meals provided on each day, first first.
+    """
+
+    departure: AwareDatetime
+    returned: AwareDatetime
+    abroad_from: AwareDatetime | None = None
+    abroad_to: AwareDatetime | None = None
+    meals: list[list[Meal]] = Field(default=[], max_length=366)
+
+    @model_validator(mode="after")
+    def _both_border_times_or_neither(self) -> Self:
+        if (self.abroad_from is None) != (self.abroad_to is None):
+            raise ValueError("Give both times abroad, or neither")
+        return self
+
+
+class PerDiemDayResponse(BaseModel):
+    """One day of a per diem: its hours, the share they earn and why, the meals off it."""
+
+    number: int
+    hours: Decimal
+    share: Decimal
+    rule: str
+    amount: Decimal
+    meals: list[Meal]
+    reduction: Decimal
+    meals_rule: str | None
+    due: Decimal
+
+
+class PerDiemPartResponse(BaseModel):
+    """The per diem for the time abroad or at home, in the currency the regulation sets."""
+
+    abroad: bool
+    country: str
+    currency: str
+    rate: Decimal
+    days: list[PerDiemDayResponse]
+    total: Decimal
+
+
+class PlnRateResponse(BaseModel):
+    """The rate a foreign per diem was put into złoty at, or null when none was had."""
+
+    currency: str
+    rate: Decimal | None
+    effective_date: date | None
+    source: str | None
+
+
+class PerDiemResponse(BaseModel):
+    """A business trip's per diem, itemised, with the times it was worked out from (F20.4).
+
+    `total_pln` is null when a foreign part could not be put into złoty.
+    """
+
+    departure: datetime
+    returned: datetime
+    abroad_from: datetime | None
+    abroad_to: datetime | None
+    meals: list[list[Meal]]
+    parts: list[PerDiemPartResponse]
+    to_pln: list[PlnRateResponse]
+    total_pln: Decimal | None
+    regulation: str = "Dz.U. 2023 poz. 2190"
+
+
 class TripDetailResponse(TripResponse):
     """A trip with its receipts, oldest first, and its spending split (F20.2).
 
@@ -107,6 +180,8 @@ class TripDetailResponse(TripResponse):
     """Where the trip's money went, the largest first (F20.3)."""
     by_kind: list[KindTotal]
     by_currency: list[CurrencyTotal]
+    per_diem: PerDiemResponse | None = None
+    """A business trip's per diem, once the user gave its times (F20.4)."""
 
 
 class ExpenseKindRequest(BaseModel):

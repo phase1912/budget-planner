@@ -21,6 +21,7 @@ import {
 import { useStores } from "@/stores/StoreContext";
 import type { ExpenseKind } from "@/stores/TripsStore";
 import { TripDialog } from "../components/TripDialog";
+import { PerDiemCard } from "../components/PerDiemCard";
 import { TripAsking } from "../components/TripAsking";
 import { TripBudget } from "../components/TripBudget";
 import { TripSpending } from "../components/TripSpending";
@@ -32,7 +33,7 @@ const KINDS: ExpenseKind[] = ["transport", "accommodation", "meals", "other"];
 /**
  * One trip (F20.1): where and when, what it cost — to be reimbursed, for a business
  * trip — against its budget and day by day (F20.3), split by kind and currency paid
- * (F20.2), and its receipts. A receipt opens to
+ * (F20.2), a business trip's per diem (F20.4), and its receipts. A receipt opens to
  * its details, its kind can be changed in place, and it can be taken out of the trip;
  * the trip can be changed or deleted, which gives its receipts back to the month.
  */
@@ -149,6 +150,8 @@ export const TripPage = observer(function TripPage() {
         </Card>
 
         <TripAsking trip={trip} />
+
+        {trip.kind === "business" && <PerDiemCard trip={trip} />}
 
         {trip.receipt_count > 0 && <TripSpending trip={trip} currency={currency} />}
 

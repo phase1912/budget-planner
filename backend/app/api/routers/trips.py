@@ -5,12 +5,14 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, get_exchange_rates
 from app.api.routers.receipts import receipt_detail
 from app.db.session import get_db_session
+from app.domain.per_diem import TripTimes
 from app.domain.trips import budget_left
 from app.models.receipt import Receipt
 from app.models.user import User
+from app.ports.exchange_rates import ExchangeRatePort
 from app.schemas.receipt import ReceiptDetailResponse, ReceiptResponse
 from app.schemas.trip import (
     CategoryTotal,
@@ -18,6 +20,11 @@ from app.schemas.trip import (
     DayTotal,
     ExpenseKindRequest,
     KindTotal,
+    PerDiemDayResponse,
+    PerDiemPartResponse,
+    PerDiemResponse,
+    PerDiemTimesRequest,
+    PlnRateResponse,
     ReceiptTripRequest,
     TripDetailResponse,
     TripReceiptResponse,
@@ -26,6 +33,7 @@ from app.schemas.trip import (
     TripSuggestionResponse,
 )
 from app.services.trip import (
+    PerDiem,
     TripDetails,
     TripService,
     TripSummary,
@@ -37,6 +45,7 @@ from app.services.trip import (
 router = APIRouter(prefix="/api/v1/trips", tags=["trips"])
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+Rates = Annotated[ExchangeRatePort | None, Depends(get_exchange_rates)]
 Session = Annotated[AsyncSession, Depends(get_db_session)]
 
 
@@ -107,13 +116,13 @@ async def createtrip_response(
 
 @router.get("/{trip_id}", response_model=TripDetailResponse)
 async def gettrip_response(
-    trip_id: uuid.UUID, current_user: CurrentUser, session: Session
+    trip_id: uuid.UUID, current_user: CurrentUser, session: Session, rates: Rates
 ) -> TripDetailResponse:
-    """One trip with its receipts and its spending by kind and currency (F20.1, F20.2).
-
-    Another user's is not found (N2).
+    """One trip with its receipts, its spending by kind and currency, and for a business
+    trip its per diem (F20.1, F20.2, F20.4). Another user's is not found (N2).
     """
-    summary, receipts, asking = await TripService(session).get(current_user.id, trip_id)
+    service = TripService(session)
+    summary, receipts, asking = await service.get(current_user.id, trip_id)
     spending = trip_spending(receipts, current_user.currency)
     story = story_of(summary.trip, receipts)
     return TripDetailResponse(
@@ -127,6 +136,7 @@ async def gettrip_response(
             CurrencyTotal(currency=c, total=t)
             for c, t in sorted(spending.by_currency.items(), key=lambda pair: -pair[1])
         ],
+        per_diem=per_diem_response(await service.per_diem_of(summary.trip, rates)),
     )
 
 
@@ -178,3 +188,77 @@ async def choose_expense_kind(
     receipt = await TripService(session).choose_kind(receipt_id, request.kind)
     await session.commit()
     return trip_receipt(receipt)
+
+
+def per_diem_response(per_diem: PerDiem | None) -> PerDiemResponse | None:
+    """A business trip's per diem as the API shows it, or None without one."""
+    if per_diem is None:
+        return None
+    times = per_diem.times
+    return PerDiemResponse(
+        departure=times.departure,
+        returned=times.returned,
+        abroad_from=times.abroad_from,
+        abroad_to=times.abroad_to,
+        meals=[list(day) for day in times.meals],
+        parts=[
+            PerDiemPartResponse(
+                abroad=part.abroad,
+                country=part.country,
+                currency=part.rate.currency,
+                rate=part.rate.amount,
+                days=[
+                    PerDiemDayResponse(**{**asdict(day), "meals": list(day.meals)})
+                    for day in part.days
+                ],
+                total=part.total,
+            )
+            for part in per_diem.parts
+        ],
+        to_pln=[
+            PlnRateResponse(
+                currency=currency,
+                rate=rate.rate if rate else None,
+                effective_date=rate.effective_date if rate else None,
+                source=rate.source if rate else None,
+            )
+            for currency, rate in sorted(per_diem.to_pln.items())
+        ],
+        total_pln=per_diem.total_pln,
+    )
+
+
+@router.put("/{trip_id}/per-diem", response_model=PerDiemResponse)
+async def set_per_diem_times(
+    trip_id: uuid.UUID,
+    request: PerDiemTimesRequest,
+    current_user: CurrentUser,
+    session: Session,
+    rates: Rates,
+) -> PerDiemResponse | None:
+    """Give a business trip's times and meals; its per diem comes back itemised (F20.4).
+
+    A personal trip, times out of order, or a trip before the rates kept is 422; another
+    user's trip is 404 (N2).
+    """
+    service = TripService(session)
+    times = TripTimes(
+        departure=request.departure,
+        returned=request.returned,
+        abroad_from=request.abroad_from,
+        abroad_to=request.abroad_to,
+        meals=tuple(tuple(day) for day in request.meals),
+    )
+    trip = await service.set_times(current_user.id, trip_id, times)
+    await session.commit()
+    return per_diem_response(await service.per_diem_of(trip, rates))
+
+
+@router.delete("/{trip_id}/per-diem", status_code=status.HTTP_204_NO_CONTENT)
+async def clear_per_diem_times(
+    trip_id: uuid.UUID, current_user: CurrentUser, session: Session
+) -> Response:
+    """Forget a business trip's times: it has no per diem until given again (F20.4)."""
+    await TripService(session).set_times(current_user.id, trip_id, None)
+    await session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

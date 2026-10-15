@@ -1,0 +1,482 @@
+{
+  "_source": "Rozporządzenie MPiPS z 29.01.2013 (Dz.U. 2023 poz. 2190, tekst jednolity), § 7 ust. 1 i załącznik; ADR-0018",
+  "applies_from": "2023-01-01",
+  "domestic": {
+    "currency": "PLN",
+    "amount": "45"
+  },
+  "abroad": {
+    "AD": {
+      "currency": "EUR",
+      "amount": "50"
+    },
+    "AE": {
+      "currency": "EUR",
+      "amount": "43"
+    },
+    "AF": {
+      "currency": "EUR",
+      "amount": "47"
+    },
+    "AL": {
+      "currency": "EUR",
+      "amount": "41"
+    },
+    "AM": {
+      "currency": "EUR",
+      "amount": "42"
+    },
+    "AO": {
+      "currency": "USD",
+      "amount": "61"
+    },
+    "AR": {
+      "currency": "USD",
+      "amount": "50"
+    },
+    "AT": {
+      "currency": "EUR",
+      "amount": "57"
+    },
+    "AU": {
+      "currency": "AUD",
+      "amount": "95"
+    },
+    "AZ": {
+      "currency": "EUR",
+      "amount": "43"
+    },
+    "BA": {
+      "currency": "EUR",
+      "amount": "41"
+    },
+    "BD": {
+      "currency": "USD",
+      "amount": "50"
+    },
+    "BE": {
+      "currency": "EUR",
+      "amount": "55"
+    },
+    "BG": {
+      "currency": "EUR",
+      "amount": "40"
+    },
+    "BR": {
+      "currency": "EUR",
+      "amount": "43"
+    },
+    "BY": {
+      "currency": "EUR",
+      "amount": "42"
+    },
+    "CA": {
+      "currency": "CAD",
+      "amount": "71"
+    },
+    "CD": {
+      "currency": "USD",
+      "amount": "66"
+    },
+    "CG": {
+      "currency": "USD",
+      "amount": "66"
+    },
+    "CH": {
+      "currency": "CHF",
+      "amount": "88"
+    },
+    "CI": {
+      "currency": "EUR",
+      "amount": "33"
+    },
+    "CL": {
+      "currency": "USD",
+      "amount": "60"
+    },
+    "CN": {
+      "currency": "EUR",
+      "amount": "55"
+    },
+    "CO": {
+      "currency": "USD",
+      "amount": "49"
+    },
+    "CR": {
+      "currency": "USD",
+      "amount": "50"
+    },
+    "CU": {
+      "currency": "EUR",
+      "amount": "50"
+    },
+    "CY": {
+      "currency": "EUR",
+      "amount": "43"
+    },
+    "CZ": {
+      "currency": "EUR",
+      "amount": "41"
+    },
+    "DE": {
+      "currency": "EUR",
+      "amount": "49"
+    },
+    "DK": {
+      "currency": "DKK",
+      "amount": "446"
+    },
+    "DZ": {
+      "currency": "EUR",
+      "amount": "50"
+    },
+    "EC": {
+      "currency": "USD",
+      "amount": "44"
+    },
+    "EE": {
+      "currency": "EUR",
+      "amount": "45"
+    },
+    "EG": {
+      "currency": "USD",
+      "amount": "55"
+    },
+    "ES": {
+      "currency": "EUR",
+      "amount": "50"
+    },
+    "ET": {
+      "currency": "USD",
+      "amount": "55"
+    },
+    "FI": {
+      "currency": "EUR",
+      "amount": "53"
+    },
+    "FR": {
+      "currency": "EUR",
+      "amount": "55"
+    },
+    "GB": {
+      "currency": "GBP",
+      "amount": "45"
+    },
+    "GE": {
+      "currency": "EUR",
+      "amount": "48"
+    },
+    "GI": {
+      "currency": "GBP",
+      "amount": "45"
+    },
+    "GR": {
+      "currency": "EUR",
+      "amount": "50"
+    },
+    "HK": {
+      "currency": "USD",
+      "amount": "55"
+    },
+    "HR": {
+      "currency": "EUR",
+      "amount": "42"
+    },
+    "HU": {
+      "currency": "EUR",
+      "amount": "44"
+    },
+    "ID": {
+      "currency": "EUR",
+      "amount": "41"
+    },
+    "IE": {
+      "currency": "EUR",
+      "amount": "52"
+    },
+    "IL": {
+      "currency": "EUR",
+      "amount": "70"
+    },
+    "IN": {
+      "currency": "EUR",
+      "amount": "42"
+    },
+    "IQ": {
+      "currency": "USD",
+      "amount": "60"
+    },
+    "IR": {
+      "currency": "EUR",
+      "amount": "41"
+    },
+    "IS": {
+      "currency": "EUR",
+      "amount": "56"
+    },
+    "IT": {
+      "currency": "EUR",
+      "amount": "53"
+    },
+    "JO": {
+      "currency": "EUR",
+      "amount": "50"
+    },
+    "JP": {
+      "currency": "JPY",
+      "amount": "7532"
+    },
+    "KE": {
+      "currency": "EUR",
+      "amount": "41"
+    },
+    "KG": {
+      "currency": "USD",
+      "amount": "41"
+    },
+    "KH": {
+      "currency": "USD",
+      "amount": "45"
+    },
+    "KP": {
+      "currency": "EUR",
+      "amount": "48"
+    },
+    "KR": {
+      "currency": "EUR",
+      "amount": "46"
+    },
+    "KW": {
+      "currency": "EUR",
+      "amount": "39"
+    },
+    "KZ": {
+      "currency": "EUR",
+      "amount": "45"
+    },
+    "LA": {
+      "currency": "USD",
+      "amount": "54"
+    },
+    "LB": {
+      "currency": "USD",
+      "amount": "57"
+    },
+    "LI": {
+      "currency": "CHF",
+      "amount": "88"
+    },
+    "LT": {
+      "currency": "EUR",
+      "amount": "45"
+    },
+    "LU": {
+      "currency": "EUR",
+      "amount": "55"
+    },
+    "LV": {
+      "currency": "EUR",
+      "amount": "57"
+    },
+    "LY": {
+      "currency": "EUR",
+      "amount": "52"
+    },
+    "MA": {
+      "currency": "EUR",
+      "amount": "41"
+    },
+    "MC": {
+      "currency": "EUR",
+      "amount": "55"
+    },
+    "MD": {
+      "currency": "EUR",
+      "amount": "45"
+    },
+    "ME": {
+      "currency": "EUR",
+      "amount": "40"
+    },
+    "MK": {
+      "currency": "EUR",
+      "amount": "43"
+    },
+    "MN": {
+      "currency": "EUR",
+      "amount": "45"
+    },
+    "MT": {
+      "currency": "EUR",
+      "amount": "43"
+    },
+    "MX": {
+      "currency": "USD",
+      "amount": "58"
+    },
+    "MY": {
+      "currency": "EUR",
+      "amount": "41"
+    },
+    "NG": {
+      "currency": "EUR",
+      "amount": "46"
+    },
+    "NL": {
+      "currency": "EUR",
+      "amount": "50"
+    },
+    "NO": {
+      "currency": "NOK",
+      "amount": "496"
+    },
+    "NZ": {
+      "currency": "USD",
+      "amount": "58"
+    },
+    "OM": {
+      "currency": "EUR",
+      "amount": "40"
+    },
+    "PA": {
+      "currency": "USD",
+      "amount": "52"
+    },
+    "PE": {
+      "currency": "USD",
+      "amount": "50"
+    },
+    "PK": {
+      "currency": "EUR",
+      "amount": "38"
+    },
+    "PS": {
+      "currency": "EUR",
+      "amount": "70"
+    },
+    "PT": {
+      "currency": "EUR",
+      "amount": "49"
+    },
+    "QA": {
+      "currency": "EUR",
+      "amount": "41"
+    },
+    "RO": {
+      "currency": "EUR",
+      "amount": "42"
+    },
+    "RS": {
+      "currency": "EUR",
+      "amount": "40"
+    },
+    "RU": {
+      "currency": "EUR",
+      "amount": "48"
+    },
+    "SA": {
+      "currency": "EUR",
+      "amount": "50"
+    },
+    "SE": {
+      "currency": "SEK",
+      "amount": "510"
+    },
+    "SG": {
+      "currency": "USD",
+      "amount": "56"
+    },
+    "SI": {
+      "currency": "EUR",
+      "amount": "45"
+    },
+    "SK": {
+      "currency": "EUR",
+      "amount": "47"
+    },
+    "SM": {
+      "currency": "EUR",
+      "amount": "53"
+    },
+    "SN": {
+      "currency": "EUR",
+      "amount": "44"
+    },
+    "SY": {
+      "currency": "USD",
+      "amount": "50"
+    },
+    "TH": {
+      "currency": "USD",
+      "amount": "42"
+    },
+    "TJ": {
+      "currency": "EUR",
+      "amount": "41"
+    },
+    "TM": {
+      "currency": "EUR",
+      "amount": "47"
+    },
+    "TN": {
+      "currency": "EUR",
+      "amount": "37"
+    },
+    "TR": {
+      "currency": "USD",
+      "amount": "53"
+    },
+    "TW": {
+      "currency": "EUR",
+      "amount": "40"
+    },
+    "TZ": {
+      "currency": "USD",
+      "amount": "53"
+    },
+    "UA": {
+      "currency": "EUR",
+      "amount": "41"
+    },
+    "US": {
+      "currency": "USD",
+      "amount": "59"
+    },
+    "UY": {
+      "currency": "USD",
+      "amount": "50"
+    },
+    "UZ": {
+      "currency": "EUR",
+      "amount": "41"
+    },
+    "VA": {
+      "currency": "EUR",
+      "amount": "53"
+    },
+    "VE": {
+      "currency": "USD",
+      "amount": "60"
+    },
+    "VN": {
+      "currency": "USD",
+      "amount": "53"
+    },
+    "YE": {
+      "currency": "USD",
+      "amount": "48"
+    },
+    "ZA": {
+      "currency": "USD",
+      "amount": "52"
+    },
+    "ZW": {
+      "currency": "EUR",
+      "amount": "39"
+    }
+  },
+  "elsewhere": {
+    "currency": "EUR",
+    "amount": "41"
+  }
+}

@@ -6,8 +6,17 @@ from decimal import Decimal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.errors import DomainError, NotFoundError, ProblemCode
+from app.api.errors import DomainError, NotFoundError, PerDiemError, ProblemCode
 from app.domain.categories import UNCATEGORIZED
+from app.domain.currency import ExchangeRate
+from app.domain.per_diem import (
+    Meal,
+    PerDiemPart,
+    PerDiemUnavailable,
+    TripTimes,
+    per_diem,
+    rates_apply_from,
+)
 from app.domain.periods import DateRange
 from app.domain.trips import (
     ExpenseKind,
@@ -24,6 +33,8 @@ from app.domain.trips import (
 )
 from app.models.receipt import Receipt, ReceiptStatus
 from app.models.trip import Trip
+from app.ports.exchange_rates import ExchangeRatePort, ExchangeRateUnavailable
+from app.repository.exchange_rate import CachedExchangeRates
 from app.repository.receipt import ReceiptRepository
 from app.repository.trip import TripRepository
 
@@ -56,6 +67,20 @@ class TripSummary:
     receipt_count: int
     total: Decimal
     asking_count: int = 0
+
+
+@dataclass(frozen=True)
+class PerDiem:
+    """A business trip's per diem as worked out from its times, and what it is in złoty.
+
+    `to_pln` holds the NBP rate used for each foreign currency, None where none could be
+    had; `total_pln` is None unless every part could be put into złoty (ADR-0018).
+    """
+
+    times: TripTimes
+    parts: list[PerDiemPart]
+    to_pln: dict[str, ExchangeRate | None]
+    total_pln: Decimal | None
 
 
 class TripService:
@@ -163,6 +188,71 @@ class TripService:
             await self._mine(user_id, trip_id)
         receipt.trip_id, receipt.trip_manual = trip_id, True
 
+    async def set_times(
+        self, user_id: uuid.UUID, trip_id: uuid.UUID, times: TripTimes | None
+    ) -> Trip:
+        """Keep a business trip's times for its per diem, or (None) forget them (F20.4).
+
+        Raises NotFoundError for a trip not the user's (N2), and PerDiemError for a
+        personal trip, for times out of order, or for a trip before the rates kept.
+        """
+        trip = await self._mine(user_id, trip_id)
+        if trip.kind is not TripKind.BUSINESS:
+            raise PerDiemError(
+                "A per diem is owed for a business trip only",
+                code=ProblemCode.PER_DIEM_PERSONAL_TRIP,
+            )
+        if times is not None:
+            try:
+                per_diem(trip.country, times)
+            except PerDiemUnavailable as error:
+                raise _per_diem_error(error) from error
+        trip.departed_at = times.departure if times else None
+        trip.returned_at = times.returned if times else None
+        trip.abroad_from = times.abroad_from if times else None
+        trip.abroad_to = times.abroad_to if times else None
+        trip.meals_provided = [list(day) for day in times.meals] if times else None
+        await self.session.flush()
+        return trip
+
+    async def per_diem_of(self, trip: Trip, rates: ExchangeRatePort | None) -> PerDiem | None:
+        """A business trip's per diem, itemised, and in złoty (F20.4, ADR-0018).
+
+        None for a personal trip, one without times, or one whose times no longer give a
+        per diem. A foreign amount is put into złoty at the NBP mid rate of the last
+        working day before the return; no rate leaves `total_pln` empty, never guessed.
+        """
+        times = times_of(trip)
+        if trip.kind is not TripKind.BUSINESS or times is None:
+            return None
+        try:
+            parts = per_diem(trip.country, times)
+        except PerDiemUnavailable:
+            return None
+        rate_day = times.returned.date() - timedelta(days=1)
+        to_pln: dict[str, ExchangeRate | None] = {}
+        for currency in {p.rate.currency for p in parts if p.rate.currency != "PLN"}:
+            to_pln[currency] = None
+            if rates is not None:
+                try:
+                    to_pln[currency] = await CachedExchangeRates(rates, self.session).rate(
+                        currency, "PLN", rate_day
+                    )
+                except ExchangeRateUnavailable:
+                    to_pln[currency] = None
+        total_pln: Decimal | None = Decimal("0.00")
+        for part in parts:
+            if part.rate.currency == "PLN":
+                total_pln = None if total_pln is None else total_pln + part.total
+                continue
+            rate = to_pln[part.rate.currency]
+            total_pln = (
+                None
+                if rate is None or total_pln is None
+                else total_pln + (part.total * rate.rate).quantize(Decimal("0.01"))
+            )
+        return PerDiem(times, parts, to_pln, total_pln)
+
     async def choose_kind(self, receipt_id: uuid.UUID, kind: ExpenseKind | None) -> Receipt:
         """Set what a receipt paid for, or (None) give it back to the guess (F20.2).
 
@@ -259,3 +349,26 @@ def story_of(trip: Trip, receipts: Sequence[Receipt]) -> TripStory:
         for item in receipt.line_items
     ]
     return trip_story(trip.start_date, trip.end_date, purchases)
+
+
+def times_of(trip: Trip) -> TripTimes | None:
+    """A trip's stored times for its per diem, or None when the user gave none (F20.4)."""
+    if trip.departed_at is None or trip.returned_at is None:
+        return None
+    return TripTimes(
+        departure=trip.departed_at,
+        returned=trip.returned_at,
+        abroad_from=trip.abroad_from,
+        abroad_to=trip.abroad_to,
+        meals=tuple(tuple(Meal(m) for m in day) for day in trip.meals_provided or []),
+    )
+
+
+def _per_diem_error(error: PerDiemUnavailable) -> PerDiemError:
+    if error.before_rates:
+        return PerDiemError(
+            str(error),
+            code=ProblemCode.PER_DIEM_NO_RATES,
+            params={"start_on": rates_apply_from().isoformat()},
+        )
+    return PerDiemError(str(error))

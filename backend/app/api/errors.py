@@ -70,6 +70,9 @@ class ProblemCode(enum.StrEnum):
     HOUSEHOLD_CURRENCY_MISMATCH = "household_currency_mismatch"
     OWNER_ONLY = "owner_only"
     TRIPS_OVERLAP = "trips_overlap"
+    PER_DIEM_TIMES = "per_diem_times"
+    PER_DIEM_NO_RATES = "per_diem_no_rates"
+    PER_DIEM_PERSONAL_TRIP = "per_diem_personal_trip"
 
 
 class ProblemDetail(BaseModel):
@@ -168,6 +171,14 @@ class InvalidPeriodError(AppError):
     status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
     code = ProblemCode.INVALID_PERIOD
     title = "Invalid Period"
+
+
+class PerDiemError(AppError):
+    """Raised when a business trip's per diem cannot be worked out from its times (F20.4)."""
+
+    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
+    code = ProblemCode.PER_DIEM_TIMES
+    title = "Per Diem Not Worked Out"
 
 
 class InvalidGoalError(AppError):

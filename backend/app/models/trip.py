@@ -1,8 +1,9 @@
 import uuid
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Date, Enum, ForeignKey, Numeric, String, Text
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.domain.trips import TripKind
@@ -40,3 +41,10 @@ class Trip(Model):
     purpose: Mapped[str | None] = mapped_column(Text, nullable=True)
     # What the user means to spend on a personal trip, in the account's currency (F20.3).
     budget: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    # A business trip's times as the user gives them, for its per diem (F20.4, ADR-0018):
+    # when it left and came back, when it was abroad, and the meals provided each day.
+    departed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    returned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    abroad_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    abroad_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    meals_provided: Mapped[list[list[str]] | None] = mapped_column(JSONB, nullable=True)
