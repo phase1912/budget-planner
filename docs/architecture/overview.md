@@ -65,6 +65,15 @@ the App Engine relay's `/send`, which calls the Mail API; locally it is written 
 log. Links in letters are signed tokens bound to the state they change
 (`AccountService`), so they work once and are never accepted as a session.
 
+The user's data rights (F17.9, ADR-0020) lean on the schema rather than on lists kept by
+hand: deleting an account deletes the user row and every table cascades from it
+(`AccountClosureService`), then removes the files by prefix through
+`StoragePort.delete_prefix`; "download everything" is an export job of kind `account`
+(`app/services/data_export.py`) that writes every row of every table with a `user_id`
+column, so a table added later is exported and deleted without anyone remembering to.
+Retention is the bucket's: lifecycle rules in `infra/terraform/storage.tf` delete photos
+after 90 days and exports after 7; `app/domain/retention.py` only tells the screens when.
+
 Whatever the channel, a receipt is checked against the user's stored ones before it is
 stored (F11.5, ADR-0015): by its fiscal identity (`app/domain/fiscal_identity.py`), read
 off the receipt by the model, which recognises a copy exactly, and otherwise by merchant,

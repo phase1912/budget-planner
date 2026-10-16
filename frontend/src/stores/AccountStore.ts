@@ -92,6 +92,16 @@ export class AccountStore {
     );
   }
 
+  /** Delete the account and everything held about its owner (F17.9.1); signs out here. */
+  async deleteAccount(password: string): Promise<boolean> {
+    const done = await this.run(() => this.api.DELETE("/users/me", { body: { password } }));
+    if (done) {
+      this.authStore.logoutLocally();
+      this.toastStore.showSuccess(i18n.t("messages:account.deleted"));
+    }
+    return done;
+  }
+
   private adopt(user: User): void {
     this.confirmedEmail = user.email;
     if (this.authStore.user?.id !== user.id) return;

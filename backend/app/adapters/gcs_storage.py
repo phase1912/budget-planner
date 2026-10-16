@@ -97,3 +97,15 @@ class GcsStorageService(StoragePort):
             await asyncio.to_thread(self._blob(object_name).delete)
         except NotFound:
             return
+
+    async def delete_prefix(self, prefix: str) -> int:
+        def remove_all() -> int:
+            blobs = list(self._client.list_blobs(self._bucket_name, prefix=prefix))
+            for blob in blobs:
+                try:
+                    blob.delete()
+                except NotFound:
+                    continue
+            return len(blobs)
+
+        return await asyncio.to_thread(remove_all)

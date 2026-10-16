@@ -32,6 +32,7 @@ _MEDIA_TYPES = {
     "csv": "text/csv; charset=utf-8",
     "json": "application/json",
     "pdf": "application/pdf",
+    "zip": "application/zip",
 }
 
 
@@ -39,8 +40,13 @@ def _params(request: ExportRequest, user: User) -> dict[str, Any]:
     """The request's filters as stored on the job; a period is validated as everywhere (E2).
 
     A trip's settlement keeps the trip and the language to write it in (F20.5); PDF is a
-    settlement's format only, and a settlement is never JSON.
+    settlement's format only, and a settlement is never JSON. Everything held about the
+    user is a ZIP, and only it is (F17.9.2).
     """
+    if (request.kind is ExportKind.ACCOUNT) != (request.format is ExportFormat.ZIP):
+        raise InvalidExportError("Everything held about you is exported as a ZIP, and only it")
+    if request.kind is ExportKind.ACCOUNT:
+        return {}
     if request.kind is ExportKind.TRIP:
         if request.trip_id is None or request.format is ExportFormat.JSON:
             raise InvalidExportError("A trip settlement needs its trip, as PDF or CSV")

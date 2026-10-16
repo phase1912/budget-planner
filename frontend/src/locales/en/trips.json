@@ -152,6 +152,7 @@
     "pending": "Waits for the NBP rate",
     "download": "Download",
     "pdf": "PDF with photos",
-    "csv": "CSV"
+    "csv": "CSV",
+    "photosExpire": "Receipt photos are kept 90 days: the first of this trip's go on {{date}}. Download the settlement as PDF before then to keep them with it."
   }
 }

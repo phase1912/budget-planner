@@ -156,6 +156,7 @@
     "pending": "Czeka na kurs NBP",
     "download": "Pobierz",
     "pdf": "PDF ze zdjęciami",
-    "csv": "CSV"
+    "csv": "CSV",
+    "photosExpire": "Zdjęcia paragonów są przechowywane 90 dni: pierwsze z tej podróży znikną {{date}}. Pobierz rozliczenie w PDF wcześniej, aby zachować je razem z nim."
   }
 }

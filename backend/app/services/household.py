@@ -71,6 +71,26 @@ class HouseholdService:
             )
         await self.households.remove_member(membership)
 
+    async def depart(self, user: User) -> None:
+        """Take a user whose account is being deleted out of their household (F17.9.1).
+
+        Unlike leaving, an owner never blocks it: the household passes to the member who
+        joined it first, and the last one out dissolves it. No household, nothing to do.
+        """
+        membership = await self.households.membership_of(user.id)
+        if membership is None:
+            return
+        household = membership.household
+        others = sorted(
+            (m for m in household.members if m.user_id != user.id), key=lambda m: m.created_at
+        )
+        if not others:
+            await self.households.delete(household)
+            return
+        if membership.role == HouseholdRole.OWNER:
+            others[0].role = HouseholdRole.OWNER
+        await self.households.remove_member(membership)
+
     async def remove_member(self, user: User, member_user_id: uuid.UUID) -> Household:
         """The owner takes someone out of the household; their access ends at once.
 

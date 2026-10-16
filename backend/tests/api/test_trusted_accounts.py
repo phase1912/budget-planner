@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import get_mail_domain_resolver, get_mailer
 from app.core.security import create_access_token, create_link_token
 from app.db.session import get_db_session
+from app.domain.terms import TERMS_VERSION
 from app.main import create_app
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
@@ -82,6 +83,7 @@ async def _sign_up(session: AsyncSession, email: str, mailer: RecordingMailer) -
             "password": PASSWORD,
             "first_name": "Ann",
             "last_name": "Lee",
+            "accept_terms": True,
             "language": "pl",
         },
         mailer=mailer,
@@ -180,7 +182,13 @@ async def test_throwaway_and_undeliverable_addresses_cannot_sign_up(
         db_session,
         "POST",
         "/auth/register",
-        json={"email": "x@gmial.con", "password": PASSWORD, "first_name": "A", "last_name": "B"},
+        json={
+            "email": "x@gmial.con",
+            "password": PASSWORD,
+            "first_name": "A",
+            "last_name": "B",
+            "accept_terms": True,
+        },
         dns=NoMailDomains(),
     )
 
@@ -327,3 +335,20 @@ async def test_changing_the_address_needs_the_password_and_a_free_address(
     assert (wrong.status_code, wrong.json()["code"]) == (403, "invalid_credentials")
     assert taken.json()["code"] == "email_taken"
     assert throwaway.json()["code"] == "disposable_email"
+
+
+@pytest.mark.asyncio
+async def test_an_account_opens_only_with_the_terms_accepted_and_records_which(
+    db_session: AsyncSession,
+) -> None:
+    """F17.9.4: when, and to which version of the terms and privacy policy."""
+    body = {"email": "terms@example.com", "password": PASSWORD, "first_name": "A", "last_name": "B"}
+
+    refused = await _call(db_session, "POST", "/auth/register", json=body)
+    opened = await _call(db_session, "POST", "/auth/register", json={**body, "accept_terms": True})
+
+    assert (refused.status_code, refused.json()["code"]) == (400, "terms_required")
+    assert opened.status_code == 201
+    user = await db_session.scalar(select(User).where(User.email == "terms@example.com"))
+    assert user is not None
+    assert user.terms_version == TERMS_VERSION and user.terms_accepted_at is not None

@@ -232,7 +232,14 @@ export interface paths {
         get: operations["get_me_users_me_get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Me
+         * @description Delete the account and everything held about its owner (F17.9.1, GDPR art. 17).
+         *
+         *     403 invalid_credentials for a wrong password. The photos and exports are removed
+         *     from storage after the response; signing in fails from now on.
+         */
+        delete: operations["delete_me_users_me_delete"];
         options?: never;
         head?: never;
         /**
@@ -1699,6 +1706,14 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * AccountDeletionRequest
+         * @description Payload for deleting the account (F17.9.1); the password proves it is the owner.
+         */
+        AccountDeletionRequest: {
+            /** Password */
+            password: string;
+        };
+        /**
          * AddDiscountRequest
          * @description A discount the reader missed, added by the user to make a receipt add up (BRD A9).
          *
@@ -2092,10 +2107,11 @@ export interface components {
         };
         /**
          * ExportFormat
-         * @description The file format asked for (BRD N6: CSV or JSON; a trip's settlement also as PDF).
+         * @description The file format asked for (BRD N6: CSV or JSON; a trip's settlement also as PDF;
+         *     the whole account as a ZIP of its data and photos, F17.9.2).
          * @enum {string}
          */
-        ExportFormat: "csv" | "json" | "pdf";
+        ExportFormat: "csv" | "json" | "pdf" | "zip";
         /**
          * ExportJobResponse
          * @description An export's progress; once `status` is `ready`, its file can be downloaded.
@@ -2123,11 +2139,12 @@ export interface components {
         };
         /**
          * ExportKind
-         * @description What an export holds: the receipts list, the statistics table (BRD N6), or a
-         *     business trip's settlement for the employer (F20.5).
+         * @description What an export holds: the receipts list, the statistics table (BRD N6), a
+         *     business trip's settlement for the employer (F20.5), or everything held about the
+         *     user (F17.9.2).
          * @enum {string}
          */
-        ExportKind: "receipts" | "statistics" | "trip";
+        ExportKind: "receipts" | "statistics" | "trip" | "account";
         /**
          * ExportRequest
          * @description What to export, in which format, filtered as the screen it came from (BRD N6).
@@ -3154,6 +3171,16 @@ export interface components {
              * @default false
              */
             trip_manual: boolean;
+            /**
+             * Photos Kept Until
+             * @description The last day the photos stay in storage (F17.9.3); None with no photos.
+             */
+            readonly photos_kept_until: string | null;
+            /**
+             * Photos Removed
+             * @description Whether storage has removed the photos after 90 days; the figures stay.
+             */
+            readonly photos_removed: boolean;
         };
         /**
          * ReceiptOrder
@@ -3261,6 +3288,16 @@ export interface components {
             line_items: components["schemas"]["LineItemResponse"][];
             trip?: components["schemas"]["TripRef"] | null;
             trip_question?: components["schemas"]["TripRef"] | null;
+            /**
+             * Photos Kept Until
+             * @description The last day the photos stay in storage (F17.9.3); None with no photos.
+             */
+            readonly photos_kept_until: string | null;
+            /**
+             * Photos Removed
+             * @description Whether storage has removed the photos after 90 days; the figures stay.
+             */
+            readonly photos_removed: boolean;
         };
         /**
          * ReceiptScope
@@ -3358,6 +3395,11 @@ export interface components {
             last_name: string;
             /** Language */
             language?: ("en" | "uk" | "pl") | null;
+            /**
+             * Accept Terms
+             * @default false
+             */
+            accept_terms: boolean;
         };
         /**
          * ResetPasswordRequest
@@ -3650,6 +3692,13 @@ export interface components {
             by_currency: components["schemas"]["CurrencyTotal"][];
             per_diem?: components["schemas"]["PerDiemResponse"] | null;
             settlement?: components["schemas"]["SettlementResponse"] | null;
+            /**
+             * Photos Expire On
+             * @description The day the first of the trip's photos still kept is removed (F17.9.3).
+             *
+             *     The screen warns before it, so the settlement is downloaded with its photos.
+             */
+            readonly photos_expire_on: string | null;
         };
         /**
          * TripKind
@@ -3721,6 +3770,16 @@ export interface components {
             expense_kind: components["schemas"]["ExpenseKind"];
             /** Expense Kind Chosen */
             expense_kind_chosen: boolean;
+            /**
+             * Photos Kept Until
+             * @description The last day the photos stay in storage (F17.9.3); None with no photos.
+             */
+            readonly photos_kept_until: string | null;
+            /**
+             * Photos Removed
+             * @description Whether storage has removed the photos after 90 days; the figures stay.
+             */
+            readonly photos_removed: boolean;
         };
         /**
          * TripRef
@@ -4351,6 +4410,39 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UserResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_me_users_me_delete: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountDeletionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

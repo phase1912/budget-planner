@@ -48,5 +48,6 @@
   "disposable_email": "Adresem z tymczasowej poczty nie można założyć konta.",
   "email_domain_unreachable": "Na {{domain}} nie da się dostarczyć poczty: sprawdź, czy w adresie nie ma literówki.",
   "email_taken": "Tego adresu nie można użyć dla konta.",
-  "link_invalid": "Link wygasł lub został już użyty."
+  "link_invalid": "Link wygasł lub został już użyty.",
+  "terms_required": "Aby założyć konto, zaakceptuj regulamin i politykę prywatności."
 }

@@ -14,7 +14,7 @@ import logging
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from functools import cache
 from pathlib import Path
@@ -23,6 +23,7 @@ from fpdf import FPDF
 from PIL import Image, UnidentifiedImageError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.domain.retention import photos_removed
 from app.domain.trips import ExpenseKind, Settlement, TripKind, TripSpending, settle
 from app.models.receipt import Receipt, ReceiptChannel, ReceiptStatus
 from app.models.trip import Trip
@@ -99,10 +100,22 @@ def _money(amount: Decimal | None) -> str:
     return "—" if amount is None else f"{amount:.2f}"
 
 
-def _name(receipt: Receipt, words: dict[str, str]) -> str:
-    """The receipt's merchant, marked when the user typed it in without a receipt (F20.5)."""
+def _name(receipt: Receipt, words: dict[str, str], today: date | None = None) -> str:
+    """The receipt's merchant, marked when it has no picture to show.
+
+    Typed in without a receipt (F20.5), or its photo removed after 90 days (F17.9.3):
+    the settlement still counts it, and says why no page shows it.
+    """
     name = receipt.merchant_name or words["unknown"]
-    return f"{name} ({words['no_receipt']})" if receipt.channel is ReceiptChannel.MANUAL else name
+    if receipt.channel is ReceiptChannel.MANUAL:
+        return f"{name} ({words['no_receipt']})"
+    if _photos_gone(receipt, today or datetime.now(UTC).date()):
+        return f"{name} ({words['photo_removed']})"
+    return name
+
+
+def _photos_gone(receipt: Receipt, today: date) -> bool:
+    return photos_removed(receipt.created_at, bool(receipt.file_ids), today)
 
 
 def _day(receipt: Receipt) -> date:
@@ -307,11 +320,15 @@ def settlement_pdf(
 async def receipt_photos(
     storage: StoragePort, receipts: Sequence[Receipt]
 ) -> list[tuple[Receipt, list[bytes]]]:
-    """Each receipt's stored files, read from its owner's prefix; a missing one is skipped."""
+    """Each receipt's stored files, read from its owner's prefix; a missing one is skipped.
+
+    Photos storage has removed after 90 days are not asked for: no page, no placeholder.
+    """
     found = []
+    today = datetime.now(UTC).date()
     for receipt in receipts:
         files = []
-        for file_id in receipt.file_ids:
+        for file_id in [] if _photos_gone(receipt, today) else receipt.file_ids:
             try:
                 files.append(
                     await storage.download_file(receipt_object_name(receipt.user_id, file_id))

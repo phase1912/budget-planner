@@ -15,6 +15,7 @@ from app.core.security import (
     verify_password,
 )
 from app.domain.passwords import password_problems
+from app.domain.terms import TERMS_VERSION
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.repository.user import UserRepository
@@ -55,6 +56,9 @@ class AuthService:
     ) -> tuple[UserResponse, str, str]:
         """Open an account, unconfirmed until its owner follows the emailed link (F17.8.2).
 
+        Refused (terms_required) unless the terms and privacy policy are accepted; which
+        version, and when, is kept on the account (F17.9.4).
+
         `guard` refuses throwaway and undeliverable addresses with their own codes
         (F17.8.4); a taken address stays a generic refusal (G2).
         """
@@ -62,6 +66,11 @@ class AuthService:
         if problems:
             raise RegistrationError(
                 f"The password needs {', '.join(problems)}.", code=ProblemCode.WEAK_PASSWORD
+            )
+        if not request.accept_terms:
+            raise RegistrationError(
+                "Accept the terms and the privacy policy to open an account.",
+                code=ProblemCode.TERMS_REQUIRED,
             )
         if guard is not None:
             await guard.check(request.email)
@@ -76,6 +85,8 @@ class AuthService:
             password_hash=hashed_password,
             first_name=request.first_name,
             last_name=request.last_name,
+            terms_accepted_at=datetime.now(UTC),
+            terms_version=TERMS_VERSION,
         )
         self.repo.add(user)
         try:

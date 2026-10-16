@@ -5,6 +5,7 @@ vision parser, and merges the photos of one receipt into one extraction, flaggin
 items caught in two overlapping shots (B2-B4).
 """
 
+import asyncio
 import io
 import logging
 import uuid
@@ -27,6 +28,30 @@ from app.ports.storage import StoragePort, receipt_object_name
 from app.schemas.extraction import ExtractedReceipt, PositionMatch
 
 logger = logging.getLogger(__name__)
+
+KEPT_PHOTO_SIDE = 2000
+"""Longest side, in pixels, of a photo kept after it was read (F17.9.3)."""
+KEPT_PHOTO_QUALITY = 82
+
+
+def compress_photo(content: bytes) -> bytes | None:
+    """The photo as kept after reading: JPEG, at most 2000 px on its longest side.
+
+    Enough to see every line on screen and in a settlement, at a fraction of a phone's
+    original — a 4-5 MB shot keeps about 0.4 MB. None when it is not a picture Pillow
+    reads, or would not get smaller: then the original is kept.
+    """
+    pillow_heif.register_heif_opener()  # type: ignore[attr-defined]
+    try:
+        with Image.open(io.BytesIO(content)) as opened:
+            image = opened.convert("RGB")
+    except Exception:
+        return None
+    image.thumbnail((KEPT_PHOTO_SIDE, KEPT_PHOTO_SIDE))
+    out = io.BytesIO()
+    image.save(out, format="JPEG", quality=KEPT_PHOTO_QUALITY, optimize=True)
+    smaller = out.getvalue()
+    return smaller if len(smaller) < len(content) else None
 
 
 class PhotoIngestionAdapter:
@@ -58,8 +83,33 @@ class PhotoIngestionAdapter:
         extraction: dict[str, object] = {}
         if self.parser_port is not None:
             extraction = await self._run_extraction(user, file_ids, content_types)
+        await self._keep_compressed(user, file_ids, payload)
         extraction["file_ids"] = file_ids
         return IngestionResult(extraction=extraction, file_ids=file_ids)
+
+    async def _keep_compressed(
+        self, user: User, file_ids: list[str], payload: list[UploadedFile]
+    ) -> None:
+        """Replace each stored photo, now read at full quality, with its kept version.
+
+        A PDF, or a photo that fails to compress or to upload, stays as it was: the
+        receipt is never at risk for the sake of space.
+        """
+        for file_id, upload in zip(file_ids, payload, strict=True):
+            if not upload["content_type"].lower().startswith("image/"):
+                continue
+            smaller = await asyncio.to_thread(compress_photo, upload["content"])
+            if smaller is None:
+                continue
+            try:
+                await self.storage_port.upload_file(
+                    receipt_object_name(user.id, file_id),
+                    smaller,
+                    "image/jpeg",
+                    {"owner_id": str(user.id)},
+                )
+            except Exception:
+                logger.warning("Photo %s kept uncompressed: upload failed", file_id)
 
     async def store_image(self, user: User, content: bytes, content_type: str) -> str:
         """Uploads a receipt image to object storage, tagged with owner ID."""

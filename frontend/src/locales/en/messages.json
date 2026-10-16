@@ -133,6 +133,7 @@
   },
   "account": {
     "linkSent": "A new link is on its way.",
-    "failed": "Something went wrong. Try again."
+    "failed": "Something went wrong. Try again.",
+    "deleted": "Your account and everything in it are deleted."
   }
 }

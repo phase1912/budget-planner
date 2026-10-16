@@ -56,7 +56,14 @@ describe("RegisterPage", () => {
     type(/confirm password/i, "Kawa-2026");
     expect(checklist.getByText(/special character/)).toHaveTextContent("done");
     expect(checklist.getByText("Both passwords match")).toHaveTextContent("done");
+    // An account opens only with the terms and privacy policy accepted (F17.9.4).
+    expect(screen.getByRole("button", { name: /register/i })).toBeDisabled();
+    fireEvent.click(screen.getByRole("checkbox", { name: /I accept the terms of use/ }));
     expect(screen.getByRole("button", { name: /register/i })).toBeEnabled();
+    expect(screen.getByRole("link", { name: "privacy policy" })).toHaveAttribute(
+      "href",
+      "/privacy",
+    );
   });
 
   it("says when the two passwords differ", () => {
@@ -86,6 +93,7 @@ describe("RegisterPage", () => {
     type(/last name/i, "R");
     type(/^password/i, "Kawa-2026");
     type(/confirm password/i, "Kawa-2026");
+    fireEvent.click(screen.getByRole("checkbox"));
 
     fireEvent.click(screen.getByRole("button", { name: /register/i }));
 

@@ -444,6 +444,17 @@ Rules that must hold at all times. Each is a candidate for a test.
     that never tells whether the address has an account. Setting the password ends every
     session of the account and confirms its address. A new address takes effect only
     when the link sent to it is followed; the old address is then told (F17.8.3).
+20d. An account opens only with the terms and privacy policy accepted; when, and which
+    version (`app/domain/terms.py`), is kept on it (F17.9.4).
+20e. Deleting an account, confirmed with the password, deletes every row of the user's —
+    each references the account with ON DELETE CASCADE — and their files under
+    `receipts/{id}/` and `exports/{id}/`. In a household, an owner's place passes to the
+    member who joined first; the last one out dissolves it (F17.9.1).
+20f. Receipt photos are kept 90 days, exports 7 (F17.9.3), then storage deletes them by
+    lifecycle rule; the lines and totals read from a photo stay, and the receipt says its
+    photo is gone. A trip's settlement after that is its summary without the photo pages,
+    the receipt marked "photo removed after 90 days". A photo is kept as a JPEG of at most
+    2000 px once it has been read (`app/domain/retention.py`).
 21. An OIDC identity links to an existing account only when the provider reports a
     verified email matching it; an unverified email never links automatically (G10, G11).
 

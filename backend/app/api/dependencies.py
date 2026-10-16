@@ -14,8 +14,8 @@ from app.adapters.exchange_rates import (
     FrankfurterExchangeRates,
     NbpExchangeRates,
 )
-from app.adapters.gcs_storage import GcsStorageService
 from app.adapters.outgoing_mail import AppEngineMailSender, LogMailSender
+from app.adapters.storage_factory import configured_storage
 from app.api.errors import AuthenticationError, EmailNotConfirmedError
 from app.core.config import get_settings
 from app.db.session import get_db_session
@@ -27,7 +27,6 @@ from app.ports.storage import StoragePort
 from app.services.account import EmailAddressGuard
 from app.services.mailer import Mailer
 from app.services.quota import QuotaService
-from app.services.storage import S3StorageService
 
 """API dependencies (F1.2.4)."""
 
@@ -114,13 +113,7 @@ def get_email_guard(
 
 async def get_storage_service() -> AsyncGenerator[StoragePort, None]:
     """The configured StoragePort: S3-compatible, or Cloud Storage (ADR-0014)."""
-    settings = get_settings()
-    service: S3StorageService | GcsStorageService = (
-        GcsStorageService(settings)
-        if settings.storage_backend == "gcs"
-        else S3StorageService(settings)
-    )
-    async with service:
+    async with configured_storage() as service:
         yield service
 
 

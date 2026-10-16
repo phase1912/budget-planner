@@ -48,3 +48,11 @@ class StoragePort(Protocol):
         one that is already gone would leave the caller unable to retry.
         """
         ...
+
+    async def delete_prefix(self, prefix: str) -> int:
+        """Permanently remove every object whose name starts with `prefix`; how many.
+
+        Used when an account is deleted (F17.9.1): everything under `receipts/{user_id}/`
+        and `exports/{user_id}/` goes, including photos no row points at any more.
+        """
+        ...

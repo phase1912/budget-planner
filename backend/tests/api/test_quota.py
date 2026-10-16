@@ -183,6 +183,7 @@ async def test_registration_is_limited_per_address(db_session: AsyncSession) -> 
                 "password": "Str0ng-Password!",
                 "first_name": "N",
                 "last_name": "N",
+                "accept_terms": True,
             },
         )
         for n in range(4)

@@ -79,6 +79,7 @@ class ProblemCode(enum.StrEnum):
     EMAIL_DOMAIN_UNREACHABLE = "email_domain_unreachable"
     EMAIL_TAKEN = "email_taken"
     LINK_INVALID = "link_invalid"
+    TERMS_REQUIRED = "terms_required"
 
 
 class ProblemDetail(BaseModel):

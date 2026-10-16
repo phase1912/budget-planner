@@ -55,6 +55,9 @@ class MockStoragePort(StoragePort):
     async def delete_file(self, object_name: str) -> None:
         MockStoragePort.deleted.append(object_name)
 
+    async def delete_prefix(self, prefix: str) -> int:
+        return 0
+
 
 @pytest.fixture
 def app() -> Iterator[FastAPI]:

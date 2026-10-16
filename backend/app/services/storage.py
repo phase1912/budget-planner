@@ -139,3 +139,19 @@ class S3StorageService(StoragePort):
         # S3 answers 204 for a key that was never there, so there is no
         # missing-object branch to write here.
         await self._client.delete_object(Bucket=self.bucket, Key=object_name)
+
+    async def delete_prefix(self, prefix: str) -> int:
+        """Permanently remove every object under `prefix`, one key at a time.
+
+        Not DeleteObjects: S3-compatible stores (MinIO) ask that batch for a Content-MD5
+        header recent botocore no longer sends, and an account holds few enough files.
+        """
+        if not self._client:
+            raise RuntimeError("S3StorageService must be used as an async context manager.")
+        removed = 0
+        paginator = self._client.get_paginator("list_objects_v2")
+        async for page in paginator.paginate(Bucket=self.bucket, Prefix=prefix):
+            for item in page.get("Contents", []):
+                await self._client.delete_object(Bucket=self.bucket, Key=item["Key"])
+                removed += 1
+        return removed

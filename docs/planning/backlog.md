@@ -1331,7 +1331,7 @@ The service states what it collects and why — including the cookieless analyti
 
 **Demonstrated by:** Open the landing page for the first time on a phone: a consent banner offers accept, reject and choose; rejecting leaves only strictly needed cookies; "Privacy" in the footer opens the policy in the page's language, and the choice can be changed there.
 
-- **F17.7.1** Privacy policy and terms pages — Public, prerendered pages for the privacy policy (GDPR) and the terms of service, in three languages, linked from the footer and from sign-up. Checked at 375, 768 and 1280 px.
+- **F17.7.1** Privacy policy and terms pages — The privacy policy and terms pages at /privacy and /terms, drafted in F17.9.4 from the record of processing (ADR-0020) and already linked from sign-up and Profile: their wording checked and completed (cookieless analytics, the consent choice), prerendered like the landing, and linked from the footer of every public page. Checked at 375, 768 and 1280 px.
 - **F17.7.2** Cookie consent with Google Consent Mode — A Google-certified consent platform with accept, reject and per-purpose choices in three languages, Consent Mode v2 signals, nothing beyond strictly needed cookies before consent, the choice kept and changeable from the privacy page, and a test that no optional script loads before consent. Checked at 375, 768 and 1280 px.
 
 ### F17.8 — Trusted accounts

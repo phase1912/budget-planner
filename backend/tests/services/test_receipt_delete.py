@@ -37,6 +37,9 @@ class RecordingStoragePort(StoragePort):
             raise RuntimeError("storage is down")
         self.deleted.append(object_name)
 
+    async def delete_prefix(self, prefix: str) -> int:
+        return 0
+
     async def upload_file(
         self,
         object_name: str,

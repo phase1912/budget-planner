@@ -18,8 +18,8 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.adapters.storage_factory import configured_storage
 from app.api.dependencies import get_exchange_rates
-from app.core.config import get_settings
 from app.core.context import current_user_id
 from app.db.session import get_session_factory
 from app.domain.periods import DateRange
@@ -30,9 +30,9 @@ from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.storage import StoragePort
 from app.repository.receipt import ReceiptRepository
 from app.schemas.receipt import ReceiptResponse
+from app.services.data_export import account_archive
 from app.services.settlement import gather, receipt_photos, settlement_csv, settlement_pdf
 from app.services.statistics import StatisticsService, statistics_response
-from app.services.storage import S3StorageService
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,7 @@ _CONTENT_TYPES = {
     ExportFormat.CSV: "text/csv",
     ExportFormat.JSON: "application/json",
     ExportFormat.PDF: "application/pdf",
+    ExportFormat.ZIP: "application/zip",
 }
 _FORMULA_STARTS = ("=", "+", "-", "@", "\t", "\r")
 
@@ -53,6 +54,8 @@ def export_filename(
     """The name the file is saved under: what it is, the days it covers, and its format."""
     start, end = params.get("start"), params.get("end")
     days = f"{start}_{end}" if start and end else today.isoformat()
+    if kind is ExportKind.ACCOUNT:
+        return f"budget-agent-data-{today.isoformat()}.{fmt.value}"
     name = "trip-settlement" if kind is ExportKind.TRIP else kind.value
     return f"{name}-{days}.{fmt.value}"
 
@@ -159,6 +162,8 @@ class ExportService:
         job.completed_at = datetime.now(UTC)
 
     async def _content(self, job: ExportJob) -> bytes:
+        if job.kind is ExportKind.ACCOUNT:
+            return await account_archive(self.session, self.storage, job.user_id)
         if job.kind is ExportKind.STATISTICS:
             return await self._statistics(job)
         if job.kind is ExportKind.TRIP:
@@ -242,7 +247,7 @@ async def run_export(job_id: uuid.UUID) -> None:
         job.status = ExportStatus.RUNNING
         await session.commit()
         try:
-            async with S3StorageService(get_settings()) as storage:
+            async with configured_storage() as storage:
                 await ExportService(session, storage, get_exchange_rates()).write(job)
         except Exception:
             logger.exception("Export %s failed", job_id)

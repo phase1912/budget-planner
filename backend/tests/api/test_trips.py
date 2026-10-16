@@ -4,7 +4,7 @@ import io
 import re
 import uuid
 from collections.abc import AsyncGenerator
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import Any, cast
 from unittest.mock import AsyncMock, patch
@@ -1045,3 +1045,61 @@ async def test_a_settlement_marks_an_expense_without_a_receipt(db_session: Async
 
     csv_text = storage.uploaded[str(job.object_name)].decode("utf-8")
     assert "Parking (bez paragonu)" in csv_text
+
+
+@pytest.mark.asyncio
+async def test_a_settlement_after_90_days_is_the_summary_and_marks_the_removed_photo(
+    db_session: AsyncSession,
+) -> None:
+    """F17.9.3: the totals stand, no page for a photo storage removed, no placeholder."""
+    user = await UserFactory.create_async(currency="PLN", language="pl")
+    trip_id = await _business_trip_with_receipts(db_session, user)
+    receipt = await db_session.scalar(select(Receipt).where(Receipt.user_id == user.id))
+    assert receipt is not None
+    receipt.created_at = datetime.now(UTC) - timedelta(days=100)
+    await db_session.flush()
+    storage = _Photos()
+    current_user_id.set(user.id)
+    jobs = []
+    for fmt in (ExportFormat.PDF, ExportFormat.CSV):
+        job = ExportJob(
+            user_id=user.id,
+            kind=ExportKind.TRIP,
+            format=fmt,
+            params={"trip_id": trip_id, "language": "pl"},
+            filename=f"trip-settlement.{fmt.value}",
+        )
+        db_session.add(job)
+        await db_session.flush()
+        await ExportService(db_session, cast(StoragePort, storage), _EuroAt425()).write(job)
+        jobs.append(job)
+    detail = (
+        await _call(db_session, user, "GET", f"/api/v1/trips/{trip_id}", rates=_EuroAt425())
+    ).json()
+
+    pdf = storage.uploaded[str(jobs[0].object_name)]
+    csv_text = storage.uploaded[str(jobs[1].object_name)].decode("utf-8")
+    assert len(re.findall(rb"/Type\s*/Page\b", pdf)) == 1
+    assert "Shop (zdjęcie usunięte po 90 dniach)" in csv_text
+    assert "Do zwrotu pracownikowi,,,,674.68,PLN" in csv_text
+    assert detail["receipts"][0]["photos_removed"] is True
+    assert detail["photos_expire_on"] is None
+
+
+@pytest.mark.asyncio
+async def test_a_trip_says_when_its_first_kept_photo_will_be_removed(
+    db_session: AsyncSession,
+) -> None:
+    """F17.9.3: the warning that the settlement's photos will not be kept forever."""
+    user = await UserFactory.create_async(currency="PLN")
+    trip_id = await _business_trip_with_receipts(db_session, user)
+    receipt = await db_session.scalar(select(Receipt).where(Receipt.user_id == user.id))
+    assert receipt is not None
+
+    detail = (
+        await _call(db_session, user, "GET", f"/api/v1/trips/{trip_id}", rates=_EuroAt425())
+    ).json()
+
+    assert (
+        detail["photos_expire_on"] == (receipt.created_at + timedelta(days=90)).date().isoformat()
+    )
