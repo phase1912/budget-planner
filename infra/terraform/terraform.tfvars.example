@@ -5,5 +5,6 @@ billing_account = "XXXXXX-XXXXXX-XXXXXX"
 # legacy_hosting_site_id = "budget-agent-phase1912"
 # budget_amount   = 20
 # admin_emails               = ["you@example.com"]   # no receipt quota (F10.6)
+# support_email              = "support@example.com" # contact form and store listing (F22.1.2)
 # monthly_receipt_quota      = 10
 # daily_receipt_read_ceiling = 100

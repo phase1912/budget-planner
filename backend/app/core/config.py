@@ -196,6 +196,13 @@ class Settings(BaseSettings):
             "no service-wide ceiling, and no access to other users' data (F10.6, BRD N2)."
         ),
     )
+    support_email: str | None = Field(
+        default=None,
+        description=(
+            "The support mailbox (F22.1.2): the public contact in the store listing and where "
+            "the contact form's messages go. Unset, they go to admin_emails."
+        ),
+    )
     inbound_email_domain: str = Field(
         default="inbound.localhost",
         description=(

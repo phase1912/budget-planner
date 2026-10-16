@@ -142,8 +142,14 @@ class Agent:
         *,
         temperature: float | None = None,
         max_tokens: int = 32768,
+        reasoning: bool = True,
     ) -> T:
         """Send messages and parse the response into a Pydantic model.
+
+        ``reasoning=False`` asks a hosted reasoning model (Gemini 2.5) to answer without
+        thinking first: its thoughts share ``max_tokens`` with the answer, so a long one
+        cut a receipt's JSON off mid-string. Reading a receipt is transcription, not
+        reasoning; other callers keep it.
 
         Uses ``response_format`` with the JSON schema derived from the Pydantic
         model so providers that support structured output (Gemini, OpenAI, newer
@@ -175,19 +181,26 @@ class Agent:
                 },
             }
         kwargs.update(self._provider_kwargs())
+        if not reasoning and "gemini" in self.model.lower():
+            kwargs["reasoning_effort"] = "disable"
 
         try:
             response = await litellm.acompletion(**kwargs)
         except Exception as exc:
             raise AgentError(f"LLM call failed: {exc}") from exc
 
-        message = response.choices[0].message
+        choice = response.choices[0]
+        message = choice.message
         raw = message.content
         if not raw:
             raise AgentError(
                 self._empty_content_reason(
                     message, "LLM returned empty content for structured request"
                 )
+            )
+        if getattr(choice, "finish_reason", None) == "length":
+            raise AgentError(
+                f"LLM response was cut off at max_tokens={max_tokens} before the JSON ended"
             )
 
         logger.debug("================ RAW LLM STRUCTURED RESPONSE ================")

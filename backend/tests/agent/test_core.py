@@ -268,3 +268,45 @@ async def test_prose_with_no_json_at_all_is_still_an_error(mock_acompletion: Mag
 
     with pytest.raises(AgentError, match="Failed to parse LLM response as JSON"):
         await agent.run_structured([Message(role="user", content="x")], schema=MockSchema)
+
+
+def _answer(content: str, finish_reason: str = "stop") -> MagicMock:
+    response = MagicMock()
+    response.choices = [MagicMock()]
+    response.choices[0].message.content = content
+    response.choices[0].finish_reason = finish_reason
+    return response
+
+
+@pytest.mark.asyncio
+@patch("litellm.acompletion")
+async def test_a_receipt_is_read_by_gemini_without_thinking_first(
+    mock_acompletion: MagicMock,
+) -> None:
+    """Gemini's thoughts share max_tokens with the answer and cut receipt JSON off."""
+    mock_acompletion.return_value = _answer('{"name": "test", "value": 42}')
+    messages = [Message(role="user", content="Extract this")]
+
+    await Agent(model="vertex_ai/gemini-2.5-flash").run_structured(
+        messages, schema=MockSchema, reasoning=False
+    )
+    await Agent(model="vertex_ai/gemini-2.5-flash").run_structured(messages, schema=MockSchema)
+    await Agent(model="anthropic/claude-sonnet").run_structured(
+        messages, schema=MockSchema, reasoning=False
+    )
+
+    calls = [call.kwargs for call in mock_acompletion.call_args_list]
+    assert calls[0]["reasoning_effort"] == "disable"
+    assert "reasoning_effort" not in calls[1]
+    assert "reasoning_effort" not in calls[2]
+
+
+@pytest.mark.asyncio
+@patch("litellm.acompletion")
+async def test_an_answer_cut_off_at_the_token_limit_says_so(mock_acompletion: MagicMock) -> None:
+    mock_acompletion.return_value = _answer('{"name": "unterminated', finish_reason="length")
+
+    with pytest.raises(AgentError, match="cut off at max_tokens"):
+        await Agent(model="test-model").run_structured(
+            [Message(role="user", content="Extract this")], schema=MockSchema
+        )

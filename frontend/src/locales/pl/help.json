@@ -1,0 +1,147 @@
+{
+  "title": "Pomoc",
+  "intro": "Odpowiedzi na typowe pytania według obszarów. Nie ma Twojego? Napisz do nas na dole strony.",
+  "areas": {
+    "receipts": {
+      "title": "Paragony",
+      "items": {
+        "photo": {
+          "q": "Jak dodać paragon?",
+          "a": "Naciśnij „Prześlij” (+ na telefonie) i zrób zdjęcie paragonu lub wybierz plik: JPEG, PNG, HEIC albo PDF. Sklep, data, każda pozycja i suma zostaną odczytane; sprawdź je i zapisz."
+        },
+        "long": {
+          "q": "Długi paragon nie mieści się na jednym zdjęciu",
+          "a": "Zrób kilka zachodzących na siebie zdjęć, do 10 na jeden paragon. Pozycje widoczne na dwóch zdjęciach liczą się raz."
+        },
+        "email": {
+          "q": "Jak przesłać e-paragon?",
+          "a": "W profilu znajdziesz swój adres do przekazywania. Przekaż tam e-mail z paragonem sklepu z adresu swojego konta, a pojawi się w paragonach po chwili — do 20 dziennie."
+        },
+        "manual": {
+          "q": "Zakup bez paragonu",
+          "a": "W paragonach lub na ekranie przesyłania wybierz „Bez paragonu” i wpisz co, kiedy i za ile. Liczy się jak każdy paragon, oznaczony jako bez dokumentu."
+        },
+        "limit": {
+          "q": "Ile paragonów mogę dodać?",
+          "a": "Odczytanie paragonu to wywołanie modelu, więc każde konto ma miesięczny limit odczytanych paragonów, widoczny na ekranie przesyłania i w profilu. Wydatki wpisane ręcznie się nie liczą."
+        },
+        "foreign": {
+          "q": "Paragon w innej walucie",
+          "a": "Jest przeliczany na walutę konta po kursie Narodowego Banku Polskiego, a obie kwoty zostają przy paragonie."
+        }
+      }
+    },
+    "categories": {
+      "title": "Kategorie",
+      "items": {
+        "how": {
+          "q": "Jak pozycje trafiają do kategorii?",
+          "a": "Każda pozycja dostaje kategorię przy odczycie. Te, co do których odczyt nie był pewny, czekają na sprawdzenie na ekranie Kategorie."
+        },
+        "fix": {
+          "q": "Pozycja jest w złej kategorii",
+          "a": "Otwórz paragon i wybierz dla pozycji inną kategorię. Nazwa poprawiona dla sklepu zostanie zapamiętana przy jego kolejnych paragonach."
+        },
+        "rules": {
+          "q": "Czy mogę ustawić własne reguły?",
+          "a": "Tak: w Kategorie → Zarządzaj utwórz własne kategorie i reguły — słowo kluczowe, które zawsze kieruje pasujące pozycje do danej kategorii."
+        }
+      }
+    },
+    "goals": {
+      "title": "Cele i porady",
+      "items": {
+        "kinds": {
+          "q": "Jakie cele mogę ustawić?",
+          "a": "Finansowe — limit wydatków albo kwotę do odłożenia — oraz dotyczące stylu życia, np. rzadsze jedzenie na mieście, powiązane z kategoriami, od których zależą."
+        },
+        "advice": {
+          "q": "Kiedy pojawiają się porady?",
+          "a": "Gdy zbierze się około 30 dni paragonów. Porady wynikają z tego, co faktycznie kupujesz, i pokazują, ile zmieni każdy krok."
+        }
+      }
+    },
+    "household": {
+      "title": "Gospodarstwo domowe",
+      "items": {
+        "share": {
+          "q": "Jak prowadzić wspólny budżet z rodziną?",
+          "a": "W profilu utwórz gospodarstwo i wyślij link z zaproszeniem. Członkowie widzą swoje paragony (tylko do odczytu), miesiąc i budżet gospodarstwa."
+        },
+        "private": {
+          "q": "Czy mogę zachować paragon dla siebie?",
+          "a": "Tak: oznacz go jako prywatny. Wlicza się do sumy gospodarstwa, ale inni nie widzą, co na nim jest."
+        }
+      }
+    },
+    "trips": {
+      "title": "Podróże i diety",
+      "items": {
+        "kinds": {
+          "q": "Podróże prywatne i służbowe",
+          "a": "Podróż prywatna to Twoje pieniądze: zostaje w miesiącu, pokazana osobno, z własnym budżetem. Służbowa to pieniądze pracodawcy: nie wchodzi do Twojego budżetu i ma dietę oraz rozliczenie."
+        },
+        "perdiem": {
+          "q": "Jak liczona jest dieta?",
+          "a": "Według rozporządzenia w sprawie podróży służbowych, z godzin wyjazdu i powrotu, które wpisujesz: w kraju 45 zł za dobę, za granicą stawka kraju docelowego; niepełne doby według godzin, a zapewnione posiłki ją zmniejszają."
+        },
+        "settlement": {
+          "q": "Jak dostać rozliczenie dla pracodawcy?",
+          "a": "Na stronie podróży służbowej wpisz otrzymaną zaliczkę i pobierz rozliczenie jako PDF ze zdjęciem każdego paragonu albo CSV: wydatki + dieta − zaliczka."
+        }
+      }
+    },
+    "data": {
+      "title": "Eksport i Twoje dane",
+      "items": {
+        "export": {
+          "q": "Jak wyeksportować dane?",
+          "a": "Paragony i Statystyki eksportują listę lub tabelę z ekranu do CSV albo JSON. Profil → „Pobierz wszystko” daje jedno archiwum ze wszystkimi Twoimi danymi i zdjęciami, które jeszcze przechowujemy. Pliki eksportu są przechowywane 7 dni."
+        },
+        "photos": {
+          "q": "Dlaczego zniknęło zdjęcie paragonu?",
+          "a": "Zdjęcia paragonów są przechowywane 90 dni, potem usuwane; odczytane z nich pozycje i kwoty zostają. Pobierz rozliczenie podróży służbowej jako PDF wcześniej, aby zachować jej zdjęcia."
+        },
+        "delete": {
+          "q": "Jak usunąć konto?",
+          "a": "Profil → Usuń konto, z hasłem. Wszystko zniknie na zawsze; najpierw pobierz swoje dane, jeśli mogą się przydać."
+        }
+      }
+    },
+    "account": {
+      "title": "Konto",
+      "items": {
+        "confirm": {
+          "q": "Nie dostałem e-maila z potwierdzeniem",
+          "a": "Sprawdź spam, potem naciśnij „Wyślij ponownie” na pasku. Dopóki adres nie jest potwierdzony, możesz przeglądać, ale nie dodawać paragonów."
+        },
+        "password": {
+          "q": "Nie pamiętam hasła",
+          "a": "Na ekranie logowania naciśnij „Nie pamiętasz hasła?” i otwórz link z wiadomości w ciągu godziny."
+        },
+        "install": {
+          "q": "Czy mogę zainstalować to jak aplikację?",
+          "a": "Tak: w profilu pokazujemy, jak dodać ją do ekranu głównego telefonu lub komputera; otwiera się jak aplikacja."
+        }
+      }
+    }
+  },
+  "contact": {
+    "title": "Nie znalazłeś odpowiedzi?",
+    "intro": "Napisz do nas: wiadomość trafi do osób prowadzących Budget Agent, a Ty dostaniesz kopię.",
+    "email": "Twój adres e-mail",
+    "topic": "Temat",
+    "topics": {
+      "question": "Pytanie",
+      "problem": "Coś nie działa",
+      "idea": "Pomysł",
+      "data": "Moje dane osobowe"
+    },
+    "message": "Wiadomość",
+    "send": "Wyślij",
+    "sending": "Wysyłamy…",
+    "sent": "Dziękujemy — wiadomość jest w drodze, a kopia już w Twojej skrzynce.",
+    "another": "Napisz kolejną",
+    "direct": "Albo napisz bezpośrednio na"
+  }
+}

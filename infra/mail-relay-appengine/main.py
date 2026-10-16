@@ -5,8 +5,9 @@ App Engine delivers every message sent to `*@<project>.appspotmail.com` as a POS
 the shared secret — the same contract as `infra/dev/mail-relay/relay.py` locally. It
 decides nothing: the backend does all the checking.
 
-The other way, `/send` takes a letter the backend wrote and gives it to the Mail API,
-which only App Engine can call; the same shared secret proves the backend sent it.
+The other way, `/send` takes a letter the backend wrote — with an optional reply-to, for
+the contact form — and gives it to the Mail API, which only App Engine can call; the same
+shared secret proves the backend sent it.
 """
 
 import hmac
@@ -60,6 +61,8 @@ def send() -> tuple[str, int]:
     to, subject, body = (letter.get(key) for key in ("to", "subject", "body"))
     if not all(isinstance(value, str) and value for value in (to, subject, body)):
         return "", 400
-    mail.send_mail(sender=SENDER, to=to, subject=subject, body=body)
+    reply_to = letter.get("reply_to")
+    extra = {"reply_to": reply_to} if isinstance(reply_to, str) and reply_to else {}
+    mail.send_mail(sender=SENDER, to=to, subject=subject, body=body, **extra)
     logging.info("Sent %r", subject)
     return "", 202

@@ -6,11 +6,16 @@ from typing import Protocol
 
 @dataclass(frozen=True)
 class Letter:
-    """One letter to one address: plain text, as every mail client reads it."""
+    """One letter to one address: plain text, as every mail client reads it.
+
+    `reply_to` is where a reply goes instead of the sender: the user who wrote through the
+    contact form (F17.10.2), since letters leave from an address nobody reads.
+    """
 
     to: str
     subject: str
     body: str
+    reply_to: str | None = None
 
 
 class EmailSendError(Exception):

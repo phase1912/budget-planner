@@ -36,6 +36,9 @@ legacy, recommending SMTP providers for reliable high-volume delivery.
   reset a password) bound to the state they change — the address, a fingerprint of the
   password hash — so each works once without a table of spent links. They carry a
   `purpose` claim, and a token with one is never accepted as a session.
+- **A letter may name a Reply-To** (`Letter.reply_to`, passed to `send_mail`): the contact
+  form's messages (F17.10) are answered straight to the person who wrote, since the
+  sender address is nobody's inbox.
 - **Letters are written in the reader's language** (English, Ukrainian, Polish), from
   `app/domain/letters.py`; at sign-up and on "forgot password", the language of the
   screen the request came from.

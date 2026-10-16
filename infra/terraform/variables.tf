@@ -74,6 +74,12 @@ variable "admin_emails" {
   default     = []
 }
 
+variable "support_email" {
+  description = "The support mailbox (F22.1.2): public in the store listing, and where the contact form's messages go."
+  type        = string
+  default     = "bohdan.razhyk.support@gmail.com"
+}
+
 variable "monthly_receipt_quota" {
   description = "Receipts an ordinary account may have read per calendar month (F10.6.1)."
   type        = number

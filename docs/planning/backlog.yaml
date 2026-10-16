@@ -2873,64 +2873,190 @@ epics:
     title: Aggregated Purchase Analytics
     br: []
     phase: 2
-    scope: out-of-scope
-    groomed: false
+    scope: diploma
+    groomed: true
     summary: >
-      The item-level data BO-2 produces is something bank and card feeds structurally cannot
-      supply: what was actually bought, not which shop was paid. Aggregated across many users and
-      anonymised, that is a saleable market signal. This epic is written with its constraints
-      first because the failure mode is legal rather than technical: no aggregate is produced
-      without explicit consent, no figure is published for a cohort small enough to identify
-      someone, and no raw personal purchase data leaves the system in any form.
+      After E21, and only if the diploma's timetable leaves room. The item-level data BO-2
+      produces is something bank and card feeds structurally cannot supply: what was actually
+      bought, not which shop was paid. Aggregated across many users and anonymised, it first
+      serves the users themselves — what a product costs across everyone and where it is cheapest
+      this week — and could later be a saleable market signal (F13.6 and E18 decide whether, with
+      a lawyer; nothing in this epic sells anything). The failure mode is legal rather than
+      technical, so the constraints come first: no aggregate without explicit, revocable opt-in,
+      no figure for a cohort small enough to identify someone, no row with a user in it ever
+      leaving PostgreSQL. The warehouse is BigQuery within its free tier, filled by a job run from
+      the backend's image as a Cloud Run Job — recorded as the first part to move into a service
+      of its own when there are the means to run one.
     features:
       - key: F13.1
         title: Explicit opt-in consent and withdrawal
-        labels: [security, backend]
+        labels: [security, backend, frontend]
+        requirements: [N6]
+        depends_on: [F17.9]
         intent: >
-          A separate, freely revocable consent — never bundled into terms of service — recording
-          what was agreed to and when. Nothing else in this epic may touch a user's data without
-          it, and withdrawal takes effect without the user having to ask twice.
+          A separate, freely revocable consent — never bundled into terms of service and never a
+          pre-ticked box — recording what was agreed to and when. Nothing else in this epic may
+          touch a user's data without it, and withdrawal takes effect without the user having to
+          ask twice. The privacy policy, terms and record of processing (ADR-0020) say so.
+        demo: >
+          Turn on "Take part in shared price statistics" on Profile and read what it shares; open
+          the privacy policy and find the new section and version; turn it off again.
+        tasks:
+          - key: F13.1.1
+            title: The sharing choice
+            labels: [backend, frontend, database]
+            detail: >
+              A flag on the user with the time it was last changed, false for every account,
+              existing ones included; a Profile switch saying what is shared — what was bought,
+              where, for how much, by which week, never who — and that turning it off removes the
+              user's part from the next recalculation, in three languages; the choice in the full
+              data export (F17.9.2). Checked at 375, 768 and 1280 px.
+          - key: F13.1.2
+            title: Privacy policy, terms and record of processing updated
+            labels: [docs, frontend]
+            detail: >
+              ADR-0020 lists the aggregates, their purpose and legal basis (consent), the
+              warehouse and its location, the minimum cohort, and that aggregates are not personal
+              data once published; the /privacy and /terms pages say the same in three languages
+              under a new TERMS_VERSION, and signed-in users are shown once that the policy
+              changed. Checked at 375, 768 and 1280 px.
       - key: F13.2
         title: Product normalisation catalogue
-        labels: [ai, backend]
+        labels: [ai, backend, database]
+        requirements: []
+        depends_on: [F16.1]
         intent: >
-          "MLEKO UHT 3,2% 1L" and "Mleko 3.2% 1l" have to become one canonical product. This is
-          the technical core of the epic: without normalisation the aggregates are noise, and
-          normalisation quality sets the ceiling on what the data is worth.
+          "MLEKO UHT 3,2% 1L" and "Mleko 3.2% 1l" have to become one canonical product across
+          users, as F16.1 already makes them one within a user. This is the technical core of the
+          epic: without normalisation the aggregates are noise, and normalisation quality sets the
+          ceiling on what the data is worth. The catalogue holds names and sizes only, nothing of
+          anyone's.
+        demo: >
+          Two test accounts each buy "MLEKO 2% 1L" in different shops; both products point to one
+          catalogue entry "mleko 2% 1 l".
+        tasks:
+          - key: F13.2.1
+            title: Shared catalogue and matching
+            labels: [backend, database]
+            detail: >
+              A catalogue table keyed like a product — words and size, without the user — each
+              user's product linked to one entry, matched by rule and, where unsure, by the model
+              as F16.1 matches lines; filled as products are matched and for those already there;
+              a merge or split (F16.1) moves the link; tests that no user id or receipt reaches
+              the catalogue.
       - key: F13.3
         title: Anonymisation and aggregation pipeline
         labels: [backend, database]
+        requirements: []
+        depends_on: [F13.1, F13.2]
         intent: >
           Pseudonymisation, deliberate coarsening of anything that narrows a person down, and
-          aggregation — producing output in which no basket can be traced back to a household.
+          aggregation — producing output in which no basket can be traced back to a household:
+          weekly price aggregates per catalogue entry and shop chain (median, lowest and highest
+          unit price, how many bought), from the purchases of users who opted in, recalculated
+          from scratch every night.
+        demo: >
+          Run the job on seeded data with twelve sharing accounts and read this week's price of
+          "mleko 2% 1 l" in Biedronka from twelve contributors.
+        tasks:
+          - key: F13.3.1
+            title: Aggregation job
+            labels: [backend]
+            detail: >
+              The weekly aggregates computed by the backend's image, runnable as a Cloud Run Job;
+              no timestamps finer than the week, no addresses finer than the shop chain, no user
+              ids in the output; unit prices per kg, l or piece as F16.2 compares them.
       - key: F13.4
         title: Minimum cohort thresholds
         labels: [security, backend]
+        requirements: []
+        depends_on: [F13.3]
         intent: >
           No figure is published for a cohort below a defined number of contributing users. A
           query that would breach the threshold returns nothing rather than a small-sample
           number, because a small sample is how anonymised data stops being anonymous.
+        demo: >
+          With nine sharing accounts buying a product, no aggregate for it exists; a tenth makes it
+          appear on the next run.
+        tasks:
+          - key: F13.4.1
+            title: The contributor threshold
+            labels: [security, backend]
+            detail: >
+              A setting, 10 by default, applied before anything is written; tests that an
+              aggregate under it is never written, by the job or by any query.
       - key: F13.5
         title: Separate analytics store
         labels: [database, infra]
+        requirements: []
+        depends_on: [F13.4, F0.9]
         intent: >
           Aggregates live outside the operational database, with no path from a business query
           back to a user's receipts. A boundary enforced by topology is worth more here than one
-          enforced by review.
+          enforced by review. The store is BigQuery in us-central1 within its free tier; the
+          aggregates are also copied back into a PostgreSQL table the product screens read.
+        demo: >
+          After a run, the BigQuery table holds the week's aggregates and nothing with a user in
+          it; the service account that writes it can write nothing else.
+        tasks:
+          - key: F13.5.1
+            title: Warehouse in Terraform
+            labels: [infra]
+            detail: >
+              A BigQuery dataset and table, the job and its nightly Cloud Scheduler trigger, a
+              service account allowed to write only there; an ADR for the warehouse, the threshold
+              and why the job is not yet a service of its own; docs/architecture/overview.md
+              updated.
       - key: F13.6
         title: Business insight API
         labels: [backend]
+        scope: out-of-scope
         intent: >
           Price and basket trends per product and category for business consumers, versioned and
-          metered, delivering only what the aggregation pipeline has already cleared.
+          metered, delivering only what the aggregation pipeline has already cleared. Waits for an
+          audience large enough to make the aggregates worth anything and for E18's legal work.
       - key: F13.7
         title: Transparency and deletion propagation
         labels: [security, backend]
         requirements: [N3, N6]
+        depends_on: [F13.3]
         intent: >
           A user can see what their data contributes, and withdrawing consent or deleting an
           account removes their contribution from future aggregates — the extension of N3 and N6
-          into a second data store.
+          into a second data store. Recalculating from scratch each night is what makes it so:
+          nothing of a user who stopped sharing survives the next run.
+        demo: >
+          Turn sharing off for three of twelve contributing accounts and run the job again: the
+          aggregate falls under the threshold and is gone from both stores.
+        tasks:
+          - key: F13.7.1
+            title: Withdrawal and deletion reach the warehouse
+            labels: [security, backend]
+            detail: >
+              Tests that a user who stopped sharing or deleted the account is in no aggregate
+              after the next run; Profile says how many of the week's published prices the user's
+              purchases are part of. Checked at 375, 768 and 1280 px.
+      - key: F13.8
+        title: Prices from everyone
+        labels: [backend, frontend]
+        requirements: []
+        depends_on: [F13.5, F16.3]
+        intent: >
+          A product's page shows what it costs across everyone this week and where it is cheapest,
+          beside what the user paid — for any product with enough contributors, and for any user,
+          sharing or not: the aggregates are anonymous. The cheaper-shop hint (F16.3) uses them
+          where the user's own receipts are too few.
+        demo: >
+          Open "mleko 2% 1 l": "Everyone this week: median 3.49 PLN, cheapest at Lidl (2.99)", next
+          to the user's own last price.
+        tasks:
+          - key: F13.8.1
+            title: Shared prices on the products screens
+            labels: [backend, frontend]
+            detail: >
+              The week's aggregate for each product with a catalogue entry in the products API;
+              the explore panel and the cheaper-shop hint showing it, in three languages, and
+              saying nothing where no aggregate is published. Checked at 375, 768 and 1280 px.
 
   - key: E14
     title: B2B Export & Accounting Integrations
@@ -2987,6 +3113,24 @@ epics:
   # ------------------------------------------------------- diploma: better than the market
   # Written from the competitor analysis: what no app on the Polish, Ukrainian or
   # global market does, or does well enough, and no planned epic already covered.
+      - key: F14.7
+        title: Sole traders and KSeF invoices
+        labels: [backend, frontend]
+        intent: >
+          A Polish sole trader (JDG) keeps the firm's costs apart from the household's: purchase
+          invoices fetched from KSeF, the national e-invoice system mandatory from 2026, with the
+          trader's NIP and authorisation token; receipts and invoices marked as a business cost;
+          VAT and the cost column of the revenue and expense ledger (KPiR) worked out per
+          document; a month's costs handed to the accountant or sent to iFirma, inFakt or wFirma.
+          The personal budget never counts a business cost, as business trips already are not.
+      - key: F14.8
+        title: Tax deductions from receipts
+        labels: [backend, ai]
+        intent: >
+          Purchases that lower personal income tax — medical and rehabilitation costs (ulga
+          rehabilitacyjna), internet, thermal modernisation — recognised from receipt lines and
+          gathered for the yearly PIT return, with the receipts that prove them kept past the
+          usual 90 days.
 
   - key: E15
     title: Receipt Accuracy & Trust
@@ -3762,21 +3906,25 @@ epics:
               calls to action by state. Checked at 375, 768 and 1280 px.
 
   - key: E19
-    title: Own Domain and Advertising
+    title: Advertising
     br: []
     phase: 2
-    scope: out-of-scope
+    scope: diploma
     groomed: true
     summary: >
-      Advertising is the free plan's way to pay for itself, but Google AdSense needs a domain the
-      service owns — ads.txt must sit at the root of the domain, which a web.app address does
-      not give — and a domain is bought only once analytics (F17.3) show real traffic. Out of
-      the diploma's scope until then; the diploma describes it as the first of the two ways the
-      service earns its keep, beside subscriptions (E18).
+      Advertising is how the free plan pays for itself. In the Android app (E22) it needs no
+      domain: AdMob ties ads to the app in Google Play, with app-ads.txt on the web.app site
+      the listing names. Free accounts see an unobtrusive banner, and once the month's ten
+      receipt reads are used up, can watch a rewarded ad for one more — a view earns more than
+      a read costs (about $0.005-0.02 against $0.001-0.005), and the user chooses it. Ads on
+      the website still need a domain of the service's own (AdSense wants ads.txt at a
+      domain's root), so F19.1 and F19.3 wait, out of the diploma's scope, for traffic. Taken
+      on with E22, after F17.7, whose consent covers ads.
     features:
       - key: F19.1
         title: The service's own domain
         labels: [infra]
+        scope: out-of-scope
         requirements: []
         depends_on: [F17.3]
         intent: >
@@ -3792,9 +3940,69 @@ epics:
               Point the domain at Firebase Hosting and the API at Cloud Run through Terraform,
               with managed certificates; redirect the web.app address; update CORS, Search
               Console (as a domain property) and the deployment documentation.
-      - key: F19.3
-        title: Advertising for accounts without a subscription
+      - key: F19.4
+        title: Ads in the Android app
         labels: [frontend, infra]
+        requirements: []
+        depends_on: [F22.2, F17.7]
+        intent: >
+          AdMob in the app for accounts without an ad-free plan: one banner of reserved size at
+          the foot of the dashboard and statistics, never in the upload flow, a dialog or a
+          form, shown only after the EEA consent Google's UMP SDK asks for (personalised or not,
+          as chosen). app-ads.txt is served from budget-agent.web.app, the site the Play listing
+          names.
+        demo: >
+          In the app on a free account, accept or refuse ad consent, then scroll the dashboard
+          to its foot: one banner that did not shift the page; none on an admin account.
+        tasks:
+          - key: F19.4.1
+            title: AdMob account, app-ads.txt and consent
+            labels: [infra]
+            detail: >
+              The AdMob account under the business, the app registered, app-ads.txt on Firebase
+              Hosting, the UMP consent form in three languages with the choice changeable from
+              Profile; the record of processing (ADR-0020) and /privacy updated for ads.
+          - key: F19.4.2
+            title: Banner placements
+            labels: [frontend]
+            detail: >
+              Reserved-size banner slots in the app only (never on the web build), hidden for
+              admins and ad-free plans, and a test that no slot appears in the upload flow or
+              any dialog. Checked on a phone and a tablet.
+      - key: F19.5
+        title: One more receipt for a rewarded ad
+        labels: [backend, frontend, security]
+        requirements: []
+        depends_on: [F19.4, F10.6]
+        intent: >
+          When the month's receipt reads are used up, the upload screen offers "Watch a short ad
+          for one more receipt" instead of only saying when the limit resets. The extra read is
+          granted by the server only when AdMob's server-side verification callback confirms the
+          ad was watched — signed by Google, checked against its public keys, each reward once
+          — so it cannot be claimed by calling the API. A daily cap keeps it bounded.
+        demo: >
+          On an account at its limit, press "Watch an ad for one more receipt", watch it, and
+          upload a receipt; the quota shows the extra read was used.
+        tasks:
+          - key: F19.5.1
+            title: Verified rewards in the quota
+            labels: [backend, security]
+            detail: >
+              A public SSV callback endpoint verifying Google's signature and refusing a
+              transaction id seen before; earned reads stored per account and day and counted by
+              the quota (F10.6) after the monthly ones; a daily cap as a setting; tests of a
+              forged, replayed and over-cap reward.
+          - key: F19.5.2
+            title: Rewarded ad on the upload screen
+            labels: [frontend]
+            detail: >
+              The offer at the limit in the app only, the rewarded ad loaded and shown, the
+              quota re-read after the reward; what the web build says instead. Checked on a phone
+              and a tablet.
+      - key: F19.3
+        title: Advertising on the website
+        labels: [frontend, infra]
+        scope: out-of-scope
         requirements: []
         depends_on: [F19.1, F17.7]
         intent: >
@@ -3819,6 +4027,7 @@ epics:
               Reserved-size ad slots on the landing page and at the foot of the dashboard and
               statistics, loaded after consent, hidden for an ad-free plan, and a test that no
               slot appears in the upload wizard or any dialog. Checked at 375, 768 and 1280 px.
+
 
   - key: E20
     title: Trips
@@ -4016,3 +4225,289 @@ epics:
               business trip; adding an expense without a receipt from the receipts list, the
               upload page and a trip's page, asked about a trip like the wizard asks. Checked at
               375, 768 and 1280 px.
+
+  - key: E21
+    title: Voice and Chat Assistant
+    br: []
+    phase: 2
+    scope: diploma
+    groomed: true
+    summary: >
+      After the Android app (E22) and its ads (E19), before E13. The agent the diploma is about, made something a user talks
+      to: they say or type what they want — "I spent 45 zloty on a taxi yesterday", "how much
+      did I spend on coffee in October?", "I want to save 3 000 for a holiday by June" — and the
+      assistant answers in a chat, showing what it understood as a card. Nothing is written until
+      the user presses Save on the card; a question is answered at once, since it changes
+      nothing. It grows step by step until everything a user can create or look up on the
+      screens can be done by voice — expenses, receipts' trips and categories, goals, questions
+      about spending, products and prices — but never settings, the account or anything that
+      deletes. The assistant acts only through the services the screens use, so ownership (N2),
+      quotas and every rule hold as they do; conversations and their cards are kept like any
+      other user data, exported and deleted with the account.
+    features:
+      - key: F21.1
+        title: Conversations and the chat screen
+        labels: [backend, frontend, database]
+        requirements: [N2, N6]
+        depends_on: [F17.9]
+        intent: >
+          A chat screen, reachable from the navigation on every screen, where the user writes and
+          the assistant answers; conversations kept and listed, newest first, each one reopened
+          where it was left. A message is the user's text, the assistant's text, or a card — a
+          proposed action with its fields and its state (proposed, saved, dismissed) and, once
+          saved, a link to what it created. Every question and every card is a model call,
+          counted against the account's quota like a receipt read.
+        demo: >
+          Open the assistant, ask "what can you do?", close the app, open it again: the
+          conversation is there and continues.
+        tasks:
+          - key: F21.1.1
+            title: Conversation and message storage
+            labels: [backend, database]
+            detail: >
+              Conversation and message tables owned by the user (ON DELETE CASCADE, so account
+              deletion and the full export of F17.9 take them with no extra code); a message's
+              kind, text and card as JSON with its state; endpoints to list, open and continue a
+              conversation; cross-user access tests (N2); rate limit and quota per message.
+          - key: F21.1.2
+            title: Assistant port and the tool protocol
+            labels: [backend, ai]
+            detail: >
+              An AssistantPort behind the LiteLLM agent (ADR-0006) taking the conversation and a
+              registry of tools, each a narrow function over an existing service: read tools run
+              at once, write tools only return a proposed card. A stub for tests; an ADR on why
+              writes go through user-approved cards and never straight from the model;
+              docs/architecture/overview.md and ADR-0020 (conversations and transcripts as
+              personal data, kept until deleted) updated.
+          - key: F21.1.3
+            title: Chat screen
+            labels: [frontend]
+            detail: >
+              The chat: messages, cards rendered by kind with Save and Dismiss, the conversation
+              list, a store owning it all; three languages. Checked at 375, 768 and 1280 px.
+      - key: F21.2
+        title: Speaking to the assistant
+        labels: [frontend, backend, ai]
+        requirements: []
+        depends_on: [F21.1]
+        intent: >
+          A microphone button beside the text field: the user speaks in Polish, Ukrainian or
+          English, the recording goes to the model, which understands audio directly, and the
+          words it heard appear as the user's message before the answer. The audio itself is
+          never stored, only what was understood.
+        demo: >
+          Hold the microphone and say "wczoraj taxi 45 złotych": the message "wczoraj taxi 45
+          złotych" appears, then the assistant's answer.
+        tasks:
+          - key: F21.2.1
+            title: Voice recording and transcription
+            labels: [frontend, backend, ai]
+            detail: >
+              Recording in the browser (MediaRecorder; the microphone permission asked for and a
+              refusal explained), a size and length limit, the audio sent to the model with the
+              conversation and discarded after; the transcript stored as the user's message.
+              Checked at 375, 768 and 1280 px and in the installed app on a phone.
+      - key: F21.3
+        title: Expenses by voice
+        labels: [backend, frontend, ai]
+        requirements: []
+        depends_on: [F21.2, F20.5]
+        intent: >
+          The first thing the assistant does: "I spent 45 zloty on a taxi yesterday" becomes a
+          card — description, amount, currency, date, category, trip if it falls in one — that
+          the user corrects in place and saves as an expense without a receipt (F20.5), or
+          dismisses. Several expenses in one sentence become several cards.
+        demo: >
+          Say "yesterday taxi 45, coffee 12": two cards appear; change the coffee's category,
+          press Save on both; both are on the receipts list and in the month's total.
+        tasks:
+          - key: F21.3.1
+            title: Expense tool and card
+            labels: [backend, frontend, ai]
+            detail: >
+              A write tool proposing manual expenses, dates resolved against the user's today and
+              timezone, the category from the user's categories; the card's fields editable before
+              Save; saving through the manual expense service, the card then linked to the
+              receipt; tests that nothing is stored before Save and that another user's category
+              or trip is never offered (N2). Checked at 375, 768 and 1280 px.
+      - key: F21.4
+        title: Questions about spending
+        labels: [backend, frontend, ai]
+        requirements: []
+        depends_on: [F21.1]
+        intent: >
+          "How much did I spend on coffee in October?", "where do I buy milk cheapest?", "what
+          did I spend in Lidl this month?" — answered from the same queries the statistics,
+          receipts and products screens use, as text and, where a figure is clearer drawn, a
+          small chart card, with a link to the screen that shows it in full.
+        demo: >
+          Ask "how much did I spend on groceries this month compared to last?": the answer with
+          both sums, the change, and a link to Statistics for those two months.
+        tasks:
+          - key: F21.4.1
+            title: Read tools over statistics, receipts and products
+            labels: [backend, ai]
+            detail: >
+              Read tools for category totals over a period, receipts by shop, text and period,
+              and a product's prices and shops (F16.2-3); answers in the user's language and
+              currency; tests that a tool only ever reads the caller's data (N2).
+          - key: F21.4.2
+            title: Answer and chart cards
+            labels: [frontend]
+            detail: >
+              A chart card for totals over time or by category, and a link card to the screen with
+              the same filters. Checked at 375, 768 and 1280 px.
+      - key: F21.5
+        title: Goals by voice
+        labels: [backend, frontend, ai]
+        requirements: []
+        depends_on: [F21.3]
+        intent: >
+          "I want to save 3 000 for a holiday by June", "spend less on eating out" — a goal card
+          with its type, target and date, saved through the goals service so its mapping and
+          advice follow as from the goals screen; "how am I doing with my holiday goal?" answered
+          from its progress.
+        demo: >
+          Say "I want to stop spending more than 400 a month on restaurants": a spending-ceiling
+          goal card; Save; it is on the goals screen with its categories mapped.
+        tasks:
+          - key: F21.5.1
+            title: Goal tools and card
+            labels: [backend, frontend, ai]
+            detail: >
+              A write tool proposing a goal and a read tool for goal progress; the card editable
+              before Save; saving through the goal service (F8.1-F8.2). Checked at 375, 768 and
+              1280 px.
+      - key: F21.6
+        title: Receipts, trips and products by voice
+        labels: [backend, frontend, ai]
+        requirements: []
+        depends_on: [F21.4, F21.5]
+        intent: >
+          The rest of what the screens create or change about the user's purchases, never
+          settings, the account or a deletion: put a receipt on a trip or take it off, change a
+          line's category, start a trip, save a selection of products to watch — each as a card
+          saved by the user. The assistant says plainly what it cannot do and where on the screen
+          it is done instead.
+        demo: >
+          Say "the Żabka receipt from Monday was on the Berlin trip": a card naming the receipt and
+          the trip; Save; the receipt is on the trip.
+        tasks:
+          - key: F21.6.1
+            title: Remaining write tools
+            labels: [backend, frontend, ai]
+            detail: >
+              Write tools for a receipt's trip, a line's category, a new trip and a product
+              selection, each a card saved through its service; a test that no tool exists for
+              settings, the account or deleting anything. Checked at 375, 768 and 1280 px.
+
+  - key: E22
+    title: Android App
+    br: []
+    phase: 2
+    scope: diploma
+    groomed: true
+    summary: >
+      The service in Google Play, where advertising needs no domain (E19) and a phone's camera,
+      haptics and share sheet are at hand. The app is the existing web client wrapped in
+      Capacitor — one codebase, the same API in the cloud — with one platform module the rest
+      of the client asks what the device can do, so a feature checks "is there a camera, can it
+      vibrate, was a file shared in" in one place and the web build keeps working unchanged.
+      Published under the business's developer account, registered as an organisation with a
+      D-U-N-S number (which spares the closed test with twelve testers a personal account
+      needs), with a support mailbox of its own as the public contact. Built, signed and
+      released by GitHub Actions after the first upload by hand. Next after F17.7, before E19's
+      in-app ads and E21.
+    features:
+      - key: F22.1
+        title: Developer account and store listing
+        labels: [infra, docs]
+        requirements: []
+        depends_on: [F17.7, F17.9, F17.10]
+        intent: >
+          A Google Play developer account for the JDG as an organisation (D-U-N-S number asked
+          for early: it takes days), a dedicated support mailbox as the public contact, and the
+          listing: name, descriptions and screenshots in three languages, icon, content rating,
+          the privacy policy's address, the Data safety form answered from ADR-0020, and the
+          account deletion address Google asks for (F17.9.1).
+        demo: >
+          Open the listing in Play: descriptions in Polish, Ukrainian and English, the support
+          address, the privacy policy link opening /privacy, and the Data safety section.
+        tasks:
+          - key: F22.1.1
+            title: Account, listing and Data safety
+            labels: [docs]
+            detail: >
+              The steps and answers recorded in docs/ (what each Data safety question was
+              answered and why, from ADR-0020), the listing texts in three languages kept in the
+              repository, screenshots at phone and tablet sizes; an ADR for the organisation
+              account, D-U-N-S and what the listing publishes about the business.
+          - key: F22.1.2
+            title: The support mailbox in the service
+            labels: [backend, frontend]
+            detail: >
+              A support_email setting the contact form (F17.10.2) mails instead of admin_emails,
+              named on the Help page and in the privacy policy; Terraform and the deployment
+              documentation updated.
+      - key: F22.2
+        title: The app on the phone
+        labels: [frontend, infra]
+        requirements: []
+        depends_on: [F22.1]
+        intent: >
+          The client built into an Android app with Capacitor: the API's address and the app's
+          origin in CORS, Android's back button moving back through the screens, the status bar
+          and splash in the service's colours, the offline page, and links from letters
+          (confirming an address, resetting a password) opening the app through Android App
+          Links (assetlinks.json on Firebase Hosting). Everything that differs on a device goes
+          through one platform module, so screens never ask "am I in the app".
+        demo: >
+          Install the app, sign in, follow the confirmation link from the letter on the same
+          phone and land in the app with the address confirmed; press back through three
+          screens.
+        tasks:
+          - key: F22.2.1
+            title: Capacitor project and the platform module
+            labels: [frontend, infra]
+            detail: >
+              The Android project from the existing build, the platform module (web and native
+              implementations behind one interface, tested with both), CORS for the app's
+              origin, the back button, status bar, splash and App Links; the architecture
+              overview updated. Checked on a phone and a tablet.
+          - key: F22.2.2
+            title: Camera, haptics and sharing a receipt in
+            labels: [frontend]
+            detail: >
+              The native camera for receipts, a short vibration when a receipt is read or saved,
+              and "Share → Budget Agent" for images and PDFs from other apps opening the upload
+              flow with them — each behind the platform module, the web build unchanged.
+      - key: F22.3
+        title: Building and releasing the app
+        labels: [infra]
+        requirements: []
+        depends_on: [F22.2]
+        intent: >
+          After the first upload by hand, every merge to main builds a signed app bundle and
+          puts it on Play's internal track; promoting a build to production is one manual run
+          of the same workflow. No key file anywhere: GitHub signs in to Google through Workload
+          Identity Federation, as the Cloud Run deploy does, as a service account added to the
+          Play Console; the upload key lives in GitHub's secrets, Google holding the app signing
+          key (Play App Signing).
+        demo: >
+          Merge a change to main and find the new version on the internal track a few minutes
+          later; promote it to production from the Actions tab.
+        tasks:
+          - key: F22.3.1
+            title: Release identity in Terraform
+            labels: [infra]
+            detail: >
+              The publishing service account and its Workload Identity binding for the
+              repository, in infra/terraform; the steps to add it to the Play Console and to
+              store the upload key in GitHub documented.
+          - key: F22.3.2
+            title: Build and release workflow
+            labels: [infra]
+            detail: >
+              A GitHub Actions workflow building the web client and the signed AAB (versionCode
+              from the run number), uploading it to the internal track on merge to main and to
+              production on a manual run; the release documentation updated.

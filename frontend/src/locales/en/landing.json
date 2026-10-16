@@ -173,5 +173,11 @@
     "title": "Start with one receipt",
     "text": "It takes a photo and a minute."
   },
-  "languages": "Also in"
+  "languages": "Also in",
+  "footer": {
+    "help": "Help",
+    "privacy": "Privacy policy",
+    "terms": "Terms of use",
+    "label": "About the service"
+  }
 }

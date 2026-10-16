@@ -19,6 +19,7 @@ locals {
     INBOUND_EMAIL_DOMAIN       = "${var.project_id}.appspotmail.com"
     CORS_ORIGINS               = jsonencode(local.frontend_origins)
     ADMIN_EMAILS               = jsonencode(var.admin_emails)
+    SUPPORT_EMAIL              = var.support_email
     MONTHLY_RECEIPT_QUOTA      = tostring(var.monthly_receipt_quota)
     DAILY_RECEIPT_READ_CEILING = tostring(var.daily_receipt_read_ceiling)
   }

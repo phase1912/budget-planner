@@ -63,7 +63,9 @@ Mail goes out the same way in reverse (F17.8, ADR-0019): services write a `Lette
 `EmailSenderPort` in a background task, retrying. In production the adapter posts it to
 the App Engine relay's `/send`, which calls the Mail API; locally it is written to the
 log. Links in letters are signed tokens bound to the state they change
-(`AccountService`), so they work once and are never accepted as a session.
+(`AccountService`), so they work once and are never accepted as a session. The Help page's
+contact form (F17.10) goes out the same way, to the support mailbox (F22.1.2) with the sender as
+Reply-To, so no address is published and the service keeps nothing of it.
 
 The user's data rights (F17.9, ADR-0020) lean on the schema rather than on lists kept by
 hand: deleting an account deletes the user row and every table cascades from it
