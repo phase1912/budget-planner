@@ -22,6 +22,8 @@ os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
 os.environ["S3_ENDPOINT_URL"] = "http://localhost:9000"
 # Foreign receipts are converted only where a test injects a stub rate source (F11.7).
 os.environ["EXCHANGE_RATE_SOURCE"] = "off"
+# Addresses are checked against the kept list only: no DNS lookups (F17.8.4).
+os.environ["EMAIL_DOMAIN_DNS_CHECK"] = "false"
 import pytest_asyncio
 from alembic.config import Config
 from sqlalchemy import text

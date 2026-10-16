@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Path, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import rate_limit
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_confirmed_user, get_current_user
 from app.api.periods import required_period
 from app.api.rate_limit import limiter
 from app.db.session import get_db_session
@@ -46,6 +46,8 @@ def get_household_service(
 
 Service = Annotated[HouseholdService, Depends(get_household_service)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
+# Inviting others waits until the address is confirmed (F17.8.2).
+ConfirmedUser = Annotated[User, Depends(get_confirmed_user)]
 
 
 def _read(household: Household, user: User) -> HouseholdRead:
@@ -80,9 +82,12 @@ async def get_my_household(current_user: CurrentUser, service: Service) -> House
 
 @router.post("", response_model=HouseholdRead, status_code=status.HTTP_201_CREATED)
 async def create_household(
-    request: HouseholdName, current_user: CurrentUser, service: Service
+    request: HouseholdName, current_user: ConfirmedUser, service: Service
 ) -> HouseholdRead:
-    """Start a household owned by the caller; 409 if they already belong to one."""
+    """Start a household owned by the caller; 409 if they already belong to one.
+
+    403 email_not_confirmed until the caller's address is confirmed: an owner invites.
+    """
     return _read(await service.create(current_user, request.name), current_user)
 
 
@@ -109,7 +114,7 @@ async def remove_member(
 
 
 @router.post("/invite/regenerate", response_model=HouseholdRead)
-async def regenerate_invite(current_user: CurrentUser, service: Service) -> HouseholdRead:
+async def regenerate_invite(current_user: ConfirmedUser, service: Service) -> HouseholdRead:
     """A new invite link for the household; the old one stops working (owner only)."""
     return _read(await service.regenerate_invite(current_user), current_user)
 

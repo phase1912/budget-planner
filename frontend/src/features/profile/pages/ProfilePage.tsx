@@ -11,14 +11,16 @@ import { ReceiptUsageCard } from "../components/ReceiptUsageCard";
 import { InstallAppCard } from "@/features/install/InstallAppCard";
 import { LanguageCard } from "../components/LanguageCard";
 import { ReadingAccuracyCard } from "../components/ReadingAccuracyCard";
+import { ChangeEmailDialog } from "../components/ChangeEmailDialog";
 import { useTranslation } from "react-i18next";
 
 export const ProfilePage = observer(function ProfilePage() {
-  const { authStore, profileStore, quotaStore } = useStores();
+  const { authStore, profileStore, quotaStore, accountStore } = useStores();
   const { t } = useTranslation("profile");
 
   const [currency, setCurrency] = useState("USD");
   const [budgetLimit, setBudgetLimit] = useState("");
+  const [changingEmail, setChangingEmail] = useState(false);
 
   const originalCurrency = authStore.user?.currency ?? "USD";
   const originalBudgetLimit = authStore.user?.budget_limit?.toString() ?? "";
@@ -165,9 +167,24 @@ export const ProfilePage = observer(function ProfilePage() {
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 md:gap-8">
               <div className="flex flex-col gap-1 w-full max-w-md">
                 <span className="font-semibold text-lg text-foreground">{t("account.email")}</span>
-                <span className="text-md text-muted-foreground">{authStore.user?.email}</span>
+                <span className="break-all text-md text-muted-foreground">
+                  {authStore.user?.email}
+                </span>
+                {accountStore.mustConfirm && (
+                  <span className="text-base text-tone-warning-text">
+                    {t("account.unconfirmed")}
+                  </span>
+                )}
               </div>
-              <Button type="button" variant="secondary" disabled className="w-full md:w-auto">
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full md:w-auto"
+                onClick={() => {
+                  accountStore.reset();
+                  setChangingEmail(true);
+                }}
+              >
                 {t("account.change")}
               </Button>
             </div>
@@ -218,6 +235,14 @@ export const ProfilePage = observer(function ProfilePage() {
           </Button>
         </div>
       </form>
+      {/* Outside the preferences form: a form nested in a form would submit the page. */}
+      {changingEmail && (
+        <ChangeEmailDialog
+          onClose={() => {
+            setChangingEmail(false);
+          }}
+        />
+      )}
     </div>
   );
 });

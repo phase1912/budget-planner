@@ -69,6 +69,12 @@ export const LoginPage = observer(() => {
             }}
             required
           />
+          <Link
+            to="/forgot-password"
+            className="-mt-2 self-end text-base text-primary hover:underline"
+          >
+            {t("login.forgot")}
+          </Link>
 
           <Button type="submit" size="lg" disabled={authStore.authState.isLoading} className="mt-2">
             {authStore.authState.isLoading ? t("login.submitting") : t("login.submit")}

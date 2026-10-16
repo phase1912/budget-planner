@@ -22,6 +22,7 @@ class UserResponse(BaseModel):
     currency: str
     budget_limit: Decimal | None = None
     language: Language | None = None
+    email_confirmed: bool = False
     forwarding_token: str = Field(exclude=True)
 
     model_config = ConfigDict(from_attributes=True)
@@ -40,6 +41,13 @@ class UserUpdateRequest(BaseModel):
     # Spend is shown as a share of it (D7), so zero or less is not a limit; null removes it.
     budget_limit: Decimal | None = Field(None, gt=0, max_digits=12, decimal_places=2)
     language: Language | None = None
+
+
+class EmailChangeRequest(BaseModel):
+    """Payload for moving the account to another address (F17.8.3); needs the password."""
+
+    email: EmailStr
+    password: str
 
 
 class ReceiptQuotaRead(BaseModel):

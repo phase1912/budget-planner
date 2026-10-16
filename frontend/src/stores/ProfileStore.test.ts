@@ -25,6 +25,7 @@ describe("ProfileStore", () => {
       currency: "USD",
       budget_limit: null,
       forwarding_address: "receipts-test@example.com",
+      email_confirmed: true,
     };
 
     toastStore = new ToastStore();

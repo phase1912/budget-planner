@@ -6,6 +6,7 @@ import { Button, Input, Card, Note } from "@/shared/components";
 import { PasswordChecklist } from "../components/PasswordChecklist";
 import { passwordIsValid } from "../passwordRules";
 import { useTranslation } from "react-i18next";
+import { screenLanguage } from "@/i18n/languages";
 
 export const RegisterPage = observer(() => {
   const { authStore, serverStore } = useStores();
@@ -13,7 +14,7 @@ export const RegisterPage = observer(() => {
   React.useEffect(() => {
     serverStore.wake();
   }, [serverStore]);
-  const { t } = useTranslation("auth");
+  const { t, i18n } = useTranslation("auth");
   const navigate = useNavigate();
   const location = useLocation();
   // Where the visitor was going before being asked to sign in — an invite link (F12.3).
@@ -40,6 +41,8 @@ export const RegisterPage = observer(() => {
       password,
       first_name: firstName,
       last_name: lastName,
+      // The confirmation letter is written in the language of this screen (F17.8.1).
+      language: screenLanguage(i18n.language),
     });
     if (success) {
       await navigate(from, { replace: true });

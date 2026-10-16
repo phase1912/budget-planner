@@ -5,6 +5,7 @@ import { useStores } from "@/stores/StoreContext";
 import { BottomNavigation } from "./BottomNavigation";
 import { Header } from "./Header";
 import { ServerWakingNotice } from "./ServerWakingNotice";
+import { ConfirmEmailBanner } from "./ConfirmEmailBanner";
 import { ToastContainer } from "@/shared/components/Toast/Toast";
 
 /**
@@ -26,6 +27,7 @@ export const AppShell = observer(() => {
         className={`flex-grow overflow-clip flex flex-col md:p-8 ${withBottomBar ? "pb-24" : ""}`}
       >
         <Container className="flex-grow flex flex-col">
+          <ConfirmEmailBanner />
           <Outlet />
         </Container>
       </main>

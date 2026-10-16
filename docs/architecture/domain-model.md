@@ -432,6 +432,18 @@ Rules that must hold at all times. Each is a candidate for a test.
 20. Refresh tokens rotate on use; presenting one already exchanged revokes every token
     issued from that session (G5, G6). A session left unused ends 30 days after its last
     refresh; however often it is used, it ends 90 days after sign-in.
+20a. An account opens unconfirmed and stays so until its owner follows the link mailed
+    to the address (F17.8.2). Until then it may look around and type in expenses, but
+    not upload receipts, have forwarded receipts read, or start or invite to a household.
+    Accounts that existed before confirmation were marked confirmed.
+20b. Throwaway addresses (the list in `app/domain/disposable_email_domains.txt`, any
+    subdomain of one included) and domains DNS says receive no mail cannot open an
+    account or become an account's address; when DNS cannot be asked, the address is
+    accepted (F17.8.4).
+20c. A password reset link works for one hour and once, and is asked for with an answer
+    that never tells whether the address has an account. Setting the password ends every
+    session of the account and confirms its address. A new address takes effect only
+    when the link sent to it is followed; the old address is then told (F17.8.3).
 21. An OIDC identity links to an existing account only when the provider reports a
     verified email matching it; an unverified email never links automatically (G10, G11).
 

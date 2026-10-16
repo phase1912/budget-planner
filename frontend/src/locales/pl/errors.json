@@ -43,5 +43,10 @@
   "per_diem_times": "Te godziny nie tworzą podróży: powrót musi być po wyjeździe, a czas za granicą mieścić się w podróży.",
   "per_diem_no_rates": "Stawki diet są dostępne dla podróży od {{start_on}}.",
   "per_diem_personal_trip": "Dieta przysługuje tylko za podróż służbową.",
-  "invalid_export": "Ten eksport nie ma takiego formatu."
+  "invalid_export": "Ten eksport nie ma takiego formatu.",
+  "email_not_confirmed": "Najpierw potwierdź adres e-mail: wysłaliśmy Ci link.",
+  "disposable_email": "Adresem z tymczasowej poczty nie można założyć konta.",
+  "email_domain_unreachable": "Na {{domain}} nie da się dostarczyć poczty: sprawdź, czy w adresie nie ma literówki.",
+  "email_taken": "Tego adresu nie można użyć dla konta.",
+  "link_invalid": "Link wygasł lub został już użyty."
 }

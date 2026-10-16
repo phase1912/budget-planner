@@ -18,6 +18,7 @@ describe("ForwardingAddressCard", () => {
       currency: "USD",
       budget_limit: null,
       forwarding_address: "receipts-ab12@inbound.test",
+      email_confirmed: true,
     };
   });
 

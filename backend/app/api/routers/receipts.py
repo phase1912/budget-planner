@@ -15,6 +15,7 @@ from app.adapters.vision_agent import VisionAgentAdapter
 from app.agent.factory import agent_from_settings
 from app.api import rate_limit
 from app.api.dependencies import (
+    get_confirmed_user,
     get_current_user,
     get_exchange_rates,
     get_quota_service,
@@ -147,7 +148,7 @@ async def upload_receipt(
     request: Request,
     files: list[UploadFile],
     background_tasks: BackgroundTasks,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_confirmed_user)],
     receipt_service: Annotated[ReceiptService, Depends(get_receipt_service)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
     quota: Annotated[QuotaService, Depends(get_quota_service)],
@@ -223,7 +224,7 @@ async def upload_receipt(
 async def upload_receipts_batch(
     request: Request,
     background_tasks: BackgroundTasks,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_confirmed_user)],
     receipt_service: Annotated[ReceiptService, Depends(get_receipt_service)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
     quota: Annotated[QuotaService, Depends(get_quota_service)],

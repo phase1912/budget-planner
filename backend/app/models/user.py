@@ -1,8 +1,9 @@
 """User entity (F1.1.1)."""
 
+from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import Numeric, String
+from sqlalchemy import DateTime, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.domain.email_intake import new_forwarding_token
@@ -22,6 +23,10 @@ class User(Model):
     first_name: Mapped[str] = mapped_column(String(50), nullable=False)
     last_name: Mapped[str] = mapped_column(String(50), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    # When the owner proved the address is theirs (F17.8.2); None until then.
+    email_confirmed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     currency: Mapped[str] = mapped_column(
         String(3), default="USD", server_default="USD", nullable=False
@@ -37,3 +42,8 @@ class User(Model):
     forwarding_token: Mapped[str] = mapped_column(
         String(32), unique=True, default=new_forwarding_token, nullable=False
     )
+
+    @property
+    def email_confirmed(self) -> bool:
+        """Whether the owner has proved the address is theirs (F17.8.2)."""
+        return self.email_confirmed_at is not None

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
 
-from app.schemas.user import UserResponse
+from app.schemas.user import Language, UserResponse
 
 
 class RegisterRequest(BaseModel):
@@ -10,6 +10,8 @@ class RegisterRequest(BaseModel):
     password: str
     first_name: str
     last_name: str
+    # The language the sign-up screen was in: the confirmation letter is written in it.
+    language: Language | None = None
 
 
 class LoginRequest(BaseModel):
@@ -37,3 +39,23 @@ class MessageResponse(BaseModel):
     """Generic message response."""
 
     message: str
+
+
+class LinkRequest(BaseModel):
+    """The token a link from a letter carries (F17.8)."""
+
+    token: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    """Payload for asking for a password reset letter (F17.8.3)."""
+
+    email: EmailStr
+    language: Language | None = None
+
+
+class ResetPasswordRequest(BaseModel):
+    """Payload for setting a new password from a reset link (F17.8.3)."""
+
+    token: str
+    password: str

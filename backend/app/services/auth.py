@@ -20,6 +20,7 @@ from app.models.user import User
 from app.repository.user import UserRepository
 from app.schemas.auth import LoginRequest, RefreshRequest, RegisterRequest
 from app.schemas.user import UserResponse
+from app.services.account import EmailAddressGuard
 
 
 class AuthService:
@@ -49,12 +50,21 @@ class AuthService:
 
         return access_token, refresh_token_str
 
-    async def register(self, request: RegisterRequest) -> tuple[UserResponse, str, str]:
+    async def register(
+        self, request: RegisterRequest, guard: EmailAddressGuard | None = None
+    ) -> tuple[UserResponse, str, str]:
+        """Open an account, unconfirmed until its owner follows the emailed link (F17.8.2).
+
+        `guard` refuses throwaway and undeliverable addresses with their own codes
+        (F17.8.4); a taken address stays a generic refusal (G2).
+        """
         problems = password_problems(request.password)
         if problems:
             raise RegistrationError(
                 f"The password needs {', '.join(problems)}.", code=ProblemCode.WEAK_PASSWORD
             )
+        if guard is not None:
+            await guard.check(request.email)
 
         existing_user = await self.repo.get_by_email(request.email)
         if existing_user:

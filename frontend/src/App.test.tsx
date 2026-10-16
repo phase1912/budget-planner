@@ -6,6 +6,7 @@ import { App } from "./App";
 vi.mock("@/stores/StoreContext", () => ({
   useStores: () => ({
     serverStore: { isWaking: false, wake: () => undefined },
+    accountStore: { mustConfirm: false, state: { isLoading: false } },
     authStore: {
       isAuthenticated: false,
     },

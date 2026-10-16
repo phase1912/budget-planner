@@ -17,7 +17,17 @@
     "change": "Zmień",
     "sessions": "Aktywne sesje",
     "sessionsHint": "Wylogowanie wszędzie unieważnia wszystkie sesje, łącznie z tą.",
-    "signOutEverywhere": "Wyloguj wszędzie"
+    "signOutEverywhere": "Wyloguj wszędzie",
+    "unconfirmed": "Jeszcze niepotwierdzony",
+    "changeTitle": "Zmiana adresu e-mail",
+    "changeHint": "Wyślemy link na nowy adres. Konto przejdzie na niego dopiero, gdy go otworzysz.",
+    "newEmail": "Nowy adres",
+    "password": "Obecne hasło",
+    "send": "Wyślij link",
+    "sending": "Wysyłamy…",
+    "sent": "Sprawdź {{email}}: otwórz link z wiadomości, aby dokończyć zmianę.",
+    "cancel": "Anuluj",
+    "close": "Zamknij"
   },
   "discard": "Odrzuć",
   "saving": "Zapisujemy…",

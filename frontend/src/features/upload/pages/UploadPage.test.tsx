@@ -30,6 +30,28 @@ const QUOTA: ReceiptQuota = {
 };
 
 describe("UploadPage", () => {
+  it("explains that adding receipts waits for the address to be confirmed (F17.8.2)", () => {
+    const mockStores = {
+      uploadStore: new UploadStore({ POST: vi.fn() } as unknown as ApiClient),
+      quotaStore: quotaStore(),
+      tripsStore: TRIPS,
+      accountStore: { mustConfirm: true, state: { isLoading: false } },
+      authStore: { user: { email: "new@example.com" } },
+    } as unknown as RootStore;
+
+    render(
+      <StoreProvider store={mockStores}>
+        <MemoryRouter>
+          <UploadPage />
+        </MemoryRouter>
+      </StoreProvider>,
+    );
+
+    expect(screen.getByText("Confirm your address to add receipts")).toBeInTheDocument();
+    expect(screen.getByText(/We sent a link to new@example.com/)).toBeInTheDocument();
+    expect(screen.queryByText("Add a receipt")).not.toBeInTheDocument();
+  });
+
   it("renders the upload button in idle state", () => {
     const mockApi = { POST: vi.fn() };
     const uploadStore = new UploadStore(mockApi as unknown as ApiClient);
@@ -38,6 +60,7 @@ describe("UploadPage", () => {
       uploadStore,
       quotaStore: quotaStore(),
       tripsStore: TRIPS,
+      accountStore: { mustConfirm: false },
     } as unknown as RootStore;
 
     render(
@@ -62,6 +85,7 @@ describe("UploadPage", () => {
       uploadStore,
       quotaStore: quotaStore(),
       tripsStore: TRIPS,
+      accountStore: { mustConfirm: false },
     } as unknown as RootStore;
 
     render(
@@ -85,6 +109,7 @@ describe("UploadPage", () => {
       uploadStore,
       quotaStore: quotaStore(quota),
       tripsStore: TRIPS,
+      accountStore: { mustConfirm: false },
     } as unknown as RootStore;
     render(
       <StoreProvider store={stores}>

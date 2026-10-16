@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 
 from polyfactory import Use
 
@@ -17,3 +18,5 @@ class UserFactory(ModelFactory[User]):
     role = "user"
     # Not chosen, as on a new account, unless a test about languages says otherwise (F9.9).
     language = None
+    # Confirmed, as every account before F17.8 is; a test about confirmation says otherwise.
+    email_confirmed_at = Use(lambda: datetime.now(UTC))

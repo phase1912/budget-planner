@@ -210,6 +210,28 @@ class Settings(BaseSettings):
             "the intake endpoint answers 404: no deployment accepts mail by accident."
         ),
     )
+    app_url: str | None = Field(
+        default=None,
+        description=(
+            "Where the web app is opened, for links in letters (F17.8); unset, the first "
+            "CORS origin, which is the app's own address in every deployment."
+        ),
+    )
+    outgoing_mail: Literal["log", "appengine"] | None = Field(
+        default=None,
+        description=(
+            "How letters go out (F17.8, ADR-0019): `appengine` through the mail relay's send "
+            "endpoint, `log` written to the log for local work. Unset, `appengine` wherever "
+            "inbound mail is App Engine's, else `log`."
+        ),
+    )
+    email_domain_dns_check: bool = Field(
+        default=True,
+        description=(
+            "Ask DNS whether an address's domain receives mail before accepting it "
+            "(F17.8.4); off in tests, which never touch the network."
+        ),
+    )
     inbound_email_max_bytes: int = Field(
         default=10 * 1024 * 1024,
         ge=1,
@@ -330,6 +352,27 @@ class Settings(BaseSettings):
                 "in staging or production environments."
             )
         return self
+
+    @property
+    def link_base(self) -> str:
+        """The web app's address that links in letters open (F17.8)."""
+        return (self.app_url or self.cors_origins[0]).rstrip("/")
+
+    @property
+    def mail_relay_send_url(self) -> str | None:
+        """The App Engine relay's send endpoint, when letters go out through it (ADR-0019).
+
+        Derived from the inbound domain `<project>.appspotmail.com`, so the deployment
+        needs no setting of its own: the same App Engine app receives and sends.
+        """
+        appspot = ".appspotmail.com"
+        sending = self.outgoing_mail or (
+            "appengine" if self.inbound_email_domain.endswith(appspot) else "log"
+        )
+        if sending != "appengine":
+            return None
+        project = self.inbound_email_domain.removesuffix(appspot)
+        return f"https://{project}.appspot.com/send"
 
 
 @lru_cache
