@@ -74,6 +74,11 @@ class ProblemCode(enum.StrEnum):
     PER_DIEM_NO_RATES = "per_diem_no_rates"
     PER_DIEM_PERSONAL_TRIP = "per_diem_personal_trip"
     INVALID_EXPORT = "invalid_export"
+    EMAIL_NOT_CONFIRMED = "email_not_confirmed"
+    DISPOSABLE_EMAIL = "disposable_email"
+    EMAIL_DOMAIN_UNREACHABLE = "email_domain_unreachable"
+    EMAIL_TAKEN = "email_taken"
+    LINK_INVALID = "link_invalid"
 
 
 class ProblemDetail(BaseModel):
@@ -228,6 +233,30 @@ class ReceiptQuotaExceededError(AppError):
     status_code = status.HTTP_429_TOO_MANY_REQUESTS
     code = ProblemCode.QUOTA_EXCEEDED
     title = "Monthly Receipt Limit Reached"
+
+
+class EmailNotConfirmedError(AppError):
+    """The account's address is not confirmed yet, so this action waits (F17.8.2)."""
+
+    status_code = status.HTTP_403_FORBIDDEN
+    code = ProblemCode.EMAIL_NOT_CONFIRMED
+    title = "Email Not Confirmed"
+
+
+class EmailRefusedError(AppError):
+    """An address an account cannot use: throwaway, undeliverable or taken (F17.8.3-4)."""
+
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = ProblemCode.DISPOSABLE_EMAIL
+    title = "Email Address Refused"
+
+
+class InvalidLinkError(AppError):
+    """A link from a letter that is expired, already used or not one of ours (F17.8)."""
+
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = ProblemCode.LINK_INVALID
+    title = "Link No Longer Valid"
 
 
 class ServiceBusyError(AppError):

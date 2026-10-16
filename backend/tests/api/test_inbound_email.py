@@ -321,3 +321,17 @@ def _without_date(parse: Any) -> Any:
         return reading.model_copy(update={"transaction_date": None})
 
     return parse_without_date
+
+
+@pytest.mark.asyncio
+async def test_mail_to_an_unconfirmed_account_is_dropped_unread(db_session: AsyncSession) -> None:
+    """Forwarding receipts waits until the address is confirmed (F17.8.2)."""
+    owner = await UserFactory.create_async(email="new@example.com", email_confirmed_at=None)
+    parser = StubParser()
+
+    response = await _deliver(
+        db_session, _address(owner), _message("new@example.com", html="<p>x</p>"), parser=parser
+    )
+
+    assert response.json() == {"status": "dropped", "reason": "unconfirmed"}
+    assert (await _receipts(db_session, owner), parser.read) == ([], [])

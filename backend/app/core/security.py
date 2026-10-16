@@ -1,5 +1,6 @@
 """Security utilities for password hashing and basic tokens (F1.1.2)."""
 
+import hashlib
 import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -66,3 +67,33 @@ def create_access_token(subject: str | Any, expires_delta: timedelta | None = No
 def create_refresh_token() -> str:
     """Create a random refresh token string (F1.2.2)."""
     return secrets.token_urlsafe(32)
+
+
+def create_link_token(purpose: str, subject: str, ttl: timedelta, **claims: str) -> str:
+    """Sign a link a letter carries: what it is for, whose it is, until when (F17.8).
+
+    `claims` bind the link to the account's state when it was sent — the address, a
+    fingerprint of the password — so it stops working once that state changes, which
+    is what makes it single-use without a table of spent links.
+    """
+    settings = get_settings()
+    now = datetime.now(UTC)
+    payload = {"purpose": purpose, "sub": subject, "iat": now, "exp": now + ttl, **claims}
+    return jwt.encode(payload, settings.jwt_secret_key.get_secret_value(), algorithm="HS256")
+
+
+def read_link_token(token: str, purpose: str) -> dict[str, Any] | None:
+    """The claims of a valid, unexpired link made for `purpose`, else None."""
+    settings = get_settings()
+    try:
+        payload: dict[str, Any] = jwt.decode(
+            token, settings.jwt_secret_key.get_secret_value(), algorithms=["HS256"]
+        )
+    except jwt.InvalidTokenError:
+        return None
+    return payload if payload.get("purpose") == purpose else None
+
+
+def fingerprint(secret: str) -> str:
+    """A short, one-way digest of a stored secret, to bind a link to its current value."""
+    return hashlib.sha256(secret.encode("utf-8")).hexdigest()[:16]

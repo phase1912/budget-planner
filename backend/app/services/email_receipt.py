@@ -25,6 +25,7 @@ class Refusal(enum.StrEnum):
     UNVERIFIED_SENDER = "unverified_sender"
     DAILY_LIMIT = "daily_limit"
     OVER_QUOTA = "over_quota"
+    UNCONFIRMED = "unconfirmed"
 
 
 @dataclass(frozen=True)
@@ -70,6 +71,9 @@ class InboundEmailService:
         if user is None:
             logger.info("Inbound email dropped: not a forwarding address")
             return Refusal.UNKNOWN_RECIPIENT
+        if not user.email_confirmed:
+            logger.info("Inbound email for user %s dropped: address not confirmed", user.id)
+            return Refusal.UNCONFIRMED
         email = parse_message(raw)
         if email.sender != user.email.lower():
             logger.info("Inbound email for user %s dropped: unverified sender", user.id)

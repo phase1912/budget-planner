@@ -58,6 +58,13 @@ production, the `mail-relay` compose service locally — POSTs each raw message 
 whether it may become a receipt; `ReceiptService.store_from_channel` reads and stores it in
 the background, with the same categorisation as an upload.
 
+Mail goes out the same way in reverse (F17.8, ADR-0019): services write a `Letter`
+(`app/domain/letters.py`, in the reader's language) and `Mailer` hands it to
+`EmailSenderPort` in a background task, retrying. In production the adapter posts it to
+the App Engine relay's `/send`, which calls the Mail API; locally it is written to the
+log. Links in letters are signed tokens bound to the state they change
+(`AccountService`), so they work once and are never accepted as a session.
+
 Whatever the channel, a receipt is checked against the user's stored ones before it is
 stored (F11.5, ADR-0015): by its fiscal identity (`app/domain/fiscal_identity.py`), read
 off the receipt by the model, which recognises a copy exactly, and otherwise by merchant,
@@ -342,7 +349,7 @@ docker-compose.yml  Local stack (API, client, PostgreSQL, MinIO) — repo root, 
 backend/             FastAPI service — routers, services, repositories, ports (see Layers above)
 frontend/            React + MobX client
 infra/terraform/     Production on Google Cloud (ADR-0014, which replaced AWS in ADR-0002)
-infra/mail-relay-appengine/  Inbound mail relay deployed to App Engine (ADR-0013)
+infra/mail-relay-appengine/  Mail relay on App Engine: receipts in (ADR-0013), letters out (ADR-0019)
 infra/dev/           Local-only stand-ins, e.g. the SMTP mail relay
 docs/                BRD, architecture, planning, ADRs — this tree
 scripts/             Repository tooling (e.g. backlog_sync.py)
@@ -373,7 +380,7 @@ Production is one environment on Google Cloud (ADR-0014), all of it in
 ```
 Firebase Hosting (static frontend) ──HTTPS──► Cloud Run "backend" ──VPC──► Postgres on e2-micro
                                                  │   │                      (daily disk snapshots)
-App Engine mail relay ──webhook + secret─────────┘   ├──► Cloud Storage (photos, S3 API)
+App Engine mail relay ◄─webhook / send + secret──┘   ├──► Cloud Storage (photos, S3 API)
                                                      └──► Vertex AI Gemini (LiteLLM)
 ```
 

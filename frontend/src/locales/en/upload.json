@@ -175,5 +175,9 @@
     "cancel": "Cancel",
     "saving": "Saving…",
     "save": "Save changes"
+  },
+  "unconfirmed": {
+    "title": "Confirm your address to add receipts",
+    "body": "We sent a link to {{email}}. Follow it, then come back here — receipts you photograph or forward wait for that one step."
   }
 }

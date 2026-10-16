@@ -43,5 +43,10 @@
   "per_diem_times": "These times do not make a trip: it returns after it leaves, and the time abroad falls within it.",
   "per_diem_no_rates": "Per diem rates are kept for trips from {{start_on}} on.",
   "per_diem_personal_trip": "A per diem is owed for a business trip only.",
-  "invalid_export": "This export does not go with that format."
+  "invalid_export": "This export does not go with that format.",
+  "email_not_confirmed": "Confirm your email address first: we sent you a link.",
+  "disposable_email": "Addresses from throwaway mail services cannot open an account.",
+  "email_domain_unreachable": "No mail can be delivered to {{domain}}: check the address for a typo.",
+  "email_taken": "This address cannot be used for the account.",
+  "link_invalid": "This link has expired or has already been used."
 }

@@ -130,5 +130,9 @@
     "moveFailed": "The receipt could not be moved. Try again.",
     "kindFailed": "The receipt's kind could not be changed. Try again.",
     "perDiemFailed": "The per diem could not be worked out. Try again."
+  },
+  "account": {
+    "linkSent": "A new link is on its way.",
+    "failed": "Something went wrong. Try again."
   }
 }

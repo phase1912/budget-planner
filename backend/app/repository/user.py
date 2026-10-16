@@ -1,3 +1,4 @@
+import uuid
 from typing import Any
 
 from sqlalchemy import select
@@ -15,6 +16,10 @@ class UserRepository:
     async def get_by_email(self, email: str) -> User | None:
         stmt = select(User).where(User.email == email)
         return (await self.session.execute(stmt)).scalar_one_or_none()
+
+    async def get(self, user_id: uuid.UUID) -> User | None:
+        """The account with this id, or None."""
+        return await self.session.get(User, user_id)
 
     async def get_by_forwarding_token(self, token: str) -> User | None:
         """The user whose forwarding address carries `token` (F11.2)."""

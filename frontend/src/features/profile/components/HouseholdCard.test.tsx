@@ -69,6 +69,7 @@ describe("HouseholdCard", () => {
       currency: "PLN",
       budget_limit: null,
       forwarding_address: "x@y",
+      email_confirmed: true,
     };
   });
 

@@ -59,10 +59,11 @@ export interface paths {
         put?: never;
         /**
          * Register
-         * @description Create a new account and return it with a session (F1.1.3).
+         * @description Create a new account, send its confirmation letter, return it with a session (F1.1.3).
          *
          *     Limited per client IP (F10.6.3), so accounts cannot be made in bulk to get round
-         *     the per-account receipt quota.
+         *     the per-account receipt quota. Throwaway and undeliverable addresses are refused
+         *     (F17.8.4); the account can look around but not upload until confirmed (F17.8.2).
          */
         post: operations["register_auth_register_post"];
         delete?: never;
@@ -125,6 +126,92 @@ export interface paths {
          * @description Revoke the given session (F1.2.3).
          */
         post: operations["logout_auth_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/confirm-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Email
+         * @description Confirm the address a confirmation link was sent to (F17.8.2).
+         *
+         *     Needs no session: the link may be opened on another device. 400 link_invalid for
+         *     an expired link or one sent to an address the account no longer uses.
+         */
+        post: operations["confirm_email_auth_confirm_email_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/password/forgot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Forgot Password
+         * @description Send a password reset link, if the address has an account (F17.8.3).
+         *
+         *     Answers the same whether it has or not, so the form cannot be used to learn which
+         *     addresses have accounts (G2).
+         */
+        post: operations["forgot_password_auth_password_forgot_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/password/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset Password
+         * @description Set a new password from a reset link; every session of the account ends (F17.8.3).
+         */
+        post: operations["reset_password_auth_password_reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/email/confirm-change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Email Change
+         * @description Switch the account to the address the link was sent to, telling the old one (F17.8.3).
+         */
+        post: operations["confirm_email_change_auth_email_confirm_change_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -195,6 +282,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/me/confirmation/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resend Confirmation
+         * @description Send the confirmation link again, unless the address is confirmed already (F17.8.2).
+         */
+        post: operations["resend_confirmation_users_me_confirmation_resend_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/me/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change Email
+         * @description Send a link to the new address; the account switches only once it is followed.
+         *
+         *     403 invalid_credentials for a wrong password; 400 email_taken, disposable_email or
+         *     email_domain_unreachable for an address the account cannot move to (F17.8.3-4).
+         */
+        post: operations["change_email_users_me_email_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/household": {
         parameters: {
             query?: never;
@@ -211,6 +341,8 @@ export interface paths {
         /**
          * Create Household
          * @description Start a household owned by the caller; 409 if they already belong to one.
+         *
+         *     403 email_not_confirmed until the caller's address is confirmed: an owner invites.
          */
         post: operations["create_household_api_v1_household_post"];
         delete?: never;
@@ -1922,6 +2054,19 @@ export interface components {
             total_price?: string | null;
         };
         /**
+         * EmailChangeRequest
+         * @description Payload for moving the account to another address (F17.8.3); needs the password.
+         */
+        EmailChangeRequest: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Password */
+            password: string;
+        };
+        /**
          * ExpenseKind
          * @description What a trip's receipt paid for: the split a settlement asks for (F20.2).
          * @enum {string}
@@ -2032,6 +2177,19 @@ export interface components {
          * @enum {string}
          */
         FinancialKind: "spending_ceiling" | "savings_target" | "category_reduction";
+        /**
+         * ForgotPasswordRequest
+         * @description Payload for asking for a password reset letter (F17.8.3).
+         */
+        ForgotPasswordRequest: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Language */
+            language?: ("en" | "uk" | "pl") | null;
+        };
         /**
          * GoalCreate
          * @description A new goal as the user states it (BRD F1).
@@ -2454,6 +2612,14 @@ export interface components {
              *     the owner chose by hand is never flagged, whatever the agent scored (C4).
              */
             readonly category_is_low_confidence: boolean;
+        };
+        /**
+         * LinkRequest
+         * @description The token a link from a letter carries (F17.8).
+         */
+        LinkRequest: {
+            /** Token */
+            token: string;
         };
         /**
          * LoginRequest
@@ -3190,6 +3356,18 @@ export interface components {
             first_name: string;
             /** Last Name */
             last_name: string;
+            /** Language */
+            language?: ("en" | "uk" | "pl") | null;
+        };
+        /**
+         * ResetPasswordRequest
+         * @description Payload for setting a new password from a reset link (F17.8.3).
+         */
+        ResetPasswordRequest: {
+            /** Token */
+            token: string;
+            /** Password */
+            password: string;
         };
         /**
          * ResolveDateRequest
@@ -3795,6 +3973,11 @@ export interface components {
             /** Language */
             language?: ("en" | "uk" | "pl") | null;
             /**
+             * Email Confirmed
+             * @default false
+             */
+            email_confirmed: boolean;
+            /**
              * Forwarding Address
              * @description Where the user forwards e-receipts (F11.2); only ever shown to its owner.
              */
@@ -4017,6 +4200,138 @@ export interface operations {
             };
         };
     };
+    confirm_email_auth_confirm_email_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    forgot_password_auth_password_forgot_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForgotPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_password_auth_password_reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_email_change_auth_email_confirm_change_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_me_users_me_get: {
         parameters: {
             query?: {
@@ -4132,6 +4447,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReceiptQuotaRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resend_confirmation_users_me_confirmation_resend_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_email_users_me_email_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
                 };
             };
             /** @description Validation Error */

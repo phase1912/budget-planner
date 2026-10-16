@@ -132,5 +132,9 @@
     "moveFailed": "Nie udało się przenieść paragonu. Spróbuj ponownie.",
     "kindFailed": "Nie udało się zmienić rodzaju wydatku. Spróbuj ponownie.",
     "perDiemFailed": "Nie udało się obliczyć diet. Spróbuj ponownie."
+  },
+  "account": {
+    "linkSent": "Nowy link jest już w drodze.",
+    "failed": "Coś poszło nie tak. Spróbuj ponownie."
   }
 }

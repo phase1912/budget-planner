@@ -17,7 +17,17 @@
     "change": "Change",
     "sessions": "Active sessions",
     "sessionsHint": "Signing out everywhere revokes every refresh token, including this one.",
-    "signOutEverywhere": "Sign out everywhere"
+    "signOutEverywhere": "Sign out everywhere",
+    "unconfirmed": "Not confirmed yet",
+    "changeTitle": "Change your email address",
+    "changeHint": "We'll send a link to the new address. The account switches only once you follow it.",
+    "newEmail": "New address",
+    "password": "Current password",
+    "send": "Send the link",
+    "sending": "Sending…",
+    "sent": "Check {{email}}: follow the link there to finish the change.",
+    "cancel": "Cancel",
+    "close": "Close"
   },
   "discard": "Discard",
   "saving": "Saving...",

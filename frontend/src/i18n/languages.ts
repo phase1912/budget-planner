@@ -54,3 +54,9 @@ export function initialLanguage(): Language {
   }
   return browserLanguage(typeof navigator === "undefined" ? [] : navigator.languages);
 }
+
+/** The language the screen is shown in now, e.g. for a letter the screen asks the server to send. */
+export function screenLanguage(current: string): Language {
+  const language = current.slice(0, 2);
+  return isLanguage(language) ? language : "en";
+}

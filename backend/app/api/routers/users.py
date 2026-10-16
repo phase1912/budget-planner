@@ -3,13 +3,18 @@
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_current_user, get_quota_service
+from app.api import rate_limit
+from app.api.dependencies import get_current_user, get_email_guard, get_mailer, get_quota_service
+from app.api.rate_limit import limiter
 from app.db.session import get_db_session
 from app.models.user import User
-from app.schemas.user import ReceiptQuotaRead, UserResponse, UserUpdateRequest
+from app.schemas.auth import MessageResponse
+from app.schemas.user import EmailChangeRequest, ReceiptQuotaRead, UserResponse, UserUpdateRequest
+from app.services.account import AccountService, EmailAddressGuard
+from app.services.mailer import Mailer
 from app.services.quota import QuotaService
 from app.services.user import UserService
 
@@ -55,3 +60,46 @@ async def get_my_quota(
     """How many receipts the user may still have read this month (F10.6.1)."""
     quota = await quotas.quota_for(current_user, datetime.now(UTC))
     return ReceiptQuotaRead.model_validate(quota)
+
+
+@router.post(
+    "/me/confirmation/resend",
+    response_model=MessageResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+@limiter.limit(rate_limit.ACCOUNT_LETTER)
+async def resend_confirmation(
+    request: Request,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    mailer: Annotated[Mailer, Depends(get_mailer)],
+    background_tasks: BackgroundTasks,
+) -> MessageResponse:
+    """Send the confirmation link again, unless the address is confirmed already (F17.8.2)."""
+    if not current_user.email_confirmed:
+        letter = AccountService(session).confirmation_letter(current_user)
+        background_tasks.add_task(mailer.deliver, letter)
+    return MessageResponse(message="A confirmation link is on its way.")
+
+
+@router.post("/me/email", response_model=MessageResponse, status_code=status.HTTP_202_ACCEPTED)
+@limiter.limit(rate_limit.ACCOUNT_LETTER)
+async def change_email(
+    request: Request,
+    body: EmailChangeRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    guard: Annotated[EmailAddressGuard, Depends(get_email_guard)],
+    mailer: Annotated[Mailer, Depends(get_mailer)],
+    background_tasks: BackgroundTasks,
+) -> MessageResponse:
+    """Send a link to the new address; the account switches only once it is followed.
+
+    403 invalid_credentials for a wrong password; 400 email_taken, disposable_email or
+    email_domain_unreachable for an address the account cannot move to (F17.8.3-4).
+    """
+    letter = await AccountService(session).request_email_change(
+        current_user, body.email, body.password, guard
+    )
+    background_tasks.add_task(mailer.deliver, letter)
+    return MessageResponse(message="A link to confirm the new address is on its way.")

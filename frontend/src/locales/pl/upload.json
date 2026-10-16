@@ -205,5 +205,9 @@
     "cancel": "Anuluj",
     "saving": "Zapisywanie…",
     "save": "Zapisz zmiany"
+  },
+  "unconfirmed": {
+    "title": "Potwierdź adres, aby dodawać paragony",
+    "body": "Wysłaliśmy link na {{email}}. Otwórz go i wróć tutaj — zdjęcia i przesłane paragony czekają tylko na ten krok."
   }
 }

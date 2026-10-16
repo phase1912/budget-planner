@@ -1,6 +1,7 @@
 # mypy: ignore-errors
 """Runs BR-1's Gherkin scenarios (F0.6.2)."""
 
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -155,6 +156,7 @@ def user_is_logged_in(app: FastAPI) -> User:
         first_name="T",
         last_name="T",
         password_hash="x",
+        email_confirmed_at=datetime.now(UTC),
     )
     app.dependency_overrides[get_current_user] = lambda: user
     return user

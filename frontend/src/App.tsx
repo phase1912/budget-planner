@@ -6,6 +6,9 @@ import { PublicLandingPage } from "@/features/public-landing/pages/PublicLanding
 import { NotFoundPage } from "@/features/public-landing/pages/NotFoundPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
 import { RegisterPage } from "@/features/auth/pages/RegisterPage";
+import { ForgotPasswordPage } from "@/features/auth/pages/ForgotPasswordPage";
+import { ResetPasswordPage } from "@/features/auth/pages/ResetPasswordPage";
+import { ConfirmLinkPage } from "@/features/auth/pages/ConfirmLinkPage";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 import { ProfilePage } from "@/features/profile/pages/ProfilePage";
@@ -55,6 +58,11 @@ export const App = observer(function App() {
           path="/register"
           element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />}
         />
+        {/* Reached from letters (F17.8), signed in or not: a letter may be read elsewhere. */}
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/confirm-email" element={<ConfirmLinkPage kind="address" />} />
+        <Route path="/confirm-email-change" element={<ConfirmLinkPage kind="change" />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/receipts" element={<ReceiptsPage />} />

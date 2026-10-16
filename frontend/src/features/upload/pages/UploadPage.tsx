@@ -13,9 +13,10 @@ import { ReceiptQuotaNote } from "../components/ReceiptQuotaNote";
 import { ManualExpenseDialog } from "@/features/receipts/components/ManualExpenseDialog";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
+import { ResendConfirmationButton } from "@/features/auth/components/ResendConfirmationButton";
 
 export const UploadPage = observer(function UploadPage() {
-  const { uploadStore, quotaStore, tripsStore } = useStores();
+  const { uploadStore, quotaStore, tripsStore, accountStore, authStore } = useStores();
   const { t } = useTranslation(["upload", "receipts"]);
   const [addingExpense, setAddingExpense] = useState(false);
   const [params] = useSearchParams();
@@ -52,6 +53,25 @@ export const UploadPage = observer(function UploadPage() {
       }
     }
   };
+
+  // Uploading waits for the address to be confirmed (F17.8.2): say why, not a refusal later.
+  if (accountStore.mustConfirm) {
+    return (
+      <Container size="narrow" gutter={false} className="py-4 md:py-9">
+        <Card variant="surface">
+          <CardBody className="flex flex-col gap-2">
+            <h1 className="m-0 text-xl font-semibold">{t("unconfirmed.title")}</h1>
+            <p className="m-0 text-md leading-relaxed text-muted-foreground">
+              {t("unconfirmed.body", { email: authStore.user?.email ?? "" })}
+            </p>
+            <div className="mt-2">
+              <ResendConfirmationButton />
+            </div>
+          </CardBody>
+        </Card>
+      </Container>
+    );
+  }
 
   if (
     uploadStore.currentStep === 2 &&
