@@ -17,6 +17,8 @@ export class ProductsStore {
   products: Product[] = [];
   search = "";
   selected: string[] = [];
+  /** Every product seen in any answer, so a product ticked before a search keeps its name. */
+  known = new Map<string, Product>();
   isLoading = false;
   isSaving = false;
   loadError: string | null = null;
@@ -32,11 +34,16 @@ export class ProductsStore {
     );
   }
 
-  /** The products ticked for merging, in the order they were ticked. */
+  /** The products ticked, in the order they were ticked, found or not by the search. */
   get selectedProducts(): Product[] {
     return this.selected
-      .map((id) => this.products.find((p) => p.id === id))
+      .map((id) => this.known.get(id))
       .filter((p): p is Product => p !== undefined);
+  }
+
+  /** A product by id, from whichever answer it last came in. */
+  productById(id: string): Product | undefined {
+    return this.known.get(id);
   }
 
   /** Ask for the list; a later request wins over an earlier one still on its way. */
@@ -55,7 +62,12 @@ export class ProductsStore {
         return;
       }
       this.products = response.data;
-      this.selected = this.selected.filter((id) => response.data.some((p) => p.id === id));
+      for (const product of response.data) this.known.set(product.id, product);
+      // A search shows only some products: a ticked one it does not show stays ticked, so
+      // several can be picked by searching for each. Only the whole list says one is gone.
+      if (!this.search) {
+        this.selected = this.selected.filter((id) => response.data.some((p) => p.id === id));
+      }
     });
   }
 
@@ -125,6 +137,7 @@ export class ProductsStore {
       }
       // The answer is the whole list; while searching, the search is asked again instead.
       if (!this.search) this.products = products;
+      this.known = new Map(products.map((product) => [product.id, product]));
       done();
     });
     if (products && this.search) void this.load();
@@ -136,6 +149,7 @@ export class ProductsStore {
     this.products = [];
     this.search = "";
     this.selected = [];
+    this.known = new Map();
     this.loadError = null;
   }
 }

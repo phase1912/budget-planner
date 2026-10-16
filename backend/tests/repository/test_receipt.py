@@ -453,3 +453,39 @@ async def test_a_months_biggest_receipts_come_first_when_asked(db_session: Async
     items, _ = await ReceiptRepository(db_session).list_paginated(0, 10, order=ReceiptOrder.LARGEST)
 
     assert [r.merchant_name for r in items] == ["Shop 10", "Shop 25", "Shop 3", "Shop 20"]
+
+
+@pytest.mark.asyncio
+async def test_a_receipt_bought_long_ago_but_added_today_tops_recently_added(
+    db_session: AsyncSession,
+) -> None:
+    """An emailed receipt from last month is found at the top of "Recently added"."""
+    import datetime
+
+    from app.domain.budget import ReceiptOrder
+
+    user = await UserFactory.create_async(email="recent@example.com")
+    current_user_id.set(user.id)
+    now = datetime.datetime(2026, 10, 16, 12, tzinfo=datetime.UTC)
+    for name, bought, added in [
+        ("Yesterday's shop", datetime.date(2026, 10, 15), now - datetime.timedelta(days=1)),
+        ("Old, emailed now", datetime.date(2026, 9, 2), now),
+    ]:
+        db_session.add(
+            Receipt(
+                id=uuid.uuid4(),
+                user_id=user.id,
+                merchant_name=name,
+                status=ReceiptStatus.PARSED,
+                transaction_date=datetime.datetime.combine(bought, datetime.time(), datetime.UTC),
+                created_at=added,
+            )
+        )
+    await db_session.flush()
+    repo = ReceiptRepository(db_session)
+
+    newest, _ = await repo.list_paginated(0, 10)
+    recent, _ = await repo.list_paginated(0, 10, order=ReceiptOrder.RECENT)
+
+    assert [r.merchant_name for r in newest] == ["Yesterday's shop", "Old, emailed now"]
+    assert [r.merchant_name for r in recent] == ["Old, emailed now", "Yesterday's shop"]

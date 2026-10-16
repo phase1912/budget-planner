@@ -90,7 +90,8 @@
     "allPurchases_one": "Усі покупки ({{count}})",
     "allPurchases_few": "Усі покупки ({{count}})",
     "allPurchases_many": "Усі покупки ({{count}})",
-    "allPurchases_other": "Усі покупки ({{count}})"
+    "allPurchases_other": "Усі покупки ({{count}})",
+    "oneTime": "Куплено один раз за цей період: графік ціни з'явиться з другої покупки."
   },
   "selections": {
     "title": "Мої набори",
@@ -99,7 +100,8 @@
     "name": "Назва",
     "placeholder": "Снеки",
     "save": "Зберегти",
-    "delete": "Видалити набір «{{name}}»"
+    "delete": "Видалити набір «{{name}}»",
+    "showing": "Відкрито «{{name}}»"
   },
   "cheaper": {
     "mark": "Дешевше в {{shop}}: на {{amount}} {{currency}}/{{unit}} ({{percent}}%), ніж у {{instead}}"

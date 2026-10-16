@@ -22,6 +22,7 @@ import { TripsStore } from "@/stores/TripsStore";
 import { InstallStore } from "@/stores/InstallStore";
 import { HouseholdStore } from "@/stores/HouseholdStore";
 import { LanguageStore } from "@/stores/LanguageStore";
+import { ServerStore } from "@/stores/ServerStore";
 
 /**
  * Single instantiation point for every MobX store in the client (F9.2.1). Feature
@@ -50,9 +51,11 @@ export class RootStore {
   readonly installStore: InstallStore;
   readonly householdStore: HouseholdStore;
   readonly languageStore: LanguageStore;
+  readonly serverStore: ServerStore;
 
   constructor() {
     this.themeStore = new ThemeStore();
+    this.serverStore = new ServerStore();
     this.toastStore = new ToastStore();
     this.authStore = new AuthStore(apiClient);
     this.languageStore = new LanguageStore(this.authStore);

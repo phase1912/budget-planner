@@ -28,7 +28,7 @@ const PERCENT = numberFormat({ maximumFractionDigits: 1, signDisplay: "always" }
  */
 export const ExplorePanel = observer(function ExplorePanel({ currency }: { currency: string }) {
   const { explorationStore, productsStore } = useStores();
-  const listed = (id: string) => productsStore.products.find((p) => p.id === id);
+  const listed = (id: string) => productsStore.productById(id);
   const { t } = useTranslation(["products", "statistics"]);
   const [picking, setPicking] = useState(false);
   const { result, isLoading, error, preset, start, end } = explorationStore;
@@ -140,6 +140,10 @@ export const ExplorePanel = observer(function ExplorePanel({ currency }: { curre
               {product.shops.length > 1 && <ShopPrices product={product} currency={currency} />}
               {result.products.length === 1 && product.prices.length > 1 && (
                 <PriceChart product={product} currency={currency} />
+              )}
+              {/* One price is no trend: say why there is no chart rather than showing nothing. */}
+              {result.products.length === 1 && product.prices.length === 1 && (
+                <p className="m-0 text-base text-muted-foreground">{t("explore.oneTime")}</p>
               )}
             </section>
           ))}

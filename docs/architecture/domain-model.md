@@ -251,6 +251,9 @@ Rules that must hold at all times. Each is a candidate for a test.
     word for word, of the same size, joins it too; a name merely alike is asked of the
     model, and otherwise starts a product. Different sizes, article numbers or
     varieties are never matched by rule. Discounts and zero lines are not products.
+    A date or billing period printed in a name (month names, years, `01.11.2026`) is not
+    part of the product, so a monthly subscription stays one product; products that were
+    told apart only by such a date are merged into the most bought one.
     Merging folds products into one that keeps its name; splitting takes one way of
     printing, with its lines, into a product of its own. Both hold for later receipts
     (F16.1).
@@ -427,7 +430,8 @@ Rules that must hold at all times. Each is a candidate for a test.
     registration screen ticks each rule off as it is met, and a refusal names the rules
     the password lacks — unlike a taken email, which stays generic (19).
 20. Refresh tokens rotate on use; presenting one already exchanged revokes every token
-    issued from that session (G5, G6).
+    issued from that session (G5, G6). A session left unused ends 30 days after its last
+    refresh; however often it is used, it ends 90 days after sign-in.
 21. An OIDC identity links to an existing account only when the provider reports a
     verified email matching it; an unverified email never links automatically (G10, G11).
 

@@ -70,7 +70,8 @@
     "chartLabel_one": "Price of {{name}} over {{count}} purchase",
     "chartLabel_other": "Price of {{name}} over {{count}} purchases",
     "allPurchases_one": "Every purchase ({{count}})",
-    "allPurchases_other": "Every purchase ({{count}})"
+    "allPurchases_other": "Every purchase ({{count}})",
+    "oneTime": "Bought once in this period: the price chart appears from the second purchase."
   },
   "selections": {
     "title": "My selections",
@@ -79,7 +80,8 @@
     "name": "Name",
     "placeholder": "Snacks",
     "save": "Save",
-    "delete": "Delete the selection {{name}}"
+    "delete": "Delete the selection {{name}}",
+    "showing": "Showing «{{name}}»"
   },
   "cheaper": {
     "mark": "Cheaper at {{shop}}: {{amount}} {{currency}}/{{unit}} less ({{percent}}%) than at {{instead}}"

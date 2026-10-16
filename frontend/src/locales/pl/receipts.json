@@ -39,7 +39,7 @@
   },
   "list": {
     "title": "Paragony",
-    "stored": "Zapisane: {{count}} · najnowsze najpierw",
+    "stored": "Zapisane: {{count}}",
     "export": "Eksportuj tę listę",
     "whose": "Czyje paragony",
     "search": "Sklep lub pozycja",
@@ -65,7 +65,14 @@
     "items_other": "{{count}} pozycji",
     "convertedFrom": "z {{amount}} {{currency}}",
     "unconvertedIn": "w {{amount}} {{currency}}",
-    "manual": "Wpisano ręcznie bez paragonu"
+    "manual": "Wpisano ręcznie bez paragonu",
+    "allTime": "Cały czas",
+    "allTimeShort": "Wszystko",
+    "order": "Kolejność",
+    "byPurchase": "Według daty zakupu",
+    "byPurchaseShort": "Kupione",
+    "recent": "Ostatnio dodane",
+    "recentShort": "Dodane"
   },
   "status": {
     "inTotal": "W sumie",

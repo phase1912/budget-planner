@@ -2,10 +2,12 @@
 
 A shop prints the same product its own way — "Jogurt Natural 330ml", "JOG NAT 330ML",
 "JogNat330ml". A line's name is reduced to a key: lowercase words without diacritics or
-punctuation, the trailing tax-class letter dropped, and the package size apart, in grams
-or millilitres. Two names with one key are one product. A name whose words abbreviate
-another's, of the same size, is the same product too. Anything less certain is a
-question for the model, and failing an answer, a product of its own the user can merge.
+punctuation, the trailing tax-class letter dropped, dates and months left out — a monthly
+plan billed "October … November 3, 2026" is the same plan next month — and the package
+size apart, in grams or millilitres. Two names with one key are one product. A name whose
+words abbreviate another's, of the same size, is the same product too. Anything less
+certain is a question for the model, and failing an answer, a product of its own the user
+can merge.
 """
 
 import difflib
@@ -31,6 +33,50 @@ _CAMEL = re.compile(
     r"(?<=[a-ząćęłńóśźż])(?=[A-ZĄĆĘŁŃÓŚŹŻ])|(?<=[A-Za-z])(?=\d)|(?<=\d)(?=[A-Za-z])"
 )
 _TRANSLITERATE = str.maketrans({"ł": "l", "Ł": "L", "ø": "o", "ß": "ss"})
+_NUMERIC_DATE = re.compile(r"\b\d{1,4}[./-]\d{1,2}[./-]\d{1,4}\b")
+MONTHS = frozenset(
+    # English, then Polish as printed once diacritics are set aside: the month and "of the
+    # month". Abbreviations are left out: "Jan" is also a name, "Mar" a word.
+    [
+        "january",
+        "february",
+        "march",
+        "april",
+        "may",
+        "june",
+        "july",
+        "august",
+        "september",
+        "october",
+        "november",
+        "december",
+        "styczen",
+        "luty",
+        "marzec",
+        "kwiecien",
+        "maj",
+        "czerwiec",
+        "lipiec",
+        "sierpien",
+        "wrzesien",
+        "pazdziernik",
+        "listopad",
+        "grudzien",
+        "stycznia",
+        "lutego",
+        "marca",
+        "kwietnia",
+        "maja",
+        "czerwca",
+        "lipca",
+        "sierpnia",
+        "wrzesnia",
+        "pazdziernika",
+        "listopada",
+        "grudnia",
+    ]
+)
+"""Month names a line may print to say which period it was for, never what it is."""
 SIMILAR_NAMES = 0.6
 """Names this alike, of one size, are worth asking the model about; below it, not."""
 MAX_CANDIDATES = 5
@@ -85,14 +131,33 @@ def parse_size(name: str) -> tuple[Size | None, str]:
     return (sizes.pop() if len(sizes) == 1 else None), rest
 
 
+def _without_dates(words: list[str]) -> list[str]:
+    """The words without months, years and the days printed beside a month.
+
+    "pro october november 3 2026" is "pro". A name made of nothing else keeps its words:
+    a key needs something to match by.
+    """
+    dated = {i for i, word in enumerate(words) if word in MONTHS}
+    for i in list(dated):
+        for j in (i - 1, i + 1):
+            if 0 <= j < len(words) and words[j].isdigit() and 1 <= int(words[j]) <= 31:
+                dated.add(j)
+    kept = [
+        word
+        for i, word in enumerate(words)
+        if i not in dated and not (len(word) == 4 and word.isdigit() and 2000 <= int(word) <= 2099)
+    ]
+    return kept or words
+
+
 def product_key(name: str) -> ProductKey:
     """The key a printed line name is matched by (F16.1)."""
-    split = _CAMEL.sub(" ", name)
+    split = _CAMEL.sub(" ", _NUMERIC_DATE.sub(" ", name))
     size, rest = parse_size(split)
     words = re.findall(r"[a-z0-9]+", _plain(rest).lower())
     if len(words) > 1 and len(words[-1]) == 1 and words[-1].isalpha():
         words = words[:-1]  # the tax-class letter a till prints after the name
-    return ProductKey(tuple(words), size)
+    return ProductKey(tuple(_without_dates(words)), size)
 
 
 def abbreviates(a: ProductKey, b: ProductKey) -> bool:

@@ -6,11 +6,34 @@ import { errorMessage } from "../api/errors";
 import { purchaseMonth } from "@/shared/purchaseDate";
 import { currentLocale, dateFormat } from "@/i18n/format";
 import i18n from "@/i18n";
+import { presetDays } from "@/stores/StatisticsStore";
 
 export type Receipt = components["schemas"]["ReceiptResponse"];
 export type ReceiptDetail = components["schemas"]["ReceiptDetailResponse"];
 export type UpdateReceiptRequest = components["schemas"]["UpdateReceiptRequest"];
 export type ManualExpense = components["schemas"]["ManualExpenseRequest"];
+
+/** Which stretch of days the receipts list shows; "custom" is picked day by day. */
+export type ReceiptPeriod = "this_month" | "last_3_months" | "all" | "custom";
+/** `newest` by purchase date, as the month figure counts; `recent` by when it arrived. */
+export type ReceiptListOrder = Extract<components["schemas"]["ReceiptOrder"], "newest" | "recent">;
+
+const LIST_VIEW_KEY = "budget_receipts_view";
+const PERIODS: readonly ReceiptPeriod[] = ["this_month", "last_3_months", "all"];
+
+/** The period and order the user last chose, or the current month by purchase date. */
+function savedView(): { period: ReceiptPeriod; order: ReceiptListOrder } {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LIST_VIEW_KEY) ?? "{}") as Record<
+      string,
+      unknown
+    >;
+    const period = PERIODS.find((p) => p === saved.period) ?? "this_month";
+    return { period, order: saved.order === "recent" ? "recent" : "newest" };
+  } catch {
+    return { period: "this_month", order: "newest" };
+  }
+}
 
 type Dated = Pick<Receipt, "transaction_date" | "created_at">;
 
@@ -58,6 +81,8 @@ export class ReceiptStore {
   isSavingPrivacy = false;
   startDateFilter: string | undefined = undefined;
   endDateFilter: string | undefined = undefined;
+  period: ReceiptPeriod = "this_month";
+  order: ReceiptListOrder = "newest";
   searchQuery: string | undefined = undefined;
 
   isLoadingList = false;
@@ -99,6 +124,58 @@ export class ReceiptStore {
       { toastStore: false, onReceiptsChanged: false, now: false },
       { autoBind: true },
     );
+    const { period, order } = savedView();
+    this.order = order;
+    this.period = period;
+    this.applyPeriod();
+  }
+
+  /**
+   * Show a preset stretch of days: by default the current month, so the list agrees with
+   * the month figure and a receipt bought earlier does not hide this month's. Remembered.
+   */
+  choosePeriod(period: Exclude<ReceiptPeriod, "custom">) {
+    this.period = period;
+    this.applyPeriod();
+    this.saveView();
+    this.page = 1;
+    void this.fetchReceipts(1, this.size);
+  }
+
+  /**
+   * Order by purchase date, or by when receipts arrived. "Recently added" looks at every
+   * date: a receipt emailed today for last month's purchase is exactly what it is for.
+   */
+  chooseOrder(order: ReceiptListOrder) {
+    this.order = order;
+    if (order === "recent") {
+      this.period = "all";
+      this.applyPeriod();
+    }
+    this.saveView();
+    this.page = 1;
+    void this.fetchReceipts(1, this.size);
+  }
+
+  /** A preset period's days from today, so a list left open overnight stays current. */
+  private applyPeriod() {
+    if (this.period === "custom") return;
+    [this.startDateFilter, this.endDateFilter] =
+      this.period === "all" ? [undefined, undefined] : presetDays(this.period, this.now());
+  }
+
+  private saveView() {
+    try {
+      // A day-by-day pick is for the moment; a preset is how the user likes the list.
+      if (this.period !== "custom") {
+        localStorage.setItem(
+          LIST_VIEW_KEY,
+          JSON.stringify({ period: this.period, order: this.order }),
+        );
+      }
+    } catch {
+      // Storage refused (private mode): the choice just lasts this visit.
+    }
   }
 
   setFilters(filters: {
@@ -139,6 +216,11 @@ export class ReceiptStore {
     } else if (filters.endDate === undefined && "endDate" in filters) {
       this.endDateFilter = undefined;
       changed = true;
+    }
+
+    if ("startDate" in filters || "endDate" in filters) {
+      this.period = this.startDateFilter && this.endDateFilter ? "custom" : "all";
+      this.saveView();
     }
 
     if (filters.searchQuery !== undefined && this.searchQuery !== filters.searchQuery) {
@@ -200,6 +282,7 @@ export class ReceiptStore {
   }
 
   async fetchReceipts(page = 1, size = 20) {
+    this.applyPeriod();
     this.isLoadingList = true;
     this.listError = null;
     try {
@@ -214,6 +297,7 @@ export class ReceiptStore {
             ...(this.endDateFilter && { end: this.endDateFilter }),
             ...(this.searchQuery && { q: this.searchQuery }),
             ...(this.scope === "household" && { scope: this.scope }),
+            ...(this.order === "recent" && { order: this.order }),
           },
         },
       });

@@ -262,7 +262,14 @@ class Settings(BaseSettings):
         default=240, ge=1, description="Lifespan of a JWT access token (F1.2.1), default 4 hours."
     )
     refresh_token_expire_days: int = Field(
-        default=30, ge=1, description="Lifespan of a refresh token family (F1.2.2)."
+        default=30,
+        ge=1,
+        description="How long a session lasts unused: each refresh extends it this far (F1.2.2).",
+    )
+    refresh_token_absolute_days: int = Field(
+        default=90,
+        ge=1,
+        description="The longest a session lasts however often it is used; then sign in again.",
     )
     argon2_time_cost: int = Field(
         default=2,

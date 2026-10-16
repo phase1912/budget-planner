@@ -8,7 +8,11 @@ import { passwordIsValid } from "../passwordRules";
 import { useTranslation } from "react-i18next";
 
 export const RegisterPage = observer(() => {
-  const { authStore } = useStores();
+  const { authStore, serverStore } = useStores();
+  // The server may be asleep: start it while the form is being filled in.
+  React.useEffect(() => {
+    serverStore.wake();
+  }, [serverStore]);
   const { t } = useTranslation("auth");
   const navigate = useNavigate();
   const location = useLocation();

@@ -44,6 +44,33 @@ describe("ProductsStore (F16.1)", () => {
     expect(store.products.map((p) => p.id)).toEqual(["milk"]);
   });
 
+  it("keeps a product ticked while searching for the next one to tick", async () => {
+    api.GET.mockResolvedValueOnce({ data: [product("yoghurt"), product("water")] });
+    await store.load();
+    store.toggle("yoghurt");
+
+    api.GET.mockResolvedValueOnce({ data: [product("water")] });
+    store.setSearch("wat");
+    await vi.waitFor(() => {
+      expect(store.products.map((p) => p.id)).toEqual(["water"]);
+    });
+    store.toggle("water");
+
+    expect(store.selected).toEqual(["yoghurt", "water"]);
+    expect(store.selectedProducts.map((p) => p.name)).toEqual(["yoghurt", "water"]);
+  });
+
+  it("drops a tick only when the whole list no longer has the product", async () => {
+    api.GET.mockResolvedValueOnce({ data: [product("yoghurt"), product("water")] });
+    await store.load();
+    store.select(["yoghurt", "water"]);
+
+    api.GET.mockResolvedValueOnce({ data: [product("water")] });
+    await store.load();
+
+    expect(store.selected).toEqual(["water"]);
+  });
+
   it("merges the other ticked products into the one kept, and clears the ticks", async () => {
     store.toggle("a");
     store.toggle("b");

@@ -577,6 +577,8 @@ class ReceiptRepository(BaseRepository[Receipt]):
         )
         if order is ReceiptOrder.LARGEST:
             stmt = base_stmt.order_by(self.model_class.total_amount.desc().nulls_last(), *newest)
+        elif order is ReceiptOrder.RECENT:
+            stmt = base_stmt.order_by(self.model_class.created_at.desc())
         else:
             stmt = base_stmt.order_by(*newest)
         stmt = stmt.offset(skip).limit(limit)

@@ -55,3 +55,20 @@ def test_only_alike_names_of_the_same_size_are_put_to_the_model() -> None:
     ]
 
     assert candidates(product_key("JajkoNiesMeltie20g"), known) == ["kinder"]
+
+
+@pytest.mark.parametrize(
+    ("printed", "key"),
+    [
+        ("Claude Pro October 3 - November 3, 2026", "claude pro"),
+        ("Claude Pro November 3 - December 3, 2026", "claude pro"),
+        ("Abonament Netflix listopad 2026", "abonament netflix"),
+        ("Bilet miesięczny 01.11.2026-30.11.2026", "bilet miesieczny"),
+    ],
+)
+def test_a_billing_period_in_the_name_is_not_part_of_the_product(printed: str, key: str) -> None:
+    assert product_key(printed).text == key
+
+
+def test_a_name_that_is_also_a_month_abbreviation_is_kept() -> None:
+    assert product_key("Jan Niezbędny Worki 35l").text == "jan niezbedny worki|35000ml"

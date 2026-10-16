@@ -39,7 +39,7 @@
   },
   "list": {
     "title": "Чеки",
-    "stored": "Збережено: {{count}} · спершу нові",
+    "stored": "Збережено: {{count}}",
     "export": "Експортувати цей список",
     "whose": "Чиї чеки",
     "search": "Магазин або позиція",
@@ -65,7 +65,14 @@
     "items_other": "{{count}} позиції",
     "convertedFrom": "з {{amount}} {{currency}}",
     "unconvertedIn": "у {{amount}} {{currency}}",
-    "manual": "Введено вручну без чека"
+    "manual": "Введено вручну без чека",
+    "allTime": "За весь час",
+    "allTimeShort": "Усе",
+    "order": "Порядок",
+    "byPurchase": "За датою покупки",
+    "byPurchaseShort": "Куплені",
+    "recent": "Нещодавно додані",
+    "recentShort": "Додані"
   },
   "status": {
     "inTotal": "У підсумку",
