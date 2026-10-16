@@ -110,6 +110,21 @@ async def test_an_export_without_a_whole_period_where_one_is_needed_is_refused(
     assert (response.status_code, response.json()["code"]) == (422, "invalid_period")
 
 
+@pytest.mark.parametrize(
+    "request_body",
+    [{"kind": "account", "format": "json"}, {"kind": "receipts", "format": "zip"}],
+)
+@pytest.mark.asyncio
+async def test_everything_held_about_the_user_is_a_zip_and_only_it_is(
+    db_session: AsyncSession, request_body: dict[str, Any]
+) -> None:
+    """F17.9.2: the whole account is one archive of data and photos."""
+    user = await UserFactory.create_async()
+    async with await _client(db_session, user) as client:
+        response = await client.post("/api/v1/exports", json=request_body)
+    assert (response.status_code, response.json()["code"]) == (422, "invalid_export")
+
+
 @pytest.mark.asyncio
 async def test_a_ready_export_downloads_under_its_name(db_session: AsyncSession) -> None:
     user = await UserFactory.create_async()

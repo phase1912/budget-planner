@@ -3,7 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Self
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, computed_field, model_validator
 
 from app.domain.per_diem import Meal
 from app.domain.trips import ExpenseKind, TripKind
@@ -208,6 +208,20 @@ class TripDetailResponse(TripResponse):
     """A business trip's per diem, once the user gave its times (F20.4)."""
     settlement: SettlementResponse | None = None
     """A business trip's sum to hand in (F20.5); null for a personal trip."""
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def photos_expire_on(self) -> date | None:
+        """The day the first of the trip's photos still kept is removed (F17.9.3).
+
+        The screen warns before it, so the settlement is downloaded with its photos.
+        """
+        kept = [
+            r.photos_kept_until
+            for r in self.receipts
+            if r.photos_kept_until is not None and not r.photos_removed
+        ]
+        return min(kept) if kept else None
 
 
 class ExpenseKindRequest(BaseModel):

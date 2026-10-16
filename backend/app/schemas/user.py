@@ -50,6 +50,12 @@ class EmailChangeRequest(BaseModel):
     password: str
 
 
+class AccountDeletionRequest(BaseModel):
+    """Payload for deleting the account (F17.9.1); the password proves it is the owner."""
+
+    password: str
+
+
 class ReceiptQuotaRead(BaseModel):
     """The account's receipt reads this month against its limit (F10.6).
 

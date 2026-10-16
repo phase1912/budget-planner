@@ -32,7 +32,8 @@
     "accommodation": "Accommodation",
     "meals": "Meals",
     "other": "Other",
-    "no_receipt": "no receipt"
+    "no_receipt": "no receipt",
+    "photo_removed": "photo removed after 90 days"
   },
   "uk": {
     "title": "Розрахунок службової поїздки",
@@ -67,7 +68,8 @@
     "accommodation": "Проживання",
     "meals": "Харчування",
     "other": "Інше",
-    "no_receipt": "без чека"
+    "no_receipt": "без чека",
+    "photo_removed": "фото видалено через 90 днів"
   },
   "pl": {
     "title": "Rozliczenie podróży służbowej",
@@ -102,6 +104,7 @@
     "accommodation": "Nocleg",
     "meals": "Wyżywienie",
     "other": "Inne",
-    "no_receipt": "bez paragonu"
+    "no_receipt": "bez paragonu",
+    "photo_removed": "zdjęcie usunięte po 90 dniach"
   }
 }

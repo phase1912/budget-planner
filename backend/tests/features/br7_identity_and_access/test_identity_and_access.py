@@ -84,6 +84,7 @@ def register_account(auth_state, override_db, email="new.user@example.com"):
             "password": "Secure-pass1",
             "first_name": "Test",
             "last_name": "User",
+            "accept_terms": True,
         },
     )
     auth_state["response"] = response
@@ -116,6 +117,7 @@ def account_already_exists(auth_state, override_db, email):
             "password": "Secure-pass1",
             "first_name": "Test",
             "last_name": "User",
+            "accept_terms": True,
         },
     )
 
@@ -130,6 +132,7 @@ def register_duplicate(auth_state, override_db):
             "password": "Another-pass2",
             "first_name": "Test",
             "last_name": "User",
+            "accept_terms": True,
         },
     )
     auth_state["response"] = response
@@ -157,6 +160,7 @@ def existing_account(auth_state, override_db):
             "password": "SecurePass123!",
             "first_name": "Test",
             "last_name": "User",
+            "accept_terms": True,
         },
     )
     assert response.status_code == status.HTTP_201_CREATED
@@ -192,6 +196,7 @@ def registered_account(auth_state, override_db):
             "password": "SecurePass123!",
             "first_name": "Test",
             "last_name": "User",
+            "accept_terms": True,
         },
     )
     assert response.status_code == status.HTTP_201_CREATED
@@ -234,6 +239,7 @@ def authenticated_session_with_refresh(auth_state, override_db):
             "password": "SecurePass123!",
             "first_name": "Refresh",
             "last_name": "User",
+            "accept_terms": True,
         },
     )
     resp = client.post(
@@ -289,6 +295,7 @@ def refresh_token_already_exchanged(auth_state, override_db):
             "password": "SecurePass123!",
             "first_name": "Rotation",
             "last_name": "User",
+            "accept_terms": True,
         },
     )
     login_resp = client.post(
@@ -340,6 +347,7 @@ def session_for_logout(auth_state, override_db):
             "password": "SecurePass123!",
             "first_name": "Logout",
             "last_name": "User",
+            "accept_terms": True,
         },
     )
     resp = client.post(

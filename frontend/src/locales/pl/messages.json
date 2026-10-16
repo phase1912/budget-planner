@@ -135,6 +135,7 @@
   },
   "account": {
     "linkSent": "Nowy link jest już w drodze.",
-    "failed": "Coś poszło nie tak. Spróbuj ponownie."
+    "failed": "Coś poszło nie tak. Spróbuj ponownie.",
+    "deleted": "Twoje konto i wszystkie jego dane zostały usunięte."
   }
 }

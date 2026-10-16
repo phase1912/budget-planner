@@ -51,6 +51,12 @@ class _Storage:
     async def delete_file(self, object_name: str) -> None:
         self.files.pop(object_name, None)
 
+    async def delete_prefix(self, prefix: str) -> int:
+        gone = [name for name in self.files if name.startswith(prefix)]
+        for name in gone:
+            del self.files[name]
+        return len(gone)
+
 
 async def _groceries(session: AsyncSession) -> Category:
     """The built-in Groceries category, created if another suite's cleanup removed the seed."""
@@ -227,11 +233,11 @@ async def test_the_background_task_marks_an_export_ready_or_failed(
     storage = _Storage()
 
     @asynccontextmanager
-    async def fake_s3(_: Any) -> AsyncIterator[_Storage]:
+    async def fake_storage() -> AsyncIterator[_Storage]:
         yield storage
 
     monkeypatch.setattr(export_module, "get_session_factory", _session_factory(db_session))
-    monkeypatch.setattr(export_module, "S3StorageService", fake_s3)
+    monkeypatch.setattr(export_module, "configured_storage", fake_storage)
     await run_export(good.id)
     assert good.status is ExportStatus.READY
 

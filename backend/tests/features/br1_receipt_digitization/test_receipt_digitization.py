@@ -68,6 +68,9 @@ def app() -> FastAPI:
         async def delete_file(self, object_name: str) -> None:
             return None
 
+        async def delete_prefix(self, prefix: str) -> int:
+            return 0
+
     async def mock_get_storage_service() -> Any:
         yield MockStoragePort()
 

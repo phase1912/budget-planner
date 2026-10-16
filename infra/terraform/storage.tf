@@ -7,7 +7,31 @@ resource "google_storage_bucket" "receipts" {
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"
-  depends_on                  = [google_project_service.this]
+
+  # Retention (F17.9.3): storage deletes files by itself, so nothing in the backend has
+  # to remember to. The numbers match backend/app/domain/retention.py, which tells the
+  # screens when a photo is gone; the figures read from it stay in the database.
+  lifecycle_rule {
+    condition {
+      age            = 90
+      matches_prefix = ["receipts/"]
+    }
+    action {
+      type = "Delete"
+    }
+  }
+
+  lifecycle_rule {
+    condition {
+      age            = 7
+      matches_prefix = ["exports/"]
+    }
+    action {
+      type = "Delete"
+    }
+  }
+
+  depends_on = [google_project_service.this]
 }
 
 resource "google_storage_bucket_iam_member" "backend_objects" {

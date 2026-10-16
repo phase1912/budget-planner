@@ -2,10 +2,22 @@ import { FileDown } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
-import { formatAmount } from "@/i18n/format";
-import { Button, Card } from "@/shared/components";
+import { dateFormat, formatAmount } from "@/i18n/format";
+import { Button, Card, Note } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
 import type { TripDetail } from "@/stores/TripsStore";
+
+const DAY = dateFormat({ day: "numeric", month: "long", timeZone: "UTC" });
+/** How long before a trip's first photo is removed the screen starts to warn (F17.9.3). */
+const WARN_DAYS = 30;
+
+/** The day photos start to go, when that is close enough to warn about. */
+function photosSoonRemoved(expireOn: string | null, today: Date): string | null {
+  if (!expireOn) return null;
+  const expires = new Date(`${expireOn}T00:00:00Z`);
+  const daysLeft = (expires.getTime() - today.getTime()) / 86_400_000;
+  return daysLeft <= WARN_DAYS ? DAY.format(expires) : null;
+}
 
 /**
  * What the employer owes back for a business trip (F20.5): expenses, the per diem, the
@@ -19,6 +31,7 @@ export const SettlementCard = observer(function SettlementCard({ trip }: { trip:
   if (!sums) return null;
   const owed = sums.to_reimburse == null ? null : Number(sums.to_reimburse);
   const money = (amount: string) => `${formatAmount(amount)} ${sums.currency}`;
+  const photosGoOn = photosSoonRemoved(trip.photos_expire_on, new Date());
   const download = (format: "pdf" | "csv") => {
     void exportStore.start({ kind: "trip", format, trip_id: trip.id, compare: false });
   };
@@ -54,6 +67,9 @@ export const SettlementCard = observer(function SettlementCard({ trip }: { trip:
           </dd>
         </div>
       </dl>
+      {photosGoOn && (
+        <Note tone="warning">{t("settlement.photosExpire", { date: photosGoOn })}</Note>
+      )}
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-end">
         <Button
           className="w-full md:w-auto"

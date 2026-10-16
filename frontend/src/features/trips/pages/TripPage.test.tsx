@@ -49,6 +49,7 @@ function trip(overrides: Partial<TripDetail> = {}): TripDetail {
       { kind: "other", total: "630.00" },
     ],
     by_currency: [{ currency: "PLN", total: "2840.00" }],
+    photos_expire_on: null,
     ...overrides,
   };
 }
@@ -86,7 +87,7 @@ vi.mock("@/stores/StoreContext", () => ({
 }));
 
 function renderPage() {
-  render(
+  return render(
     <MemoryRouter initialEntries={["/trips/t1"]}>
       <Routes>
         <Route path="/trips/:id" element={<TripPage />} />
@@ -310,6 +311,27 @@ describe("TripPage — what a trip cost, by kind (F20.2)", () => {
       expect(exportStore.start).toHaveBeenLastCalledWith(
         expect.objectContaining({ kind: "trip", format: "csv", trip_id: "t1" }),
       );
+    });
+
+    it("warns before the trip's photos are removed, and not long before (F17.9.3)", () => {
+      const inDays = (days: number) =>
+        new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+      tripsStore.current = trip({
+        kind: "business",
+        settlement: SETTLEMENT,
+        photos_expire_on: inDays(10),
+      });
+      const { unmount } = renderPage();
+      expect(screen.getByText(/Receipt photos are kept 90 days/)).toBeInTheDocument();
+      unmount();
+
+      tripsStore.current = trip({
+        kind: "business",
+        settlement: SETTLEMENT,
+        photos_expire_on: inDays(80),
+      });
+      renderPage();
+      expect(screen.queryByText(/Receipt photos are kept 90 days/)).not.toBeInTheDocument();
     });
   });
 });

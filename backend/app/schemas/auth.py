@@ -12,6 +12,8 @@ class RegisterRequest(BaseModel):
     last_name: str
     # The language the sign-up screen was in: the confirmation letter is written in it.
     language: Language | None = None
+    # Ticked "I accept the terms and the privacy policy" (F17.9.4); required to be true.
+    accept_terms: bool = False
 
 
 class LoginRequest(BaseModel):

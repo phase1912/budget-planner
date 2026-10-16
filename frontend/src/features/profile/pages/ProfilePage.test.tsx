@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import { ProfilePage } from "./ProfilePage";
 import { StoreProvider } from "@/stores/StoreContext";
 import { RootStore } from "@/stores/RootStore";
@@ -28,7 +29,9 @@ describe("ProfilePage", () => {
   it("renders with user preferences", () => {
     render(
       <StoreProvider store={rootStore}>
-        <ProfilePage />
+        <MemoryRouter>
+          <ProfilePage />
+        </MemoryRouter>
       </StoreProvider>,
     );
 
@@ -46,7 +49,9 @@ describe("ProfilePage", () => {
   it("calls updateProfile on save", async () => {
     render(
       <StoreProvider store={rootStore}>
-        <ProfilePage />
+        <MemoryRouter>
+          <ProfilePage />
+        </MemoryRouter>
       </StoreProvider>,
     );
 
@@ -71,7 +76,9 @@ describe("ProfilePage", () => {
   it("allows removing the budget limit", () => {
     render(
       <StoreProvider store={rootStore}>
-        <ProfilePage />
+        <MemoryRouter>
+          <ProfilePage />
+        </MemoryRouter>
       </StoreProvider>,
     );
 

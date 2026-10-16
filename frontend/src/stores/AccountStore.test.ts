@@ -67,3 +67,25 @@ describe("AccountStore (F17.8)", () => {
     });
   });
 });
+
+describe("AccountStore account deletion (F17.9.1)", () => {
+  it("signs out here once the account is deleted, and keeps it on a wrong password", async () => {
+    const api = { DELETE: vi.fn() };
+    const auth = { user: { ...USER }, logoutLocally: vi.fn() };
+    const toast = { showSuccess: vi.fn(), showError: vi.fn() };
+    const store = new AccountStore(
+      api as unknown as ApiClient,
+      auth as unknown as AuthStore,
+      toast as unknown as ToastStore,
+    );
+
+    api.DELETE.mockResolvedValueOnce({ error: { code: "invalid_credentials", detail: "No." } });
+    expect(await store.deleteAccount("wrong")).toBe(false);
+    expect(auth.logoutLocally).not.toHaveBeenCalled();
+
+    api.DELETE.mockResolvedValueOnce({ data: undefined, response: new Response(null) });
+    expect(await store.deleteAccount("right")).toBe(true);
+    expect(api.DELETE).toHaveBeenLastCalledWith("/users/me", { body: { password: "right" } });
+    expect(auth.logoutLocally).toHaveBeenCalled();
+  });
+});

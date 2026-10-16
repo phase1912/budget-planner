@@ -31,7 +31,9 @@ class UploadJob(Model):
 
     __tablename__ = "upload_jobs"
 
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     status: Mapped[JobStatus] = mapped_column(
         Enum(JobStatus, name="job_status_enum", create_type=False),
         default=JobStatus.PENDING,

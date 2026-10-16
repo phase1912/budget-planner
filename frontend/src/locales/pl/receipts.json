@@ -105,7 +105,8 @@
     "hidePhotos": "Ukryj zdjęcia",
     "originalPhotos": "Oryginalne zdjęcia",
     "photos": "Zdjęcia",
-    "edit": "Edytuj"
+    "edit": "Edytuj",
+    "photosRemoved": "Zdjęcie usunięte po 90 dniach — odczytane z niego pozycje i kwoty zostają."
   },
   "cols": {
     "item": "Pozycja",

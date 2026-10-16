@@ -77,5 +77,23 @@
     "ofReceipts_one": "{{corrected}} of {{count}} receipt",
     "ofReceipts_other": "{{corrected}} of {{count}} receipts",
     "noReceipts": "no receipts"
+  },
+  "data": {
+    "title": "Your data",
+    "exportLabel": "Everything held about you",
+    "exportHint": "One archive: your data as JSON and the receipt photos still kept. Photos are kept 90 days.",
+    "export": "Download everything",
+    "exporting": "Preparing…",
+    "deleteLabel": "Delete account",
+    "deleteHint": "Removes your account, receipts, photos, trips, goals and everything else for good.",
+    "delete": "Delete account",
+    "dialogTitle": "Delete your account?",
+    "dialogBody": "Everything goes: receipts and their photos, trips, goals, advice, categories, products and exports. You leave your household; if you own it, it passes to the member who joined first. This cannot be undone — download your data first if you may need it.",
+    "password": "Your password",
+    "confirm": "Delete for good",
+    "deleting": "Deleting…",
+    "cancel": "Cancel",
+    "privacy": "Privacy policy",
+    "terms": "Terms of use"
   }
 }

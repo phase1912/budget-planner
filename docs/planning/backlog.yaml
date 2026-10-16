@@ -3451,9 +3451,11 @@ epics:
             title: Privacy policy and terms pages
             labels: [frontend]
             detail: >
-              Public, prerendered pages for the privacy policy (GDPR) and the terms of service,
-              in three languages, linked from the footer and from sign-up. Checked at 375, 768
-              and 1280 px.
+              The privacy policy and terms pages at /privacy and /terms, drafted in F17.9.4 from
+              the record of processing (ADR-0020) and already linked from sign-up and Profile:
+              their wording checked and completed (cookieless analytics, the consent choice),
+              prerendered like the landing, and linked from the footer of every public page.
+              Checked at 375, 768 and 1280 px.
           - key: F17.7.2
             title: Cookie consent with Google Consent Mode
             labels: [frontend, security]

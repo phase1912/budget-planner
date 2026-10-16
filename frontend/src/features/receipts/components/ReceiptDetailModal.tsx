@@ -280,7 +280,7 @@ export const ReceiptDetailModal = observer(() => {
           onToggle={() => {
             setOnlyDoubtful(!showingDoubtful);
           }}
-          fileIds={receipt.file_ids}
+          fileIds={receipt.photos_removed ? [] : receipt.file_ids}
           photoAlt={t("detail.photoAlt", {
             merchant: receipt.merchant_name ?? t("detail.thisMerchant"),
           })}
@@ -363,7 +363,14 @@ export const ReceiptDetailModal = observer(() => {
           </div>
         ))}
 
-        {showPhotos && (
+        {/* Storage removes photos after 90 days; what was read from them stays (F17.9.3). */}
+        {receipt.photos_removed && (
+          <p className="m-0 pt-5 mt-5 border-t border-border text-[13px] text-muted-foreground">
+            {t("detail.photosRemoved")}
+          </p>
+        )}
+
+        {showPhotos && !receipt.photos_removed && (
           <div className="flex flex-wrap gap-3 pt-5 mt-5 border-t border-border">
             {receipt.file_ids.length === 0 ? (
               <span className="text-[13px] text-muted-foreground">{t("detail.noPhotos")}</span>
@@ -418,7 +425,7 @@ export const ReceiptDetailModal = observer(() => {
             </Button>
           )}
           {/* A receipt read from an email's text has no photos to show (F11.2). */}
-          {receipt.file_ids.length > 0 && (
+          {receipt.file_ids.length > 0 && !receipt.photos_removed && (
             <Button
               variant="secondary"
               size="sm"

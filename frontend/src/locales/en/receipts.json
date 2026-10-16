@@ -97,7 +97,8 @@
     "hidePhotos": "Hide photos",
     "originalPhotos": "Original photos",
     "photos": "Photos",
-    "edit": "Edit"
+    "edit": "Edit",
+    "photosRemoved": "Photo removed after 90 days — the lines and totals read from it stay."
   },
   "cols": {
     "item": "Item",

@@ -85,5 +85,23 @@
     "ofReceipts_many": "{{corrected}} z {{count}} paragonów",
     "ofReceipts_other": "{{corrected}} z {{count}} paragonu",
     "noReceipts": "brak paragonów"
+  },
+  "data": {
+    "title": "Twoje dane",
+    "exportLabel": "Wszystko, co o Tobie przechowujemy",
+    "exportHint": "Jedno archiwum: Twoje dane w formacie JSON i zdjęcia paragonów, które jeszcze przechowujemy. Zdjęcia są przechowywane 90 dni.",
+    "export": "Pobierz wszystko",
+    "exporting": "Przygotowujemy…",
+    "deleteLabel": "Usunięcie konta",
+    "deleteHint": "Na zawsze usuwa konto, paragony, zdjęcia, podróże, cele i wszystko inne.",
+    "delete": "Usuń konto",
+    "dialogTitle": "Usunąć konto?",
+    "dialogBody": "Zniknie wszystko: paragony i ich zdjęcia, podróże, cele, porady, kategorie, produkty i eksporty. Opuścisz gospodarstwo domowe; jeśli jesteś jego właścicielem, przejdzie ono na członka, który dołączył najwcześniej. Tego nie da się cofnąć — najpierw pobierz swoje dane, jeśli mogą się przydać.",
+    "password": "Twoje hasło",
+    "confirm": "Usuń na zawsze",
+    "deleting": "Usuwamy…",
+    "cancel": "Anuluj",
+    "privacy": "Polityka prywatności",
+    "terms": "Regulamin"
   }
 }

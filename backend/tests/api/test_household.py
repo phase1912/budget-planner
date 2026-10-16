@@ -380,6 +380,7 @@ async def test_someone_new_registers_from_the_invite_and_joins(db_session: Async
             "password": "Kawa-2026!",
             "first_name": "Anna",
             "last_name": "New",
+            "accept_terms": True,
         },
     )
     assert registered.status_code == 201, registered.json()

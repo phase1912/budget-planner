@@ -66,6 +66,7 @@ class TestRegister:
                 "password": "pass",  # too short
                 "first_name": "T",
                 "last_name": "U",
+                "accept_terms": True,
             },
         )
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
@@ -84,6 +85,7 @@ class TestRegister:
                 "password": "SecurePass123!",
                 "first_name": "T",
                 "last_name": "U",
+                "accept_terms": True,
             },
         )
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
@@ -113,6 +115,7 @@ class TestRegister:
                 "password": "SecurePass123!",
                 "first_name": "New",
                 "last_name": "User",
+                "accept_terms": True,
             },
         )
         # Could be 201 or 500 depending on flush side-effects with mocks;

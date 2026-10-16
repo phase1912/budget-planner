@@ -1,0 +1,55 @@
+{
+  "version": "Wersja z {{date}}",
+  "privacy": {
+    "title": "Polityka prywatności",
+    "intro": "Co Budget Agent przechowuje o Tobie, po co, gdzie i jak długo, oraz jak to pobrać lub usunąć.",
+    "sections": {
+      "data": {
+        "title": "Co przechowujemy",
+        "body": "Twoje konto: imię i nazwisko, adres e-mail, skrót hasła, język, walutę i budżet.\n\nTo, co dodajesz: paragony i odczytane z nich dane — sklep, datę, pozycje, kwoty, kategorie — a także podróże, cele, reguły i gospodarstwo domowe, które tworzysz. Zdjęcia paragonów i przesłane e-paragony są przechowywane jako pliki."
+      },
+      "why": {
+        "title": "Po co",
+        "body": "Wyłącznie do świadczenia usługi, na którą się zapisujesz: odczytywania paragonów, prowadzenia budżetu i wysyłania wiadomości o koncie (potwierdzenie adresu, reset hasła). Logi żądań i adresy IP są przechowywane, by usługa była bezpieczna i działała. Nic nie jest sprzedawane, udostępniane do reklamy ani używane do innych celów."
+      },
+      "where": {
+        "title": "Gdzie i kto przetwarza",
+        "body": "Wszystko jest przechowywane i przetwarzane w Google Cloud w USA (region us-central1): serwer, baza danych, magazyn plików, poczta i model AI odczytujący zdjęcia paragonów (Vertex AI Gemini, który nie uczy się na Twoich danych). Google przetwarza je w naszym imieniu na podstawie umowy powierzenia Cloud DPA; przekazanie do USA opiera się na EU-US Data Privacy Framework i standardowych klauzulach umownych."
+      },
+      "keep": {
+        "title": "Jak długo",
+        "body": "Zdjęcia paragonów i przesłane pliki: 90 dni, potem magazyn je usuwa — odczytane z nich dane zostają. Pliki eksportu: 7 dni. Logi żądań: 30 dni. Wszystko inne: do usunięcia konta; kopie zapasowe bazy przechowują je jeszcze najwyżej 7 dni."
+      },
+      "rights": {
+        "title": "Twoje prawa",
+        "body": "W profilu możesz pobrać wszystko, co o Tobie przechowujemy, w jednym archiwum oraz usunąć konto wraz ze wszystkimi danymi. Każdy paragon i pole profilu możesz w każdej chwili poprawić. Zgodnie z RODO możesz też wnieść sprzeciw wobec przetwarzania lub skargę do organu ochrony danych (w Polsce: PUODO)."
+      }
+    }
+  },
+  "terms": {
+    "title": "Regulamin",
+    "intro": "Zasady korzystania z Budget Agent. Zakładając konto, akceptujesz je oraz politykę prywatności.",
+    "sections": {
+      "service": {
+        "title": "Usługa",
+        "body": "Budget Agent odczytuje paragony, które fotografujesz lub przesyłasz, i prowadzi Twój budżet. To projekt dyplomowy, bezpłatny i udostępniany w obecnej postaci: może pomylić się przy odczycie paragonu, a każdą kwotę możesz poprawić. To nie jest porada finansowa, podatkowa ani prawna."
+      },
+      "account": {
+        "title": "Twoje konto",
+        "body": "Używaj adresu e-mail, który czytasz, i nikomu nie zdradzaj hasła. Jedno konto to jedna osoba. Odpowiadasz za to, co dzieje się na Twoim koncie."
+      },
+      "content": {
+        "title": "Co przesyłasz",
+        "body": "Twoje paragony i dane pozostają Twoje. Przesyłaj tylko to, do czego masz prawo, i nic niezgodnego z prawem. Przetwarzamy je wyłącznie do świadczenia usługi, jak opisuje polityka prywatności."
+      },
+      "use": {
+        "title": "Uczciwe korzystanie",
+        "body": "Nie próbuj łamać, przeciążać ani obchodzić limitów usługi ani dostać się do danych innych użytkowników. Takie konta mogą zostać zawieszone."
+      },
+      "end": {
+        "title": "Zmiany i zakończenie",
+        "body": "Konto możesz usunąć w każdej chwili w profilu. Jeśli regulamin istotnie się zmieni, poprosimy o akceptację nowej wersji. Usługa może się zmienić lub zakończyć; postaramy się uprzedzić z wyprzedzeniem, abyś zdążył pobrać swoje dane."
+      }
+    }
+  }
+}

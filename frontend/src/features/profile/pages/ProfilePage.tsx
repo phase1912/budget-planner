@@ -12,6 +12,7 @@ import { InstallAppCard } from "@/features/install/InstallAppCard";
 import { LanguageCard } from "../components/LanguageCard";
 import { ReadingAccuracyCard } from "../components/ReadingAccuracyCard";
 import { ChangeEmailDialog } from "../components/ChangeEmailDialog";
+import { DataCard } from "../components/DataCard";
 import { useTranslation } from "react-i18next";
 
 export const ProfilePage = observer(function ProfilePage() {
@@ -236,6 +237,7 @@ export const ProfilePage = observer(function ProfilePage() {
         </div>
       </form>
       {/* Outside the preferences form: a form nested in a form would submit the page. */}
+      <DataCard />
       {changingEmail && (
         <ChangeEmailDialog
           onClose={() => {

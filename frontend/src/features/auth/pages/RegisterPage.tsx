@@ -5,7 +5,7 @@ import { useStores } from "@/stores/StoreContext";
 import { Button, Input, Card, Note } from "@/shared/components";
 import { PasswordChecklist } from "../components/PasswordChecklist";
 import { passwordIsValid } from "../passwordRules";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { screenLanguage } from "@/i18n/languages";
 
 export const RegisterPage = observer(() => {
@@ -26,6 +26,7 @@ export const RegisterPage = observer(() => {
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
   const [passwordError, setPasswordError] = React.useState("");
+  const [acceptTerms, setAcceptTerms] = React.useState(false);
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -43,6 +44,7 @@ export const RegisterPage = observer(() => {
       last_name: lastName,
       // The confirmation letter is written in the language of this screen (F17.8.1).
       language: screenLanguage(i18n.language),
+      accept_terms: acceptTerms,
     });
     if (success) {
       await navigate(from, { replace: true });
@@ -123,13 +125,40 @@ export const RegisterPage = observer(() => {
           />
           <PasswordChecklist password={password} confirm={confirmPassword} />
 
+          <label className="flex min-h-11 cursor-pointer items-start gap-2.5 text-base leading-relaxed">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 flex-shrink-0 accent-primary"
+              checked={acceptTerms}
+              onChange={(e) => {
+                setAcceptTerms(e.target.checked);
+              }}
+              required
+            />
+            <span>
+              <Trans
+                t={t}
+                i18nKey="register.acceptTerms"
+                components={{
+                  terms: (
+                    <Link to="/terms" target="_blank" className="text-primary hover:underline" />
+                  ),
+                  privacy: (
+                    <Link to="/privacy" target="_blank" className="text-primary hover:underline" />
+                  ),
+                }}
+              />
+            </span>
+          </label>
+
           <Button
             type="submit"
             size="lg"
             disabled={
               authStore.authState.isLoading ||
               !passwordIsValid(password) ||
-              password !== confirmPassword
+              password !== confirmPassword ||
+              !acceptTerms
             }
             className="mt-2"
           >

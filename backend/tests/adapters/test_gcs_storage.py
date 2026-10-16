@@ -51,6 +51,10 @@ class FakeClient:
         assert name == "photos"
         return FakeBucket(self.store)
 
+    def list_blobs(self, bucket: str, prefix: str) -> list[FakeBlob]:
+        assert bucket == "photos"
+        return [FakeBlob(self.store, name) for name in list(self.store) if name.startswith(prefix)]
+
 
 def _service(client: FakeClient) -> GcsStorageService:
     return GcsStorageService(SimpleNamespace(s3_bucket_name="photos"), client=client)  # type: ignore[arg-type]
@@ -75,3 +79,28 @@ async def test_a_missing_photo_is_object_not_found_and_deleting_it_is_not_an_err
         with pytest.raises(ObjectNotFoundError):
             await photos.get_object_metadata("receipts/u1/none")
         await photos.delete_file("receipts/u1/none")
+
+
+@pytest.mark.asyncio
+async def test_deleting_a_prefix_removes_only_the_files_under_it() -> None:
+    """F17.9.1: a deleted account's photos go, another account's stay."""
+    client = FakeClient()
+    service = _service(client)
+    for name in ("receipts/u1/a", "receipts/u1/b", "receipts/u2/c"):
+        await service.upload_file(name, b"x", "image/jpeg")
+
+    assert await service.delete_prefix("receipts/u1/") == 2
+    assert list(client.store) == ["receipts/u2/c"]
+
+
+def test_background_work_opens_the_deployments_storage(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Exports and account deletion use Cloud Storage in production, not always S3."""
+    from app.adapters import storage_factory
+    from app.services.storage import S3StorageService
+
+    for backend, kind in (("gcs", GcsStorageService), ("s3", S3StorageService)):
+        settings = SimpleNamespace(storage_backend=backend, s3_bucket_name="photos")
+        monkeypatch.setattr(storage_factory, "get_settings", lambda s=settings: s)
+        monkeypatch.setattr(GcsStorageService, "__init__", lambda self, _s: None)
+        monkeypatch.setattr(S3StorageService, "__init__", lambda self, _s: None)
+        assert isinstance(storage_factory.configured_storage(), kind)

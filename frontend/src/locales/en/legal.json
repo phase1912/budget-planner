@@ -1,0 +1,55 @@
+{
+  "version": "Version of {{date}}",
+  "privacy": {
+    "title": "Privacy policy",
+    "intro": "What Budget Agent keeps about you, why, where and for how long, and how you take it or delete it.",
+    "sections": {
+      "data": {
+        "title": "What we keep",
+        "body": "Your account: name, email address, a hash of your password, language, currency and budget.\n\nWhat you add: receipts and what is read from them — shop, date, items, amounts, categories — and the trips, goals, rules and household you set up. Receipt photos and forwarded e-receipts are kept as files."
+      },
+      "why": {
+        "title": "Why",
+        "body": "Only to provide the service you signed up for: reading receipts, keeping your budget and sending letters about your account (confirming your address, resetting your password). Request logs and IP addresses are kept to keep the service secure and working. Nothing is sold, shared for advertising or used for anything else."
+      },
+      "where": {
+        "title": "Where, and who processes it",
+        "body": "Everything is stored and processed on Google Cloud in the USA (region us-central1): the server, the database, file storage, mail and the AI model that reads receipt photos (Vertex AI Gemini, which does not train on your data). Google processes it for us under its Cloud Data Processing Addendum; the transfer to the USA rests on the EU-US Data Privacy Framework and standard contractual clauses."
+      },
+      "keep": {
+        "title": "How long",
+        "body": "Receipt photos and forwarded files: 90 days, then storage deletes them — the figures read from them stay. Export files: 7 days. Request logs: 30 days. Everything else: until you delete your account; database backups hold it for at most 7 more days."
+      },
+      "rights": {
+        "title": "Your rights",
+        "body": "On Profile you can download everything held about you in one archive, and delete your account with all of it. You can correct any receipt and any profile field at any time. Under the GDPR you may also object to processing or complain to your data protection authority."
+      }
+    }
+  },
+  "terms": {
+    "title": "Terms of use",
+    "intro": "The rules of using Budget Agent. By opening an account you agree to them and to the privacy policy.",
+    "sections": {
+      "service": {
+        "title": "The service",
+        "body": "Budget Agent reads receipts you photograph or forward and keeps your budget. It is a diploma project, offered free of charge, as it is: it can make mistakes reading a receipt, and every figure can be corrected by you. It is not financial, tax or legal advice."
+      },
+      "account": {
+        "title": "Your account",
+        "body": "Use an email address you read and keep your password to yourself. One account is one person. You are responsible for what is done with your account."
+      },
+      "content": {
+        "title": "What you upload",
+        "body": "Your receipts and data stay yours. Upload only what you have the right to, and nothing unlawful. We process it only to provide the service, as the privacy policy describes."
+      },
+      "use": {
+        "title": "Fair use",
+        "body": "Do not try to break, overload or get round the limits of the service, or to reach other users' data. Accounts that do may be suspended."
+      },
+      "end": {
+        "title": "Changes and ending",
+        "body": "You can delete your account at any time from Profile. If these terms change in substance, you will be asked to accept the new version. The service may change or stop; we will try to tell you in time to download your data."
+      }
+    }
+  }
+}

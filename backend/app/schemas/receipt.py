@@ -1,12 +1,13 @@
 import enum
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any, Literal
 
 from pydantic import AliasPath, BaseModel, ConfigDict, Field, computed_field, field_validator
 
 from app.core.config import get_settings
+from app.domain import retention
 from app.domain.categories import is_low_confidence
 from app.domain.read_confidence import is_doubtful
 from app.domain.trips import ExpenseKind, TripKind
@@ -349,6 +350,19 @@ class ReceiptResponse(BaseModel):
     trip_question: TripRef | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def photos_kept_until(self) -> date | None:
+        """The last day the photos stay in storage (F17.9.3); None with no photos."""
+        return retention.photos_kept_until(self.created_at) if self.file_ids else None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def photos_removed(self) -> bool:
+        """Whether storage has removed the photos after 90 days; the figures stay."""
+        today = datetime.now(UTC).date()
+        return retention.photos_removed(self.created_at, bool(self.file_ids), today)
 
 
 class ReceiptDetailResponse(ReceiptResponse):

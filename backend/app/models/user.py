@@ -23,6 +23,12 @@ class User(Model):
     first_name: Mapped[str] = mapped_column(String(50), nullable=False)
     last_name: Mapped[str] = mapped_column(String(50), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    # When, and to which version of, the terms and privacy policy the owner agreed at
+    # sign-up (F17.9.4); None for accounts opened before acceptance was asked.
+    terms_accepted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    terms_version: Mapped[str | None] = mapped_column(String(20), nullable=True)
     # When the owner proved the address is theirs (F17.8.2); None until then.
     email_confirmed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
