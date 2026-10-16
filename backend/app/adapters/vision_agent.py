@@ -210,7 +210,7 @@ class VisionAgentAdapter:
         ]
 
         return await self._agent.run_structured(
-            messages, schema=ExtractedReceipt, max_tokens=EXTRACTION_MAX_TOKENS
+            messages, schema=ExtractedReceipt, max_tokens=EXTRACTION_MAX_TOKENS, reasoning=False
         )
 
 

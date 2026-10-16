@@ -10,6 +10,7 @@ import { ForgotPasswordPage } from "@/features/auth/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/features/auth/pages/ResetPasswordPage";
 import { ConfirmLinkPage } from "@/features/auth/pages/ConfirmLinkPage";
 import { LegalPage } from "@/features/legal/LegalPage";
+import { HelpPage } from "@/features/help/HelpPage";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 import { ProfilePage } from "@/features/profile/pages/ProfilePage";
@@ -63,6 +64,7 @@ export const App = observer(function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/privacy" element={<LegalPage document="privacy" />} />
         <Route path="/terms" element={<LegalPage document="terms" />} />
+        <Route path="/help" element={<HelpPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/confirm-email" element={<ConfirmLinkPage kind="address" />} />
         <Route path="/confirm-email-change" element={<ConfirmLinkPage kind="change" />} />

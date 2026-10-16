@@ -16,6 +16,10 @@
         "destination": "/pl.html"
       },
       {
+        "source": "/help",
+        "destination": "/help.html"
+      },
+      {
         "source": "**",
         "destination": "/app.html"
       }

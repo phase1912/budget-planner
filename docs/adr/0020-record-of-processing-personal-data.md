@@ -22,6 +22,7 @@ data. Wording to be reviewed in the E18 legal investigation.
 | Receipts: merchant, date, lines, amounts, category, fiscal numbers, exchange rates; trips, per diem times, goals, advice, categories and rules, products, household membership | The service itself: reading receipts and budgeting | Contract, 6(1)(b) | Until the account is deleted |
 | Receipt photos and forwarded e-receipts (files) | Reading them; showing the receipt; a trip's settlement | Contract, 6(1)(b) | 90 days, then deleted by storage; the figures read from them stay (F17.9.3) |
 | Export files | Giving the user their data or a settlement | Contract, 6(1)(b); art. 15/20 | 7 days |
+| Messages through the contact form: reply address, topic, text (F17.10) | Answering the person who wrote | Legitimate interest, 6(1)(f); a data request, art. 12 | Not stored by the service: mailed to the support mailbox (F22.1.2) and a copy to the sender; kept there as long as the correspondence needs |
 | Sessions (refresh tokens) | Staying signed in | Contract, 6(1)(b) | 30 days unused, 90 at most (F17.8) |
 | Client IP addresses (in memory, for rate limits) and request logs (URL, status, IP, user agent) | Security, abuse prevention, debugging | Legitimate interest, 6(1)(f) | Memory: minutes; Cloud Logging: 30 days (default bucket) |
 | Database backups (disk snapshots) | Recovery from failure | Legitimate interest, 6(1)(f) | 7 days — a deleted account is gone from them within 7 days |

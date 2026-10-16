@@ -73,6 +73,21 @@ describe("PublicLandingPage (F17.2)", () => {
     expect(within(languages).getByRole("link", { name: "Polski" })).toHaveAttribute("href", "/pl");
   });
 
+  it("leads to help, the privacy policy and the terms from the footer (F17.10)", () => {
+    renderPage();
+
+    const about = screen.getByRole("navigation", { name: "About the service" });
+    expect(within(about).getByRole("link", { name: "Help" })).toHaveAttribute("href", "/help");
+    expect(within(about).getByRole("link", { name: "Privacy policy" })).toHaveAttribute(
+      "href",
+      "/privacy",
+    );
+    expect(within(about).getByRole("link", { name: "Terms of use" })).toHaveAttribute(
+      "href",
+      "/terms",
+    );
+  });
+
   it("opening a language's address chooses that language", () => {
     renderPage("pl");
 

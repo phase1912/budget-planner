@@ -1701,6 +1701,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/contact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Contact
+         * @description Mail the message to the support mailbox, with the sender to reply to (F17.10.2).
+         *
+         *     The support mailbox (F22.1.2) when one is set, else the administrators.
+         *
+         *     No address is published and no domain is needed: it goes out like every letter
+         *     (ADR-0019). A filled-in trap field is answered as a success and sent nowhere, so a
+         *     bot learns nothing; 429 for an address that wrote too often.
+         */
+        post: operations["contact_api_v1_contact_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2022,6 +2048,33 @@ export interface components {
             /** Stops Mid Month */
             stops_mid_month: boolean;
         };
+        /**
+         * ContactRequest
+         * @description A message to the people running the service; `website` is a trap for bots.
+         */
+        ContactRequest: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            topic: components["schemas"]["ContactTopic"];
+            /** Message */
+            message: string;
+            /** Language */
+            language?: ("en" | "uk" | "pl") | null;
+            /**
+             * Website
+             * @default
+             */
+            website: string;
+        };
+        /**
+         * ContactTopic
+         * @description What a message is about, so it can be answered by the right person first.
+         * @enum {string}
+         */
+        ContactTopic: "question" | "problem" | "idea" | "data";
         /**
          * CurrencyTotal
          * @description What a trip's read receipts paid in one currency come to, as printed.
@@ -7156,6 +7209,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InboundEmailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    contact_api_v1_contact_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContactRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
                 };
             };
             /** @description Validation Error */

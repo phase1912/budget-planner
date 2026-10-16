@@ -17,11 +17,13 @@ class LetterKind(StrEnum):
     RESET_PASSWORD = "reset_password"
     CHANGE_EMAIL = "change_email"
     EMAIL_CHANGED = "email_changed"
+    CONTACT_RECEIVED = "contact_received"
 
 
 @dataclass(frozen=True)
 class Wording:
-    """A letter's subject and body; the body may name `{name}`, `{link}` and `{email}`."""
+    """A letter's subject and body; the body may name `{name}`, `{link}`, `{email}` and
+    `{message}`."""
 
     subject: str
     body: str
@@ -111,14 +113,40 @@ WORDING: Final[dict[LetterKind, dict[str, Wording]]] = {
             "hasło.",
         ),
     },
+    LetterKind.CONTACT_RECEIVED: {
+        "en": Wording(
+            "We have your message",
+            "Hello,\n\nThank you for writing to Budget Agent. We read every message and answer "
+            "from our own address, usually within a few days. This is what you sent:\n\n"
+            "{message}",
+        ),
+        "uk": Wording(
+            "Ми отримали ваше повідомлення",
+            "Вітаємо!\n\nДякуємо, що написали в Budget Agent. Ми читаємо кожне повідомлення й "
+            "відповідаємо зі своєї адреси, зазвичай протягом кількох днів. Ось що ви "
+            "надіслали:\n\n{message}",
+        ),
+        "pl": Wording(
+            "Otrzymaliśmy Twoją wiadomość",
+            "Dzień dobry!\n\nDziękujemy za wiadomość do Budget Agent. Czytamy każdą i "
+            "odpowiadamy z własnego adresu, zwykle w ciągu kilku dni. Oto co wysłałeś:\n\n"
+            "{message}",
+        ),
+    },
 }
 
 
 def write_letter(
-    kind: LetterKind, language: str | None, *, name: str, link: str = "", email: str = ""
+    kind: LetterKind,
+    language: str | None,
+    *,
+    name: str = "",
+    link: str = "",
+    email: str = "",
+    message: str = "",
 ) -> Wording:
     """The letter of this kind in the reader's language, English when it is unknown."""
     chosen = language if language in LANGUAGES else "en"
     wording = WORDING[kind][chosen]
-    body = wording.body.format(name=name, link=link, email=email)
+    body = wording.body.format(name=name, link=link, email=email, message=message)
     return Wording(wording.subject, f"{body}\n\n{SIGNATURE[chosen]}")

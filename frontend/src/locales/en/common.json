@@ -22,7 +22,8 @@
     "preferences": "Preferences",
     "logOut": "Log out",
     "signIn": "Sign in",
-    "createAccount": "Create an account"
+    "createAccount": "Create an account",
+    "help": "Help"
   },
   "language": {
     "label": "Language",

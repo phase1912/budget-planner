@@ -3,9 +3,9 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-21 epics · 133 features · 297 tasks written so far.
+23 epics · 147 features · 324 tasks written so far.
 
-16 epics are in the diploma project's scope; 5 are planned but out of it.
+20 epics are in the diploma project's scope; 3 are planned but out of it.
 
 | Epic | Title | BRD | Features | Groomed | Phase | Scope |
 |---|---|---|---|---|---|---|
@@ -22,14 +22,16 @@
 | E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 6 | no | 1 | Out of scope |
 | E11 | Alternative Receipt Intake | — | 6 | yes | 2 | Diploma |
 | E12 | Household & Shared Budgets | — | 6 | yes | 2 | Diploma |
-| E13 | Aggregated Purchase Analytics | — | 7 | no | 2 | Out of scope |
-| E14 | B2B Export & Accounting Integrations | — | 6 | no | 2 | Out of scope |
+| E13 | Aggregated Purchase Analytics | — | 8 | yes | 2 | Diploma |
+| E14 | B2B Export & Accounting Integrations | — | 8 | no | 2 | Out of scope |
 | E15 | Receipt Accuracy & Trust | — | 4 | yes | 2 | Diploma |
 | E16 | Personal Price History | — | 4 | yes | 2 | Diploma |
 | E17 | Landing, Search and Analytics | — | 10 | yes | 2 | Diploma |
 | E18 | Subscriptions and Payments | — | 5 | yes | 2 | Out of scope |
-| E19 | Own Domain and Advertising | — | 2 | yes | 2 | Out of scope |
+| E19 | Advertising | — | 4 | yes | 2 | Diploma |
 | E20 | Trips | — | 5 | yes | 2 | Diploma |
+| E21 | Voice and Chat Assistant | — | 6 | yes | 2 | Diploma |
+| E22 | Android App | — | 3 | yes | 2 | Diploma |
 
 ---
 
@@ -1054,51 +1056,86 @@ One suite that walks every household-aware endpoint as the owner, a member, a re
 
 ## E13 — Aggregated Purchase Analytics
 
-**BRD sections:** — · **Phase:** 2 · **Scope:** Out of scope
+**BRD sections:** — · **Phase:** 2 · **Scope:** Diploma
 
-The item-level data BO-2 produces is something bank and card feeds structurally cannot supply: what was actually bought, not which shop was paid. Aggregated across many users and anonymised, that is a saleable market signal. This epic is written with its constraints first because the failure mode is legal rather than technical: no aggregate is produced without explicit consent, no figure is published for a cohort small enough to identify someone, and no raw personal purchase data leaves the system in any form.
+After E21, and only if the diploma's timetable leaves room. The item-level data BO-2 produces is something bank and card feeds structurally cannot supply: what was actually bought, not which shop was paid. Aggregated across many users and anonymised, it first serves the users themselves — what a product costs across everyone and where it is cheapest this week — and could later be a saleable market signal (F13.6 and E18 decide whether, with a lawyer; nothing in this epic sells anything). The failure mode is legal rather than technical, so the constraints come first: no aggregate without explicit, revocable opt-in, no figure for a cohort small enough to identify someone, no row with a user in it ever leaving PostgreSQL. The warehouse is BigQuery within its free tier, filled by a job run from the backend's image as a Cloud Run Job — recorded as the first part to move into a service of its own when there are the means to run one.
 
 ### F13.1 — Explicit opt-in consent and withdrawal
 
-*Requirements: —*
+*Requirements: N6* · *Blocked by: F17.9*
 
-A separate, freely revocable consent — never bundled into terms of service — recording what was agreed to and when. Nothing else in this epic may touch a user's data without it, and withdrawal takes effect without the user having to ask twice.
+A separate, freely revocable consent — never bundled into terms of service and never a pre-ticked box — recording what was agreed to and when. Nothing else in this epic may touch a user's data without it, and withdrawal takes effect without the user having to ask twice. The privacy policy, terms and record of processing (ADR-0020) say so.
+
+**Demonstrated by:** Turn on "Take part in shared price statistics" on Profile and read what it shares; open the privacy policy and find the new section and version; turn it off again.
+
+- **F13.1.1** The sharing choice — A flag on the user with the time it was last changed, false for every account, existing ones included; a Profile switch saying what is shared — what was bought, where, for how much, by which week, never who — and that turning it off removes the user's part from the next recalculation, in three languages; the choice in the full data export (F17.9.2). Checked at 375, 768 and 1280 px.
+- **F13.1.2** Privacy policy, terms and record of processing updated — ADR-0020 lists the aggregates, their purpose and legal basis (consent), the warehouse and its location, the minimum cohort, and that aggregates are not personal data once published; the /privacy and /terms pages say the same in three languages under a new TERMS_VERSION, and signed-in users are shown once that the policy changed. Checked at 375, 768 and 1280 px.
 
 ### F13.2 — Product normalisation catalogue
 
-*Requirements: —*
+*Requirements: —* · *Blocked by: F16.1*
 
-"MLEKO UHT 3,2% 1L" and "Mleko 3.2% 1l" have to become one canonical product. This is the technical core of the epic: without normalisation the aggregates are noise, and normalisation quality sets the ceiling on what the data is worth.
+"MLEKO UHT 3,2% 1L" and "Mleko 3.2% 1l" have to become one canonical product across users, as F16.1 already makes them one within a user. This is the technical core of the epic: without normalisation the aggregates are noise, and normalisation quality sets the ceiling on what the data is worth. The catalogue holds names and sizes only, nothing of anyone's.
+
+**Demonstrated by:** Two test accounts each buy "MLEKO 2% 1L" in different shops; both products point to one catalogue entry "mleko 2% 1 l".
+
+- **F13.2.1** Shared catalogue and matching — A catalogue table keyed like a product — words and size, without the user — each user's product linked to one entry, matched by rule and, where unsure, by the model as F16.1 matches lines; filled as products are matched and for those already there; a merge or split (F16.1) moves the link; tests that no user id or receipt reaches the catalogue.
 
 ### F13.3 — Anonymisation and aggregation pipeline
 
-*Requirements: —*
+*Requirements: —* · *Blocked by: F13.1, F13.2*
 
-Pseudonymisation, deliberate coarsening of anything that narrows a person down, and aggregation — producing output in which no basket can be traced back to a household.
+Pseudonymisation, deliberate coarsening of anything that narrows a person down, and aggregation — producing output in which no basket can be traced back to a household: weekly price aggregates per catalogue entry and shop chain (median, lowest and highest unit price, how many bought), from the purchases of users who opted in, recalculated from scratch every night.
+
+**Demonstrated by:** Run the job on seeded data with twelve sharing accounts and read this week's price of "mleko 2% 1 l" in Biedronka from twelve contributors.
+
+- **F13.3.1** Aggregation job — The weekly aggregates computed by the backend's image, runnable as a Cloud Run Job; no timestamps finer than the week, no addresses finer than the shop chain, no user ids in the output; unit prices per kg, l or piece as F16.2 compares them.
 
 ### F13.4 — Minimum cohort thresholds
 
-*Requirements: —*
+*Requirements: —* · *Blocked by: F13.3*
 
 No figure is published for a cohort below a defined number of contributing users. A query that would breach the threshold returns nothing rather than a small-sample number, because a small sample is how anonymised data stops being anonymous.
 
+**Demonstrated by:** With nine sharing accounts buying a product, no aggregate for it exists; a tenth makes it appear on the next run.
+
+- **F13.4.1** The contributor threshold — A setting, 10 by default, applied before anything is written; tests that an aggregate under it is never written, by the job or by any query.
+
 ### F13.5 — Separate analytics store
 
-*Requirements: —*
+*Requirements: —* · *Blocked by: F13.4, F0.9*
 
-Aggregates live outside the operational database, with no path from a business query back to a user's receipts. A boundary enforced by topology is worth more here than one enforced by review.
+Aggregates live outside the operational database, with no path from a business query back to a user's receipts. A boundary enforced by topology is worth more here than one enforced by review. The store is BigQuery in us-central1 within its free tier; the aggregates are also copied back into a PostgreSQL table the product screens read.
+
+**Demonstrated by:** After a run, the BigQuery table holds the week's aggregates and nothing with a user in it; the service account that writes it can write nothing else.
+
+- **F13.5.1** Warehouse in Terraform — A BigQuery dataset and table, the job and its nightly Cloud Scheduler trigger, a service account allowed to write only there; an ADR for the warehouse, the threshold and why the job is not yet a service of its own; docs/architecture/overview.md updated.
 
 ### F13.6 — Business insight API
 
-*Requirements: —*
+*Requirements: —* · *Scope: Out of scope, unlike its epic*
 
-Price and basket trends per product and category for business consumers, versioned and metered, delivering only what the aggregation pipeline has already cleared.
+Price and basket trends per product and category for business consumers, versioned and metered, delivering only what the aggregation pipeline has already cleared. Waits for an audience large enough to make the aggregates worth anything and for E18's legal work.
 
 ### F13.7 — Transparency and deletion propagation
 
-*Requirements: N3, N6*
+*Requirements: N3, N6* · *Blocked by: F13.3*
 
-A user can see what their data contributes, and withdrawing consent or deleting an account removes their contribution from future aggregates — the extension of N3 and N6 into a second data store.
+A user can see what their data contributes, and withdrawing consent or deleting an account removes their contribution from future aggregates — the extension of N3 and N6 into a second data store. Recalculating from scratch each night is what makes it so: nothing of a user who stopped sharing survives the next run.
+
+**Demonstrated by:** Turn sharing off for three of twelve contributing accounts and run the job again: the aggregate falls under the threshold and is gone from both stores.
+
+- **F13.7.1** Withdrawal and deletion reach the warehouse — Tests that a user who stopped sharing or deleted the account is in no aggregate after the next run; Profile says how many of the week's published prices the user's purchases are part of. Checked at 375, 768 and 1280 px.
+
+### F13.8 — Prices from everyone
+
+*Requirements: —* · *Blocked by: F13.5, F16.3*
+
+A product's page shows what it costs across everyone this week and where it is cheapest, beside what the user paid — for any product with enough contributors, and for any user, sharing or not: the aggregates are anonymous. The cheaper-shop hint (F16.3) uses them where the user's own receipts are too few.
+
+**Demonstrated by:** Open "mleko 2% 1 l": "Everyone this week: median 3.49 PLN, cheapest at Lidl (2.99)", next to the user's own last price.
+
+- **F13.8.1** Shared prices on the products screens — The week's aggregate for each product with a catalogue entry in the products API; the explore panel and the cheaper-shop hint showing it, in three languages, and saying nothing where no aggregate is published. Checked at 375, 768 and 1280 px.
 
 ---
 
@@ -1143,6 +1180,18 @@ Counting what each account consumes — receipts parsed, API calls made, images 
 *Requirements: —*
 
 Export configuration, API key management and current usage against plan limits.
+
+### F14.7 — Sole traders and KSeF invoices
+
+*Requirements: —*
+
+A Polish sole trader (JDG) keeps the firm's costs apart from the household's: purchase invoices fetched from KSeF, the national e-invoice system mandatory from 2026, with the trader's NIP and authorisation token; receipts and invoices marked as a business cost; VAT and the cost column of the revenue and expense ledger (KPiR) worked out per document; a month's costs handed to the accountant or sent to iFirma, inFakt or wFirma. The personal budget never counts a business cost, as business trips already are not.
+
+### F14.8 — Tax deductions from receipts
+
+*Requirements: —*
+
+Purchases that lower personal income tax — medical and rehabilitation costs (ulga rehabilitacyjna), internet, thermal modernisation — recognised from receipt lines and gathered for the yearly PIT return, with the receipts that prove them kept past the usual 90 days.
 
 ---
 
@@ -1435,15 +1484,15 @@ A public page comparing the plans in each language, from the same configuration 
 
 ---
 
-## E19 — Own Domain and Advertising
+## E19 — Advertising
 
-**BRD sections:** — · **Phase:** 2 · **Scope:** Out of scope
+**BRD sections:** — · **Phase:** 2 · **Scope:** Diploma
 
-Advertising is the free plan's way to pay for itself, but Google AdSense needs a domain the service owns — ads.txt must sit at the root of the domain, which a web.app address does not give — and a domain is bought only once analytics (F17.3) show real traffic. Out of the diploma's scope until then; the diploma describes it as the first of the two ways the service earns its keep, beside subscriptions (E18).
+Advertising is how the free plan pays for itself. In the Android app (E22) it needs no domain: AdMob ties ads to the app in Google Play, with app-ads.txt on the web.app site the listing names. Free accounts see an unobtrusive banner, and once the month's ten receipt reads are used up, can watch a rewarded ad for one more — a view earns more than a read costs (about $0.005-0.02 against $0.001-0.005), and the user chooses it. Ads on the website still need a domain of the service's own (AdSense wants ads.txt at a domain's root), so F19.1 and F19.3 wait, out of the diploma's scope, for traffic. Taken on with E22, after F17.7, whose consent covers ads.
 
 ### F19.1 — The service's own domain
 
-*Requirements: —* · *Blocked by: F17.3*
+*Requirements: —* · *Blocked by: F17.3* · *Scope: Out of scope, unlike its epic*
 
 Once traffic justifies it, the service moves to a domain of its own, bought by the author, with HTTPS and the API under the same name; budget-agent.web.app redirects to it.
 
@@ -1451,9 +1500,31 @@ Once traffic justifies it, the service moves to a domain of its own, bought by t
 
 - **F19.1.1** Domain on hosting and API, in Terraform — Point the domain at Firebase Hosting and the API at Cloud Run through Terraform, with managed certificates; redirect the web.app address; update CORS, Search Console (as a domain property) and the deployment documentation.
 
-### F19.3 — Advertising for accounts without a subscription
+### F19.4 — Ads in the Android app
 
-*Requirements: —* · *Blocked by: F19.1, F17.7*
+*Requirements: —* · *Blocked by: F22.2, F17.7*
+
+AdMob in the app for accounts without an ad-free plan: one banner of reserved size at the foot of the dashboard and statistics, never in the upload flow, a dialog or a form, shown only after the EEA consent Google's UMP SDK asks for (personalised or not, as chosen). app-ads.txt is served from budget-agent.web.app, the site the Play listing names.
+
+**Demonstrated by:** In the app on a free account, accept or refuse ad consent, then scroll the dashboard to its foot: one banner that did not shift the page; none on an admin account.
+
+- **F19.4.1** AdMob account, app-ads.txt and consent — The AdMob account under the business, the app registered, app-ads.txt on Firebase Hosting, the UMP consent form in three languages with the choice changeable from Profile; the record of processing (ADR-0020) and /privacy updated for ads.
+- **F19.4.2** Banner placements — Reserved-size banner slots in the app only (never on the web build), hidden for admins and ad-free plans, and a test that no slot appears in the upload flow or any dialog. Checked on a phone and a tablet.
+
+### F19.5 — One more receipt for a rewarded ad
+
+*Requirements: —* · *Blocked by: F19.4, F10.6*
+
+When the month's receipt reads are used up, the upload screen offers "Watch a short ad for one more receipt" instead of only saying when the limit resets. The extra read is granted by the server only when AdMob's server-side verification callback confirms the ad was watched — signed by Google, checked against its public keys, each reward once — so it cannot be claimed by calling the API. A daily cap keeps it bounded.
+
+**Demonstrated by:** On an account at its limit, press "Watch an ad for one more receipt", watch it, and upload a receipt; the quota shows the extra read was used.
+
+- **F19.5.1** Verified rewards in the quota — A public SSV callback endpoint verifying Google's signature and refusing a transaction id seen before; earned reads stored per account and day and counted by the quota (F10.6) after the monthly ones; a daily cap as a setting; tests of a forged, replayed and over-cap reward.
+- **F19.5.2** Rewarded ad on the upload screen — The offer at the limit in the app only, the rewarded ad loaded and shown, the quota re-read after the reward; what the web build says instead. Checked on a phone and a tablet.
+
+### F19.3 — Advertising on the website
+
+*Requirements: —* · *Blocked by: F19.1, F17.7* · *Scope: Out of scope, unlike its epic*
 
 Google AdSense shows ads on the public pages and in one or two places in the app that never sit inside a task — never in the upload wizard, a dialog or a form — and only for accounts whose plan is not ad-free (F18.4). Ads respect consent, do not shift the layout as they load, and fit a phone.
 
@@ -1526,4 +1597,116 @@ The settlement an employee gives the employer for a business trip: its details, 
 
 - **F20.5.1** Settlement export — PDF and CSV of a business trip's settlement through the export jobs of F7.6, with the receipts' photos in the PDF, in the user's language; the advance stored on the trip; the user's own trips only (N2). An expense without a receipt stored as a one-line receipt of a `manual` channel — description, date, amount, currency, category, optional kind and trip — counted like any receipt, kept out of the reading-accuracy report, and marked in the settlement.
 - **F20.5.2** Advance and download on the trip page — The advance received, the amount to reimburse, and the settlement download on a business trip; adding an expense without a receipt from the receipts list, the upload page and a trip's page, asked about a trip like the wizard asks. Checked at 375, 768 and 1280 px.
+
+---
+
+## E21 — Voice and Chat Assistant
+
+**BRD sections:** — · **Phase:** 2 · **Scope:** Diploma
+
+After the Android app (E22) and its ads (E19), before E13. The agent the diploma is about, made something a user talks to: they say or type what they want — "I spent 45 zloty on a taxi yesterday", "how much did I spend on coffee in October?", "I want to save 3 000 for a holiday by June" — and the assistant answers in a chat, showing what it understood as a card. Nothing is written until the user presses Save on the card; a question is answered at once, since it changes nothing. It grows step by step until everything a user can create or look up on the screens can be done by voice — expenses, receipts' trips and categories, goals, questions about spending, products and prices — but never settings, the account or anything that deletes. The assistant acts only through the services the screens use, so ownership (N2), quotas and every rule hold as they do; conversations and their cards are kept like any other user data, exported and deleted with the account.
+
+### F21.1 — Conversations and the chat screen
+
+*Requirements: N2, N6* · *Blocked by: F17.9*
+
+A chat screen, reachable from the navigation on every screen, where the user writes and the assistant answers; conversations kept and listed, newest first, each one reopened where it was left. A message is the user's text, the assistant's text, or a card — a proposed action with its fields and its state (proposed, saved, dismissed) and, once saved, a link to what it created. Every question and every card is a model call, counted against the account's quota like a receipt read.
+
+**Demonstrated by:** Open the assistant, ask "what can you do?", close the app, open it again: the conversation is there and continues.
+
+- **F21.1.1** Conversation and message storage — Conversation and message tables owned by the user (ON DELETE CASCADE, so account deletion and the full export of F17.9 take them with no extra code); a message's kind, text and card as JSON with its state; endpoints to list, open and continue a conversation; cross-user access tests (N2); rate limit and quota per message.
+- **F21.1.2** Assistant port and the tool protocol — An AssistantPort behind the LiteLLM agent (ADR-0006) taking the conversation and a registry of tools, each a narrow function over an existing service: read tools run at once, write tools only return a proposed card. A stub for tests; an ADR on why writes go through user-approved cards and never straight from the model; docs/architecture/overview.md and ADR-0020 (conversations and transcripts as personal data, kept until deleted) updated.
+- **F21.1.3** Chat screen — The chat: messages, cards rendered by kind with Save and Dismiss, the conversation list, a store owning it all; three languages. Checked at 375, 768 and 1280 px.
+
+### F21.2 — Speaking to the assistant
+
+*Requirements: —* · *Blocked by: F21.1*
+
+A microphone button beside the text field: the user speaks in Polish, Ukrainian or English, the recording goes to the model, which understands audio directly, and the words it heard appear as the user's message before the answer. The audio itself is never stored, only what was understood.
+
+**Demonstrated by:** Hold the microphone and say "wczoraj taxi 45 złotych": the message "wczoraj taxi 45 złotych" appears, then the assistant's answer.
+
+- **F21.2.1** Voice recording and transcription — Recording in the browser (MediaRecorder; the microphone permission asked for and a refusal explained), a size and length limit, the audio sent to the model with the conversation and discarded after; the transcript stored as the user's message. Checked at 375, 768 and 1280 px and in the installed app on a phone.
+
+### F21.3 — Expenses by voice
+
+*Requirements: —* · *Blocked by: F21.2, F20.5*
+
+The first thing the assistant does: "I spent 45 zloty on a taxi yesterday" becomes a card — description, amount, currency, date, category, trip if it falls in one — that the user corrects in place and saves as an expense without a receipt (F20.5), or dismisses. Several expenses in one sentence become several cards.
+
+**Demonstrated by:** Say "yesterday taxi 45, coffee 12": two cards appear; change the coffee's category, press Save on both; both are on the receipts list and in the month's total.
+
+- **F21.3.1** Expense tool and card — A write tool proposing manual expenses, dates resolved against the user's today and timezone, the category from the user's categories; the card's fields editable before Save; saving through the manual expense service, the card then linked to the receipt; tests that nothing is stored before Save and that another user's category or trip is never offered (N2). Checked at 375, 768 and 1280 px.
+
+### F21.4 — Questions about spending
+
+*Requirements: —* · *Blocked by: F21.1*
+
+"How much did I spend on coffee in October?", "where do I buy milk cheapest?", "what did I spend in Lidl this month?" — answered from the same queries the statistics, receipts and products screens use, as text and, where a figure is clearer drawn, a small chart card, with a link to the screen that shows it in full.
+
+**Demonstrated by:** Ask "how much did I spend on groceries this month compared to last?": the answer with both sums, the change, and a link to Statistics for those two months.
+
+- **F21.4.1** Read tools over statistics, receipts and products — Read tools for category totals over a period, receipts by shop, text and period, and a product's prices and shops (F16.2-3); answers in the user's language and currency; tests that a tool only ever reads the caller's data (N2).
+- **F21.4.2** Answer and chart cards — A chart card for totals over time or by category, and a link card to the screen with the same filters. Checked at 375, 768 and 1280 px.
+
+### F21.5 — Goals by voice
+
+*Requirements: —* · *Blocked by: F21.3*
+
+"I want to save 3 000 for a holiday by June", "spend less on eating out" — a goal card with its type, target and date, saved through the goals service so its mapping and advice follow as from the goals screen; "how am I doing with my holiday goal?" answered from its progress.
+
+**Demonstrated by:** Say "I want to stop spending more than 400 a month on restaurants": a spending-ceiling goal card; Save; it is on the goals screen with its categories mapped.
+
+- **F21.5.1** Goal tools and card — A write tool proposing a goal and a read tool for goal progress; the card editable before Save; saving through the goal service (F8.1-F8.2). Checked at 375, 768 and 1280 px.
+
+### F21.6 — Receipts, trips and products by voice
+
+*Requirements: —* · *Blocked by: F21.4, F21.5*
+
+The rest of what the screens create or change about the user's purchases, never settings, the account or a deletion: put a receipt on a trip or take it off, change a line's category, start a trip, save a selection of products to watch — each as a card saved by the user. The assistant says plainly what it cannot do and where on the screen it is done instead.
+
+**Demonstrated by:** Say "the Żabka receipt from Monday was on the Berlin trip": a card naming the receipt and the trip; Save; the receipt is on the trip.
+
+- **F21.6.1** Remaining write tools — Write tools for a receipt's trip, a line's category, a new trip and a product selection, each a card saved through its service; a test that no tool exists for settings, the account or deleting anything. Checked at 375, 768 and 1280 px.
+
+---
+
+## E22 — Android App
+
+**BRD sections:** — · **Phase:** 2 · **Scope:** Diploma
+
+The service in Google Play, where advertising needs no domain (E19) and a phone's camera, haptics and share sheet are at hand. The app is the existing web client wrapped in Capacitor — one codebase, the same API in the cloud — with one platform module the rest of the client asks what the device can do, so a feature checks "is there a camera, can it vibrate, was a file shared in" in one place and the web build keeps working unchanged. Published under the business's developer account, registered as an organisation with a D-U-N-S number (which spares the closed test with twelve testers a personal account needs), with a support mailbox of its own as the public contact. Built, signed and released by GitHub Actions after the first upload by hand. Next after F17.7, before E19's in-app ads and E21.
+
+### F22.1 — Developer account and store listing
+
+*Requirements: —* · *Blocked by: F17.7, F17.9, F17.10*
+
+A Google Play developer account for the JDG as an organisation (D-U-N-S number asked for early: it takes days), a dedicated support mailbox as the public contact, and the listing: name, descriptions and screenshots in three languages, icon, content rating, the privacy policy's address, the Data safety form answered from ADR-0020, and the account deletion address Google asks for (F17.9.1).
+
+**Demonstrated by:** Open the listing in Play: descriptions in Polish, Ukrainian and English, the support address, the privacy policy link opening /privacy, and the Data safety section.
+
+- **F22.1.1** Account, listing and Data safety — The steps and answers recorded in docs/ (what each Data safety question was answered and why, from ADR-0020), the listing texts in three languages kept in the repository, screenshots at phone and tablet sizes; an ADR for the organisation account, D-U-N-S and what the listing publishes about the business.
+- **F22.1.2** The support mailbox in the service — A support_email setting the contact form (F17.10.2) mails instead of admin_emails, named on the Help page and in the privacy policy; Terraform and the deployment documentation updated.
+
+### F22.2 — The app on the phone
+
+*Requirements: —* · *Blocked by: F22.1*
+
+The client built into an Android app with Capacitor: the API's address and the app's origin in CORS, Android's back button moving back through the screens, the status bar and splash in the service's colours, the offline page, and links from letters (confirming an address, resetting a password) opening the app through Android App Links (assetlinks.json on Firebase Hosting). Everything that differs on a device goes through one platform module, so screens never ask "am I in the app".
+
+**Demonstrated by:** Install the app, sign in, follow the confirmation link from the letter on the same phone and land in the app with the address confirmed; press back through three screens.
+
+- **F22.2.1** Capacitor project and the platform module — The Android project from the existing build, the platform module (web and native implementations behind one interface, tested with both), CORS for the app's origin, the back button, status bar, splash and App Links; the architecture overview updated. Checked on a phone and a tablet.
+- **F22.2.2** Camera, haptics and sharing a receipt in — The native camera for receipts, a short vibration when a receipt is read or saved, and "Share → Budget Agent" for images and PDFs from other apps opening the upload flow with them — each behind the platform module, the web build unchanged.
+
+### F22.3 — Building and releasing the app
+
+*Requirements: —* · *Blocked by: F22.2*
+
+After the first upload by hand, every merge to main builds a signed app bundle and puts it on Play's internal track; promoting a build to production is one manual run of the same workflow. No key file anywhere: GitHub signs in to Google through Workload Identity Federation, as the Cloud Run deploy does, as a service account added to the Play Console; the upload key lives in GitHub's secrets, Google holding the app signing key (Play App Signing).
+
+**Demonstrated by:** Merge a change to main and find the new version on the internal track a few minutes later; promote it to production from the Actions tab.
+
+- **F22.3.1** Release identity in Terraform — The publishing service account and its Workload Identity binding for the repository, in infra/terraform; the steps to add it to the Play Console and to store the upload key in GitHub documented.
+- **F22.3.2** Build and release workflow — A GitHub Actions workflow building the web client and the signed AAB (versionCode from the run number), uploading it to the internal track on merge to main and to production on a manual run; the release documentation updated.
 

@@ -6,7 +6,7 @@
     "sections": {
       "data": {
         "title": "Co przechowujemy",
-        "body": "Twoje konto: imię i nazwisko, adres e-mail, skrót hasła, język, walutę i budżet.\n\nTo, co dodajesz: paragony i odczytane z nich dane — sklep, datę, pozycje, kwoty, kategorie — a także podróże, cele, reguły i gospodarstwo domowe, które tworzysz. Zdjęcia paragonów i przesłane e-paragony są przechowywane jako pliki."
+        "body": "Twoje konto: imię i nazwisko, adres e-mail, skrót hasła, język, walutę i budżet.\n\nTo, co dodajesz: paragony i odczytane z nich dane — sklep, datę, pozycje, kwoty, kategorie — a także podróże, cele, reguły i gospodarstwo domowe, które tworzysz. Zdjęcia paragonów i przesłane e-paragony są przechowywane jako pliki.\n\nJeśli piszesz do nas przez formularz na stronie Pomocy, Twój adres i wiadomość trafiają do nas pocztą, abyśmy mogli odpowiedzieć; sama usługa ich nie przechowuje."
       },
       "why": {
         "title": "Po co",
@@ -18,7 +18,7 @@
       },
       "keep": {
         "title": "Jak długo",
-        "body": "Zdjęcia paragonów i przesłane pliki: 90 dni, potem magazyn je usuwa — odczytane z nich dane zostają. Pliki eksportu: 7 dni. Logi żądań: 30 dni. Wszystko inne: do usunięcia konta; kopie zapasowe bazy przechowują je jeszcze najwyżej 7 dni."
+        "body": "Zdjęcia paragonów i przesłane pliki: 90 dni, potem magazyn je usuwa — odczytane z nich dane zostają. Pliki eksportu: 7 dni. Logi żądań: 30 dni. Wszystko inne: do usunięcia konta; kopie zapasowe bazy przechowują je jeszcze najwyżej 7 dni. Wiadomość z formularza kontaktowego pozostaje w naszej skrzynce tak długo, jak wymaga tego odpowiedź."
       },
       "rights": {
         "title": "Twoje prawa",

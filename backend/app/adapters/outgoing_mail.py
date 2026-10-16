@@ -26,7 +26,12 @@ class AppEngineMailSender:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(
                     self.url,
-                    json={"to": letter.to, "subject": letter.subject, "body": letter.body},
+                    json={
+                        "to": letter.to,
+                        "subject": letter.subject,
+                        "body": letter.body,
+                        "reply_to": letter.reply_to,
+                    },
                     headers={"X-Relay-Secret": self.secret},
                 )
         except httpx.HTTPError as error:
@@ -42,4 +47,5 @@ class LogMailSender:
     """
 
     async def send(self, letter: Letter) -> None:
-        logger.warning("Letter to %s — %s\n%s", letter.to, letter.subject, letter.body)
+        reply = f" (reply to {letter.reply_to})" if letter.reply_to else ""
+        logger.warning("Letter to %s%s — %s\n%s", letter.to, reply, letter.subject, letter.body)

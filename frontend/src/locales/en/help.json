@@ -1,0 +1,147 @@
+{
+  "title": "Help",
+  "intro": "Answers to the usual questions, by area. Didn't find yours? Write to us at the bottom of the page.",
+  "areas": {
+    "receipts": {
+      "title": "Receipts",
+      "items": {
+        "photo": {
+          "q": "How do I add a receipt?",
+          "a": "Press Upload (the + on a phone) and take a photo or choose one: JPEG, PNG, HEIC or a PDF. Shop, date, every line and the total are read off it; check them and save."
+        },
+        "long": {
+          "q": "A long receipt doesn't fit in one photo",
+          "a": "Take it in several overlapping photos, up to 10 for one receipt. Lines caught in two photos are counted once."
+        },
+        "email": {
+          "q": "How do I forward an e-receipt?",
+          "a": "Profile shows your personal forwarding address. Forward the shop's e-mail receipt there from the address of your account, and it appears on Receipts a moment later — up to 20 a day."
+        },
+        "manual": {
+          "q": "A purchase without a receipt",
+          "a": "On Receipts or the upload screen choose “No receipt” and type in what, when and how much. It counts like any receipt, marked as having no document."
+        },
+        "limit": {
+          "q": "How many receipts can I add?",
+          "a": "Reading a receipt costs a model call, so each account has a monthly limit of receipts read, shown on the upload screen and on Profile. Expenses typed in by hand don't count."
+        },
+        "foreign": {
+          "q": "A receipt in another currency",
+          "a": "It is converted into your account's currency at the National Bank of Poland's rate, and both amounts are kept on the receipt."
+        }
+      }
+    },
+    "categories": {
+      "title": "Categories",
+      "items": {
+        "how": {
+          "q": "How are lines categorised?",
+          "a": "Each line is put in a category as it is read. Lines the reader was unsure of wait on the Categories screen for a look."
+        },
+        "fix": {
+          "q": "A line is in the wrong category",
+          "a": "Open the receipt and pick another category for the line. A name you correct for a shop is remembered for that shop's later receipts."
+        },
+        "rules": {
+          "q": "Can I set my own rules?",
+          "a": "Yes: on Categories → Manage, create your own categories and rules — a keyword that always sends matching lines to a category."
+        }
+      }
+    },
+    "goals": {
+      "title": "Goals and advice",
+      "items": {
+        "kinds": {
+          "q": "What goals can I set?",
+          "a": "Money goals — a spending ceiling or a sum to save — and lifestyle ones, such as eating out less, which are mapped to the categories they depend on."
+        },
+        "advice": {
+          "q": "When do I get advice?",
+          "a": "Once there are about 30 days of receipts. Advice is worked out from what you actually bought and says how much each step would change."
+        }
+      }
+    },
+    "household": {
+      "title": "Household",
+      "items": {
+        "share": {
+          "q": "How do I share a budget with my family?",
+          "a": "On Profile, create a household and send the invite link. Members see each other's receipts, read only, and the household's month and budget."
+        },
+        "private": {
+          "q": "Can I keep a receipt to myself?",
+          "a": "Yes: mark it private. It still counts in the household's total, but the others don't see what is on it."
+        }
+      }
+    },
+    "trips": {
+      "title": "Trips and per diem",
+      "items": {
+        "kinds": {
+          "q": "Personal and business trips",
+          "a": "A personal trip is your own money: it stays in the month, shown apart, with a budget of its own. A business trip is your employer's: it stays out of your budget and gets a per diem and a settlement."
+        },
+        "perdiem": {
+          "q": "How is the per diem counted?",
+          "a": "Under the Polish business-travel regulation, from the departure and return times you enter: in Poland 45 zł a day, abroad the destination's rate; part days by hours, and meals provided reduce it."
+        },
+        "settlement": {
+          "q": "How do I get the settlement for my employer?",
+          "a": "On the business trip's page enter the advance you received and download the settlement as a PDF with every receipt's photo, or as CSV: expenses + per diem − advance."
+        }
+      }
+    },
+    "data": {
+      "title": "Exports and your data",
+      "items": {
+        "export": {
+          "q": "How do I export my data?",
+          "a": "Receipts and Statistics export the list or table on screen as CSV or JSON. Profile → “Download everything” gives one archive with all your data and the photos still kept. Export files are kept 7 days."
+        },
+        "photos": {
+          "q": "Why did a receipt's photo disappear?",
+          "a": "Receipt photos are kept 90 days, then deleted; the lines and totals read from them stay. Download a business trip's settlement as PDF before then to keep its photos."
+        },
+        "delete": {
+          "q": "How do I delete my account?",
+          "a": "Profile → Delete account, with your password. Everything goes for good; download your data first if you may need it."
+        }
+      }
+    },
+    "account": {
+      "title": "Account",
+      "items": {
+        "confirm": {
+          "q": "I didn't get the confirmation email",
+          "a": "Look in spam, then press “Send again” on the banner. Until the address is confirmed you can look around but not add receipts."
+        },
+        "password": {
+          "q": "I forgot my password",
+          "a": "On the sign-in screen press “Forgot your password?” and follow the link sent to you within an hour."
+        },
+        "install": {
+          "q": "Can I install it as an app?",
+          "a": "Yes: Profile shows how to add it to the home screen of your phone or computer; it opens like an app."
+        }
+      }
+    }
+  },
+  "contact": {
+    "title": "Didn't find an answer?",
+    "intro": "Write to us: the message goes to the people running Budget Agent, and you get a copy.",
+    "email": "Your email address",
+    "topic": "Topic",
+    "topics": {
+      "question": "A question",
+      "problem": "Something doesn't work",
+      "idea": "An idea",
+      "data": "My personal data"
+    },
+    "message": "Message",
+    "send": "Send",
+    "sending": "Sending…",
+    "sent": "Thank you — your message is on its way, and a copy is in your inbox.",
+    "another": "Write another",
+    "direct": "Or write straight to"
+  }
+}

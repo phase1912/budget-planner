@@ -24,6 +24,7 @@ import { HouseholdStore } from "@/stores/HouseholdStore";
 import { LanguageStore } from "@/stores/LanguageStore";
 import { ServerStore } from "@/stores/ServerStore";
 import { AccountStore } from "@/stores/AccountStore";
+import { ContactStore } from "@/stores/ContactStore";
 
 /**
  * Single instantiation point for every MobX store in the client (F9.2.1). Feature
@@ -54,6 +55,7 @@ export class RootStore {
   readonly languageStore: LanguageStore;
   readonly serverStore: ServerStore;
   readonly accountStore: AccountStore;
+  readonly contactStore: ContactStore;
 
   constructor() {
     this.themeStore = new ThemeStore();
@@ -63,6 +65,7 @@ export class RootStore {
     this.languageStore = new LanguageStore(this.authStore);
     this.profileStore = new ProfileStore(apiClient, this.authStore, this.toastStore);
     this.accountStore = new AccountStore(apiClient, this.authStore, this.toastStore);
+    this.contactStore = new ContactStore(apiClient);
     this.budgetStore = new BudgetStore();
     // Any receipt change may have recalculated the month on screen (BRD D6, F6.5).
     const refreshMonth = () => void this.budgetStore.refresh();

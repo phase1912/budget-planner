@@ -22,7 +22,8 @@
     "preferences": "Налаштування",
     "logOut": "Вийти",
     "signIn": "Увійти",
-    "createAccount": "Створити акаунт"
+    "createAccount": "Створити акаунт",
+    "help": "Допомога"
   },
   "language": {
     "label": "Мова",

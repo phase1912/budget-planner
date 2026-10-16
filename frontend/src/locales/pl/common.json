@@ -22,7 +22,8 @@
     "preferences": "Ustawienia",
     "logOut": "Wyloguj",
     "signIn": "Zaloguj się",
-    "createAccount": "Załóż konto"
+    "createAccount": "Załóż konto",
+    "help": "Pomoc"
   },
   "language": {
     "label": "Język",

@@ -1,6 +1,7 @@
 // Writes the public pages as prerendered HTML after the build (F17.2.2).
 //
-// The landing renders in English at "/", and in each language at "/en", "/uk" and "/pl",
+// The landing renders in English at "/", and in each language at "/en", "/uk" and "/pl";
+// the Help page (F17.10) in English at "/help", the browser then showing the reader's language;
 // with that language's title, description, Open Graph tags, canonical address and hreflang
 // links, so search engines and link previews read it without running the app. The untouched
 // build output is kept as app.html: every other route falls back to it (firebase.json), so a
@@ -43,15 +44,22 @@ async function meta(language) {
   return JSON.parse(await readFile(file, "utf8")).meta;
 }
 
-function head(language, address, { title, description }) {
-  const alternates = LANGUAGES.map(
-    (code) => `<link rel="alternate" hreflang="${code}" href="${SITE}/${code}" />`,
-  ).join("\n    ");
+async function helpMeta() {
+  const file = new URL("../src/locales/en/help.json", import.meta.url);
+  const help = JSON.parse(await readFile(file, "utf8"));
+  return { title: `${help.title} — Budget Agent`, description: help.intro };
+}
+
+function head(language, address, { title, description }, languageVersions = true) {
+  const alternates = languageVersions
+    ? LANGUAGES.map(
+        (code) => `<link rel="alternate" hreflang="${code}" href="${SITE}/${code}" />`,
+      ).join("\n    ") + `\n    <link rel="alternate" hreflang="x-default" href="${SITE}/" />`
+    : "";
   return `<title>${escape(title)}</title>
     <meta name="description" content="${escape(description)}" />
     <link rel="canonical" href="${SITE}${address}" />
     ${alternates}
-    <link rel="alternate" hreflang="x-default" href="${SITE}/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Budget Agent" />
     <meta property="og:url" content="${SITE}${address}" />
@@ -62,13 +70,13 @@ function head(language, address, { title, description }) {
     <meta name="twitter:card" content="summary" />`;
 }
 
-async function page(path, language, out) {
+async function page(path, language, out, pageMeta = null) {
   const body = await render(path, language);
   const html = template
     .replace(/<html lang="[^"]*">/, `<html lang="${language}">`)
     .replace(
       /<title>[\s\S]*?<\/title>\s*<meta\s+name="description"[\s\S]*?\/>/,
-      head(language, path, await meta(language)),
+      pageMeta ? head(language, path, pageMeta, false) : head(language, path, await meta(language)),
     )
     .replace('<div id="root"></div>', `<div id="root">${body}</div>`);
   if (!html.includes(body)) throw new Error(`Could not place the rendered ${path} into the page`);
@@ -78,3 +86,4 @@ async function page(path, language, out) {
 
 await page("/", "en", "index.html");
 for (const language of LANGUAGES) await page(`/${language}`, language, `${language}.html`);
+await page("/help", "en", "help.html", await helpMeta());

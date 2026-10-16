@@ -173,6 +173,20 @@ export function PublicLandingPage({ language }: { language?: Language }) {
             </a>
           ))}
         </nav>
+        <nav
+          aria-label={t("footer.label")}
+          className="flex flex-wrap justify-center gap-x-4 gap-y-1"
+        >
+          {(["help", "privacy", "terms"] as const).map((page) => (
+            <Link
+              key={page}
+              to={`/${page}`}
+              className="inline-flex min-h-11 items-center text-md text-muted-foreground underline-offset-2 hover:text-foreground hover:underline md:min-h-0"
+            >
+              {t(`footer.${page}`)}
+            </Link>
+          ))}
+        </nav>
       </footer>
     </div>
   );

@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
-import { ArrowLeft, Moon, Sun, LogOut, Upload, Settings } from "lucide-react";
+import { ArrowLeft, CircleHelp, Moon, Sun, LogOut, Upload, Settings } from "lucide-react";
 import { useStores } from "@/stores/StoreContext";
 import { Button } from "@/shared/components";
 import { Navigation } from "./Navigation";
@@ -123,6 +123,16 @@ export const Header = observer(() => {
                     {t("header.preferences")}
                     <Settings size={16} className="text-muted-foreground" />
                   </Link>
+                  <Link
+                    to="/help"
+                    onClick={() => {
+                      setMenuOpen(false);
+                    }}
+                    className="flex items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-[14px] text-foreground hover:bg-surface-hover transition-colors"
+                  >
+                    {t("header.help")}
+                    <CircleHelp size={16} className="text-muted-foreground" />
+                  </Link>
                   <button
                     onClick={() => {
                       void handleLogout();
@@ -138,6 +148,11 @@ export const Header = observer(() => {
           </>
         ) : (
           <>
+            <Link to="/help" className="hidden md:contents">
+              <Button variant="ghost" size="compact" className="whitespace-nowrap">
+                {t("header.help")}
+              </Button>
+            </Link>
             <LanguageSwitcher compact />
             <Button
               variant="ghost"
