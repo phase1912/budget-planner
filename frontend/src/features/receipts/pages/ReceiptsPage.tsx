@@ -7,7 +7,7 @@ import { useStores } from "@/stores/StoreContext";
 import { DeleteReceiptDialog } from "../components/DeleteReceiptDialog";
 import { EditReceiptDialog } from "../components/EditReceiptDialog";
 import { ReceiptDetailModal } from "../components/ReceiptDetailModal";
-import { DateFilterModal } from "../components/DateFilterModal";
+import { DateFilterModal, ReceiptOrderControl } from "../components/DateFilterModal";
 import { StatusFilterDropdown } from "../components/StatusFilterDropdown";
 import { ChannelFilterDropdown } from "../components/ChannelFilterDropdown";
 import { Button, Card, Input, IconTile, Pagination, SegmentedControl } from "@/shared/components";
@@ -148,6 +148,7 @@ export const ReceiptsPage = observer(() => {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
           <div className="flex flex-wrap items-center gap-2.5">
             <DateFilterModal />
+            <ReceiptOrderControl />
             <StatusFilterDropdown />
             <ChannelFilterDropdown />
           </div>

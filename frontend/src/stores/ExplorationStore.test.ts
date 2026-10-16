@@ -58,4 +58,12 @@ describe("ExplorationStore (F16.2)", () => {
     });
     expect(store.selections.map((s) => s.name)).toEqual(["Snacks"]);
   });
+
+  it("knows ticks that are exactly a saved selection, in any order", () => {
+    store.selections = [{ id: "s1", name: "Snacks", product_ids: ["p1", "p2"] }] as never;
+
+    expect(store.selectionMatching(["p2", "p1"])?.name).toBe("Snacks");
+    expect(store.selectionMatching(["p1"])).toBeUndefined();
+    expect(store.selectionMatching(["p1", "p2", "p3"])).toBeUndefined();
+  });
 });

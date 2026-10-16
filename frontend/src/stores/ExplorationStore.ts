@@ -39,6 +39,19 @@ export class ExplorationStore {
     [this.start, this.end] = presetDays("this_month", new Date());
   }
 
+  /**
+   * The saved selection holding exactly these products, in any order, if one does: what
+   * is ticked is then already saved, so saving it again is not offered.
+   */
+  selectionMatching(productIds: readonly string[]): Selection | undefined {
+    const ticked = new Set(productIds);
+    return this.selections.find(
+      (selection) =>
+        selection.product_ids.length === ticked.size &&
+        selection.product_ids.every((id) => ticked.has(id)),
+    );
+  }
+
   /** Explore these products; an empty list clears the result. */
   setProducts(ids: string[]): void {
     this.productIds = ids;

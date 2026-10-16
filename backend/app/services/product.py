@@ -70,6 +70,7 @@ class ProductService:
         to the model, and with no answer, or nothing like it, starts a product of its own.
         Commonest names go first, so a product is named the way it is usually printed.
         """
+        await self._rekey(user_id)
         lines = await self.products.unmatched_lines(user_id)
         if not lines:
             return 0
@@ -107,6 +108,57 @@ class ProductService:
             await self._ask(user_id, questions, by_key, printed, keys, owner, known)
         await self.session.flush()
         return sum(len(ids) for text, ids in by_key.items() if text in owner)
+
+    async def _rekey(self, user_id: uuid.UUID) -> None:
+        """Bring known ways of printing up to how names are matched now (F16.1).
+
+        When matching changes, as when billing periods stopped counting as part of a name,
+        products told apart only by what no longer counts become one again: the most
+        bought keeps its name and saved selections follow, as in `merge`.
+        """
+        aliases = list(await self.products.aliases(user_id))
+        fresh = {a.id: product_key(a.printed_name).text for a in aliases}
+        stale = [a for a in aliases if a.key != fresh[a.id]]
+        if not stale:
+            return
+        groups: dict[str, list[ProductAlias]] = defaultdict(list)
+        for alias in aliases:
+            groups[fresh[alias.id]].append(alias)
+        bought = {pid: facts[0] for pid, facts in (await self.products.purchases(user_id)).items()}
+        names = {p.id: p.name for p in await self.products.list_with_aliases(user_id)}
+        merged_into: dict[uuid.UUID, uuid.UUID] = {}
+        kept: list[ProductAlias] = []
+        for text, group in groups.items():
+            if all(a.key == text for a in group):
+                continue
+            owners = list(dict.fromkeys(self._current(a.product_id, merged_into) for a in group))
+            target = max(owners, key=lambda p: bought.get(p, 0))
+            if len(owners) > 1:
+                await self.merge(user_id, target, owners)
+                merged_into.update({p: target for p in owners if p != target})
+            keep = next(
+                (a for a in group if a.key == text),
+                next((a for a in group if a.printed_name == names.get(target)), group[0]),
+            )
+            kept.append(keep)
+            for alias in group:
+                if alias is not keep:
+                    await self.session.delete(alias)
+        # Two steps, so a key taken over from an alias that is itself changing never
+        # meets it in the unique (user, key) index mid-update.
+        for alias in kept:
+            alias.key = f"~{alias.id}"
+        await self.session.flush()
+        for alias in kept:
+            alias.key = fresh[alias.id]
+        await self.session.flush()
+        self.session.expire_all()
+
+    @staticmethod
+    def _current(product_id: uuid.UUID, merged_into: dict[uuid.UUID, uuid.UUID]) -> uuid.UUID:
+        while product_id in merged_into:
+            product_id = merged_into[product_id]
+        return product_id
 
     async def _ask(
         self,

@@ -14,6 +14,9 @@ vi.mock("../api/client", () => ({
   },
 }));
 
+const TODAY = new Date(2026, 9, 16);
+const THIS_MONTH = { start: "2026-10-01", end: "2026-10-16" };
+
 describe("ReceiptStore", () => {
   let store: ReceiptStore;
   let toastStore: ToastStore;
@@ -23,7 +26,8 @@ describe("ReceiptStore", () => {
   beforeEach(() => {
     toastStore = new ToastStore();
     showErrorSpy = vi.spyOn(toastStore, "showError");
-    store = new ReceiptStore(toastStore);
+    localStorage.clear();
+    store = new ReceiptStore(toastStore, undefined, () => TODAY);
     vi.clearAllMocks();
   });
 
@@ -44,7 +48,7 @@ describe("ReceiptStore", () => {
     await store.fetchReceipts(1, 20);
 
     expect(apiClient.GET).toHaveBeenCalledWith("/receipts", {
-      params: { query: { page: 1, size: 20 } },
+      params: { query: { page: 1, size: 20, ...THIS_MONTH } },
     });
     expect(store.receipts).toEqual(mockData.items);
     expect(store.total).toBe(1);
@@ -125,7 +129,7 @@ describe("ReceiptStore", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(apiClient.GET).toHaveBeenCalledWith("/receipts", {
-      params: { query: { page: 1, size: 20, channel: "email" } },
+      params: { query: { page: 1, size: 20, channel: "email", ...THIS_MONTH } },
     });
   });
 
@@ -167,6 +171,50 @@ describe("ReceiptStore", () => {
     });
   });
 
+  it("opens on the current month and remembers the period chosen", async () => {
+    vi.mocked(apiClient.GET).mockResolvedValue({
+      data: { items: [], total: 0, page: 1, size: 20, pages: 0 },
+      response: new Response(),
+    });
+    expect(store.period).toBe("this_month");
+
+    store.choosePeriod("last_3_months");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(apiClient.GET).toHaveBeenCalledWith("/receipts", {
+      params: { query: { page: 1, size: 20, start: "2026-08-01", end: "2026-10-16" } },
+    });
+    const next = new ReceiptStore(toastStore, undefined, () => TODAY);
+    expect([next.period, next.startDateFilter]).toEqual(["last_3_months", "2026-08-01"]);
+  });
+
+  it("lists recently added receipts over every date, newest upload first", async () => {
+    vi.mocked(apiClient.GET).mockResolvedValue({
+      data: { items: [], total: 0, page: 1, size: 20, pages: 0 },
+      response: new Response(),
+    });
+
+    store.chooseOrder("recent");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(store.period).toBe("all");
+    expect(apiClient.GET).toHaveBeenCalledWith("/receipts", {
+      params: { query: { page: 1, size: 20, order: "recent" } },
+    });
+  });
+
+  it("a month opened from the dashboard is shown but not remembered", () => {
+    vi.mocked(apiClient.GET).mockResolvedValue({
+      data: { items: [], total: 0, page: 1, size: 20, pages: 0 },
+      response: new Response(),
+    });
+
+    store.setFilters({ startDate: "2026-08-01", endDate: "2026-08-31" });
+
+    expect(store.period).toBe("custom");
+    expect(new ReceiptStore(toastStore, undefined, () => TODAY).period).toBe("this_month");
+  });
+
   it("clearing a filter removes it from the query", async () => {
     store.statusFilter = "parsed";
     vi.mocked(apiClient.GET).mockResolvedValue({
@@ -187,6 +235,7 @@ describe("ReceiptStore", () => {
         query: {
           page: 1,
           size: 20,
+          ...THIS_MONTH,
         },
       },
     });

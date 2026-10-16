@@ -90,7 +90,8 @@
     "allPurchases_one": "Wszystkie zakupy ({{count}})",
     "allPurchases_few": "Wszystkie zakupy ({{count}})",
     "allPurchases_many": "Wszystkie zakupy ({{count}})",
-    "allPurchases_other": "Wszystkie zakupy ({{count}})"
+    "allPurchases_other": "Wszystkie zakupy ({{count}})",
+    "oneTime": "Kupiony raz w tym okresie: wykres ceny pojawi się od drugiego zakupu."
   },
   "selections": {
     "title": "Moje zestawy",
@@ -99,7 +100,8 @@
     "name": "Nazwa",
     "placeholder": "Przekąski",
     "save": "Zapisz",
-    "delete": "Usuń zestaw „{{name}}”"
+    "delete": "Usuń zestaw „{{name}}”",
+    "showing": "Otwarto «{{name}}»"
   },
   "cheaper": {
     "mark": "Taniej w {{shop}}: o {{amount}} {{currency}}/{{unit}} ({{percent}}%) niż w {{instead}}"

@@ -4,6 +4,7 @@ import { Container } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
 import { BottomNavigation } from "./BottomNavigation";
 import { Header } from "./Header";
+import { ServerWakingNotice } from "./ServerWakingNotice";
 import { ToastContainer } from "@/shared/components/Toast/Toast";
 
 /**
@@ -19,6 +20,7 @@ export const AppShell = observer(() => {
     <div className="flex flex-col min-h-screen bg-muted text-foreground">
       <Header />
       <ToastContainer />
+      <ServerWakingNotice />
 
       <main
         className={`flex-grow overflow-clip flex flex-col md:p-8 ${withBottomBar ? "pb-24" : ""}`}

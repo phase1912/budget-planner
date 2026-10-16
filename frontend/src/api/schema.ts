@@ -2995,10 +2995,12 @@ export interface components {
          *
          *     `newest` is the receipts screen and a running month's "Latest receipts";
          *     `largest` is a finished month's "Biggest receipts", where what the money
-         *     went on matters more than when it was spent.
+         *     went on matters more than when it was spent; `recent` is the receipts screen's
+         *     "Recently added", by when a receipt arrived, so one bought long ago and uploaded or
+         *     emailed today is found at the top.
          * @enum {string}
          */
-        ReceiptOrder: "newest" | "largest";
+        ReceiptOrder: "newest" | "largest" | "recent";
         /**
          * ReceiptPrivacyRequest
          * @description Whether the owner's household may see this receipt beyond its money (F12.4).

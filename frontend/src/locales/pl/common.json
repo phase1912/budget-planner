@@ -90,5 +90,6 @@
     "from": "Poprawiono z „{{name}}”",
     "undo": "Cofnij",
     "forget": "Zapomnij dla tego sklepu"
-  }
+  },
+  "serverWaking": "Uruchamiamy serwer: po przerwie pierwsze ładowanie trwa do 20 sekund."
 }

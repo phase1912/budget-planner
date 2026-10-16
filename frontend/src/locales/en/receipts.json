@@ -33,7 +33,7 @@
   },
   "list": {
     "title": "Receipts",
-    "stored": "{{count}} stored · newest first",
+    "stored": "{{count}} stored",
     "export": "Export this list",
     "whose": "Whose receipts",
     "search": "Merchant or item",
@@ -57,7 +57,14 @@
     "items_other": "{{count}} items",
     "convertedFrom": "from {{amount}} {{currency}}",
     "unconvertedIn": "in {{amount}} {{currency}}",
-    "manual": "Typed in without a receipt"
+    "manual": "Typed in without a receipt",
+    "allTime": "All time",
+    "allTimeShort": "All",
+    "order": "Order",
+    "byPurchase": "By purchase date",
+    "byPurchaseShort": "Bought",
+    "recent": "Recently added",
+    "recentShort": "Added"
   },
   "status": {
     "inTotal": "In the total",

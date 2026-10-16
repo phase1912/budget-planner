@@ -33,8 +33,14 @@
          (F17.2) is cleared before it is ever painted. -->
     <script>
       try {
-        if (localStorage.getItem("budget_access_token"))
+        if (localStorage.getItem("budget_access_token")) {
           document.getElementById("root").replaceChildren();
+          // The server may be asleep: start it while the app's code is still downloading.
+          if ("%VITE_API_BASE_URL%".indexOf("http") === 0)
+            fetch("%VITE_API_BASE_URL%/health", { mode: "no-cors", credentials: "omit" }).catch(
+              function () {},
+            );
+        }
       } catch (e) {}
     </script>
     <script type="module" src="/src/main.tsx"></script>

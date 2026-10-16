@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -134,12 +134,25 @@ class AuthService:
             user_id=user.id,
             token=new_refresh_token_str,
             family_id=rt.family_id,
-            expires_at=rt.expires_at,
+            expires_at=await self._extended_expiry(rt.family_id, now),
         )
         self.session.add(new_rt)
         await self.session.flush()
 
         return UserResponse.model_validate(user), access_token, new_refresh_token_str
+
+    async def _extended_expiry(self, family_id: uuid.UUID, now: datetime) -> datetime:
+        """When a session refreshed now ends: a full term from now, within its absolute cap.
+
+        Someone using the app keeps their session; one left alone ends after the term, and
+        none outlives the cap counted from sign-in (F1.2.2).
+        """
+        settings = get_settings()
+        signed_in = await self.session.scalar(
+            select(func.min(RefreshToken.created_at)).where(RefreshToken.family_id == family_id)
+        )
+        cap = (signed_in or now) + timedelta(days=settings.refresh_token_absolute_days)
+        return min(now + timedelta(days=settings.refresh_token_expire_days), cap)
 
     async def logout(self, request: RefreshRequest) -> None:
         stmt = select(RefreshToken).where(RefreshToken.token == request.refresh_token)

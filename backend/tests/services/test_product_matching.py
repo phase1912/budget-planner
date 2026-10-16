@@ -8,8 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import NotFoundError
 from app.models.line_item import LineItem
+from app.models.product import Product, ProductAlias
 from app.models.receipt import Receipt, ReceiptStatus
 from app.ports.product_matching import MatchQuestion
+from app.repository.product import ProductRepository
 from app.services.product import ProductService, ProductSummary
 from tests.factories.user import UserFactory
 
@@ -203,3 +205,35 @@ async def test_search_finds_a_product_by_any_way_it_is_printed(db_session: Async
         "Jogurt Natural 330ml"
     ]
     assert [p.name for p in await service.list_products(user.id, "CHLEB")] == ["Chleb 300g"]
+
+
+@pytest.mark.asyncio
+async def test_products_split_by_a_billing_period_in_the_name_become_one_again(
+    db_session: AsyncSession,
+) -> None:
+    """Before periods were left out of names, each month's line started a new product."""
+    user = await UserFactory.create_async()
+    october = "Claude Pro October 3 - November 3, 2026"
+    november = "Claude Pro November 3 - December 3, 2026"
+    once = await _receipt(db_session, user.id, "Anthropic", (october, "90.00"))
+    twice = [await _receipt(db_session, user.id, "Anthropic", (november, "90.00")) for _ in "ab"]
+    # As the old matching stored them: one product per month, keyed with its dates.
+    old: dict[str, Product] = {}
+    for name, receipts in ((october, [once]), (november, twice)):
+        product = Product(user_id=user.id, name=name)
+        product.aliases = [
+            ProductAlias(user_id=user.id, key=f"stale {name}".lower(), printed_name=name)
+        ]
+        db_session.add(product)
+        await db_session.flush()
+        await ProductRepository(db_session).link([r.line_items[0].id for r in receipts], product.id)
+        old[name] = product
+    service = ProductService(db_session)
+    selection = await service.save_selection(user.id, "Subscriptions", [old[october].id])
+
+    products = await service.list_products(user.id)
+
+    assert [(p.name, p.purchases) for p in products] == [(november, 3)]
+    assert [(v.printed_name, v.purchases) for v in products[0].variants] == [(november, 3)]
+    await db_session.refresh(selection)
+    assert selection.product_ids == [str(products[0].id)]

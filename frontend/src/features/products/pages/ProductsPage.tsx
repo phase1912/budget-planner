@@ -38,6 +38,8 @@ export const ProductsPage = observer(function ProductsPage() {
   const [draft, setDraft] = useState(productsStore.search);
   const currency = authStore.user?.currency ?? "PLN";
   const { products, isLoading, loadError, selected } = productsStore;
+  // Ticks that are exactly a saved selection are already saved: no offer to save them again.
+  const openSelection = explorationStore.selectionMatching(selected);
 
   useEffect(() => {
     void productsStore.load();
@@ -92,7 +94,12 @@ export const ProductsPage = observer(function ProductsPage() {
                 >
                   <button
                     type="button"
-                    className="min-h-11 cursor-pointer rounded-l-pill px-3.5 text-md font-semibold hover:bg-muted md:min-h-0 md:py-1.5"
+                    aria-pressed={openSelection?.id === selection.id}
+                    className={`min-h-11 cursor-pointer rounded-l-pill px-3.5 text-md font-semibold md:min-h-0 md:py-1.5 ${
+                      openSelection?.id === selection.id
+                        ? "bg-primary/10 text-primary"
+                        : "hover:bg-muted"
+                    }`}
                     onClick={() => {
                       productsStore.select(selection.product_ids);
                     }}
@@ -136,7 +143,11 @@ export const ProductsPage = observer(function ProductsPage() {
           <div className="sticky top-2 z-20 rounded-control bg-background shadow-raised">
             <Note tone="info">
               <span className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
-                <span>{t("picked", { count: selected.length })}</span>
+                <span>
+                  {openSelection
+                    ? t("selections.showing", { name: openSelection.name })
+                    : t("picked", { count: selected.length })}
+                </span>
                 <span className="flex flex-wrap gap-2 [&>*]:flex-1 md:flex-nowrap md:[&>*]:flex-none">
                   <Button
                     variant="ghost"
@@ -147,15 +158,17 @@ export const ProductsPage = observer(function ProductsPage() {
                   >
                     {t("clear")}
                   </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      setSaving(true);
-                    }}
-                  >
-                    {t("selections.open")}
-                  </Button>
+                  {!openSelection && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setSaving(true);
+                      }}
+                    >
+                      {t("selections.open")}
+                    </Button>
+                  )}
                   {selected.length > 1 && (
                     <Button
                       variant="primary"

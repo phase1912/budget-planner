@@ -6,7 +6,11 @@ import { Button, Input, Card, Note } from "@/shared/components";
 import { useTranslation } from "react-i18next";
 
 export const LoginPage = observer(() => {
-  const { authStore } = useStores();
+  const { authStore, serverStore } = useStores();
+  // The server may be asleep: start it while the form is being filled in.
+  React.useEffect(() => {
+    serverStore.wake();
+  }, [serverStore]);
   const { t } = useTranslation("auth");
   const navigate = useNavigate();
   const location = useLocation();

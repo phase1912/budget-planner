@@ -41,6 +41,7 @@ const store = vi.hoisted(() => ({
   get selectedProducts() {
     return store.products.filter((p) => store.selected.includes((p as { id: string }).id));
   },
+  productById: (id: string) => store.products.find((p) => (p as { id: string }).id === id),
   load: vi.fn(),
   setSearch: vi.fn(),
   toggle: vi.fn((id: string) => {
@@ -72,6 +73,12 @@ const exploration = vi.hoisted(() => ({
   chooseRange: vi.fn(),
   saveSelection: vi.fn().mockResolvedValue(true),
   deleteSelection: vi.fn(),
+  selectionMatching: (ids: readonly string[]) =>
+    exploration.selections.find(
+      (selection) =>
+        selection.product_ids.length === new Set(ids).size &&
+        selection.product_ids.every((id) => ids.includes(id)),
+    ),
 }));
 
 vi.mock("@/stores/StoreContext", () => ({
@@ -223,5 +230,42 @@ describe("ProductsPage (F16.1)", () => {
     await vi.waitFor(() => {
       expect(exploration.saveSelection).toHaveBeenCalledWith("Breakfast");
     });
+  });
+
+  it("does not offer to save a saved selection again once it is open", () => {
+    exploration.selections = [{ id: "s1", name: "Snacks", product_ids: ["p1", "p2"] }];
+    store.selected = ["p2", "p1"];
+    renderPage();
+
+    expect(screen.getByRole("button", { name: "Snacks" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("Showing «Snacks»")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save as a selection" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Clear" })).toBeInTheDocument();
+  });
+
+  it("says why a product bought once has no price chart", () => {
+    store.products = [YOGHURT];
+    store.selected = ["p1"];
+    exploration.result = {
+      totals: { times: 1, spent: "4.49", quantities: {} },
+      months: [{ month: "2026-10-01", amounts: { times: 1, spent: "4.49", quantities: {} } }],
+      products: [
+        {
+          product: YOGHURT,
+          amounts: { times: 1, spent: "4.49", quantities: {} },
+          prices: [{ day: "2026-10-02", shop: "Lidl", unit_price: "4.49", base_price: "13.61" }],
+          change: null,
+          shops: [],
+        },
+      ],
+    };
+    renderPage();
+
+    expect(
+      screen.getByText(
+        "Bought once in this period: the price chart appears from the second purchase.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("figure")).not.toBeInTheDocument();
   });
 });

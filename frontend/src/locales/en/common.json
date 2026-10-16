@@ -88,5 +88,6 @@
     "from": "Corrected from “{{name}}”",
     "undo": "Undo",
     "forget": "Forget for this shop"
-  }
+  },
+  "serverWaking": "Starting the server: after a quiet spell the first load takes up to 20 seconds."
 }

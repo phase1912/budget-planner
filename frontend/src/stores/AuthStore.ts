@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import type { Middleware } from "openapi-fetch";
 
-import { apiClient, type ApiClient } from "@/api/client";
+import { apiClient, patientFetch, type ApiClient } from "@/api/client";
 import type { components } from "@/api/schema";
 import { AsyncState } from "@/stores/AsyncState";
 import i18n from "@/i18n";
@@ -78,7 +78,7 @@ export class AuthStore {
               if (currentToken) {
                 newRequest.headers.set("Authorization", `Bearer ${currentToken}`);
               }
-              return await fetch(newRequest);
+              return await patientFetch(newRequest);
             } catch (err) {
               // If the request body has already been consumed (e.g., FormData file uploads),
               // we cannot retry it automatically. The user must retry the action manually.

@@ -6,6 +6,7 @@ import { LoginPage } from "./LoginPage";
 // Mock the store context
 vi.mock("@/stores/StoreContext", () => ({
   useStores: () => ({
+    serverStore: { wake: vi.fn() },
     authStore: {
       authState: { isLoading: false, error: null },
       login: vi.fn().mockResolvedValue(true),
