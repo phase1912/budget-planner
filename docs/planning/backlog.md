@@ -1336,7 +1336,7 @@ The author can see whether the service has an audience: visitors, where they com
 
 **Demonstrated by:** Open the analytics dashboard and read last week's visitors by source; open the admin metrics page and read 3 sign-ups, 2 users active this week, 1 returning from last week, 14 receipts read.
 
-- **F17.3.1** Cookieless visitor analytics — Umami (cloud free tier, self-hosting kept possible) on the public pages and the app, without cookies or personal data, page views and the visit-to-sign-up path as events; the choice and its limits recorded in an ADR, and the privacy policy (F17.7) states it.
+- **F17.3.1** Cookieless visitor analytics — Umami (cloud free tier in the EU, self-hosting kept possible) on the public pages and the app, needing no consent: nothing stored on the device, no IP kept (a hash salted daily), no lasting fingerprint, the data used for the service's own statistics only; page views and the visit-to-sign-up path as events; the choice and these conditions in an ADR and ADR-0020, the privacy policy (F17.7) stating it, and the CI check of F17.7.2 allowing its one script by name.
 - **F17.3.2** Usage metrics for the admin — An admin-only endpoint and page with sign-ups per day, weekly and monthly active users, returning users and receipts read, as aggregate counts only; refused to anyone but an admin, with a test. Checked at 375, 768 and 1280 px.
 
 ### F17.4 — Interactive demo on sample data
@@ -1376,12 +1376,12 @@ Search engines can find, read and present the service: they are told what to cra
 
 *Requirements: —* · *Blocked by: F17.2*
 
-The service states what it collects and why — including the cookieless analytics — and the terms it is offered under, in all three languages, linked from every public page and from sign-up; and it asks before setting any cookie that is not strictly needed, through a consent platform Google accepts in the EEA, so anything added later that needs consent — advertising (E19), other analytics — only runs once given. Wording to be checked against the E18 legal investigation.
+The service states what it collects and why and the terms it is offered under, in all three languages, linked from every public page and from sign-up. The website keeps on the device only what is strictly needed — the session, and choices the user made (theme, language, a list's period) — and loads nothing from third parties, so under ePrivacy it asks no consent, and a consent banner with nothing to ask would only train people to click through. A check in CI keeps it so: the day anything needing consent arrives, the build fails until it comes with its banner — on the website with AdSense (F19.3), in the app through Google's UMP (F19.4.1). Analytics (F17.3) stays cookieless and needs none. Wording to be checked against the E18 legal investigation.
 
-**Demonstrated by:** Open the landing page for the first time on a phone: a consent banner offers accept, reject and choose; rejecting leaves only strictly needed cookies; "Privacy" in the footer opens the policy in the page's language, and the choice can be changed there.
+**Demonstrated by:** Open the landing page on a phone: no banner, no cookie set; "Privacy" in the footer opens the policy in the page's language, which says what is kept on the device and why no consent is asked.
 
 - **F17.7.1** Privacy policy and terms pages — The privacy policy and terms pages at /privacy and /terms, drafted in F17.9.4 from the record of processing (ADR-0020) and already linked from sign-up and Profile: their wording checked and completed (cookieless analytics, the consent choice), prerendered like the landing, and linked from the footer of every public page. Checked at 375, 768 and 1280 px.
-- **F17.7.2** Cookie consent with Google Consent Mode — A Google-certified consent platform with accept, reject and per-purpose choices in three languages, Consent Mode v2 signals, nothing beyond strictly needed cookies before consent, the choice kept and changeable from the privacy page, and a test that no optional script loads before consent. Checked at 375, 768 and 1280 px.
+- **F17.7.2** Nothing that needs consent, kept so by CI — A check run in CI that fails when the built site or the client's source loads a script, style, font or image from another origin, sets a cookie, or writes to the device's storage under a key not on the list of strictly needed ones; the list and why each entry is exempt in the privacy policy and ADR-0020. The consent banner itself moves to F19.3, where AdSense first needs it.
 
 ### F17.8 — Trusted accounts
 
@@ -1530,7 +1530,7 @@ Google AdSense shows ads on the public pages and in one or two places in the app
 
 **Demonstrated by:** Signed in on the free plan, scroll the dashboard to its foot and see one ad block that did not move the page as it loaded; on a paid account the block is not there.
 
-- **F19.3.1** AdSense account and site approval — Create the AdSense account for the business, add ads.txt at the domain's root, request site approval, and document the policies the placements must keep to.
+- **F19.3.1** AdSense account, site approval and consent — Create the AdSense account for the business, add ads.txt at the domain's root, request site approval, and document the policies the placements must keep to; the consent banner moved here from F17.7.2 — a Google-certified consent platform with accept, reject and per-purpose choices in three languages and Consent Mode v2, no ad script before consent, the choice changeable from the privacy page.
 - **F19.3.2** Ad placements — Reserved-size ad slots on the landing page and at the foot of the dashboard and statistics, loaded after consent, hidden for an ad-free plan, and a test that no slot appears in the upload wizard or any dialog. Checked at 375, 768 and 1280 px.
 
 ---

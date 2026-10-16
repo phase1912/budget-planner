@@ -24,6 +24,7 @@ data. Wording to be reviewed in the E18 legal investigation.
 | Export files | Giving the user their data or a settlement | Contract, 6(1)(b); art. 15/20 | 7 days |
 | Messages through the contact form: reply address, topic, text (F17.10) | Answering the person who wrote | Legitimate interest, 6(1)(f); a data request, art. 12 | Not stored by the service: mailed to the support mailbox (F22.1.2) and a copy to the sender; kept there as long as the correspondence needs |
 | Sessions (refresh tokens) | Staying signed in | Contract, 6(1)(b) | 30 days unused, 90 at most (F17.8) |
+| Kept in the visitor's browser (F17.7): the session tokens and account, chosen theme, language and list view, dismissed hints (localStorage), the app's own files (Cache Storage) | Signing in and keeping choices the user made | ePrivacy art. 5(3) exemption: strictly necessary or requested by the user — no consent asked; no cookies, nothing from other origins, kept so by `npm run lint:privacy` in CI | Until signing out or clearing the site's data |
 | Client IP addresses (in memory, for rate limits) and request logs (URL, status, IP, user agent) | Security, abuse prevention, debugging | Legitimate interest, 6(1)(f) | Memory: minutes; Cloud Logging: 30 days (default bucket) |
 | Database backups (disk snapshots) | Recovery from failure | Legitimate interest, 6(1)(f) | 7 days — a deleted account is gone from them within 7 days |
 
@@ -31,6 +32,9 @@ No special categories (art. 9) are asked for; a receipt may reveal some (a pharm
 purchase), which the user chooses to upload. Nothing is sold, shared for advertising or
 used to profile beyond the user's own budget advice. Analytics (F17.3) is cookieless and
 aggregate; anything needing consent waits for F17.7's consent banner.
+
+The controller is Bohdan Razhyk, a sole trader (JDG) in Poland, reached at
+bohdan.razhyk.support@gmail.com or the Help page's form (F17.10, F22.1.2).
 
 ### Where, and by whom (processors)
 
