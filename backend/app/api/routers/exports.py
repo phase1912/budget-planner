@@ -16,6 +16,7 @@ from app.api.errors import (
 )
 from app.api.rate_limit import limiter
 from app.db.session import get_db_session
+from app.domain.activity import ActivityKind
 from app.domain.periods import DateRange
 from app.domain.trips import TripKind
 from app.models.export_job import ExportFormat, ExportJob, ExportKind, ExportStatus
@@ -24,6 +25,7 @@ from app.ports.storage import StoragePort
 from app.repository.export_job import ExportJobRepository
 from app.repository.trip import TripRepository
 from app.schemas.export import ExportJobResponse, ExportRequest
+from app.services.activity import ActivityService
 from app.services.export import export_filename, run_export
 
 router = APIRouter(prefix="/api/v1/exports", tags=["exports"])
@@ -105,6 +107,7 @@ async def start_export(
         ),
     )
     ExportJobRepository(session).add(job)
+    ActivityService(session).record(current_user.id, ActivityKind.EXPORTED)
     await session.commit()
     await session.refresh(job)
     background_tasks.add_task(run_export, job.id)

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { Container } from "@/shared/components";
@@ -14,8 +15,12 @@ import { ToastContainer } from "@/shared/components/Toast/Toast";
  * way back, so it goes without the bar, as docs/design/screens/upload-mobile.html does.
  */
 export const AppShell = observer(() => {
-  const { authStore } = useStores();
-  const { pathname } = useLocation();
+  const { authStore, analyticsStore } = useStores();
+  const { pathname, search } = useLocation();
+  // Each public page opened is counted, without anything about the reader (F17.3.2).
+  useEffect(() => {
+    analyticsStore.countView(pathname, document.referrer, search, authStore.isAuthenticated);
+  }, [analyticsStore, authStore, pathname, search]);
   const withBottomBar = authStore.isAuthenticated && !pathname.startsWith("/upload");
   return (
     <div className="flex flex-col min-h-screen bg-muted text-foreground">

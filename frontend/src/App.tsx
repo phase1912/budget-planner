@@ -11,6 +11,7 @@ import { ResetPasswordPage } from "@/features/auth/pages/ResetPasswordPage";
 import { ConfirmLinkPage } from "@/features/auth/pages/ConfirmLinkPage";
 import { LegalPage } from "@/features/legal/LegalPage";
 import { HelpPage } from "@/features/help/HelpPage";
+import { AdminDashboardPage } from "@/features/admin/AdminDashboardPage";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 import { ProfilePage } from "@/features/profile/pages/ProfilePage";
@@ -81,6 +82,7 @@ export const App = observer(function App() {
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/join/:code" element={<JoinHouseholdPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />

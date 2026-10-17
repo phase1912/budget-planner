@@ -24,8 +24,16 @@ class UserResponse(BaseModel):
     language: Language | None = None
     email_confirmed: bool = False
     forwarding_token: str = Field(exclude=True)
+    role: str = Field(default="user", exclude=True)
 
     model_config = ConfigDict(from_attributes=True)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_admin(self) -> bool:
+        """Whether the account sees the admin pages (F17.3.3): by role, or a listed email."""
+        admins = {email.lower() for email in get_settings().admin_emails}
+        return self.role == "admin" or self.email.lower() in admins
 
     @computed_field  # type: ignore[prop-decorator]
     @property

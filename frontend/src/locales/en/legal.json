@@ -10,7 +10,7 @@
       },
       "why": {
         "title": "Why",
-        "body": "Only to provide the service you signed up for: reading receipts, keeping your budget and sending letters about your account (confirming your address, resetting your password). Request logs and IP addresses are kept to keep the service secure and working. Nothing is sold, shared for advertising or used for anything else."
+        "body": "Only to provide the service you signed up for: reading receipts, keeping your budget and sending letters about your account (confirming your address, resetting your password). Request logs and IP addresses are kept to keep the service secure and working. Nothing is sold, shared for advertising or used for anything else.\n\nWhen you are signed in, the service also records what you do in it — signing up, confirming your address, signing in, using it on a day, adding a receipt, exporting — with the time and nothing more, to run and support the service and to know whether it is used. It never records what your receipts say. Visits to the public pages are only counted, by page and the site you came from, with nothing that could say who you are."
       },
       "where": {
         "title": "Where, and who processes it",
@@ -18,7 +18,7 @@
       },
       "keep": {
         "title": "How long",
-        "body": "Receipt photos and forwarded files: 90 days, then storage deletes them — the figures read from them stay. Export files: 7 days. Request logs: 30 days. Everything else: until you delete your account; database backups hold it for at most 7 more days. A message through the contact form stays in our mailbox as long as answering it needs."
+        "body": "Receipt photos and forwarded files: 90 days, then storage deletes them — the figures read from them stay. Export files: 7 days. Request logs: 30 days. Everything else: until you delete your account; database backups hold it for at most 7 more days. A message through the contact form stays in our mailbox as long as answering it needs. The record of what you do in the service: 12 months."
       },
       "rights": {
         "title": "Your rights",

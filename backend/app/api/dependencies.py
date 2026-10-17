@@ -1,5 +1,6 @@
 import uuid
 from collections.abc import AsyncGenerator
+from datetime import UTC, datetime
 from typing import Annotated
 
 import jwt
@@ -16,7 +17,7 @@ from app.adapters.exchange_rates import (
 )
 from app.adapters.outgoing_mail import AppEngineMailSender, LogMailSender
 from app.adapters.storage_factory import configured_storage
-from app.api.errors import AuthenticationError, EmailNotConfirmedError
+from app.api.errors import AuthenticationError, EmailNotConfirmedError, PermissionDeniedError
 from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.models.user import User
@@ -25,8 +26,9 @@ from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.mail_domains import MailDomainResolverPort
 from app.ports.storage import StoragePort
 from app.services.account import EmailAddressGuard
+from app.services.activity import ActivityService
 from app.services.mailer import Mailer
-from app.services.quota import QuotaService
+from app.services.quota import QuotaService, is_admin
 
 """API dependencies (F1.2.4)."""
 
@@ -70,6 +72,7 @@ async def get_current_user(
     if user is None:
         raise AuthenticationError("User not found.")
 
+    ActivityService(session).seen(user.id, datetime.now(UTC).date())
     return user
 
 
@@ -81,6 +84,17 @@ async def get_confirmed_user(user: Annotated[User, Depends(get_current_user)]) -
     """
     if not user.email_confirmed:
         raise EmailNotConfirmedError("Confirm your email address first: we sent you a link.")
+    return user
+
+
+async def get_admin_user(user: Annotated[User, Depends(get_current_user)]) -> User:
+    """The signed-in user, provided they are an admin (F17.3.3, F10.6.2).
+
+    403 for anyone else. Being an admin opens the service's own figures and, later, the
+    admin console (F18.6) — never another user's receipts (BRD N2).
+    """
+    if not is_admin(user, get_settings()):
+        raise PermissionDeniedError("This page is for the service's administrators.")
     return user
 
 

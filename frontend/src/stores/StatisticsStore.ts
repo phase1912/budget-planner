@@ -11,7 +11,8 @@ export type CategoryStatistics = components["schemas"]["CategoryStatisticsRespon
 export type Preset = "this_month" | "last_month" | "last_3_months" | "custom";
 
 const pad = (n: number) => String(n).padStart(2, "0");
-const isoDay = (d: Date) =>
+/** A local day as YYYY-MM-DD, the form the API's periods take. */
+export const isoDay = (d: Date) =>
   `${String(d.getFullYear())}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 /**

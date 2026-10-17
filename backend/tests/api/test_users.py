@@ -49,6 +49,7 @@ def _mock_user() -> User:
     user.budget_limit = None
     user.language = None
     user.forwarding_token = "0123456789abcdef"
+    user.role = "user"
     return user
 
 

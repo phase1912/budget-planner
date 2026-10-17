@@ -26,6 +26,7 @@ from app.api.periods import optional_period
 from app.api.rate_limit import limiter
 from app.core.config import get_settings
 from app.db.session import get_db_session
+from app.domain.activity import ActivityKind
 from app.domain.budget import ReceiptOrder
 from app.domain.categories import ItemView
 from app.domain.fiscal_identity import fiscal_identity, is_left_out
@@ -70,6 +71,7 @@ from app.schemas.receipt import (
     UploadJobStatusResponse,
     UploadReceiptResponse,
 )
+from app.services.activity import ActivityService
 from app.services.categorisation import CategorisationService
 from app.services.household import HouseholdService
 from app.services.manual_expense import ManualExpense, record_expense
@@ -192,6 +194,7 @@ async def upload_receipt(
     await quota.ensure_can_read(current_user, 1, datetime.now(UTC))
     job = UploadJob(user_id=current_user.id, total_items=1, channel=PhotoIngestionAdapter.channel)
     session.add(job)
+    ActivityService(session).record(current_user.id, ActivityKind.RECEIPT_UPLOADED)
     await session.commit()
 
     background_tasks.add_task(
@@ -292,6 +295,7 @@ async def upload_receipts_batch(
         channel=PhotoIngestionAdapter.channel,
     )
     session.add(job)
+    ActivityService(session).record(current_user.id, ActivityKind.RECEIPT_UPLOADED)
     await session.commit()
 
     background_tasks.add_task(
@@ -919,6 +923,7 @@ async def commit_job(
             parser_version=CURRENT_PARSER_VERSION,
             channel=job.channel,
         )
+        ActivityService(session).record(current_user.id, ActivityKind.RECEIPT_STORED)
         if i in trip_choices:
             await TripService(session).place_new(current_user.id, receipt, trip_choices[i])
 

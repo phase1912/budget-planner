@@ -1,0 +1,41 @@
+{
+  "title": "Panel administratora",
+  "subtitle": "Jak używana jest usługa: tylko liczby, nigdy niczyje dane.",
+  "periods": {
+    "label": "Okres",
+    "last7": "Ostatnie 7 dni",
+    "last7Short": "7 dni",
+    "last30": "Ostatnie 30 dni",
+    "last30Short": "30 dni",
+    "thisMonth": "Ten miesiąc"
+  },
+  "tiles": {
+    "visits": "Wizyty",
+    "signUps": "Rejestracje",
+    "confirmed": "Potwierdzili adres",
+    "withReceipt": "Dodali paragon",
+    "uploads": "Przesłania",
+    "receiptsRead": "Odczytane paragony",
+    "activeWeek": "Aktywni w tym tygodniu",
+    "activeMonth": "Aktywni w tym miesiącu",
+    "returning": "Wrócili z zeszłego tygodnia",
+    "pageViews": "Wyświetlenia stron"
+  },
+  "funnel": {
+    "title": "Od wizyty do pierwszego paragonu",
+    "visits": "Odwiedzili",
+    "signUps": "Zarejestrowali się",
+    "confirmed": "Potwierdzili",
+    "withReceipt": "Dodali paragon"
+  },
+  "byDay": {
+    "title": "Według dni",
+    "line": "wizyty: {{visits}} · rejestracje: {{signUps}} · odczytane: {{reads}}"
+  },
+  "byPage": "Otwierane strony",
+  "bySource": "Skąd przyszli",
+  "direct": "Bezpośrednio lub nieznane",
+  "nothing": "W tym okresie nic jeszcze nie policzono.",
+  "loading": "Liczymy…",
+  "failed": "Nie udało się wczytać liczb."
+}

@@ -10,7 +10,7 @@
       },
       "why": {
         "title": "Po co",
-        "body": "Wyłącznie do świadczenia usługi, na którą się zapisujesz: odczytywania paragonów, prowadzenia budżetu i wysyłania wiadomości o koncie (potwierdzenie adresu, reset hasła). Logi żądań i adresy IP są przechowywane, by usługa była bezpieczna i działała. Nic nie jest sprzedawane, udostępniane do reklamy ani używane do innych celów."
+        "body": "Wyłącznie do świadczenia usługi, na którą się zapisujesz: odczytywania paragonów, prowadzenia budżetu i wysyłania wiadomości o koncie (potwierdzenie adresu, reset hasła). Logi żądań i adresy IP są przechowywane, by usługa była bezpieczna i działała. Nic nie jest sprzedawane, udostępniane do reklamy ani używane do innych celów.\n\nGdy jesteś zalogowany, usługa zapisuje też, co w niej robisz — rejestrację, potwierdzenie adresu, logowanie, korzystanie w danym dniu, dodanie paragonu, eksport — tylko z czasem i niczym więcej, aby prowadzić i wspierać usługę oraz wiedzieć, czy jest używana. Nigdy nie zapisuje treści Twoich paragonów. Wizyty na stronach publicznych są tylko liczone — według strony i witryny, z której przyszedłeś — bez niczego, co mogłoby wskazać, kim jesteś."
       },
       "where": {
         "title": "Gdzie i kto przetwarza",
@@ -18,7 +18,7 @@
       },
       "keep": {
         "title": "Jak długo",
-        "body": "Zdjęcia paragonów i przesłane pliki: 90 dni, potem magazyn je usuwa — odczytane z nich dane zostają. Pliki eksportu: 7 dni. Logi żądań: 30 dni. Wszystko inne: do usunięcia konta; kopie zapasowe bazy przechowują je jeszcze najwyżej 7 dni. Wiadomość z formularza kontaktowego pozostaje w naszej skrzynce tak długo, jak wymaga tego odpowiedź."
+        "body": "Zdjęcia paragonów i przesłane pliki: 90 dni, potem magazyn je usuwa — odczytane z nich dane zostają. Pliki eksportu: 7 dni. Logi żądań: 30 dni. Wszystko inne: do usunięcia konta; kopie zapasowe bazy przechowują je jeszcze najwyżej 7 dni. Wiadomość z formularza kontaktowego pozostaje w naszej skrzynce tak długo, jak wymaga tego odpowiedź. Zapis tego, co robisz w usłudze: 12 miesięcy."
       },
       "rights": {
         "title": "Twoje prawa",
