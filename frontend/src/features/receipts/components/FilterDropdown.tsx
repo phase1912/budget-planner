@@ -41,11 +41,11 @@ export function FilterDropdown<T extends string>({
   const current = options.find((o) => o.value === value)?.label ?? options[0]?.label;
 
   return (
-    <div className="relative inline-block text-left" ref={containerRef}>
+    <div className="relative min-w-0 text-left md:inline-block" ref={containerRef}>
       <Button
         variant="secondary"
         size="sm"
-        className="min-h-11 md:min-h-0"
+        className="min-h-11 w-full justify-between md:w-auto"
         onClick={() => {
           setIsOpen(!isOpen);
         }}
@@ -53,12 +53,13 @@ export function FilterDropdown<T extends string>({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
-        {current}
-        <ChevronDown size={15} aria-hidden="true" className="ml-1 text-muted-foreground" />
+        {/* Unset, the filter's own name is shorter than "Any status" and says the same. */}
+        <span className="truncate">{value === options[0]?.value ? label : current}</span>
+        <ChevronDown size={15} aria-hidden="true" className="shrink-0 text-muted-foreground" />
       </Button>
 
       {isOpen && (
-        <div className="absolute z-10 mt-2 w-48 rounded-md bg-surface shadow-lg ring-1 ring-border focus:outline-none">
+        <div className="absolute z-10 mt-2 w-48 overflow-hidden rounded-control bg-surface shadow-modal focus:outline-none">
           <div className="py-1" role="listbox" aria-label={label}>
             {options.map((option) => (
               <button

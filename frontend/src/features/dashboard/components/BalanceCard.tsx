@@ -25,7 +25,7 @@ export function BalanceCard({ balance, currency, onEdit }: BalanceCardProps) {
     <button
       type="button"
       onClick={onEdit}
-      className="flex min-h-16 items-center gap-3.5 rounded-card bg-surface px-4 py-3 text-left shadow-card"
+      className="flex min-h-16 items-center gap-3.5 rounded-card bg-surface px-4 py-3 text-left"
     >
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-tone-primary-bg text-primary">
         <Landmark size={20} aria-hidden="true" />

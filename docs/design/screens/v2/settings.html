@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settings — v2</title>
+<!-- Design v2 reference (F23, ADR-0022): rendered from the design canvas; static, read-only. -->
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+body{margin:0}
+button{font:inherit;cursor:pointer}
+</style>
+
+<style>body{background:#e9ebf0;display:flex;justify-content:center;padding:24px 0}</style>
+</head>
+<body>
+
+
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; font-family: Manrope, system-ui, sans-serif; background: #0f172a; color: #f8fafc; overflow: hidden; transition: background 0.3s">
+  <div style="display: flex; align-items: center; gap: 12px; padding: 20px 20px 8px">
+    <a href="home.html" aria-label="Back to Home" style="width: 44px; height: 44px; border-radius: 22px; background: #1e293b; color: #f8fafc; display: flex; align-items: center; justify-content: center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+    </a>
+    <h1 style="margin: 0; font-size: 24px; font-weight: 800">Settings</h1>
+  </div>
+
+  <div style="flex: 1; overflow: auto; padding: 12px 20px 28px; display: flex; flex-direction: column; gap: 18px">
+    <div style="display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 24px; background: #1e293b">
+      <span style="width: 56px; height: 56px; border-radius: 28px; background: #4ade80; color: #052e16; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; flex-shrink: 0">BR</span>
+      <span style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0">
+        <span style="font-weight: 800; font-size: 17px">Bohdan Razhyk</span>
+        <span style="font-size: 13px; color: #a3b0c5">bohdan@example.com</span>
+      </span>
+      <span style="padding: 6px 10px; border-radius: 999px; background: #1f3b2c; color: #4ade80; font-size: 12px; font-weight: 800">Free · 7/10</span>
+    </div>
+
+    <section style="display: flex; flex-direction: column; gap: 10px">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #a3b0c5">Appearance</h2>
+      <div style="display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: 22px; background: #1e293b">
+        <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px">
+          
+            <button type="button" onclick="" aria-label="Midnight" aria-pressed="true" style="aspect-ratio: 1; min-height: 44px; border-radius: 16px; border: 3px solid #4ade80; padding: 0; background: linear-gradient(135deg, #0f172a 0 50%, #4ade80 50% 100%)"></button>
+          
+            <button type="button" onclick="" aria-label="Daylight" aria-pressed="false" style="aspect-ratio: 1; min-height: 44px; border-radius: 16px; border: 3px solid #334155; padding: 0; background: linear-gradient(135deg, #f1f5f9 0 50%, #15803d 50% 100%)"></button>
+          
+            <button type="button" onclick="" aria-label="Rose" aria-pressed="false" style="aspect-ratio: 1; min-height: 44px; border-radius: 16px; border: 3px solid #334155; padding: 0; background: linear-gradient(135deg, #fdf2f4 0 50%, #c93a66 50% 100%)"></button>
+          
+            <button type="button" onclick="" aria-label="Lavender" aria-pressed="false" style="aspect-ratio: 1; min-height: 44px; border-radius: 16px; border: 3px solid #334155; padding: 0; background: linear-gradient(135deg, #f5f3ff 0 50%, #6142f5 50% 100%)"></button>
+          
+            <button type="button" onclick="" aria-label="Sage" aria-pressed="false" style="aspect-ratio: 1; min-height: 44px; border-radius: 16px; border: 3px solid #334155; padding: 0; background: linear-gradient(135deg, #f2f5f0 0 50%, #3f6a49 50% 100%)"></button>
+          
+            <button type="button" onclick="" aria-label="Ocean" aria-pressed="false" style="aspect-ratio: 1; min-height: 44px; border-radius: 16px; border: 3px solid #334155; padding: 0; background: linear-gradient(135deg, #0a0f1f 0 50%, #4f8cff 50% 100%)"></button>
+          
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline">
+          <span style="font-weight: 800; font-size: 16px">Midnight</span>
+          <a href="themes.html" style="color: #4ade80; font-weight: 700; font-size: 14px; text-decoration: none">Preview all</a>
+        </div>
+        <div style="display: flex; height: 10px; border-radius: 5px; overflow: hidden">
+          
+            <span style="flex: 1; background: #4ade80"></span>
+          
+            <span style="flex: 1; background: #818cf8"></span>
+          
+            <span style="flex: 1; background: #fbbf24"></span>
+          
+            <span style="flex: 1; background: #38bdf8"></span>
+          
+            <span style="flex: 1; background: #fb7185"></span>
+          
+            <span style="flex: 1; background: #2dd4bf"></span>
+          
+        </div>
+      </div>
+    </section>
+
+    
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #a3b0c5">Night</h2>
+        <div style="display: flex; flex-direction: column; border-radius: 22px; background: #1e293b; overflow: hidden">
+          
+            <button type="button" onclick="" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 16px; border: 0; border-bottom: 1px solid #334155; background: transparent; color: #f8fafc; text-align: left">
+              <span style="width: 36px; height: 36px; border-radius: 12px; background: #38bdf826; color: #38bdf8; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"></path></svg>
+              </span>
+              <span style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+                <span style="font-weight: 700; font-size: 15px">Dark at night</span>
+                <span style="font-size: 12px; color: #a3b0c5">Midnight when the phone goes dark</span>
+              </span>
+              
+                <span style="width: 50px; height: 30px; border-radius: 15px; background: #4ade80; display: flex; align-items: center; padding: 3px; box-sizing: border-box; justify-content: flex-end; flex-shrink: 0">
+                  <span style="width: 24px; height: 24px; border-radius: 12px; background: #ffffff"></span>
+                </span>
+              
+              
+            </button>
+          
+        </div>
+      </section>
+    
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #a3b0c5">Money</h2>
+        <div style="display: flex; flex-direction: column; border-radius: 22px; background: #1e293b; overflow: hidden">
+          
+            <button type="button" onclick="" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 16px; border: 0; border-bottom: 1px solid #334155; background: transparent; color: #f8fafc; text-align: left">
+              <span style="width: 36px; height: 36px; border-radius: 12px; background: #fbbf2426; color: #fbbf24; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M9 9h4.5a2 2 0 0 1 0 4H9v4 M9 13h5"></path></svg>
+              </span>
+              <span style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+                <span style="font-weight: 700; font-size: 15px">Currency</span>
+                
+              </span>
+              
+              
+                <span style="display: flex; align-items: center; gap: 4px; color: #a3b0c5; font-size: 14px; font-weight: 600">
+                  PLN
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+                </span>
+              
+            </button>
+          
+            <button type="button" onclick="" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 16px; border: 0; border-bottom: 1px solid #334155; background: transparent; color: #f8fafc; text-align: left">
+              <span style="width: 36px; height: 36px; border-radius: 12px; background: #4ade8026; color: #4ade80; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M3 7l13-4v4 M16 13h.01"></path></svg>
+              </span>
+              <span style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+                <span style="font-weight: 700; font-size: 15px">Monthly income</span>
+                
+              </span>
+              
+              
+                <span style="display: flex; align-items: center; gap: 4px; color: #a3b0c5; font-size: 14px; font-weight: 600">
+                  6 800 zł
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+                </span>
+              
+            </button>
+          
+            <button type="button" onclick="" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 16px; border: 0; border-bottom: 1px solid #334155; background: transparent; color: #f8fafc; text-align: left">
+              <span style="width: 36px; height: 36px; border-radius: 12px; background: #38bdf826; color: #38bdf8; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v15H4z M4 9h16 M8 3v4 M16 3v4"></path></svg>
+              </span>
+              <span style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+                <span style="font-weight: 700; font-size: 15px">Month starts on</span>
+                
+              </span>
+              
+              
+                <span style="display: flex; align-items: center; gap: 4px; color: #a3b0c5; font-size: 14px; font-weight: 600">
+                  10th · payday
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+                </span>
+              
+            </button>
+          
+        </div>
+      </section>
+    
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #a3b0c5">Language</h2>
+        <div style="display: flex; flex-direction: column; border-radius: 22px; background: #1e293b; overflow: hidden">
+          
+            <button type="button" onclick="" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 16px; border: 0; border-bottom: 1px solid #334155; background: transparent; color: #f8fafc; text-align: left">
+              <span style="width: 36px; height: 36px; border-radius: 12px; background: #818cf826; color: #818cf8; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M3 12h18 M12 3c2.5 3 2.5 15 0 18 M12 3c-2.5 3-2.5 15 0 18"></path></svg>
+              </span>
+              <span style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+                <span style="font-weight: 700; font-size: 15px">Language</span>
+                
+              </span>
+              
+              
+                <span style="display: flex; align-items: center; gap: 4px; color: #a3b0c5; font-size: 14px; font-weight: 600">
+                  Polski
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+                </span>
+              
+            </button>
+          
+        </div>
+      </section>
+    
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #a3b0c5">Sharing and work</h2>
+        <div style="display: flex; flex-direction: column; border-radius: 22px; background: #1e293b; overflow: hidden">
+          
+            <button type="button" onclick="" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 16px; border: 0; border-bottom: 1px solid #334155; background: transparent; color: #f8fafc; text-align: left">
+              <span style="width: 36px; height: 36px; border-radius: 12px; background: #fb718526; color: #fb7185; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M2 21a7 7 0 0 1 14 0 M17 4a4 4 0 0 1 0 7 M22 21a7 7 0 0 0-4-6.3"></path></svg>
+              </span>
+              <span style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+                <span style="font-weight: 700; font-size: 15px">Household</span>
+                
+              </span>
+              
+              
+                <span style="display: flex; align-items: center; gap: 4px; color: #a3b0c5; font-size: 14px; font-weight: 600">
+                  With Olena
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+                </span>
+              
+            </button>
+          
+            <button type="button" onclick="" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 16px; border: 0; border-bottom: 1px solid #334155; background: transparent; color: #f8fafc; text-align: left">
+              <span style="width: 36px; height: 36px; border-radius: 12px; background: #818cf826; color: #818cf8; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h18v12H3z M8 8V5h8v3 M3 13h18"></path></svg>
+              </span>
+              <span style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+                <span style="font-weight: 700; font-size: 15px">I travel for work</span>
+                <span style="font-size: 12px; color: #a3b0c5">Shows business trips: per diem and a settlement for your employer</span>
+              </span>
+              
+                <span style="width: 50px; height: 30px; border-radius: 15px; background: #334155; display: flex; align-items: center; padding: 3px; box-sizing: border-box; justify-content: flex-start; flex-shrink: 0">
+                  <span style="width: 24px; height: 24px; border-radius: 12px; background: #ffffff"></span>
+                </span>
+              
+              
+            </button>
+          
+        </div>
+      </section>
+    
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #a3b0c5">Account</h2>
+        <div style="display: flex; flex-direction: column; border-radius: 22px; background: #1e293b; overflow: hidden">
+          
+            <button type="button" onclick="" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 16px; border: 0; border-bottom: 1px solid #334155; background: transparent; color: #f8fafc; text-align: left">
+              <span style="width: 36px; height: 36px; border-radius: 12px; background: #38bdf826; color: #38bdf8; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18v14H3z M3 6l9 7 9-7"></path></svg>
+              </span>
+              <span style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+                <span style="font-weight: 700; font-size: 15px">Email</span>
+                
+              </span>
+              
+              
+                <span style="display: flex; align-items: center; gap: 4px; color: #a3b0c5; font-size: 14px; font-weight: 600">
+                  confirmed
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+                </span>
+              
+            </button>
+          
+            <button type="button" onclick="" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 16px; border: 0; border-bottom: 1px solid #334155; background: transparent; color: #f8fafc; text-align: left">
+              <span style="width: 36px; height: 36px; border-radius: 12px; background: #4ade8026; color: #4ade80; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z M9 12l2 2 4-4"></path></svg>
+              </span>
+              <span style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+                <span style="font-weight: 700; font-size: 15px">Two-factor sign-in</span>
+                
+              </span>
+              
+              
+                <span style="display: flex; align-items: center; gap: 4px; color: #a3b0c5; font-size: 14px; font-weight: 600">
+                  On
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+                </span>
+              
+            </button>
+          
+            <button type="button" onclick="" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 16px; border: 0; border-bottom: 1px solid #334155; background: transparent; color: #f8fafc; text-align: left">
+              <span style="width: 36px; height: 36px; border-radius: 12px; background: #fbbf2426; color: #fbbf24; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4 M10 8l-4 4 4 4 M6 12h10"></path></svg>
+              </span>
+              <span style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+                <span style="font-weight: 700; font-size: 15px">Sign out everywhere</span>
+                
+              </span>
+              
+              
+                <span style="display: flex; align-items: center; gap: 4px; color: #a3b0c5; font-size: 14px; font-weight: 600">
+                  
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+                </span>
+              
+            </button>
+          
+        </div>
+      </section>
+    
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #a3b0c5">Your data</h2>
+        <div style="display: flex; flex-direction: column; border-radius: 22px; background: #1e293b; overflow: hidden">
+          
+            <button type="button" onclick="" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 16px; border: 0; border-bottom: 1px solid #334155; background: transparent; color: #f8fafc; text-align: left">
+              <span style="width: 36px; height: 36px; border-radius: 12px; background: #818cf826; color: #818cf8; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12 M7 10l5 5 5-5 M4 21h16"></path></svg>
+              </span>
+              <span style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+                <span style="font-weight: 700; font-size: 15px">Download everything</span>
+                
+              </span>
+              
+              
+                <span style="display: flex; align-items: center; gap: 4px; color: #a3b0c5; font-size: 14px; font-weight: 600">
+                  ZIP
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+                </span>
+              
+            </button>
+          
+            <button type="button" onclick="" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 16px; border: 0; border-bottom: 1px solid #334155; background: transparent; color: #fb7185; text-align: left">
+              <span style="width: 36px; height: 36px; border-radius: 12px; background: #fb718526; color: #fb7185; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16 M9 7V4h6v3 M6 7l1 13h10l1-13"></path></svg>
+              </span>
+              <span style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+                <span style="font-weight: 700; font-size: 15px">Delete account</span>
+                
+              </span>
+              
+              
+                <span style="display: flex; align-items: center; gap: 4px; color: #a3b0c5; font-size: 14px; font-weight: 600">
+                  
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+                </span>
+              
+            </button>
+          
+        </div>
+      </section>
+    
+  </div>
+</div>
+
+</body>
+</html>

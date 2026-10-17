@@ -62,28 +62,28 @@ export const ProductRow = observer(function ProductRow({
             ` · ${t("last", { date: DAY.format(new Date(product.last_bought)) })}`}
         </span>
         <CheaperMark product={product} currency={currency} />
-        <details className="group">
-          <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-1 text-base font-medium text-muted-foreground hover:text-foreground md:min-h-0 md:py-0.5 [&::-webkit-details-marker]:hidden">
-            {t("variants", { count: product.variants.length })}
-            <ChevronDown
-              size={13}
-              aria-hidden="true"
-              className="transition-transform group-open:rotate-180"
-            />
-          </summary>
-          <ul className="m-0 mt-1.5 flex list-none flex-col divide-y divide-border rounded-control border border-border p-0">
-            {product.variants.map((variant) => (
-              <li
-                key={variant.alias_id}
-                className="flex flex-col gap-1.5 px-3 py-2 md:flex-row md:items-center md:justify-between"
-              >
-                <span className="flex min-w-0 flex-col">
-                  <span className="break-all font-mono text-md">{variant.printed_name}</span>
-                  <span className="text-base text-muted-foreground">
-                    {t("bought", { count: variant.purchases })}
+        {splittable && (
+          <details className="group">
+            <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-1 text-base font-medium text-muted-foreground hover:text-foreground md:min-h-0 md:py-0.5 [&::-webkit-details-marker]:hidden">
+              {t("variants", { count: product.variants.length })}
+              <ChevronDown
+                size={13}
+                aria-hidden="true"
+                className="transition-transform group-open:rotate-180"
+              />
+            </summary>
+            <ul className="m-0 mt-1.5 flex list-none flex-col divide-y divide-border rounded-control border border-border p-0">
+              {product.variants.map((variant) => (
+                <li
+                  key={variant.alias_id}
+                  className="flex flex-col gap-1.5 px-3 py-2 md:flex-row md:items-center md:justify-between"
+                >
+                  <span className="flex min-w-0 flex-col">
+                    <span className="break-all font-mono text-md">{variant.printed_name}</span>
+                    <span className="text-base text-muted-foreground">
+                      {t("bought", { count: variant.purchases })}
+                    </span>
                   </span>
-                </span>
-                {splittable && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -94,11 +94,11 @@ export const ProductRow = observer(function ProductRow({
                   >
                     {t("split")}
                   </Button>
-                )}
-              </li>
-            ))}
-          </ul>
-        </details>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
       </div>
     </li>
   );

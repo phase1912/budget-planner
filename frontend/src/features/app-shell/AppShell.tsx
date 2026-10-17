@@ -17,24 +17,31 @@ import { ToastContainer } from "@/shared/components/Toast/Toast";
  * goes without the bar.
  */
 export const AppShell = observer(() => {
-  const { authStore, analyticsStore } = useStores();
+  const { authStore, analyticsStore, profileStore } = useStores();
   const { pathname, search } = useLocation();
   // Each public page opened is counted, without anything about the reader (F17.3.2).
   useEffect(() => {
     analyticsStore.countView(pathname, document.referrer, search, authStore.isAuthenticated);
   }, [analyticsStore, authStore, pathname, search]);
   const signedIn = authStore.isAuthenticated;
-  const withBottomBar = signedIn && !pathname.startsWith("/upload");
+  // A profile cached before a field existed (onboarding, palette) is refreshed once.
+  useEffect(() => {
+    if (signedIn) void profileStore.loadProfile();
+  }, [signedIn, profileStore]);
+  const welcome = pathname === "/welcome";
+  const withBottomBar = signedIn && !welcome && !pathname.startsWith("/upload");
   return (
     <div className="flex flex-col min-h-screen bg-muted text-foreground">
-      <Header />
+      {/* Signed in, every screen carries its own title (design v2); the header is the
+          public pages'. */}
+      {!signedIn && <Header />}
       <ToastContainer />
       <ServerWakingNotice />
 
       <div className="flex flex-grow">
-        {signedIn && <SideNavigation />}
+        {signedIn && !welcome && <SideNavigation />}
         <main
-          className={`flex min-w-0 flex-grow flex-col overflow-clip md:p-8 ${withBottomBar ? "pb-24 md:pb-8" : ""}`}
+          className={`flex min-w-0 flex-grow flex-col overflow-clip ${signedIn ? "pt-5 md:px-4 md:pt-8 lg:px-8" : "md:p-8"} ${withBottomBar ? "pb-28 md:pb-10" : ""}`}
         >
           <Container className="flex-grow flex flex-col">
             <ConfirmEmailBanner />

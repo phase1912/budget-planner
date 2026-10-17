@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { ChevronRight, ListChecks } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { useStores } from "@/stores/StoreContext";
@@ -15,16 +15,15 @@ import { InstallHint } from "@/features/install/InstallHint";
 import { BalanceCard } from "../components/BalanceCard";
 import { CategoryTiles } from "../components/CategoryTiles";
 import { MonthHero } from "../components/MonthHero";
-import { MonthReceipts } from "../components/MonthReceipts";
-import { MonthStatus } from "../components/MonthStatus";
-import { MonthSwitcher } from "../components/MonthSwitcher";
+import { HomeHeader } from "../components/HomeHeader";
+import { PriceInsight } from "../components/PriceInsight";
+import { RecentPurchases } from "../components/RecentPurchases";
 import { WelcomePanel } from "../components/WelcomePanel";
 import { HouseholdMonthView } from "@/features/household/components/HouseholdMonthView";
 import { HouseholdViewSwitch } from "@/features/household/components/HouseholdViewSwitch";
 import { numberFormat, dateFormat } from "@/i18n/format";
 import { useTranslation } from "react-i18next";
 
-const MONTH_AND_YEAR = dateFormat({ month: "long", year: "numeric" });
 const MONTH = dateFormat({ month: "long" });
 const AMOUNT = numberFormat({
   minimumFractionDigits: 2,
@@ -51,6 +50,7 @@ export const DashboardPage = observer(function DashboardPage() {
     incomeStore,
     categoriesStore,
     profileStore,
+    productsStore,
   } = useStores();
   const { summary, error } = budgetStore;
   const { t } = useTranslation("dashboard");
@@ -60,7 +60,8 @@ export const DashboardPage = observer(function DashboardPage() {
     void budgetStore.open();
     void householdStore.load();
     void categoriesStore.loadReviewCount();
-  }, [budgetStore, householdStore, categoriesStore]);
+    void productsStore.loadOverview();
+  }, [budgetStore, householdStore, categoriesStore, productsStore]);
 
   const { year, month } = budgetStore;
   useEffect(() => {
@@ -100,26 +101,9 @@ export const DashboardPage = observer(function DashboardPage() {
   const reviewCount = categoriesStore.reviewCount;
 
   return (
-    <div className="flex-grow flex flex-col items-center py-4 md:py-2">
-      <div className="w-full max-w-[960px] flex flex-col gap-4 md:gap-5">
-        <div className="flex flex-wrap items-center justify-between gap-3.5">
-          <div className="flex w-full items-center gap-3.5 md:w-auto">
-            <MonthSwitcher
-              label={MONTH_AND_YEAR.format(selected)}
-              canGoForward={budgetStore.canGoForward}
-              onPrevious={() => {
-                void budgetStore.showPreviousMonth();
-              }}
-              onNext={() => {
-                void budgetStore.showNextMonth();
-              }}
-              status={<MonthStatus isComplete={summary.is_complete} compact />}
-            />
-            <span className="hidden md:inline-flex">
-              <MonthStatus isComplete={summary.is_complete} />
-            </span>
-          </div>
-        </div>
+    <div className="flex-grow flex flex-col items-center pb-4">
+      <div className="w-full max-w-[960px] flex flex-col gap-4.5 md:gap-5">
+        <HomeHeader isComplete={summary.is_complete} />
 
         <HouseholdViewSwitch />
         <InstallHint />
@@ -131,59 +115,68 @@ export const DashboardPage = observer(function DashboardPage() {
           <>
             {error && <ErrorState layout="banner" title={t("loadFailed")} message={error} />}
 
-            <MonthHero
-              summary={summary}
-              spend={budgetStore.spend}
-              income={incomeStore.month}
-              currency={currency}
-              onEditIncome={() => {
-                setEditing("income");
-              }}
-              onEditBudget={() => {
-                setEditing("budget");
-              }}
-            />
-            <BalanceCard
-              balance={incomeStore.balance}
-              currency={currency}
-              onEdit={() => {
-                setEditing("balance");
-              }}
-            />
-            <MonthTrips trips={budgetStore.trips} currency={currency} />
-
-            {summary.excluded_count > 0 && (
-              <Link to="/receipts?status=manual_review" className="text-inherit">
-                <Note tone="warning">
-                  <span className="flex items-center justify-between gap-3">
-                    <span className="tabular-nums">
-                      {t("heldOutPhone", { count: summary.excluded_count, worth: heldOutWorth })}
+            <div className="grid gap-4.5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:items-start">
+              <MonthHero
+                summary={summary}
+                spend={budgetStore.spend}
+                income={incomeStore.month}
+                currency={currency}
+                onEditIncome={() => {
+                  setEditing("income");
+                }}
+                onEditBudget={() => {
+                  setEditing("budget");
+                }}
+              />
+              <div className="flex flex-col gap-3">
+                {reviewCount > 0 && (
+                  <Link
+                    to="/categories"
+                    className="flex min-h-14 items-center gap-3 rounded-card bg-tone-primary-bg px-4 py-3 text-foreground"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-primary text-md font-extrabold text-primary-foreground tabular-nums">
+                      {reviewCount}
                     </span>
-                    <ChevronRight size={16} aria-hidden="true" className="shrink-0" />
-                  </span>
-                </Note>
-              </Link>
-            )}
-
-            {reviewCount > 0 && (
-              <Link
-                to="/categories"
-                className="flex min-h-14 items-center gap-3 rounded-card bg-tone-primary-bg px-4 py-3 text-foreground"
-              >
-                <ListChecks size={20} className="shrink-0 text-primary" aria-hidden="true" />
-                <span className="flex-1 text-lg font-semibold">
-                  {t("review", { count: reviewCount })}
-                </span>
-                <ChevronRight size={18} aria-hidden="true" />
-              </Link>
-            )}
+                    <span className="flex-1 text-lg font-bold">
+                      {t("reviewShort", { count: reviewCount })}
+                    </span>
+                    <ChevronRight size={18} aria-hidden="true" />
+                  </Link>
+                )}
+                {summary.excluded_count > 0 && (
+                  <Link to="/receipts?status=manual_review" className="text-inherit">
+                    <Note tone="warning">
+                      <span className="flex items-center justify-between gap-3">
+                        <span className="tabular-nums">
+                          {t("heldOutPhone", {
+                            count: summary.excluded_count,
+                            worth: heldOutWorth,
+                          })}
+                        </span>
+                        <ChevronRight size={16} aria-hidden="true" className="shrink-0" />
+                      </span>
+                    </Note>
+                  </Link>
+                )}
+                <BalanceCard
+                  balance={incomeStore.balance}
+                  currency={currency}
+                  onEdit={() => {
+                    setEditing("balance");
+                  }}
+                />
+                <MonthTrips trips={budgetStore.trips} currency={currency} />
+              </div>
+            </div>
 
             <CategoryTiles
               spend={budgetStore.spend}
               hrefFor={(categoryId) => categoryItemsHref(summary, categoryId)}
             />
 
-            <MonthReceipts
+            <PriceInsight />
+
+            <RecentPurchases
               title={summary.is_complete ? t("biggest") : t("latest")}
               receipts={budgetStore.receipts}
               total={budgetStore.receiptsInMonth}

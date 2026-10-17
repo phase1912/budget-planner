@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
-import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import { Button, Input, Modal, ModalBody, Note } from "@/shared/components";
-import { Card, CardBody, CardHeader } from "@/shared/components/Card/Card";
+import { Download, FileText, Trash2 } from "lucide-react";
+import { SettingsRow } from "./SettingsRows";
 import { useStores } from "@/stores/StoreContext";
 
 /**
- * The user's rights over their data (F17.9.1-2, GDPR art. 15, 17, 20): everything held
- * about them in one archive, and the account deleted with all of it.
+ * The user's rights over their data (F17.9.1-2, GDPR art. 15, 17, 20), as Settings rows:
+ * everything held about them in one archive, and the account deleted with all of it.
  */
 export const DataCard = observer(function DataCard() {
   const { exportStore, accountStore } = useStores();
@@ -18,60 +18,35 @@ export const DataCard = observer(function DataCard() {
   const exporting = Boolean(exportStore.busy.account);
 
   return (
-    <Card variant="surface" flush>
-      <CardHeader>{t("data.title")}</CardHeader>
-      <CardBody className="flex flex-col gap-5.5">
-        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center md:gap-8">
-          <div className="flex w-full max-w-md flex-col gap-1">
-            <span className="text-lg font-semibold text-foreground">{t("data.exportLabel")}</span>
-            <span className="text-md leading-relaxed text-muted-foreground">
-              {t("data.exportHint")}
-            </span>
-          </div>
-          <Button
-            type="button"
-            variant="secondary"
-            className="w-full md:w-auto"
-            disabled={exporting}
-            onClick={() => {
-              void exportStore.start({ kind: "account", format: "zip", compare: false });
-            }}
-          >
-            {exporting ? t("data.exporting") : t("data.export")}
-          </Button>
-        </div>
-
-        <div className="h-px bg-border" />
-
-        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center md:gap-8">
-          <div className="flex w-full max-w-md flex-col gap-1">
-            <span className="text-lg font-semibold text-foreground">{t("data.deleteLabel")}</span>
-            <span className="text-md leading-relaxed text-muted-foreground">
-              {t("data.deleteHint")}
-            </span>
-          </div>
-          <Button
-            type="button"
-            variant="danger"
-            className="w-full md:w-auto"
-            onClick={() => {
-              accountStore.reset();
-              setDeleting(true);
-            }}
-          >
-            {t("data.delete")}
-          </Button>
-        </div>
-
-        <nav className="flex flex-wrap gap-x-5 gap-y-2 text-base">
-          <Link to="/privacy" className="text-primary hover:underline">
-            {t("data.privacy")}
-          </Link>
-          <Link to="/terms" className="text-primary hover:underline">
-            {t("data.terms")}
-          </Link>
-        </nav>
-      </CardBody>
+    <>
+      <SettingsRow
+        icon={Download}
+        color="var(--cat-dining)"
+        label={t("data.export")}
+        hint={t("data.exportHint")}
+        value={exporting ? t("data.exporting") : "ZIP"}
+        onClick={() => {
+          if (!exporting)
+            void exportStore.start({ kind: "account", format: "zip", compare: false });
+        }}
+      />
+      <SettingsRow
+        icon={Trash2}
+        danger
+        label={t("data.delete")}
+        hint={t("data.deleteHint")}
+        onClick={() => {
+          accountStore.reset();
+          setDeleting(true);
+        }}
+      />
+      <SettingsRow
+        icon={FileText}
+        color="var(--cat-other)"
+        label={t("data.privacy")}
+        to="/privacy"
+      />
+      <SettingsRow icon={FileText} color="var(--cat-other)" label={t("data.terms")} to="/terms" />
       {deleting && (
         <DeleteAccountDialog
           onClose={() => {
@@ -79,7 +54,7 @@ export const DataCard = observer(function DataCard() {
           }}
         />
       )}
-    </Card>
+    </>
   );
 });
 

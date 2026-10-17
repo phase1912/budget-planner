@@ -31,7 +31,7 @@ export function AddReceiptStart({ onFiles, forwardingAddress }: AddReceiptStartP
     if (picked.length > 0) onFiles(picked);
   };
   const tile =
-    "flex min-h-24 w-full items-center gap-4 rounded-card bg-surface p-4 text-left shadow-card transition-transform active:scale-[0.99]";
+    "flex min-h-24 w-full items-center gap-4 rounded-card p-4 text-left transition-transform active:scale-[0.99]";
 
   return (
     <div className="flex flex-col gap-3">
@@ -64,7 +64,7 @@ export function AddReceiptStart({ onFiles, forwardingAddress }: AddReceiptStartP
 
       <button
         type="button"
-        className={`${tile} md:min-h-40 md:flex-col md:justify-center md:border-2 md:border-dashed md:text-center md:shadow-none ${
+        className={`${tile} bg-surface md:min-h-40 md:flex-col md:justify-center md:border-2 md:border-dashed md:text-center md:shadow-none ${
           dragging ? "md:border-primary md:bg-tone-primary-bg" : "md:border-border-strong"
         }`}
         onClick={() => files.current?.click()}
@@ -107,7 +107,7 @@ export function AddReceiptStart({ onFiles, forwardingAddress }: AddReceiptStartP
       />
 
       {forwardingAddress && (
-        <div className={`${tile} min-h-20`}>
+        <div className={`${tile} min-h-20 bg-surface`}>
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-tone-primary-bg text-primary">
             <Mail size={24} aria-hidden="true" />
           </span>

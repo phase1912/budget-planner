@@ -22,7 +22,9 @@
     "save": "Zapisz",
     "delete": "Usuń",
     "cancel": "Anuluj",
-    "total": "W tym miesiącu"
+    "total": "W tym miesiącu",
+    "spent": "Wydano {{amount}}",
+    "free": "Wolne {{amount}}"
   },
   "budget": {
     "title": "Budżet miesięczny",

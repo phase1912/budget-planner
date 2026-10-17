@@ -31,7 +31,7 @@ export function SpendingRing({ statistics, currency }: SpendingRingProps) {
   return (
     <section
       aria-label={t("ring.label")}
-      className="flex flex-col items-center gap-5 rounded-card bg-surface p-5 shadow-card md:flex-row md:items-start md:gap-8 md:p-7"
+      className="flex flex-col items-center gap-5 rounded-hero bg-surface p-5 md:flex-row md:items-start md:gap-8 md:p-7"
     >
       <button
         type="button"

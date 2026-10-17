@@ -455,7 +455,8 @@ class ReceiptRepository(BaseRepository[Receipt]):
     async def month_total(self, period: DateRange) -> tuple[Decimal, int]:
         """The current user's spend over `period` and how many receipts it covers (D1, D2).
 
-        Sums line-item totals, not printed receipt totals, and only over `parsed`
+        Sums what was paid for the lines (their totals less any share of an unprinted
+        discount, invariant 5d), not printed receipt totals, and only over `parsed`
         receipts: one under manual review has an unreliable total and is held
         out (domain model invariants 4 and 5). Files a receipt by its printed
         date, so a back-dated one lands in its own month, and by its upload date

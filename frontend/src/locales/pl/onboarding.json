@@ -1,0 +1,57 @@
+{
+  "skip": "Pomiń",
+  "back": "Wstecz",
+  "steps": "Krok {{step}} z {{total}}",
+  "welcome": {
+    "title": "Każdy paragon, linijka po linijce.",
+    "body": "Zobacz, co naprawdę kupujesz, co podrożało i ile zostało w tym miesiącu.",
+    "start": "Ustaw w minutę",
+    "defaults": "Użyj domyślnych i zacznij",
+    "perk1": "Paragony pozycja po pozycji",
+    "perk2": "Zmiany cen",
+    "perk3": "Cele, które się dopasowują"
+  },
+  "money": {
+    "title": "Język i pieniądze",
+    "body": "Zgadliśmy z przeglądarki. Zmień, co chcesz.",
+    "language": "Język",
+    "currency": "Waluta",
+    "nbp": "Paragony w innych walutach przeliczamy po kursie NBP."
+  },
+  "look": {
+    "title": "Wybierz wygląd",
+    "body": "Wykresy też idą za paletą. Zmienisz ją w każdej chwili w ustawieniach."
+  },
+  "income": {
+    "title": "Ile wpływa w miesiącu?",
+    "body": "Żeby Start pokazywał, ile zostało. Opcjonalne, widzisz tylko Ty.",
+    "amount": "Zwykły dochód netto",
+    "payday": "Dzień wypłaty",
+    "none": "Nie ustawiono",
+    "last": "Ostatni dzień",
+    "balance": "Na kontach dzisiaj",
+    "balanceHint": "To nie dochód, tylko ile masz teraz na kartach i kontach. Od dziś zmienia się samo."
+  },
+  "security": {
+    "title": "Zabezpiecz kodem",
+    "body": "Logowanie dwuetapowe po haśle prosi o kod z aplikacji uwierzytelniającej.",
+    "now": "Włącz teraz",
+    "nowHint": "Kod QR, potem 10 kodów odzyskiwania",
+    "later": "Później, w ustawieniach",
+    "laterHint": "Logujesz się samym hasłem"
+  },
+  "done": {
+    "title": "Wszystko gotowe",
+    "body": "Zrób zdjęcie pierwszego paragonu — to około dziesięciu sekund.",
+    "scan": "Dodaj pierwszy paragon",
+    "look": "Najpierw się rozejrzę",
+    "language": "Język",
+    "currency": "Waluta",
+    "palette": "Wygląd",
+    "income": "Dochód",
+    "twoFactor": "Dwuetapowe",
+    "on": "Dalej",
+    "off": "Później"
+  },
+  "next": "Dalej"
+}

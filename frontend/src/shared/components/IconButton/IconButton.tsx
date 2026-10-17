@@ -15,13 +15,13 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
       tone === "danger"
         ? "bg-tone-error-bg text-tone-error-text hover:opacity-80"
         : bordered
-          ? "bg-background text-foreground hover:bg-muted"
+          ? "control-fill text-foreground hover:brightness-95 dark:hover:brightness-125"
           : "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground";
     return (
       <button
         ref={ref}
         type={type}
-        className={`inline-flex items-center justify-center p-2 border ${bordered ? "border-border" : "border-transparent"} rounded-chip cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${toneClasses} ${className ?? ""}`}
+        className={`inline-flex items-center justify-center p-2 border border-transparent rounded-chip cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${toneClasses} ${className ?? ""}`}
         {...props}
       />
     );

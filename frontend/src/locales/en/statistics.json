@@ -61,5 +61,6 @@
     "showAll": "Show every category",
     "picture": "{{total}} {{currency}} spent, by category",
     "spent": "Spent"
-  }
+  },
+  "details": "Chart and table"
 }

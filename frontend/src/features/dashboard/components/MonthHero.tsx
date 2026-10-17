@@ -135,54 +135,53 @@ export function MonthHero({
   return (
     <section
       aria-label={t("hero.label")}
-      className="flex flex-col items-center gap-5 rounded-card bg-surface p-5 shadow-card md:flex-row md:gap-8 md:p-7"
+      className="flex flex-col gap-4 rounded-hero bg-surface p-4 md:p-6"
     >
-      <div className="flex flex-col items-center gap-2.5">
-        <button
-          type="button"
-          onClick={() => {
-            setAt((i) => (i + 1) % views.length);
-          }}
-          aria-label={`${view?.picture ?? ""}. ${t("hero.next")}`}
-          className="rounded-pill"
-        >
-          <Ring
-            segments={view?.segments ?? []}
-            max={view?.max}
-            className="h-44 w-44 md:h-48 md:w-48"
-            thickness={0.16}
-            label={view?.picture ?? ""}
+      <div className="flex items-center gap-4 md:gap-8">
+        <div className="flex shrink-0 flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setAt((i) => (i + 1) % views.length);
+            }}
+            aria-label={`${view?.picture ?? ""}. ${t("hero.next")}`}
+            className="rounded-pill"
           >
-            <span className="text-[28px] font-bold leading-tight tracking-tight tabular-nums md:text-[32px]">
-              {view?.value}
+            <Ring
+              segments={view?.segments ?? []}
+              max={view?.max}
+              className="h-34 w-34 md:h-48 md:w-48"
+              thickness={0.2}
+              label={view?.picture ?? ""}
+            >
+              <span className="text-xl font-extrabold leading-tight tracking-tight tabular-nums md:text-3xl">
+                {view?.value}
+              </span>
+              <span className="max-w-[6.5rem] text-xs font-semibold leading-snug text-muted-foreground md:text-sm">
+                {view?.label}
+              </span>
+            </Ring>
+          </button>
+          {views.length > 1 && (
+            <span className="flex gap-1.5" aria-hidden="true">
+              {views.map((v, i) => (
+                <span
+                  key={v.key}
+                  className={`h-1.5 rounded-pill transition-all ${
+                    i === at % views.length ? "w-5 bg-primary" : "w-1.5 bg-border-strong"
+                  }`}
+                />
+              ))}
             </span>
-            <span className="text-sm font-semibold text-muted-foreground">{currency}</span>
-            <span className="mt-1 max-w-[7.5rem] text-sm font-medium leading-snug text-muted-foreground">
-              {view?.label}
-            </span>
-          </Ring>
-        </button>
-        {views.length > 1 && (
-          <span className="flex gap-1.5" aria-hidden="true">
-            {views.map((v, i) => (
-              <span
-                key={v.key}
-                className={`h-1.5 rounded-pill transition-all ${
-                  i === at % views.length ? "w-5 bg-primary" : "w-1.5 bg-border-strong"
-                }`}
-              />
-            ))}
-          </span>
-        )}
-      </div>
-      <div className="flex w-full flex-col gap-2.5">
-        <dl className="m-0 grid w-full grid-cols-1 gap-2.5">
+          )}
+        </div>
+        <dl className="m-0 flex min-w-0 flex-1 flex-col gap-1">
           {facts.map((fact) => {
             const body = (
               <>
-                <dt className="text-base font-medium text-muted-foreground">{fact.label}</dt>
+                <dt className="text-sm font-semibold text-muted-foreground">{fact.label}</dt>
                 <dd
-                  className={`m-0 text-xl font-bold tabular-nums ${fact.muted ? "text-primary" : ""}`}
+                  className={`m-0 truncate text-lg font-extrabold tabular-nums md:text-xl ${fact.muted ? "text-primary" : ""}`}
                 >
                   {fact.value}
                 </dd>
@@ -193,28 +192,25 @@ export function MonthHero({
                 key={fact.key}
                 type="button"
                 onClick={fact.action}
-                className="flex min-h-14 items-center justify-between gap-3 rounded-control border border-border px-4 py-2.5 text-left transition-colors hover:bg-tone-primary-bg"
+                className="flex min-h-11 flex-col items-start justify-center rounded-chip text-left"
               >
                 {body}
               </button>
             ) : (
-              <div
-                key={fact.key}
-                className="flex min-h-14 items-center justify-between gap-3 rounded-control border border-border px-4 py-2.5"
-              >
+              <div key={fact.key} className="flex min-h-11 flex-col justify-center">
                 {body}
               </div>
             );
           })}
         </dl>
-        <p className="m-0 text-base text-muted-foreground tabular-nums">
-          {t("days", {
-            elapsed: summary.is_complete ? summary.days_in_month : summary.days_elapsed,
-            days: summary.days_in_month,
-          })}{" "}
-          · {t("receipts", { count: summary.receipt_count })}
-        </p>
       </div>
+      <p className="m-0 text-base text-muted-foreground tabular-nums">
+        {t("days", {
+          elapsed: summary.is_complete ? summary.days_in_month : summary.days_elapsed,
+          days: summary.days_in_month,
+        })}{" "}
+        · {t("receipts", { count: summary.receipt_count })}
+      </p>
     </section>
   );
 }

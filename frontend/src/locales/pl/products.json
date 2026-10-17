@@ -124,5 +124,10 @@
     "cheapestFor_other": "najtańszy dla {{count}} produktu"
   },
   "exploreHint": "Zaznacz produkty, aby zobaczyć, ile kosztują razem, w miesiącach i sklepach.",
-  "all": "Wszystkie produkty"
+  "all": "Wszystkie produkty",
+  "count_one": "{{count}} produkt",
+  "count_few": "{{count}} produkty",
+  "count_many": "{{count}} produktów",
+  "count_other": "{{count}} produktu",
+  "exploreTitle": "Zbadaj kilka razem"
 }

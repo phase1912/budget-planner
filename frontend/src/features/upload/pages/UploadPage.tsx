@@ -13,12 +13,15 @@ import { ReceiptQuotaNote } from "../components/ReceiptQuotaNote";
 import { AddReceiptStart } from "../components/AddReceiptStart";
 import { ManualExpenseDialog } from "@/features/receipts/components/ManualExpenseDialog";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { X } from "lucide-react";
+import { SegmentedControl } from "@/shared/components";
 import { ResendConfirmationButton } from "@/features/auth/components/ResendConfirmationButton";
 
 export const UploadPage = observer(function UploadPage() {
   const { uploadStore, quotaStore, tripsStore, accountStore, authStore } = useStores();
   const { t } = useTranslation(["upload", "receipts"]);
+  const { t: common } = useTranslation();
   const [addingExpense, setAddingExpense] = useState(false);
   const [params] = useSearchParams();
   const tripId = params.get("trip");
@@ -109,9 +112,16 @@ export const UploadPage = observer(function UploadPage() {
         </div>
 
         <div>
-          <h1 className="m-0 text-[22px] font-bold tracking-tight md:text-[30px]">
-            {t("add.title")}
-          </h1>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/"
+              aria-label={common("header.back")}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-pill bg-surface text-foreground md:hidden"
+            >
+              <X size={20} aria-hidden="true" />
+            </Link>
+            <h1 className="m-0 text-3xl font-extrabold tracking-[-0.02em]">{t("add.title")}</h1>
+          </div>
           <p className="m-0 text-[15px] text-muted-foreground mt-1">{t("add.formats")}</p>
           {/* F20.5: cash for a tour has nothing to photograph; it is typed in instead. */}
           <p className="m-0 mt-1 text-[15px] text-muted-foreground">
@@ -130,68 +140,23 @@ export const UploadPage = observer(function UploadPage() {
 
         <ReceiptQuotaNote needed={uploadStore.lines.length} />
 
-        <div
-          className="flex w-full gap-1 border border-border rounded-control bg-muted p-1 md:inline-flex md:w-auto md:self-start"
-          role="tablist"
-        >
-          <button
-            className={`inline-flex flex-1 items-center justify-center gap-2 border-none rounded-[9px] px-4 py-[9px] text-sm cursor-pointer transition-colors md:flex-none ${
-              uploadStore.mode === "single"
-                ? "bg-background text-foreground shadow-raised"
-                : "bg-transparent text-muted-foreground hover:text-foreground"
-            }`}
-            role="tab"
-            aria-selected={uploadStore.mode === "single"}
-            onClick={() => {
-              uploadStore.setMode("single");
-            }}
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
-              <path d="M16 8H8" />
-              <path d="M16 12H8" />
-            </svg>
-            {t("add.one")}
-          </button>
-          <button
-            className={`inline-flex flex-1 items-center justify-center gap-2 border-none rounded-[9px] px-4 py-[9px] text-sm cursor-pointer transition-colors md:flex-none ${
-              uploadStore.mode === "multiple"
-                ? "bg-background text-foreground shadow-raised"
-                : "bg-transparent text-muted-foreground hover:text-foreground"
-            }`}
-            role="tab"
-            aria-selected={uploadStore.mode === "multiple"}
-            onClick={() => {
-              uploadStore.setMode("multiple");
-            }}
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polygon points="12 2 2 7 12 12 22 7 12 2" />
-              <polyline points="2 17 12 22 22 17" />
-              <polyline points="2 12 17 22 12" />
-            </svg>
-            {t("add.several")}
-            <span className="hidden md:inline">{t("add.severalWide")}</span>
-          </button>
-        </div>
+        <SegmentedControl<"single" | "multiple">
+          label={t("add.title")}
+          size="sm"
+          fill
+          value={uploadStore.mode}
+          onChange={(mode) => {
+            uploadStore.setMode(mode);
+          }}
+          options={[
+            { value: "single", label: t("add.one") },
+            {
+              value: "multiple",
+              label: `${t("add.several")}${t("add.severalWide")}`,
+              shortLabel: t("add.several"),
+            },
+          ]}
+        />
 
         <Stack className="gap-4">
           {uploadStore.lines.map((lineFiles, index) => {

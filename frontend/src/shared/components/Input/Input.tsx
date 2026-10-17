@@ -22,10 +22,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           id={inputId}
-          className={`px-3 py-2.75 text-lg font-normal border rounded-control bg-background text-foreground transition-shadow
-            focus:outline-none focus:border-primary focus:shadow-[var(--ring-primary)]
-            disabled:bg-muted disabled:text-muted-foreground
-            ${error ? "border-error" : "border-border"}
+          className={`px-3 py-2.75 text-lg font-normal min-h-12 border-2 rounded-control control-fill text-foreground transition-shadow
+            focus:outline-none focus:border-primary focus:shadow-none
+            disabled:opacity-60 disabled:text-muted-foreground
+            ${error ? "border-error" : "border-transparent"}
             ${className ?? ""}
           `}
           {...props}

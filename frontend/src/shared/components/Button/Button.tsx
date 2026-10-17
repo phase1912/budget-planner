@@ -11,7 +11,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     if (variant === "primary") {
       variantClasses = "bg-primary text-primary-foreground shadow-primary hover:bg-primary-hover";
     } else if (variant === "secondary") {
-      variantClasses = "bg-background text-foreground border border-border hover:bg-muted";
+      variantClasses = "control-fill text-foreground hover:brightness-95 dark:hover:brightness-125";
     } else if (variant === "ghost") {
       variantClasses = "bg-transparent text-muted-foreground hover:bg-muted";
     } else if (variant === "danger") {

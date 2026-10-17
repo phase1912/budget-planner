@@ -76,7 +76,7 @@ describe("StatisticsPage", () => {
   it("loads the period's statistics when opened", () => {
     renderPage();
     expect(statisticsStore.load).toHaveBeenCalled();
-    expect(screen.getByText("1 – 27 Jul 2026")).toBeInTheDocument();
+    expect(screen.getAllByText("1 – 27 Jul 2026").length).toBeGreaterThan(0);
   });
 
   it("ranks every category with its total, share and item count", () => {
@@ -188,7 +188,7 @@ describe("StatisticsPage", () => {
   it("turns the comparison on from the period bar", () => {
     statisticsStore.statistics = july();
     renderPage();
-    fireEvent.click(screen.getByRole("checkbox", { name: "Compare with the previous period" }));
+    fireEvent.click(screen.getByRole("switch", { name: /Compare with the previous period/ }));
     expect(statisticsStore.setCompare).toHaveBeenCalledWith(true);
   });
 
@@ -218,7 +218,10 @@ describe("StatisticsPage", () => {
     });
     renderPage();
 
-    expect(screen.getByRole("checkbox", { name: "Compare with 1 – 27 Jun 2026" })).toBeChecked();
+    expect(screen.getByRole("switch", { name: /Compare with 1 – 27 Jun 2026/ })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
     expect(screen.getByText(/July is still running/)).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "1 – 27 Jun 2026" })).toBeInTheDocument();
     // In full in its own column; for a phone, just the percentage under the amount.

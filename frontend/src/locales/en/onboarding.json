@@ -1,0 +1,57 @@
+{
+  "skip": "Skip",
+  "back": "Back",
+  "steps": "Step {{step}} of {{total}}",
+  "welcome": {
+    "title": "Every receipt, read line by line.",
+    "body": "See what you really buy, what got dearer, and how much is left this month.",
+    "start": "Set up in a minute",
+    "defaults": "Use the defaults and start",
+    "perk1": "Line-by-line receipts",
+    "perk2": "Price changes",
+    "perk3": "Goals that adapt"
+  },
+  "money": {
+    "title": "Language and money",
+    "body": "We guessed from your browser. Change anything.",
+    "language": "Language",
+    "currency": "Currency",
+    "nbp": "Receipts in other currencies are converted at the NBP rate."
+  },
+  "look": {
+    "title": "Pick your look",
+    "body": "Charts follow the palette too. Change it any time in Settings."
+  },
+  "income": {
+    "title": "What comes in a month?",
+    "body": "So Home can show what is left. Optional, and only you see it.",
+    "amount": "Usual net income",
+    "payday": "Payday",
+    "none": "Not set",
+    "last": "Last day",
+    "balance": "On your accounts today",
+    "balanceHint": "Not income: what your cards and accounts hold now. From today it moves by itself."
+  },
+  "security": {
+    "title": "Lock it with a code",
+    "body": "Two-factor sign-in asks for a code from an authenticator app after your password.",
+    "now": "Turn it on now",
+    "nowHint": "A QR code, then 10 recovery codes",
+    "later": "Later, in Settings",
+    "laterHint": "Your password alone signs you in"
+  },
+  "done": {
+    "title": "You're all set",
+    "body": "Snap your first receipt — it takes about ten seconds.",
+    "scan": "Add my first receipt",
+    "look": "Look around first",
+    "language": "Language",
+    "currency": "Currency",
+    "palette": "Look",
+    "income": "Income",
+    "twoFactor": "Two-factor",
+    "on": "Next",
+    "off": "Later"
+  },
+  "next": "Continue"
+}

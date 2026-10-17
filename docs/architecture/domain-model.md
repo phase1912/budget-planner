@@ -92,7 +92,8 @@ Rules that must hold at all times. Each is a candidate for a test.
 
 **Aggregation**
 
-4. A monthly total is the sum of line-item totals of `parsed` receipts in that month (D1).
+4. A monthly total is the sum of what was paid for the line items of `parsed` receipts in
+   that month (D1): each line's total less its share of an unprinted discount (5d).
 5. Receipts in `manual_review` are excluded, and their count and value are reported
    alongside the total — the number is never quietly incomplete (D3). The value is the
    sum of their lines, since the printed total may be what could not be read. One with
@@ -128,6 +129,15 @@ Rules that must hold at all times. Each is a candidate for a test.
    total, so the model can never "fix" a receipt by rewriting what was paid. Only what
    still disagrees is shown to the user, marked as already tried (`total_reconciled_by`
    = `unresolved`), with 5b's offer.
+5d. A discount the receipt does not print — a gift card, a voucher, a deal at the till —
+   is stated by the user as an amount off the receipt (F23.7, `app/domain/discount.py`).
+   It is spread over every line in proportion to what each cost, or over the lines the
+   user picks; shares are cut to the grosz and the pennies left go to the dearest line, so
+   they sum to the amount exactly. Each line keeps its printed total, so price history
+   shows the shelf price, while every spending figure — month, category, trip,
+   household, statistics, exports' totals — counts `paid` (total less share). A discount
+   larger than the lines it is spread over is refused (`discount_too_large`). Correcting
+   the lines spreads it again over all of them, or drops it if it no longer fits.
 5d. A receipt with no readable date is dated the day it was uploaded (UTC), marked as
     assumed, and stored like any other; a missing date never holds it out of the month
     or stops the upload (`app/domain/receipt_dates.py`). The wizard says the date was
@@ -509,6 +519,22 @@ Rules that must hold at all times. Each is a candidate for a test.
     orphaned object survives in storage (A12, N2).
 25. Deleting a receipt discards the transient upload-job payload that named those
     photos, so no screen can ask for an image that is gone (A12).
+
+**Income and balance**
+
+26. A month's income is the sum of the entries received in it (F23.10). With none
+    entered, the account's usual income stands in, marked as usual rather than entered,
+    so "left to spend" is right on the 1st; with neither, the month has no income figure
+    (`app/domain/income.py`). Each entry has a kind (salary, side, refund, other) and says
+    whether it was typed or read from a document.
+27. The balance is a starting amount the user states once — what the accounts hold on a
+    date, not income — carried forward: plus income received since, minus spending
+    counted since by invariant 4's rule (F23.14, `app/domain/balance.py`). Without a
+    starting amount there is no balance, never a zero.
+28. Income, its entries and the balance are their owner's alone; a household sees none of
+    them (N2, ADR-0017).
+29. Accounts made before the first-sign-in setup existed count as having done it
+    (F23.9); only new accounts are walked through it, once, on any device.
 
 ## Open decisions
 

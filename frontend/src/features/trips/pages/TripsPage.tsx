@@ -5,7 +5,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import { formatAmount } from "@/i18n/format";
-import { Button, EmptyState, ErrorState, LoadingState, Note } from "@/shared/components";
+import { BackLink, Button, EmptyState, ErrorState, LoadingState, Note } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
 import type { TripRequest } from "@/stores/TripsStore";
 import { TripCard } from "../components/TripCard";
@@ -21,6 +21,7 @@ import { formatTripDay } from "../tripFormat";
 export const TripsPage = observer(function TripsPage() {
   const { tripsStore, authStore } = useStores();
   const { t } = useTranslation("trips");
+  const { t: common } = useTranslation();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const kindParam = params.get("kind");
@@ -42,8 +43,9 @@ export const TripsPage = observer(function TripsPage() {
     <div className="flex-grow flex flex-col items-center py-4 md:py-10 md:px-8">
       <div className="w-full max-w-[1000px] flex flex-col gap-4 md:gap-5">
         <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div className="flex flex-col gap-1">
-            <h1 className="m-0 text-[24px] font-bold tracking-[-0.02em] md:text-[28px]">{title}</h1>
+          <div className="flex flex-col items-start gap-2">
+            <BackLink to="/plan" label={common("nav.plan")} />
+            <h1 className="m-0 text-3xl font-extrabold tracking-[-0.02em]">{title}</h1>
             <p className="m-0 text-lg text-muted-foreground">{t("subtitle")}</p>
           </div>
           <Button

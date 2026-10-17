@@ -184,7 +184,7 @@ export const GoalDialog = observer(function GoalDialog({ goal, onClose }: GoalDi
               maxLength={1000}
               rows={3}
               placeholder={lifestyle ? t("dialog.descriptionPlaceholder") : ""}
-              className="resize-y rounded-control border border-border bg-background px-3 py-2.75 text-lg text-foreground transition-shadow focus:border-primary focus:shadow-[var(--ring-primary)] focus:outline-none"
+              className="resize-y rounded-control border-2 border-transparent control-fill px-3 py-2.75 text-lg text-foreground transition-shadow focus:border-primary focus:shadow-[var(--ring-primary)] focus:outline-none"
               onChange={(e) => {
                 setDescription(e.target.value);
               }}

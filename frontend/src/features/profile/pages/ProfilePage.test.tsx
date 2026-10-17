@@ -40,33 +40,35 @@ describe("ProfilePage", () => {
       </StoreProvider>,
     );
 
-  it("shows the account's settings, money among them", () => {
+  it("shows the account's settings as rows, money among them", () => {
     renderPage();
 
     expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Currency")).toHaveValue("USD");
-    expect(screen.getByLabelText("Monthly budget limit")).toHaveValue("1000");
+    expect(screen.getByRole("button", { name: /Currency/ })).toHaveTextContent("USD");
+    expect(screen.getByRole("button", { name: /Monthly budget limit/ })).toHaveTextContent(
+      "1,000 USD",
+    );
   });
 
-  it("saves currency, budget, usual income and payday together", async () => {
+  it("changes the currency and the payday from their rows", async () => {
+    const save = vi.spyOn(rootStore.profileStore, "saveQuietly").mockResolvedValue(true);
     renderPage();
 
-    fireEvent.change(screen.getByLabelText("Monthly budget limit"), { target: { value: "2000" } });
-    fireEvent.change(screen.getByLabelText("Currency"), { target: { value: "EUR" } });
-    fireEvent.change(screen.getByLabelText("Usual monthly income"), {
-      target: { value: "6800,50" },
+    fireEvent.click(screen.getByRole("button", { name: /Currency/ }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Currency" }), {
+      target: { value: "EUR" },
     });
-    fireEvent.change(screen.getByLabelText("Payday"), { target: { value: "10" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
-
     await waitFor(() => {
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(rootStore.profileStore.updateProfile).toHaveBeenCalledWith({
-        currency: "EUR",
-        budget_limit: "2000",
-        usual_income: "6800.50",
-        payday: 10,
-      });
+      expect(rootStore.profileStore.updateProfile).toHaveBeenCalledWith({ currency: "EUR" });
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Payday/ }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Payday" }), { target: { value: "10" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(save).toHaveBeenCalledWith({ payday: 10 });
     });
   });
 
@@ -84,7 +86,7 @@ describe("ProfilePage", () => {
     renderPage();
 
     expect(screen.queryByRole("link", { name: "Open business trips" })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("switch", { name: /I travel for work/ }));
+    fireEvent.click(screen.getByRole("switch", { name: "I travel for work" }));
     expect(save).toHaveBeenCalledWith({ travels_for_work: true });
   });
 });

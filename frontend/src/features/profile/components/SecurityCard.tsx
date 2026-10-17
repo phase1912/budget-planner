@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
+import { ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 
 import { Button, Input, Modal, ModalBody, Note, Pill } from "@/shared/components";
-import { Card, CardBody, CardHeader } from "@/shared/components/Card/Card";
 import { useStores } from "@/stores/StoreContext";
 
 /**
@@ -18,7 +18,7 @@ export const SecurityCard = observer(function SecurityCard() {
   const { enabled, setup, recoveryCodes } = twoFactorStore;
   const mustForAdmin = authStore.user?.is_admin === true && !enabled;
   const { hash } = useLocation();
-  const card = useRef<HTMLDivElement>(null);
+  const card = useRef<HTMLLIElement>(null);
 
   // The admin pages send an admin here to set it up (F18.6.1).
   useEffect(() => {
@@ -26,51 +26,54 @@ export const SecurityCard = observer(function SecurityCard() {
   }, [hash]);
 
   return (
-    <Card ref={card} variant="surface" flush id="security">
-      <CardHeader>{t("security.title")}</CardHeader>
-      <CardBody className="flex flex-col gap-4">
-        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center md:gap-8">
-          <div className="flex w-full max-w-md flex-col gap-1">
-            <span className="flex flex-wrap items-center gap-2 text-lg font-semibold text-foreground">
-              {t("security.label")}
-              <Pill tone={enabled ? "success" : "default"} size="sm">
-                {enabled ? t("security.on") : t("security.off")}
-              </Pill>
-            </span>
-            <span className="text-md leading-relaxed text-muted-foreground">
-              {t("security.hint")}
-            </span>
-          </div>
-          {enabled ? (
-            <Button
-              type="button"
-              variant="secondary"
-              className="w-full md:w-auto"
-              onClick={() => {
-                twoFactorStore.close();
-                setTurningOff(true);
-              }}
-            >
-              {t("security.turnOff")}
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              className="w-full md:w-auto"
-              disabled={twoFactorStore.state.isLoading}
-              onClick={() => {
-                void twoFactorStore.begin();
-              }}
-            >
-              {t("security.turnOn")}
-            </Button>
-          )}
-        </div>
-        {mustForAdmin && <Note tone="warning">{t("security.adminNeedsIt")}</Note>}
-        {!setup && !turningOff && twoFactorStore.state.error && (
-          <Note tone="error">{twoFactorStore.state.error}</Note>
-        )}
-      </CardBody>
+    <li ref={card} id="security" className="flex scroll-mt-4 flex-col gap-2.5 px-4 py-3">
+      <div className="flex min-h-11 items-center gap-3">
+        <span
+          aria-hidden="true"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-chip bg-tone-primary-bg text-primary"
+        >
+          <ShieldCheck size={18} />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="flex flex-wrap items-center gap-2 text-lg font-bold">
+            {t("security.label")}
+            <Pill tone={enabled ? "success" : "default"} size="sm">
+              {enabled ? t("security.on") : t("security.off")}
+            </Pill>
+          </span>
+          <span className="text-sm text-muted-foreground">{t("security.hint")}</span>
+        </span>
+      </div>
+      {enabled ? (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="w-full md:w-auto md:self-end"
+          onClick={() => {
+            twoFactorStore.close();
+            setTurningOff(true);
+          }}
+        >
+          {t("security.turnOff")}
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          size="sm"
+          className="w-full md:w-auto md:self-end"
+          disabled={twoFactorStore.state.isLoading}
+          onClick={() => {
+            void twoFactorStore.begin();
+          }}
+        >
+          {t("security.turnOn")}
+        </Button>
+      )}
+      {mustForAdmin && <Note tone="warning">{t("security.adminNeedsIt")}</Note>}
+      {!setup && !turningOff && twoFactorStore.state.error && (
+        <Note tone="error">{twoFactorStore.state.error}</Note>
+      )}
       {setup && <SetupDialog />}
       {recoveryCodes && <RecoveryCodesDialog codes={recoveryCodes} />}
       {turningOff && (
@@ -81,7 +84,7 @@ export const SecurityCard = observer(function SecurityCard() {
           }}
         />
       )}
-    </Card>
+    </li>
   );
 });
 

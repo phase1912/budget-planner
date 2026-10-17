@@ -22,7 +22,9 @@
     "save": "Save",
     "delete": "Delete",
     "cancel": "Cancel",
-    "total": "This month"
+    "total": "This month",
+    "spent": "Spent {{amount}}",
+    "free": "Free {{amount}}"
   },
   "budget": {
     "title": "Monthly budget",

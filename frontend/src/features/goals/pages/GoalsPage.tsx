@@ -2,7 +2,15 @@ import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Plus, Target } from "lucide-react";
 
-import { Button, Card, EmptyState, ErrorState, LoadingState, Note } from "@/shared/components";
+import {
+  BackLink,
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  Note,
+} from "@/shared/components";
 import type { Goal } from "@/stores/GoalsStore";
 import { useStores } from "@/stores/StoreContext";
 import { AtRiskWarnings } from "../components/AtRiskWarnings";
@@ -20,6 +28,7 @@ import { categoryName } from "@/shared/categoryName";
 export const GoalsPage = observer(function GoalsPage() {
   const { goalsStore, categoriesStore, authStore, adviceStore } = useStores();
   const { t } = useTranslation("goals");
+  const { t: common } = useTranslation();
   const { goals, isLoading, loadError } = goalsStore;
   const currency = authStore.user?.currency ?? "PLN";
   // null: closed; "new": stating a goal; a goal: editing it.
@@ -52,10 +61,9 @@ export const GoalsPage = observer(function GoalsPage() {
     <div className="flex-grow flex flex-col items-center py-4 md:py-10 md:px-8">
       <div className="w-full max-w-[1000px] flex flex-col gap-4 md:gap-5.5">
         <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div className="flex flex-col gap-1">
-            <h1 className="m-0 text-[24px] font-bold tracking-[-0.02em] md:text-[28px]">
-              {t("title")}
-            </h1>
+          <div className="flex flex-col items-start gap-2">
+            <BackLink to="/plan" label={common("nav.plan")} />
+            <h1 className="m-0 text-3xl font-extrabold tracking-[-0.02em]">{t("title")}</h1>
             <p className="m-0 text-lg text-muted-foreground">{t("subtitle")}</p>
           </div>
           {goals.length > 0 && newGoal}

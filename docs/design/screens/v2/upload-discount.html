@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Discount — v2</title>
+<!-- Design v2 reference (F23, ADR-0022): rendered from the design canvas; static, read-only. -->
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+body{margin:0}
+button{font:inherit;cursor:pointer}
+input{font:inherit}
+@keyframes scan{0%{top:6%}50%{top:90%}100%{top:6%}}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+</style>
+
+<style>body{background:#e9ebf0;display:flex;justify-content:center;padding:24px 0}</style>
+</head>
+<body>
+
+
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; font-family: Manrope, system-ui, sans-serif; background: #0f172a; color: #f8fafc; overflow: hidden; position: relative">
+
+  
+
+  
+
+  
+    <div style="flex: 1; overflow: auto; padding: 20px 20px 24px; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; align-items: center; gap: 12px">
+        <span style="width: 48px; height: 48px; border-radius: 16px; background: #1f3b2c; color: #4ade80; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px">C</span>
+        <span style="flex: 1; display: flex; flex-direction: column">
+          <span style="font-weight: 800; font-size: 18px">Carrefour Express</span>
+          <span style="font-size: 13px; color: #a3b0c5">Galeria Kazimierz · today 14:32 · 5 lines</span>
+        </span>
+        <span style="padding: 6px 10px; border-radius: 999px; background: #1f3b2c; color: #4ade80; font-size: 12px; font-weight: 800">Totals match</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; border-radius: 22px; background: #1e293b; overflow: hidden">
+        
+          <button type="button" onclick="" style="display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 10px 14px; border: 0; border-bottom: 1px solid #334155; background: transparent; color: #f8fafc; text-align: left">
+            
+            <span style="flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0">
+              <span style="font-weight: 700; font-size: 15px">Coffee Lavazza 1 kg</span>
+              <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #4ade80">
+                <span style="width: 8px; height: 8px; border-radius: 4px; background: #4ade80"></span>Groceries
+              </span>
+            </span>
+            <span style="display: flex; flex-direction: column; align-items: flex-end">
+              <span style="font-weight: 800; font-size: 15px">24,49 zł</span>
+              <span style="font-size: 12px; color: #a3b0c5; text-decoration: line-through">59,99 zł</span>
+            </span>
+          </button>
+        
+          <button type="button" onclick="" style="display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 10px 14px; border: 0; border-bottom: 1px solid #334155; background: transparent; color: #f8fafc; text-align: left">
+            
+            <span style="flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0">
+              <span style="font-weight: 700; font-size: 15px">Kids T-shirt</span>
+              <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #38bdf8">
+                <span style="width: 8px; height: 8px; border-radius: 4px; background: #38bdf8"></span>Clothes
+              </span>
+            </span>
+            <span style="display: flex; flex-direction: column; align-items: flex-end">
+              <span style="font-weight: 800; font-size: 15px">20,41 zł</span>
+              <span style="font-size: 12px; color: #a3b0c5; text-decoration: line-through">49,99 zł</span>
+            </span>
+          </button>
+        
+          <button type="button" onclick="" style="display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 10px 14px; border: 0; border-bottom: 1px solid #334155; background: transparent; color: #f8fafc; text-align: left">
+            
+            <span style="flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0">
+              <span style="font-weight: 700; font-size: 15px">Shampoo Elseve</span>
+              <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #fb7185">
+                <span style="width: 8px; height: 8px; border-radius: 4px; background: #fb7185"></span>Care
+              </span>
+            </span>
+            <span style="display: flex; flex-direction: column; align-items: flex-end">
+              <span style="font-weight: 800; font-size: 15px">10,20 zł</span>
+              <span style="font-size: 12px; color: #a3b0c5; text-decoration: line-through">24,99 zł</span>
+            </span>
+          </button>
+        
+          <button type="button" onclick="" style="display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 10px 14px; border: 0; border-bottom: 1px solid #334155; background: transparent; color: #f8fafc; text-align: left">
+            
+            <span style="flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0">
+              <span style="font-weight: 700; font-size: 15px">Batteries AA ×4</span>
+              <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #818cf8">
+                <span style="width: 8px; height: 8px; border-radius: 4px; background: #818cf8"></span>Home
+              </span>
+            </span>
+            <span style="display: flex; flex-direction: column; align-items: flex-end">
+              <span style="font-weight: 800; font-size: 15px">8,59 zł</span>
+              <span style="font-size: 12px; color: #a3b0c5; text-decoration: line-through">21,04 zł</span>
+            </span>
+          </button>
+        
+          <button type="button" onclick="" style="display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 10px 14px; border: 0; border-bottom: 1px solid #334155; background: transparent; color: #f8fafc; text-align: left">
+            
+            <span style="flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0">
+              <span style="font-weight: 700; font-size: 15px">Chocolate Milka</span>
+              <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #4ade80">
+                <span style="width: 8px; height: 8px; border-radius: 4px; background: #4ade80"></span>Groceries
+              </span>
+            </span>
+            <span style="display: flex; flex-direction: column; align-items: flex-end">
+              <span style="font-weight: 800; font-size: 15px">5,30 zł</span>
+              <span style="font-size: 12px; color: #a3b0c5; text-decoration: line-through">12,99 zł</span>
+            </span>
+          </button>
+        
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 22px; background: #1e293b">
+        <div style="display: flex; justify-content: space-between; font-size: 15px"><span style="color: #a3b0c5">On the receipt</span><span style="font-weight: 700">169,00 zł</span></div>
+        
+          <div style="display: flex; justify-content: space-between; font-size: 15px; color: #4ade80"><span>Your discount</span><span style="font-weight: 800">−100,00 zł</span></div>
+        
+        <div style="display: flex; justify-content: space-between; font-size: 20px; padding-top: 8px; border-top: 1px solid #334155"><span style="font-weight: 800">You paid</span><span style="font-weight: 800">69,00 zł</span></div>
+      </div>
+
+      
+      <button type="button" onclick="" style="min-height: 56px; border: 0; border-radius: 18px; background: #4ade80; color: #052e16; font-weight: 800; font-size: 17px">Save receipt</button>
+    </div>
+  
+
+  
+
+  
+    <div style="position: absolute; inset: 0; background: rgba(5,7,13,0.35); display: flex; align-items: flex-end; pointer-events: none">
+      <div role="dialog" aria-label="Add a discount" style="width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 18px 20px 28px; border-radius: 28px 28px 0 0; background: #0f172a; box-shadow: 0 -12px 40px rgba(0,0,0,0.3); pointer-events: auto">
+        <span style="align-self: center; width: 40px; height: 5px; border-radius: 3px; background: #334155"></span>
+        <h2 style="margin: 0; font-size: 22px; font-weight: 800">Discount not on the receipt</h2>
+        <span style="font-size: 14px; color: #a3b0c5">A gift card, a voucher, a deal at the till — whatever you did not pay.</span>
+        <label style="display: flex; align-items: baseline; gap: 8px; padding: 14px 18px; border-radius: 18px; background: #1e293b; border: 2px solid #4ade80">
+          <span style="font-size: 28px; font-weight: 800; color: #a3b0c5">−</span>
+          <input value="100" onchange="" aria-label="Discount amount" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: #f8fafc; font-size: 32px; font-weight: 800">
+          <span style="font-size: 18px; font-weight: 700; color: #a3b0c5">zł</span>
+        </label>
+        <div style="display: flex; justify-content: space-between; padding: 12px 16px; border-radius: 16px; background: #1f3b2c; font-size: 15px; font-weight: 700">
+          <span>You paid</span><span>69,00 zł</span>
+        </div>
+        <span style="font-size: 13px; color: #a3b0c5">Spread over the whole receipt, so each category counts what you really paid. Shelf prices stay as printed.</span>
+        <button type="button" onclick="" style="align-self: flex-start; min-height: 44px; padding: 0; border: 0; background: transparent; color: #4ade80; font-weight: 700; font-size: 14px">Only on some items</button>
+        <button type="button" onclick="" style="min-height: 56px; border: 0; border-radius: 18px; background: #4ade80; color: #052e16; font-weight: 800; font-size: 17px">Apply</button>
+      </div>
+    </div>
+  
+</div>
+
+</body>
+</html>

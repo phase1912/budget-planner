@@ -15,3 +15,15 @@
 body {
   margin: 0;
 }
+
+/* Design v2 (docs/design/v2.md, "Surfaces"): a control is filled with the colour of what
+   it is not on — the card colour on the page's ground, the ground inside a card, sheet
+   or dialog — so it reads without a border either way. A utility on the element wins. */
+@layer components {
+  .control-fill {
+    background-color: var(--color-surface);
+  }
+  .on-surface .control-fill {
+    background-color: var(--color-muted);
+  }
+}

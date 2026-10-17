@@ -40,11 +40,12 @@ export const PlanPage = observer(function PlanPage() {
   const budget = user?.budget_limit == null ? null : Number(user.budget_limit);
   const spent = summary?.month === month ? Number(summary.total) : 0;
   const holidays = tripsStore.trips.filter((trip) => trip.kind === "personal");
+  const incomeTotal = income?.total == null ? null : Number(income.total);
   const business = tripsStore.trips.filter((trip) => trip.kind === "business");
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 py-4 md:gap-5 md:py-2">
-      <h1 className="m-0 text-[24px] font-bold md:text-3xl">{t("title")}</h1>
+    <div className="mx-auto grid w-full max-w-3xl gap-4 py-4 md:gap-5 md:py-2 lg:max-w-[1100px] lg:grid-cols-2 lg:items-start">
+      <h1 className="m-0 text-3xl font-extrabold tracking-[-0.02em] lg:col-span-2">{t("title")}</h1>
 
       <Section
         title={t("income.title")}
@@ -54,6 +55,26 @@ export const PlanPage = observer(function PlanPage() {
           </span>
         }
       >
+        {incomeTotal !== null && incomeTotal > 0 && (
+          <>
+            <span className="flex h-3.5 overflow-hidden rounded-pill bg-muted" aria-hidden="true">
+              <span
+                className={spent > incomeTotal ? "bg-error" : "bg-primary"}
+                style={{ width: `${String(Math.min(100, (spent / incomeTotal) * 100))}%` }}
+              />
+            </span>
+            <span className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-bold">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-pill bg-primary" />
+                {t("income.spent", { amount: WHOLE.format(spent) })}
+              </span>
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <span className="h-2 w-2 rounded-pill bg-muted" />
+                {t("income.free", { amount: WHOLE.format(Math.max(0, incomeTotal - spent)) })}
+              </span>
+            </span>
+          </>
+        )}
         <p className="m-0 text-base text-muted-foreground">
           {MONTH.format(new Date(year, month - 1, 1))} ·{" "}
           {user?.usual_income != null
@@ -137,19 +158,23 @@ export const PlanPage = observer(function PlanPage() {
           <p className="m-0 text-md text-muted-foreground">{t("holidays.none")}</p>
         ) : (
           <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
-            {holidays.slice(0, 3).map((trip) => {
+            {holidays.slice(0, 3).map((trip, index) => {
               const total = Number(trip.total);
               const tripBudget = trip.budget == null ? null : Number(trip.budget);
               return (
                 <li key={trip.id}>
                   <Link
                     to={`/trips/${trip.id}`}
-                    className="flex flex-col gap-2 rounded-card bg-tone-primary-bg p-4 text-foreground"
+                    className={`flex flex-col gap-2 rounded-card p-4 ${
+                      index === 0
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-tone-primary-bg text-foreground"
+                    }`}
                   >
                     <span className="flex items-center gap-3">
-                      <Palmtree size={20} className="shrink-0 text-primary" aria-hidden="true" />
-                      <span className="flex-1 truncate text-lg font-bold">{trip.name}</span>
-                      <span className="text-base text-muted-foreground">
+                      <Palmtree size={20} className="shrink-0" aria-hidden="true" />
+                      <span className="flex-1 truncate text-xl font-extrabold">{trip.name}</span>
+                      <span className="text-base opacity-80">
                         {DAY.format(new Date(`${trip.start_date}T00:00:00`))} –{" "}
                         {DAY.format(new Date(`${trip.end_date}T00:00:00`))}
                       </span>
@@ -192,7 +217,7 @@ export const PlanPage = observer(function PlanPage() {
       {user?.travels_for_work === true && (
         <Link
           to="/trips?kind=business"
-          className="flex min-h-16 items-center gap-3.5 rounded-card bg-surface px-4 py-3 text-foreground shadow-card"
+          className="flex min-h-16 items-center gap-3.5 rounded-card bg-surface px-4 py-3 text-foreground"
         >
           <Briefcase size={20} className="shrink-0 text-primary" aria-hidden="true" />
           <span className="flex flex-1 flex-col">
@@ -282,9 +307,9 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3 rounded-card bg-surface p-4 shadow-card md:p-5">
+    <section className="flex flex-col gap-3 rounded-card bg-surface p-4 md:p-5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="m-0 text-xl font-bold">{title}</h2>
+        <h2 className="m-0 text-lg font-extrabold">{title}</h2>
         {aside}
       </div>
       {children}

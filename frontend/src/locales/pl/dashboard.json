@@ -114,7 +114,8 @@
     "overIncome": "więcej niż wpłynęło",
     "ringIncome": "Wydano {{spent}} z {{of}} {{currency}}, które wpłynęły",
     "ringCategories": "Wydano {{spent}} {{currency}}, według kategorii",
-    "next": "Dotknij, aby zobaczyć kolejny widok"
+    "next": "Dotknij, aby zobaczyć kolejny widok",
+    "settings": "Ustawienia"
   },
   "review_one": "{{count}} pozycja czeka na kategorię",
   "review_few": "{{count}} pozycje czekają na kategorię",
@@ -137,5 +138,13 @@
     "editTitle": "Pieniądze na kontach",
     "editLabel": "Ile masz dzisiaj",
     "editHint": "To nie dochód, tylko pieniądze na Twoich kartach i kontach w tej chwili. Od dziś rośnie z wpływami i maleje z każdym zakupem."
-  }
+  },
+  "insight": {
+    "dearer": "{{name}} podrożał o {{percent}}%",
+    "cheaper": "{{name}} potaniał o {{percent}}%"
+  },
+  "reviewShort_one": "pozycja czeka na kategorię",
+  "reviewShort_few": "pozycje czekają na kategorię",
+  "reviewShort_many": "pozycji czeka na kategorię",
+  "reviewShort_other": "pozycji czeka na kategorię"
 }

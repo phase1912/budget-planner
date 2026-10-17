@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 
 import { App } from "@/App";
 import "@/i18n";
+import "@fontsource-variable/manrope";
 import "@/shared/styles/index.css";
 import { StoreProvider } from "@/stores/StoreContext";
 import { registerServiceWorker } from "@/pwa/registerServiceWorker";

@@ -69,5 +69,6 @@
     "showAll": "Pokaż wszystkie kategorie",
     "picture": "Wydano {{total}} {{currency}}, według kategorii",
     "spent": "Wydano"
-  }
+  },
+  "details": "Wykres i tabela"
 }

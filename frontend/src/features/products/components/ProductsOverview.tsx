@@ -52,7 +52,7 @@ export const ProductsOverview = observer(function ProductsOverview({
 
       {view === "prices" &&
         (!overview || overview.moves.length === 0 ? (
-          <p className="m-0 rounded-card bg-surface p-4 text-md text-muted-foreground shadow-card">
+          <p className="m-0 rounded-card bg-surface p-4 text-md text-muted-foreground">
             {t("overview.noMoves")}
           </p>
         ) : (
@@ -68,7 +68,7 @@ export const ProductsOverview = observer(function ProductsOverview({
                     onClick={() => {
                       explore(move.product.id);
                     }}
-                    className="flex w-full items-center gap-3 rounded-card bg-surface p-3.5 text-left shadow-card"
+                    className="flex w-full items-center gap-3 rounded-card bg-surface p-3.5 text-left"
                   >
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="truncate text-lg font-bold">{move.product.name}</span>
@@ -109,7 +109,7 @@ export const ProductsOverview = observer(function ProductsOverview({
         ))}
 
       {view === "most" && (
-        <ul className="m-0 flex list-none flex-col divide-y divide-border overflow-hidden rounded-card bg-surface p-0 shadow-card">
+        <ul className="m-0 flex list-none flex-col divide-y divide-border overflow-hidden rounded-card bg-surface p-0">
           {most.map((product) => (
             <li key={product.id}>
               <button
@@ -136,7 +136,7 @@ export const ProductsOverview = observer(function ProductsOverview({
 
       {view === "shops" &&
         (!overview || overview.shops.length === 0 ? (
-          <p className="m-0 rounded-card bg-surface p-4 text-md text-muted-foreground shadow-card">
+          <p className="m-0 rounded-card bg-surface p-4 text-md text-muted-foreground">
             {t("overview.noShops")}
           </p>
         ) : (
@@ -151,10 +151,7 @@ export const ProductsOverview = observer(function ProductsOverview({
             )}
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {overview.shops.map((shop, i) => (
-                <li
-                  key={shop.shop}
-                  className="flex flex-col gap-2 rounded-card bg-surface p-3.5 shadow-card"
-                >
+                <li key={shop.shop} className="flex flex-col gap-2 rounded-card bg-surface p-3.5">
                   <span className="flex items-baseline justify-between gap-3">
                     <span className="truncate text-lg font-bold">{shop.shop}</span>
                     <span className="text-base text-muted-foreground">

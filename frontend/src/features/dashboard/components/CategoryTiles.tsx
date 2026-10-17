@@ -27,10 +27,14 @@ export function CategoryTiles({ spend, hrefFor }: CategoryTilesProps) {
   return (
     <section aria-labelledby="where-it-went" className="flex flex-col gap-2.5">
       <div className="flex items-baseline justify-between">
-        <h2 id="where-it-went" className="m-0 text-lg font-bold">
+        <h2 id="where-it-went" className="m-0 text-xl font-extrabold">
           {t("top.title")}
         </h2>
-        <Link to="/spending" className="text-md font-semibold" aria-label={t("top.allLabel")}>
+        <Link
+          to="/spending"
+          className="text-md font-bold text-primary"
+          aria-label={t("top.allLabel")}
+        >
           {t("top.all")}
         </Link>
       </div>
@@ -46,7 +50,7 @@ export function CategoryTiles({ spend, hrefFor }: CategoryTilesProps) {
                 <span className="truncate text-base font-semibold text-muted-foreground">
                   {categoryName(category.name)}
                 </span>
-                <span className="text-xl font-bold tabular-nums">{WHOLE.format(amount)}</span>
+                <span className="text-xl font-extrabold tabular-nums">{WHOLE.format(amount)}</span>
               </span>
               <span className="h-1.5 overflow-hidden rounded-pill bg-muted" aria-hidden="true">
                 <span
@@ -56,8 +60,7 @@ export function CategoryTiles({ spend, hrefFor }: CategoryTilesProps) {
               </span>
             </>
           );
-          const tile =
-            "flex h-full flex-col gap-2.5 rounded-card bg-surface p-3.5 text-foreground shadow-card";
+          const tile = "flex h-full flex-col gap-2.5 rounded-card bg-surface p-3.5 text-foreground";
           return (
             <li key={category.category_id ?? "none"}>
               {category.category_id ? (

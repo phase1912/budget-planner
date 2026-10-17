@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Package, Search, X } from "lucide-react";
+import { ChartLine, ChevronRight, Package, Search, X } from "lucide-react";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
@@ -71,21 +71,50 @@ export const ProductsPage = observer(function ProductsPage() {
   }, [draft, productsStore]);
 
   return (
-    <div className="flex-grow flex flex-col items-center py-4 md:py-10 md:px-8">
+    <div className="flex-grow flex flex-col items-center pb-4">
       <div className="w-full max-w-[1000px] flex flex-col gap-4 md:gap-5">
-        <header className="flex flex-col gap-1">
-          <h1 className="m-0 text-[24px] font-bold tracking-[-0.02em] md:text-[28px]">
-            {t("title")}
-          </h1>
-          <p className="m-0 text-lg text-muted-foreground">{t("subtitle")}</p>
+        <header className="flex flex-col gap-0.5">
+          <h1 className="m-0 text-3xl font-extrabold tracking-[-0.02em]">{t("title")}</h1>
+          <p className="m-0 text-md text-muted-foreground">
+            {t("count", { count: products.length })}
+          </p>
         </header>
+
+        <div className="relative">
+          <Search
+            size={16}
+            aria-hidden="true"
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            type="search"
+            className="min-h-12 rounded-control border-0 bg-surface pl-10 text-lg"
+            aria-label={t("search")}
+            placeholder={t("search")}
+            value={draft}
+            onChange={(e) => {
+              setDraft(e.target.value);
+            }}
+          />
+        </div>
+
+        <a
+          href="#all-products"
+          className="flex min-h-15 items-center gap-3 rounded-card bg-primary px-4 py-3 text-primary-foreground"
+        >
+          <ChartLine size={22} aria-hidden="true" />
+          <span className="flex flex-1 flex-col">
+            <span className="text-lg font-extrabold">{t("exploreTitle")}</span>
+            <span className="text-sm opacity-90">{t("exploreHint")}</span>
+          </span>
+          <ChevronRight size={18} aria-hidden="true" />
+        </a>
 
         <ProductsOverview currency={currency} />
 
-        <div className="flex flex-col gap-1 pt-2">
-          <h2 className="m-0 text-xl font-bold">{t("all")}</h2>
-          <p className="m-0 text-md text-muted-foreground">{t("exploreHint")}</p>
-        </div>
+        <h2 id="all-products" className="m-0 scroll-mt-4 pt-2 text-xl font-extrabold">
+          {t("all")}
+        </h2>
 
         {explorationStore.selections.length > 0 && (
           <section aria-label={t("selections.title")} className="flex flex-col gap-1.5">
@@ -96,7 +125,7 @@ export const ProductsPage = observer(function ProductsPage() {
               {explorationStore.selections.map((selection) => (
                 <li
                   key={selection.id}
-                  className="inline-flex items-center rounded-pill border border-border bg-background"
+                  className="inline-flex items-center rounded-pill control-fill"
                 >
                   <button
                     type="button"
@@ -125,24 +154,6 @@ export const ProductsPage = observer(function ProductsPage() {
             </ul>
           </section>
         )}
-
-        <div className="relative">
-          <Search
-            size={16}
-            aria-hidden="true"
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            type="search"
-            className="pl-9"
-            aria-label={t("search")}
-            placeholder={t("search")}
-            value={draft}
-            onChange={(e) => {
-              setDraft(e.target.value);
-            }}
-          />
-        </div>
 
         {selected.length > 0 && (
           // Stays in view while ticking further down a long list, where the action is needed.

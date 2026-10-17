@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { observable, runInAction } from "mobx";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -112,7 +113,7 @@ vi.mock("@/stores/StoreContext", () => ({
 }));
 
 function openNewGoal() {
-  render(<GoalsPage />);
+  render(<GoalsPage />, { wrapper: MemoryRouter });
   fireEvent.click(screen.getByRole("button", { name: /new goal/i }));
   return screen.getByRole("dialog");
 }
@@ -137,7 +138,7 @@ describe("GoalsPage", () => {
   });
 
   it("loads the goals and offers a first one when there are none", () => {
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     expect(goalsStore.load).toHaveBeenCalled();
     expect(screen.getByText("No goals yet")).toBeInTheDocument();
   });
@@ -146,7 +147,7 @@ describe("GoalsPage", () => {
     runInAction(() => {
       goalsStore.goals = [ceiling, eatBetter];
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     expect(screen.getByText("Stay under 3,000.00 PLN a month")).toBeInTheDocument();
     expect(screen.getByText("Fewer snacks")).toBeInTheDocument();
     expect(screen.getByText(/Lifestyle goal · set/)).toBeInTheDocument();
@@ -156,7 +157,7 @@ describe("GoalsPage", () => {
     runInAction(() => {
       goalsStore.loadError = "Token expired.";
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     expect(screen.getByText("Token expired.")).toBeInTheDocument();
   });
 
@@ -233,7 +234,7 @@ describe("GoalsPage", () => {
       });
       return Promise.resolve(false);
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole("button", { name: /new goal/i }));
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Zero" } });
     fireEvent.change(screen.getByLabelText("Monthly ceiling, PLN"), { target: { value: "0" } });
@@ -249,7 +250,7 @@ describe("GoalsPage", () => {
     runInAction(() => {
       goalsStore.goals = [eatBetter];
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole("button", { name: "Edit Eat better" }));
     expect(screen.getByLabelText("What kind of goal")).toBeDisabled();
   });
@@ -258,7 +259,7 @@ describe("GoalsPage", () => {
     runInAction(() => {
       goalsStore.goals = [ceiling];
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole("button", { name: "Edit Monthly ceiling" }));
     fireEvent.click(screen.getByRole("button", { name: "Remove goal" }));
     expect(goalsStore.remove).not.toHaveBeenCalled();
@@ -272,7 +273,7 @@ describe("GoalsPage", () => {
     runInAction(() => {
       goalsStore.goals = [eatBetter];
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     expect(screen.getByText("Groceries")).toBeInTheDocument();
     expect(screen.getByText("sweets")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Adjust what Eat better watches" }));
@@ -283,7 +284,7 @@ describe("GoalsPage", () => {
     runInAction(() => {
       goalsStore.goals = [eatBetter];
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole("button", { name: "Edit Eat better" }));
     fireEvent.click(screen.getByRole("button", { name: "Groceries", pressed: true }));
     fireEvent.click(screen.getByRole("button", { name: "Stop watching sweets" }));
@@ -304,7 +305,7 @@ describe("GoalsPage", () => {
     runInAction(() => {
       goalsStore.goals = [eatBetter];
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole("button", { name: "Edit Eat better" }));
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     await waitFor(() => {
@@ -318,7 +319,7 @@ describe("GoalsPage", () => {
       goalsStore.goals = [ceiling, eatBetter];
       adviceStore.recommendations = [cookies];
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     expect(adviceStore.load).toHaveBeenCalled();
     const eating = within(screen.getByRole("region", { name: "Advice on Eat better" }));
     const ceilingAdvice = within(screen.getByRole("region", { name: "Advice on Monthly ceiling" }));
@@ -335,7 +336,7 @@ describe("GoalsPage", () => {
       goalsStore.goals = [ceiling, eatBetter];
       adviceStore.recommendations = [cookies];
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole("button", { name: "Get advice on Monthly ceiling" }));
     expect(adviceStore.advise).toHaveBeenCalledWith("g1");
     expect(
@@ -348,7 +349,7 @@ describe("GoalsPage", () => {
       goalsStore.goals = [ceiling, eatBetter];
       adviceStore.advisingGoalId = "g2";
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     expect(screen.getByRole("button", { name: "Get advice on Monthly ceiling" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Get advice on Eat better" })).toHaveTextContent(
       "Working it out…",
@@ -365,7 +366,7 @@ describe("GoalsPage", () => {
         message: "Advice could not be worked out just now.",
       });
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     const eating = within(screen.getByRole("region", { name: "Advice on Eat better" }));
     const ceilingAdvice = within(screen.getByRole("region", { name: "Advice on Monthly ceiling" }));
     expect(eating.getByText("Advice could not be worked out just now.")).toBeInTheDocument();
@@ -384,7 +385,7 @@ describe("GoalsPage", () => {
         progress: 40,
       };
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     const eating = within(screen.getByRole("region", { name: "Advice on Eat better" }));
     expect(eating.getByText("3 receipts is not a pattern yet")).toBeInTheDocument();
     expect(eating.getByText("3 of 4 receipts · 12 of 30 days")).toBeInTheDocument();
@@ -409,7 +410,7 @@ describe("GoalsPage", () => {
         days_in_month: 31,
       });
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     const card = within(screen.getByRole("region", { name: "Advice on Monthly ceiling" }));
     expect(card.getByText("Nothing to cut this month")).toBeInTheDocument();
     expect(card.getByText("2,066.67 PLN")).toBeInTheDocument();
@@ -437,7 +438,7 @@ describe("GoalsPage", () => {
         days_in_month: 31,
       });
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     const warnings = within(screen.getByRole("list", { name: "Goals at risk" }));
     expect(warnings.getByText("Monthly ceiling is heading over its limit")).toBeInTheDocument();
     expect(warnings.getByText(/100.00 PLN over your limit/)).toBeInTheDocument();
@@ -466,7 +467,7 @@ describe("GoalsPage", () => {
         days_in_month: 31,
       });
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     expect(screen.queryByRole("list", { name: "Goals at risk" })).toBeNull();
   });
 
@@ -475,7 +476,7 @@ describe("GoalsPage", () => {
       goalsStore.goals = [eatBetter];
       adviceStore.recommendations = [cookies];
     });
-    const { rerender } = render(<GoalsPage />);
+    const { rerender } = render(<GoalsPage />, { wrapper: MemoryRouter });
     fireEvent.click(
       screen.getByRole("button", { name: "Won't follow: Stop buying the chocolate-chip cookies" }),
     );

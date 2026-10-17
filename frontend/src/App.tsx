@@ -25,6 +25,7 @@ import { CategoriesPage } from "@/features/categories/pages/CategoriesPage";
 import { CategorisationQueuePage } from "@/features/categories/pages/CategorisationQueuePage";
 import { GoalsPage } from "@/features/goals/pages/GoalsPage";
 import { PlanPage } from "@/features/plan/PlanPage";
+import { OnboardingPage } from "@/features/onboarding/OnboardingPage";
 import { StatisticsPage } from "@/features/statistics/pages/StatisticsPage";
 import { ProductsPage } from "@/features/products/pages/ProductsPage";
 import { TripPage } from "@/features/trips/pages/TripPage";
@@ -39,11 +40,13 @@ import { LANGUAGES } from "@/i18n/languages";
 export const App = observer(function App() {
   const { authStore } = useStores();
   const isAuthenticated = authStore.isAuthenticated;
+  const home =
+    authStore.user?.onboarded_at === null ? <Navigate to="/welcome" replace /> : <DashboardPage />;
 
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route path="/" element={isAuthenticated ? <DashboardPage /> : <PublicLandingPage />} />
+        <Route path="/" element={isAuthenticated ? home : <PublicLandingPage />} />
         {/* The landing at each language's own address, for search engines and links (F17.2). */}
         {LANGUAGES.map((language) => (
           <Route
@@ -87,6 +90,7 @@ export const App = observer(function App() {
           <Route path="/trips" element={<TripsPage />} />
           <Route path="/trips/:id" element={<TripPage />} />
           <Route path="/goals" element={<GoalsPage />} />
+          <Route path="/welcome" element={<OnboardingPage />} />
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/settings" element={<ProfilePage />} />
           <Route path="/profile" element={<Navigate to="/settings" replace />} />

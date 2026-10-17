@@ -66,6 +66,9 @@ def upgrade() -> None:
     )
     op.add_column("users", sa.Column("balance_since", sa.Date(), nullable=True))
     # ### end Alembic commands ###
+    # Accounts made before onboarding existed already set themselves up; only new sign-ups
+    # are welcomed (F23.9).
+    op.execute("UPDATE users SET onboarded_at = created_at")
 
 
 def downgrade() -> None:

@@ -7,12 +7,10 @@ const SECTIONS = [
 ] as const;
 
 /**
- * "Receipts | Categories" at the top of these screens on a phone (trips are in Plan, F23.2).
- *
- * The phone's bottom bar has room for one of them (docs/design/README.md), so
- * its Receipts tab stands for all three and this switch makes the others plain to
- * see, rather than a link lost under the title. Wider screens have them in the
- * header already.
+ * "Receipts | Categories" at the top of these screens, at every width (trips are in Plan,
+ * F23.2). Neither has a place in the navigation of design v2 — receipts open from
+ * Spending, categories from Home's "to review" — so this switch is how one reaches the
+ * other.
  */
 export function SectionTabs() {
   const { pathname } = useLocation();
@@ -20,7 +18,7 @@ export function SectionTabs() {
   return (
     <nav
       aria-label={t("nav.receiptsAndCategories")}
-      className="flex w-full gap-1 rounded-control border border-border bg-muted p-1 md:hidden"
+      className="flex w-full gap-1 rounded-control bg-surface p-1 md:w-80 md:self-start"
     >
       {SECTIONS.map((section) => {
         const active = pathname === section.path || pathname.startsWith(`${section.path}/`);
@@ -29,9 +27,9 @@ export function SectionTabs() {
             key={section.path}
             to={section.path}
             aria-current={active ? "page" : undefined}
-            className={`flex min-h-11 flex-1 items-center justify-center rounded-chip text-lg font-semibold transition-colors ${
+            className={`flex min-h-11 flex-1 items-center justify-center rounded-chip text-lg font-bold transition-colors ${
               active
-                ? "bg-background text-foreground shadow-raised"
+                ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >

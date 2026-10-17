@@ -37,6 +37,7 @@ const incomeStore = {
 };
 const categoriesStore = { reviewCount: 0, loadReviewCount: vi.fn() };
 const profileStore = { saveQuietly: vi.fn().mockResolvedValue(true) };
+const productsStore = { overview: null, loadOverview: vi.fn() };
 
 const receiptStore = {
   selectedReceiptId: null as string | null,
@@ -63,6 +64,7 @@ vi.mock("@/stores/StoreContext", () => ({
     incomeStore,
     categoriesStore,
     profileStore,
+    productsStore,
     adviceStore: { warnings: [], loadProgress: vi.fn(), dismissWarning: vi.fn() },
     installStore: { dismissed: false, offersInstall: false, showsIosHint: false },
     authStore: {
@@ -173,11 +175,11 @@ describe("DashboardPage", () => {
     budgetStore.summary = summary();
     renderPage();
 
-    expect(screen.getByRole("heading", { name: "September 2026" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "September" })).toBeInTheDocument();
     expect(screen.getByText("Spent so far")).toBeInTheDocument();
     expect(screen.getByText("1,235")).toBeInTheDocument();
     expect(screen.getByText("26 of 30 days · 15 receipts")).toBeInTheDocument();
-    expect(screen.getByText("Month-to-date · still running")).toBeInTheDocument();
+    expect(screen.getByText("Still running")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Next month" })).toBeDisabled();
   });
 
@@ -195,7 +197,7 @@ describe("DashboardPage", () => {
 
     expect(screen.getByText("Spent")).toBeInTheDocument();
     expect(screen.getByText("31 of 31 days · 1 receipt")).toBeInTheDocument();
-    expect(screen.getByText("Finalised · complete month")).toBeInTheDocument();
+    expect(screen.getByText("Finalised")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Next month" }));
     expect(budgetStore.showNextMonth).toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Previous month" }));

@@ -5,6 +5,15 @@ What every phase-1 screen should look like, and the rules that hold them togethe
 Open `index.html` in a browser. The screens link to each other, so you can click through
 the product as designed rather than reading files one at a time.
 
+## Design v2 is the current look
+
+Since F23 (E23 Improvements, [ADR 0022](../adr/0022-design-language-v2.md)) the product
+follows **design v2**: the screens in `screens/v2/` and the numbers in [`v2.md`](v2.md) —
+type, geometry, palettes, components and which route each screen is. Where a v2 screen and
+an older one draw the same thing, v2 wins; the older screens remain the reference only for
+what v2 does not draw (the upload wizard's conflict steps, categories, the receipts list
+and dialog, the public pages, sign-in), and those take v2's type and geometry.
+
 ## This folder is the source of truth
 
 When the built UI and a page here disagree, **the built UI is wrong** — a button of the
@@ -23,6 +32,8 @@ defect, not technical debt.
 | `index.html` | The way in. Every screen, grouped by flow. |
 | `design.css` | **The values.** Colour, radius, shadow, control anatomy — defined once. |
 | `components.md` | The anatomy of each primitive in numbers, for checking code against. |
+| `v2.md` | **Design v2**: type, geometry, palettes, components, screen-to-route map (F23). |
+| `screens/v2/*.html` | The v2 screens, rendered from the design canvas at 390 px. |
 | `screens/*.html` | One file per screen. Plain HTML; no build step, no dependencies. |
 | `app-icon/*.svg` | The app icon (F9.8): a white receipt glyph from the same lucide set as the UI, on the light `--color-primary`. `icon.svg` has rounded corners for the browser tab; `icon-full.svg` is full-bleed for Android and iOS, which round it themselves; `icon-maskable.svg` keeps the glyph inside the maskable safe zone. The PNGs in `frontend/public/` are rendered from these. |
 

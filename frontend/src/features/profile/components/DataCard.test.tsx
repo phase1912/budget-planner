@@ -30,7 +30,7 @@ describe("DataCard (F17.9.1-2)", () => {
   it("downloads everything held about the user as one archive", () => {
     renderCard();
 
-    fireEvent.click(screen.getByRole("button", { name: "Download everything" }));
+    fireEvent.click(screen.getByRole("button", { name: /Download everything/ }));
 
     expect(stores.exportStore.start).toHaveBeenCalledWith({
       kind: "account",
@@ -46,7 +46,7 @@ describe("DataCard (F17.9.1-2)", () => {
   it("deletes the account only with the password, after saying what goes", () => {
     renderCard();
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete account" }));
+    fireEvent.click(screen.getByRole("button", { name: /Delete account/ }));
     const confirm = screen.getByRole("button", { name: "Delete for good" });
     expect(confirm).toBeDisabled();
     expect(screen.getByText(/This cannot be undone/)).toBeInTheDocument();

@@ -102,5 +102,8 @@
     "cheapestFor_other": "cheapest for {{count}} products"
   },
   "exploreHint": "Tick products to see what they cost you together, by month and by shop.",
-  "all": "All products"
+  "all": "All products",
+  "count_one": "{{count}} product",
+  "count_other": "{{count}} products",
+  "exploreTitle": "Explore several together"
 }

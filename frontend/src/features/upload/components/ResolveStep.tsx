@@ -201,7 +201,7 @@ export const ResolveStep = observer(function ResolveStep() {
 
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col gap-1">
-            <h1 className="m-0 text-[22px] font-bold tracking-tight md:text-[30px]">
+            <h1 className="m-0 text-3xl font-extrabold tracking-[-0.02em]">
               {t("resolve.title", { count: conflictsCount })}
             </h1>
             <p className="m-0 text-[15px] text-muted-foreground mt-1">{t("resolve.untilEmpty")}</p>

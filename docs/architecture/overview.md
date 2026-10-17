@@ -269,6 +269,18 @@ one of these period queries filters one user's receipts by
 `coalesce(transaction_date, created_at)`; the `ix_receipts_user_purchased` expression
 index and `ix_line_items_receipt_id` exist for exactly that (F7.1).
 
+Every one of these sums reads `LineItem.paid`, a `column_property` of the line's total
+less its share of a receipt's unprinted discount (F23.7), never `total_price` directly;
+the price history is the one reader of the shelf price. `PUT /api/v1/receipts/{id}/discount`
+spreads the discount (`app/services/receipt_discount.py`), and a receipt update spreads
+it again, so the shares can never disagree with the lines.
+
+Income has its own table and router (F23.10): `GET/POST/PUT/DELETE /api/v1/income`
+for a month's entries, the month's figure falling back to the account's usual income
+(`app/domain/income.py`), and `GET /api/v1/income/balance?today=` for the balance
+(F23.14): the account's starting amount carried forward by income received and spending
+counted since, through the same `ReceiptRepository.month_total` the month view uses.
+
 ## Proactive advice
 
 Advice for goals at risk (BRD F7, F8.8) is prepared by a scheduled pass inside the API
@@ -339,6 +351,13 @@ instead of a token is wrong even if the pixels match, because it cannot follow a
 retheme. When a built screen and its reference in `docs/design/` disagree, the built
 screen is wrong; when implementation shows the reference itself is wrong, fix
 `docs/design/` in the same commit as the code that prompted it.
+
+Design v2 (ADR-0022, `docs/design/v2.md`) is the current look: six palettes keyed off
+`data-palette` on `<html>` (`ThemeStore`, saved on the account), the tabs Home ·
+Spending · ＋ · Products · Plan, and Settings behind the avatar. A new account is
+walked through `/welcome` once — `ProtectedRoute` and the signed-in "/" send there while
+`users.onboarded_at` is empty — and finishing or skipping it saves the choices with
+`onboarded: true` in one `PATCH /users/me`.
 
 The client is also an installable app (PWA, F9.8): `frontend/public/manifest.webmanifest`
 and the Apple meta tags in `index.html` make it open full screen from the home screen,

@@ -19,6 +19,7 @@
     "lint:privacy": "node scripts/check-privacy.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/manrope": "^5.3.0",
     "i18next": "^25.10.10",
     "lucide-react": "^1.33.0",
     "mobx": "^7.0.3",

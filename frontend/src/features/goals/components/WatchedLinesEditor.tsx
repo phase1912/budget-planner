@@ -72,7 +72,7 @@ export function WatchedLinesEditor({
                 className={`inline-flex min-h-11 cursor-pointer items-center rounded-pill px-3 text-md font-semibold transition-colors disabled:opacity-45 md:min-h-0 md:py-1.25 ${
                   watched
                     ? "border border-transparent bg-tone-primary-bg text-tone-primary-text"
-                    : "border border-border bg-background text-muted-foreground hover:text-foreground"
+                    : "control-fill text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {categoryName(category.name)}

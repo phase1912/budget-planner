@@ -26,3 +26,4 @@ export * from "./Switch";
 export * from "./Ring";
 export * from "./AmountDialog";
 export * from "./PalettePicker";
+export * from "./BackLink";

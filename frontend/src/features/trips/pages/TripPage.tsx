@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, PenLine, Pencil, Plus, Trash2, X } from "lucide-react";
+import { PenLine, Pencil, Plus, Trash2, X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -9,6 +9,7 @@ import { ReceiptDetailModal } from "@/features/receipts/components/ReceiptDetail
 import { formatAmount } from "@/i18n/format";
 import { formatPurchase } from "@/shared/purchaseDate";
 import {
+  BackLink,
   Button,
   Card,
   ErrorState,
@@ -86,20 +87,16 @@ export const TripPage = observer(function TripPage() {
   return (
     <div className="flex-grow flex flex-col items-center py-4 md:py-10 md:px-8">
       <div className="w-full max-w-[1000px] flex flex-col gap-4 md:gap-5">
-        <Link
-          to="/trips"
-          className="inline-flex min-h-11 items-center gap-1.5 self-start text-md font-semibold text-muted-foreground no-underline hover:text-foreground md:min-h-0"
-        >
-          <ArrowLeft size={16} aria-hidden="true" />
-          {t("detail.back")}
-        </Link>
+        {/* Holidays live in Plan; business trips have their own list (F23.12). */}
+        <BackLink
+          to={trip.kind === "business" ? "/trips?kind=business" : "/plan"}
+          label={t("detail.back")}
+        />
 
         <header className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div className="flex min-w-0 flex-col gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="m-0 text-[24px] font-bold tracking-[-0.02em] md:text-[28px]">
-                {trip.name}
-              </h1>
+              <h1 className="m-0 text-3xl font-extrabold tracking-[-0.02em]">{trip.name}</h1>
               <Pill size="sm" tone={trip.kind === "business" ? "info" : "accent"}>
                 {t(`kind.${trip.kind}`)}
               </Pill>

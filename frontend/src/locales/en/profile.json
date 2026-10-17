@@ -14,7 +14,10 @@
     "noPayday": "Not set",
     "lastDay": "Last day of the month",
     "none": "Not set",
-    "hint": "Income entered for a month replaces the usual amount there. Months still run from the 1st."
+    "hint": "Income entered for a month replaces the usual amount there. Months still run from the 1st.",
+    "balance": "On your accounts",
+    "balanceLabel": "What you have today",
+    "balanceHint": "Not your income: the money on your cards and accounts right now. From today it goes up with income and down with every purchase."
   },
   "account": {
     "title": "Account",
@@ -150,5 +153,13 @@
     "label": "I travel for work",
     "hint": "Shows business trips: per diem and a settlement for your employer.",
     "open": "Open business trips"
-  }
+  },
+  "back": "Back to Home",
+  "receiptsGroup": "Receipts",
+  "sharing": "Sharing and work",
+  "household": "Household",
+  "more": "More",
+  "help": "Help",
+  "admin": "Admin",
+  "logOut": "Log out"
 }
