@@ -22,8 +22,12 @@ depends_on: str | Sequence[str] | None = None
 def _base_columns() -> list[sa.Column]:  # type: ignore[type-arg]
     return [
         sa.Column("id", sa.Uuid(), server_default=sa.text("gen_random_uuid()"), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     ]
 
 
