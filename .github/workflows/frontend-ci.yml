@@ -60,6 +60,10 @@ jobs:
       - name: translations complete
         run: npm run lint:locales
 
+      # No cookie, other origin or unlisted device storage: nothing that needs consent (F17.7.2).
+      - name: nothing that needs consent
+        run: npm run lint:privacy
+
       - name: prettier --check
         run: npm run format
 

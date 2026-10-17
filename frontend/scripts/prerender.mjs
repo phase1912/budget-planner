@@ -1,7 +1,8 @@
 // Writes the public pages as prerendered HTML after the build (F17.2.2).
 //
 // The landing renders in English at "/", and in each language at "/en", "/uk" and "/pl";
-// the Help page (F17.10) in English at "/help", the browser then showing the reader's language;
+// the Help page (F17.10), the privacy policy and the terms (F17.7.1) in English at "/help",
+// "/privacy" and "/terms", the browser then showing the reader's language;
 // with that language's title, description, Open Graph tags, canonical address and hreflang
 // links, so search engines and link previews read it without running the app. The untouched
 // build output is kept as app.html: every other route falls back to it (firebase.json), so a
@@ -50,6 +51,12 @@ async function helpMeta() {
   return { title: `${help.title} — Budget Agent`, description: help.intro };
 }
 
+async function legalMeta(document) {
+  const file = new URL("../src/locales/en/legal.json", import.meta.url);
+  const page = JSON.parse(await readFile(file, "utf8"))[document];
+  return { title: `${page.title} — Budget Agent`, description: page.intro };
+}
+
 function head(language, address, { title, description }, languageVersions = true) {
   const alternates = languageVersions
     ? LANGUAGES.map(
@@ -87,3 +94,6 @@ async function page(path, language, out, pageMeta = null) {
 await page("/", "en", "index.html");
 for (const language of LANGUAGES) await page(`/${language}`, language, `${language}.html`);
 await page("/help", "en", "help.html", await helpMeta());
+for (const document of ["privacy", "terms"]) {
+  await page(`/${document}`, "en", `${document}.html`, await legalMeta(document));
+}

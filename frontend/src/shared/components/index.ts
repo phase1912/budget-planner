@@ -21,3 +21,4 @@ export * from "./TotalsGapNote";
 export * from "./DoubtfulLines";
 export * from "./CorrectedName";
 export * from "./CategoryIcon";
+export * from "./PublicLinks/PublicLinks";

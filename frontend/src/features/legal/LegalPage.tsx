@@ -1,13 +1,14 @@
 import { useTranslation } from "react-i18next";
 
 import { dateFormat } from "@/i18n/format";
+import { PublicLinks } from "@/shared/components";
 
 /** The day the current terms and privacy policy took effect; backend `app/domain/terms.py`. */
 export const TERMS_VERSION = "2026-10-17";
 
 const SECTIONS = {
-  privacy: ["data", "why", "where", "keep", "rights"],
-  terms: ["service", "account", "content", "use", "end"],
+  privacy: ["who", "data", "why", "ai", "where", "keep", "storage", "rights"],
+  terms: ["service", "account", "content", "use", "end", "law"],
 } as const;
 
 const DAY = dateFormat({ day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
@@ -43,6 +44,9 @@ export function LegalPage({ document: doc }: { document: keyof typeof SECTIONS }
             ))}
         </section>
       ))}
+      <footer className="border-t border-border pt-6">
+        <PublicLinks />
+      </footer>
     </article>
   );
 }

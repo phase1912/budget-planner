@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "generate:api": "bash scripts/generate-api-types.sh",
-    "lint:locales": "node scripts/check-locales.mjs"
+    "lint:locales": "node scripts/check-locales.mjs",
+    "lint:privacy": "node scripts/check-privacy.mjs"
   },
   "dependencies": {
     "i18next": "^25.10.10",

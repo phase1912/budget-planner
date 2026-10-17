@@ -90,5 +90,11 @@
     "undo": "Undo",
     "forget": "Forget for this shop"
   },
-  "serverWaking": "Starting the server: after a quiet spell the first load takes up to 20 seconds."
+  "serverWaking": "Starting the server: after a quiet spell the first load takes up to 20 seconds.",
+  "footer": {
+    "help": "Help",
+    "privacy": "Privacy policy",
+    "terms": "Terms of use",
+    "label": "About the service"
+  }
 }

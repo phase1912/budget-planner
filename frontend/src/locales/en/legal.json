@@ -23,6 +23,18 @@
       "rights": {
         "title": "Your rights",
         "body": "On Profile you can download everything held about you in one archive, and delete your account with all of it. You can correct any receipt and any profile field at any time. Under the GDPR you may also object to processing or complain to your data protection authority."
+      },
+      "who": {
+        "title": "Who we are",
+        "body": "Budget Agent is run by Bohdan Razhyk, a sole trader in Poland, who decides how your data is used (the controller). Write to bohdan.razhyk.support@gmail.com, or through the form on the Help page, about anything in this policy."
+      },
+      "storage": {
+        "title": "Cookies and what is kept on your device",
+        "body": "Budget Agent sets no cookies and loads nothing from other websites: no trackers, no advertising, no third-party fonts or widgets.\n\nYour browser keeps only what the service needs to work, or what you chose: your sign-in session and account details (so a reload does not sign you out), the theme and language you picked, the period and order you set for the receipts list, hints you closed, and the app's own files so it opens quickly and offline. Because each is strictly needed or set by you, no consent is asked for them. Signing out removes the session; clearing the site's data in your browser removes all of it.\n\nIf we ever add something that needs your consent, we will ask before it runs."
+      },
+      "ai": {
+        "title": "Reading receipts with AI",
+        "body": "Receipt photos and names are read and categorised by an AI model. It only turns what is printed into figures you can check and correct; it makes no decision about you with legal or similarly significant effects."
       }
     }
   },
@@ -49,6 +61,10 @@
       "end": {
         "title": "Changes and ending",
         "body": "You can delete your account at any time from Profile. If these terms change in substance, you will be asked to accept the new version. The service may change or stop; we will try to tell you in time to download your data."
+      },
+      "law": {
+        "title": "Law and consumer rights",
+        "body": "These terms are governed by Polish law. Nothing in them limits the rights you have as a consumer under the law of the country where you live."
       }
     }
   }

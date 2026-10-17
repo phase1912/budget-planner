@@ -92,5 +92,11 @@
     "undo": "Cofnij",
     "forget": "Zapomnij dla tego sklepu"
   },
-  "serverWaking": "Uruchamiamy serwer: po przerwie pierwsze ładowanie trwa do 20 sekund."
+  "serverWaking": "Uruchamiamy serwer: po przerwie pierwsze ładowanie trwa do 20 sekund.",
+  "footer": {
+    "help": "Pomoc",
+    "privacy": "Polityka prywatności",
+    "terms": "Regulamin",
+    "label": "O usłudze"
+  }
 }

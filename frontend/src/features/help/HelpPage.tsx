@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
+import { PublicLinks } from "@/shared/components";
 import { ContactForm } from "./ContactForm";
 
 /** The areas of the Help page and their questions, in the order they are shown. */
@@ -69,6 +70,9 @@ export function HelpPage() {
       ))}
 
       <ContactForm />
+      <footer className="border-t border-border pt-6">
+        <PublicLinks />
+      </footer>
     </article>
   );
 }

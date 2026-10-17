@@ -2,7 +2,7 @@ import * as React from "react";
 import { observer } from "mobx-react-lite";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useStores } from "@/stores/StoreContext";
-import { Button, Input, Card, Note } from "@/shared/components";
+import { Button, Input, Card, Note, PublicLinks } from "@/shared/components";
 import { useTranslation } from "react-i18next";
 
 export const LoginPage = observer(() => {
@@ -33,7 +33,7 @@ export const LoginPage = observer(() => {
   };
 
   return (
-    <div className="flex-grow flex items-center justify-center py-10">
+    <div className="flex-grow flex flex-col items-center justify-center gap-6 py-10">
       <Card className="w-full max-w-md p-8 flex flex-col gap-6">
         <div className="text-center">
           <h1 className="text-xl font-semibold mb-2">{t("login.title")}</h1>
@@ -93,6 +93,7 @@ export const LoginPage = observer(() => {
           </Link>
         </div>
       </Card>
+      <PublicLinks />
     </div>
   );
 });

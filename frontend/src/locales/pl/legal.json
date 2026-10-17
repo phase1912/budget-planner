@@ -23,6 +23,18 @@
       "rights": {
         "title": "Twoje prawa",
         "body": "W profilu możesz pobrać wszystko, co o Tobie przechowujemy, w jednym archiwum oraz usunąć konto wraz ze wszystkimi danymi. Każdy paragon i pole profilu możesz w każdej chwili poprawić. Zgodnie z RODO możesz też wnieść sprzeciw wobec przetwarzania lub skargę do organu ochrony danych (w Polsce: PUODO)."
+      },
+      "who": {
+        "title": "Kim jesteśmy",
+        "body": "Budget Agent prowadzi Bohdan Razhyk w ramach jednoosobowej działalności gospodarczej w Polsce i to on decyduje o sposobie wykorzystania Twoich danych (administrator). W każdej sprawie dotyczącej tej polityki napisz na bohdan.razhyk.support@gmail.com albo przez formularz na stronie Pomocy."
+      },
+      "storage": {
+        "title": "Cookies i co jest przechowywane na Twoim urządzeniu",
+        "body": "Budget Agent nie ustawia plików cookie i niczego nie ładuje z innych stron: żadnych trackerów, reklam, cudzych czcionek ani widżetów.\n\nTwoja przeglądarka przechowuje tylko to, bez czego usługa nie działa, albo co sam wybrałeś: sesję logowania i dane konta (aby odświeżenie strony nie wylogowywało), wybrany motyw i język, okres i kolejność listy paragonów, zamknięte podpowiedzi oraz własne pliki aplikacji, aby otwierała się szybko i działała offline. Ponieważ każda z tych rzeczy jest niezbędna albo ustawiona przez Ciebie, nie prosimy o zgodę. Wylogowanie usuwa sesję; wyczyszczenie danych strony w przeglądarce usuwa wszystko.\n\nJeśli kiedyś dodamy coś, co wymaga Twojej zgody, zapytamy, zanim to zadziała."
+      },
+      "ai": {
+        "title": "Odczytywanie paragonów przez AI",
+        "body": "Zdjęcia paragonów i nazwy pozycji odczytuje i kategoryzuje model AI. Zamienia on jedynie to, co wydrukowano, na kwoty, które możesz sprawdzić i poprawić; nie podejmuje wobec Ciebie decyzji wywołujących skutki prawne ani podobnie istotne."
       }
     }
   },
@@ -49,6 +61,10 @@
       "end": {
         "title": "Zmiany i zakończenie",
         "body": "Konto możesz usunąć w każdej chwili w profilu. Jeśli regulamin istotnie się zmieni, poprosimy o akceptację nowej wersji. Usługa może się zmienić lub zakończyć; postaramy się uprzedzić z wyprzedzeniem, abyś zdążył pobrać swoje dane."
+      },
+      "law": {
+        "title": "Prawo i prawa konsumenta",
+        "body": "Regulamin podlega prawu polskiemu. Nic w nim nie ogranicza praw, które przysługują Ci jako konsumentowi na mocy prawa kraju, w którym mieszkasz."
       }
     }
   }
