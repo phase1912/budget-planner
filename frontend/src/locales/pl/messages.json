@@ -137,5 +137,18 @@
     "linkSent": "Nowy link jest już w drodze.",
     "failed": "Coś poszło nie tak. Spróbuj ponownie.",
     "deleted": "Twoje konto i wszystkie jego dane zostały usunięte."
+  },
+  "twoFactor": {
+    "failed": "Nie udało się zmienić logowania dwuetapowego. Spróbuj ponownie.",
+    "off": "Logowanie dwuetapowe jest wyłączone."
+  },
+  "admin": {
+    "failed": "Żądanie administratora nie powiodło się. Spróbuj ponownie.",
+    "emailConfirmed": "Adres jest potwierdzony.",
+    "linkSent": "Link jest w drodze.",
+    "planGranted": "Plan został przyznany.",
+    "planRevoked": "Przyznanie zostało cofnięte.",
+    "appointed": "To konto jest teraz administratorem.",
+    "removed": "To konto nie jest już administratorem."
   }
 }

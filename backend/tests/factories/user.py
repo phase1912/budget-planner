@@ -20,3 +20,7 @@ class UserFactory(ModelFactory[User]):
     language = None
     # Confirmed, as every account before F17.8 is; a test about confirmation says otherwise.
     email_confirmed_at = Use(lambda: datetime.now(UTC))
+    # Off, as on a new account; a random secret would ask every sign-in for a code (F18.6.1).
+    two_factor_secret = None
+    two_factor_enabled_at = None
+    recovery_code_hashes = None

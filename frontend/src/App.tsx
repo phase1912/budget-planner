@@ -12,6 +12,10 @@ import { ConfirmLinkPage } from "@/features/auth/pages/ConfirmLinkPage";
 import { LegalPage } from "@/features/legal/LegalPage";
 import { HelpPage } from "@/features/help/HelpPage";
 import { AdminDashboardPage } from "@/features/admin/AdminDashboardPage";
+import { AdminLayout } from "@/features/admin/AdminLayout";
+import { AdminLogPage } from "@/features/admin/AdminLogPage";
+import { AdminUserPage } from "@/features/admin/AdminUserPage";
+import { AdminUsersPage } from "@/features/admin/AdminUsersPage";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 import { ProfilePage } from "@/features/profile/pages/ProfilePage";
@@ -82,7 +86,12 @@ export const App = observer(function App() {
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/admin" element={<AdminDashboardPage />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboardPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="users/:id" element={<AdminUserPage />} />
+            <Route path="log" element={<AdminLogPage />} />
+          </Route>
           <Route path="/join/:code" element={<JoinHouseholdPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />

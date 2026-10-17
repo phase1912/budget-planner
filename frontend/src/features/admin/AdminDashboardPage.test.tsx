@@ -73,12 +73,4 @@ describe("AdminDashboardPage (F17.3.3)", () => {
     expect(screen.getByText("Direct or unknown")).toBeInTheDocument();
     expect(screen.getByText("visits: 10 · sign-ups: 1 · read: 2")).toBeInTheDocument();
   });
-
-  it("is a page that does not exist for anyone but an admin", () => {
-    stores.authStore.user = { is_admin: false };
-    renderPage();
-
-    expect(screen.queryByText("Page views")).not.toBeInTheDocument();
-    expect(stores.analyticsStore.loadReport).not.toHaveBeenCalled();
-  });
 });

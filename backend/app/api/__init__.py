@@ -9,6 +9,7 @@ from fastapi import APIRouter, FastAPI
 
 from app.api.auth import router as auth_router
 from app.api.health import router as health_router
+from app.api.routers.admin import router as admin_router
 from app.api.routers.analytics import router as analytics_router
 from app.api.routers.budget import router as budget_router
 from app.api.routers.categories import router as categories_router
@@ -41,6 +42,7 @@ ROUTERS: list[APIRouter] = [
     webhooks_router,
     contact_router,
     analytics_router,
+    admin_router,
 ]
 
 

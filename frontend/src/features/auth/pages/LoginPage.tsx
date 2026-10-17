@@ -24,13 +24,66 @@ export const LoginPage = observer(() => {
   const state = location.state as LocationState | null;
   const from = state?.from?.pathname ?? "/";
 
+  const [code, setCode] = React.useState("");
+  const askingForCode = authStore.secondFactorToken !== null;
+
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const success = await authStore.login({ email, password });
+    const success = askingForCode
+      ? await authStore.completeSecondFactor(code)
+      : await authStore.login({ email, password });
     if (success) {
       void navigate(from, { replace: true });
     }
   };
+
+  if (askingForCode) {
+    return (
+      <div className="flex-grow flex flex-col items-center justify-center gap-6 py-10">
+        <Card className="w-full max-w-md p-6 md:p-8 flex flex-col gap-6">
+          <div className="text-center">
+            <h1 className="text-xl font-semibold mb-2">{t("login.codeTitle")}</h1>
+            <p className="text-base text-muted-foreground">{t("login.codeSubtitle")}</p>
+          </div>
+          {authStore.authState.error && <Note tone="error">{authStore.authState.error}</Note>}
+          <form
+            onSubmit={(e) => {
+              void handleSubmit(e);
+            }}
+            className="flex flex-col gap-5"
+          >
+            <Input
+              id="code"
+              label={t("login.code")}
+              value={code}
+              onChange={(e) => {
+                setCode(e.target.value);
+              }}
+              autoComplete="one-time-code"
+              required
+              minLength={6}
+              maxLength={16}
+            />
+            <p className="-mt-3 m-0 text-base text-muted-foreground">{t("login.codeHint")}</p>
+            <Button type="submit" size="lg" disabled={authStore.authState.isLoading}>
+              {authStore.authState.isLoading ? t("login.submitting") : t("login.codeSubmit")}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setCode("");
+                authStore.cancelSecondFactor();
+              }}
+            >
+              {t("login.back")}
+            </Button>
+          </form>
+        </Card>
+        <PublicLinks />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-grow flex flex-col items-center justify-center gap-6 py-10">

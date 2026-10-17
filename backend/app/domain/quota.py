@@ -29,12 +29,16 @@ class ReceiptQuota:
     """One account's receipt reads this month against its limit.
 
     `limit` is None for an account without one (an admin); `resets_on` is the first
-    day of next month, when `used` starts again from zero.
+    day of next month, when `used` starts again from zero. `plan` is the plan the limit
+    comes from, `plan_ends_on` the last day a granted plan runs (F18.4).
     """
 
     limit: int | None
     used: int
     resets_on: date
+    plan: str = "free"
+    plan_ends_on: date | None = None
+    ad_free: bool = False
 
     @property
     def unlimited(self) -> bool:

@@ -135,5 +135,18 @@
     "linkSent": "A new link is on its way.",
     "failed": "Something went wrong. Try again.",
     "deleted": "Your account and everything in it are deleted."
+  },
+  "twoFactor": {
+    "failed": "Two-factor sign-in could not be changed. Try again.",
+    "off": "Two-factor sign-in is off."
+  },
+  "admin": {
+    "failed": "The admin request failed. Try again.",
+    "emailConfirmed": "The address is confirmed.",
+    "linkSent": "The link is on its way.",
+    "planGranted": "The plan is granted.",
+    "planRevoked": "The grant is taken back.",
+    "appointed": "The account is now an admin.",
+    "removed": "The account is no longer an admin."
   }
 }

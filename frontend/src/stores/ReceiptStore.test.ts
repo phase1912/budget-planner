@@ -360,7 +360,7 @@ describe("ReceiptStore in a household (F12.4)", () => {
     vi.mocked(apiClient.PUT).mockResolvedValueOnce({
       data: { id: "r1", is_private: true },
       response: new Response(),
-    } as never);
+    });
 
     await store.setPrivacy(true);
 

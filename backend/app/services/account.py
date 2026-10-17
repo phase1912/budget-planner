@@ -33,6 +33,7 @@ from app.models.user import User
 from app.ports.email import Letter
 from app.ports.mail_domains import MailDomainResolverPort
 from app.repository.user import UserRepository
+from app.schemas.user import UserResponse
 from app.services.activity import ActivityService
 
 CONFIRM_LINK_LIFETIME = timedelta(hours=24)
@@ -239,3 +240,14 @@ class AccountService:
         if user is None or claims is None:
             raise InvalidLinkError("This link has expired or is not valid.")
         return user, claims
+
+
+def admin_sign_in_letter(user: UserResponse, when: datetime) -> Letter:
+    """The letter telling an admin their account was signed in to (F18.6.1)."""
+    wording = write_letter(
+        LetterKind.ADMIN_SIGN_IN,
+        user.language,
+        name=user.first_name,
+        when=f"{when:%Y-%m-%d %H:%M}",
+    )
+    return Letter(str(user.email), wording.subject, wording.body)

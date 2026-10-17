@@ -23,6 +23,7 @@ class UserResponse(BaseModel):
     budget_limit: Decimal | None = None
     language: Language | None = None
     email_confirmed: bool = False
+    two_factor_enabled: bool = False
     forwarding_token: str = Field(exclude=True)
     role: str = Field(default="user", exclude=True)
 
@@ -34,6 +35,12 @@ class UserResponse(BaseModel):
         """Whether the account sees the admin pages (F17.3.3): by role, or a listed email."""
         admins = {email.lower() for email in get_settings().admin_emails}
         return self.role == "admin" or self.email.lower() in admins
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_super_admin(self) -> bool:
+        """Whether the account appoints admins (F18.6.1): an email the deployment lists."""
+        return self.email.lower() in {e.lower() for e in get_settings().admin_emails}
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -64,10 +71,40 @@ class AccountDeletionRequest(BaseModel):
     password: str
 
 
+class TwoFactorSetupRead(BaseModel):
+    """What the screen shows to set an authenticator up (F18.6.1)."""
+
+    secret: str
+    uri: str
+    qr_svg: str
+
+
+class TwoFactorCodeRequest(BaseModel):
+    """A code from the authenticator app."""
+
+    code: str = Field(min_length=6, max_length=16)
+
+
+class TwoFactorEnabledRead(BaseModel):
+    """Two-factor sign-in is on: the recovery codes, shown once, and a session that has it."""
+
+    recovery_codes: list[str]
+    access_token: str
+    refresh_token: str
+
+
+class TwoFactorOffRequest(BaseModel):
+    """Turning it off takes the password and a code, both."""
+
+    password: str
+    code: str = Field(min_length=6, max_length=16)
+
+
 class ReceiptQuotaRead(BaseModel):
     """The account's receipt reads this month against its limit (F10.6).
 
-    `limit` and `remaining` are null for an account without a limit (an admin).
+    `limit` and `remaining` are null for an account without a limit (an admin). `plan`
+    says where the limit comes from and `plan_ends_on` when a granted plan ends (F18.4).
     """
 
     limit: int | None
@@ -75,5 +112,8 @@ class ReceiptQuotaRead(BaseModel):
     remaining: int | None
     unlimited: bool
     resets_on: date
+    plan: str
+    plan_ends_on: date | None
+    ad_free: bool
 
     model_config = ConfigDict(from_attributes=True)

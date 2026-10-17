@@ -17,7 +17,12 @@ from app.adapters.exchange_rates import (
 )
 from app.adapters.outgoing_mail import AppEngineMailSender, LogMailSender
 from app.adapters.storage_factory import configured_storage
-from app.api.errors import AuthenticationError, EmailNotConfirmedError, PermissionDeniedError
+from app.api.errors import (
+    AuthenticationError,
+    EmailNotConfirmedError,
+    PermissionDeniedError,
+    ProblemCode,
+)
 from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.models.user import User
@@ -28,7 +33,7 @@ from app.ports.storage import StoragePort
 from app.services.account import EmailAddressGuard
 from app.services.activity import ActivityService
 from app.services.mailer import Mailer
-from app.services.quota import QuotaService, is_admin
+from app.services.quota import QuotaService, is_admin, is_super_admin
 
 """API dependencies (F1.2.4)."""
 
@@ -87,14 +92,50 @@ async def get_confirmed_user(user: Annotated[User, Depends(get_current_user)]) -
     return user
 
 
-async def get_admin_user(user: Annotated[User, Depends(get_current_user)]) -> User:
-    """The signed-in user, provided they are an admin (F17.3.3, F10.6.2).
+def get_session_second_factor(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
+) -> bool:
+    """Whether the caller's session was opened with an authenticator code (F18.6.1)."""
+    if credentials is None:
+        return False
+    try:
+        claims = jwt.decode(
+            credentials.credentials,
+            get_settings().jwt_secret_key.get_secret_value(),
+            algorithms=["HS256"],
+        )
+    except jwt.InvalidTokenError:
+        return False
+    return claims.get("sf") is True
 
-    403 for anyone else. Being an admin opens the service's own figures and, later, the
-    admin console (F18.6) — never another user's receipts (BRD N2).
+
+async def get_admin_user(
+    user: Annotated[User, Depends(get_current_user)],
+    second_factor: Annotated[bool, Depends(get_session_second_factor)],
+) -> User:
+    """The signed-in user, provided they are an admin who signed in with a second factor.
+
+    403 for anyone else (F17.3.3, F18.6); 403 second_factor_required for an admin whose
+    session was opened with the password alone, where the deployment asks for more
+    (F18.6.1). Being an admin never opens another user's receipts (BRD N2).
     """
-    if not is_admin(user, get_settings()):
+    settings = get_settings()
+    if not is_admin(user, settings):
         raise PermissionDeniedError("This page is for the service's administrators.")
+    if settings.requires_admin_second_factor and not second_factor:
+        raise PermissionDeniedError(
+            "Turn on two-factor sign-in and sign in with it to open the admin pages.",
+            code=ProblemCode.SECOND_FACTOR_REQUIRED,
+        )
+    return user
+
+
+async def get_super_admin(user: Annotated[User, Depends(get_admin_user)]) -> User:
+    """An admin who is also a super admin: 403 super_admin_only for any other (F18.6.1)."""
+    if not is_super_admin(user, get_settings()):
+        raise PermissionDeniedError(
+            "Only a super admin can do this.", code=ProblemCode.SUPER_ADMIN_ONLY
+        )
     return user
 
 

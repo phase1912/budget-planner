@@ -27,6 +27,9 @@ const QUOTA: ReceiptQuota = {
   remaining: 7,
   unlimited: false,
   resets_on: "2026-11-01",
+  plan: "free",
+  plan_ends_on: null,
+  ad_free: false,
 };
 
 describe("UploadPage", () => {
