@@ -105,5 +105,24 @@
   },
   "cheaper": {
     "mark": "Дешевше в {{shop}}: на {{amount}} {{currency}}/{{unit}} ({{percent}}%), ніж у {{instead}}"
-  }
+  },
+  "overview": {
+    "label": "Коротко",
+    "prices": "Зміни цін",
+    "pricesShort": "Ціни",
+    "most": "Найчастіше",
+    "mostShort": "Часто",
+    "shops": "Найдешевший магазин",
+    "shopsShort": "Магазини",
+    "noMoves": "За пів року жодна ціна не змінилась на 5% чи більше.",
+    "moveLine": "{{shop}} · {{first}} → {{last}} {{currency}}",
+    "noShops": "Купіть те саме у двох магазинах — і тут їх буде порівняно.",
+    "paidAbove": "Близько {{amount}} {{currency}} переплачено проти найдешевшого магазину за пів року",
+    "cheapestFor_one": "найдешевший для {{count}} товару",
+    "cheapestFor_few": "найдешевший для {{count}} товарів",
+    "cheapestFor_many": "найдешевший для {{count}} товарів",
+    "cheapestFor_other": "найдешевший для {{count}} товару"
+  },
+  "exploreHint": "Позначте товари, щоб побачити, скільки вони коштують разом, по місяцях і магазинах.",
+  "all": "Усі товари"
 }

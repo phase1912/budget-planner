@@ -62,7 +62,7 @@ describe("AdminLayout (F18.6)", () => {
     expect(screen.queryByText("inside")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Set it up" })).toHaveAttribute(
       "href",
-      "/profile#security",
+      "/settings#security",
     );
   });
 });

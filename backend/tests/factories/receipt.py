@@ -33,3 +33,5 @@ class ReceiptFactory(ModelFactory[Receipt]):
     trip_manual = False
     # Read as it was, unless a test about corrections says otherwise (F15.4).
     user_corrected = False
+    # No unprinted discount unless a test about one gives it (F23.7).
+    paid_discount = None

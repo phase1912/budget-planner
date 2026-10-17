@@ -35,7 +35,7 @@ export function TopCategories({ spend, hrefFor }: TopCategoriesProps) {
         <h2 id="top-categories" className="m-0 text-[15px] font-bold">
           {t("top.title")}
         </h2>
-        <Link to="/statistics" className="text-md" aria-label={t("top.allLabel")}>
+        <Link to="/spending" className="text-md" aria-label={t("top.allLabel")}>
           {t("top.all")}
         </Link>
       </div>

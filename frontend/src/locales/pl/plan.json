@@ -1,0 +1,59 @@
+{
+  "title": "Plan",
+  "income": {
+    "title": "Wpływy",
+    "month": "{{month}}",
+    "usual": "Zwykle: {{amount}} {{currency}} miesięcznie",
+    "usualNone": "Nie ustawiono zwykłego dochodu",
+    "none": "W tym miesiącu jeszcze nic nie wpisano.",
+    "add": "Dodaj dochód",
+    "edit": "Zmień dochód",
+    "date": "Data",
+    "amount": "Kwota",
+    "source": "Od kogo",
+    "sourcePlaceholder": "Wynagrodzenie, klient, zwrot…",
+    "kind": "Rodzaj",
+    "kinds": {
+      "salary": "Wynagrodzenie",
+      "side": "Dodatkowa praca",
+      "refund": "Zwrot",
+      "other": "Inne"
+    },
+    "save": "Zapisz",
+    "delete": "Usuń",
+    "cancel": "Anuluj",
+    "total": "W tym miesiącu"
+  },
+  "budget": {
+    "title": "Budżet miesięczny",
+    "none": "Nie ustawiono budżetu",
+    "set": "Ustaw budżet",
+    "spent": "Wydano {{spent}} z {{budget}} {{currency}}"
+  },
+  "holidays": {
+    "title": "Wypoczynek",
+    "none": "Brak wyjazdów — zaplanuj, aby trzymać ich wydatki osobno i w budżecie.",
+    "new": "Zaplanuj wypoczynek",
+    "all": "Wszystkie wyjazdy",
+    "left": "Zostało {{amount}} {{currency}}",
+    "spent": "Wydano {{amount}} {{currency}}"
+  },
+  "work": {
+    "title": "Podróże służbowe",
+    "open": "Otwórz podróże służbowe",
+    "count_one": "{{count}} podróż",
+    "count_few": "{{count}} podróże",
+    "count_many": "{{count}} podróży",
+    "count_other": "{{count}} podróży"
+  },
+  "goals": {
+    "title": "Cele",
+    "none": "Brak celów.",
+    "new": "Nowy cel",
+    "all": "Wszystkie cele",
+    "kinds": {
+      "financial": "Cel finansowy",
+      "lifestyle": "Cel stylu życia"
+    }
+  }
+}

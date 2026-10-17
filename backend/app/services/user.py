@@ -1,5 +1,7 @@
 """User profile service (F1.4)."""
 
+from datetime import UTC, datetime
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import DomainError, ProblemCode
@@ -33,6 +35,14 @@ class UserService:
                     "Cannot change currency once receipts exist.",
                     code=ProblemCode.CURRENCY_LOCKED,
                 )
+
+        if data.pop("onboarded", None) and user.onboarded_at is None:
+            user.onboarded_at = datetime.now(UTC)
+        if data.get("starting_balance") is not None and data.get("balance_since") is None:
+            data["balance_since"] = datetime.now(UTC).date()
+        for flag in ("dark_at_night", "travels_for_work"):
+            if flag in data and data[flag] is None:
+                del data[flag]
 
         self.repository.update(user, data)
         await self.session.commit()

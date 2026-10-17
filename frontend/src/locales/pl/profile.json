@@ -1,6 +1,5 @@
 {
   "title": "Ustawienia",
-  "subtitle": "Ustawienia konta, w których wyrażona jest każda kwota w aplikacji.",
   "money": {
     "title": "Pieniądze",
     "currency": "Waluta",
@@ -9,7 +8,13 @@
     "recorded": "Paragonów w {{currency}}: {{count}}",
     "limit": "Miesięczny limit budżetu",
     "limitHint": "Opcjonalnie. Gdy jest ustawiony, wydatki są też pokazywane jako jego procent. Zmiana wpływa tylko na prezentację — zamknięte miesiące nigdy nie są przepisywane.",
-    "removeLimit": "Usuń limit"
+    "removeLimit": "Usuń limit",
+    "income": "Zwykły miesięczny dochód",
+    "payday": "Dzień wypłaty",
+    "noPayday": "Nie ustawiono",
+    "lastDay": "Ostatni dzień miesiąca",
+    "none": "Nie ustawiono",
+    "hint": "Dochód wpisany za miesiąc zastępuje tam zwykłą kwotę. Miesiące nadal zaczynają się 1-go."
   },
   "account": {
     "title": "Konto",
@@ -31,7 +36,7 @@
   },
   "discard": "Odrzuć",
   "saving": "Zapisujemy…",
-  "save": "Zapisz ustawienia",
+  "save": "Zapisz",
   "forwarding": {
     "title": "Paragony e-mailem",
     "label": "Twój adres do przekazywania",
@@ -133,5 +138,25 @@
     "offBody": "Logowanie znów będzie prosić tylko o hasło.",
     "password": "Hasło",
     "codeOrRecovery": "Kod z aplikacji lub kod odzyskiwania"
+  },
+  "appearance": {
+    "title": "Wygląd",
+    "palette": "Paleta",
+    "darkAtNight": "Ciemny w nocy",
+    "darkAtNightHint": "Midnight, gdy urządzenie jest w trybie ciemnym.",
+    "palettes": {
+      "midnight": "Midnight",
+      "daylight": "Daylight",
+      "rose": "Rose",
+      "lavender": "Lavender",
+      "sage": "Sage",
+      "ocean": "Ocean"
+    }
+  },
+  "work": {
+    "title": "Podróże służbowe",
+    "label": "Jeżdżę w podróże służbowe",
+    "hint": "Pokazuje podróże służbowe: diety i rozliczenie dla pracodawcy.",
+    "open": "Otwórz podróże służbowe"
   }
 }

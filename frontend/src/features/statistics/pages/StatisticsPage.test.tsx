@@ -223,6 +223,6 @@ describe("StatisticsPage", () => {
     expect(screen.getByRole("columnheader", { name: "1 – 27 Jun 2026" })).toBeInTheDocument();
     // In full in its own column; for a phone, just the percentage under the amount.
     expect(screen.getByText("−69.80 · −8.6%")).toBeInTheDocument();
-    expect(screen.getByText("−8.6%")).toBeInTheDocument();
+    expect(screen.getAllByText("−8.6%").length).toBeGreaterThan(0);
   });
 });

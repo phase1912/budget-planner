@@ -317,9 +317,9 @@ class ReceiptRepository(BaseRepository[Receipt]):
         held = and_(Receipt.status != ReceiptStatus.PARSED, ~on_trip(TripKind.BUSINESS))
         stmt = (
             select(
-                func.coalesce(func.sum(case((counted, matching.c.total_price))), 0),
+                func.coalesce(func.sum(case((counted, matching.c.paid))), 0),
                 func.count().filter(held),
-                func.coalesce(func.sum(case((held, matching.c.total_price))), 0),
+                func.coalesce(func.sum(case((held, matching.c.paid))), 0),
             )
             .select_from(matching)
             .join(Receipt, Receipt.id == matching.c.receipt_id)
@@ -347,10 +347,10 @@ class ReceiptRepository(BaseRepository[Receipt]):
                 Category.id,
                 Category.name,
                 func.count(LineItem.id),
-                func.coalesce(func.sum(LineItem.total_price), 0),
+                func.coalesce(func.sum(LineItem.paid), 0),
             )
             .group_by(Category.id, Category.name)
-            .order_by(func.sum(LineItem.total_price).desc(), Category.name)
+            .order_by(func.sum(LineItem.paid).desc(), Category.name)
         )
         return [
             CategorySpend(category_id, name, int(count), Decimal(amount))
@@ -375,7 +375,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         """
         key = _purchase_key()
         receipts = func.count(func.distinct(LineItem.receipt_id))
-        spent = func.coalesce(func.sum(LineItem.total_price), 0)
+        spent = func.coalesce(func.sum(LineItem.paid), 0)
         matching = self._filtered_items(
             ItemView.ALL, search=None, period=period, category_id=None
         ).where(counted_in_budget())
@@ -466,7 +466,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
             _within(period),
         )
         in_month = self._apply_ownership(in_month)
-        total_stmt = select(func.coalesce(func.sum(LineItem.total_price), 0)).where(
+        total_stmt = select(func.coalesce(func.sum(LineItem.paid), 0)).where(
             LineItem.receipt_id.in_(in_month)
         )
         count_stmt = select(func.count()).select_from(in_month.subquery())
@@ -491,7 +491,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
             )
         )
         count_stmt = select(func.count()).select_from(in_month.subquery())
-        value_stmt = select(func.coalesce(func.sum(LineItem.total_price), 0)).where(
+        value_stmt = select(func.coalesce(func.sum(LineItem.paid), 0)).where(
             LineItem.receipt_id.in_(in_month)
         )
         count: int = (await self.session.execute(count_stmt)).scalar_one()

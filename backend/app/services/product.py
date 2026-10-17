@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.errors import NotFoundError
 from app.core.config import get_settings
 from app.domain.periods import DateRange
+from app.domain.product_overview import ProductsOverview, products_overview
 from app.domain.products import ProductKey, abbreviates, candidates, product_key
 from app.domain.purchases import (
     CheaperShop,
@@ -381,6 +382,17 @@ class ProductService:
         ]
         purchases = await self.products.purchases_of(user_id, wanted, period)
         return explore(facts, purchases, (period.start, period.end) if period else None)
+
+    async def overview(self, user_id: uuid.UUID, period: DateRange | None) -> ProductsOverview:
+        """Every product's price move and each shop's standing over `period` (F23.5).
+
+        Lines not matched yet are matched first, as the product list does.
+        """
+        await self.link_unmatched(user_id)
+        products = await self.products.list_with_aliases(user_id)
+        facts = [ProductFacts(p.id, p.name, p.size_amount, p.size_unit) for p in products]
+        purchases = await self.products.purchases_of(user_id, [p.id for p in products], period)
+        return products_overview(facts, purchases)
 
     async def save_selection(
         self,

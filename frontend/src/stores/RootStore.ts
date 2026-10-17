@@ -28,6 +28,7 @@ import { ContactStore } from "@/stores/ContactStore";
 import { AnalyticsStore } from "@/stores/AnalyticsStore";
 import { AdminStore } from "@/stores/AdminStore";
 import { TwoFactorStore } from "@/stores/TwoFactorStore";
+import { IncomeStore } from "@/stores/IncomeStore";
 
 /**
  * Single instantiation point for every MobX store in the client (F9.2.1). Feature
@@ -62,6 +63,7 @@ export class RootStore {
   readonly analyticsStore: AnalyticsStore;
   readonly adminStore: AdminStore;
   readonly twoFactorStore: TwoFactorStore;
+  readonly incomeStore: IncomeStore;
 
   constructor() {
     this.themeStore = new ThemeStore();
@@ -69,12 +71,18 @@ export class RootStore {
     this.toastStore = new ToastStore();
     this.authStore = new AuthStore(apiClient);
     this.languageStore = new LanguageStore(this.authStore);
-    this.profileStore = new ProfileStore(apiClient, this.authStore, this.toastStore);
+    this.profileStore = new ProfileStore(
+      apiClient,
+      this.authStore,
+      this.toastStore,
+      this.themeStore,
+    );
     this.accountStore = new AccountStore(apiClient, this.authStore, this.toastStore);
     this.contactStore = new ContactStore(apiClient);
     this.analyticsStore = new AnalyticsStore(apiClient);
     this.adminStore = new AdminStore(apiClient, this.toastStore);
     this.twoFactorStore = new TwoFactorStore(apiClient, this.authStore, this.toastStore);
+    this.incomeStore = new IncomeStore(apiClient, this.toastStore);
     this.budgetStore = new BudgetStore();
     // Any receipt change may have recalculated the month on screen (BRD D6, F6.5).
     const refreshMonth = () => void this.budgetStore.refresh();
@@ -109,6 +117,15 @@ export class RootStore {
       // Keyed by value: the user object is replaced on every profile load, its language is not.
       { fireImmediately: true },
     );
+    // The account's look follows it to every device (F23.1).
+    reaction(
+      () => `${this.authStore.user?.palette ?? ""}:${String(this.authStore.user?.dark_at_night)}`,
+      () => {
+        const user = this.authStore.user;
+        if (user) this.themeStore.adoptAccount(user.palette, user.dark_at_night);
+      },
+      { fireImmediately: true },
+    );
     reaction(
       () => this.authStore.user?.id,
       () => {
@@ -124,6 +141,7 @@ export class RootStore {
         this.householdStore.reset();
         this.receiptStore.resetScope();
         this.adminStore.reset();
+        this.incomeStore.reset();
         this.twoFactorStore.close();
       },
     );

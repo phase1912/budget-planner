@@ -22,6 +22,8 @@ describe("ProfilePage", () => {
       is_admin: false,
       is_super_admin: false,
       two_factor_enabled: false,
+      dark_at_night: false,
+      travels_for_work: false,
     };
 
     // Stub api client on profileStore
@@ -29,7 +31,7 @@ describe("ProfilePage", () => {
     vi.spyOn(rootStore.profileStore, "loadProfile").mockResolvedValue();
   });
 
-  it("renders with user preferences", () => {
+  const renderPage = () =>
     render(
       <StoreProvider store={rootStore}>
         <MemoryRouter>
@@ -38,57 +40,51 @@ describe("ProfilePage", () => {
       </StoreProvider>,
     );
 
-    expect(screen.getByText("Preferences")).toBeInTheDocument();
+  it("shows the account's settings, money among them", () => {
+    renderPage();
 
-    // Currency is a select box if no receipts, or locked if receipts
-    // Since receiptCount is 0, it should be a select box
-    const currencySelect = screen.getByLabelText("Currency");
-    expect(currencySelect).toHaveValue("USD");
-
-    const budgetInput = screen.getByLabelText("Monthly budget limit");
-    expect(budgetInput).toHaveAttribute("value", "1000");
+    expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Currency")).toHaveValue("USD");
+    expect(screen.getByLabelText("Monthly budget limit")).toHaveValue("1000");
   });
 
-  it("calls updateProfile on save", async () => {
-    render(
-      <StoreProvider store={rootStore}>
-        <MemoryRouter>
-          <ProfilePage />
-        </MemoryRouter>
-      </StoreProvider>,
-    );
+  it("saves currency, budget, usual income and payday together", async () => {
+    renderPage();
 
-    const budgetInput = screen.getByLabelText("Monthly budget limit");
-    fireEvent.change(budgetInput, { target: { value: "2000" } });
-
-    const currencySelect = screen.getByLabelText("Currency");
-    fireEvent.change(currencySelect, { target: { value: "EUR" } });
-
-    const saveButton = screen.getByRole("button", { name: "Save preferences" });
-    fireEvent.click(saveButton);
+    fireEvent.change(screen.getByLabelText("Monthly budget limit"), { target: { value: "2000" } });
+    fireEvent.change(screen.getByLabelText("Currency"), { target: { value: "EUR" } });
+    fireEvent.change(screen.getByLabelText("Usual monthly income"), {
+      target: { value: "6800,50" },
+    });
+    fireEvent.change(screen.getByLabelText("Payday"), { target: { value: "10" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => {
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(rootStore.profileStore.updateProfile).toHaveBeenCalledWith({
         currency: "EUR",
-        budget_limit: 2000,
+        budget_limit: "2000",
+        usual_income: "6800.50",
+        payday: 10,
       });
     });
   });
 
-  it("allows removing the budget limit", () => {
-    render(
-      <StoreProvider store={rootStore}>
-        <MemoryRouter>
-          <ProfilePage />
-        </MemoryRouter>
-      </StoreProvider>,
-    );
+  it("paints a palette at once and keeps it on the account (F23.1)", () => {
+    const choose = vi.spyOn(rootStore.profileStore, "choosePalette").mockResolvedValue();
+    renderPage();
 
-    const removeBtn = screen.getByRole("button", { name: "Remove the limit" });
-    fireEvent.click(removeBtn);
+    fireEvent.click(screen.getByRole("radio", { name: /Rose/ }));
 
-    const budgetInput = screen.getByLabelText("Monthly budget limit");
-    expect(budgetInput).toHaveValue(null);
+    expect(choose).toHaveBeenCalledWith("rose");
+  });
+
+  it("shows business trips only to someone who travels for work (F23.12)", () => {
+    const save = vi.spyOn(rootStore.profileStore, "saveQuietly").mockResolvedValue(true);
+    renderPage();
+
+    expect(screen.queryByRole("link", { name: "Open business trips" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("switch", { name: /I travel for work/ }));
+    expect(save).toHaveBeenCalledWith({ travels_for_work: true });
   });
 });

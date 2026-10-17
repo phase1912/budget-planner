@@ -81,5 +81,45 @@
     "loading": "Loading the household's month…"
   },
   "inMonth": " in {{month}}",
-  "recorded": " recorded"
+  "recorded": " recorded",
+  "hero": {
+    "label": "This month",
+    "ring": "Spent {{spent}} of {{of}} {{currency}}",
+    "leftOfBudget": "left of your budget",
+    "leftOfIncome": "left of what came in",
+    "over": "over budget",
+    "income": "Income",
+    "incomeUsual": "Income · usual",
+    "budget": "Budget",
+    "add": "Add",
+    "set": "Set",
+    "daysLeft_one": "{{count}} day left",
+    "daysLeft_other": "{{count}} days left",
+    "perDay": "{{amount}} {{currency}} a day",
+    "kept": "Kept",
+    "overIncome": "more than came in",
+    "ringIncome": "Spent {{spent}} of the {{of}} {{currency}} that came in",
+    "ringCategories": "Spent {{spent}} {{currency}}, by category",
+    "next": "Tap for the next view"
+  },
+  "review_one": "{{count}} line needs a category",
+  "review_other": "{{count}} lines need a category",
+  "edit": {
+    "incomeTitle": "Income in {{month}}",
+    "incomeLabel": "What came in",
+    "incomeHint": "Several sums this month? Add each in Plan.",
+    "incomeSource": "Salary",
+    "incomeMany": "This month has several entries: change them in Plan.",
+    "budgetTitle": "Monthly budget",
+    "budgetLabel": "Budget",
+    "budgetHint": "Leave it empty to have no budget."
+  },
+  "balance": {
+    "title": "On your accounts",
+    "add": "Add what you have now",
+    "since": "counted from {{date}}",
+    "editTitle": "Money on your accounts",
+    "editLabel": "What you have today",
+    "editHint": "Not your income: the money on your cards and accounts right now. From today it goes up with income and down with every purchase."
+  }
 }

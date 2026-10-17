@@ -87,7 +87,7 @@ function SecondFactorGate({ enabled }: { enabled: boolean }) {
         </Button>
       ) : (
         <Link
-          to="/profile#security"
+          to="/settings#security"
           className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 font-semibold text-primary-foreground md:w-auto md:self-start"
         >
           {t("gate.setUp")}

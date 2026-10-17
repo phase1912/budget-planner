@@ -1,0 +1,57 @@
+{
+  "title": "Plan",
+  "income": {
+    "title": "Coming in",
+    "month": "{{month}}",
+    "usual": "Usual: {{amount}} {{currency}} a month",
+    "usualNone": "No usual income set",
+    "none": "Nothing entered this month yet.",
+    "add": "Add income",
+    "edit": "Change income",
+    "date": "Date",
+    "amount": "Amount",
+    "source": "From",
+    "sourcePlaceholder": "Salary, client, refund…",
+    "kind": "Kind",
+    "kinds": {
+      "salary": "Salary",
+      "side": "Side job",
+      "refund": "Refund",
+      "other": "Other"
+    },
+    "save": "Save",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "total": "This month"
+  },
+  "budget": {
+    "title": "Monthly budget",
+    "none": "No budget set",
+    "set": "Set a budget",
+    "spent": "{{spent}} of {{budget}} {{currency}} spent"
+  },
+  "holidays": {
+    "title": "Holidays",
+    "none": "No holidays yet — plan one to keep its spending apart and on budget.",
+    "new": "Plan a holiday",
+    "all": "All holidays",
+    "left": "{{amount}} {{currency}} left",
+    "spent": "{{amount}} {{currency}} spent"
+  },
+  "work": {
+    "title": "Business trips",
+    "open": "Open business trips",
+    "count_one": "{{count}} trip",
+    "count_other": "{{count}} trips"
+  },
+  "goals": {
+    "title": "Goals",
+    "none": "No goals yet.",
+    "new": "New goal",
+    "all": "All goals",
+    "kinds": {
+      "financial": "Money goal",
+      "lifestyle": "Lifestyle goal"
+    }
+  }
+}

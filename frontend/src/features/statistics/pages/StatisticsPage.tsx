@@ -1,11 +1,10 @@
 import { CategoryIcon } from "@/shared/components";
 import { useEffect, useState } from "react";
-import { CalendarX } from "lucide-react";
+import { CalendarX, ChevronRight, ReceiptText } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { Link } from "react-router-dom";
 
 import { ExportMenu } from "@/features/exports/components/ExportMenu";
-import { StatisticsTabs } from "../components/StatisticsTabs";
 import {
   Button,
   Card,
@@ -25,6 +24,7 @@ import {
 import type { Preset } from "@/stores/StatisticsStore";
 import { useStores } from "@/stores/StoreContext";
 import { CategoryChart } from "../components/CategoryChart";
+import { SpendingRing } from "../components/SpendingRing";
 import { Change } from "../components/Change";
 import { likeForLikeNote, periodLabel, periodName } from "../periodLabel";
 import { HouseholdStatisticsView } from "@/features/household/components/HouseholdStatisticsView";
@@ -91,8 +91,6 @@ export const StatisticsPage = observer(function StatisticsPage() {
             />
           )}
         </header>
-
-        <StatisticsTabs />
 
         <HouseholdViewSwitch />
 
@@ -216,6 +214,12 @@ export const StatisticsPage = observer(function StatisticsPage() {
                   </Note>
                 )}
 
+                {statistics.categories.length > 0 && (
+                  <div className={`transition-opacity ${isLoading ? "opacity-60" : ""}`}>
+                    <SpendingRing statistics={statistics} currency={currency} />
+                  </div>
+                )}
+
                 {statistics.chart && statistics.categories.length > 0 && (
                   <div className={`transition-opacity ${isLoading ? "opacity-60" : ""}`}>
                     <CategoryChart chart={statistics.chart} current={period} previous={previous} />
@@ -324,6 +328,19 @@ export const StatisticsPage = observer(function StatisticsPage() {
                 </Card>
               </>
             )}
+            <Link
+              to={`/receipts?start=${start}&end=${end}`}
+              className="flex min-h-16 items-center gap-3.5 rounded-card bg-surface px-4 py-3 text-foreground shadow-card"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-tone-primary-bg text-primary">
+                <ReceiptText size={20} aria-hidden="true" />
+              </span>
+              <span className="flex flex-1 flex-col">
+                <span className="text-lg font-bold">{t("allReceipts")}</span>
+                <span className="text-md text-muted-foreground">{t("allReceiptsHint")}</span>
+              </span>
+              <ChevronRight size={18} aria-hidden="true" />
+            </Link>
           </>
         )}
       </div>

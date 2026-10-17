@@ -1,6 +1,6 @@
 {
-  "title": "Statystyki",
-  "subtitle": "Sumy według kategorii za dowolny okres, nie tylko za pełne miesiące.",
+  "title": "Wydatki",
+  "subtitle": "Gdzie poszły pieniądze, według kategorii, w dowolnych dniach.",
   "export": "Eksport",
   "period": "Okres",
   "presets": {
@@ -61,5 +61,13 @@
     "label": "Co przeglądać",
     "categories": "Kategorie",
     "products": "Produkty"
+  },
+  "allReceipts": "Wszystkie paragony",
+  "allReceiptsHint": "Z tego okresu · szukaj po sklepie lub produkcie",
+  "ring": {
+    "label": "Wydatki według kategorii",
+    "showAll": "Pokaż wszystkie kategorie",
+    "picture": "Wydano {{total}} {{currency}}, według kategorii",
+    "spent": "Wydano"
   }
 }

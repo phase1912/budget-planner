@@ -4,15 +4,17 @@ import { observer } from "mobx-react-lite";
 import { Container } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
 import { BottomNavigation } from "./BottomNavigation";
+import { SideNavigation } from "./SideNavigation";
 import { Header } from "./Header";
 import { ServerWakingNotice } from "./ServerWakingNotice";
 import { ConfirmEmailBanner } from "./ConfirmEmailBanner";
 import { ToastContainer } from "@/shared/components/Toast/Toast";
 
 /**
- * The frame every screen renders inside: header, content and, on a phone, the
- * bottom navigation (F9.4, F6.7). The upload flow is a focused task with its own
- * way back, so it goes without the bar, as docs/design/screens/upload-mobile.html does.
+ * The frame every screen renders inside (F9.4, F23.2): the header, then the content with,
+ * for a signed-in user, the navigation — a bar along the bottom on a phone, a side menu on
+ * wider screens. On a phone the upload flow is a focused task with its own way back, so it
+ * goes without the bar.
  */
 export const AppShell = observer(() => {
   const { authStore, analyticsStore } = useStores();
@@ -21,21 +23,25 @@ export const AppShell = observer(() => {
   useEffect(() => {
     analyticsStore.countView(pathname, document.referrer, search, authStore.isAuthenticated);
   }, [analyticsStore, authStore, pathname, search]);
-  const withBottomBar = authStore.isAuthenticated && !pathname.startsWith("/upload");
+  const signedIn = authStore.isAuthenticated;
+  const withBottomBar = signedIn && !pathname.startsWith("/upload");
   return (
     <div className="flex flex-col min-h-screen bg-muted text-foreground">
       <Header />
       <ToastContainer />
       <ServerWakingNotice />
 
-      <main
-        className={`flex-grow overflow-clip flex flex-col md:p-8 ${withBottomBar ? "pb-24" : ""}`}
-      >
-        <Container className="flex-grow flex flex-col">
-          <ConfirmEmailBanner />
-          <Outlet />
-        </Container>
-      </main>
+      <div className="flex flex-grow">
+        {signedIn && <SideNavigation />}
+        <main
+          className={`flex min-w-0 flex-grow flex-col overflow-clip md:p-8 ${withBottomBar ? "pb-24 md:pb-8" : ""}`}
+        >
+          <Container className="flex-grow flex flex-col">
+            <ConfirmEmailBanner />
+            <Outlet />
+          </Container>
+        </main>
+      </div>
       {withBottomBar && <BottomNavigation />}
     </div>
   );

@@ -74,6 +74,7 @@ from app.schemas.receipt import (
     UploadJobStatusResponse,
 )
 from app.services.activity import ActivityService
+from app.services.receipt_discount import respread_discount
 
 logger = logging.getLogger(__name__)
 
@@ -899,6 +900,8 @@ class ReceiptService:
         # Reassigning the collection is what lets delete-orphan drop any
         # existing line the caller did not resend.
         receipt.line_items = updated_items
+        # Corrected lines carry the receipt's unprinted discount afresh (F23.7).
+        respread_discount(receipt)
 
         await self.repository.session.flush()
         return receipt

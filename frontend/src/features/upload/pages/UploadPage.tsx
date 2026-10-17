@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/StoreContext";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
 import { Card, CardBody } from "@/shared/components/Card/Card";
 import { Button } from "@/shared/components/Button/Button";
@@ -10,6 +10,7 @@ import { ExtractedStep } from "../components/ExtractedStep";
 
 import { ResolveStep } from "../components/ResolveStep";
 import { ReceiptQuotaNote } from "../components/ReceiptQuotaNote";
+import { AddReceiptStart } from "../components/AddReceiptStart";
 import { ManualExpenseDialog } from "@/features/receipts/components/ManualExpenseDialog";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
@@ -36,21 +37,10 @@ export const UploadPage = observer(function UploadPage() {
       uploadStore.setFromTrip(null);
     };
   }, [tripsStore, uploadStore, tripId]);
-  const singleInputRef = useRef<HTMLInputElement>(null);
 
   const handleUploadClick = () => {
     if (!uploadStore.isAnyLineOverLimit && uploadStore.totalFilesCount > 0) {
       void uploadStore.submitUpload();
-    }
-  };
-
-  const handleSingleInitialUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    if (files.length > 0) {
-      uploadStore.addFilesToLine(0, files);
-      if (singleInputRef.current) {
-        singleInputRef.current.value = "";
-      }
     }
   };
 
@@ -233,35 +223,12 @@ export const UploadPage = observer(function UploadPage() {
           })}
 
           {uploadStore.mode === "single" && uploadStore.files.length === 0 && (
-            <Card variant="surface" className="p-5">
-              <button
-                className="inline-flex flex-row items-center justify-center gap-2 border border-dashed border-border-strong rounded-card bg-background text-primary font-medium text-sm p-4 w-full cursor-pointer hover:bg-muted"
-                onClick={() => singleInputRef.current?.click()}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 12h14" />
-                  <path d="M12 5v14" />
-                </svg>
-                {t("add.receipt")}
-              </button>
-              <input
-                type="file"
-                ref={singleInputRef}
-                className="hidden"
-                multiple
-                onChange={handleSingleInitialUpload}
-                accept="image/jpeg, image/png, image/heic, application/pdf"
-              />
-            </Card>
+            <AddReceiptStart
+              forwardingAddress={authStore.user?.forwarding_address ?? null}
+              onFiles={(files) => {
+                uploadStore.addFilesToLine(0, files);
+              }}
+            />
           )}
 
           {uploadStore.mode === "multiple" && !uploadStore.isProcessing && (

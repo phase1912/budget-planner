@@ -64,6 +64,7 @@ describe("UploadPage", () => {
       quotaStore: quotaStore(),
       tripsStore: TRIPS,
       accountStore: { mustConfirm: false },
+      authStore: { user: { forwarding_address: "receipts-x@inbound.test" } },
     } as unknown as RootStore;
 
     render(
@@ -74,7 +75,10 @@ describe("UploadPage", () => {
       </StoreProvider>,
     );
 
-    expect(screen.getByText("Add a receipt")).toBeInTheDocument();
+    // Choosing files, with dropping them on a wider screen, and forwarding by email (F23.6).
+    expect(screen.getByRole("button", { name: /Choose photos or a PDF/ })).toBeInTheDocument();
+    expect(screen.getByText("receipts-x@inbound.test")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy the address" })).toBeInTheDocument();
   });
 
   it("renders the error panel when there is an error", () => {
@@ -89,6 +93,7 @@ describe("UploadPage", () => {
       quotaStore: quotaStore(),
       tripsStore: TRIPS,
       accountStore: { mustConfirm: false },
+      authStore: { user: { forwarding_address: "receipts-x@inbound.test" } },
     } as unknown as RootStore;
 
     render(
@@ -113,6 +118,7 @@ describe("UploadPage", () => {
       quotaStore: quotaStore(quota),
       tripsStore: TRIPS,
       accountStore: { mustConfirm: false },
+      authStore: { user: { forwarding_address: "receipts-x@inbound.test" } },
     } as unknown as RootStore;
     render(
       <StoreProvider store={stores}>

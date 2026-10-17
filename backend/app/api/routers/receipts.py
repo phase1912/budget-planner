@@ -55,6 +55,7 @@ from app.schemas.receipt import (
     ManualExpenseRequest,
     PaginatedReceiptsResponse,
     ReceiptDetailResponse,
+    ReceiptDiscountRequest,
     ReceiptPrivacyRequest,
     ReceiptResponse,
     ReceiptScope,
@@ -77,6 +78,7 @@ from app.services.household import HouseholdService
 from app.services.manual_expense import ManualExpense, record_expense
 from app.services.quota import QuotaService
 from app.services.receipt import ReceiptService
+from app.services.receipt_discount import apply_discount
 from app.services.storage import ObjectNotFoundError
 from app.services.trip import TripService
 
@@ -663,6 +665,26 @@ async def set_receipt_privacy(
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
     receipt.is_private = request_data.is_private
+    await session.commit()
+    return await receipt_detail(session, receipt, current_user)
+
+
+@router.put("/{receipt_id}/discount", response_model=ReceiptDetailResponse)
+async def set_receipt_discount(
+    receipt_id: uuid.UUID,
+    request_data: ReceiptDiscountRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> ReceiptDetailResponse:
+    """Take off a receipt what was not paid — a gift card, a voucher (F23.7); null removes it.
+
+    409 discount_too_large when it is more than the lines cost; another user's receipt is
+    not found (N2).
+    """
+    receipt = await ReceiptRepository(session).get_with_items(receipt_id)
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+    apply_discount(receipt, request_data.amount, request_data.line_ids)
     await session.commit()
     return await receipt_detail(session, receipt, current_user)
 

@@ -98,7 +98,7 @@ class ProductRepository:
                 func.count(LineItem.id),
                 func.count(func.distinct(shop)),
                 func.max(func.coalesce(Receipt.transaction_date, Receipt.created_at)),
-                func.sum(LineItem.total_price),
+                func.sum(LineItem.paid),
             )
             .join(Receipt, Receipt.id == LineItem.receipt_id)
             .where(Receipt.user_id == user_id, LineItem.product_id.is_not(None))
@@ -132,7 +132,7 @@ class ProductRepository:
                 Receipt.merchant_name,
                 LineItem.quantity,
                 LineItem.unit_price,
-                LineItem.total_price,
+                LineItem.paid,
             )
             .join(Receipt, Receipt.id == LineItem.receipt_id)
             .where(

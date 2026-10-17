@@ -915,6 +915,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/receipts/{receipt_id}/discount": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Receipt Discount
+         * @description Take off a receipt what was not paid — a gift card, a voucher (F23.7); null removes it.
+         *
+         *     409 discount_too_large when it is more than the lines cost; another user's receipt is
+         *     not found (N2).
+         */
+        put: operations["set_receipt_discount_receipts__receipt_id__discount_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts/upload/{job_id}/resolve-total": {
         parameters: {
             query?: never;
@@ -1243,6 +1266,28 @@ export interface paths {
          *     time. Only counted receipts of the caller's own (N2): another user's product is 404.
          */
         get: operations["explore_products_api_v1_products_explore_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Products Overview
+         * @description The caller's biggest price moves and each shop's standing over the period (F23.5).
+         *
+         *     Without `start` and `end`, all time. Only the caller's counted receipts (N2).
+         */
+        get: operations["products_overview_api_v1_products_overview_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2034,6 +2079,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/income": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Month Income
+         * @description A month's income (YYYY-MM): its entries, or the usual amount standing in.
+         */
+        get: operations["month_income_api_v1_income_get"];
+        put?: never;
+        /**
+         * Add Income
+         * @description Record a sum that came in.
+         */
+        post: operations["add_income_api_v1_income_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/{income_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Income
+         * @description Change an entry; 404 for one that is not the user's (N2).
+         */
+        put: operations["update_income_api_v1_income__income_id__put"];
+        post?: never;
+        /**
+         * Delete Income
+         * @description Remove an entry; 404 for one that is not the user's (N2).
+         */
+        delete: operations["delete_income_api_v1_income__income_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Balance
+         * @description What the user has on `today` (their own date): the start, plus income, minus spend.
+         */
+        get: operations["balance_api_v1_income_balance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2240,6 +2353,22 @@ export interface components {
             access_token: string;
             /** Refresh Token */
             refresh_token: string;
+        };
+        /**
+         * BalanceRead
+         * @description What the user has now, and how it came to be (F23.14); null fields without a start.
+         */
+        BalanceRead: {
+            /** Balance */
+            balance: string | null;
+            /** Since */
+            since: string | null;
+            /** Starting */
+            starting: string | null;
+            /** Came In */
+            came_in: string | null;
+            /** Spent */
+            spent: string | null;
         };
         /**
          * BarGroupResponse
@@ -3004,6 +3133,54 @@ export interface components {
             reason?: string | null;
         };
         /**
+         * IncomeChannel
+         * @description How it reached the service: typed in, or read from a document (F23.11).
+         * @enum {string}
+         */
+        IncomeChannel: "manual" | "document";
+        /**
+         * IncomeKind
+         * @description What a sum that came in was.
+         * @enum {string}
+         */
+        IncomeKind: "salary" | "side" | "refund" | "other";
+        /** IncomeRead */
+        IncomeRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Received On
+             * Format: date
+             */
+            received_on: string;
+            /** Amount */
+            amount: string;
+            /** Source */
+            source: string;
+            kind: components["schemas"]["IncomeKind"];
+            channel: components["schemas"]["IncomeChannel"];
+        };
+        /**
+         * IncomeRequest
+         * @description A sum that came in, as the user enters it.
+         */
+        IncomeRequest: {
+            /**
+             * Received On
+             * Format: date
+             */
+            received_on: string;
+            /** Amount */
+            amount: number | string;
+            /** Source */
+            source: string;
+            /** @default salary */
+            kind: components["schemas"]["IncomeKind"];
+        };
+        /**
          * ItemView
          * @description The three lists on the categorisation screen (docs/design/screens/categorisation.html).
          *
@@ -3116,6 +3293,11 @@ export interface components {
             unit_price: string;
             /** Total Price */
             total_price: string;
+            /**
+             * Discount Share
+             * @default 0
+             */
+            discount_share: string;
             /** Category Id */
             category_id: string | null;
             category?: components["schemas"]["CategoryResponse"] | null;
@@ -3283,6 +3465,22 @@ export interface components {
              * @default []
              */
             trips: components["schemas"]["TripResponse"][];
+        };
+        /**
+         * MonthIncomeRead
+         * @description A month's income: its entries, their total, or the usual amount standing in.
+         */
+        MonthIncomeRead: {
+            /** Month */
+            month: string;
+            /** Total */
+            total: string | null;
+            /** Entered */
+            entered: boolean;
+            /** Usual */
+            usual: string | null;
+            /** Entries */
+            entries: components["schemas"]["IncomeRead"][];
         };
         /**
          * MonthPurchasesResponse
@@ -3555,6 +3753,18 @@ export interface components {
             percent: string | null;
         };
         /**
+         * PriceMoveResponse
+         * @description A product whose price for one item moved noticeably over the period (F23.5).
+         */
+        PriceMoveResponse: {
+            product: components["schemas"]["ProductFactsResponse"];
+            change: components["schemas"]["PriceChangeResponse"];
+            /** Last Shop */
+            last_shop: string | null;
+            /** History */
+            history: string[];
+        };
+        /**
          * PricePointResponse
          * @description What one purchase cost a unit, and per kg or l where the size is known.
          */
@@ -3647,6 +3857,18 @@ export interface components {
             purchases: number;
         };
         /**
+         * ProductsOverviewResponse
+         * @description Everything bought at a glance: price moves and shops (F23.5).
+         */
+        ProductsOverviewResponse: {
+            /** Moves */
+            moves: components["schemas"]["PriceMoveResponse"][];
+            /** Shops */
+            shops: components["schemas"]["ShopStandingResponse"][];
+            /** Paid Above */
+            paid_above: string;
+        };
+        /**
          * ReadingAccuracyResponse
          * @description How often reading needed the user's correction, by shop and over time (F15.4).
          *
@@ -3703,6 +3925,8 @@ export interface components {
             transaction_date: string | null;
             /** Total Amount */
             total_amount: string | null;
+            /** Paid Discount */
+            paid_discount?: string | null;
             /** Status */
             status: string;
             channel: components["schemas"]["ReceiptChannel"];
@@ -3758,6 +3982,17 @@ export interface components {
              * @description Whether storage has removed the photos after 90 days; the figures stay.
              */
             readonly photos_removed: boolean;
+        };
+        /**
+         * ReceiptDiscountRequest
+         * @description What was not paid of a receipt (F23.7): null takes the discount off; `line_ids`
+         *     narrows it to some lines, all of them otherwise.
+         */
+        ReceiptDiscountRequest: {
+            /** Amount */
+            amount?: number | string | null;
+            /** Line Ids */
+            line_ids?: string[] | null;
         };
         /**
          * ReceiptOrder
@@ -3832,6 +4067,8 @@ export interface components {
             transaction_date: string | null;
             /** Total Amount */
             total_amount: string | null;
+            /** Paid Discount */
+            paid_discount?: string | null;
             /** Status */
             status: string;
             channel: components["schemas"]["ReceiptChannel"];
@@ -4070,6 +4307,11 @@ export interface components {
             unit_price: string;
             /** Total Price */
             total_price: string;
+            /**
+             * Discount Share
+             * @default 0
+             */
+            discount_share: string;
             /** Category Id */
             category_id: string | null;
             category?: components["schemas"]["CategoryResponse"] | null;
@@ -4217,6 +4459,18 @@ export interface components {
             above_percent: string | null;
         };
         /**
+         * ShopStandingResponse
+         * @description A shop: cheapest for how many products, and what was paid above the cheapest there.
+         */
+        ShopStandingResponse: {
+            /** Shop */
+            shop: string;
+            /** Cheapest For */
+            cheapest_for: number;
+            /** Paid Above */
+            paid_above: string;
+        };
+        /**
          * SplitProductRequest
          * @description The way of printing to take out of the product into one of its own (F16.1).
          */
@@ -4335,6 +4589,8 @@ export interface components {
             transaction_date: string | null;
             /** Total Amount */
             total_amount: string | null;
+            /** Paid Discount */
+            paid_discount?: string | null;
             /** Status */
             status: string;
             channel: components["schemas"]["ReceiptChannel"];
@@ -4738,6 +4994,28 @@ export interface components {
              * @default false
              */
             two_factor_enabled: boolean;
+            /** Palette */
+            palette?: ("midnight" | "daylight" | "rose" | "lavender" | "sage" | "ocean") | null;
+            /**
+             * Dark At Night
+             * @default false
+             */
+            dark_at_night: boolean;
+            /** Onboarded At */
+            onboarded_at?: string | null;
+            /**
+             * Travels For Work
+             * @default false
+             */
+            travels_for_work: boolean;
+            /** Usual Income */
+            usual_income?: string | null;
+            /** Payday */
+            payday?: number | null;
+            /** Starting Balance */
+            starting_balance?: string | null;
+            /** Balance Since */
+            balance_since?: string | null;
             /**
              * Is Admin
              * @description Whether the account sees the admin pages (F17.3.3): by role, or a listed email.
@@ -4765,6 +5043,22 @@ export interface components {
             budget_limit?: number | string | null;
             /** Language */
             language?: ("en" | "uk" | "pl") | null;
+            /** Palette */
+            palette?: ("midnight" | "daylight" | "rose" | "lavender" | "sage" | "ocean") | null;
+            /** Dark At Night */
+            dark_at_night?: boolean | null;
+            /** Travels For Work */
+            travels_for_work?: boolean | null;
+            /** Usual Income */
+            usual_income?: number | string | null;
+            /** Payday */
+            payday?: number | null;
+            /** Onboarded */
+            onboarded?: boolean | null;
+            /** Starting Balance */
+            starting_balance?: number | string | null;
+            /** Balance Since */
+            balance_since?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -6367,6 +6661,43 @@ export interface operations {
             };
         };
     };
+    set_receipt_discount_receipts__receipt_id__discount_put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceiptDiscountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     resolve_total_receipts_upload__job_id__resolve_total_post: {
         parameters: {
             query?: {
@@ -6959,6 +7290,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExplorationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    products_overview_api_v1_products_overview_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+                /** @description First day of the period, included */
+                start?: string | null;
+                /** @description Last day of the period, included */
+                end?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductsOverviewResponse"];
                 };
             };
             /** @description Validation Error */
@@ -8399,6 +8765,173 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminLogPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    month_income_api_v1_income_get: {
+        parameters: {
+            query: {
+                month: string;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthIncomeRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_income_api_v1_income_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncomeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_income_api_v1_income__income_id__put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                income_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncomeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_income_api_v1_income__income_id__delete: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                income_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    balance_api_v1_income_balance_get: {
+        parameters: {
+            query: {
+                today: string;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BalanceRead"];
                 };
             };
             /** @description Validation Error */

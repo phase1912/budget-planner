@@ -132,6 +132,31 @@ class ExplorationResponse(BaseModel):
     products: list[ProductPurchasesResponse]
 
 
+class PriceMoveResponse(BaseModel):
+    """A product whose price for one item moved noticeably over the period (F23.5)."""
+
+    product: ProductFactsResponse
+    change: PriceChangeResponse
+    last_shop: str | None
+    history: list[Decimal]
+
+
+class ShopStandingResponse(BaseModel):
+    """A shop: cheapest for how many products, and what was paid above the cheapest there."""
+
+    shop: str
+    cheapest_for: int
+    paid_above: Decimal
+
+
+class ProductsOverviewResponse(BaseModel):
+    """Everything bought at a glance: price moves and shops (F23.5)."""
+
+    moves: list[PriceMoveResponse]
+    shops: list[ShopStandingResponse]
+    paid_above: Decimal
+
+
 class SelectionRequest(BaseModel):
     """Products to keep together under a name (F16.2)."""
 

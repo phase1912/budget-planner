@@ -1,0 +1,317 @@
+import { useEffect, useState, type ReactNode } from "react";
+import { observer } from "mobx-react-lite";
+import { Briefcase, ChevronRight, Palmtree, Plus, Target } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+
+import { AmountDialog } from "@/shared/components";
+import { dateFormat, numberFormat } from "@/i18n/format";
+import type { IncomeEntry } from "@/stores/IncomeStore";
+import { useStores } from "@/stores/StoreContext";
+import { IncomeDialog } from "./IncomeDialog";
+
+const WHOLE = numberFormat({ maximumFractionDigits: 0 });
+const MONTH = dateFormat({ month: "long", year: "numeric" });
+const DAY = dateFormat({ day: "numeric", month: "short" });
+
+/**
+ * Plan (F23.2): money coming in this month, the monthly budget, holidays, business trips
+ * for those who travel for work, and goals — what the user sets up, where the other tabs
+ * show what happened.
+ */
+export const PlanPage = observer(function PlanPage() {
+  const { authStore, incomeStore, budgetStore, tripsStore, goalsStore, profileStore } = useStores();
+  const { t } = useTranslation("plan");
+  const [incomeEntry, setIncomeEntry] = useState<IncomeEntry | null | "new">(null);
+  const [editingBudget, setEditingBudget] = useState(false);
+  const user = authStore.user;
+  const currency = user?.currency ?? "PLN";
+  const { year, month } = budgetStore.current;
+
+  useEffect(() => {
+    void incomeStore.load(year, month);
+    void budgetStore.open();
+    void tripsStore.load();
+    void goalsStore.load();
+  }, [incomeStore, budgetStore, tripsStore, goalsStore, year, month]);
+
+  const income = incomeStore.month;
+  const summary = budgetStore.summary;
+  const budget = user?.budget_limit == null ? null : Number(user.budget_limit);
+  const spent = summary?.month === month ? Number(summary.total) : 0;
+  const holidays = tripsStore.trips.filter((trip) => trip.kind === "personal");
+  const business = tripsStore.trips.filter((trip) => trip.kind === "business");
+
+  return (
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 py-4 md:gap-5 md:py-2">
+      <h1 className="m-0 text-[24px] font-bold md:text-3xl">{t("title")}</h1>
+
+      <Section
+        title={t("income.title")}
+        aside={
+          <span className="text-xl font-bold tabular-nums">
+            {income?.total != null ? `${WHOLE.format(Number(income.total))} ${currency}` : "—"}
+          </span>
+        }
+      >
+        <p className="m-0 text-base text-muted-foreground">
+          {MONTH.format(new Date(year, month - 1, 1))} ·{" "}
+          {user?.usual_income != null
+            ? t("income.usual", { amount: WHOLE.format(Number(user.usual_income)), currency })
+            : t("income.usualNone")}
+        </p>
+        {income && income.entries.length > 0 ? (
+          <ul className="m-0 flex list-none flex-col divide-y divide-border p-0">
+            {income.entries.map((entry) => (
+              <li key={entry.id}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIncomeEntry(entry);
+                  }}
+                  className="flex min-h-14 w-full items-center gap-3 py-2 text-left"
+                >
+                  <span className="flex flex-1 flex-col">
+                    <span className="text-lg font-semibold">{entry.source}</span>
+                    <span className="text-base text-muted-foreground">
+                      {DAY.format(new Date(`${entry.received_on}T00:00:00`))} ·{" "}
+                      {t(`income.kinds.${entry.kind}`)}
+                    </span>
+                  </span>
+                  <span className="text-lg font-bold tabular-nums">
+                    {WHOLE.format(Number(entry.amount))} {currency}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="m-0 text-md text-muted-foreground">{t("income.none")}</p>
+        )}
+        <AddButton
+          onClick={() => {
+            setIncomeEntry("new");
+          }}
+        >
+          {t("income.add")}
+        </AddButton>
+      </Section>
+
+      <Section
+        title={t("budget.title")}
+        aside={
+          <button
+            type="button"
+            onClick={() => {
+              setEditingBudget(true);
+            }}
+            className="min-h-11 text-xl font-bold text-primary tabular-nums"
+          >
+            {budget === null ? t("budget.set") : `${WHOLE.format(budget)} ${currency}`}
+          </button>
+        }
+      >
+        {budget !== null ? (
+          <>
+            <span className="h-2.5 overflow-hidden rounded-pill bg-muted" aria-hidden="true">
+              <span
+                className={`block h-2.5 rounded-pill ${spent > budget ? "bg-error" : "bg-primary"}`}
+                style={{ width: `${String(Math.min(100, (spent / budget) * 100))}%` }}
+              />
+            </span>
+            <p className="m-0 text-base text-muted-foreground tabular-nums">
+              {t("budget.spent", {
+                spent: WHOLE.format(spent),
+                budget: WHOLE.format(budget),
+                currency,
+              })}
+            </p>
+          </>
+        ) : (
+          <p className="m-0 text-md text-muted-foreground">{t("budget.none")}</p>
+        )}
+      </Section>
+
+      <Section title={t("holidays.title")}>
+        {holidays.length === 0 ? (
+          <p className="m-0 text-md text-muted-foreground">{t("holidays.none")}</p>
+        ) : (
+          <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+            {holidays.slice(0, 3).map((trip) => {
+              const total = Number(trip.total);
+              const tripBudget = trip.budget == null ? null : Number(trip.budget);
+              return (
+                <li key={trip.id}>
+                  <Link
+                    to={`/trips/${trip.id}`}
+                    className="flex flex-col gap-2 rounded-card bg-tone-primary-bg p-4 text-foreground"
+                  >
+                    <span className="flex items-center gap-3">
+                      <Palmtree size={20} className="shrink-0 text-primary" aria-hidden="true" />
+                      <span className="flex-1 truncate text-lg font-bold">{trip.name}</span>
+                      <span className="text-base text-muted-foreground">
+                        {DAY.format(new Date(`${trip.start_date}T00:00:00`))} –{" "}
+                        {DAY.format(new Date(`${trip.end_date}T00:00:00`))}
+                      </span>
+                    </span>
+                    {tripBudget !== null && (
+                      <span
+                        className="h-2 overflow-hidden rounded-pill bg-surface"
+                        aria-hidden="true"
+                      >
+                        <span
+                          className="block h-2 rounded-pill bg-primary"
+                          style={{ width: `${String(Math.min(100, (total / tripBudget) * 100))}%` }}
+                        />
+                      </span>
+                    )}
+                    <span className="text-base font-semibold tabular-nums">
+                      {trip.budget_left != null
+                        ? t("holidays.left", {
+                            amount: WHOLE.format(Number(trip.budget_left)),
+                            currency,
+                          })
+                        : t("holidays.spent", { amount: WHOLE.format(total), currency })}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <div className="flex flex-col gap-2 md:flex-row md:justify-between">
+          <AddButton to="/trips?kind=personal&new=1">{t("holidays.new")}</AddButton>
+          {holidays.length > 0 && (
+            <Link to="/trips?kind=personal" className="min-h-11 text-md font-semibold text-primary">
+              {t("holidays.all")}
+            </Link>
+          )}
+        </div>
+      </Section>
+
+      {user?.travels_for_work === true && (
+        <Link
+          to="/trips?kind=business"
+          className="flex min-h-16 items-center gap-3.5 rounded-card bg-surface px-4 py-3 text-foreground shadow-card"
+        >
+          <Briefcase size={20} className="shrink-0 text-primary" aria-hidden="true" />
+          <span className="flex flex-1 flex-col">
+            <span className="text-lg font-bold">{t("work.title")}</span>
+            <span className="text-base text-muted-foreground">
+              {t("work.count", { count: business.length })}
+            </span>
+          </span>
+          <ChevronRight size={18} aria-hidden="true" />
+        </Link>
+      )}
+
+      <Section title={t("goals.title")}>
+        {goalsStore.goals.length === 0 ? (
+          <p className="m-0 text-md text-muted-foreground">{t("goals.none")}</p>
+        ) : (
+          <ul className="m-0 flex list-none flex-col gap-2 p-0">
+            {goalsStore.goals.slice(0, 4).map((goal) => (
+              <li key={goal.id}>
+                <Link
+                  to="/goals"
+                  className="flex min-h-14 items-center gap-3 rounded-control border border-border px-3.5 py-2.5 text-foreground"
+                >
+                  <Target size={20} className="shrink-0 text-primary" aria-hidden="true" />
+                  <span className="flex flex-1 flex-col">
+                    <span className="text-lg font-semibold">{goal.name}</span>
+                    <span className="text-base text-muted-foreground">
+                      {t(`goals.kinds.${goal.type}`)}
+                      {goal.target_amount != null &&
+                        ` · ${WHOLE.format(Number(goal.target_amount))} ${currency}`}
+                    </span>
+                  </span>
+                  <ChevronRight size={18} aria-hidden="true" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="flex flex-col gap-2 md:flex-row md:justify-between">
+          <AddButton to="/goals?new=1">{t("goals.new")}</AddButton>
+          {goalsStore.goals.length > 0 && (
+            <Link to="/goals" className="min-h-11 text-md font-semibold text-primary">
+              {t("goals.all")}
+            </Link>
+          )}
+        </div>
+      </Section>
+
+      {incomeEntry !== null && (
+        <IncomeDialog
+          entry={incomeEntry === "new" ? null : incomeEntry}
+          defaultDay={budgetStore.today}
+          onClose={() => {
+            setIncomeEntry(null);
+          }}
+          onSaved={() => {
+            void incomeStore.load(year, month);
+          }}
+        />
+      )}
+      {editingBudget && (
+        <AmountDialog
+          title={t("budget.title")}
+          label={t("budget.title")}
+          initial={user?.budget_limit ?? ""}
+          currency={currency}
+          allowEmpty
+          onSave={(amount) =>
+            profileStore.saveQuietly({ budget_limit: amount === "" ? null : amount })
+          }
+          onClose={() => {
+            setEditingBudget(false);
+          }}
+        />
+      )}
+    </div>
+  );
+});
+
+function Section({
+  title,
+  aside,
+  children,
+}: {
+  title: string;
+  aside?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="flex flex-col gap-3 rounded-card bg-surface p-4 shadow-card md:p-5">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="m-0 text-xl font-bold">{title}</h2>
+        {aside}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function AddButton({
+  children,
+  onClick,
+  to,
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  to?: string;
+}) {
+  const className =
+    "inline-flex min-h-11 items-center gap-1.5 self-start text-md font-semibold text-primary";
+  return to ? (
+    <Link to={to} className={className}>
+      <Plus size={16} aria-hidden="true" />
+      {children}
+    </Link>
+  ) : (
+    <button type="button" onClick={onClick} className={className}>
+      <Plus size={16} aria-hidden="true" />
+      {children}
+    </button>
+  );
+}

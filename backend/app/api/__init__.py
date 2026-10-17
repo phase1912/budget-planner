@@ -17,6 +17,7 @@ from app.api.routers.contact import router as contact_router
 from app.api.routers.exports import router as exports_router
 from app.api.routers.goals import router as goals_router
 from app.api.routers.household import router as household_router
+from app.api.routers.income import router as income_router
 from app.api.routers.products import router as products_router
 from app.api.routers.receipts import router as receipts_router
 from app.api.routers.recommendations import router as recommendations_router
@@ -43,6 +44,7 @@ ROUTERS: list[APIRouter] = [
     contact_router,
     analytics_router,
     admin_router,
+    income_router,
 ]
 
 

@@ -154,5 +154,7 @@
     "pdf": "PDF with photos",
     "csv": "CSV",
     "photosExpire": "Receipt photos are kept 90 days: the first of this trip's go on {{date}}. Download the settlement as PDF before then to keep them with it."
-  }
+  },
+  "holidays": "Holidays",
+  "business": "Business trips"
 }

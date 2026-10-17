@@ -73,7 +73,7 @@ class TripRepository:
             receipts = receipts.where(_within(period))
         count = await self.session.scalar(select(func.count()).select_from(receipts.subquery()))
         total = await self.session.scalar(
-            select(func.coalesce(func.sum(LineItem.total_price), 0)).where(
+            select(func.coalesce(func.sum(LineItem.paid), 0)).where(
                 LineItem.receipt_id.in_(receipts)
             )
         )
@@ -117,7 +117,7 @@ class TripRepository:
                 day,
                 Receipt.original_currency,
                 func.count(func.distinct(Receipt.id)),
-                func.coalesce(func.sum(LineItem.total_price), 0),
+                func.coalesce(func.sum(LineItem.paid), 0),
             )
             .outerjoin(LineItem, LineItem.receipt_id == Receipt.id)
             .where(

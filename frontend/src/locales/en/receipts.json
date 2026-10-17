@@ -140,5 +140,21 @@
     "kindAuto": "Work it out from the category",
     "save": "Add expense",
     "amountInvalid": "Enter an amount above zero."
+  },
+  "discount": {
+    "open": "Paid less than printed? Add a discount",
+    "title": "A discount the receipt does not show",
+    "hint": "A gift card, a voucher, a deal at the till — whatever you did not pay.",
+    "amount": "Not paid",
+    "paid": "You paid",
+    "whole": "Spread over the whole receipt, so each category counts what you really paid. Shelf prices stay as printed.",
+    "some": "Only on some items",
+    "wholeInstead": "Spread over the whole receipt instead",
+    "which": "Take it off these lines",
+    "remove": "Remove the discount",
+    "cancel": "Cancel",
+    "apply": "Apply",
+    "line": "Your discount −{{amount}} · you paid {{paid}}",
+    "change": "Change"
   }
 }

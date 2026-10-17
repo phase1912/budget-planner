@@ -321,10 +321,7 @@ def kind_of(receipt: Receipt) -> ExpenseKind:
     if receipt.expense_kind is not None:
         return receipt.expense_kind
     return kind_from_categories(
-        [
-            (item.category.name if item.category else None, item.total_price)
-            for item in receipt.line_items
-        ]
+        [(item.category.name if item.category else None, item.paid) for item in receipt.line_items]
     )
 
 
@@ -338,7 +335,7 @@ def trip_spending(receipts: Sequence[Receipt], currency: str) -> TripSpending:
     for receipt in receipts:
         if receipt.status is not ReceiptStatus.PARSED:
             continue
-        amount = sum((item.total_price for item in receipt.line_items), Decimal(0))
+        amount = sum((item.paid for item in receipt.line_items), Decimal(0))
         paid_currency, paid_amount = currency, amount
         if receipt.original_currency and receipt.original_total is not None:
             paid_currency, paid_amount = receipt.original_currency, receipt.original_total
@@ -363,7 +360,7 @@ def story_of(trip: Trip, receipts: Sequence[Receipt]) -> TripStory:
         TripPurchase(
             day=(receipt.transaction_date or receipt.created_at).astimezone(UTC).date(),
             category=item.category.name if item.category else UNCATEGORIZED,
-            amount=item.total_price,
+            amount=item.paid,
         )
         for receipt in receipts
         if receipt.status is ReceiptStatus.PARSED

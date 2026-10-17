@@ -43,6 +43,8 @@ const store = vi.hoisted(() => ({
   },
   productById: (id: string) => store.products.find((p) => (p as { id: string }).id === id),
   load: vi.fn(),
+  loadOverview: vi.fn(),
+  overview: null,
   setSearch: vi.fn(),
   toggle: vi.fn((id: string) => {
     store.selected = store.selected.includes(id)
@@ -108,7 +110,6 @@ describe("ProductsPage (F16.1)", () => {
   it("lists each product once, with how often, where and how it was printed", () => {
     renderPage();
 
-    expect(screen.getByRole("link", { name: "Products" })).toHaveAttribute("aria-current", "page");
     expect(
       screen.getByRole("checkbox", { name: "Select Jogurt Natural 330ml" }),
     ).toBeInTheDocument();

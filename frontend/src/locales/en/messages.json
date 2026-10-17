@@ -79,7 +79,10 @@
     "deleted": "Receipt deleted",
     "recalculated": "{{done}}. {{months}} recalculated",
     "manualFailed": "The expense could not be added. Try again.",
-    "manualAdded": "Expense added."
+    "manualAdded": "Expense added.",
+    "discountFailed": "The discount could not be saved. Try again.",
+    "discountSaved": "Discount taken off. The month counts what you paid.",
+    "discountRemoved": "Discount removed."
   },
   "statistics": {
     "loadFailed": "Could not load the statistics"
@@ -148,5 +151,9 @@
     "planRevoked": "The grant is taken back.",
     "appointed": "The account is now an admin.",
     "removed": "The account is no longer an admin."
+  },
+  "income": {
+    "saved": "Saved.",
+    "failed": "The income could not be saved. Try again."
   }
 }

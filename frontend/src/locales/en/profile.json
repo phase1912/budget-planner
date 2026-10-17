@@ -1,6 +1,5 @@
 {
-  "title": "Preferences",
-  "subtitle": "Account-level settings that every figure in the product is expressed in.",
+  "title": "Settings",
   "money": {
     "title": "Money",
     "currency": "Currency",
@@ -9,7 +8,13 @@
     "recorded": "{{count}} receipts recorded in {{currency}}",
     "limit": "Monthly budget limit",
     "limitHint": "Optional. When set, spend is also shown as a percentage of it. Changing it affects presentation only — finalised months are never rewritten.",
-    "removeLimit": "Remove the limit"
+    "removeLimit": "Remove the limit",
+    "income": "Usual monthly income",
+    "payday": "Payday",
+    "noPayday": "Not set",
+    "lastDay": "Last day of the month",
+    "none": "Not set",
+    "hint": "Income entered for a month replaces the usual amount there. Months still run from the 1st."
   },
   "account": {
     "title": "Account",
@@ -31,7 +36,7 @@
   },
   "discard": "Discard",
   "saving": "Saving...",
-  "save": "Save preferences",
+  "save": "Save",
   "forwarding": {
     "title": "Receipts by email",
     "label": "Your forwarding address",
@@ -125,5 +130,25 @@
     "offBody": "Sign-in will ask only for your password again.",
     "password": "Password",
     "codeOrRecovery": "Code from the app or a recovery code"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "palette": "Palette",
+    "darkAtNight": "Dark at night",
+    "darkAtNightHint": "Midnight whenever your device is in dark mode.",
+    "palettes": {
+      "midnight": "Midnight",
+      "daylight": "Daylight",
+      "rose": "Rose",
+      "lavender": "Lavender",
+      "sage": "Sage",
+      "ocean": "Ocean"
+    }
+  },
+  "work": {
+    "title": "Work trips",
+    "label": "I travel for work",
+    "hint": "Shows business trips: per diem and a settlement for your employer.",
+    "open": "Open business trips"
   }
 }

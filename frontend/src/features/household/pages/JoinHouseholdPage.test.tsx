@@ -24,7 +24,7 @@ describe("JoinHouseholdPage", () => {
         <MemoryRouter initialEntries={["/join/abc123"]}>
           <Routes>
             <Route path="/join/:code" element={<JoinHouseholdPage />} />
-            <Route path="/profile" element={<p>Profile page</p>} />
+            <Route path="/settings" element={<p>Profile page</p>} />
           </Routes>
         </MemoryRouter>
       </StoreProvider>,

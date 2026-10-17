@@ -4,7 +4,6 @@ import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
-import { StatisticsTabs } from "@/features/statistics/components/StatisticsTabs";
 import {
   Button,
   Card,
@@ -19,6 +18,7 @@ import { ExplorePanel } from "../components/ExplorePanel";
 import { MergeProductsDialog } from "../components/MergeProductsDialog";
 import { SaveSelectionDialog } from "../components/SaveSelectionDialog";
 import { ProductRow } from "../components/ProductRow";
+import { ProductsOverview } from "../components/ProductsOverview";
 
 /**
  * What the user buys, one product however each shop prints it (F16.1), and what it was
@@ -43,6 +43,7 @@ export const ProductsPage = observer(function ProductsPage() {
 
   useEffect(() => {
     void productsStore.load();
+    void productsStore.loadOverview();
     void explorationStore.loadSelections();
   }, [productsStore, explorationStore]);
 
@@ -79,7 +80,12 @@ export const ProductsPage = observer(function ProductsPage() {
           <p className="m-0 text-lg text-muted-foreground">{t("subtitle")}</p>
         </header>
 
-        <StatisticsTabs />
+        <ProductsOverview currency={currency} />
+
+        <div className="flex flex-col gap-1 pt-2">
+          <h2 className="m-0 text-xl font-bold">{t("all")}</h2>
+          <p className="m-0 text-md text-muted-foreground">{t("exploreHint")}</p>
+        </div>
 
         {explorationStore.selections.length > 0 && (
           <section aria-label={t("selections.title")} className="flex flex-col gap-1.5">
@@ -186,7 +192,11 @@ export const ProductsPage = observer(function ProductsPage() {
           </div>
         )}
 
-        {selected.length > 0 && <ExplorePanel currency={currency} />}
+        {selected.length > 0 && (
+          <div id="explore-panel" className="scroll-mt-4">
+            <ExplorePanel currency={currency} />
+          </div>
+        )}
 
         {loadError ? (
           <ErrorState layout="banner" title={t("loadFailed")} message={loadError} />

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 from uuid import UUID
@@ -10,6 +10,9 @@ from app.domain.email_intake import forwarding_address
 
 Language = Literal["en", "uk", "pl"]
 """The languages the product is written in (F9.9)."""
+
+Palette = Literal["midnight", "daylight", "rose", "lavender", "sage", "ocean"]
+"""The looks a user picks from (F23.1); none chosen means the default, midnight."""
 
 
 class UserResponse(BaseModel):
@@ -24,6 +27,14 @@ class UserResponse(BaseModel):
     language: Language | None = None
     email_confirmed: bool = False
     two_factor_enabled: bool = False
+    palette: Palette | None = None
+    dark_at_night: bool = False
+    onboarded_at: datetime | None = None
+    travels_for_work: bool = False
+    usual_income: Decimal | None = None
+    payday: int | None = None
+    starting_balance: Decimal | None = None
+    balance_since: date | None = None
     forwarding_token: str = Field(exclude=True)
     role: str = Field(default="user", exclude=True)
 
@@ -56,6 +67,18 @@ class UserUpdateRequest(BaseModel):
     # Spend is shown as a share of it (D7), so zero or less is not a limit; null removes it.
     budget_limit: Decimal | None = Field(None, gt=0, max_digits=12, decimal_places=2)
     language: Language | None = None
+    palette: Palette | None = None
+    dark_at_night: bool | None = None
+    travels_for_work: bool | None = None
+    usual_income: Decimal | None = Field(None, ge=0, max_digits=12, decimal_places=2)
+    # 31 means the last day of the month, whatever its length.
+    payday: int | None = Field(None, ge=1, le=31)
+    onboarded: bool | None = None
+    """True when the first-sign-in setup is finished or skipped (F23.9)."""
+    # Money on the accounts now (F23.14); it may be negative, an overdraft. The date it
+    # was true on defaults to the day it is entered.
+    starting_balance: Decimal | None = Field(None, max_digits=12, decimal_places=2)
+    balance_since: date | None = None
 
 
 class EmailChangeRequest(BaseModel):

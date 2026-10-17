@@ -21,7 +21,7 @@ describe("StoreContext", () => {
 
   it("provides the injected store to descendants", () => {
     const store = new RootStore();
-    store.themeStore.setTheme("dark");
+    store.themeStore.setPalette("midnight");
 
     render(
       <StoreProvider store={store}>

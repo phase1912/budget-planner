@@ -1,6 +1,6 @@
 {
-  "title": "Statistics",
-  "subtitle": "Category totals over any stretch of days, not just whole months.",
+  "title": "Spending",
+  "subtitle": "Where the money went, by category, over any stretch of days.",
   "export": "Export",
   "period": "Period",
   "presets": {
@@ -53,5 +53,13 @@
     "label": "What to look at",
     "categories": "Categories",
     "products": "Products"
+  },
+  "allReceipts": "All receipts",
+  "allReceiptsHint": "Of this period · search by shop or product",
+  "ring": {
+    "label": "Spending by category",
+    "showAll": "Show every category",
+    "picture": "{{total}} {{currency}} spent, by category",
+    "spent": "Spent"
   }
 }

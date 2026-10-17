@@ -14,6 +14,7 @@ from app.models.exchange_rate import CachedExchangeRate
 from app.models.export_job import ExportJob
 from app.models.goal import Goal
 from app.models.household import Household, HouseholdMember
+from app.models.income import Income
 from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
 from app.models.monthly_snapshot import MonthlySnapshot
@@ -38,6 +39,7 @@ __all__ = [
     "Goal",
     "Household",
     "HouseholdMember",
+    "Income",
     "LineItem",
     "Model",
     "MonthlySnapshot",

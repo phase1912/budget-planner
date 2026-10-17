@@ -17,6 +17,7 @@ from app.schemas.product import (
     ExplorationResponse,
     MergeProductsRequest,
     ProductResponse,
+    ProductsOverviewResponse,
     SelectionRequest,
     SelectionResponse,
     SplitProductRequest,
@@ -63,6 +64,21 @@ async def explore_products(
     """
     exploration = await service.explore(current_user.id, product_ids, period)
     return ExplorationResponse.model_validate(asdict(exploration))
+
+
+@router.get("/overview", response_model=ProductsOverviewResponse)
+async def products_overview(
+    current_user: CurrentUser,
+    service: Service,
+    period: Annotated[DateRange | None, Depends(optional_period)],
+) -> ProductsOverviewResponse:
+    """The caller's biggest price moves and each shop's standing over the period (F23.5).
+
+    Without `start` and `end`, all time. Only the caller's counted receipts (N2).
+    """
+    return ProductsOverviewResponse.model_validate(
+        asdict(await service.overview(current_user.id, period))
+    )
 
 
 @router.get("/selections", response_model=list[SelectionResponse])

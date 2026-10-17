@@ -4,11 +4,10 @@ import { useTranslation } from "react-i18next";
 const SECTIONS = [
   { name: "receipts", path: "/receipts" },
   { name: "categories", path: "/categories" },
-  { name: "trips", path: "/trips" },
 ] as const;
 
 /**
- * "Receipts | Categories | Trips" at the top of these screens on a phone.
+ * "Receipts | Categories" at the top of these screens on a phone (trips are in Plan, F23.2).
  *
  * The phone's bottom bar has room for one of them (docs/design/README.md), so
  * its Receipts tab stands for all three and this switch makes the others plain to

@@ -85,5 +85,22 @@
   },
   "cheaper": {
     "mark": "Cheaper at {{shop}}: {{amount}} {{currency}}/{{unit}} less ({{percent}}%) than at {{instead}}"
-  }
+  },
+  "overview": {
+    "label": "At a glance",
+    "prices": "Price changes",
+    "pricesShort": "Prices",
+    "most": "Bought most",
+    "mostShort": "Most",
+    "shops": "Cheapest shop",
+    "shopsShort": "Shops",
+    "noMoves": "No price moved by 5% or more in the last six months.",
+    "moveLine": "{{shop}} · {{first}} → {{last}} {{currency}}",
+    "noShops": "Buy the same thing in two shops and this compares them.",
+    "paidAbove": "About {{amount}} {{currency}} paid above the cheapest shop in six months",
+    "cheapestFor_one": "cheapest for {{count}} product",
+    "cheapestFor_other": "cheapest for {{count}} products"
+  },
+  "exploreHint": "Tick products to see what they cost you together, by month and by shop.",
+  "all": "All products"
 }

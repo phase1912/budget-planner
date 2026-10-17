@@ -146,6 +146,22 @@ export class CategoriesStore {
    * response that arrives after a newer request was made is dropped, so fast
    * tab switching or typing never shows a stale list.
    */
+  /** Lines waiting for a category, for Home's card (F23.3); zero when it cannot be read. */
+  reviewCount = 0;
+
+  async loadReviewCount(): Promise<void> {
+    try {
+      const response = await apiClient.GET("/receipts/line-items", {
+        params: { query: { view: "needs_review", page: 1, size: 1 } },
+      });
+      runInAction(() => {
+        this.reviewCount = response.data?.total ?? 0;
+      });
+    } catch {
+      // Home works without the count.
+    }
+  }
+
   async fetchReviewQueue(): Promise<void> {
     const request = ++this.queueRequest;
     this.isLoadingQueue = true;
