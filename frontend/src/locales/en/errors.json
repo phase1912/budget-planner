@@ -49,5 +49,12 @@
   "email_domain_unreachable": "No mail can be delivered to {{domain}}: check the address for a typo.",
   "email_taken": "This address cannot be used for the account.",
   "link_invalid": "This link has expired or has already been used.",
-  "terms_required": "Accept the terms and the privacy policy to open an account."
+  "terms_required": "Accept the terms and the privacy policy to open an account.",
+  "two_factor_already_on": "Two-factor sign-in is already on.",
+  "two_factor_not_started": "Start the setup again: scan the new QR code first.",
+  "two_factor_code_wrong": "The code is not right, or the sign-in took too long. Try again.",
+  "second_factor_required": "Turn on two-factor sign-in and sign in with it to open the admin pages.",
+  "super_admin_only": "Only a super admin can do this.",
+  "admin_role_fixed": "A super admin is set by the deployment and cannot be changed here.",
+  "already_confirmed": "This address is already confirmed."
 }

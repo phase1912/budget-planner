@@ -13,6 +13,8 @@ export class AuthStore {
   user: User | null = null;
   token: string | null = null;
   refreshToken: string | null = null;
+  /** Set between the password and the authenticator code of a two-factor sign-in (F18.6.1). */
+  secondFactorToken: string | null = null;
   readonly authState = new AsyncState();
   private readonly api: ApiClient;
   private refreshPromise: Promise<boolean> | null = null;
@@ -152,6 +154,11 @@ export class AuthStore {
         return false;
       }
 
+      if ("second_factor_token" in data) {
+        this.secondFactorToken = data.second_factor_token;
+        this.authState.succeed();
+        return false;
+      }
       this.persistSession(data.user, data.access_token, data.refresh_token);
       this.authState.succeed();
       return true;
@@ -160,6 +167,50 @@ export class AuthStore {
       this.authState.fail(errMsg);
       return false;
     }
+  }
+
+  /**
+   * Finish a two-factor sign-in with an authenticator or recovery code (F18.6.1).
+   * True once signed in; a wrong code leaves the step open to try again.
+   */
+  async completeSecondFactor(code: string): Promise<boolean> {
+    const token = this.secondFactorToken;
+    if (!token) return false;
+    this.authState.start();
+    try {
+      const { data, error } = await this.api.POST("/auth/login/second-factor", {
+        body: { token, code: code.trim() },
+      });
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (error || !data) {
+        this.authState.fail(errorMessage(error, i18n.t("messages:auth.failed")));
+        return false;
+      }
+      this.secondFactorToken = null;
+      this.persistSession(data.user, data.access_token, data.refresh_token);
+      this.authState.succeed();
+      return true;
+    } catch (err) {
+      this.authState.fail(err instanceof Error ? err.message : i18n.t("messages:unknown"));
+      return false;
+    }
+  }
+
+  /** Back to the password step, forgetting the half-finished sign-in. */
+  cancelSecondFactor(): void {
+    this.secondFactorToken = null;
+    this.authState.reset();
+  }
+
+  /** Take on a session the server upgraded, e.g. after turning on two-factor sign-in. */
+  adoptSession(user: User, accessToken: string, refreshToken: string): void {
+    this.persistSession(user, accessToken, refreshToken);
+  }
+
+  /** Replace the signed-in user's details after a change made elsewhere. */
+  updateUser(user: User): void {
+    this.user = user;
+    localStorage.setItem("budget_user", JSON.stringify(user));
   }
 
   async register(request: components["schemas"]["RegisterRequest"]): Promise<boolean> {

@@ -9,9 +9,12 @@ from app.api.errors import AuthenticationError, ProblemCode, RegistrationError
 from app.core.config import get_settings
 from app.core.security import (
     create_access_token,
+    create_link_token,
     create_refresh_token,
+    fingerprint,
     get_dummy_hash,
     get_password_hash,
+    read_link_token,
     verify_password,
 )
 from app.domain.activity import ActivityKind
@@ -24,6 +27,11 @@ from app.schemas.auth import LoginRequest, RefreshRequest, RegisterRequest
 from app.schemas.user import UserResponse
 from app.services.account import EmailAddressGuard
 from app.services.activity import ActivityService
+from app.services.two_factor import TwoFactorService
+
+SECOND_FACTOR = "second_factor"
+SECOND_FACTOR_WINDOW = timedelta(minutes=5)
+"""How long the code may take after the password: long enough to open the app."""
 
 
 class AuthService:
@@ -33,9 +41,15 @@ class AuthService:
         self.session = session
         self.repo = UserRepository(session)
 
-    async def _create_session(self, user_id: uuid.UUID) -> tuple[str, str]:
-        """Helper to create access and refresh tokens, and persist the refresh token."""
-        access_token = create_access_token(subject=user_id)
+    async def _create_session(
+        self, user_id: uuid.UUID, *, second_factor: bool = False
+    ) -> tuple[str, str]:
+        """Create access and refresh tokens and persist the refresh token.
+
+        `second_factor` marks a session opened with an authenticator code (F18.6.1); its
+        refreshed tokens keep the mark.
+        """
+        access_token = create_access_token(subject=user_id, second_factor=second_factor)
         refresh_token_str = create_refresh_token()
         family_id = uuid.uuid4()
 
@@ -47,6 +61,7 @@ class AuthService:
             token=refresh_token_str,
             family_id=family_id,
             expires_at=expires_at,
+            second_factor=second_factor,
         )
         self.session.add(rt)
         await self.session.flush()
@@ -103,7 +118,12 @@ class AuthService:
         access_token, refresh_token = await self._create_session(user.id)
         return UserResponse.model_validate(user), access_token, refresh_token
 
-    async def login(self, request: LoginRequest) -> tuple[UserResponse, str, str]:
+    async def login(self, request: LoginRequest) -> tuple[UserResponse, str, str] | str:
+        """Check the password; a session, or for a second-factor account a challenge token.
+
+        The challenge (F18.6.1) is a five-minute link token, bound to the password's
+        fingerprint, that `complete_second_factor` exchanges with an authenticator code.
+        """
         user = await self.repo.get_by_email(request.email)
 
         if not user:
@@ -117,9 +137,42 @@ class AuthService:
                 "Invalid email or password.", code=ProblemCode.INVALID_CREDENTIALS
             )
 
+        if user.two_factor_enabled:
+            return create_link_token(
+                SECOND_FACTOR,
+                str(user.id),
+                SECOND_FACTOR_WINDOW,
+                pwd=fingerprint(user.password_hash),
+            )
         ActivityService(self.session).record(user.id, ActivityKind.SIGNED_IN)
         access_token, refresh_token = await self._create_session(user.id)
         return UserResponse.model_validate(user), access_token, refresh_token
+
+    async def complete_second_factor(self, token: str, code: str) -> tuple[UserResponse, str, str]:
+        """Open the session the password started, once the authenticator code matches.
+
+        Raises AuthenticationError for an expired challenge or a wrong code, the same for
+        both, so the answer tells a guesser nothing (G4).
+        """
+        claims = read_link_token(token, SECOND_FACTOR)
+        user = await self.session.get(User, uuid.UUID(str(claims["sub"]))) if claims else None
+        if (
+            user is None
+            or claims is None
+            or claims.get("pwd") != fingerprint(user.password_hash)
+            or not await TwoFactorService(self.session).verify(user, code)
+        ):
+            raise AuthenticationError(
+                "The code is not right, or the sign-in took too long.",
+                code=ProblemCode.TWO_FACTOR_CODE_WRONG,
+            )
+        ActivityService(self.session).record(user.id, ActivityKind.SIGNED_IN)
+        access_token, refresh_token = await self._create_session(user.id, second_factor=True)
+        return UserResponse.model_validate(user), access_token, refresh_token
+
+    async def upgrade_to_second_factor(self, user: User) -> tuple[str, str]:
+        """A session marked second-factor, right after the user proved the app with a code."""
+        return await self._create_session(user.id, second_factor=True)
 
     async def refresh(self, request: RefreshRequest) -> tuple[UserResponse, str, str]:
         stmt = select(RefreshToken).where(RefreshToken.token == request.refresh_token)
@@ -152,7 +205,7 @@ class AuthService:
         if not user:
             raise AuthenticationError("User not found.")
 
-        access_token = create_access_token(subject=user.id)
+        access_token = create_access_token(subject=user.id, second_factor=rt.second_factor)
         new_refresh_token_str = create_refresh_token()
 
         new_rt = RefreshToken(
@@ -160,6 +213,7 @@ class AuthService:
             token=new_refresh_token_str,
             family_id=rt.family_id,
             expires_at=await self._extended_expiry(rt.family_id, now),
+            second_factor=rt.second_factor,
         )
         self.session.add(new_rt)
         await self.session.flush()

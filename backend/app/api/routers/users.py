@@ -23,13 +23,19 @@ from app.schemas.user import (
     AccountDeletionRequest,
     EmailChangeRequest,
     ReceiptQuotaRead,
+    TwoFactorCodeRequest,
+    TwoFactorEnabledRead,
+    TwoFactorOffRequest,
+    TwoFactorSetupRead,
     UserResponse,
     UserUpdateRequest,
 )
 from app.services.account import AccountService, EmailAddressGuard
 from app.services.account_closure import AccountClosureService
+from app.services.auth import AuthService
 from app.services.mailer import Mailer
 from app.services.quota import QuotaService
+from app.services.two_factor import TwoFactorService
 from app.services.user import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -146,3 +152,42 @@ async def delete_me(
     """
     prefixes = await AccountClosureService(session).close(current_user, body.password)
     background_tasks.add_task(_remove_files, prefixes)
+
+
+@router.post("/me/two-factor/setup", response_model=TwoFactorSetupRead)
+async def begin_two_factor(
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> TwoFactorSetupRead:
+    """Start setting up an authenticator: a QR code, not in force until confirmed (F18.6.1)."""
+    setup = await TwoFactorService(session).begin(current_user)
+    return TwoFactorSetupRead(secret=setup.secret, uri=setup.uri, qr_svg=setup.qr_svg)
+
+
+@router.post("/me/two-factor/confirm", response_model=TwoFactorEnabledRead)
+@limiter.limit(rate_limit.LOGIN)
+async def confirm_two_factor(
+    request: Request,
+    body: TwoFactorCodeRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> TwoFactorEnabledRead:
+    """Turn it on with a first code; the recovery codes come back once, with a session
+    that has the second factor, so an admin need not sign in again (F18.6.1)."""
+    codes = await TwoFactorService(session).confirm(current_user, body.code)
+    access_token, refresh_token = await AuthService(session).upgrade_to_second_factor(current_user)
+    return TwoFactorEnabledRead(
+        recovery_codes=codes, access_token=access_token, refresh_token=refresh_token
+    )
+
+
+@router.post("/me/two-factor/disable", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit(rate_limit.LOGIN)
+async def disable_two_factor(
+    request: Request,
+    body: TwoFactorOffRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> None:
+    """Turn it off with the password and a code (F18.6.1); 403 if either is wrong."""
+    await TwoFactorService(session).turn_off(current_user, body.password, body.code)

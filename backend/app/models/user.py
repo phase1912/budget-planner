@@ -3,7 +3,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, Numeric, String
+from sqlalchemy import JSON, DateTime, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.domain.email_intake import new_forwarding_token
@@ -29,6 +29,13 @@ class User(Model):
         DateTime(timezone=True), nullable=True
     )
     terms_version: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # The authenticator secret, encrypted (F18.6.1); set while setting up, in force once
+    # `two_factor_enabled_at` is set. Recovery codes are kept as hashes, used ones removed.
+    two_factor_secret: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    two_factor_enabled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    recovery_code_hashes: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     # When the owner proved the address is theirs (F17.8.2); None until then.
     email_confirmed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
@@ -53,3 +60,8 @@ class User(Model):
     def email_confirmed(self) -> bool:
         """Whether the owner has proved the address is theirs (F17.8.2)."""
         return self.email_confirmed_at is not None
+
+    @property
+    def two_factor_enabled(self) -> bool:
+        """Whether signing in needs an authenticator code after the password (F18.6.1)."""
+        return self.two_factor_enabled_at is not None

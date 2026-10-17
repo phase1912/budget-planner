@@ -1,4 +1,6 @@
-from pydantic import BaseModel, EmailStr
+from typing import Literal
+
+from pydantic import BaseModel, EmailStr, Field
 
 from app.schemas.user import Language, UserResponse
 
@@ -29,6 +31,20 @@ class AuthResponse(BaseModel):
     user: UserResponse
     access_token: str
     refresh_token: str
+
+
+class SecondFactorChallenge(BaseModel):
+    """The password was right; the account wants its authenticator code too (F18.6.1)."""
+
+    second_factor_required: Literal[True] = True
+    second_factor_token: str
+
+
+class SecondFactorRequest(BaseModel):
+    """The challenge from sign-in and a code from the app, or a recovery code."""
+
+    token: str
+    code: str = Field(min_length=6, max_length=16)
 
 
 class RefreshRequest(BaseModel):

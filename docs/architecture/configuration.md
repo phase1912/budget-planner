@@ -45,9 +45,11 @@ A field with no default (`database_url`, `anthropic_api_key`) makes `Settings()`
 | `price_freshness_days` | `PRICE_FRESHNESS_DAYS` | No | `90` | How recent a shop's price must be to say another shop is cheaper (F16.3); older prices may no longer hold. At least 1. |
 | `storage_backend` | `STORAGE_BACKEND` | No | `s3` | `s3` for an S3-compatible store (MinIO locally), `gcs` for Cloud Storage as the runtime's service account, keyless (ADR-0014). `S3_BUCKET_NAME` names the bucket either way. |
 | `exchange_rate_source` | `EXCHANGE_RATE_SOURCE` | No | `nbp` | `nbp` converts foreign receipts at the National Bank of Poland's rates, the ECB's as fallback (ADR-0016); `off` stores them unconverted. The test suite runs with `off`, so it never reaches the network. |
-| `monthly_receipt_quota` | `MONTHLY_RECEIPT_QUOTA` | No | `10` | Receipts an ordinary account may have read per calendar month (F10.6). Set from Terraform's `monthly_receipt_quota`. |
+| `monthly_receipt_quota` | `MONTHLY_RECEIPT_QUOTA` | No | `10` | Receipts an account on the free plan may have read per calendar month (F10.6, F18.4). Set from Terraform's `monthly_receipt_quota`. |
+| `paid_monthly_receipt_quota` | `PAID_MONTHLY_RECEIPT_QUOTA` | No | `200` | Receipts an account on the paid plan may have read per calendar month (F18.4). |
+| `admin_second_factor_required` | `ADMIN_SECOND_FACTOR_REQUIRED` | No | unset | Whether admin pages need a session opened with two-factor sign-in (F18.6.1); unset means yes everywhere but `local`. |
 | `daily_receipt_read_ceiling` | `DAILY_RECEIPT_READ_CEILING` | No | `100` | Receipts read per UTC day across every non-admin account (F10.6). |
-| `admin_emails` | `ADMIN_EMAILS` | No | `[]` | JSON list of emails treated as admins (no receipt limits), besides accounts with role `admin`. Set from `terraform.tfvars`, which is kept out of git. |
+| `admin_emails` | `ADMIN_EMAILS` | No | `[]` | JSON list of the super admins' emails (ADR-0021): admins with no receipt limits who alone appoint admins (accounts with role `admin`) and read the admin log. Set from `terraform.tfvars`, which is kept out of git. |
 | `build_sha` | `BUILD_SHA` | No | `dev` | Set by CI/CD at deploy time; stays `dev` outside a built image. Surfaced for support/debugging, not read by any business logic. |
 
 ## Where each environment's values actually come from

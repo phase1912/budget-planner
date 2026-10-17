@@ -50,7 +50,10 @@
     "title": "Receipts this month",
     "unlimited": "No limit on this account. {{used}} read so far this month.",
     "used": "{{used}} of {{limit}} read",
-    "note": "Each receipt read by photo or by email counts. The count starts again on {{date}}."
+    "note": "Each receipt read by photo or by email counts. The count starts again on {{date}}.",
+    "planFree": "Free plan",
+    "planPaid": "Paid plan",
+    "planEnds": "until {{date}}"
   },
   "install": {
     "title": "App",
@@ -95,5 +98,32 @@
     "cancel": "Cancel",
     "privacy": "Privacy policy",
     "terms": "Terms of use"
+  },
+  "security": {
+    "title": "Sign-in security",
+    "label": "Two-factor sign-in",
+    "on": "On",
+    "off": "Off",
+    "hint": "After your password, sign-in also asks for a code from an authenticator app on your phone.",
+    "turnOn": "Turn on",
+    "turnOff": "Turn off",
+    "adminNeedsIt": "As an admin, you need it to open the admin pages.",
+    "setupTitle": "Set up two-factor sign-in",
+    "step1": "Install an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…).",
+    "step2": "Scan this QR code with it.",
+    "step3": "Type the 6-digit code it shows.",
+    "qrAlt": "QR code for your authenticator app",
+    "manual": "Can't scan? Enter this key by hand:",
+    "code": "Code from the app",
+    "cancel": "Cancel",
+    "confirm": "Turn on",
+    "codesTitle": "Save your recovery codes",
+    "codesBody": "Each code signs you in once if you lose your phone. They are shown only now: keep them somewhere safe.",
+    "copy": "Copy",
+    "saved": "I saved them",
+    "offTitle": "Turn off two-factor sign-in?",
+    "offBody": "Sign-in will ask only for your password again.",
+    "password": "Password",
+    "codeOrRecovery": "Code from the app or a recovery code"
   }
 }

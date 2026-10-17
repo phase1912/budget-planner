@@ -20,6 +20,8 @@ describe("ProfilePage", () => {
       forwarding_address: "receipts-test@example.com",
       email_confirmed: true,
       is_admin: false,
+      is_super_admin: false,
+      two_factor_enabled: false,
     };
 
     // Stub api client on profileStore

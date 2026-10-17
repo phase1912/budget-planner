@@ -6,7 +6,7 @@
     "sections": {
       "data": {
         "title": "What we keep",
-        "body": "Your account: name, email address, a hash of your password, language, currency and budget.\n\nWhat you add: receipts and what is read from them — shop, date, items, amounts, categories — and the trips, goals, rules and household you set up. Receipt photos and forwarded e-receipts are kept as files.\n\nIf you write to us through the contact form on the Help page, your address and message are mailed to us to answer you; the service itself does not keep them."
+        "body": "Your account: name, email address, a hash of your password, language, currency and budget; your plan and any plan given to you, with the reason; and, if you turn on two-factor sign-in, its encrypted key and the hashes of your recovery codes.\n\nWhat you add: receipts and what is read from them — shop, date, items, amounts, categories — and the trips, goals, rules and household you set up. Receipt photos and forwarded e-receipts are kept as files.\n\nIf you write to us through the contact form on the Help page, your address and message are mailed to us to answer you; the service itself does not keep them."
       },
       "why": {
         "title": "Why",
@@ -18,7 +18,7 @@
       },
       "keep": {
         "title": "How long",
-        "body": "Receipt photos and forwarded files: 90 days, then storage deletes them — the figures read from them stay. Export files: 7 days. Request logs: 30 days. Everything else: until you delete your account; database backups hold it for at most 7 more days. A message through the contact form stays in our mailbox as long as answering it needs. The record of what you do in the service: 12 months."
+        "body": "Receipt photos and forwarded files: 90 days, then storage deletes them — the figures read from them stay. Export files: 7 days. Request logs: 30 days. Everything else: until you delete your account; database backups hold it for at most 7 more days. A message through the contact form stays in our mailbox as long as answering it needs. The record of what you do in the service: 12 months. What an administrator did on your account (for example, granting a plan or sending you a link) is logged; when you delete your account, the log no longer says whose it was."
       },
       "rights": {
         "title": "Your rights",

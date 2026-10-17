@@ -1,15 +1,19 @@
 """Security utilities for password hashing and basic tokens (F1.1.2)."""
 
+import base64
 import hashlib
 import secrets
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 
 from app.core.config import get_settings
+
+if TYPE_CHECKING:
+    from cryptography.fernet import Fernet
 
 
 def _get_hasher() -> PasswordHasher:
@@ -47,8 +51,14 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
 
 
-def create_access_token(subject: str | Any, expires_delta: timedelta | None = None) -> str:
-    """Create a JWT access token (F1.2.1)."""
+def create_access_token(
+    subject: str | Any, expires_delta: timedelta | None = None, *, second_factor: bool = False
+) -> str:
+    """Create a JWT access token (F1.2.1).
+
+    `second_factor` says the session was opened with an authenticator code too (F18.6.1):
+    what the admin pages ask for.
+    """
     settings = get_settings()
     now = datetime.now(UTC)
     if expires_delta:
@@ -56,7 +66,7 @@ def create_access_token(subject: str | Any, expires_delta: timedelta | None = No
     else:
         expire = now + timedelta(minutes=settings.access_token_expire_minutes)
 
-    to_encode = {"exp": expire, "iat": now, "sub": str(subject)}
+    to_encode = {"exp": expire, "iat": now, "sub": str(subject), "sf": second_factor}
 
     encoded_jwt = jwt.encode(
         to_encode, settings.jwt_secret_key.get_secret_value(), algorithm="HS256"
@@ -97,3 +107,27 @@ def read_link_token(token: str, purpose: str) -> dict[str, Any] | None:
 def fingerprint(secret: str) -> str:
     """A short, one-way digest of a stored secret, to bind a link to its current value."""
     return hashlib.sha256(secret.encode("utf-8")).hexdigest()[:16]
+
+
+def _secret_box() -> "Fernet":
+    """The key secrets kept in the database are encrypted with, derived from the JWT key.
+
+    Rotating JWT_SECRET_KEY therefore also voids every authenticator set up so far: the
+    users affected set theirs up again (ADR-0021).
+    """
+    from cryptography.fernet import Fernet
+
+    key = hashlib.sha256(
+        b"two-factor:" + get_settings().jwt_secret_key.get_secret_value().encode()
+    ).digest()
+    return Fernet(base64.urlsafe_b64encode(key))
+
+
+def encrypt_secret(plain: str) -> str:
+    """Encrypt a secret before it is stored (the authenticator's, F18.6.1)."""
+    return _secret_box().encrypt(plain.encode()).decode()
+
+
+def decrypt_secret(stored: str) -> str:
+    """The secret `encrypt_secret` stored."""
+    return _secret_box().decrypt(stored.encode()).decode()

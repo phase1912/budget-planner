@@ -79,6 +79,16 @@ public pages report a view to `/api/v1/analytics/views` (counted, not stored per
 visitor), and `UsageReportService` builds the admin dashboard from those and from the
 users, upload and receipt tables. Old activity is pruned when an instance starts.
 
+The admin console (F18.6, ADR-0021) is one router, `/api/v1/admin`, behind two
+dependencies: `get_admin_user` (an admin, with a second-factor session where the
+deployment requires it) and `get_super_admin` (appointing admins, reading the log).
+`AdminService` reads accounts through `AdminUsersRepository` — facts and activity, never a
+receipt — and writes every action to `admin_actions`. Two-factor sign-in lives in
+`TwoFactorService`; `AuthService.login` answers a challenge instead of a session when it is
+on, and the session's second factor travels as the access token's `sf` claim and the
+refresh token's flag. The plan in force is read by `PlanService` from `plan_grants`
+(`app/domain/plans.py`), and `QuotaService` takes its limit from it (F18.4).
+
 Retention is the bucket's: lifecycle rules in `infra/terraform/storage.tf` delete photos
 after 90 days and exports after 7; `app/domain/retention.py` only tells the screens when.
 
@@ -295,6 +305,9 @@ returns, so a file and the screen cannot disagree.
   login, registration, upload, advice and export (`app/api/rate_limit.py`, slowapi,
   counted in memory per instance). Vertex AI offers no per-project cap for Gemini 2.x, and
   the billing budget only alerts.
+- An admin account opens the admin console only with a second factor (TOTP, encrypted
+  at rest), is mailed on every sign-in, sees no receipts, and leaves a log entry for each
+  action; only the super admins named in configuration appoint admins (ADR-0021).
 - The agent advises and never moves money. There is no code path to a payment API, by
   design (BRD constraint 11.2).
 

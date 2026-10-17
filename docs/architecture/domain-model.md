@@ -19,7 +19,9 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | `password_hash` | String | Argon2id hash |
 | `currency` | String | Default `USD`. Used as the base currency for all monetary amounts; receipts in other currencies are converted into it (ADR-0016). Fixed once receipts exist (F1.4.2) |
 | `budget_limit` | Decimal | Optional monthly budget cap; more than zero when set (D7) |
-| `role` | String | `user` or `admin` (controls cross-user visibility) |
+| `role` | String | `user` or `admin`: an admin opens the admin console (F18.6) and sees account facts, never receipts; super admins are `admin_emails`, not a role (ADR-0021) |
+| `two_factor_secret` | String | The TOTP secret, encrypted (ADR-0021); in force once `two_factor_enabled_at` is set |
+| `recovery_code_hashes` | JSON | SHA-256 of the unused recovery codes; a used one is removed |
 | `created_at` | Timestamp | Standard audit field |
 | `updated_at` | Timestamp | Standard audit field |
 | **IdentityLink** | A linked Google or Facebook identity, verified-email-gated (G9-G11). | User |
@@ -38,6 +40,8 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | **Goal** | A financial or lifestyle objective the user declared. A financial goal is one of three kinds: a monthly spending ceiling, a savings target, or a cap on one category (F1). | User |
 | **Household** | A group of users keeping one budget (E12, ADR-0017): a name, an invite code, an optional monthly budget. Reads its members' receipts, never owns them. | Its owner |
 | **HouseholdMember** | A user's place in a household, as `owner` or `member`. One household per user. | Household |
+| **PlanGrant** | A plan an admin gave the account from one moment to another, with the reason and who gave it; taken back by setting `revoked_at`, never deleted (F18.6.3, ADR-0021). | User |
+| **AdminAction** | One thing an admin did to an account, for the log super admins read (F18.6.3). Survives either account's deletion with that side emptied. | — |
 | **Recommendation** | Advice on one goal: the category, recurring purchase or priced product it targets, what to do and why. Asking again replaces the goal's advice, except advice the user marked won't-follow or not helpful (F8.9), which stays. Carries its projected impact (F8.5). | User |
 
 Relationships: a User has many Receipts and belongs to at most one Household; a Receipt has many LineItems; a LineItem has one
@@ -45,9 +49,9 @@ Category; a Goal produces many Recommendations; a User has many IdentityLinks; a
 
 **Not yet groomed:** BR-7 (G1-G12, added by F0.10.1) is fully specified in the BRD, but
 E1 as currently groomed (`docs/planning/backlog.yaml`) implements only G1-G7 —
-registration, login, session refresh. G8 (admin role) and G9-G12 (OIDC linking) need
-their own tasks before BR-7 is delivered; `IdentityLink` and `User.role` above describe
-the target, not something built yet.
+registration, login, session refresh. G8 (admin role) is built by F18.6 (ADR-0021);
+G9-G12 (OIDC linking) need their own tasks before BR-7 is delivered; `IdentityLink`
+above describes the target, not something built yet.
 
 ### Position matching rules (B1–B9)
 - Comparing extracted items checks the name, unit price, quantity and total.
@@ -462,14 +466,28 @@ Rules that must hold at all times. Each is a candidate for a test.
     identifies the visitor (F17.3.2). A visit is the first public page of a page load, and
     its source is where that page was reached from; a signed-in reader is not a visitor.
     Only admins read the totals, never one user's data, and admins are in none of them.
+20h. A super admin is an address in `admin_emails`; an admin is `role = admin`, appointed
+    and removed only by a super admin, and no one changes a super admin through the
+    service. Admins see an account's facts, plan and activity, never what it stored (N2);
+    they confirm its address and send it links, never set its password; every action is
+    in the admin log, read by super admins (F18.6, ADR-0021).
+20i. With two-factor sign-in on, the password alone opens no session: it gives a
+    five-minute challenge that an authenticator or recovery code exchanges for one. An
+    admin page refuses a session opened without a second factor wherever the deployment
+    requires it; a session keeps the mark across refreshes. A recovery code works once
+    (F18.6.1).
+20j. The plan in force is the paid plan while a grant runs that is not taken back, else
+    free. A grant made while a plan runs starts when it ends, and the plan runs on through
+    grants that follow without a gap (`app/domain/plans.py`, F18.4).
 21. An OIDC identity links to an existing account only when the provider reports a
     verified email matching it; an unverified email never links automatically (G10, G11).
 
 **Limits**
 
 21a. Every receipt read costs a model call, so reads, not stored receipts, are limited
-    (F10.6, `app/services/quota.py`). An ordinary account may have
-    `monthly_receipt_quota` receipts read per calendar month in UTC (10 by default): each
+    (F10.6, `app/services/quota.py`). An account may have its plan's receipts read per
+    calendar month in UTC — `monthly_receipt_quota` on the free plan (10 by default),
+    `paid_monthly_receipt_quota` on the paid one (200), which is also ad-free (F18.4): each
     receipt in an upload counts when the upload is accepted, stored later or not, and so
     does each e-receipt that arrives by email. An upload that would go past it is refused
     before anything is read, saying the limit and the date it resets; an e-receipt past

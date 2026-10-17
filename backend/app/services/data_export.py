@@ -26,8 +26,9 @@ logger = logging.getLogger(__name__)
 
 WITHHELD_TABLES = frozenset({"refresh_tokens"})
 """Session secrets: handing them out would hand out the account, and they are no one's data."""
-WITHHELD_COLUMNS = frozenset({"password_hash"})
-"""A hash of the password is a credential, not information about the person."""
+WITHHELD_COLUMNS = frozenset({"password_hash", "two_factor_secret", "recovery_code_hashes"})
+"""Credentials, not information about the person: the password's hash, the authenticator
+secret and the recovery codes' hashes (F18.6.1) — an archive must never open the account."""
 
 
 def _plain(value: Any) -> Any:

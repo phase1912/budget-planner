@@ -18,6 +18,7 @@ class LetterKind(StrEnum):
     CHANGE_EMAIL = "change_email"
     EMAIL_CHANGED = "email_changed"
     CONTACT_RECEIVED = "contact_received"
+    ADMIN_SIGN_IN = "admin_sign_in"
 
 
 @dataclass(frozen=True)
@@ -113,6 +114,25 @@ WORDING: Final[dict[LetterKind, dict[str, Wording]]] = {
             "hasło.",
         ),
     },
+    LetterKind.ADMIN_SIGN_IN: {
+        "en": Wording(
+            "Someone signed in to your admin account",
+            "Hello {name},\n\nYour Budget Agent admin account was signed in to on {when} UTC. "
+            "If it was not you, change your password and check two-factor sign-in at once.",
+        ),
+        "uk": Wording(
+            "Вхід у ваш адміністраторський обліковий запис",
+            "Вітаємо, {name}!\n\nУ ваш адміністраторський обліковий запис Budget Agent увійшли "
+            "{when} UTC. Якщо це були не ви, негайно змініть пароль і перевірте двофакторний "
+            "вхід.",
+        ),
+        "pl": Wording(
+            "Logowanie do Twojego konta administratora",
+            "Dzień dobry, {name}!\n\nNa Twoje konto administratora Budget Agent zalogowano się "
+            "{when} UTC. Jeśli to nie Ty, natychmiast zmień hasło i sprawdź logowanie "
+            "dwuetapowe.",
+        ),
+    },
     LetterKind.CONTACT_RECEIVED: {
         "en": Wording(
             "We have your message",
@@ -144,9 +164,10 @@ def write_letter(
     link: str = "",
     email: str = "",
     message: str = "",
+    when: str = "",
 ) -> Wording:
     """The letter of this kind in the reader's language, English when it is unknown."""
     chosen = language if language in LANGUAGES else "en"
     wording = WORDING[kind][chosen]
-    body = wording.body.format(name=name, link=link, email=email, message=message)
+    body = wording.body.format(name=name, link=link, email=email, message=message, when=when)
     return Wording(wording.subject, f"{body}\n\n{SIGNATURE[chosen]}")

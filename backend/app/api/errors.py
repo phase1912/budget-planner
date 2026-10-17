@@ -80,6 +80,13 @@ class ProblemCode(enum.StrEnum):
     EMAIL_TAKEN = "email_taken"
     LINK_INVALID = "link_invalid"
     TERMS_REQUIRED = "terms_required"
+    TWO_FACTOR_ALREADY_ON = "two_factor_already_on"
+    TWO_FACTOR_NOT_STARTED = "two_factor_not_started"
+    TWO_FACTOR_CODE_WRONG = "two_factor_code_wrong"
+    SECOND_FACTOR_REQUIRED = "second_factor_required"
+    SUPER_ADMIN_ONLY = "super_admin_only"
+    ADMIN_ROLE_FIXED = "admin_role_fixed"
+    ALREADY_CONFIRMED = "already_confirmed"
 
 
 class ProblemDetail(BaseModel):

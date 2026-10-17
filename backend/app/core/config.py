@@ -173,11 +173,23 @@ class Settings(BaseSettings):
             "cap (BRD F7); 0 turns it off."
         ),
     )
+    paid_monthly_receipt_quota: int = Field(
+        default=200,
+        ge=0,
+        description="Receipts the paid plan may have read per calendar month (F18.2.2).",
+    )
+    admin_second_factor_required: bool | None = Field(
+        default=None,
+        description=(
+            "Whether admins must sign in with a second factor (F18.6.1). Unset: required "
+            "everywhere but local work."
+        ),
+    )
     monthly_receipt_quota: int = Field(
         default=10,
         ge=0,
         description=(
-            "Receipts an ordinary account may have read per calendar month (F10.6). A "
+            "Receipts the free plan may have read per calendar month (F10.6, F18.2.2). A "
             "receipt counts when it is read, since the model call is the cost."
         ),
     )
@@ -359,6 +371,13 @@ class Settings(BaseSettings):
                 "in staging or production environments."
             )
         return self
+
+    @property
+    def requires_admin_second_factor(self) -> bool:
+        """Whether an admin needs a second factor: always, unless switched off or local."""
+        if self.admin_second_factor_required is not None:
+            return self.admin_second_factor_required
+        return self.environment != Environment.LOCAL
 
     @property
     def link_base(self) -> str:

@@ -83,9 +83,32 @@ export interface paths {
         put?: never;
         /**
          * Login
-         * @description Authenticate and return an access token (F1.1.4).
+         * @description Authenticate and return a session (F1.1.4), or ask for the authenticator code.
+         *
+         *     An account with two-factor sign-in gets a challenge to send back with its code to
+         *     `/auth/login/second-factor` (F18.6.1). An admin is told by letter of every sign-in.
          */
         post: operations["login_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/login/second-factor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Login Second Factor
+         * @description Finish signing in with an authenticator or recovery code (F18.6.1); 401 if wrong.
+         */
+        post: operations["login_second_factor_auth_login_second_factor_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -326,6 +349,67 @@ export interface paths {
          *     email_domain_unreachable for an address the account cannot move to (F17.8.3-4).
          */
         post: operations["change_email_users_me_email_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/me/two-factor/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Begin Two Factor
+         * @description Start setting up an authenticator: a QR code, not in force until confirmed (F18.6.1).
+         */
+        post: operations["begin_two_factor_users_me_two_factor_setup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/me/two-factor/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Two Factor
+         * @description Turn it on with a first code; the recovery codes come back once, with a session
+         *     that has the second factor, so an admin need not sign in again (F18.6.1).
+         */
+        post: operations["confirm_two_factor_users_me_two_factor_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/me/two-factor/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Disable Two Factor
+         * @description Turn it off with the password and a code (F18.6.1); 403 if either is wrong.
+         */
+        post: operations["disable_two_factor_users_me_two_factor_disable_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1770,6 +1854,186 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Users
+         * @description Accounts by address, with filters: confirmed, on a paid plan, active in 30 days.
+         */
+        get: operations["list_users_api_v1_admin_users_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * User Card
+         * @description One account's facts, plan, grants and latest activity; 404 for none.
+         */
+        get: operations["user_card_api_v1_admin_users__user_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{user_id}/confirm-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Email
+         * @description Mark the account's address confirmed (F18.6.2).
+         */
+        post: operations["confirm_email_api_v1_admin_users__user_id__confirm_email_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{user_id}/send-confirmation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Confirmation
+         * @description Send the account a fresh confirmation link; 409 already_confirmed if it needs none.
+         */
+        post: operations["send_confirmation_api_v1_admin_users__user_id__send_confirmation_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{user_id}/send-password-reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Password Reset
+         * @description Send the account's owner a reset link; an admin never sets a password (F18.6.2).
+         */
+        post: operations["send_password_reset_api_v1_admin_users__user_id__send_password_reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{user_id}/grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Grant Plan
+         * @description Give the paid plan for some days, after any plan running now (F18.6.3).
+         */
+        post: operations["grant_plan_api_v1_admin_users__user_id__grants_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{user_id}/grants/{grant_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke Grant
+         * @description Take a grant back from now; 404 for a grant not this account's.
+         */
+        post: operations["revoke_grant_api_v1_admin_users__user_id__grants__grant_id__revoke_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{user_id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Role
+         * @description Appoint or remove an admin: super admins only (F18.6.1).
+         */
+        put: operations["set_role_api_v1_admin_users__user_id__role_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Log
+         * @description What admins did, newest first: super admins only (F18.6.3).
+         */
+        get: operations["admin_log_api_v1_admin_log_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1782,6 +2046,16 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** ActivityRead */
+        ActivityRead: {
+            /** Event */
+            event: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /**
          * AddDiscountRequest
          * @description A discount the reader missed, added by the user to make a receipt add up (BRD A9).
@@ -1793,6 +2067,127 @@ export interface components {
             extraction_index: number;
             /** Amount */
             amount: number | string;
+        };
+        /**
+         * AdminActionRead
+         * @description One entry of the admin log.
+         */
+        AdminActionRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Action */
+            action: string;
+            /** Admin */
+            admin: string | null;
+            /** Target */
+            target: string | null;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            };
+        };
+        /** AdminLogPage */
+        AdminLogPage: {
+            /** Items */
+            items: components["schemas"]["AdminActionRead"][];
+        };
+        /** AdminRoleRequest */
+        AdminRoleRequest: {
+            /** Admin */
+            admin: boolean;
+        };
+        /**
+         * AdminUserCard
+         * @description What an admin sees about one account: who, how it is set up, how it is used.
+         */
+        AdminUserCard: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Email */
+            email: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Email Confirmed At */
+            email_confirmed_at: string | null;
+            /** Language */
+            language: string | null;
+            /** Terms Version */
+            terms_version: string | null;
+            /** Is Admin */
+            is_admin: boolean;
+            /** Is Super Admin */
+            is_super_admin: boolean;
+            /** Two Factor Enabled */
+            two_factor_enabled: boolean;
+            /** Plan */
+            plan: string;
+            /** Plan Ends On */
+            plan_ends_on: string | null;
+            /** Receipts Limit */
+            receipts_limit: number | null;
+            /** Receipts Used */
+            receipts_used: number;
+            /** Last Active At */
+            last_active_at: string | null;
+            /** Grants */
+            grants: components["schemas"]["PlanGrantRead"][];
+            /** Activity */
+            activity: components["schemas"]["ActivityRead"][];
+        };
+        /**
+         * AdminUserRow
+         * @description One account in the admin list.
+         */
+        AdminUserRow: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Email */
+            email: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Email Confirmed */
+            email_confirmed: boolean;
+            /** Is Admin */
+            is_admin: boolean;
+            /** Plan */
+            plan: string;
+            /** Last Active At */
+            last_active_at: string | null;
+        };
+        /** AdminUsersPage */
+        AdminUsersPage: {
+            /** Items */
+            items: components["schemas"]["AdminUserRow"][];
+            /** Total */
+            total: number;
         };
         /**
          * AdviceReadinessRead
@@ -3090,6 +3485,47 @@ export interface components {
              */
             meals: components["schemas"]["Meal"][][];
         };
+        /** PlanGrantRead */
+        PlanGrantRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Plan */
+            plan: string;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /** Reason */
+            reason: string;
+            /** Granted By */
+            granted_by: string | null;
+            /** Revoked At */
+            revoked_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * PlanGrantRequest
+         * @description Give the paid plan for `days` more days, saying why (F18.6.3).
+         */
+        PlanGrantRequest: {
+            /** Days */
+            days: number;
+            /** Reason */
+            reason: string;
+        };
         /**
          * PlnRateResponse
          * @description The rate a foreign per diem was put into złoty at, or null when none was had.
@@ -3347,7 +3783,8 @@ export interface components {
          * ReceiptQuotaRead
          * @description The account's receipt reads this month against its limit (F10.6).
          *
-         *     `limit` and `remaining` are null for an account without a limit (an admin).
+         *     `limit` and `remaining` are null for an account without a limit (an admin). `plan`
+         *     says where the limit comes from and `plan_ends_on` when a granted plan ends (F18.4).
          */
         ReceiptQuotaRead: {
             /** Limit */
@@ -3363,6 +3800,12 @@ export interface components {
              * Format: date
              */
             resets_on: string;
+            /** Plan */
+            plan: string;
+            /** Plan Ends On */
+            plan_ends_on: string | null;
+            /** Ad Free */
+            ad_free: boolean;
         };
         /**
          * ReceiptResponse
@@ -3669,6 +4112,30 @@ export interface components {
              *     the owner chose by hand is never flagged, whatever the agent scored (C4).
              */
             readonly category_is_low_confidence: boolean;
+        };
+        /**
+         * SecondFactorChallenge
+         * @description The password was right; the account wants its authenticator code too (F18.6.1).
+         */
+        SecondFactorChallenge: {
+            /**
+             * Second Factor Required
+             * @default true
+             * @constant
+             */
+            second_factor_required: true;
+            /** Second Factor Token */
+            second_factor_token: string;
+        };
+        /**
+         * SecondFactorRequest
+         * @description The challenge from sign-in and a code from the app, or a recovery code.
+         */
+        SecondFactorRequest: {
+            /** Token */
+            token: string;
+            /** Code */
+            code: string;
         };
         /**
          * SelectionRequest
@@ -4039,6 +4506,48 @@ export interface components {
             amount: string;
         };
         /**
+         * TwoFactorCodeRequest
+         * @description A code from the authenticator app.
+         */
+        TwoFactorCodeRequest: {
+            /** Code */
+            code: string;
+        };
+        /**
+         * TwoFactorEnabledRead
+         * @description Two-factor sign-in is on: the recovery codes, shown once, and a session that has it.
+         */
+        TwoFactorEnabledRead: {
+            /** Recovery Codes */
+            recovery_codes: string[];
+            /** Access Token */
+            access_token: string;
+            /** Refresh Token */
+            refresh_token: string;
+        };
+        /**
+         * TwoFactorOffRequest
+         * @description Turning it off takes the password and a code, both.
+         */
+        TwoFactorOffRequest: {
+            /** Password */
+            password: string;
+            /** Code */
+            code: string;
+        };
+        /**
+         * TwoFactorSetupRead
+         * @description What the screen shows to set an authenticator up (F18.6.1).
+         */
+        TwoFactorSetupRead: {
+            /** Secret */
+            secret: string;
+            /** Uri */
+            uri: string;
+            /** Qr Svg */
+            qr_svg: string;
+        };
+        /**
          * UndoExtractedCorrectionRequest
          * @description Put back what was printed on one line of an extracted receipt (F15.3.2).
          *
@@ -4225,10 +4734,20 @@ export interface components {
              */
             email_confirmed: boolean;
             /**
+             * Two Factor Enabled
+             * @default false
+             */
+            two_factor_enabled: boolean;
+            /**
              * Is Admin
              * @description Whether the account sees the admin pages (F17.3.3): by role, or a listed email.
              */
             readonly is_admin: boolean;
+            /**
+             * Is Super Admin
+             * @description Whether the account appoints admins (F18.6.1): an email the deployment lists.
+             */
+            readonly is_super_admin: boolean;
             /**
              * Forwarding Address
              * @description Where the user forwards e-receipts (F11.2); only ever shown to its owner.
@@ -4365,7 +4884,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthResponse"];
+                    "application/json": components["schemas"]["AuthResponse"] | components["schemas"]["SecondFactorChallenge"];
                 };
             };
             /** @description Validation Error */
@@ -4383,6 +4902,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    login_second_factor_auth_login_second_factor_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SecondFactorRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
@@ -4799,6 +5351,105 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MessageResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    begin_two_factor_users_me_two_factor_setup_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TwoFactorSetupRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_two_factor_users_me_two_factor_confirm_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TwoFactorCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TwoFactorEnabledRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disable_two_factor_users_me_two_factor_disable_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TwoFactorOffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -7448,6 +8099,306 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UsageReportRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_users_api_v1_admin_users_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                confirmed?: boolean | null;
+                paid?: boolean | null;
+                active?: boolean;
+                limit?: number;
+                offset?: number;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUsersPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    user_card_api_v1_admin_users__user_id__get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUserCard"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_email_api_v1_admin_users__user_id__confirm_email_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_confirmation_api_v1_admin_users__user_id__send_confirmation_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_password_reset_api_v1_admin_users__user_id__send_password_reset_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    grant_plan_api_v1_admin_users__user_id__grants_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanGrantRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanGrantRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_grant_api_v1_admin_users__user_id__grants__grant_id__revoke_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                user_id: string;
+                grant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_role_api_v1_admin_users__user_id__role_put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_log_api_v1_admin_log_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminLogPage"];
                 };
             };
             /** @description Validation Error */

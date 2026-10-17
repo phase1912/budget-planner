@@ -6,33 +6,26 @@ import { Card, ErrorState, LoadingState, Meter, SegmentedControl } from "@/share
 import { dateFormat } from "@/i18n/format";
 import type { ReportPeriod, UsageReport } from "@/stores/AnalyticsStore";
 import { useStores } from "@/stores/StoreContext";
-import { NotFoundPage } from "@/features/public-landing/pages/NotFoundPage";
 
 const DAY = dateFormat({ day: "numeric", month: "short", timeZone: "UTC" });
 
 /**
  * How the service is used, for its admins (F17.3.3): visits, sign-ups, who is active and
  * who returns, the path from visit to first receipt — counts only, never anyone's data.
- * Anyone else gets the page that does not exist.
+ * Opened inside `AdminLayout`, which keeps everyone else out.
  */
 export const AdminDashboardPage = observer(function AdminDashboardPage() {
-  const { analyticsStore, authStore } = useStores();
+  const { analyticsStore } = useStores();
   const { t } = useTranslation("admin");
-  const isAdmin = authStore.user?.is_admin === true;
   const { report, reportState, period } = analyticsStore;
 
   useEffect(() => {
-    if (isAdmin) void analyticsStore.loadReport();
-  }, [analyticsStore, isAdmin]);
-
-  if (!isAdmin) return <NotFoundPage />;
+    void analyticsStore.loadReport();
+  }, [analyticsStore]);
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 py-4 md:gap-6 md:py-10">
-      <header className="flex flex-col gap-1">
-        <h1 className="m-0 text-[24px] font-bold text-foreground md:text-3xl">{t("title")}</h1>
-        <p className="m-0 text-lg text-muted-foreground">{t("subtitle")}</p>
-      </header>
+    <section className="flex flex-col gap-4 md:gap-6">
+      <p className="m-0 text-lg text-muted-foreground">{t("subtitle")}</p>
       <SegmentedControl<ReportPeriod>
         label={t("periods.label")}
         size="sm"
@@ -54,7 +47,7 @@ export const AdminDashboardPage = observer(function AdminDashboardPage() {
       ) : (
         <Figures report={report} />
       )}
-    </div>
+    </section>
   );
 });
 

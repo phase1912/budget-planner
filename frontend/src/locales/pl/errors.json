@@ -49,5 +49,12 @@
   "email_domain_unreachable": "Na {{domain}} nie da się dostarczyć poczty: sprawdź, czy w adresie nie ma literówki.",
   "email_taken": "Tego adresu nie można użyć dla konta.",
   "link_invalid": "Link wygasł lub został już użyty.",
-  "terms_required": "Aby założyć konto, zaakceptuj regulamin i politykę prywatności."
+  "terms_required": "Aby założyć konto, zaakceptuj regulamin i politykę prywatności.",
+  "two_factor_already_on": "Logowanie dwuetapowe jest już włączone.",
+  "two_factor_not_started": "Zacznij konfigurację od nowa: najpierw zeskanuj nowy kod QR.",
+  "two_factor_code_wrong": "Kod jest nieprawidłowy albo logowanie trwało zbyt długo. Spróbuj ponownie.",
+  "second_factor_required": "Włącz logowanie dwuetapowe i zaloguj się z nim, aby otworzyć strony administratora.",
+  "super_admin_only": "Może to zrobić tylko superadministrator.",
+  "admin_role_fixed": "Superadministratora ustawia konfiguracja usługi; nie można go tu zmienić.",
+  "already_confirmed": "Ten adres jest już potwierdzony."
 }

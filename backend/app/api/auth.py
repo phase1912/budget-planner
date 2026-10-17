@@ -1,5 +1,6 @@
 """Authentication router (F1.1.3, F1.1.4, F1.2)."""
 
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Request, status
@@ -18,9 +19,11 @@ from app.schemas.auth import (
     RefreshRequest,
     RegisterRequest,
     ResetPasswordRequest,
+    SecondFactorChallenge,
+    SecondFactorRequest,
 )
 from app.schemas.user import UserResponse
-from app.services.account import AccountService, EmailAddressGuard
+from app.services.account import AccountService, EmailAddressGuard, admin_sign_in_letter
 from app.services.auth import AuthService
 from app.services.mailer import Mailer
 
@@ -67,7 +70,7 @@ async def register(
 
 @router.post(
     "/login",
-    response_model=AuthResponse,
+    response_model=AuthResponse | SecondFactorChallenge,
     responses={status.HTTP_429_TOO_MANY_REQUESTS: {"description": "Too Many Requests"}},
 )
 @limiter.limit(rate_limit.LOGIN)
@@ -75,10 +78,43 @@ async def login(
     request: Request,
     login_request: LoginRequest,
     service: Annotated[AuthService, Depends(get_auth_service)],
-) -> AuthResponse:
-    """Authenticate and return an access token (F1.1.4)."""
-    user_response, access_token, refresh_token = await service.login(login_request)
+    mailer: Mail,
+    background_tasks: BackgroundTasks,
+) -> AuthResponse | SecondFactorChallenge:
+    """Authenticate and return a session (F1.1.4), or ask for the authenticator code.
+
+    An account with two-factor sign-in gets a challenge to send back with its code to
+    `/auth/login/second-factor` (F18.6.1). An admin is told by letter of every sign-in.
+    """
+    outcome = await service.login(login_request)
+    if isinstance(outcome, str):
+        return SecondFactorChallenge(second_factor_token=outcome)
+    user_response, access_token, refresh_token = outcome
+    _tell_admin(user_response, mailer, background_tasks)
     return AuthResponse(user=user_response, access_token=access_token, refresh_token=refresh_token)
+
+
+@router.post("/login/second-factor", response_model=AuthResponse)
+@limiter.limit(rate_limit.LOGIN)
+async def login_second_factor(
+    request: Request,
+    body: SecondFactorRequest,
+    service: Annotated[AuthService, Depends(get_auth_service)],
+    mailer: Mail,
+    background_tasks: BackgroundTasks,
+) -> AuthResponse:
+    """Finish signing in with an authenticator or recovery code (F18.6.1); 401 if wrong."""
+    user_response, access_token, refresh_token = await service.complete_second_factor(
+        body.token, body.code
+    )
+    _tell_admin(user_response, mailer, background_tasks)
+    return AuthResponse(user=user_response, access_token=access_token, refresh_token=refresh_token)
+
+
+def _tell_admin(user: UserResponse, mailer: Mailer, background_tasks: BackgroundTasks) -> None:
+    """Write to an admin that their account was signed in to, so a stranger's is seen."""
+    if user.is_admin:
+        background_tasks.add_task(mailer.deliver, admin_sign_in_letter(user, datetime.now(UTC)))
 
 
 @router.post("/refresh", response_model=AuthResponse)

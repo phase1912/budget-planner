@@ -50,7 +50,10 @@
     "title": "Paragony w tym miesiącu",
     "unlimited": "To konto nie ma limitu. W tym miesiącu odczytano: {{used}}.",
     "used": "Odczytano {{used}} z {{limit}}",
-    "note": "Liczy się każdy paragon odczytany ze zdjęcia lub e-maila. Licznik zacznie się od nowa {{date}}."
+    "note": "Liczy się każdy paragon odczytany ze zdjęcia lub e-maila. Licznik zacznie się od nowa {{date}}.",
+    "planFree": "Plan darmowy",
+    "planPaid": "Plan płatny",
+    "planEnds": "do {{date}}"
   },
   "install": {
     "title": "Aplikacja",
@@ -103,5 +106,32 @@
     "cancel": "Anuluj",
     "privacy": "Polityka prywatności",
     "terms": "Regulamin"
+  },
+  "security": {
+    "title": "Bezpieczeństwo logowania",
+    "label": "Logowanie dwuetapowe",
+    "on": "Włączone",
+    "off": "Wyłączone",
+    "hint": "Po haśle logowanie prosi też o kod z aplikacji uwierzytelniającej w telefonie.",
+    "turnOn": "Włącz",
+    "turnOff": "Wyłącz",
+    "adminNeedsIt": "Jako administrator potrzebujesz go, aby otworzyć strony administratora.",
+    "setupTitle": "Konfiguracja logowania dwuetapowego",
+    "step1": "Zainstaluj aplikację uwierzytelniającą (Google Authenticator, Microsoft Authenticator, 1Password…).",
+    "step2": "Zeskanuj nią ten kod QR.",
+    "step3": "Wpisz 6-cyfrowy kod, który pokazuje.",
+    "qrAlt": "Kod QR dla aplikacji uwierzytelniającej",
+    "manual": "Nie możesz zeskanować? Wpisz ten klucz ręcznie:",
+    "code": "Kod z aplikacji",
+    "cancel": "Anuluj",
+    "confirm": "Włącz",
+    "codesTitle": "Zapisz kody odzyskiwania",
+    "codesBody": "Każdy kod raz pozwala się zalogować, jeśli zgubisz telefon. Są pokazane tylko teraz: przechowuj je w bezpiecznym miejscu.",
+    "copy": "Kopiuj",
+    "saved": "Zapisałem/am je",
+    "offTitle": "Wyłączyć logowanie dwuetapowe?",
+    "offBody": "Logowanie znów będzie prosić tylko o hasło.",
+    "password": "Hasło",
+    "codeOrRecovery": "Kod z aplikacji lub kod odzyskiwania"
   }
 }

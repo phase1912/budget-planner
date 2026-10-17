@@ -26,3 +26,8 @@ class RefreshToken(Model):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     is_used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # The session was opened with a second factor (F18.6.1); refreshing it keeps that, so
+    # an admin is not asked again every few hours.
+    second_factor: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", nullable=False
+    )

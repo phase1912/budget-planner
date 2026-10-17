@@ -9,6 +9,7 @@ from app.core.config import Settings
 from app.domain.quota import ReceiptQuota, month_start, next_month_start, start_of
 from app.models.user import User
 from app.repository.usage import UsageRepository
+from app.services.plans import PlanService
 
 
 def is_admin(user: User, settings: Settings) -> bool:
@@ -21,19 +22,34 @@ def is_admin(user: User, settings: Settings) -> bool:
     return user.role == "admin" or user.email.lower() in admins
 
 
+def is_super_admin(user: User, settings: Settings) -> bool:
+    """A super admin: an email the deployment lists (F18.6.1). Only they appoint admins,
+    and no one can make an account one through the service."""
+    return user.email.lower() in {email.lower() for email in settings.admin_emails}
+
+
 class QuotaService:
     """Monthly receipt reads per account, and a daily ceiling for the whole service."""
 
     def __init__(self, session: AsyncSession, settings: Settings) -> None:
         self.usage = UsageRepository(session)
+        self.plans = PlanService(session, settings)
         self.settings = settings
 
     async def quota_for(self, user: User, now: datetime) -> ReceiptQuota:
-        """The account's reads this calendar month (UTC) against its limit."""
+        """The account's reads this calendar month (UTC) against its plan's limit (F18.4)."""
         today = now.date()
         used = await self.usage.receipts_read_since(start_of(month_start(today)), user_id=user.id)
-        limit = None if is_admin(user, self.settings) else self.settings.monthly_receipt_quota
-        return ReceiptQuota(limit=limit, used=used, resets_on=next_month_start(today))
+        plan, terms, ends_on = await self.plans.plan_of(user, now)
+        limit = None if is_admin(user, self.settings) else terms.monthly_receipts
+        return ReceiptQuota(
+            limit=limit,
+            used=used,
+            resets_on=next_month_start(today),
+            plan=plan.value,
+            plan_ends_on=ends_on,
+            ad_free=terms.ad_free or is_admin(user, self.settings),
+        )
 
     async def ensure_can_read(self, user: User, receipts: int, now: datetime) -> None:
         """Refuse, before any model call, reads past the account's quota or the service's.
