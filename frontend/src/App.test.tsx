@@ -7,6 +7,7 @@ vi.mock("@/stores/StoreContext", () => ({
   useStores: () => ({
     serverStore: { isWaking: false, wake: () => undefined },
     accountStore: { mustConfirm: false, state: { isLoading: false } },
+    analyticsStore: { countView: () => undefined },
     authStore: {
       isAuthenticated: false,
     },

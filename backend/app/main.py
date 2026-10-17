@@ -6,9 +6,10 @@ routers, or later middleware, are added.
 """
 
 import asyncio
+import logging
 from collections.abc import AsyncGenerator, Awaitable
 from contextlib import asynccontextmanager, suppress
-from datetime import date
+from datetime import UTC, date, datetime
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,13 +21,19 @@ from app.api.errors import register_exception_handlers
 from app.api.rate_limit import limiter
 from app.core.config import get_settings
 from app.db.session import get_session_factory
+from app.services.activity import ActivityService
 from app.services.job_recovery import fail_orphaned_upload_jobs
 from app.services.proactive_advice import prepare_advice_for_everyone, run_every
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Clear upload jobs the previous process left mid-flight, then serve.
+    """Clear upload jobs the previous process left mid-flight, prune old activity, then serve.
+
+    Instances start often — the service scales to zero — so pruning at start keeps the
+    activity log within its 12 months (ADR-0020) without a scheduler of its own.
 
     While serving, the proactive advice pass (BRD F7) runs on its schedule, and
     stops with the app.
@@ -34,12 +41,23 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     session_factory = get_session_factory()
     async with session_factory() as session:
         await fail_orphaned_upload_jobs(session)
+    await _prune_activity()
     schedule = _start_proactive_advice()
     yield
     if schedule is not None:
         schedule.cancel()
         with suppress(asyncio.CancelledError):
             await schedule
+
+
+async def _prune_activity() -> None:
+    """Drop activity past its 12 months (ADR-0020); housekeeping that never stops a start."""
+    try:
+        async with get_session_factory()() as session:
+            await ActivityService(session).prune(datetime.now(UTC))
+            await session.commit()
+    except Exception:
+        logger.exception("Old activity was not pruned at start")
 
 
 def _start_proactive_advice() -> "asyncio.Task[None] | None":

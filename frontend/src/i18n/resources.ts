@@ -1,3 +1,4 @@
+import enAdmin from "@/locales/en/admin.json";
 import enAuth from "@/locales/en/auth.json";
 import enCategories from "@/locales/en/categories.json";
 import enCommon from "@/locales/en/common.json";
@@ -15,6 +16,7 @@ import enReceipts from "@/locales/en/receipts.json";
 import enStatistics from "@/locales/en/statistics.json";
 import enTrips from "@/locales/en/trips.json";
 import enUpload from "@/locales/en/upload.json";
+import plAdmin from "@/locales/pl/admin.json";
 import plAuth from "@/locales/pl/auth.json";
 import plCategories from "@/locales/pl/categories.json";
 import plCommon from "@/locales/pl/common.json";
@@ -32,6 +34,7 @@ import plReceipts from "@/locales/pl/receipts.json";
 import plStatistics from "@/locales/pl/statistics.json";
 import plTrips from "@/locales/pl/trips.json";
 import plUpload from "@/locales/pl/upload.json";
+import ukAdmin from "@/locales/uk/admin.json";
 import ukAuth from "@/locales/uk/auth.json";
 import ukCategories from "@/locales/uk/categories.json";
 import ukCommon from "@/locales/uk/common.json";
@@ -56,6 +59,7 @@ import ukUpload from "@/locales/uk/upload.json";
  * Ukrainian or Polish lacks one of them. Generated from the files in src/locales/en.
  */
 export const en = {
+  admin: enAdmin,
   auth: enAuth,
   categories: enCategories,
   common: enCommon,
@@ -78,6 +82,7 @@ export const en = {
 export const resources = {
   en,
   uk: {
+    admin: ukAdmin,
     auth: ukAuth,
     categories: ukCategories,
     common: ukCommon,
@@ -97,6 +102,7 @@ export const resources = {
     upload: ukUpload,
   },
   pl: {
+    admin: plAdmin,
     auth: plAuth,
     categories: plCategories,
     common: plCommon,

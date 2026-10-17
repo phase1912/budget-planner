@@ -23,7 +23,8 @@
     "logOut": "Вийти",
     "signIn": "Увійти",
     "createAccount": "Створити акаунт",
-    "help": "Допомога"
+    "help": "Допомога",
+    "admin": "Адмінка"
   },
   "language": {
     "label": "Мова",

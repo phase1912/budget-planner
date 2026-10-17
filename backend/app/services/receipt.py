@@ -16,6 +16,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from app.adapters.photo_ingestion import PhotoIngestionAdapter
 from app.core.config import get_settings
 from app.db.session import get_session_factory
+from app.domain.activity import ActivityKind
 from app.domain.categories import (
     UNCATEGORIZED,
     confident_category,
@@ -72,6 +73,7 @@ from app.schemas.receipt import (
     UpdateReceiptRequest,
     UploadJobStatusResponse,
 )
+from app.services.activity import ActivityService
 
 logger = logging.getLogger(__name__)
 
@@ -352,6 +354,7 @@ class ReceiptService:
                 source_reference=source_reference,
                 possible_duplicate_of_id=likely.id if likely else None,
             )
+            ActivityService(session).record(user.id, ActivityKind.RECEIPT_STORED)
             await session.commit()
 
     async def preview_conversion(

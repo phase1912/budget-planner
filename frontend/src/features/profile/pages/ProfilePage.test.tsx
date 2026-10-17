@@ -19,6 +19,7 @@ describe("ProfilePage", () => {
       budget_limit: "1000",
       forwarding_address: "receipts-test@example.com",
       email_confirmed: true,
+      is_admin: false,
     };
 
     // Stub api client on profileStore

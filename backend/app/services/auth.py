@@ -14,6 +14,7 @@ from app.core.security import (
     get_password_hash,
     verify_password,
 )
+from app.domain.activity import ActivityKind
 from app.domain.passwords import password_problems
 from app.domain.terms import TERMS_VERSION
 from app.models.refresh_token import RefreshToken
@@ -22,6 +23,7 @@ from app.repository.user import UserRepository
 from app.schemas.auth import LoginRequest, RefreshRequest, RegisterRequest
 from app.schemas.user import UserResponse
 from app.services.account import EmailAddressGuard
+from app.services.activity import ActivityService
 
 
 class AuthService:
@@ -97,6 +99,7 @@ class AuthService:
                 "Registration failed. Please check your details and try again."
             ) from err
 
+        ActivityService(self.session).record(user.id, ActivityKind.SIGNED_UP)
         access_token, refresh_token = await self._create_session(user.id)
         return UserResponse.model_validate(user), access_token, refresh_token
 
@@ -114,6 +117,7 @@ class AuthService:
                 "Invalid email or password.", code=ProblemCode.INVALID_CREDENTIALS
             )
 
+        ActivityService(self.session).record(user.id, ActivityKind.SIGNED_IN)
         access_token, refresh_token = await self._create_session(user.id)
         return UserResponse.model_validate(user), access_token, refresh_token
 

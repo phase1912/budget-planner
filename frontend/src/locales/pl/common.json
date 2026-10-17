@@ -23,7 +23,8 @@
     "logOut": "Wyloguj",
     "signIn": "Zaloguj się",
     "createAccount": "Załóż konto",
-    "help": "Pomoc"
+    "help": "Pomoc",
+    "admin": "Panel administratora"
   },
   "language": {
     "label": "Język",

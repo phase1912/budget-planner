@@ -455,6 +455,13 @@ Rules that must hold at all times. Each is a candidate for a test.
     photo is gone. A trip's settlement after that is its summary without the photo pages,
     the receipt marked "photo removed after 90 days". A photo is kept as a JPEG of at most
     2000 px once it has been read (`app/domain/retention.py`).
+20g. The service's own analytics records a signed-in user's actions — signing up,
+    confirming, signing in, a day of use, uploading and storing a receipt, exporting —
+    against the account, with the time and nothing more, for 12 months (F17.3.1); visits to
+    the public pages are only counted per day, page and source, never with anything that
+    identifies the visitor (F17.3.2). A visit is the first public page of a page load, and
+    its source is where that page was reached from; a signed-in reader is not a visitor.
+    Only admins read the totals, never one user's data, and admins are in none of them.
 21. An OIDC identity links to an existing account only when the provider reports a
     verified email matching it; an unverified email never links automatically (G10, G11).
 

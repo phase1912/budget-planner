@@ -70,6 +70,7 @@ describe("HouseholdCard", () => {
       budget_limit: null,
       forwarding_address: "x@y",
       email_confirmed: true,
+      is_admin: false,
     };
   });
 

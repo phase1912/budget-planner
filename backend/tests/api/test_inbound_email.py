@@ -266,6 +266,7 @@ async def test_a_regenerated_address_stops_the_old_one_working(db_session: Async
     owner = await UserFactory.create_async(email="shopper@example.com")
     old = _address(owner)
     owner.forwarding_token = "fedcba9876543210"
+    owner.role = "user"
     await db_session.flush()
 
     response = await _deliver(db_session, old, _message("shopper@example.com", html="<p>x</p>"))

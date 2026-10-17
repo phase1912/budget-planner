@@ -24,6 +24,7 @@ from app.core.security import (
     read_link_token,
     verify_password,
 )
+from app.domain.activity import ActivityKind
 from app.domain.email_addresses import disposable_domains, domain_of, is_disposable
 from app.domain.letters import LetterKind, write_letter
 from app.domain.passwords import password_problems
@@ -32,6 +33,7 @@ from app.models.user import User
 from app.ports.email import Letter
 from app.ports.mail_domains import MailDomainResolverPort
 from app.repository.user import UserRepository
+from app.services.activity import ActivityService
 
 CONFIRM_LINK_LIFETIME = timedelta(hours=24)
 RESET_LINK_LIFETIME = timedelta(hours=1)
@@ -122,6 +124,7 @@ class AccountService:
             raise InvalidLinkError("This link was sent to an address the account no longer uses.")
         if user.email_confirmed_at is None:
             user.email_confirmed_at = datetime.now(UTC)
+            ActivityService(self.session).record(user.id, ActivityKind.EMAIL_CONFIRMED)
             await self.session.flush()
         return user
 

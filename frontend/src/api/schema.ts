@@ -1727,6 +1727,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analytics/views": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Count View
+         * @description Count one view of a public page (F17.3.2); a crawler or another path is not counted.
+         *
+         *     Nothing about the visitor is kept: not the IP, not the full referrer — only the page,
+         *     the referring domain or campaign, and the day. Always 204, so it tells a caller nothing.
+         */
+        post: operations["count_view_api_v1_analytics_views_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analytics/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Usage Report
+         * @description The admin dashboard's figures for a period (F17.3.3); 403 for anyone but an admin.
+         */
+        get: operations["usage_report_api_v1_analytics_report_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2076,6 +2119,16 @@ export interface components {
          */
         ContactTopic: "question" | "problem" | "idea" | "data";
         /**
+         * Count
+         * @description A name and how many.
+         */
+        Count: {
+            /** Name */
+            name: string;
+            /** Count */
+            count: number;
+        };
+        /**
          * CurrencyTotal
          * @description What a trip's read receipts paid in one currency come to, as printed.
          */
@@ -2084,6 +2137,24 @@ export interface components {
             currency: string;
             /** Total */
             total: string;
+        };
+        /** DayFiguresRead */
+        DayFiguresRead: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Visits */
+            visits: number;
+            /** Page Views */
+            page_views: number;
+            /** Sign Ups */
+            sign_ups: number;
+            /** Confirmations */
+            confirmations: number;
+            /** Receipts Read */
+            receipts_read: number;
         };
         /**
          * DayTotal
@@ -2872,6 +2943,23 @@ export interface components {
             limit_percent?: number | null;
             /** Limit Remaining */
             limit_remaining?: string | null;
+        };
+        /**
+         * PageViewRequest
+         * @description One view of a public page: which, and from where — never who (F17.3.2).
+         */
+        PageViewRequest: {
+            /** Page */
+            page: string;
+            /** Referrer */
+            referrer?: string | null;
+            /** Utm Source */
+            utm_source?: string | null;
+            /**
+             * Entry
+             * @default false
+             */
+            entry: boolean;
         };
         /**
          * PaginatedReceiptsResponse
@@ -4060,6 +4148,53 @@ export interface components {
             job_id: string;
         };
         /**
+         * UsageReportRead
+         * @description The admin dashboard's figures for a period (F17.3.3): counts only, never a user.
+         *
+         *     A visit is the first public page of a page load; `page_views` counts every opening.
+         *     `active_week` and `active_month` are users active in the 7 and 30 days up to the
+         *     period's end; `returning` those active in its last week and the week before. Admins
+         *     are left out of every user figure.
+         */
+        UsageReportRead: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Visits */
+            visits: number;
+            /** Page Views */
+            page_views: number;
+            /** Views By Page */
+            views_by_page: components["schemas"]["Count"][];
+            /** Visits By Source */
+            visits_by_source: components["schemas"]["Count"][];
+            /** Sign Ups */
+            sign_ups: number;
+            /** Confirmed */
+            confirmed: number;
+            /** With A Receipt */
+            with_a_receipt: number;
+            /** Uploads */
+            uploads: number;
+            /** Receipts Read */
+            receipts_read: number;
+            /** Active Week */
+            active_week: number;
+            /** Active Month */
+            active_month: number;
+            /** Returning */
+            returning: number;
+            /** Days */
+            days: components["schemas"]["DayFiguresRead"][];
+        };
+        /**
          * UserResponse
          * @description Public representation of a user (F1.1).
          */
@@ -4089,6 +4224,11 @@ export interface components {
              * @default false
              */
             email_confirmed: boolean;
+            /**
+             * Is Admin
+             * @description Whether the account sees the admin pages (F17.3.3): by role, or a listed email.
+             */
+            readonly is_admin: boolean;
             /**
              * Forwarding Address
              * @description Where the user forwards e-receipts (F11.2); only ever shown to its owner.
@@ -7242,6 +7382,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    count_view_api_v1_analytics_views_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PageViewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    usage_report_api_v1_analytics_report_get: {
+        parameters: {
+            query: {
+                token?: string | null;
+                /** @description First day of the period, included */
+                start: string;
+                /** @description Last day of the period, included */
+                end: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageReportRead"];
                 };
             };
             /** @description Validation Error */

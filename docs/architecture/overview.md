@@ -73,6 +73,12 @@ hand: deleting an account deletes the user row and every table cascades from it
 `StoragePort.delete_prefix`; "download everything" is an export job of kind `account`
 (`app/services/data_export.py`) that writes every row of every table with a `user_id`
 column, so a table added later is exported and deleted without anyone remembering to.
+The service measures its own use rather than through a third party (F17.3):
+`ActivityService` writes an `activity_events` row with the request's other changes,
+public pages report a view to `/api/v1/analytics/views` (counted, not stored per
+visitor), and `UsageReportService` builds the admin dashboard from those and from the
+users, upload and receipt tables. Old activity is pruned when an instance starts.
+
 Retention is the bucket's: lifecycle rules in `infra/terraform/storage.tf` delete photos
 after 90 days and exports after 7; `app/domain/retention.py` only tells the screens when.
 

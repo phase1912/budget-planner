@@ -16,12 +16,14 @@ from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import NotFoundError
+from app.domain.activity import ActivityKind
 from app.domain.trips import ExpenseKind
 from app.models.receipt import Receipt, ReceiptChannel
 from app.models.user import User
 from app.ports.exchange_rates import ExchangeRatePort
 from app.repository.category import CategoryRepository
 from app.repository.receipt import ReceiptRepository
+from app.services.activity import ActivityService
 from app.services.receipt import ReceiptService
 from app.services.trip import TripService
 
@@ -83,6 +85,7 @@ async def record_expense(
         parser_version="manual",
         channel=ReceiptChannel.MANUAL,
     )
+    ActivityService(session).record(user.id, ActivityKind.RECEIPT_STORED)
     for item in receipt.line_items:
         item.is_category_manual = True
     receipt.expense_kind_chosen = expense.kind

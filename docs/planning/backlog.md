@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-23 epics · 147 features · 324 tasks written so far.
+23 epics · 148 features · 328 tasks written so far.
 
 20 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -27,7 +27,7 @@
 | E15 | Receipt Accuracy & Trust | — | 4 | yes | 2 | Diploma |
 | E16 | Personal Price History | — | 4 | yes | 2 | Diploma |
 | E17 | Landing, Search and Analytics | — | 10 | yes | 2 | Diploma |
-| E18 | Subscriptions and Payments | — | 5 | yes | 2 | Out of scope |
+| E18 | Subscriptions and Payments | — | 6 | yes | 2 | Out of scope |
 | E19 | Advertising | — | 4 | yes | 2 | Diploma |
 | E20 | Trips | — | 5 | yes | 2 | Diploma |
 | E21 | Voice and Chat Assistant | — | 6 | yes | 2 | Diploma |
@@ -1332,12 +1332,13 @@ A visitor learns in one screen what the service does — receipts read from a ph
 
 *Requirements: —* · *Blocked by: F17.2, F17.8, F17.9*
 
-The author can see whether the service has an audience: visitors, where they come from and which pages they read, measured without cookies so no consent banner is needed; and from the service's own data, sign-ups, active users by week and month, who returns, and receipts read — counted, never exposing one user's data. Free tools only.
+The author can see whether the service has an audience, from analytics of its own rather than a third party's: visitors to the public pages and where they come from, counted without cookies or any identifier, so no consent is needed and no other origin's script loads (F17.7.2); and for signed-in users, a record of what they do — signing up, confirming the address, signing in, uploading and reading receipts, exporting — kept 12 months for running and supporting the service (legitimate interest, art. 6(1)(f)), never the content of a receipt. Read on a dashboard for admins: sign-ups, confirmations, active users by week and month, who returns, the path from visit to first receipt.
 
-**Demonstrated by:** Open the analytics dashboard and read last week's visitors by source; open the admin metrics page and read 3 sign-ups, 2 users active this week, 1 returning from last week, 14 receipts read.
+**Demonstrated by:** Open the admin dashboard and read last week's visits to the landing page by source, 3 sign-ups of which 2 confirmed, 2 users active this week, 1 returning from last week, 14 receipts uploaded and 12 read.
 
-- **F17.3.1** Cookieless visitor analytics — Umami (cloud free tier in the EU, self-hosting kept possible) on the public pages and the app, needing no consent: nothing stored on the device, no IP kept (a hash salted daily), no lasting fingerprint, the data used for the service's own statistics only; page views and the visit-to-sign-up path as events; the choice and these conditions in an ADR and ADR-0020, the privacy policy (F17.7) stating it, and the CI check of F17.7.2 allowing its one script by name.
-- **F17.3.2** Usage metrics for the admin — An admin-only endpoint and page with sign-ups per day, weekly and monthly active users, returning users and receipts read, as aggregate counts only; refused to anyone but an admin, with a test. Checked at 375, 768 and 1280 px.
+- **F17.3.1** What signed-in users do — An activity table — user, event, when, and nothing more — written for signing up, confirming the address, signing in, uploading a receipt, a receipt read and an export; owned by the user, so the full export (F17.9.2) carries it and account deletion removes it; events older than 12 months pruned daily; ADR-0020 and the privacy policy saying what is recorded, why and for how long.
+- **F17.3.2** Visits to the public pages without an identifier — The public pages tell the API "a view of this page, from this source" (referrer domain, utm_source) — no IP kept, no cookie, nothing stored on the device — counted per day, page and source; rate-limited, bots by user agent left out; a test that nothing identifying a visitor is stored, and lint:privacy still passing.
+- **F17.3.3** Metrics dashboard for admins — An admin-only endpoint and page: visits by page and source, sign-ups and confirmations per day, weekly and monthly active users, returning users, receipts uploaded and read, and the path from visit to first receipt, over a chosen period; refused to anyone but an admin, with a test. Checked at 375, 768 and 1280 px.
 
 ### F17.4 — Interactive demo on sample data
 
@@ -1426,7 +1427,7 @@ A user with a question finds the answer without leaving the product, and when th
 
 **BRD sections:** — · **Phase:** 2 · **Scope:** Out of scope
 
-A free account reads ten receipts a month (and, once E19 brings them, sees ads). Paying raises the limit, and removes ads when there are any, priced from what a receipt read actually costs, so the service covers its model calls. The author sells through a Polish sole-proprietorship (JDG); how that may lawfully take card payments for a subscription — VAT on EU consumers, invoices and receipts, consumer withdrawal rights, the terms — is investigated before any code, and the payment provider is chosen from it. Payments run in the provider's test mode until the legal checklist is closed. Out of the diploma's scope while traffic is unproven: it needs paid services and legal work the author will not spend on before there are users.
+Payments stay out of the diploma's scope, but plans (F18.2), what a plan gives (F18.4) and the admin console that grants them (F18.6) are in it. A free account reads ten receipts a month (and, once E19 brings them, sees ads). Paying raises the limit, and removes ads when there are any, priced from what a receipt read actually costs, so the service covers its model calls. The author sells through a Polish sole-proprietorship (JDG); how that may lawfully take card payments for a subscription — VAT on EU consumers, invoices and receipts, consumer withdrawal rights, the terms — is investigated before any code, and the payment provider is chosen from it. Payments run in the provider's test mode until the legal checklist is closed. Out of the diploma's scope while traffic is unproven: it needs paid services and legal work the author will not spend on before there are users.
 
 ### F18.1 — Selling a subscription as a Polish JDG
 
@@ -1441,14 +1442,14 @@ What a JDG must have and do to sell a monthly subscription to consumers in Polan
 
 ### F18.2 — Plans and prices
 
-*Requirements: —* · *Blocked by: F10.6*
+*Requirements: —* · *Blocked by: F10.6* · *Scope: Diploma, unlike its epic*
 
 Plans priced from what a receipt read costs: the free plan keeps its limit (and the ads E19 may bring); a paid plan raises the limit and is ad-free; a larger one raises it further. The figures — cost per read, limits, prices, margin — are worked out and recorded, and the plans live in configuration, not code.
 
 **Demonstrated by:** Read the pricing ADR: cost per read from the model's measured tokens, three plans with limits and prices, and the margin at each.
 
 - **F18.2.1** Cost per read and the plans — Measure tokens per receipt read and per advice call, cost them at the model's prices and the hosting costs, and set the plans' limits and prices in an ADR.
-- **F18.2.2** Plans in configuration — Plans with their monthly receipt limit and ad-free flag in settings, replacing the single free limit; the free plan unchanged for existing accounts.
+- **F18.2.2** Plans in configuration — Plans with their monthly receipt limit and ad-free flag in settings, replacing the single free limit: free (10 reads a month) and a paid plan (200), more added by configuration; the free plan unchanged for existing accounts.
 
 ### F18.3 — Paying for a subscription
 
@@ -1463,14 +1464,14 @@ A user subscribes, changes plan or cancels through the provider's hosted checkou
 
 ### F18.4 — What a plan gives
 
-*Requirements: —* · *Blocked by: F18.3*
+*Requirements: —* · *Blocked by: F18.2* · *Scope: Diploma, unlike its epic*
 
-The plan sets the month's receipt limit and whether ads may show (E19), from the subscription state; a cancelled plan lasts until its period ends, then the free plan applies.
+The plan sets the month's receipt limit and whether ads may show (E19). Until payments exist (F18.3) a paid plan is one an admin granted for a time (F18.6); then a subscription gives it the same way. A plan that ends — a grant past its date, a cancelled subscription past its period — leaves the free plan.
 
-**Demonstrated by:** On the paid plan, the profile shows 30 receipts a month; after the period of a cancelled plan ends, 10 again.
+**Demonstrated by:** Granted the paid plan for a month, the profile shows 200 receipts a month until the grant's end date; the day after, 10 again.
 
 - **F18.4.1** Limits and ads from the plan — The receipt quota (F10.6) and an ad-free flag on the user read from the active plan, falling back to free at period end.
-- **F18.4.2** Plan on the profile — The current plan, its limit, renewal or end date and the portal link on Profile. Checked at 375, 768 and 1280 px.
+- **F18.4.2** Plan on the profile — The current plan, its limit and its end date on Profile, and the provider's portal link once payments exist (F18.3). Checked at 375, 768 and 1280 px.
 
 ### F18.5 — Pricing page
 
@@ -1481,6 +1482,18 @@ A public page comparing the plans in each language, from the same configuration 
 **Demonstrated by:** Open "Pricing" from the landing page on a phone: three plans side by side as stacked cards, the current plan marked when signed in.
 
 - **F18.5.1** Plans comparison page — Public, prerendered pricing page per language from the plans endpoint, with calls to action by state. Checked at 375, 768 and 1280 px.
+
+### F18.6 — Admin console
+
+*Requirements: N2* · *Blocked by: F17.3, F18.2, F17.8* · *Scope: Diploma, unlike its epic*
+
+Running the service without touching the database: super admins (the author and his wife, named in configuration) appoint and remove admins, and only they can; every admin signs in with a second factor, which any user may also turn on for their own account; admins find a user by address and see their account — whether confirmed, when they signed up and were last active, the month's reads, the plan and until when, recent activity — never their receipts (N2); and act for them: confirm the address, send the confirmation or a password reset link, grant a paid plan for a time or take it back. Every admin action is recorded, who did what to whom.
+
+**Demonstrated by:** Sign in as a super admin with the authenticator code, make a user an admin, grant another the paid plan until next month and see it on their profile; read both actions in the admin log.
+
+- **F18.6.1** Roles and two-factor sign-in — Super admins from configuration (admin_emails), admins as a role stored on the user, granted and removed only by a super admin; a TOTP second factor (authenticator app, set up by QR code, with 10 single-use recovery codes) that any user may turn on in Preferences and that every admin must have — an admin without it is asked to set it up before any admin page opens — switched off by a setting for local work; a letter to the admin on each admin sign-in; tests that an admin cannot appoint anyone and that a password alone never opens an admin session. Checked at 375, 768 and 1280 px.
+- **F18.6.2** Users and support actions — The users list with search by address and filters (confirmed, plan, active), the user's card with account facts, usage and recent activity (F17.3.1) but nothing of their receipts, and the actions: confirm the address, resend the confirmation, send a password reset link (F17.8.3). Checked at 375, 768 and 1280 px.
+- **F18.6.3** Granted plans and the admin log — Plan grants — user, plan, from, until, who granted, why — made, extended and taken back from the user's card, the active one setting the plan (F18.4); an admin log of every admin action, read by super admins; ADR-0020 listing the admin log. Checked at 375, 768 and 1280 px.
 
 ---
 
