@@ -237,6 +237,44 @@ describe("UploadStore surfaces what the server refused", () => {
     expect(store.receiptsToStore).toBe(2);
   });
 
+  it("skipping the only receipt as a duplicate goes back to an empty first step", async () => {
+    const POST = vi.fn().mockResolvedValue({
+      data: {
+        extracted_data: { extractions: [{ is_skipped: true, duplicate_resolved: "skipped" }] },
+      },
+    });
+    const { store } = storeWith(POST);
+    store.jobId = "job";
+    store.lines = [[new File(["x"], "a.jpg", { type: "image/jpeg" })]];
+    store.extractedData = { extractions: [{ is_duplicate: true }] };
+    store.selectedIndices = new Set([0]);
+    store.currentStep = 2;
+
+    expect(await store.resolveDuplicate(0, "skip")).toBe(true);
+
+    expect(store.currentStep).toBe(1);
+    expect(store.extractedData).toBeNull();
+    expect(store.lines).toEqual([[]]);
+  });
+
+  it("skipping one duplicate of several keeps the others and stops offering it", async () => {
+    const POST = vi.fn().mockResolvedValue({
+      data: {
+        extracted_data: { extractions: [{ is_skipped: true, duplicate_resolved: "skipped" }, {}] },
+      },
+    });
+    const { store } = storeWith(POST);
+    store.jobId = "job";
+    store.extractedData = { extractions: [{ is_duplicate: true }, {}] };
+    store.selectedIndices = new Set([0, 1]);
+    store.currentStep = 2;
+
+    await store.resolveDuplicate(0, "skip");
+
+    expect(store.currentStep).toBe(2);
+    expect([...store.selectedIndices]).toEqual([1]);
+  });
+
   it("going back to the photos keeps them for another try", () => {
     const { store } = storeWith(vi.fn());
     const photo = new File(["x"], "pepco-1.jpg", { type: "image/jpeg" });

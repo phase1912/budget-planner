@@ -23,8 +23,6 @@
     "photos_other": "{{count}} фото",
     "size": "Разом {{size}} МБ",
     "cancel": "Скасувати",
-    "processed": "Оброблено {{done}} з {{total}}…",
-    "sending": "Надсилаємо…",
     "read": "Зчитати ці фото",
     "noReceipt": "Немає чека?",
     "moneyIn": "Прийшли гроші?",
@@ -125,8 +123,6 @@
     "itemsCount_few": "{{count}} позиції",
     "itemsCount_many": "{{count}} позицій",
     "itemsCount_other": "{{count}} позиції",
-    "linesAddUp": "позиції дають {{total}}",
-    "cannotAdd": "в однієї позиції немає ціни, тож їх не можна скласти",
     "matches": "Збігається із сумою в чеку",
     "nothingToCheck": "Немає з чим порівняти",
     "mismatch": "Позиції не збігаються із сумою в чеку",
@@ -139,7 +135,11 @@
     "store_one": "Зберегти {{count}} чек",
     "store_few": "Зберегти {{count}} чеки",
     "store_many": "Зберегти {{count}} чеків",
-    "store_other": "Зберегти {{count}} чека"
+    "store_other": "Зберегти {{count}} чека",
+    "totalsMatch": "Суми збігаються",
+    "onReceipt": "У чеку",
+    "linesSum": "Позиції разом",
+    "cannotAddShort": "в одній позиції немає ціни"
   },
   "cols": {
     "item": "Позиція",
@@ -223,5 +223,11 @@
     "income": "Розрахунковий лист або переказ",
     "incomeHint": "Гроші, що надійшли, — прочитаємо суму, файл не зберігаємо",
     "reading": "Читаємо документ…"
+  },
+  "reading": {
+    "title": "Читаємо чек",
+    "titleMany": "Читаємо чеки",
+    "hint": "Кожну позицію, її ціну й категорію",
+    "progress": "Прочитано {{done}} з {{total}}"
   }
 }

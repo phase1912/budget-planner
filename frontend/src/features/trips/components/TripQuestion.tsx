@@ -18,7 +18,7 @@ export const TripQuestion = observer(function TripQuestion({ index }: { index: n
 
   if (uploadStore.fromTrip) {
     return (
-      <p className="m-0 flex items-center gap-2 border-b border-border px-5 py-3 text-md">
+      <p className="m-0 flex items-center gap-2 rounded-card bg-surface px-4 py-3 text-md">
         <Plane size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />
         {t("question.fromTrip", { name: uploadStore.fromTrip.name })}
       </p>
@@ -36,8 +36,8 @@ export const TripQuestion = observer(function TripQuestion({ index }: { index: n
       }}
       className={
         trip.kind === "personal"
-          ? "border-b border-border px-5 py-3"
-          : "border-0 border-b border-border px-5 py-3.5"
+          ? "rounded-card bg-surface px-4 py-3"
+          : "rounded-card border-0 bg-surface px-4 py-3.5"
       }
     />
   );

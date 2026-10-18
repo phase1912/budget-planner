@@ -462,6 +462,9 @@ export class UploadStore {
   /**
    * Submits the user's decision (store or skip) for a flagged duplicate receipt.
    * Resolves the extraction server-side so it can proceed or be discarded.
+   *
+   * A skipped receipt leaves the selection, so it is not offered for storing; when it was
+   * the last one left to store, the upload starts over instead of showing an empty step.
    */
   async resolveDuplicate(index: number, action: "store" | "skip"): Promise<boolean> {
     if (!this.jobId) return false;
@@ -474,6 +477,9 @@ export class UploadStore {
         throw new Error(errorMessage(res.error, i18n.t("messages:upload.duplicateFailed")));
       runInAction(() => {
         this.extractedData = res.data.extracted_data ?? null;
+        if (action !== "skip") return;
+        this.selectedIndices.delete(index);
+        if (this.receiptsToStore === 0) this.startOver();
       });
       return true;
     } catch (err) {

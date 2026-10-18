@@ -23,8 +23,6 @@
     "photos_other": "{{count}} zdjęcia",
     "size": "Razem {{size}} MB",
     "cancel": "Anuluj",
-    "processed": "Przetworzono {{done}} z {{total}}…",
-    "sending": "Wysyłanie…",
     "read": "Odczytaj te zdjęcia",
     "noReceipt": "Nie masz paragonu?",
     "moneyIn": "Wpłynęły pieniądze?",
@@ -125,8 +123,6 @@
     "itemsCount_few": "{{count}} pozycje",
     "itemsCount_many": "{{count}} pozycji",
     "itemsCount_other": "{{count}} pozycji",
-    "linesAddUp": "pozycje dają {{total}}",
-    "cannotAdd": "jedna pozycja nie ma ceny, więc nie da się ich zsumować",
     "matches": "Zgadza się z sumą z paragonu",
     "nothingToCheck": "Nie ma z czym porównać",
     "mismatch": "Pozycje nie zgadzają się z sumą z paragonu",
@@ -139,7 +135,11 @@
     "store_one": "Zapisz {{count}} paragon",
     "store_few": "Zapisz {{count}} paragony",
     "store_many": "Zapisz {{count}} paragonów",
-    "store_other": "Zapisz {{count}} paragonu"
+    "store_other": "Zapisz {{count}} paragonu",
+    "totalsMatch": "Sumy się zgadzają",
+    "onReceipt": "Na paragonie",
+    "linesSum": "Pozycje razem",
+    "cannotAddShort": "jedna pozycja nie ma ceny"
   },
   "cols": {
     "item": "Pozycja",
@@ -223,5 +223,11 @@
     "income": "Pasek wypłaty lub przelew",
     "incomeHint": "Pieniądze, które wpłynęły — odczytamy kwotę, pliku nie zapisujemy",
     "reading": "Czytamy dokument…"
+  },
+  "reading": {
+    "title": "Czytamy paragon",
+    "titleMany": "Czytamy paragony",
+    "hint": "Każdą pozycję, jej cenę i kategorię",
+    "progress": "Przeczytano {{done}} z {{total}}"
   }
 }

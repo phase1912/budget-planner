@@ -11,10 +11,11 @@ import { ExtractedStep } from "../components/ExtractedStep";
 import { ResolveStep } from "../components/ResolveStep";
 import { ReceiptQuotaNote } from "../components/ReceiptQuotaNote";
 import { AddReceiptStart } from "../components/AddReceiptStart";
+import { ReadingStep } from "../components/ReadingStep";
 import { ManualExpenseDialog } from "@/features/receipts/components/ManualExpenseDialog";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { X } from "lucide-react";
+import { ArrowRight, X } from "lucide-react";
 import { Note, SegmentedControl } from "@/shared/components";
 import { IncomeDialog } from "@/features/plan/IncomeDialog";
 import { isoDay } from "@/stores/StatisticsStore";
@@ -68,6 +69,10 @@ export const UploadPage = observer(function UploadPage() {
         </Card>
       </Container>
     );
+  }
+
+  if (uploadStore.uploadState.status === "loading") {
+    return <ReadingStep />;
   }
 
   if (
@@ -322,34 +327,11 @@ export const UploadPage = observer(function UploadPage() {
                 variant="primary"
                 onClick={handleUploadClick}
                 disabled={
-                  uploadStore.isAnyLineOverLimit ||
-                  uploadStore.uploadState.status === "loading" ||
-                  !quotaStore.allows(uploadStore.lines.length)
+                  uploadStore.isAnyLineOverLimit || !quotaStore.allows(uploadStore.lines.length)
                 }
               >
-                {uploadStore.uploadState.status === "loading"
-                  ? uploadStore.totalItems > 0
-                    ? t("add.processed", {
-                        done: uploadStore.processedItems,
-                        total: uploadStore.totalItems,
-                      })
-                    : t("add.sending")
-                  : t("add.read")}
-                {uploadStore.uploadState.status !== "loading" && (
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M5 12h14" />
-                    <path d="m12 5 7 7-7 7" />
-                  </svg>
-                )}
+                {t("add.read")}
+                <ArrowRight size={16} aria-hidden="true" />
               </Button>
             </div>
           </div>
