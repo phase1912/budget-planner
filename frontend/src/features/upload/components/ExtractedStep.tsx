@@ -10,19 +10,18 @@ import { Button } from "@/shared/components/Button/Button";
 import {
   SecureImage,
   Note,
-  IconTile,
   Pill,
   TotalsGapNote,
   DoubtfulLinesNote,
   DoubtfulMark,
   CorrectedName,
 } from "@/shared/components";
-import type { PillProps } from "@/shared/components";
-import { Card, CardHeader, CardFooter } from "@/shared/components/Card/Card";
-import { dateFormat } from "@/i18n/format";
+import { dateFormat, formatAmount } from "@/i18n/format";
 import { Trans, useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 import { categoryName } from "@/shared/categoryName";
+import { categoryColor } from "@/shared/categoryColor";
+import { ArrowRight, Check, ChevronLeft, Layers, Pencil, TriangleAlert } from "lucide-react";
 import { TripQuestion } from "@/features/trips/components/TripQuestion";
 import { useNavigate } from "react-router-dom";
 
@@ -44,18 +43,6 @@ interface ExtractedLineItem {
   category_is_low_confidence?: boolean;
   /** Taken off by an "OPUST" line printed beneath this one, already netted from the total. */
   discount?: string | null;
-}
-
-/**
- * Pick the chip colour for an item's category.
- *
- * Mirrors `receipt-detail.html`: a confident category reads as settled, one the
- * agent doubted is a warning, and an item with no category at all is neutral
- * rather than alarming — it is waiting, not wrong.
- */
-function categoryTone(item: ExtractedLineItem): PillProps["tone"] {
-  if (item.category_is_low_confidence) return "warning";
-  return item.category_name ? "success" : "default";
 }
 
 interface ExtractedData {
@@ -147,57 +134,30 @@ export const ExtractedStep = observer(function ExtractedStep() {
   if (!extractions || extractions.length === 0) return null;
 
   const totalItems = extractions.reduce((acc, data) => acc + (data.line_items?.length ?? 0), 0);
+  const selectable =
+    extractions.filter((e) => !e.is_skipped && !e.error && !e.already_stored).length > 1;
 
   return (
     <Container size="narrow" gutter={false} className="py-4 pb-8 md:py-9">
-      <Stack className="gap-6">
-        <div className="flex items-center">
+      <Stack className="gap-4 md:gap-5">
+        <div className="flex items-start gap-3">
           <button
             type="button"
-            className="inline-flex items-center gap-2.5 appearance-none bg-transparent border-none p-0 text-left cursor-pointer hover:opacity-80 transition-opacity"
             onClick={handleBack}
+            aria-label={t("read.back")}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-pill bg-surface text-foreground"
           >
-            <span className="inline-flex items-center justify-center w-[28px] h-[28px] border border-transparent rounded-pill bg-primary text-primary-foreground text-[13px] font-bold">
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M20 6 9 17l-5-5" />
-              </svg>
-            </span>
-            <span className="text-[14px] font-semibold text-foreground">{t("steps.photos")}</span>
+            <ChevronLeft size={20} aria-hidden="true" />
           </button>
-          <span className="grow h-[2px] rounded-[1px] bg-primary mx-4"></span>
-          <span className="inline-flex items-center gap-2.5">
-            <span className="inline-flex items-center justify-center w-[28px] h-[28px] border border-transparent rounded-pill bg-primary text-primary-foreground text-[13px] font-bold">
-              2
-            </span>
-            <span className="text-[14px] font-semibold text-foreground">{t("steps.read")}</span>
-          </span>
-          <span className="grow h-[2px] rounded-[1px] bg-border mx-4"></span>
-          <span className="inline-flex items-center gap-2.5">
-            <span className="inline-flex items-center justify-center w-[28px] h-[28px] border border-border rounded-pill bg-background text-border-strong text-[13px] font-bold">
-              3
-            </span>
-            <span className="text-[14px] font-semibold text-border-strong">
-              {t("steps.resolve")}
-            </span>
-          </span>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <h1 className="m-0 text-3xl font-extrabold tracking-[-0.02em]">{t("read.title")}</h1>
-          <p className="m-0 text-[15px] text-muted-foreground mt-1">
-            {t("read.summaryReceipts", { count: uploadStore.lines.length })},{" "}
-            {t("read.summaryItems", { count: totalItems })},{" "}
-            {t("read.summaryPhotos", { count: uploadStore.totalFilesCount })}. {t("read.notStored")}
-          </p>
+          <div className="flex min-w-0 flex-col gap-1">
+            <h1 className="m-0 text-3xl font-extrabold tracking-[-0.02em]">{t("read.title")}</h1>
+            <p className="m-0 text-base text-muted-foreground">
+              {t("read.summaryReceipts", { count: uploadStore.lines.length })},{" "}
+              {t("read.summaryItems", { count: totalItems })},{" "}
+              {t("read.summaryPhotos", { count: uploadStore.totalFilesCount })}.{" "}
+              {t("read.notStored")}
+            </p>
+          </div>
         </div>
 
         {uploadStore.conflictsCount > 0 && (
@@ -205,12 +165,10 @@ export const ExtractedStep = observer(function ExtractedStep() {
         )}
 
         {extractions.map((data, index) => {
-          const selectable =
-            extractions.filter((e) => !e.is_skipped && !e.error && !e.already_stored).length > 1;
           if (data.is_skipped) return null;
           if (data.already_stored) {
             return (
-              <Note key={index} tone="info" className="mt-4">
+              <Note key={index} tone="info">
                 {alreadyStoredText(data.already_stored, data.merchant_name)}
               </Note>
             );
@@ -240,121 +198,72 @@ export const ExtractedStep = observer(function ExtractedStep() {
 
           if (data.error) {
             return (
-              <Card key={index} flush className="mt-4 border-tone-error-border">
-                <CardHeader className="flex items-center justify-between bg-tone-error-bg">
-                  <div className="flex items-center gap-3.5">
-                    <div className="flex gap-1.5">
-                      {fileIds.slice(0, 2).map((id) => (
-                        <SecureImage
-                          key={id}
-                          fileId={id}
-                          alt={t("read.thumb")}
-                          className="w-9 h-11 object-cover rounded-md opacity-50 grayscale"
-                        />
-                      ))}
-                      {fileIds.length > 2 && (
-                        <span className="inline-flex items-center justify-center w-9 h-11 rounded-md bg-muted text-[11px] font-bold text-muted-foreground opacity-50">
-                          +{fileIds.length - 2}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-base font-bold text-tone-error-text">
-                        {t("read.failedTitle")}
-                      </span>
-                      <span className="text-[13px] text-tone-error-text opacity-90">
-                        {t("read.failedText")}
-                      </span>
-                    </div>
-                  </div>
-                </CardHeader>
-              </Card>
+              <section
+                key={index}
+                className="flex items-center gap-3.5 rounded-card bg-tone-error-bg p-4"
+              >
+                <Thumbs fileIds={fileIds} alt={t("read.thumb")} faded />
+                <span className="flex flex-col gap-1">
+                  <span className="text-base font-bold text-tone-error-text">
+                    {t("read.failedTitle")}
+                  </span>
+                  <span className="text-md text-tone-error-text opacity-90">
+                    {t("read.failedText")}
+                  </span>
+                </span>
+              </section>
             );
           }
 
           return (
-            <Card
+            <section
               key={index}
-              flush
-              className={matchesTotal === false ? "border-tone-error-border mt-4" : "mt-4"}
+              aria-label={merchantName}
+              className="flex flex-col gap-3 border-t border-border pt-4 first-of-type:border-t-0 first-of-type:pt-0"
             >
-              <CardHeader className="flex items-center justify-between">
-                <div className="flex items-center gap-3.5">
-                  <div className="flex gap-1.5">
-                    {fileIds.slice(0, 2).map((id) => (
-                      <SecureImage
-                        key={id}
-                        fileId={id}
-                        alt={t("read.thumb")}
-                        className="w-9 h-11 object-cover rounded-md"
-                      />
-                    ))}
-                    {fileIds.length > 2 && (
-                      <span className="inline-flex items-center justify-center w-9 h-11 rounded-md bg-muted text-[11px] font-bold text-muted-foreground">
-                        +{fileIds.length - 2}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-0.5">
-                    <span
-                      className={`text-base font-bold ${merchantNameLowConf ? "text-tone-warning-text" : ""}`}
-                    >
-                      {merchantName}
-                    </span>
-                    <span
-                      className={`text-[13px] ${transactionDateLowConf ? "text-tone-warning-text" : "text-muted-foreground"}`}
-                    >
-                      {transactionDate} &middot; {t("read.photos", { count: fileIds.length })}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3.5">
-                  <div className="flex flex-col items-end gap-0.5">
-                    {matchesTotal === null && (
-                      <span className="text-[11px] font-semibold text-tone-warning-text">
-                        {t("read.totalUnsure")}
-                      </span>
-                    )}
-                    {matchesTotal === false && (
-                      <span className="text-[11px] font-semibold text-tone-error-text">
-                        {t("read.totalMismatch")}
-                      </span>
-                    )}
-                    <span
-                      className={`text-lg font-bold tabular-nums ${receiptTotalLowConf ? "text-tone-warning-text" : ""}`}
-                    >
-                      {data.receipt_total
-                        ? `${data.receipt_total} ${data.currency ?? ""}`.trim()
-                        : "—"}
-                    </span>
-                  </div>
-                  <button
-                    className="inline-flex items-center justify-center w-11 h-11 md:w-8 md:h-8 rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors ml-1"
-                    aria-label={t("read.edit")}
-                    onClick={() => {
-                      uploadStore.startEditingExtraction(index);
-                    }}
+              <div className="flex items-center gap-3">
+                <span
+                  aria-hidden="true"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-tone-primary-bg text-lg font-extrabold text-primary"
+                >
+                  {merchantName.charAt(0).toUpperCase()}
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span
+                    className={`truncate text-lg font-extrabold ${merchantNameLowConf ? "text-tone-warning-text" : ""}`}
                   >
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M12 20h9" />
-                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                    </svg>
-                  </button>
-                </div>
-              </CardHeader>
+                    {merchantName}
+                  </span>
+                  <span
+                    className={`text-md ${transactionDateLowConf ? "text-tone-warning-text" : "text-muted-foreground"}`}
+                  >
+                    {transactionDate} &middot;{" "}
+                    {t("read.itemsCount", { count: deduplicatedItems.length })} &middot;{" "}
+                    {t("read.photos", { count: fileIds.length })}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-pill bg-surface text-muted-foreground"
+                  aria-label={t("read.edit")}
+                  onClick={() => {
+                    uploadStore.startEditingExtraction(index);
+                  }}
+                >
+                  <Pencil size={16} aria-hidden="true" />
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Thumbs fileIds={fileIds} alt={t("read.thumb")} />
+                {matchesTotal === true && <Pill tone="success">{t("read.totalsMatch")}</Pill>}
+                {matchesTotal === null && <Pill tone="warning">{t("read.totalUnsure")}</Pill>}
+                {matchesTotal === false && <Pill tone="error">{t("read.totalMismatch")}</Pill>}
+              </div>
 
               {/* Choosing which receipts to store only means something when there are several. */}
               {selectable && (
-                <label className="flex min-h-11 cursor-pointer items-center gap-2.5 border-b border-border px-5 py-2 text-md font-semibold text-foreground">
+                <label className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-control bg-surface px-4 py-2 text-md font-semibold text-foreground">
                   <input
                     type="checkbox"
                     checked={uploadStore.selectedIndices.has(index)}
@@ -370,7 +279,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
               {uploadStore.selectedIndices.has(index) && <TripQuestion index={index} />}
 
               {data.transaction_date_assumed && data.transaction_date && (
-                <Note tone="info" className="rounded-none border-x-0 border-t-0 px-5 py-3.5">
+                <Note tone="info">
                   <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                     <span>
                       <Trans
@@ -398,7 +307,6 @@ export const ExtractedStep = observer(function ExtractedStep() {
 
               {matchesTotal === false && data.computed_total && data.receipt_total && (
                 <TotalsGapNote
-                  className="rounded-none border-x-0 border-t-0 px-5 py-3.5"
                   linesSum={Number(data.computed_total)}
                   printedTotal={Number(data.receipt_total.replace(",", "."))}
                   busy={uploadStore.isAddingDiscount}
@@ -415,10 +323,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
               )}
 
               {isNotReceipt && (
-                <Note
-                  tone="error"
-                  className="rounded-none border-x-0 border-t-0 px-5 py-3.5 items-start"
-                >
+                <Note tone="error" className="items-start">
                   <div className="flex flex-col gap-0.5">
                     <span className="font-bold">{t("read.notReceiptTitle")}</span>
                     <span className="opacity-90">{t("read.notReceiptText")}</span>
@@ -427,29 +332,18 @@ export const ExtractedStep = observer(function ExtractedStep() {
               )}
 
               {data.is_duplicate && (
-                <div className="flex flex-col gap-3 px-5 py-4 border-b border-border bg-card">
+                <div className="flex flex-col gap-3 rounded-card bg-tone-warning-bg p-4">
                   <div className="flex items-start gap-3">
-                    <IconTile tone="warning">
-                      <svg
-                        width="17"
-                        height="17"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                        <polyline points="2 17 12 22 22 17" />
-                        <polyline points="2 12 12 17 22 12" />
-                      </svg>
-                    </IconTile>
+                    <Layers
+                      size={20}
+                      aria-hidden="true"
+                      className="mt-0.5 shrink-0 text-tone-warning-text"
+                    />
                     <div className="flex flex-col gap-1">
-                      <span className="text-[13px] font-bold text-foreground">
+                      <span className="text-base font-bold text-tone-warning-text">
                         {t("read.duplicateTitle")}
                       </span>
-                      <span className="text-[12px] leading-relaxed text-muted-foreground prose tabular-nums">
+                      <span className="text-md leading-relaxed text-tone-warning-prose tabular-nums">
                         {t("read.duplicateText", {
                           merchant: merchantName,
                           date: transactionDate,
@@ -459,11 +353,10 @@ export const ExtractedStep = observer(function ExtractedStep() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                     <Button
                       variant="secondary"
-                      size="sm"
-                      className="self-start text-[12px]"
+                      className="min-h-11"
                       onClick={() => {
                         void uploadStore.resolveDuplicate(index, "skip");
                       }}
@@ -472,8 +365,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                     </Button>
                     <Button
                       variant="primary"
-                      size="sm"
-                      className="self-start text-[12px]"
+                      className="min-h-11"
                       onClick={() => {
                         void uploadStore.resolveDuplicate(index, "store");
                       }}
@@ -485,29 +377,18 @@ export const ExtractedStep = observer(function ExtractedStep() {
               )}
 
               {data.requires_manual_review && (
-                <div className="flex flex-col gap-3 px-5 py-4 border-b border-border bg-card">
+                <div className="flex flex-col gap-3 rounded-card bg-tone-error-bg p-4">
                   <div className="flex items-start gap-3">
-                    <IconTile tone="error">
-                      <svg
-                        width="17"
-                        height="17"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
-                        <path d="M12 9v4" />
-                        <path d="M12 17h.01" />
-                      </svg>
-                    </IconTile>
+                    <TriangleAlert
+                      size={20}
+                      aria-hidden="true"
+                      className="mt-0.5 shrink-0 text-tone-error-text"
+                    />
                     <div className="flex flex-col gap-1">
-                      <span className="text-[13px] font-bold text-foreground">
+                      <span className="text-base font-bold text-tone-error-text">
                         {t("read.needsYou", { merchant: merchantName || t("read.receipt") })}
                       </span>
-                      <span className="text-[12px] leading-relaxed text-muted-foreground prose">
+                      <span className="text-md leading-relaxed text-tone-error-prose">
                         {missingFieldsMessage(data)}
                       </span>
                     </div>
@@ -523,8 +404,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
                     ) : (
                       <Button
                         variant="danger-solid"
-                        size="sm"
-                        className="self-start text-[12px]"
+                        className="min-h-11 self-stretch md:self-start"
                         onClick={() => {
                           setEnteringTotalFor(index);
                         }}
@@ -536,7 +416,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
               )}
 
               <DoubtfulLinesNote
-                className="border-b border-border px-4 py-3.5 md:px-5"
+                className="rounded-card"
                 count={doubtfulItems.length}
                 only={showingDoubtful}
                 onToggle={() => {
@@ -549,212 +429,82 @@ export const ExtractedStep = observer(function ExtractedStep() {
                 fileIds={fileIds}
                 photoAlt={t("read.thumb")}
               />
-              <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_48px_84px_92px_148px] items-center gap-3 px-5 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">
-                <span>{t("cols.item")}</span>
-                <span className="text-right">{t("cols.qty")}</span>
-                <span className="text-right">{t("cols.unit")}</span>
-                <span className="text-right">{t("cols.total")}</span>
-                <span>{t("cols.category")}</span>
-              </div>
 
-              {shownItems.map(({ item, idx }) => {
-                const itemLowConf = item.is_doubtful === true;
-                const fileIndex = item.file_id ? fileIds.indexOf(item.file_id) + 1 : 0;
-                const matchesForThisItem = (data.position_matches ?? []).filter(
-                  (m) => m.item_a_index === idx && m.result === "same",
-                );
-
-                let provenanceLabel = "";
-                if (fileIds.length > 1 && fileIndex > 0) {
-                  provenanceLabel = `P${fileIndex.toString()}`;
-                  if (matchesForThisItem.length > 0) {
-                    const otherFileIndices = [
-                      ...new Set(
-                        matchesForThisItem
-                          .map((m) => {
-                            const bItem = lineItems[m.item_b_index];
-                            return bItem?.file_id ? fileIds.indexOf(bItem.file_id) + 1 : 0;
-                          })
-                          .filter((val) => val > 0 && val !== fileIndex),
-                      ),
-                    ];
-
-                    if (otherFileIndices.length > 0) {
-                      provenanceLabel += ` & P${otherFileIndices.join(" & P")}`;
-                    }
-                  }
-                }
-                const showProvenance = !!provenanceLabel;
-
-                return (
-                  <div
+              <ul className="m-0 flex list-none flex-col overflow-hidden rounded-card bg-surface p-0">
+                {shownItems.map(({ item, idx }) => (
+                  <LineRow
                     key={idx}
-                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 px-4 py-3 md:grid-cols-[minmax(0,1fr)_48px_84px_92px_148px] md:gap-3 md:px-5 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors text-[13px]"
-                  >
-                    <div className="flex min-w-0 flex-col gap-0.5">
-                      <div className="flex items-center gap-2 overflow-hidden">
-                        {showProvenance && (
-                          <span className="shrink-0 inline-flex items-center justify-center h-4 px-1.5 rounded-sm bg-muted text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
-                            {provenanceLabel}
-                          </span>
-                        )}
-                        <span
-                          className={`font-medium truncate ${itemLowConf ? "text-tone-warning-text" : "text-foreground"}`}
-                        >
-                          {item.name}
-                        </span>
-                        {itemLowConf && <DoubtfulMark className="shrink-0" />}
-                      </div>
-                      {item.read_name && (
-                        <CorrectedName
-                          readName={item.read_name}
-                          busy={uploadStore.isUndoingCorrection}
-                          onUndo={() => void uploadStore.undoCorrection(index, idx, false)}
-                          onForget={() => void uploadStore.undoCorrection(index, idx, true)}
-                        />
-                      )}
-                    </div>
-                    <span
-                      className={`hidden md:block text-right tabular-nums ${itemLowConf ? "text-tone-warning-text" : "text-muted-foreground"}`}
-                    >
-                      {item.quantity}
-                    </span>
-                    <span
-                      className={`hidden md:block text-right tabular-nums ${itemLowConf ? "text-tone-warning-text" : "text-muted-foreground"}`}
-                    >
-                      {item.unit_price}
-                    </span>
-                    <span
-                      className={`flex flex-col items-end text-right font-semibold tabular-nums ${itemLowConf ? "text-tone-warning-text" : "text-foreground"}`}
-                    >
-                      {item.total_price}
-                      {item.discount && (
-                        <span className="text-sm font-medium text-tone-primary-text whitespace-nowrap">
-                          {t("read.discount", { amount: item.discount })}
-                        </span>
-                      )}
-                    </span>
-                    {/* A phone has no room for the columns: quantity and price go under the name. */}
-                    <span
-                      className={`md:hidden text-[12px] tabular-nums ${itemLowConf ? "text-tone-warning-text" : "text-muted-foreground"}`}
-                    >
-                      {item.quantity} × {item.unit_price}
-                    </span>
-                    <span className="justify-self-end md:justify-self-auto">
-                      <Pill
-                        size="sm"
-                        tone={categoryTone(item)}
-                        title={
-                          item.category_is_low_confidence ? t("read.lowConfidence") : undefined
-                        }
-                      >
-                        {categoryName(item.category_name ?? "Uncategorized")}
-                      </Pill>
-                    </span>
-                  </div>
-                );
-              })}
+                    item={item}
+                    provenance={provenance(data, item, idx)}
+                    onUndo={() => void uploadStore.undoCorrection(index, idx, false)}
+                    onForget={() => void uploadStore.undoCorrection(index, idx, true)}
+                    undoing={uploadStore.isUndoingCorrection}
+                  />
+                ))}
+              </ul>
 
-              <CardFooter
-                className={
-                  matchesTotal === false
-                    ? "bg-tone-error-bg border-t border-tone-error-border"
-                    : "border-t border-border"
-                }
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span className="text-[13px] text-muted-foreground tabular-nums">
-                    {t("read.itemsCount", { count: deduplicatedItems.length })} &middot;{" "}
-                    {data.computed_total
-                      ? t("read.linesAddUp", { total: data.computed_total })
-                      : t("read.cannotAdd")}
-                  </span>
-                  {matchesTotal === true && (
-                    <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary">
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M20 6 9 17l-5-5" />
-                      </svg>
-                      {t("read.matches")}
-                    </span>
-                  )}
-                  {matchesTotal === false && (
-                    <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-tone-error-text">
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
-                        <path d="M12 9v4" />
-                        <path d="M12 17h.01" />
-                      </svg>
-                      {!data.receipt_total ? t("read.nothingToCheck") : t("read.mismatch")}
-                    </span>
-                  )}
+              <dl className="m-0 flex flex-col gap-2 rounded-card bg-surface p-4">
+                <div className="flex justify-between gap-3 text-base">
+                  <dt className="text-muted-foreground">{t("read.onReceipt")}</dt>
+                  <dd
+                    className={`m-0 font-bold tabular-nums ${receiptTotalLowConf ? "text-tone-warning-text" : ""}`}
+                  >
+                    {data.receipt_total
+                      ? `${data.receipt_total} ${data.currency ?? ""}`.trim()
+                      : "—"}
+                  </dd>
                 </div>
-              </CardFooter>
-            </Card>
+                <div className="flex justify-between gap-3 text-base">
+                  <dt className="text-muted-foreground">{t("read.linesSum")}</dt>
+                  <dd className="m-0 font-bold tabular-nums">
+                    {data.computed_total
+                      ? `${formatAmount(data.computed_total)} ${data.currency ?? ""}`.trim()
+                      : t("read.cannotAddShort")}
+                  </dd>
+                </div>
+                {matchesTotal === true && (
+                  <p className="m-0 flex items-center gap-1.5 border-t border-border pt-2 text-md font-semibold text-primary">
+                    <Check size={16} aria-hidden="true" />
+                    {t("read.matches")}
+                  </p>
+                )}
+                {matchesTotal === false && (
+                  <p className="m-0 flex items-center gap-1.5 border-t border-border pt-2 text-md font-semibold text-tone-error-text">
+                    <TriangleAlert size={16} aria-hidden="true" />
+                    {!data.receipt_total ? t("read.nothingToCheck") : t("read.mismatch")}
+                  </p>
+                )}
+              </dl>
+            </section>
           );
         })}
 
         {uploadStore.unansweredTrips.length > 0 && (
-          <Note tone="warning" className="mt-4">
+          <Note tone="warning">
             {t("trips:question.unanswered", { count: uploadStore.unansweredTrips.length })}
           </Note>
         )}
 
-        <div className="flex items-center justify-between gap-4 mt-4">
-          <Button variant="ghost" onClick={handleBack}>
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="mr-2"
-            >
-              <path d="m15 18-6-6 6-6" />
-            </svg>
+        <div className="flex flex-col-reverse gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
+          <Button variant="ghost" className="min-h-11" onClick={handleBack}>
+            <ChevronLeft size={16} aria-hidden="true" className="mr-1" />
             {t("read.back")}
           </Button>
           {uploadStore.conflictsCount > 0 ? (
-            <Button variant="primary" onClick={() => (uploadStore.currentStep = 3)}>
+            <Button
+              variant="primary"
+              size="lg"
+              className="min-h-14 w-full md:w-auto"
+              onClick={() => (uploadStore.currentStep = 3)}
+            >
               {t("read.resolve", { count: uploadStore.conflictsCount })}
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="ml-2"
-              >
-                <path d="M5 12h14" />
-                <path d="m12 5 7 7-7 7" />
-              </svg>
+              <ArrowRight size={18} aria-hidden="true" className="ml-2" />
             </Button>
           ) : (
             <Button
               variant="primary"
+              size="lg"
+              className="min-h-14 w-full md:w-auto"
               disabled={
                 uploadStore.selectedIndices.size === 0 ||
                 uploadStore.isCommitting ||
@@ -770,20 +520,6 @@ export const ExtractedStep = observer(function ExtractedStep() {
               {uploadStore.selectedIndices.size === 0
                 ? t("read.nothingToStore")
                 : t("read.store", { count: uploadStore.selectedIndices.size })}
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="ml-2"
-              >
-                <path d="M5 12h14" />
-                <path d="m12 5 7 7-7 7" />
-              </svg>
             </Button>
           )}
         </div>
@@ -793,6 +529,138 @@ export const ExtractedStep = observer(function ExtractedStep() {
     </Container>
   );
 });
+
+/** Up to two photo thumbnails of a receipt, and how many more there are. */
+function Thumbs({
+  fileIds,
+  alt,
+  faded = false,
+}: {
+  fileIds: string[];
+  alt: string;
+  faded?: boolean;
+}) {
+  if (fileIds.length === 0) return null;
+  const look = faded ? "opacity-50 grayscale" : "";
+  return (
+    <span className="flex gap-1.5">
+      {fileIds.slice(0, 2).map((id) => (
+        <SecureImage
+          key={id}
+          fileId={id}
+          alt={alt}
+          className={`h-11 w-9 rounded-md object-cover ${look}`}
+        />
+      ))}
+      {fileIds.length > 2 && (
+        <span
+          className={`inline-flex h-11 w-9 items-center justify-center rounded-md bg-muted text-xs font-bold text-muted-foreground ${look}`}
+        >
+          +{fileIds.length - 2}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/**
+ * Which photos of an overlapping set a line was read from ("P1 & P2"), so a line caught in
+ * two frames and counted once can be traced (BRD B2-B4). Empty for a single photo.
+ */
+function provenance(data: ExtractedData, item: ExtractedLineItem, idx: number): string {
+  const fileIds = data.file_ids ?? [];
+  const lineItems = data.line_items ?? [];
+  const fileIndex = item.file_id ? fileIds.indexOf(item.file_id) + 1 : 0;
+  if (fileIds.length <= 1 || fileIndex === 0) return "";
+  const others = [
+    ...new Set(
+      (data.position_matches ?? [])
+        .filter((m) => m.item_a_index === idx && m.result === "same")
+        .map((m) => {
+          const other = lineItems[m.item_b_index];
+          return other?.file_id ? fileIds.indexOf(other.file_id) + 1 : 0;
+        })
+        .filter((n) => n > 0 && n !== fileIndex),
+    ),
+  ];
+  const label = `P${fileIndex.toString()}`;
+  return others.length > 0 ? `${label} & P${others.join(" & P")}` : label;
+}
+
+/**
+ * One line as read: its name, the category it will be filed under, and its price — with
+ * quantity and any discount beneath. A line the reader was unsure of is drawn in warning.
+ */
+function LineRow({
+  item,
+  provenance: from,
+  onUndo,
+  onForget,
+  undoing,
+}: {
+  item: ExtractedLineItem;
+  provenance: string;
+  onUndo: () => void;
+  onForget: () => void;
+  undoing: boolean;
+}) {
+  const { t } = useTranslation("upload");
+  const doubtful = item.is_doubtful === true;
+  const category = item.category_name ?? "Uncategorized";
+  return (
+    <li className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0">
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="flex items-center gap-2 overflow-hidden">
+          {from && (
+            <span className="inline-flex h-4 shrink-0 items-center justify-center rounded-sm bg-muted px-1.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+              {from}
+            </span>
+          )}
+          <span
+            className={`truncate text-base font-bold ${doubtful ? "text-tone-warning-text" : "text-foreground"}`}
+          >
+            {item.name}
+          </span>
+          {doubtful && <DoubtfulMark className="shrink-0" />}
+        </span>
+        {item.read_name && (
+          <CorrectedName
+            readName={item.read_name}
+            busy={undoing}
+            onUndo={onUndo}
+            onForget={onForget}
+          />
+        )}
+        <span
+          className={`flex items-center gap-1.5 text-sm font-semibold ${item.category_is_low_confidence ? "text-tone-warning-text" : "text-muted-foreground"}`}
+          title={item.category_is_low_confidence ? t("read.lowConfidence") : undefined}
+        >
+          <span
+            aria-hidden="true"
+            className="h-2 w-2 shrink-0 rounded-pill"
+            style={{ background: categoryColor(category) }}
+          />
+          {categoryName(category)}
+        </span>
+      </span>
+      <span className="flex shrink-0 flex-col items-end gap-0.5 text-right tabular-nums">
+        <span
+          className={`text-base font-extrabold ${doubtful ? "text-tone-warning-text" : "text-foreground"}`}
+        >
+          {item.total_price}
+        </span>
+        <span className="text-sm text-muted-foreground">
+          {item.quantity} × {item.unit_price}
+        </span>
+        {item.discount && (
+          <span className="whitespace-nowrap text-sm font-medium text-tone-primary-text">
+            {t("read.discount", { amount: item.discount })}
+          </span>
+        )}
+      </span>
+    </li>
+  );
+}
 
 /**
  * What a foreign receipt will count as once stored (F11.7, ADR-0016), following a total

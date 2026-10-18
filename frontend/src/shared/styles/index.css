@@ -27,3 +27,18 @@ body {
     background-color: var(--color-muted);
   }
 }
+
+/* A light passing down a receipt while it is read (upload-reading.html). */
+@theme {
+  --animate-scan: scan 2.2s ease-in-out infinite;
+
+  @keyframes scan {
+    0%,
+    100% {
+      top: 6%;
+    }
+    50% {
+      top: 90%;
+    }
+  }
+}

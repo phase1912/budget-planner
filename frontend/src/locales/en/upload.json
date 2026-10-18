@@ -19,8 +19,6 @@
     "photos_other": "{{count}} photos",
     "size": "{{size}} MB total",
     "cancel": "Cancel",
-    "processed": "Processed {{done}} of {{total}}…",
-    "sending": "Sending…",
     "read": "Read these photos",
     "noReceipt": "No receipt?",
     "moneyIn": "Money came in?",
@@ -103,8 +101,6 @@
     "uncategorized": "Uncategorized",
     "itemsCount_one": "{{count}} item",
     "itemsCount_other": "{{count}} items",
-    "linesAddUp": "lines add up to {{total}}",
-    "cannotAdd": "a line has no price, so these cannot be added up",
     "matches": "Matches the printed total",
     "nothingToCheck": "Nothing to check them against",
     "mismatch": "Lines do not match printed total",
@@ -113,7 +109,11 @@
     "resolve_other": "Resolve {{count}} things",
     "nothingToStore": "Nothing to store",
     "store_one": "Store {{count}} receipt",
-    "store_other": "Store {{count}} receipts"
+    "store_other": "Store {{count}} receipts",
+    "totalsMatch": "Totals match",
+    "onReceipt": "On the receipt",
+    "linesSum": "Lines add up to",
+    "cannotAddShort": "a line has no price"
   },
   "cols": {
     "item": "Item",
@@ -193,5 +193,11 @@
     "income": "Payslip or transfer",
     "incomeHint": "Money that came in — we read the amount, the file isn't kept",
     "reading": "Reading the document…"
+  },
+  "reading": {
+    "title": "Reading your receipt",
+    "titleMany": "Reading your receipts",
+    "hint": "Every line, its price and its category",
+    "progress": "{{done}} of {{total}} read"
   }
 }
