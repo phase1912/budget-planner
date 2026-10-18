@@ -143,5 +143,11 @@
     "question": "Has your salary arrived?",
     "yes": "Yes, add it",
     "other": "Another amount"
+  },
+  "pendingIncome": {
+    "title": "Came in by email",
+    "noAmount": "Amount not read",
+    "review": "Check and add",
+    "dismiss": "Dismiss"
   }
 }

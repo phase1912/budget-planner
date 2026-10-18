@@ -283,7 +283,18 @@ counted since, through the same `ReceiptRepository.month_total` the month view u
 `POST /api/v1/income/read` reads a payslip or transfer confirmation through
 `IncomeReaderPort` (`IncomeDocumentAdapter`, the vision model) into a draft that is not
 saved; the file stays in memory, and the confirmed entry goes through `POST /income` with
-`channel: "document"` (F23.11).
+`channel: "document"` (F23.11). A forwarded letter the vision reader calls income
+(`ExtractedReceipt.document_kind`) is read again by the same port and kept in
+`pending_incomes` instead of becoming a receipt; `GET /income/pending`,
+`POST /income/pending/{id}` (confirm) and `DELETE /income/pending/{id}` serve Home's card.
+
+Reading a photo stays off the event loop: `prepare_photo` (HEIC to JPEG, upright by EXIF,
+at most 3000 px) runs in a thread, the prepared bytes are read from memory rather than
+downloaded back, and litellm is imported at start (`app/main.py`), not inside the first
+read — lazily, it froze every request on a new instance for 11-14 s. The browser shrinks
+photos to the same 3000 px before sending (`shrinkPhoto`), which keeps a many-shot
+receipt under Cloud Run's 32 MB request limit, and a progress poll that fails is retried
+rather than reported, since the job runs on regardless.
 
 Spending day by day (`GET /api/v1/statistics/daily`, F23.4) sums the same `paid` per UTC
 day and lists every day of the period, a quiet one as zero (`app/domain/daily_spend.py`).

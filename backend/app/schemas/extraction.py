@@ -18,6 +18,7 @@ from __future__ import annotations
 import re
 import uuid
 from decimal import Decimal, InvalidOperation
+from typing import Literal
 
 from pydantic import (
     BaseModel,
@@ -242,6 +243,15 @@ class ExtractedReceipt(BaseModel):
     )
     receipt_total_confidence: int = Field(
         default=100, ge=0, le=100, description="Confidence score between 0 and 100 (e.g. 100)"
+    )
+
+    document_kind: Literal["receipt", "income", "other"] = Field(
+        default="receipt",
+        description=(
+            "What the document is: 'receipt' for a purchase the user paid for, 'income' "
+            "for money paid TO the user (payslip, transfer received, refund confirmation), "
+            "'other' for anything else."
+        ),
     )
 
     is_receipt_confidence: int = Field(

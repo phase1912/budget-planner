@@ -2176,6 +2176,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/income/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pending Income
+         * @description Income read off forwarded payslips or transfers, waiting to be confirmed (F23.11).
+         */
+        get: operations["pending_income_api_v1_income_pending_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/pending/{pending_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Pending Income
+         * @description Confirm a pending income as `body` says, making it an entry; 404 if not the user's.
+         */
+        post: operations["confirm_pending_income_api_v1_income_pending__pending_id__post"];
+        /**
+         * Dismiss Pending Income
+         * @description Drop a pending income without keeping it; 404 if not the user's (N2).
+         */
+        delete: operations["dismiss_pending_income_api_v1_income_pending__pending_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/income/{income_id}": {
         parameters: {
             query?: never;
@@ -3739,6 +3783,24 @@ export interface components {
             pages: number;
         };
         /**
+         * PendingIncomeRead
+         * @description Income read off a forwarded document, waiting to be confirmed (F23.11).
+         */
+        PendingIncomeRead: {
+            /** Amount */
+            amount: string | null;
+            /** Received On */
+            received_on: string | null;
+            /** Source */
+            source: string | null;
+            kind: components["schemas"]["IncomeKind"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
+        /**
          * PerDiemDayResponse
          * @description One day of a per diem: its hours, the share they earn and why, the meals off it.
          */
@@ -3931,6 +3993,11 @@ export interface components {
             last_shop: string | null;
             /** History */
             history: string[];
+            /**
+             * Shops
+             * @default []
+             */
+            shops: components["schemas"]["ShopPriceResponse"][];
         };
         /**
          * PricePointResponse
@@ -9120,6 +9187,105 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["IncomeDraft"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pending_income_api_v1_income_pending_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingIncomeRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_pending_income_api_v1_income_pending__pending_id__post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                pending_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncomeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dismiss_pending_income_api_v1_income_pending__pending_id__delete: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                pending_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

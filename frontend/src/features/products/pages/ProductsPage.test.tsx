@@ -205,14 +205,19 @@ describe("ProductsPage (F16.1)", () => {
     renderPage();
 
     expect(exploration.setProducts).toHaveBeenCalledWith(["p1"]);
-    expect(screen.getByText("990 g")).toBeInTheDocument();
+    expect(screen.getAllByText(/990 g/).length).toBeGreaterThan(0);
+    expect(screen.getByText("3×")).toBeInTheDocument();
     expect(
       screen.getByText("Price per l went from 13.61 to 16.64 PLN (+22.3%)."),
     ).toBeInTheDocument();
     const shops = screen.getByRole("list", { name: "Prices of Jogurt Natural 330ml by shop" });
     expect(within(shops).getByText("Cheapest")).toBeInTheDocument();
     expect(within(shops).getByText("+1.52 PLN (10.1%)")).toBeInTheDocument();
-    expect(screen.getByRole("list", { name: "By month" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "By month" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /October 2026: 10.48 PLN/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     expect(screen.getByRole("figure")).toBeInTheDocument();
   });
 
@@ -224,7 +229,7 @@ describe("ProductsPage (F16.1)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Snacks" }));
     expect(store.select).toHaveBeenCalledWith(["p1", "p2"]);
 
-    fireEvent.click(screen.getByRole("button", { name: "Save as a selection" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save set" }));
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Breakfast" } });
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Save" }));
 
@@ -239,8 +244,8 @@ describe("ProductsPage (F16.1)", () => {
     renderPage();
 
     expect(screen.getByRole("button", { name: "Snacks" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText("Showing «Snacks»")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Save as a selection" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Snacks" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save set" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Clear" })).toBeInTheDocument();
   });
 

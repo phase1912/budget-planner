@@ -38,6 +38,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     While serving, the proactive advice pass (BRD F7) runs on its schedule, and
     stops with the app.
     """
+    _warm_model_client()
     session_factory = get_session_factory()
     async with session_factory() as session:
         await fail_orphaned_upload_jobs(session)
@@ -48,6 +49,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         schedule.cancel()
         with suppress(asyncio.CancelledError):
             await schedule
+
+
+def _warm_model_client() -> None:
+    """Load the model client while the instance starts, not inside the first upload.
+
+    Importing litellm takes seconds on one vCPU and holds the event loop while it runs;
+    done lazily, it froze every request — the upload's own progress polls included —
+    for 11-14 s on the first receipt read by each new instance. Never stops a start.
+    """
+    try:
+        import litellm  # noqa: F401
+    except Exception:
+        logger.exception("The model client could not be loaded at start")
 
 
 async def _prune_activity() -> None:

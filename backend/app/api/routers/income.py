@@ -21,6 +21,7 @@ from app.schemas.income import (
     IncomeRead,
     IncomeRequest,
     MonthIncomeRead,
+    PendingIncomeRead,
 )
 from app.services.balance import BalanceService
 from app.services.income import IncomeService
@@ -86,6 +87,31 @@ async def read_income_document(
         source=reading.source,
         kind=reading.kind,
     )
+
+
+@router.get("/pending", response_model=list[PendingIncomeRead])
+async def pending_income(_user: CurrentUser, session: Session) -> list[PendingIncomeRead]:
+    """Income read off forwarded payslips or transfers, waiting to be confirmed (F23.11)."""
+    return [PendingIncomeRead.model_validate(p) for p in await IncomeService(session).waiting()]
+
+
+@router.post(
+    "/pending/{pending_id}", response_model=IncomeRead, status_code=status.HTTP_201_CREATED
+)
+async def confirm_pending_income(
+    pending_id: uuid.UUID, body: IncomeRequest, _user: CurrentUser, session: Session
+) -> IncomeRead:
+    """Confirm a pending income as `body` says, making it an entry; 404 if not the user's."""
+    return IncomeRead.model_validate(await IncomeService(session).confirm(pending_id, body))
+
+
+@router.delete("/pending/{pending_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def dismiss_pending_income(
+    pending_id: uuid.UUID, _user: CurrentUser, session: Session
+) -> Response:
+    """Drop a pending income without keeping it; 404 if not the user's (N2)."""
+    await IncomeService(session).dismiss(pending_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.put("/{income_id}", response_model=IncomeRead)

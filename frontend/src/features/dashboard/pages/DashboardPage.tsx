@@ -14,6 +14,8 @@ import { AtRiskWarnings } from "@/features/goals/components/AtRiskWarnings";
 import { InstallHint } from "@/features/install/InstallHint";
 import { BalanceCard } from "../components/BalanceCard";
 import { PaydayPrompt } from "../components/PaydayPrompt";
+import { PendingIncomeCard } from "../components/PendingIncomeCard";
+import { IncomeDialog } from "@/features/plan/IncomeDialog";
 import { paydayDue } from "@/stores/IncomeStore";
 import { CategoryTiles } from "../components/CategoryTiles";
 import { MonthHero } from "../components/MonthHero";
@@ -58,13 +60,15 @@ export const DashboardPage = observer(function DashboardPage() {
   const { t } = useTranslation("dashboard");
   const [editing, setEditing] = useState<"income" | "budget" | "balance" | "received" | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [reviewing, setReviewing] = useState<string | null>(null);
 
   useEffect(() => {
     void budgetStore.open();
     void householdStore.load();
     void categoriesStore.loadReviewCount();
     void productsStore.loadOverview();
-  }, [budgetStore, householdStore, categoriesStore, productsStore]);
+    void incomeStore.loadPending();
+  }, [budgetStore, householdStore, categoriesStore, productsStore, incomeStore]);
 
   const { year, month } = budgetStore;
   useEffect(() => {
@@ -165,6 +169,19 @@ export const DashboardPage = observer(function DashboardPage() {
                     </Note>
                   </Link>
                 )}
+                {incomeStore.pending.map((pending) => (
+                  <PendingIncomeCard
+                    key={pending.id}
+                    pending={pending}
+                    currency={currency}
+                    onReview={() => {
+                      setReviewing(pending.id);
+                    }}
+                    onDismiss={() => {
+                      void incomeStore.dismissPending(pending.id);
+                    }}
+                  />
+                ))}
                 {askPayday && usual !== null && (
                   <PaydayPrompt
                     usual={usual}
@@ -256,6 +273,21 @@ export const DashboardPage = observer(function DashboardPage() {
           />
         )}
 
+        {reviewing && (
+          <IncomeDialog
+            entry={null}
+            draft={incomeStore.pending.find((p) => p.id === reviewing) ?? null}
+            pendingId={reviewing}
+            defaultDay={today}
+            onClose={() => {
+              setReviewing(null);
+            }}
+            onSaved={() => {
+              void incomeStore.load(year, month);
+              void incomeStore.loadBalance(today);
+            }}
+          />
+        )}
         {editing === "received" && (
           <AmountDialog
             title={t("received.title")}

@@ -60,3 +60,11 @@ class BalanceRead(BaseModel):
     starting: Decimal | None
     came_in: Decimal | None
     spent: Decimal | None
+
+
+class PendingIncomeRead(IncomeDraft):
+    """Income read off a forwarded document, waiting to be confirmed (F23.11)."""
+
+    id: uuid.UUID
+
+    model_config = ConfigDict(from_attributes=True)

@@ -14,6 +14,8 @@ interface IncomeDialogProps {
   defaultDay: string;
   /** What a document said came in (F23.11): the form starts from it, saved as read. */
   draft?: IncomeDraft | null;
+  /** The pending income `draft` came from (F23.11): saving confirms it rather than adding. */
+  pendingId?: string;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -27,6 +29,7 @@ export const IncomeDialog = observer(function IncomeDialog({
   entry,
   defaultDay,
   draft = null,
+  pendingId,
   onClose,
   onSaved,
 }: IncomeDialogProps) {
@@ -63,7 +66,12 @@ export const IncomeDialog = observer(function IncomeDialog({
             event.preventDefault();
             if (!valid) return;
             const body = { ...form, amount, source: form.source.trim() };
-            void (entry ? incomeStore.update(entry.id, body) : incomeStore.add(body)).then(done);
+            const saved = entry
+              ? incomeStore.update(entry.id, body)
+              : pendingId
+                ? incomeStore.confirmPending(pendingId, body)
+                : incomeStore.add(body);
+            void saved.then(done);
           }}
         >
           <h2 id="income-title" className="m-0 text-lg font-bold">

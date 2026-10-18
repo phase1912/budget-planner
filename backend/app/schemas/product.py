@@ -139,6 +139,7 @@ class PriceMoveResponse(BaseModel):
     change: PriceChangeResponse
     last_shop: str | None
     history: list[Decimal]
+    shops: list[ShopPriceResponse] = []
 
 
 class ShopStandingResponse(BaseModel):

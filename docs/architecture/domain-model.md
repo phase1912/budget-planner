@@ -544,7 +544,11 @@ Rules that must hold at all times. Each is a candidate for a test.
     stored as a file or written as an entry by itself: it is read in memory, shown as a
     draft, and only what the user confirms becomes an entry, marked as from a document
     (correcting it later keeps that mark). A document that is not money received is
-    refused.
+    refused. A payslip or transfer forwarded by email is told apart from a receipt by the
+    reader itself (`document_kind`, or a low `is_receipt_confidence`): it becomes a
+    pending income — kept apart from entries, counting nowhere — and its stored files are
+    deleted; confirming makes it an entry, dismissing drops it. A letter delivered twice
+    waits once.
 
 **Goals before they are saved**
 

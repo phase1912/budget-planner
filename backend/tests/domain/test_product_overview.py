@@ -46,3 +46,21 @@ def test_ranks_shops_by_how_often_they_were_cheapest_and_what_was_paid_above_it(
     # Milk: 0.90 above Lidl, bought twice at Żabka; bread: 0.50 above, once.
     assert result.shops[1].paid_above == Decimal("2.30")
     assert result.paid_above == Decimal("2.30")
+
+
+def test_a_price_move_says_where_the_product_costs_what_cheapest_first() -> None:
+    result = products_overview(
+        [MILK],
+        [
+            _buy(MILK, 1, "Żabka", "3.49"),
+            _buy(MILK, 5, "Lidl", "3.79"),
+            _buy(MILK, 9, "Biedronka", "3.99"),
+            _buy(MILK, 12, "Żabka", "4.69"),
+        ],
+    )
+
+    assert [(s.shop, s.latest) for s in result.moves[0].shops] == [
+        ("Lidl", Decimal("3.79")),
+        ("Biedronka", Decimal("3.99")),
+        ("Żabka", Decimal("4.69")),
+    ]

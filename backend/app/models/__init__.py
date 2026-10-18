@@ -19,6 +19,7 @@ from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
 from app.models.monthly_snapshot import MonthlySnapshot
 from app.models.name_correction import NameCorrection
+from app.models.pending_income import PendingIncome
 from app.models.product import Product, ProductAlias
 from app.models.receipt import Receipt
 from app.models.recommendation import Recommendation
@@ -45,6 +46,7 @@ __all__ = [
     "MonthlySnapshot",
     "NameCorrection",
     "PageViewCount",
+    "PendingIncome",
     "PlanGrant",
     "PositionMatchOverride",
     "Product",

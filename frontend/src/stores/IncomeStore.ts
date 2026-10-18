@@ -9,6 +9,7 @@ import type { ToastStore } from "@/stores/ToastStore";
 
 export type MonthIncome = components["schemas"]["MonthIncomeRead"];
 export type IncomeDraft = components["schemas"]["IncomeDraft"];
+export type PendingIncome = components["schemas"]["PendingIncomeRead"];
 export type IncomeEntry = components["schemas"]["IncomeRead"];
 type IncomeRequestSchema = components["schemas"]["IncomeRequest"];
 /** An entry as sent; `channel` is "manual" unless it was confirmed from a document. */
@@ -47,6 +48,8 @@ export class IncomeStore {
   balance: Balance | null = null;
   /** What a document says came in, waiting for the user to confirm (F23.11). */
   draft: IncomeDraft | null = null;
+  /** Income read off forwarded payslips or transfers, waiting to be confirmed (F23.11). */
+  pending: PendingIncome[] = [];
   readingDocument = false;
   readError: string | null = null;
   private readonly api: ApiClient;
@@ -183,6 +186,42 @@ export class IncomeStore {
     });
   }
 
+  /** What forwarded documents left to confirm; a failure leaves the list as it was. */
+  async loadPending(): Promise<void> {
+    const response = await settle(() => this.api.GET("/api/v1/income/pending"));
+    runInAction(() => {
+      if (response.error === undefined) this.pending = response.data;
+    });
+  }
+
+  /** Confirm a pending income as corrected; it becomes an entry read from a document. */
+  async confirmPending(id: string, body: IncomeRequest): Promise<boolean> {
+    const ok = await this.save(() =>
+      this.api.POST("/api/v1/income/pending/{pending_id}", {
+        params: { path: { pending_id: id } },
+        body: { channel: "document", ...body },
+      }),
+    );
+    if (ok) {
+      runInAction(() => {
+        this.pending = this.pending.filter((p) => p.id !== id);
+      });
+    }
+    return ok;
+  }
+
+  /** Drop a pending income without keeping it. */
+  async dismissPending(id: string): Promise<void> {
+    const response = await settle(() =>
+      this.api.DELETE("/api/v1/income/pending/{pending_id}", {
+        params: { path: { pending_id: id } },
+      }),
+    );
+    runInAction(() => {
+      if (response.error === undefined) this.pending = this.pending.filter((p) => p.id !== id);
+    });
+  }
+
   clearDraft(): void {
     this.draft = null;
     this.readError = null;
@@ -191,6 +230,7 @@ export class IncomeStore {
   reset(): void {
     this.request++;
     this.draft = null;
+    this.pending = [];
     this.month = null;
     this.balance = null;
     this.state.reset();

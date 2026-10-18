@@ -71,7 +71,14 @@
     "chartLabel_other": "Price of {{name}} over {{count}} purchases",
     "allPurchases_one": "Every purchase ({{count}})",
     "allPurchases_other": "Every purchase ({{count}})",
-    "oneTime": "Bought once in this period: the price chart appears from the second purchase."
+    "oneTime": "Bought once in this period: the price chart appears from the second purchase.",
+    "title": "Explore",
+    "save": "Save set",
+    "add": "Add product",
+    "remove": "Remove {{name}}",
+    "perMonth": "A month",
+    "mostly": "mostly {{shop}}",
+    "changePill": "{{percent}}% per {{unit}}"
   },
   "selections": {
     "title": "My selections",
@@ -89,17 +96,21 @@
   "overview": {
     "label": "At a glance",
     "prices": "Price changes",
-    "pricesShort": "Prices",
+    "pricesShort": "Changes",
     "most": "Bought most",
-    "mostShort": "Most",
-    "shops": "Cheapest shop",
-    "shopsShort": "Shops",
+    "mostShort": "Most bought",
+    "shops": "Best shop",
+    "shopsShort": "Best shop",
     "noMoves": "No price moved by 5% or more in the last six months.",
     "moveLine": "{{shop}} · {{first}} → {{last}} {{currency}}",
     "noShops": "Buy the same thing in two shops and this compares them.",
     "paidAbove": "About {{amount}} {{currency}} paid above the cheapest shop in six months",
     "cheapestFor_one": "cheapest for {{count}} product",
-    "cheapestFor_other": "cheapest for {{count}} products"
+    "cheapestFor_other": "cheapest for {{count}} products",
+    "where": "Where it costs what",
+    "oneShop": "Bought in one shop so far — nothing to compare.",
+    "exploreOne": "See it month by month",
+    "shopsHint": "For how many of the products you buy each shop is the cheapest, from your own receipts."
   },
   "exploreHint": "Tick products to see what they cost you together, by month and by shop.",
   "all": "All products",

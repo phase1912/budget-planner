@@ -4,15 +4,7 @@ import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
-import {
-  Button,
-  Card,
-  EmptyState,
-  ErrorState,
-  Input,
-  LoadingState,
-  Note,
-} from "@/shared/components";
+import { Card, EmptyState, ErrorState, Input, LoadingState } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
 import { ExplorePanel } from "../components/ExplorePanel";
 import { MergeProductsDialog } from "../components/MergeProductsDialog";
@@ -156,56 +148,17 @@ export const ProductsPage = observer(function ProductsPage() {
         )}
 
         {selected.length > 0 && (
-          // Stays in view while ticking further down a long list, where the action is needed.
-          <div className="sticky top-2 z-20 rounded-control bg-background shadow-raised">
-            <Note tone="info">
-              <span className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
-                <span>
-                  {openSelection
-                    ? t("selections.showing", { name: openSelection.name })
-                    : t("picked", { count: selected.length })}
-                </span>
-                <span className="flex flex-wrap gap-2 [&>*]:flex-1 md:flex-nowrap md:[&>*]:flex-none">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      productsStore.clearSelection();
-                    }}
-                  >
-                    {t("clear")}
-                  </Button>
-                  {!openSelection && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        setSaving(true);
-                      }}
-                    >
-                      {t("selections.open")}
-                    </Button>
-                  )}
-                  {selected.length > 1 && (
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => {
-                        setMerging(true);
-                      }}
-                    >
-                      {t("merge.open")}
-                    </Button>
-                  )}
-                </span>
-              </span>
-            </Note>
-          </div>
-        )}
-
-        {selected.length > 0 && (
           <div id="explore-panel" className="scroll-mt-4">
-            <ExplorePanel currency={currency} />
+            <ExplorePanel
+              currency={currency}
+              selectionName={openSelection?.name ?? null}
+              onSave={() => {
+                setSaving(true);
+              }}
+              onMerge={() => {
+                setMerging(true);
+              }}
+            />
           </div>
         )}
 

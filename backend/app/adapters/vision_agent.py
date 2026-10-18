@@ -66,7 +66,10 @@ For ALL `_confidence` fields and `confidence` fields inside `line_items`:
    DO NOT return floats.
 
 Also, set `is_receipt_confidence` (0 to 100) indicating whether the image
-actually looks like a receipt (100 = definitely a receipt, 0 = definitely not).
+actually looks like a receipt (100 = definitely a receipt, 0 = definitely not), and
+`document_kind`: "receipt" for a purchase the user paid for; "income" when the document
+shows money paid TO the user — a payslip ("pasek wynagrodzeń", "розрахунковий лист"),
+a transfer they received, a refund confirmation; "other" for anything else.
 
 IMPORTANT:
 1. Return ONLY valid JSON matching the schema. No extra text or explanation. Always extract

@@ -1,14 +1,15 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Meter } from "@/shared/components";
 import { dateFormat, formatAmount } from "@/i18n/format";
 import type { Exploration } from "@/stores/ExplorationStore";
 
-const MONTH = dateFormat({ month: "short", year: "numeric" });
+const SHORT = dateFormat({ month: "short" });
+const LONG = dateFormat({ month: "long", year: "numeric" });
 
 /**
- * What the selection cost month by month (F16.2): one bar per month, its amount and how
- * many times it was bought written beside it, so the figure never rests on the bar alone.
+ * What the selection cost month by month (F16.2, explore.html): a column per month,
+ * tapping one names its amount and how many times it was bought; opens on the latest.
  */
 export function MonthBars({
   months,
@@ -18,27 +19,56 @@ export function MonthBars({
   currency: string;
 }) {
   const { t } = useTranslation("products");
+  const [chosen, setChosen] = useState<string | null>(null);
   const top = Math.max(...months.map((m) => Number(m.amounts.spent)), 0);
+  const selected = months.find((m) => m.month === chosen) ?? months[months.length - 1];
+  const day = (month: string) => new Date(`${month}T00:00:00`);
+  const labelled = months.length <= 12;
+
   return (
-    <ul aria-label={t("explore.byMonth")} className="m-0 flex list-none flex-col gap-2.5 p-0">
-      {months.map((month) => (
-        <li
-          key={month.month}
-          className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_11rem]"
-        >
-          <span className="text-base text-muted-foreground">
-            {MONTH.format(new Date(`${month.month}T00:00:00`))}
+    <section className="flex flex-col gap-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="m-0 text-lg font-extrabold">{t("explore.byMonth")}</h3>
+        {selected && (
+          <span className="text-md font-bold text-primary tabular-nums" aria-live="polite">
+            {SHORT.format(day(selected.month))} · {formatAmount(selected.amounts.spent)} {currency}
           </span>
-          <span className="order-3 col-span-2 md:order-none md:col-span-1">
-            <Meter value={top > 0 ? (Number(month.amounts.spent) / top) * 100 : 0} />
-          </span>
-          <span className="text-right text-base tabular-nums text-muted-foreground">
-            {month.amounts.times > 0
-              ? `${formatAmount(month.amounts.spent)} ${currency} · ${t("explore.times", { count: month.amounts.times })}`
-              : t("explore.none")}
-          </span>
-        </li>
-      ))}
-    </ul>
+        )}
+      </div>
+      <div className="flex h-28 items-end gap-1">
+        {months.map((month) => {
+          const share = top > 0 ? Number(month.amounts.spent) / top : 0;
+          const isSelected = month.month === selected?.month;
+          return (
+            <button
+              key={month.month}
+              type="button"
+              aria-pressed={isSelected}
+              aria-label={`${LONG.format(day(month.month))}: ${
+                month.amounts.times > 0
+                  ? `${formatAmount(month.amounts.spent)} ${currency}, ${t("explore.times", { count: month.amounts.times })}`
+                  : t("explore.none")
+              }`}
+              onClick={() => {
+                setChosen(month.month);
+              }}
+              className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1"
+            >
+              <span
+                className={`block w-full rounded-t-[5px] rounded-b-[2px] ${
+                  isSelected ? "bg-primary" : "bg-tone-primary-bg"
+                }`}
+                style={{ height: `${String(Math.max(4, share * 100))}%` }}
+              />
+              {labelled && (
+                <span className="text-xs text-muted-foreground">
+                  {SHORT.format(day(month.month))}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }

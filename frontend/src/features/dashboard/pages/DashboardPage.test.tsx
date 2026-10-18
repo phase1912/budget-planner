@@ -32,6 +32,17 @@ const incomeStore = {
   month: null as null | { total: string | null; entered: boolean; entries: { amount: string }[] },
   balance: null as null | { balance: string | null; since: string | null },
   receive: vi.fn().mockResolvedValue(true),
+  pending: [] as {
+    id: string;
+    amount: string | null;
+    received_on: string | null;
+    source: string | null;
+    kind: "salary" | "side" | "refund" | "other";
+  }[],
+  loadPending: vi.fn(),
+  confirmPending: vi.fn().mockResolvedValue(true),
+  dismissPending: vi.fn(),
+  saveState: { isLoading: false },
   load: vi.fn(),
   loadBalance: vi.fn(),
   setMonthTotal: vi.fn().mockResolvedValue(true),
@@ -297,7 +308,39 @@ describe("DashboardPage — what is left (D7, F23.3)", () => {
     Object.assign(budgetStore, { error: null, isLoading: false, receipts: [], spend: [] });
     incomeStore.month = null;
     incomeStore.balance = null;
+    incomeStore.pending = [];
     authStore.user.payday = null;
+  });
+
+  it("shows a payslip that came by email and confirms it as checked", async () => {
+    budgetStore.summary = summary();
+    incomeStore.pending = [
+      { id: "p1", amount: "7607.55", received_on: "2026-10-10", source: "ACME", kind: "salary" },
+    ];
+    renderPage();
+
+    expect(screen.getByText("Came in by email · ACME")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Check and add" }));
+    expect(screen.getByLabelText("Amount")).toHaveValue("7607.55");
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await vi.waitFor(() => {
+      expect(incomeStore.confirmPending).toHaveBeenCalledWith(
+        "p1",
+        expect.objectContaining({ amount: "7607.55", source: "ACME", channel: "document" }),
+      );
+    });
+  });
+
+  it("dismisses a pending income without adding it", () => {
+    budgetStore.summary = summary();
+    incomeStore.pending = [
+      { id: "p1", amount: "10.00", received_on: null, source: null, kind: "other" },
+    ];
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    expect(incomeStore.dismissPending).toHaveBeenCalledWith("p1");
   });
 
   it("asks for income when the balance has run out, and records what came in today", async () => {

@@ -12,6 +12,7 @@ from app.domain.purchases import (
     PricePoint,
     ProductFacts,
     Purchase,
+    ShopPrice,
     price_change,
     shop_prices,
 )
@@ -28,6 +29,9 @@ class PriceMove:
     change: PriceChange
     last_shop: str | None
     history: list[Decimal]
+    shops: list[ShopPrice]
+    """Where it costs what: its latest price in each shop, cheapest first; empty when it
+    was bought in one shop only."""
 
 
 @dataclass(frozen=True)
@@ -70,6 +74,7 @@ def products_overview(
     above: dict[str, Decimal] = defaultdict(Decimal)
     for product_id, history in points.items():
         change = price_change(history)
+        shops = shop_prices(history)
         if change and change.percent is not None and abs(change.percent) >= RISE_MIN_PERCENT:
             moves.append(
                 PriceMove(
@@ -77,9 +82,9 @@ def products_overview(
                     change=change,
                     last_shop=history[-1].shop,
                     history=[p.unit_price for p in history[-HISTORY_MAX:]],
+                    shops=shops,
                 )
             )
-        shops = shop_prices(history)
         if shops:
             cheapest[shops[0].shop] += 1
             for row in shops:
