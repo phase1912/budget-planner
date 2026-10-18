@@ -8,6 +8,9 @@ const usualOnly: MonthIncome = {
   entered: false,
   usual: "6800.00",
   entries: [],
+  taxes: "0.00",
+  taxes_paid: "0.00",
+  regular: [],
 };
 
 describe("paydayDue", () => {
@@ -27,5 +30,14 @@ describe("paydayDue", () => {
     expect(paydayDue("2026-10-20", 10, { ...usualOnly, total: null })).toBe(false);
     expect(paydayDue("2026-10-20", null, usualOnly)).toBe(false);
     expect(paydayDue("2026-10-20", 10, null)).toBe(false);
+    const salary = {
+      id: "s",
+      name: "Salary",
+      amount: "10000.00",
+      day: 10,
+      taxed: false,
+      starts_on: "2026-10-01",
+    };
+    expect(paydayDue("2026-10-20", 10, { ...usualOnly, regular: [salary] })).toBe(false);
   });
 });

@@ -4,15 +4,15 @@ import { Check, ChevronLeft, ReceiptText, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-import { Button, Input, PalettePicker, Select } from "@/shared/components";
+import { Button, Input, PalettePicker } from "@/shared/components";
 import { SUPPORTED_CURRENCIES } from "@/config/currencies";
 import { LANGUAGES, LANGUAGE_NAMES, type Language } from "@/i18n/languages";
 import { useStores } from "@/stores/StoreContext";
 import { numberFormat } from "@/i18n/format";
+import { RegularIncomes } from "@/features/profile/components/RegularIncomes";
 import { guessCurrency } from "./guess";
 
 const STEPS = 6;
-const DAYS = Array.from({ length: 30 }, (_, i) => i + 1);
 
 /** A decimal string the API takes, or null for an empty field. */
 function amountOf(text: string): string | null {
@@ -22,12 +22,12 @@ function amountOf(text: string): string | null {
 
 /**
  * The first sign-in (F23.9, docs/design/screens/v2/onboarding-*): language and currency
- * guessed from the browser, the palette — painted as it is picked — the usual income,
- * payday and what is on the accounts today, and two-factor sign-in now or later. Skipping
+ * guessed from the browser, the palette — painted as it is picked — the regular incomes
+ * (F23.17) and what is on the accounts today, and two-factor sign-in now or later. Skipping
  * at any step keeps the defaults; either way it is not shown again, on any device.
  */
 export const OnboardingPage = observer(function OnboardingPage() {
-  const { authStore, languageStore, themeStore, profileStore } = useStores();
+  const { authStore, languageStore, themeStore, profileStore, incomeStore } = useStores();
   const { t } = useTranslation("onboarding");
   const { t: profile } = useTranslation("profile");
   const navigate = useNavigate();
@@ -38,8 +38,6 @@ export const OnboardingPage = observer(function OnboardingPage() {
       ? user.currency
       : guessCurrency(Intl.DateTimeFormat().resolvedOptions().timeZone, navigator.language),
   );
-  const [income, setIncome] = useState("");
-  const [payday, setPayday] = useState("");
   const [balance, setBalance] = useState("");
   const [twoFactor, setTwoFactor] = useState<"now" | "later">("later");
   const [busy, setBusy] = useState(false);
@@ -55,8 +53,6 @@ export const OnboardingPage = observer(function OnboardingPage() {
         ? {
             currency,
             palette: themeStore.palette,
-            usual_income: amountOf(income),
-            payday: payday ? Number(payday) : null,
             ...(balanceAmount ? { starting_balance: balanceAmount, balance_since: isoToday } : {}),
           }
         : {},
@@ -194,37 +190,7 @@ export const OnboardingPage = observer(function OnboardingPage() {
           {step === 3 && (
             <>
               <Heading title={t("income.title")} body={t("income.body")} />
-              <div className="relative">
-                <Input
-                  id="onboarding-income"
-                  label={t("income.amount")}
-                  inputMode="decimal"
-                  value={income}
-                  onChange={(e) => {
-                    setIncome(e.target.value);
-                  }}
-                  className="min-h-14 pr-16 text-2xl font-extrabold tabular-nums"
-                />
-                <span className="pointer-events-none absolute right-4 bottom-4 text-lg font-bold text-muted-foreground">
-                  {currency}
-                </span>
-              </div>
-              <Select
-                id="onboarding-payday"
-                label={t("income.payday")}
-                value={payday}
-                onChange={(e) => {
-                  setPayday(e.target.value);
-                }}
-              >
-                <option value="">{t("income.none")}</option>
-                {DAYS.map((day) => (
-                  <option key={day} value={day}>
-                    {day}
-                  </option>
-                ))}
-                <option value="31">{t("income.last")}</option>
-              </Select>
+              <RegularIncomes currency={currency} />
               <div className="flex flex-col gap-1.5">
                 <div className="relative">
                   <Input
@@ -300,8 +266,10 @@ export const OnboardingPage = observer(function OnboardingPage() {
                   [t("done.palette"), profile(`appearance.palettes.${themeStore.palette}`)],
                   [
                     t("done.income"),
-                    amountOf(income)
-                      ? `${numberFormat({ maximumFractionDigits: 2 }).format(Number(amountOf(income)))} ${currency}`
+                    incomeStore.regular.length > 0
+                      ? `${numberFormat({ maximumFractionDigits: 2 }).format(
+                          incomeStore.regular.reduce((sum, r) => sum + Number(r.amount), 0),
+                        )} ${currency}`
                       : t("income.none"),
                   ],
                   [t("done.twoFactor"), twoFactor === "now" ? t("done.on") : t("done.off")],

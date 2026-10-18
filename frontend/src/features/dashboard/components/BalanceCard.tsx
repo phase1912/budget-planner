@@ -71,6 +71,11 @@ export function BalanceCard({ balance, currency, onEdit, onAddIncome }: BalanceC
         ) : (
           <span className="text-lg font-semibold text-primary">{t("balance.add")}</span>
         )}
+        {known && balance.for_taxes != null && Number(balance.for_taxes) > 0 && (
+          <span className="text-md font-semibold text-tone-warning-text tabular-nums">
+            {t("balance.forTaxes", { amount: WHOLE.format(Number(balance.for_taxes)), currency })}
+          </span>
+        )}
         {known && balance.since && (
           <span className="text-sm text-muted-foreground">
             {t("balance.since", { date: DAY.format(new Date(`${balance.since}T00:00:00`)) })}

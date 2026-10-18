@@ -14,7 +14,9 @@ from app.domain.goals import FinancialKind
 from app.domain.periods import DateRange
 from app.models.income import Income
 from app.models.user import User
+from app.repository.income_source import IncomeSourceRepository
 from app.repository.receipt import ReceiptRepository
+from app.services.income import tax_rule
 
 MONTHS_BACK = 3
 
@@ -58,11 +60,15 @@ class GoalCheckService:
             months=n,
             monthly_spend=spend / n if n else Decimal(0),
             categories=_averaged(categories, n),
-            monthly_income=await self._monthly_income(user, counted),
+            monthly_income=_after_taxes(user, await self._monthly_income(user, counted)),
         )
 
     async def _monthly_income(self, user: User, months: list[DateRange]) -> Decimal | None:
-        """The usual income, else what was entered over the counted months, averaged."""
+        """The regular incomes (F23.17), else the usual income, else what was entered over
+        the counted months, averaged."""
+        regular = await IncomeSourceRepository(self.session).current()
+        if regular:
+            return sum((s.amount for s in regular), Decimal(0))
         if user.usual_income is not None:
             return user.usual_income
         if not months:
@@ -75,6 +81,15 @@ class GoalCheckService:
             )
         )
         return None if entered is None else Decimal(entered) / len(months)
+
+
+def _after_taxes(user: User, income: Decimal | None) -> Decimal | None:
+    """What of a month's income is the user's to keep, for one who pays their own taxes:
+    a savings goal comes out of that, not out of money owed to the tax office (F23.16)."""
+    rule = tax_rule(user)
+    if income is None or rule is None:
+        return income
+    return income - rule.on(income) - rule.fixed
 
 
 def _month_before(today: date, n: int) -> DateRange:

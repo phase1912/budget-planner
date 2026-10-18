@@ -20,8 +20,12 @@ from app.schemas.income import (
     IncomeDraft,
     IncomeRead,
     IncomeRequest,
+    IncomeSourceRead,
+    IncomeSourceRequest,
     MonthIncomeRead,
     PendingIncomeRead,
+    TaxPaymentRead,
+    TaxPaymentRequest,
 )
 from app.services.balance import BalanceService
 from app.services.income import IncomeService
@@ -49,6 +53,10 @@ async def month_income(
         entered=view.income.entered,
         usual=user.usual_income,
         entries=[IncomeRead.model_validate(e) for e in view.entries],
+        taxes=view.income.taxes,
+        net=view.income.net,
+        taxes_paid=view.taxes_paid,
+        regular=[IncomeSourceRead.model_validate(s) for s in view.regular],
     )
 
 
@@ -114,6 +122,80 @@ async def dismiss_pending_income(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@router.get("/regular", response_model=list[IncomeSourceRead])
+async def regular_incomes(_user: CurrentUser, session: Session) -> list[IncomeSourceRead]:
+    """The regular incomes still running, already net (F23.17)."""
+    return [
+        IncomeSourceRead.model_validate(s) for s in await IncomeService(session).regular_incomes()
+    ]
+
+
+@router.post("/regular", response_model=IncomeSourceRead, status_code=status.HTTP_201_CREATED)
+async def add_regular_income(
+    body: IncomeSourceRequest,
+    _user: CurrentUser,
+    session: Session,
+    today: Annotated[date | None, Query(description="The caller's own date")] = None,
+) -> IncomeSourceRead:
+    """Start a regular income; it counts every month from this one on."""
+    return IncomeSourceRead.model_validate(
+        await IncomeService(session).add_regular(body, today or datetime.now(UTC).date())
+    )
+
+
+@router.put("/regular/{source_id}", response_model=IncomeSourceRead)
+async def change_regular_income(
+    source_id: uuid.UUID, body: IncomeSourceRequest, _user: CurrentUser, session: Session
+) -> IncomeSourceRead:
+    """Change a regular income; 404 if it is not the user's (N2)."""
+    return IncomeSourceRead.model_validate(
+        await IncomeService(session).change_regular(source_id, body)
+    )
+
+
+@router.delete("/regular/{source_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def end_regular_income(
+    source_id: uuid.UUID,
+    _user: CurrentUser,
+    session: Session,
+    today: Annotated[date | None, Query(description="The caller's own date")] = None,
+) -> Response:
+    """Stop a regular income from next month; past months keep it. 404 if not the user's."""
+    await IncomeService(session).end_regular(source_id, today or datetime.now(UTC).date())
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/taxes", response_model=list[TaxPaymentRead])
+async def tax_payments(
+    _user: CurrentUser,
+    session: Session,
+    month: Annotated[str, Query(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")],
+) -> list[TaxPaymentRead]:
+    """A month's tax payments (YYYY-MM), for a user who pays their own (F23.16)."""
+    first_day = date.fromisoformat(f"{month}-01")
+    return [
+        TaxPaymentRead.model_validate(p)
+        for p in await IncomeService(session).tax_payments_of(first_day)
+    ]
+
+
+@router.post("/taxes", response_model=TaxPaymentRead, status_code=status.HTTP_201_CREATED)
+async def pay_taxes(
+    body: TaxPaymentRequest, _user: CurrentUser, session: Session
+) -> TaxPaymentRead:
+    """Record taxes paid: they leave the balance, never the spending (F23.16)."""
+    return TaxPaymentRead.model_validate(await IncomeService(session).pay_taxes(body))
+
+
+@router.delete("/taxes/{payment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_tax_payment(
+    payment_id: uuid.UUID, _user: CurrentUser, session: Session
+) -> Response:
+    """Remove a tax payment; 404 if it is not the user's (N2)."""
+    await IncomeService(session).delete_tax_payment(payment_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.put("/{income_id}", response_model=IncomeRead)
 async def update_income(
     income_id: uuid.UUID, body: IncomeRequest, _user: CurrentUser, session: Session
@@ -141,4 +223,6 @@ async def balance(user: CurrentUser, session: Session, today: date) -> BalanceRe
         starting=found.starting,
         came_in=found.came_in,
         spent=found.spent,
+        taxes_paid=found.taxes_paid,
+        for_taxes=found.for_taxes if user.pays_own_taxes else None,
     )

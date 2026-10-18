@@ -26,7 +26,21 @@
     "spent": "Spent {{amount}}",
     "free": "Free {{amount}}",
     "fromDocument": "Check what we read",
-    "fromDocumentHint": "Nothing is saved until you do. The file itself is not kept."
+    "fromDocumentHint": "Nothing is saved until you do. The file itself is not kept.",
+    "gross": "Came in",
+    "taxes": "Taxes ~",
+    "net": "Yours",
+    "taxesPaid": "Taxes paid this month: {{amount}} {{currency}}",
+    "payTaxes": "I paid taxes",
+    "paidAmount": "Paid",
+    "paidHint": "It leaves your balance and what you still owe — not your spending.",
+    "taxed": "I pay tax on this",
+    "taxedShort": "taxed",
+    "regular": "Every month",
+    "editRegular": "Change",
+    "setRegular": "Set up",
+    "extra": "Came in on top this month",
+    "decideTax": "You pay your own taxes: decide below whether your tax comes out of this."
   },
   "budget": {
     "title": "Monthly budget",

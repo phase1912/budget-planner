@@ -26,7 +26,21 @@
     "spent": "Wydano {{amount}}",
     "free": "Wolne {{amount}}",
     "fromDocument": "Sprawdź, co odczytaliśmy",
-    "fromDocumentHint": "Nic nie zostanie zapisane bez Twojego potwierdzenia. Sam plik nie jest przechowywany."
+    "fromDocumentHint": "Nic nie zostanie zapisane bez Twojego potwierdzenia. Sam plik nie jest przechowywany.",
+    "gross": "Wpłynęło",
+    "taxes": "Podatki ~",
+    "net": "Twoje",
+    "taxesPaid": "Zapłacone podatki w tym miesiącu: {{amount}} {{currency}}",
+    "payTaxes": "Podatki zapłacone",
+    "paidAmount": "Zapłacono",
+    "paidHint": "Zmniejsza saldo i to, co jeszcze do zapłaty — ale nie wydatki.",
+    "taxed": "Płacę od tego podatek",
+    "taxedShort": "z podatkiem",
+    "regular": "Co miesiąc",
+    "editRegular": "Zmień",
+    "setRegular": "Ustaw",
+    "extra": "Wpłynęło ponadto w tym miesiącu",
+    "decideTax": "Płacisz podatki samodzielnie: zdecyduj niżej, czy płacisz od tego podatek."
   },
   "budget": {
     "title": "Budżet miesięczny",

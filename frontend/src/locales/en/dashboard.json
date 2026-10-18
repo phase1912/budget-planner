@@ -101,7 +101,8 @@
     "ringIncome": "Spent {{spent}} of the {{of}} {{currency}} that came in",
     "ringCategories": "Spent {{spent}} {{currency}}, by category",
     "next": "Tap for the next view",
-    "settings": "Settings"
+    "settings": "Settings",
+    "incomeNet": "Income · after tax"
   },
   "review_one": "{{count}} line needs a category",
   "review_other": "{{count}} lines need a category",
@@ -125,7 +126,8 @@
     "emptyTitle": "Looks like money came in that isn't here",
     "emptyBody": "{{amount}} {{currency}} on your accounts by our count. Add what came in, or set what you have now.",
     "addIncome": "Add income",
-    "correct": "Correct the balance"
+    "correct": "Correct the balance",
+    "forTaxes": "of which ~{{amount}} {{currency}} for taxes"
   },
   "insight": {
     "dearer": "{{name}} is {{percent}}% dearer",

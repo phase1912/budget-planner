@@ -25,6 +25,7 @@ describe("OnboardingPage", () => {
       two_factor_enabled: false,
       dark_at_night: false,
       travels_for_work: false,
+      pays_own_taxes: false,
       onboarded_at: null,
       forwarding_address: "receipts-new@example.com",
     };
@@ -58,8 +59,9 @@ describe("OnboardingPage", () => {
     fireEvent.click(screen.getByRole("radio", { name: /Rose/ }));
     expect(rootStore.themeStore.palette).toBe("rose");
     next();
-    fireEvent.change(screen.getByLabelText("Usual net income"), { target: { value: "8000" } });
-    fireEvent.change(screen.getByLabelText("Payday"), { target: { value: "10" } });
+    // Regular incomes are saved as they are added (F23.17), in the PLN just chosen.
+    fireEvent.click(screen.getByRole("button", { name: "Add a regular income" }));
+    expect(screen.getByLabelText("A month, PLN")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("On your accounts today"), {
       target: { value: "1 250,50" },
     });
@@ -74,8 +76,6 @@ describe("OnboardingPage", () => {
       expect.objectContaining({
         currency: "PLN",
         palette: "rose",
-        usual_income: "8000",
-        payday: 10,
         starting_balance: "1250.50",
       }),
     );

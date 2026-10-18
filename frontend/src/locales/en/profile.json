@@ -17,7 +17,14 @@
     "hint": "Income entered for a month replaces the usual amount there. Months still run from the 1st.",
     "balance": "On your accounts",
     "balanceLabel": "What you have today",
-    "balanceHint": "Not your income: the money on your cards and accounts right now. From today it goes up with income and down with every purchase."
+    "balanceHint": "Not your income: the money on your cards and accounts right now. From today it goes up with income and down with every purchase.",
+    "taxes": "I pay my own taxes",
+    "taxesHint": "Income comes in before tax and you pay it yourself — sole trader, contract work.",
+    "taxRate": "Tax on income",
+    "taxRateHint": "Your own rate, from each taxed income: PIT, flat tax, health contribution together. Gifts and things sold are not taxed unless you say so.",
+    "taxFixed": "Fixed each month",
+    "taxFixedHint": "Paid once a month whatever came in — a social contribution, a lump-sum tax. Empty for none.",
+    "percent": "{{value}} %"
   },
   "account": {
     "title": "Account",
@@ -161,5 +168,26 @@
   "more": "More",
   "help": "Help",
   "admin": "Admin",
-  "logOut": "Log out"
+  "logOut": "Log out",
+  "regular": {
+    "title": "Regular income",
+    "hint": "What comes every month, already as it reaches your account. It counts by itself; anything extra you add on top.",
+    "name": "What it is",
+    "namePlaceholder": "Salary",
+    "amount": "A month, {{currency}}",
+    "day": "Comes on",
+    "anyDay": "Any day",
+    "taxed": "My tax comes out of it",
+    "taxedShort": "taxed",
+    "monthly": "every month",
+    "onDay": "on day {{day}}",
+    "remove": "Stop it",
+    "cancel": "Cancel",
+    "save": "Save",
+    "add": "Add another",
+    "addFirst": "Add a regular income",
+    "summary_one": "{{amount}} · {{count}} income",
+    "summary_other": "{{amount}} · {{count}} incomes",
+    "none": "None yet"
+  }
 }

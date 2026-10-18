@@ -69,6 +69,13 @@ class User(Model):
     # itself with income and counted purchases. None: no balance is shown.
     starting_balance: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     balance_since: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # Pays their own taxes (F23.16): a share of each taxed income and a fixed sum a month
+    # are set aside, so "left to spend" counts what is theirs to keep.
+    pays_own_taxes: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", nullable=False
+    )
+    tax_rate: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)
+    tax_fixed_monthly: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
 
     role: Mapped[str] = mapped_column(String, default="user", server_default="user", nullable=False)
     # The secret part of the user's receipt forwarding address (F11.2); the domain

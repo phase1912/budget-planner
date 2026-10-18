@@ -4,11 +4,13 @@ import { Briefcase, ChevronRight, Palmtree, Plus, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-import { AmountDialog } from "@/shared/components";
+import { AmountDialog, Button } from "@/shared/components";
 import { dateFormat, numberFormat } from "@/i18n/format";
 import type { IncomeEntry } from "@/stores/IncomeStore";
 import { useStores } from "@/stores/StoreContext";
 import { IncomeDialog } from "./IncomeDialog";
+import { RegularIncomes } from "@/features/profile/components/RegularIncomes";
+import { SettingsSheet } from "@/features/profile/components/SettingsRows";
 
 const WHOLE = numberFormat({ maximumFractionDigits: 0 });
 const MONTH = dateFormat({ month: "long", year: "numeric" });
@@ -24,6 +26,8 @@ export const PlanPage = observer(function PlanPage() {
   const { t } = useTranslation("plan");
   const [incomeEntry, setIncomeEntry] = useState<IncomeEntry | null | "new">(null);
   const [editingBudget, setEditingBudget] = useState(false);
+  const [payingTaxes, setPayingTaxes] = useState(false);
+  const [editingRegular, setEditingRegular] = useState(false);
   const user = authStore.user;
   const currency = user?.currency ?? "PLN";
   const { year, month } = budgetStore.current;
@@ -40,7 +44,10 @@ export const PlanPage = observer(function PlanPage() {
   const budget = user?.budget_limit == null ? null : Number(user.budget_limit);
   const spent = summary?.month === month ? Number(summary.total) : 0;
   const holidays = tripsStore.trips.filter((trip) => trip.kind === "personal");
-  const incomeTotal = income?.total == null ? null : Number(income.total);
+  // The bar measures spending against what is the user's to keep (F23.16).
+  const kept = income?.net ?? income?.total;
+  const incomeTotal = kept == null ? null : Number(kept);
+  const paysOwnTaxes = user?.pays_own_taxes === true;
   const business = tripsStore.trips.filter((trip) => trip.kind === "business");
 
   return (
@@ -75,12 +82,85 @@ export const PlanPage = observer(function PlanPage() {
             </span>
           </>
         )}
-        <p className="m-0 text-base text-muted-foreground">
-          {MONTH.format(new Date(year, month - 1, 1))} ·{" "}
-          {user?.usual_income != null
-            ? t("income.usual", { amount: WHOLE.format(Number(user.usual_income)), currency })
-            : t("income.usualNone")}
-        </p>
+        {paysOwnTaxes && income?.total != null && (
+          <dl className="on-surface m-0 grid grid-cols-3 gap-2">
+            {[
+              [t("income.gross"), income.total],
+              [t("income.taxes"), income.taxes],
+              [t("income.net"), income.net ?? income.total],
+            ].map(([label, value]) => (
+              <div key={label} className="flex flex-col gap-0.5 rounded-control control-fill p-2.5">
+                <dt className="text-sm text-muted-foreground">{label}</dt>
+                <dd className="m-0 text-lg font-extrabold tabular-nums">
+                  {WHOLE.format(Number(value))}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
+        {paysOwnTaxes && (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-base text-muted-foreground tabular-nums">
+              {t("income.taxesPaid", {
+                amount: WHOLE.format(Number(income?.taxes_paid ?? 0)),
+                currency,
+              })}
+            </span>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="min-h-11"
+              onClick={() => {
+                setPayingTaxes(true);
+              }}
+            >
+              {t("income.payTaxes")}
+            </Button>
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm font-bold tracking-[0.06em] text-muted-foreground uppercase">
+            {t("income.regular")}
+          </span>
+          <button
+            type="button"
+            className="min-h-11 text-md font-bold text-primary"
+            onClick={() => {
+              setEditingRegular(true);
+            }}
+          >
+            {(income?.regular.length ?? 0) > 0 ? t("income.editRegular") : t("income.setRegular")}
+          </button>
+        </div>
+        {income && income.regular.length > 0 ? (
+          <ul className="m-0 flex list-none flex-col divide-y divide-border p-0">
+            {income.regular.map((regular) => (
+              <li key={regular.id} className="flex min-h-12 items-center gap-3 py-1.5">
+                <span className="flex flex-1 flex-col">
+                  <span className="text-lg font-semibold">{regular.name}</span>
+                  {paysOwnTaxes && regular.taxed && (
+                    <span className="text-base text-muted-foreground">
+                      {t("income.taxedShort")}
+                    </span>
+                  )}
+                </span>
+                <span className="text-lg font-bold tabular-nums">
+                  {WHOLE.format(Number(regular.amount))} {currency}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="m-0 text-base text-muted-foreground">
+            {MONTH.format(new Date(year, month - 1, 1))} ·{" "}
+            {user?.usual_income != null
+              ? t("income.usual", { amount: WHOLE.format(Number(user.usual_income)), currency })
+              : t("income.usualNone")}
+          </p>
+        )}
+        <span className="text-sm font-bold tracking-[0.06em] text-muted-foreground uppercase">
+          {t("income.extra")}
+        </span>
         {income && income.entries.length > 0 ? (
           <ul className="m-0 flex list-none flex-col divide-y divide-border p-0">
             {income.entries.map((entry) => (
@@ -97,6 +177,7 @@ export const PlanPage = observer(function PlanPage() {
                     <span className="text-base text-muted-foreground">
                       {DAY.format(new Date(`${entry.received_on}T00:00:00`))} ·{" "}
                       {t(`income.kinds.${entry.kind}`)}
+                      {paysOwnTaxes && entry.taxed && ` · ${t("income.taxedShort")}`}
                     </span>
                   </span>
                   <span className="text-lg font-bold tabular-nums">
@@ -275,6 +356,32 @@ export const PlanPage = observer(function PlanPage() {
           }}
           onSaved={() => {
             void incomeStore.load(year, month);
+            void incomeStore.loadBalance(budgetStore.today);
+          }}
+        />
+      )}
+      {editingRegular && (
+        <SettingsSheet
+          title={t("income.regular")}
+          onClose={() => {
+            setEditingRegular(false);
+            void incomeStore.load(year, month);
+            void incomeStore.loadBalance(budgetStore.today);
+          }}
+        >
+          <RegularIncomes />
+        </SettingsSheet>
+      )}
+      {payingTaxes && (
+        <AmountDialog
+          title={t("income.payTaxes")}
+          label={t("income.paidAmount")}
+          hint={t("income.paidHint")}
+          initial={income?.taxes != null && Number(income.taxes) > 0 ? income.taxes : ""}
+          currency={currency}
+          onSave={(amount) => incomeStore.payTaxes(amount, budgetStore.today, { year, month })}
+          onClose={() => {
+            setPayingTaxes(false);
           }}
         />
       )}
@@ -307,7 +414,7 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3 rounded-card bg-surface p-4 md:p-5">
+    <section className="on-surface flex flex-col gap-3 rounded-card bg-surface p-4 md:p-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="m-0 text-lg font-extrabold">{title}</h2>
         {aside}

@@ -4,7 +4,7 @@ import uuid
 from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import Date, ForeignKey, Numeric, String
+from sqlalchemy import Boolean, Date, ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Model
@@ -28,3 +28,7 @@ class Income(Model):
     source: Mapped[str] = mapped_column(String(80), nullable=False)
     kind: Mapped[str] = mapped_column(String(16), nullable=False, default="salary")
     channel: Mapped[str] = mapped_column(String(16), nullable=False, default="manual")
+    # Taxes are set aside from it, for a user who pays their own (F23.16).
+    taxed: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )

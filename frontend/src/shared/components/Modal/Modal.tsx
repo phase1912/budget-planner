@@ -6,6 +6,8 @@ const FOCUSABLE =
 export interface ModalProps extends React.HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
   onClose: () => void;
+  /** Where the caret goes on opening — the one field a dialog asks for; else the dialog. */
+  initialFocus?: React.RefObject<HTMLElement | null>;
 }
 
 /**
@@ -14,7 +16,14 @@ export interface ModalProps extends React.HTMLAttributes<HTMLDivElement> {
  * On a phone a sheet rising from the bottom edge, full width (design v2); from a tablet
  * up a centred card. A caller sets its tablet and desktop width with `md:` classes.
  */
-export const Modal = ({ isOpen, onClose, children, className, ...props }: ModalProps) => {
+export const Modal = ({
+  isOpen,
+  onClose,
+  initialFocus,
+  children,
+  className,
+  ...props
+}: ModalProps) => {
   const dialogRef = React.useRef<HTMLDivElement>(null);
   // Callers pass a fresh arrow every render. Were `onClose` a dependency below, each
   // keystroke in a field would re-run the effect and pull focus back onto the dialog.
@@ -29,7 +38,7 @@ export const Modal = ({ isOpen, onClose, children, className, ...props }: ModalP
     // Remembered before focus moves into the dialog, so closing can put the
     // caret back where the user left it instead of at the top of the document.
     const previouslyFocused = document.activeElement as HTMLElement | null;
-    dialogRef.current?.focus();
+    (initialFocus?.current ?? dialogRef.current)?.focus();
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -64,7 +73,7 @@ export const Modal = ({ isOpen, onClose, children, className, ...props }: ModalP
       document.removeEventListener("keydown", handleKeyDown);
       previouslyFocused?.focus();
     };
-  }, [isOpen]);
+  }, [isOpen, initialFocus]);
 
   if (!isOpen) return null;
 

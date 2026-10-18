@@ -40,7 +40,7 @@ class UserService:
             user.onboarded_at = datetime.now(UTC)
         if data.get("starting_balance") is not None and data.get("balance_since") is None:
             data["balance_since"] = datetime.now(UTC).date()
-        for flag in ("dark_at_night", "travels_for_work"):
+        for flag in ("dark_at_night", "travels_for_work", "pays_own_taxes"):
             if flag in data and data[flag] is None:
                 del data[flag]
 

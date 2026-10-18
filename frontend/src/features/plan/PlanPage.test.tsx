@@ -11,12 +11,14 @@ const stores = vi.hoisted(() => ({
       budget_limit: "3000.00",
       usual_income: "6800.00",
       travels_for_work: false,
+      pays_own_taxes: false,
     },
   },
   incomeStore: {
     month: {
       total: "6200.00",
       entered: true,
+      regular: [] as { id: string; name: string; amount: string; taxed: boolean }[],
       entries: [
         {
           id: "i1",
@@ -30,6 +32,8 @@ const stores = vi.hoisted(() => ({
     },
     saveState: { isLoading: false },
     load: vi.fn(),
+    loadBalance: vi.fn(),
+    payTaxes: vi.fn().mockResolvedValue(true),
     add: vi.fn().mockResolvedValue(true),
     update: vi.fn().mockResolvedValue(true),
     remove: vi.fn().mockResolvedValue(true),
@@ -83,6 +87,46 @@ describe("PlanPage (F23.2, F23.10, F23.12)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     stores.authStore.user.travels_for_work = false;
+    stores.authStore.user.pays_own_taxes = false;
+  });
+
+  it("shows one who pays their own taxes what came in, the taxes, and what is theirs", async () => {
+    stores.authStore.user.pays_own_taxes = true;
+    const month = stores.incomeStore.month as Record<string, unknown>;
+    Object.assign(month, { taxes: "2344.00", net: "3856.00", taxes_paid: "0.00" });
+    renderPage();
+
+    expect(screen.getByText("Came in")).toBeInTheDocument();
+    expect(screen.getByText("2,344")).toBeInTheDocument();
+    expect(screen.getByText("3,856")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "I paid taxes" }));
+    expect(screen.getByLabelText("Paid")).toHaveValue("2344.00");
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await vi.waitFor(() => {
+      expect(stores.incomeStore.payTaxes).toHaveBeenCalledWith("2344.00", "2026-10-17", {
+        year: 2026,
+        month: 10,
+      });
+    });
+    Object.assign(month, { taxes: undefined, net: undefined, taxes_paid: undefined });
+  });
+
+  it("lets an income be marked as untaxed when it is a gift", async () => {
+    stores.authStore.user.pays_own_taxes = true;
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add income" }));
+    fireEvent.change(screen.getByLabelText("Amount"), { target: { value: "1000" } });
+    expect(screen.getByRole("switch", { name: "I pay tax on this" })).toBeChecked();
+    fireEvent.click(screen.getByRole("switch", { name: "I pay tax on this" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await vi.waitFor(() => {
+      expect(stores.incomeStore.add).toHaveBeenCalledWith(
+        expect.objectContaining({ amount: "1000", taxed: false }),
+      );
+    });
   });
 
   it("shows the month's income, the budget, holidays and goals", () => {

@@ -29,7 +29,14 @@ const budgetStore = {
 };
 
 const incomeStore = {
-  month: null as null | { total: string | null; entered: boolean; entries: { amount: string }[] },
+  month: null as null | {
+    total: string | null;
+    entered: boolean;
+    entries: { amount: string }[];
+    taxes?: string;
+    net?: string | null;
+    regular?: unknown[];
+  },
   balance: null as null | { balance: string | null; since: string | null },
   receive: vi.fn().mockResolvedValue(true),
   pending: [] as {
@@ -374,7 +381,7 @@ describe("DashboardPage — what is left (D7, F23.3)", () => {
   it("on payday with nothing entered, records the usual salary in one tap", async () => {
     budgetStore.summary = summary();
     authStore.user.payday = 10;
-    incomeStore.month = { total: "6800.00", entered: false, entries: [] };
+    incomeStore.month = { total: "6800.00", entered: false, entries: [], regular: [] };
     renderPage();
 
     expect(screen.getByText("Has your salary arrived?")).toBeInTheDocument();
@@ -392,7 +399,7 @@ describe("DashboardPage — what is left (D7, F23.3)", () => {
   it("does not ask about the salary once the month has income entered", () => {
     budgetStore.summary = summary();
     authStore.user.payday = 10;
-    incomeStore.month = { total: "6800.00", entered: true, entries: [] };
+    incomeStore.month = { total: "6800.00", entered: true, entries: [], regular: [] };
     renderPage();
 
     expect(screen.queryByText("Has your salary arrived?")).toBeNull();
@@ -417,7 +424,7 @@ describe("DashboardPage — what is left (D7, F23.3)", () => {
     budgetStore.spend = [
       { category_id: "g", name: "Groceries", item_count: 4, total_amount: "1800.00" },
     ];
-    incomeStore.month = { total: "6800.00", entered: true, entries: [] };
+    incomeStore.month = { total: "6800.00", entered: true, entries: [], regular: [] };
     renderPage();
 
     expect(screen.getByText("left of your budget")).toBeInTheDocument();
@@ -430,6 +437,22 @@ describe("DashboardPage — what is left (D7, F23.3)", () => {
     expect(screen.getByText("left of your budget")).toBeInTheDocument();
   });
 
+  it("measures what is left against income after tax for one who pays their own", () => {
+    budgetStore.summary = summary({ total: "1800" });
+    incomeStore.month = {
+      total: "6800.00",
+      entered: true,
+      entries: [],
+      taxes: "1800.00",
+      net: "5000.00",
+    };
+    renderPage();
+
+    expect(screen.getByText("Income · after tax")).toBeInTheDocument();
+    expect(screen.getByText("5,000 PLN")).toBeInTheDocument();
+    expect(screen.getByText("3,200")).toBeInTheDocument();
+  });
+
   it("says by how much a month went over, never clamping", () => {
     budgetStore.summary = summary({ total: "3248", is_complete: true, budget_limit: "3000.00" });
     renderPage();
@@ -439,7 +462,7 @@ describe("DashboardPage — what is left (D7, F23.3)", () => {
 
   it("measures against the income when there is no budget, marking the usual one", () => {
     budgetStore.summary = summary({ total: "1800" });
-    incomeStore.month = { total: "6800.00", entered: false, entries: [] };
+    incomeStore.month = { total: "6800.00", entered: false, entries: [], regular: [] };
     renderPage();
     expect(screen.getByText("left of what came in")).toBeInTheDocument();
     expect(screen.getByText("5,000")).toBeInTheDocument();

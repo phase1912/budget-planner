@@ -22,7 +22,9 @@
     "processed": "Processed {{done}} of {{total}}…",
     "sending": "Sending…",
     "read": "Read these photos",
-    "noReceipt": "No receipt?"
+    "noReceipt": "No receipt?",
+    "moneyIn": "Money came in?",
+    "addIncome": "Add income"
   },
   "line": {
     "receipt": "Receipt",

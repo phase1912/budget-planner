@@ -10,6 +10,8 @@ import type { ToastStore } from "@/stores/ToastStore";
 export type MonthIncome = components["schemas"]["MonthIncomeRead"];
 export type IncomeDraft = components["schemas"]["IncomeDraft"];
 export type PendingIncome = components["schemas"]["PendingIncomeRead"];
+export type RegularIncome = components["schemas"]["IncomeSourceRead"];
+export type RegularIncomeRequest = components["schemas"]["IncomeSourceRequest"];
 export type IncomeEntry = components["schemas"]["IncomeRead"];
 type IncomeRequestSchema = components["schemas"]["IncomeRequest"];
 /** An entry as sent; `channel` is "manual" unless it was confirmed from a document. */
@@ -22,14 +24,17 @@ const pad = (n: number) => String(n).padStart(2, "0");
 /**
  * Whether Home should ask if the salary has arrived (F23.10): in the running month, once
  * its payday is reached (31 meaning the month's last day, whatever its length), while
- * nothing is entered yet and a usual income is known to offer.
+ * nothing is entered yet, no regular income counts, and a usual income is known to offer.
  */
 export function paydayDue(
   today: string,
   payday: number | null | undefined,
   month: MonthIncome | null,
 ): boolean {
-  if (!payday || !month || month.entered || month.total == null) return false;
+  // Regular incomes arrive by themselves (F23.17): nothing to ask.
+  if (!payday || !month || month.regular.length > 0 || month.entered || month.total == null) {
+    return false;
+  }
   const [year, monthNumber, day] = today.split("-").map(Number) as [number, number, number];
   const lastDay = new Date(year, monthNumber, 0).getDate();
   return day >= Math.min(payday, lastDay);
@@ -50,6 +55,8 @@ export class IncomeStore {
   draft: IncomeDraft | null = null;
   /** Income read off forwarded payslips or transfers, waiting to be confirmed (F23.11). */
   pending: PendingIncome[] = [];
+  /** The regular incomes still running, already net (F23.17). */
+  regular: RegularIncome[] = [];
   readingDocument = false;
   readError: string | null = null;
   private readonly api: ApiClient;
@@ -186,6 +193,46 @@ export class IncomeStore {
     });
   }
 
+  /** The regular incomes; a failure leaves the list as it was. */
+  async loadRegular(): Promise<void> {
+    const response = await settle(() => this.api.GET("/api/v1/income/regular"));
+    runInAction(() => {
+      if (response.error === undefined) this.regular = response.data;
+    });
+  }
+
+  /** Start a regular income, counted from this month on (`today` is the user's date). */
+  async addRegular(body: RegularIncomeRequest, today: string): Promise<boolean> {
+    const ok = await this.save(() =>
+      this.api.POST("/api/v1/income/regular", { params: { query: { today } }, body }),
+    );
+    if (ok) await this.loadRegular();
+    return ok;
+  }
+
+  /** Change a regular income's name, amount or day. */
+  async changeRegular(id: string, body: RegularIncomeRequest): Promise<boolean> {
+    const ok = await this.save(() =>
+      this.api.PUT("/api/v1/income/regular/{source_id}", {
+        params: { path: { source_id: id } },
+        body,
+      }),
+    );
+    if (ok) await this.loadRegular();
+    return ok;
+  }
+
+  /** Stop a regular income from next month; past months keep it. */
+  async endRegular(id: string, today: string): Promise<boolean> {
+    const ok = await this.save(() =>
+      this.api.DELETE("/api/v1/income/regular/{source_id}", {
+        params: { path: { source_id: id }, query: { today } },
+      }),
+    );
+    if (ok) await this.loadRegular();
+    return ok;
+  }
+
   /** What forwarded documents left to confirm; a failure leaves the list as it was. */
   async loadPending(): Promise<void> {
     const response = await settle(() => this.api.GET("/api/v1/income/pending"));
@@ -210,6 +257,22 @@ export class IncomeStore {
     return ok;
   }
 
+  /**
+   * Record taxes paid (F23.16): they lower the balance and what is still owed, never the
+   * spending. Re-reads the shown month and the balance.
+   */
+  async payTaxes(
+    amount: string,
+    today: string,
+    shown: { year: number; month: number },
+  ): Promise<boolean> {
+    const ok = await this.save(() =>
+      this.api.POST("/api/v1/income/taxes", { body: { paid_on: today, amount } }),
+    );
+    if (ok) await Promise.all([this.load(shown.year, shown.month), this.loadBalance(today)]);
+    return ok;
+  }
+
   /** Drop a pending income without keeping it. */
   async dismissPending(id: string): Promise<void> {
     const response = await settle(() =>
@@ -231,6 +294,7 @@ export class IncomeStore {
     this.request++;
     this.draft = null;
     this.pending = [];
+    this.regular = [];
     this.month = null;
     this.balance = null;
     this.state.reset();

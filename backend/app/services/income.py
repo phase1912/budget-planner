@@ -8,14 +8,37 @@ from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import NotFoundError
-from app.domain.income import IncomeChannel, MonthIncome, month_income
+from app.domain.income import (
+    IncomeChannel,
+    MonthIncome,
+    RegularIncome,
+    TaxRule,
+    month_income,
+    taxed_by_default,
+)
 from app.domain.quota import next_month_start
 from app.models.income import Income
+from app.models.income_source import IncomeSource
 from app.models.pending_income import PendingIncome
+from app.models.tax_payment import TaxPayment
 from app.models.user import User
 from app.repository.income import IncomeRepository
+from app.repository.income_source import IncomeSourceRepository
 from app.repository.pending_income import PendingIncomeRepository
-from app.schemas.income import IncomeRequest
+from app.repository.tax_payment import TaxPaymentRepository
+from app.schemas.income import IncomeRequest, IncomeSourceRequest, TaxPaymentRequest
+
+
+def regular_rule(source: IncomeSource) -> RegularIncome:
+    """A regular income as the domain rules read it."""
+    return RegularIncome(source.amount, source.day, source.starts_on, source.ends_on, source.taxed)
+
+
+def tax_rule(user: User) -> TaxRule | None:
+    """What the user sets aside for taxes, or None when they do not pay their own (F23.16)."""
+    if not user.pays_own_taxes:
+        return None
+    return TaxRule(user.tax_rate or Decimal(0), user.tax_fixed_monthly or Decimal(0))
 
 
 @dataclass(frozen=True)
@@ -23,6 +46,8 @@ class MonthIncomeView:
     month: date
     income: MonthIncome
     entries: list[Income]
+    taxes_paid: Decimal
+    regular: list[IncomeSource]
 
 
 class IncomeService:
@@ -32,21 +57,76 @@ class IncomeService:
         self.session = session
         self.incomes = IncomeRepository(session)
         self.pending = PendingIncomeRepository(session)
+        self.tax_payments = TaxPaymentRepository(session)
+        self.sources = IncomeSourceRepository(session)
 
     async def month(self, user: User, first_day: date) -> MonthIncomeView:
         """The entries of the month starting `first_day` and its income (usual if none)."""
         last_day = date.fromordinal(next_month_start(first_day).toordinal() - 1)
         entries = list(await self.incomes.between(first_day, last_day))
-        return MonthIncomeView(
-            first_day, month_income((e.amount for e in entries), user.usual_income), entries
+        regular = [
+            s
+            for s in await self.sources.running_since(first_day)
+            if regular_rule(s).runs_in(first_day)
+        ]
+        income = month_income(
+            ((e.amount, e.taxed) for e in entries),
+            user.usual_income,
+            tax_rule(user),
+            recurring=((s.amount, s.taxed) for s in regular),
         )
+        paid = await self.tax_payments.total(first_day, last_day)
+        return MonthIncomeView(first_day, income, entries, paid, regular)
 
-    async def total_for(self, user: User, first_day: date) -> Decimal | None:
-        return (await self.month(user, first_day)).income.total
+    async def regular_incomes(self) -> list[IncomeSource]:
+        """The regular incomes still running (F23.17)."""
+        return list(await self.sources.current())
+
+    async def add_regular(self, request: IncomeSourceRequest, today: date) -> IncomeSource:
+        """Start a regular income: it counts from this month on."""
+        source = IncomeSource(**request.model_dump(), starts_on=today)
+        self.sources.add(source)
+        await self.session.flush()
+        return source
+
+    async def change_regular(
+        self, source_id: uuid.UUID, request: IncomeSourceRequest
+    ) -> IncomeSource:
+        """Change a regular income's name, amount or day; NotFoundError if not the user's."""
+        source = await self.sources.get(source_id)
+        if source is None or source.ends_on is not None:
+            raise NotFoundError("No such regular income.")
+        for field, value in request.model_dump().items():
+            setattr(source, field, value)
+        await self.session.flush()
+        return source
+
+    async def end_regular(self, source_id: uuid.UUID, today: date) -> None:
+        """Stop a regular income from next month on; this month and the past keep it.
+
+        One started this very month never counted anywhere yet, so it simply goes.
+        NotFoundError for one that is not the user's (N2).
+        """
+        source = await self.sources.get(source_id)
+        if source is None or source.ends_on is not None:
+            raise NotFoundError("No such regular income.")
+        if source.starts_on.replace(day=1) == today.replace(day=1):
+            await self.session.delete(source)
+        else:
+            source.ends_on = today
+        await self.session.flush()
 
     async def add(self, request: IncomeRequest) -> Income:
-        """Record a sum that came in, typed or confirmed from a document (`channel`)."""
-        income = Income(**request.model_dump())
+        """Record a sum that came in, typed or confirmed from a document (`channel`).
+
+        Whether it is taxed defaults by its kind (F23.16) — earnings are, the rest is not —
+        and is kept even while the user does not pay their own taxes, so switching that on
+        later reads the past right.
+        """
+        data = request.model_dump()
+        if data["taxed"] is None:
+            data["taxed"] = taxed_by_default(request.kind)
+        income = Income(**data)
         self.incomes.add(income)
         await self.session.flush()
         return income
@@ -58,6 +138,8 @@ class IncomeService:
             raise NotFoundError("No such income.")
         # How an entry came in stays as it was: correcting it does not make it typed.
         for field, value in request.model_dump(exclude={"channel"}).items():
+            if field == "taxed" and value is None:
+                continue
             setattr(income, field, value)
         await self.session.flush()
         return income
@@ -65,6 +147,23 @@ class IncomeService:
     async def delete(self, income_id: uuid.UUID) -> None:
         if not await self.incomes.delete(income_id):
             raise NotFoundError("No such income.")
+
+    async def pay_taxes(self, request: TaxPaymentRequest) -> TaxPayment:
+        """Record taxes paid (F23.16): they leave the balance, never the spending."""
+        payment = TaxPayment(**request.model_dump())
+        self.tax_payments.add(payment)
+        await self.session.flush()
+        return payment
+
+    async def tax_payments_of(self, first_day: date) -> list[TaxPayment]:
+        """The month's tax payments, newest first."""
+        last_day = date.fromordinal(next_month_start(first_day).toordinal() - 1)
+        return list(await self.tax_payments.between(first_day, last_day))
+
+    async def delete_tax_payment(self, payment_id: uuid.UUID) -> None:
+        """Remove a tax payment; NotFoundError for one not the user's (N2)."""
+        if not await self.tax_payments.delete(payment_id):
+            raise NotFoundError("No such tax payment.")
 
     async def waiting(self) -> list[PendingIncome]:
         """Income read off forwarded documents, waiting to be confirmed (F23.11)."""

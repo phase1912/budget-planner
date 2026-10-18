@@ -288,6 +288,11 @@ saved; the file stays in memory, and the confirmed entry goes through `POST /inc
 `pending_incomes` instead of becoming a receipt; `GET /income/pending`,
 `POST /income/pending/{id}` (confirm) and `DELETE /income/pending/{id}` serve Home's card.
 
+Regular incomes live in `income_sources` (`/api/v1/income/regular`, F23.17) and are
+folded into the month by `month_income(recurring=…)` and into the balance by
+`regular_since`; taxes for those who pay their own (F23.16) come from the user's rate and
+fixed sum, each income's `taxed` flag, and `tax_payments` (`/api/v1/income/taxes`).
+
 Reading a photo stays off the event loop: `prepare_photo` (HEIC to JPEG, upright by EXIF,
 at most 3000 px) runs in a thread, the prepared bytes are read from memory rather than
 downloaded back, and litellm is imported at start (`app/main.py`), not inside the first

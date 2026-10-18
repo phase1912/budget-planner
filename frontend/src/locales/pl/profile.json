@@ -17,7 +17,14 @@
     "hint": "Dochód wpisany za miesiąc zastępuje tam zwykłą kwotę. Miesiące nadal zaczynają się 1-go.",
     "balance": "Na kontach",
     "balanceLabel": "Ile masz dzisiaj",
-    "balanceHint": "To nie dochód, tylko pieniądze na Twoich kartach i kontach w tej chwili. Od dziś rośnie z wpływami i maleje z każdym zakupem."
+    "balanceHint": "To nie dochód, tylko pieniądze na Twoich kartach i kontach w tej chwili. Od dziś rośnie z wpływami i maleje z każdym zakupem.",
+    "taxes": "Sam płacę podatki",
+    "taxesHint": "Dochód wpływa przed podatkiem, a płacisz go sam — JDG, B2B, umowa.",
+    "taxRate": "Podatek od dochodu",
+    "taxRateHint": "Twoja stawka od każdego opodatkowanego dochodu: PIT, ryczałt, składka zdrowotna razem. Prezenty i sprzedane rzeczy nie są opodatkowane, chyba że zaznaczysz.",
+    "taxFixed": "Stała kwota co miesiąc",
+    "taxFixedHint": "Płacona raz w miesiącu bez względu na wpływy — ZUS, ryczałt kwotowy. Puste, jeśli brak.",
+    "percent": "{{value}} %"
   },
   "account": {
     "title": "Konto",
@@ -169,5 +176,28 @@
   "more": "Więcej",
   "help": "Pomoc",
   "admin": "Panel administratora",
-  "logOut": "Wyloguj"
+  "logOut": "Wyloguj",
+  "regular": {
+    "title": "Stałe dochody",
+    "hint": "Co wpływa co miesiąc — tak, jak trafia na konto. Liczy się samo; coś ponad to dodajesz osobno.",
+    "name": "Co to jest",
+    "namePlaceholder": "Pensja",
+    "amount": "Miesięcznie, {{currency}}",
+    "day": "Wpływa",
+    "anyDay": "Dowolnego dnia",
+    "taxed": "Płacę od tego podatek",
+    "taxedShort": "z podatkiem",
+    "monthly": "co miesiąc",
+    "onDay": "{{day}}. dnia",
+    "remove": "Zakończ",
+    "cancel": "Anuluj",
+    "save": "Zapisz",
+    "add": "Dodaj kolejny",
+    "addFirst": "Dodaj stały dochód",
+    "summary_one": "{{amount}} · {{count}} dochód",
+    "summary_few": "{{amount}} · {{count}} dochody",
+    "summary_many": "{{amount}} · {{count}} dochodów",
+    "summary_other": "{{amount}} · {{count}} dochodu",
+    "none": "Na razie brak"
+  }
 }

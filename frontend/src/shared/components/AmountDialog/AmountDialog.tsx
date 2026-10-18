@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "../Button/Button";
@@ -35,12 +35,15 @@ export function AmountDialog({
   const { t } = useTranslation();
   const [value, setValue] = useState(initial);
   const [busy, setBusy] = useState(false);
+  // The dialog asks one thing: the caret is in its field, a phone's keyboard already up.
+  const field = useRef<HTMLInputElement>(null);
   const amount = value.trim().replace(",", ".").replace(/\s/g, "");
   const valid =
     (allowEmpty && amount === "") || (/^\d+(\.\d{1,2})?$/.test(amount) && Number(amount) > 0);
 
   return (
     <Modal
+      initialFocus={field}
       isOpen
       onClose={onClose}
       className="w-full md:max-w-[420px]"
@@ -64,6 +67,7 @@ export function AmountDialog({
           </h2>
           <div className="relative flex items-center">
             <Input
+              ref={field}
               id="amount-value"
               label={label}
               inputMode="decimal"

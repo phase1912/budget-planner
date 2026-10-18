@@ -2,7 +2,7 @@ import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
-import { Button, Input, Modal, ModalBody, Select } from "@/shared/components";
+import { Button, Input, Modal, ModalBody, Select, Switch } from "@/shared/components";
 import type { IncomeDraft, IncomeEntry, IncomeRequest } from "@/stores/IncomeStore";
 import { useStores } from "@/stores/StoreContext";
 
@@ -33,7 +33,8 @@ export const IncomeDialog = observer(function IncomeDialog({
   onClose,
   onSaved,
 }: IncomeDialogProps) {
-  const { incomeStore } = useStores();
+  const { incomeStore, authStore } = useStores();
+  const paysOwnTaxes = authStore.user?.pays_own_taxes === true;
   const { t } = useTranslation("plan");
   const [form, setForm] = useState<IncomeRequest>({
     received_on: entry?.received_on ?? draft?.received_on ?? defaultDay,
@@ -41,7 +42,10 @@ export const IncomeDialog = observer(function IncomeDialog({
     source: entry?.source ?? draft?.source ?? t(`income.kinds.${draft?.kind ?? "salary"}`),
     kind: entry?.kind ?? draft?.kind ?? "salary",
     channel: draft ? "document" : undefined,
+    taxed: entry?.taxed,
   });
+  // Until the user flips it, a new entry is taxed by its kind, as the server decides (F23.16).
+  const taxed = form.taxed ?? (form.kind === "salary" || form.kind === "side");
   const amount = String(form.amount).trim().replace(",", ".").replace(/\s/g, "");
   const valid = /^\d+(\.\d{1,2})?$/.test(amount) && Number(amount) > 0 && form.source.trim() !== "";
   const busy = incomeStore.saveState.isLoading;
@@ -79,6 +83,12 @@ export const IncomeDialog = observer(function IncomeDialog({
           </h2>
           {draft && (
             <p className="m-0 text-md text-muted-foreground">{t("income.fromDocumentHint")}</p>
+          )}
+          {/* Read off a document, it is the user's call whether their tax comes out of it. */}
+          {draft && paysOwnTaxes && (
+            <p className="m-0 rounded-control bg-tone-warning-bg px-3 py-2 text-md text-tone-warning-text">
+              {t("income.decideTax")}
+            </p>
           )}
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <Input
@@ -127,6 +137,16 @@ export const IncomeDialog = observer(function IncomeDialog({
               ))}
             </Select>
           </div>
+          {paysOwnTaxes && (
+            <Switch
+              checked={taxed}
+              onChange={(value) => {
+                setForm((f) => ({ ...f, taxed: value }));
+              }}
+              label={t("income.taxed")}
+              ariaLabel={t("income.taxed")}
+            />
+          )}
           <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-between">
             {entry ? (
               <Button

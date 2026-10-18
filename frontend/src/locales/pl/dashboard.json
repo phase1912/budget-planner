@@ -115,7 +115,8 @@
     "ringIncome": "Wydano {{spent}} z {{of}} {{currency}}, które wpłynęły",
     "ringCategories": "Wydano {{spent}} {{currency}}, według kategorii",
     "next": "Dotknij, aby zobaczyć kolejny widok",
-    "settings": "Ustawienia"
+    "settings": "Ustawienia",
+    "incomeNet": "Dochód · netto"
   },
   "review_one": "{{count}} pozycja czeka na kategorię",
   "review_few": "{{count}} pozycje czekają na kategorię",
@@ -141,7 +142,8 @@
     "emptyTitle": "Wygląda na to, że wpłynęły pieniądze, których tu nie ma",
     "emptyBody": "Według naszych obliczeń na kontach jest {{amount}} {{currency}}. Dodaj, co wpłynęło, albo wpisz, ile masz teraz.",
     "addIncome": "Dodaj wpływ",
-    "correct": "Popraw saldo"
+    "correct": "Popraw saldo",
+    "forTaxes": "w tym ~{{amount}} {{currency}} na podatki"
   },
   "insight": {
     "dearer": "{{name}} podrożał o {{percent}}%",

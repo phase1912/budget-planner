@@ -13,8 +13,16 @@ class Balance:
     starting: Decimal
     came_in: Decimal
     spent: Decimal
+    taxes_paid: Decimal = Decimal("0.00")
+    taxes_owed: Decimal = Decimal("0.00")
+    """For a user who pays their own taxes (F23.16): set aside on income since `since`."""
 
     @property
     def now(self) -> Decimal:
-        """The starting amount, plus income since, minus counted purchases since."""
-        return self.starting + self.came_in - self.spent
+        """The starting amount, plus income since, minus counted purchases and taxes paid."""
+        return self.starting + self.came_in - self.spent - self.taxes_paid
+
+    @property
+    def for_taxes(self) -> Decimal:
+        """Of `now`, what is still owed in taxes: set aside but not yet paid, never below 0."""
+        return max(self.taxes_owed - self.taxes_paid, Decimal("0.00"))

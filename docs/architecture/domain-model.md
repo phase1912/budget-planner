@@ -550,6 +550,20 @@ Rules that must hold at all times. Each is a candidate for a test.
     deleted; confirming makes it an entry, dismissing drops it. A letter delivered twice
     waits once.
 
+33. Regular incomes (F23.17) — a salary, a side job, a pension — are set once and count in
+    every month from the month they were added, as they reach the account; anything else
+    is entered on top by hand, through ＋ or from a document. With any regular income the
+    single usual income no longer stands in. Ending one stops it from the next month and
+    keeps it in the months it ran (one ended in its first month simply goes). The balance
+    gains each on its day of the month (a 31st in a shorter month on its last day).
+34. A user who pays their own taxes (F23.16) sets a rate and an optional fixed sum a
+    month. Each income — entry or regular — says whether the tax comes out of it: by
+    default earnings do and gifts, refunds and sales do not; a regular income is untaxed
+    until ticked, and income read off an emailed document asks the user to decide. A
+    month's taxes are the rate on its taxed income plus the fixed sum, once; "left to
+    spend" counts the income after them. Taxes paid are recorded apart: they lower the
+    balance and what is still owed, never the spending.
+
 **Goals before they are saved**
 
 32. A money goal is checked against the user's last three whole months that had receipts

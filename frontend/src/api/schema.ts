@@ -2220,6 +2220,98 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/income/regular": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Regular Incomes
+         * @description The regular incomes still running, already net (F23.17).
+         */
+        get: operations["regular_incomes_api_v1_income_regular_get"];
+        put?: never;
+        /**
+         * Add Regular Income
+         * @description Start a regular income; it counts every month from this one on.
+         */
+        post: operations["add_regular_income_api_v1_income_regular_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/regular/{source_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Regular Income
+         * @description Change a regular income; 404 if it is not the user's (N2).
+         */
+        put: operations["change_regular_income_api_v1_income_regular__source_id__put"];
+        post?: never;
+        /**
+         * End Regular Income
+         * @description Stop a regular income from next month; past months keep it. 404 if not the user's.
+         */
+        delete: operations["end_regular_income_api_v1_income_regular__source_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/taxes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tax Payments
+         * @description A month's tax payments (YYYY-MM), for a user who pays their own (F23.16).
+         */
+        get: operations["tax_payments_api_v1_income_taxes_get"];
+        put?: never;
+        /**
+         * Pay Taxes
+         * @description Record taxes paid: they leave the balance, never the spending (F23.16).
+         */
+        post: operations["pay_taxes_api_v1_income_taxes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/taxes/{payment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Tax Payment
+         * @description Remove a tax payment; 404 if it is not the user's (N2).
+         */
+        delete: operations["delete_tax_payment_api_v1_income_taxes__payment_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/income/{income_id}": {
         parameters: {
             query?: never;
@@ -2486,6 +2578,10 @@ export interface components {
             came_in: string | null;
             /** Spent */
             spent: string | null;
+            /** Taxes Paid */
+            taxes_paid?: string | null;
+            /** For Taxes */
+            for_taxes?: string | null;
         };
         /**
          * BarGroupResponse
@@ -3372,6 +3468,11 @@ export interface components {
             source: string;
             kind: components["schemas"]["IncomeKind"];
             channel: components["schemas"]["IncomeChannel"];
+            /**
+             * Taxed
+             * @default false
+             */
+            taxed: boolean;
         };
         /**
          * IncomeRequest
@@ -3391,6 +3492,49 @@ export interface components {
             kind: components["schemas"]["IncomeKind"];
             /** @default manual */
             channel: components["schemas"]["IncomeChannel"];
+            /** Taxed */
+            taxed?: boolean | null;
+        };
+        /** IncomeSourceRead */
+        IncomeSourceRead: {
+            /** Name */
+            name: string;
+            /** Amount */
+            amount: string;
+            /** Day */
+            day?: number | null;
+            /**
+             * Taxed
+             * @default false
+             */
+            taxed: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Starts On
+             * Format: date
+             */
+            starts_on: string;
+        };
+        /**
+         * IncomeSourceRequest
+         * @description A regular income, already net (F23.17); `day` is when in the month it comes.
+         */
+        IncomeSourceRequest: {
+            /** Name */
+            name: string;
+            /** Amount */
+            amount: number | string;
+            /** Day */
+            day?: number | null;
+            /**
+             * Taxed
+             * @default false
+             */
+            taxed: boolean;
         };
         /**
          * ItemView
@@ -3693,6 +3837,23 @@ export interface components {
             usual: string | null;
             /** Entries */
             entries: components["schemas"]["IncomeRead"][];
+            /**
+             * Taxes
+             * @default 0.00
+             */
+            taxes: string;
+            /** Net */
+            net?: string | null;
+            /**
+             * Taxes Paid
+             * @default 0.00
+             */
+            taxes_paid: string;
+            /**
+             * Regular
+             * @default []
+             */
+            regular: components["schemas"]["IncomeSourceRead"][];
         };
         /**
          * MonthPurchasesResponse
@@ -4716,6 +4877,34 @@ export interface components {
              */
             alias_id: string;
         };
+        /** TaxPaymentRead */
+        TaxPaymentRead: {
+            /**
+             * Paid On
+             * Format: date
+             */
+            paid_on: string;
+            /** Amount */
+            amount: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
+        /**
+         * TaxPaymentRequest
+         * @description Taxes paid, by a user who pays their own (F23.16).
+         */
+        TaxPaymentRequest: {
+            /**
+             * Paid On
+             * Format: date
+             */
+            paid_on: string;
+            /** Amount */
+            amount: number | string;
+        };
         /**
          * TripChoice
          * @description The trip one extraction goes into when stored, or none (null), as the user said.
@@ -5258,6 +5447,15 @@ export interface components {
             /** Balance Since */
             balance_since?: string | null;
             /**
+             * Pays Own Taxes
+             * @default false
+             */
+            pays_own_taxes: boolean;
+            /** Tax Rate */
+            tax_rate?: string | null;
+            /** Tax Fixed Monthly */
+            tax_fixed_monthly?: string | null;
+            /**
              * Is Admin
              * @description Whether the account sees the admin pages (F17.3.3): by role, or a listed email.
              */
@@ -5300,6 +5498,12 @@ export interface components {
             starting_balance?: number | string | null;
             /** Balance Since */
             balance_since?: string | null;
+            /** Pays Own Taxes */
+            pays_own_taxes?: boolean | null;
+            /** Tax Rate */
+            tax_rate?: number | string | null;
+            /** Tax Fixed Monthly */
+            tax_fixed_monthly?: number | string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -9275,6 +9479,242 @@ export interface operations {
             header?: never;
             path: {
                 pending_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    regular_incomes_api_v1_income_regular_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeSourceRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_regular_income_api_v1_income_regular_post: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncomeSourceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeSourceRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_regular_income_api_v1_income_regular__source_id__put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncomeSourceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeSourceRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    end_regular_income_api_v1_income_regular__source_id__delete: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tax_payments_api_v1_income_taxes_get: {
+        parameters: {
+            query: {
+                month: string;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxPaymentRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pay_taxes_api_v1_income_taxes_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaxPaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxPaymentRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_tax_payment_api_v1_income_taxes__payment_id__delete: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                payment_id: string;
             };
             cookie?: never;
         };

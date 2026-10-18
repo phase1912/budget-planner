@@ -33,3 +33,6 @@ class UserFactory(ModelFactory[User]):
     payday = None
     starting_balance = None
     balance_since = None
+    pays_own_taxes = False
+    tax_rate = None
+    tax_fixed_monthly = None

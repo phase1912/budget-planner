@@ -26,6 +26,7 @@ export const UploadPage = observer(function UploadPage() {
   const { t } = useTranslation(["upload", "receipts"]);
   const { t: common } = useTranslation();
   const [addingExpense, setAddingExpense] = useState(false);
+  const [addingIncome, setAddingIncome] = useState(false);
   const [params] = useSearchParams();
   const tripId = params.get("trip");
 
@@ -139,6 +140,19 @@ export const UploadPage = observer(function UploadPage() {
               {t("receipts:manual.openLong")}
             </button>
           </p>
+          {/* Money that came in unexpectedly is added here too, on top of regular income. */}
+          <p className="m-0 text-[15px] text-muted-foreground">
+            {t("add.moneyIn")}{" "}
+            <button
+              type="button"
+              className="inline-flex min-h-11 cursor-pointer items-center bg-transparent p-0 font-semibold text-primary underline-offset-2 hover:underline md:min-h-0"
+              onClick={() => {
+                setAddingIncome(true);
+              }}
+            >
+              {t("add.addIncome")}
+            </button>
+          </p>
         </div>
 
         <ReceiptQuotaNote needed={uploadStore.lines.length} />
@@ -203,6 +217,18 @@ export const UploadPage = observer(function UploadPage() {
             />
           )}
           {incomeStore.readError && <Note tone="error">{incomeStore.readError}</Note>}
+          {addingIncome && (
+            <IncomeDialog
+              entry={null}
+              defaultDay={isoDay(new Date())}
+              onClose={() => {
+                setAddingIncome(false);
+              }}
+              onSaved={() => {
+                void navigate("/");
+              }}
+            />
+          )}
           {incomeStore.draft && (
             <IncomeDialog
               entry={null}

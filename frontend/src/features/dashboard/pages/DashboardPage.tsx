@@ -133,7 +133,8 @@ export const DashboardPage = observer(function DashboardPage() {
                 income={incomeStore.month}
                 currency={currency}
                 onEditIncome={() => {
-                  setEditing("income");
+                  // With regular incomes the month counts itself; a tap adds what came on top.
+                  setEditing((incomeStore.month?.regular.length ?? 0) > 0 ? "received" : "income");
                 }}
                 onEditBudget={() => {
                   setEditing("budget");

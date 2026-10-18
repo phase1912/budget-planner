@@ -75,6 +75,7 @@ describe("HouseholdCard", () => {
       two_factor_enabled: false,
       dark_at_night: false,
       travels_for_work: false,
+      pays_own_taxes: false,
     };
   });
 

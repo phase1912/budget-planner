@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-25 epics · 164 features · 328 tasks written so far.
+25 epics · 166 features · 328 tasks written so far.
 
 22 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -32,7 +32,7 @@
 | E20 | Trips | — | 5 | yes | 2 | Diploma |
 | E21 | Voice and Chat Assistant | — | 6 | yes | 2 | Diploma |
 | E22 | Android App | — | 3 | yes | 2 | Diploma |
-| E23 | Improvements | — | 15 | no | 2 | Diploma |
+| E23 | Improvements | — | 17 | no | 2 | Diploma |
 | E24 | Bugfixes | — | 1 | no | 2 | Diploma |
 
 ---
@@ -1845,13 +1845,29 @@ What the user has now: a starting balance entered once — in the first sign-in 
 
 **Demonstrated by:** Start with 5 000 zł; store a 169 zł receipt and the balance reads 4 831 zł; add the salary and it grows by it.
 
-### F23.15 — Assets
+### F23.15 — Assets and savings
 
 *Requirements: —* · *Blocked by: F23.14*
 
-Later, not in this branch: what else the user owns — a deposit, money on another card, a car — listed beside the balance for a picture of everything they have, behind two-factor sign-in; whether and how it may be kept decided first (ADR-0020).
+Later, not in this branch: the third of "income · spending · assets": what else the user owns or puts aside — a savings pot, a deposit, money on another card, a car — beside the balance for a picture of everything they have, behind two-factor sign-in; whether and how it may be kept decided first (ADR-0020).
 
 **Demonstrated by:** Add a 10 000 zł deposit and see it beside the balance.
+
+### F23.16 — Paying one's own taxes
+
+*Requirements: —* · *Blocked by: F23.10, F23.14*
+
+For a sole trader or contractor, whose income comes before tax: a switch in Settings with their own rate and an optional fixed sum a month; each income says whether the tax comes out of it, "left to spend" counts what is theirs to keep, and taxes paid leave the balance without counting as spending.
+
+**Demonstrated by:** Set 12 % and 1 600 zł a month, see 20 000 zł earned leave 16 000 zł to live on, and the balance say how much of it is still owed in taxes.
+
+### F23.17 — Regular incomes
+
+*Requirements: —* · *Blocked by: F23.10, F23.14*
+
+A salary, a side job, a pension — set once in Settings or the first-sign-in setup, counted in every month by themselves, the balance gaining each on its day; anything that comes on top is added by hand through ＋ or from a document.
+
+**Demonstrated by:** Add a 10 000 zł salary on the 10th and a 1 000 zł side job; next month both count without entering anything, and 500 zł added on top joins them.
 
 ---
 

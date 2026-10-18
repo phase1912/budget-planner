@@ -109,6 +109,9 @@ class TestRegister:
         user.usual_income = None
         user.payday = None
         user.starting_balance = None
+        user.pays_own_taxes = False
+        user.tax_rate = None
+        user.tax_fixed_monthly = None
         user.balance_since = None
 
         # First execute: no existing user; second: flush creates the RT
@@ -236,6 +239,9 @@ class TestLogin:
         user.usual_income = None
         user.payday = None
         user.starting_balance = None
+        user.pays_own_taxes = False
+        user.tax_rate = None
+        user.tax_fixed_monthly = None
         user.balance_since = None
         user.password_hash = get_password_hash("SecurePass123!")
 

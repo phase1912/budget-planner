@@ -35,6 +35,9 @@ class UserResponse(BaseModel):
     payday: int | None = None
     starting_balance: Decimal | None = None
     balance_since: date | None = None
+    pays_own_taxes: bool = False
+    tax_rate: Decimal | None = None
+    tax_fixed_monthly: Decimal | None = None
     forwarding_token: str = Field(exclude=True)
     role: str = Field(default="user", exclude=True)
 
@@ -79,6 +82,11 @@ class UserUpdateRequest(BaseModel):
     # was true on defaults to the day it is entered.
     starting_balance: Decimal | None = Field(None, max_digits=12, decimal_places=2)
     balance_since: date | None = None
+    # Paying one's own taxes (F23.16): a percentage of each taxed income, and a fixed
+    # sum a month; null clears either.
+    pays_own_taxes: bool | None = None
+    tax_rate: Decimal | None = Field(None, ge=0, le=100, max_digits=5, decimal_places=2)
+    tax_fixed_monthly: Decimal | None = Field(None, ge=0, max_digits=12, decimal_places=2)
 
 
 class EmailChangeRequest(BaseModel):

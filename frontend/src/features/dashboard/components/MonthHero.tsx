@@ -47,7 +47,10 @@ export function MonthHero({
   const { t } = useTranslation("dashboard");
   const spent = Number(summary.total);
   const budget = summary.budget_limit == null ? null : Number(summary.budget_limit);
-  const earned = income?.total == null ? null : Number(income.total);
+  // What is the user's to keep: for one who pays their own taxes, after them (F23.16).
+  const kept = income?.net ?? income?.total;
+  const earned = kept == null ? null : Number(kept);
+  const afterTax = Number(income?.taxes ?? 0) > 0;
   const base = budget ?? earned;
   const left = base === null ? null : base - spent;
   const over = left !== null && left < 0;
@@ -105,7 +108,11 @@ export function MonthHero({
     {
       key: "income",
       label:
-        income?.entered === false && earned !== null ? t("hero.incomeUsual") : t("hero.income"),
+        income?.entered === false && earned !== null
+          ? t("hero.incomeUsual")
+          : afterTax
+            ? t("hero.incomeNet")
+            : t("hero.income"),
       value: earned === null ? t("hero.add") : `${WHOLE.format(earned)} ${currency}`,
       action: onEditIncome,
       muted: earned === null,

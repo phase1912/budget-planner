@@ -172,4 +172,237 @@ async def test_the_balance_moves_with_income_and_counted_purchases_since_it_was_
         "starting": "5000.00",
         "came_in": "6200.00",
         "spent": "169.00",
+        "taxes_paid": "0",
+        "for_taxes": None,
     }
+
+
+@pytest.mark.asyncio
+async def test_one_who_pays_their_own_taxes_sees_what_is_theirs_to_keep(
+    db_session: AsyncSession,
+) -> None:
+    """F23.16: 20 000 earned is taxed by its kind, a 1 000 gift is not; the fixed sum once."""
+    user = await UserFactory.create_async()
+    await _call(
+        db_session,
+        "PATCH",
+        "/users/me",
+        user=user,
+        json={
+            "pays_own_taxes": True,
+            "tax_rate": "12",
+            "tax_fixed_monthly": "1600",
+            "starting_balance": "0",
+            "balance_since": "2026-10-01",
+        },
+    )
+    entry = {"received_on": "2026-10-05", "source": "x"}
+    salary = await _call(
+        db_session,
+        "POST",
+        "/api/v1/income",
+        user=user,
+        json={**entry, "amount": "20000.00", "kind": "side"},
+    )
+    gift = await _call(
+        db_session,
+        "POST",
+        "/api/v1/income",
+        user=user,
+        json={**entry, "amount": "1000.00", "kind": "other"},
+    )
+    assert (salary.json()["taxed"], gift.json()["taxed"]) == (True, False)
+
+    month = (await _call(db_session, "GET", "/api/v1/income?month=2026-10", user=user)).json()
+    assert (month["total"], month["taxes"], month["net"]) == ("21000.00", "4000.00", "17000.00")
+
+    paid = await _call(
+        db_session,
+        "POST",
+        "/api/v1/income/taxes",
+        user=user,
+        json={"paid_on": "2026-10-20", "amount": "1600.00"},
+    )
+    assert paid.status_code == 201
+    balance = (
+        await _call(db_session, "GET", "/api/v1/income/balance?today=2026-10-25", user=user)
+    ).json()
+    assert (balance["balance"], balance["for_taxes"]) == ("19400.00", "2400.00")
+    month = (await _call(db_session, "GET", "/api/v1/income?month=2026-10", user=user)).json()
+    assert month["taxes_paid"] == "1600.00"
+
+
+@pytest.mark.asyncio
+async def test_a_gift_marked_taxed_by_hand_stays_so_until_changed(db_session: AsyncSession) -> None:
+    user = await UserFactory.create_async()
+    entry = {"received_on": "2026-10-05", "source": "x", "amount": "300.00", "kind": "other"}
+    made = (
+        await _call(db_session, "POST", "/api/v1/income", user=user, json={**entry, "taxed": True})
+    ).json()
+    kept = (
+        await _call(db_session, "PUT", f"/api/v1/income/{made['id']}", user=user, json=entry)
+    ).json()
+    cleared = (
+        await _call(
+            db_session,
+            "PUT",
+            f"/api/v1/income/{made['id']}",
+            user=user,
+            json={**entry, "taxed": False},
+        )
+    ).json()
+
+    assert (made["taxed"], kept["taxed"], cleared["taxed"]) == (True, True, False)
+
+
+@pytest.mark.asyncio
+async def test_another_users_tax_payments_are_neither_seen_nor_removed(
+    db_session: AsyncSession,
+) -> None:
+    """N2."""
+    owner = await UserFactory.create_async()
+    stranger = await UserFactory.create_async()
+    paid = (
+        await _call(
+            db_session,
+            "POST",
+            "/api/v1/income/taxes",
+            user=owner,
+            json={"paid_on": "2026-10-20", "amount": "100.00"},
+        )
+    ).json()
+
+    listed = await _call(db_session, "GET", "/api/v1/income/taxes?month=2026-10", user=stranger)
+    removed = await _call(db_session, "DELETE", f"/api/v1/income/taxes/{paid['id']}", user=stranger)
+
+    assert listed.json() == []
+    assert removed.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_regular_incomes_count_every_month_and_ending_one_keeps_the_past(
+    db_session: AsyncSession,
+) -> None:
+    """F23.17: a salary and a side income, already net, with 500 more entered on top."""
+    user = await UserFactory.create_async()
+    base = "/api/v1/income/regular"
+    salary = await _call(
+        db_session,
+        "POST",
+        f"{base}?today=2026-10-01",
+        user=user,
+        json={"name": "Salary", "amount": "10000.00", "day": 10},
+    )
+    await _call(
+        db_session,
+        "POST",
+        f"{base}?today=2026-10-01",
+        user=user,
+        json={"name": "Side", "amount": "1000.00"},
+    )
+    await _call(
+        db_session,
+        "POST",
+        "/api/v1/income",
+        user=user,
+        json={"received_on": "2026-10-15", "amount": "500.00", "source": "Gift", "kind": "other"},
+    )
+
+    october = (await _call(db_session, "GET", "/api/v1/income?month=2026-10", user=user)).json()
+    september = (await _call(db_session, "GET", "/api/v1/income?month=2026-09", user=user)).json()
+    assert october["total"] == "11500.00"
+    assert [r["name"] for r in october["regular"]] == ["Salary", "Side"]
+    assert september["regular"] == []
+
+    await _call(db_session, "DELETE", f"{base}/{salary.json()['id']}?today=2026-11-20", user=user)
+    november = (await _call(db_session, "GET", "/api/v1/income?month=2026-11", user=user)).json()
+    december = (await _call(db_session, "GET", "/api/v1/income?month=2026-12", user=user)).json()
+    listed = (await _call(db_session, "GET", base, user=user)).json()
+    assert november["total"] == "11000.00"
+    assert december["total"] == "1000.00"
+    assert [r["name"] for r in listed] == ["Side"]
+
+
+@pytest.mark.asyncio
+async def test_the_balance_gains_the_salary_on_its_day(db_session: AsyncSession) -> None:
+    user = await UserFactory.create_async()
+    await _call(
+        db_session,
+        "PATCH",
+        "/users/me",
+        user=user,
+        json={"starting_balance": "100", "balance_since": "2026-10-01"},
+    )
+    await _call(
+        db_session,
+        "POST",
+        "/api/v1/income/regular?today=2026-10-01",
+        user=user,
+        json={"name": "Salary", "amount": "10000.00", "day": 10},
+    )
+
+    before = await _call(db_session, "GET", "/api/v1/income/balance?today=2026-10-09", user=user)
+    after = await _call(db_session, "GET", "/api/v1/income/balance?today=2026-10-10", user=user)
+
+    assert (before.json()["balance"], after.json()["balance"]) == ("100.00", "10100.00")
+
+
+@pytest.mark.asyncio
+async def test_another_users_regular_income_cannot_be_changed_or_ended(
+    db_session: AsyncSession,
+) -> None:
+    """N2."""
+    owner = await UserFactory.create_async()
+    stranger = await UserFactory.create_async()
+    made = (
+        await _call(
+            db_session,
+            "POST",
+            "/api/v1/income/regular",
+            user=owner,
+            json={"name": "Salary", "amount": "10000.00"},
+        )
+    ).json()
+    url = f"/api/v1/income/regular/{made['id']}"
+
+    changed = await _call(
+        db_session, "PUT", url, user=stranger, json={"name": "Mine", "amount": "1.00"}
+    )
+    ended = await _call(db_session, "DELETE", url, user=stranger)
+    listed = await _call(db_session, "GET", "/api/v1/income/regular", user=stranger)
+
+    assert (changed.status_code, ended.status_code, listed.json()) == (404, 404, [])
+
+
+@pytest.mark.asyncio
+async def test_tax_comes_out_of_a_regular_income_marked_taxed(db_session: AsyncSession) -> None:
+    """F23.16 with F23.17: 12 % of the taxed salary plus 1 600, nothing from the pension."""
+    user = await UserFactory.create_async()
+    await _call(
+        db_session,
+        "PATCH",
+        "/users/me",
+        user=user,
+        json={
+            "pays_own_taxes": True,
+            "tax_rate": "12",
+            "tax_fixed_monthly": "1600",
+            "starting_balance": "0",
+            "balance_since": "2026-10-01",
+        },
+    )
+    for body in (
+        {"name": "Salary", "amount": "10000.00", "day": 10, "taxed": True},
+        {"name": "Pension", "amount": "1000.00", "day": 5},
+    ):
+        await _call(
+            db_session, "POST", "/api/v1/income/regular?today=2026-10-01", user=user, json=body
+        )
+
+    month = (await _call(db_session, "GET", "/api/v1/income?month=2026-10", user=user)).json()
+    balance = (
+        await _call(db_session, "GET", "/api/v1/income/balance?today=2026-10-20", user=user)
+    ).json()
+
+    assert (month["total"], month["taxes"], month["net"]) == ("11000.00", "2800.00", "8200.00")
+    assert (balance["balance"], balance["for_taxes"]) == ("11000.00", "2800.00")

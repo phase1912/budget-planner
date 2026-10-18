@@ -14,7 +14,9 @@ import {
   LogOut,
   Mail,
   Moon,
+  Percent,
   Plane,
+  ReceiptText,
   Target,
   Users,
   Wallet,
@@ -31,6 +33,7 @@ import { InstallAppCard } from "@/features/install/InstallAppCard";
 import { ChangeEmailDialog } from "../components/ChangeEmailDialog";
 import { DataCard } from "../components/DataCard";
 import { ForwardingAddressCard } from "../components/ForwardingAddressCard";
+import { RegularIncomes } from "../components/RegularIncomes";
 import { HouseholdCard } from "../components/HouseholdCard";
 import { LanguageCard } from "../components/LanguageCard";
 import { ReadingAccuracyCard } from "../components/ReadingAccuracyCard";
@@ -46,6 +49,9 @@ type Sheet =
   | "income"
   | "payday"
   | "balance"
+  | "regular"
+  | "taxRate"
+  | "taxFixed"
   | "language"
   | "forwarding"
   | "usage"
@@ -77,7 +83,8 @@ export const ProfilePage = observer(function ProfilePage() {
   useEffect(() => {
     void profileStore.loadProfile();
     void quotaStore.load();
-  }, [profileStore, quotaStore]);
+    void incomeStore.loadRegular();
+  }, [profileStore, quotaStore, incomeStore]);
 
   const initials =
     `${user?.first_name.charAt(0) ?? ""}${user?.last_name.charAt(0) ?? ""}`.toUpperCase() || "?";
@@ -173,12 +180,33 @@ export const ProfilePage = observer(function ProfilePage() {
         <SettingsRow
           icon={Wallet}
           color="var(--cat-dining)"
-          label={t("money.income")}
-          value={amount(user?.usual_income)}
+          label={t("regular.title")}
+          value={
+            incomeStore.regular.length === 0
+              ? t("regular.none")
+              : t("regular.summary", {
+                  count: incomeStore.regular.length,
+                  amount: amount(
+                    String(incomeStore.regular.reduce((sum, r) => sum + Number(r.amount), 0)),
+                  ),
+                })
+          }
           onClick={() => {
-            setSheet("income");
+            setSheet("regular");
           }}
         />
+        {/* The single usual income came before regular incomes; kept while it is all there is. */}
+        {incomeStore.regular.length === 0 && user?.usual_income != null && (
+          <SettingsRow
+            icon={Wallet}
+            color="var(--cat-dining)"
+            label={t("money.income")}
+            value={amount(user.usual_income)}
+            onClick={() => {
+              setSheet("income");
+            }}
+          />
+        )}
         <SettingsRow
           icon={CalendarDays}
           color="var(--cat-transport)"
@@ -204,6 +232,50 @@ export const ProfilePage = observer(function ProfilePage() {
             setSheet("balance");
           }}
         />
+        <SettingsRow
+          icon={ReceiptText}
+          color="var(--cat-utilities)"
+          label={t("money.taxes")}
+          hint={t("money.taxesHint")}
+          aside={
+            <span className="w-14 shrink-0">
+              <Switch
+                checked={user?.pays_own_taxes === true}
+                onChange={(value) => {
+                  void profileStore.saveQuietly({ pays_own_taxes: value });
+                }}
+                label=""
+                ariaLabel={t("money.taxes")}
+              />
+            </span>
+          }
+        />
+        {user?.pays_own_taxes === true && (
+          <>
+            <SettingsRow
+              icon={Percent}
+              color="var(--cat-utilities)"
+              label={t("money.taxRate")}
+              value={
+                user.tax_rate == null
+                  ? t("money.none")
+                  : t("money.percent", { value: Number(user.tax_rate) })
+              }
+              onClick={() => {
+                setSheet("taxRate");
+              }}
+            />
+            <SettingsRow
+              icon={CalendarDays}
+              color="var(--cat-utilities)"
+              label={t("money.taxFixed")}
+              value={amount(user.tax_fixed_monthly)}
+              onClick={() => {
+                setSheet("taxFixed");
+              }}
+            />
+          </>
+        )}
       </SettingsGroup>
 
       <SettingsGroup label={common("language.label")}>
@@ -411,6 +483,38 @@ export const ProfilePage = observer(function ProfilePage() {
           currency={money}
           onSave={(value) =>
             profileStore.saveQuietly({ starting_balance: value, balance_since: isoToday })
+          }
+          onClose={close}
+        />
+      )}
+      {sheet === "regular" && (
+        <SettingsSheet title={t("regular.title")} onClose={close}>
+          <p className="m-0 text-md text-muted-foreground">{t("regular.hint")}</p>
+          <RegularIncomes />
+        </SettingsSheet>
+      )}
+      {sheet === "taxRate" && (
+        <AmountDialog
+          title={t("money.taxRate")}
+          label={t("money.taxRate")}
+          hint={t("money.taxRateHint")}
+          initial={user?.tax_rate ?? ""}
+          currency="%"
+          allowEmpty
+          onSave={(value) => profileStore.saveQuietly({ tax_rate: value === "" ? null : value })}
+          onClose={close}
+        />
+      )}
+      {sheet === "taxFixed" && (
+        <AmountDialog
+          title={t("money.taxFixed")}
+          label={t("money.taxFixed")}
+          hint={t("money.taxFixedHint")}
+          initial={user?.tax_fixed_monthly ?? ""}
+          currency={money}
+          allowEmpty
+          onSave={(value) =>
+            profileStore.saveQuietly({ tax_fixed_monthly: value === "" ? null : value })
           }
           onClose={close}
         />
