@@ -1,40 +1,27 @@
 import { useEffect, useState } from "react";
-import { Package, Search, X } from "lucide-react";
+import { ChartLine, ChevronRight, Package, Search, X } from "lucide-react";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
-import { StatisticsTabs } from "@/features/statistics/components/StatisticsTabs";
-import {
-  Button,
-  Card,
-  EmptyState,
-  ErrorState,
-  Input,
-  LoadingState,
-  Note,
-} from "@/shared/components";
+import { Card, EmptyState, ErrorState, Input, LoadingState } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
-import { ExplorePanel } from "../components/ExplorePanel";
-import { MergeProductsDialog } from "../components/MergeProductsDialog";
-import { SaveSelectionDialog } from "../components/SaveSelectionDialog";
 import { ProductRow } from "../components/ProductRow";
+import { ProductsOverview } from "../components/ProductsOverview";
 
 /**
  * What the user buys, one product however each shop prints it (F16.1), and what it was
  * bought for (F16.2).
  *
  * Opening it matches every line not yet matched, so the first visit can take a moment.
- * Products are searched by any printed name. Ticking products explores them over a period
- * — amounts, months, prices per shop — and the ticked set can be saved under a name and
- * opened again; ticking two or more also offers to merge them. Each product opens to the
- * ways it was printed, any of which can be split off.
+ * Products are searched by any printed name. Ticked products are explored on their own
+ * screen (ExplorePage) — a bar leads there — and saved sets open from here too. Each
+ * product opens to the ways it was printed, any of which can be split off.
  */
 export const ProductsPage = observer(function ProductsPage() {
   const { productsStore, authStore, explorationStore } = useStores();
   const { t } = useTranslation("products");
-  const [merging, setMerging] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState(productsStore.search);
   const currency = authStore.user?.currency ?? "PLN";
   const { products, isLoading, loadError, selected } = productsStore;
@@ -43,6 +30,7 @@ export const ProductsPage = observer(function ProductsPage() {
 
   useEffect(() => {
     void productsStore.load();
+    void productsStore.loadOverview();
     void explorationStore.loadSelections();
   }, [productsStore, explorationStore]);
 
@@ -70,16 +58,50 @@ export const ProductsPage = observer(function ProductsPage() {
   }, [draft, productsStore]);
 
   return (
-    <div className="flex-grow flex flex-col items-center py-4 md:py-10 md:px-8">
+    <div className="flex-grow flex flex-col items-center pb-4">
       <div className="w-full max-w-[1000px] flex flex-col gap-4 md:gap-5">
-        <header className="flex flex-col gap-1">
-          <h1 className="m-0 text-[24px] font-bold tracking-[-0.02em] md:text-[28px]">
-            {t("title")}
-          </h1>
-          <p className="m-0 text-lg text-muted-foreground">{t("subtitle")}</p>
+        <header className="flex flex-col gap-0.5">
+          <h1 className="m-0 text-3xl font-extrabold tracking-[-0.02em]">{t("title")}</h1>
+          <p className="m-0 text-md text-muted-foreground">
+            {t("count", { count: products.length })}
+          </p>
         </header>
 
-        <StatisticsTabs />
+        <div className="relative">
+          <Search
+            size={16}
+            aria-hidden="true"
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            type="search"
+            className="min-h-12 rounded-control border-0 bg-surface pl-10 text-lg"
+            aria-label={t("search")}
+            placeholder={t("search")}
+            value={draft}
+            onChange={(e) => {
+              setDraft(e.target.value);
+            }}
+          />
+        </div>
+
+        <Link
+          to="/products/explore"
+          className="flex min-h-15 items-center gap-3 rounded-card bg-primary px-4 py-3 text-primary-foreground"
+        >
+          <ChartLine size={22} aria-hidden="true" />
+          <span className="flex flex-1 flex-col">
+            <span className="text-lg font-extrabold">{t("exploreTitle")}</span>
+            <span className="text-sm opacity-90">{t("exploreHint")}</span>
+          </span>
+          <ChevronRight size={18} aria-hidden="true" />
+        </Link>
+
+        <ProductsOverview currency={currency} />
+
+        <h2 id="all-products" className="m-0 scroll-mt-4 pt-2 text-xl font-extrabold">
+          {t("all")}
+        </h2>
 
         {explorationStore.selections.length > 0 && (
           <section aria-label={t("selections.title")} className="flex flex-col gap-1.5">
@@ -90,7 +112,7 @@ export const ProductsPage = observer(function ProductsPage() {
               {explorationStore.selections.map((selection) => (
                 <li
                   key={selection.id}
-                  className="inline-flex items-center rounded-pill border border-border bg-background"
+                  className="inline-flex items-center rounded-pill control-fill"
                 >
                   <button
                     type="button"
@@ -120,74 +142,6 @@ export const ProductsPage = observer(function ProductsPage() {
           </section>
         )}
 
-        <div className="relative">
-          <Search
-            size={16}
-            aria-hidden="true"
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            type="search"
-            className="pl-9"
-            aria-label={t("search")}
-            placeholder={t("search")}
-            value={draft}
-            onChange={(e) => {
-              setDraft(e.target.value);
-            }}
-          />
-        </div>
-
-        {selected.length > 0 && (
-          // Stays in view while ticking further down a long list, where the action is needed.
-          <div className="sticky top-2 z-20 rounded-control bg-background shadow-raised">
-            <Note tone="info">
-              <span className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
-                <span>
-                  {openSelection
-                    ? t("selections.showing", { name: openSelection.name })
-                    : t("picked", { count: selected.length })}
-                </span>
-                <span className="flex flex-wrap gap-2 [&>*]:flex-1 md:flex-nowrap md:[&>*]:flex-none">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      productsStore.clearSelection();
-                    }}
-                  >
-                    {t("clear")}
-                  </Button>
-                  {!openSelection && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        setSaving(true);
-                      }}
-                    >
-                      {t("selections.open")}
-                    </Button>
-                  )}
-                  {selected.length > 1 && (
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => {
-                        setMerging(true);
-                      }}
-                    >
-                      {t("merge.open")}
-                    </Button>
-                  )}
-                </span>
-              </span>
-            </Note>
-          </div>
-        )}
-
-        {selected.length > 0 && <ExplorePanel currency={currency} />}
-
         {loadError ? (
           <ErrorState layout="banner" title={t("loadFailed")} message={loadError} />
         ) : isLoading && products.length === 0 ? (
@@ -214,19 +168,19 @@ export const ProductsPage = observer(function ProductsPage() {
           </Card>
         )}
       </div>
-      {saving && (
-        <SaveSelectionDialog
-          onClose={() => {
-            setSaving(false);
-          }}
-        />
-      )}
-      {merging && (
-        <MergeProductsDialog
-          onClose={() => {
-            setMerging(false);
-          }}
-        />
+      {/* Ticked products are explored on their own screen; this is the way there. */}
+      {selected.length > 0 && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-24 z-20 flex justify-center px-4 md:bottom-6">
+          <Link
+            to="/products/explore"
+            className="pointer-events-auto flex min-h-13 items-center gap-3 rounded-pill bg-primary px-5 text-lg font-extrabold text-primary-foreground shadow-modal"
+          >
+            {openSelection ? openSelection.name : t("picked", { count: selected.length })}
+            <span aria-hidden="true">·</span>
+            {t("explore.go")}
+            <ChevronRight size={18} aria-hidden="true" />
+          </Link>
+        </div>
       )}
     </div>
   );

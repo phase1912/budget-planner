@@ -1,31 +1,33 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { ArrowRight, ChevronRight } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { useStores } from "@/stores/StoreContext";
 import { monthRange } from "@/stores/BudgetStore";
-import type { MonthSummary } from "@/stores/BudgetStore";
-import { Card, ErrorState, LoadingState, Note } from "@/shared/components";
+import { AmountDialog, ErrorState, LoadingState, Note } from "@/shared/components";
 import { MonthTrips } from "@/features/trips/components/MonthTrips";
 import { DeleteReceiptDialog } from "@/features/receipts/components/DeleteReceiptDialog";
 import { EditReceiptDialog } from "@/features/receipts/components/EditReceiptDialog";
 import { ReceiptDetailModal } from "@/features/receipts/components/ReceiptDetailModal";
-import { CategorySpendList } from "@/features/categories/components/CategorySpendList";
 import { AtRiskWarnings } from "@/features/goals/components/AtRiskWarnings";
 import { InstallHint } from "@/features/install/InstallHint";
-import { LimitStatus } from "../components/LimitStatus";
-import { MonthReceipts } from "../components/MonthReceipts";
-import { MonthStatus } from "../components/MonthStatus";
-import { MonthSwitcher } from "../components/MonthSwitcher";
-import { TopCategories } from "../components/TopCategories";
+import { BalanceCard } from "../components/BalanceCard";
+import { PaydayPrompt } from "../components/PaydayPrompt";
+import { PendingIncomeCard } from "../components/PendingIncomeCard";
+import { IncomeDialog } from "@/features/plan/IncomeDialog";
+import { paydayDue } from "@/stores/IncomeStore";
+import { CategoryTiles } from "../components/CategoryTiles";
+import { MonthHero } from "../components/MonthHero";
+import { HomeHeader } from "../components/HomeHeader";
+import { PriceInsight } from "../components/PriceInsight";
+import { RecentPurchases } from "../components/RecentPurchases";
 import { WelcomePanel } from "../components/WelcomePanel";
 import { HouseholdMonthView } from "@/features/household/components/HouseholdMonthView";
 import { HouseholdViewSwitch } from "@/features/household/components/HouseholdViewSwitch";
 import { numberFormat, dateFormat } from "@/i18n/format";
 import { useTranslation } from "react-i18next";
 
-const MONTH_AND_YEAR = dateFormat({ month: "long", year: "numeric" });
 const MONTH = dateFormat({ month: "long" });
 const AMOUNT = numberFormat({
   minimumFractionDigits: 2,
@@ -33,36 +35,50 @@ const AMOUNT = numberFormat({
 });
 
 /**
- * The landing view (docs/design/screens/dashboard.html): the month's spend by
- * receipt date, with a switcher to step back through earlier months (BRD D1,
- * D2 — F6.1). A user with no receipts yet sees the welcome instead.
+ * Home (F23.3, was the dashboard of F6.1–F6.7): what is left to spend this month as a
+ * ring, income and budget changed in place, the lines waiting for a category, where the
+ * money went as coloured tiles, and the month's receipts. A user with no receipts yet sees
+ * the welcome instead.
  *
- * Receipts under manual review are left out of the figure and named beneath
- * it, with the way through to fix them (D3 — F6.2). An unfinished month is
- * labelled month-to-date, with the days so far (D4 — F6.3).
- *
- * Beneath it, where the month went by category, and its receipts, which open
- * their detail dialog here; correcting or deleting one refetches the month, so
- * its figure moves without a reload, and the view reopens on the month it was
- * left on (D6 — F6.5). Where the user has set a monthly limit, the figure reads
- * as a share of it, past 100% when over (D7 — F6.6).
- *
- * All of it arrives in one request, and "Full statistics" leads on to E7 (F6.7).
- * A phone gets docs/design/screens/dashboard-mobile.html: the month centred
- * between its arrows, the shorter figure card, the held-out receipts as one
- * tappable line, and the top five categories in place of the breakdown and the
- * receipts column.
+ * The month's rules stay as they were: the figure counts receipts by their date (D1, D2),
+ * receipts held for review are left out and named beneath it (D3), an unfinished month
+ * says "so far" (D4), a corrected receipt refetches the month (D6), and with a budget the
+ * month reads against it (D7).
  */
 export const DashboardPage = observer(function DashboardPage() {
-  const { budgetStore, authStore, receiptStore, householdStore } = useStores();
-  const { summary, isLoading, error } = budgetStore;
-  const navigate = useNavigate();
+  const {
+    budgetStore,
+    authStore,
+    receiptStore,
+    householdStore,
+    incomeStore,
+    categoriesStore,
+    profileStore,
+    productsStore,
+  } = useStores();
+  const { summary, error } = budgetStore;
   const { t } = useTranslation("dashboard");
+  const [editing, setEditing] = useState<"income" | "budget" | "balance" | "received" | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [reviewing, setReviewing] = useState<string | null>(null);
 
   useEffect(() => {
     void budgetStore.open();
     void householdStore.load();
-  }, [budgetStore, householdStore]);
+    void categoriesStore.loadReviewCount();
+    void productsStore.loadOverview();
+    void incomeStore.loadPending();
+  }, [budgetStore, householdStore, categoriesStore, productsStore, incomeStore]);
+
+  const { year, month } = budgetStore;
+  useEffect(() => {
+    void incomeStore.load(year, month);
+  }, [incomeStore, year, month]);
+  const today = budgetStore.today;
+  const receiptsKnown = budgetStore.receiptsInMonth;
+  useEffect(() => {
+    void incomeStore.loadBalance(today);
+  }, [incomeStore, today, receiptsKnown]);
 
   if (!summary) {
     return (
@@ -82,163 +98,235 @@ export const DashboardPage = observer(function DashboardPage() {
   if (!summary.has_receipts && !householdStore.shared) return <WelcomePanel />;
 
   const selected = new Date(budgetStore.year, budgetStore.month - 1, 1);
-  // The figure's own month, not the selection: while the next month loads, the
-  // old figure stays labelled as what it is.
-  const figureMonth = new Date(summary.year, summary.month - 1, 1);
   const currency = authStore.user?.currency ?? "PLN";
-  // An unfinished month's figure is month-to-date and must never read as final (D4).
-  // A phone drops the month's name, already shown right above the card.
-  const wide = (text: string) => <span className="hidden md:inline">{text}</span>;
-  const heading = (
-    <>
-      {summary.is_complete ? t("spent") : t("spentSoFar")}
-      {wide(t("inMonth", { month: MONTH.format(figureMonth) }))}
-    </>
-  );
-  const limit = limitOf(summary);
-  const overLimit = limit !== null && Number(limit.remaining) < 0;
-  const days = summary.is_complete ? (
-    t("days", { elapsed: summary.days_in_month, days: summary.days_in_month })
-  ) : (
-    <>
-      {t("days", { elapsed: summary.days_elapsed, days: summary.days_in_month })}
-      {wide(t("recorded"))}
-    </>
-  );
   const heldOutWorth = t("heldOutWorth", {
     receipts: t("receipts", { count: summary.excluded_count }),
     amount: AMOUNT.format(Number(summary.excluded_amount)),
     currency,
   });
-
-  const meta = (
-    <span className="tabular-nums text-sm text-muted-foreground md:text-md">
-      {days} · {t("receipts", { count: summary.receipt_count })}
-      {overLimit && t("markNote")}
-    </span>
-  );
+  const entries = incomeStore.month?.entries ?? [];
+  const shown = { year, month };
+  const running = year === budgetStore.current.year && month === budgetStore.current.month;
+  const askPayday = running && paydayDue(today, authStore.user?.payday, incomeStore.month);
+  const usual = incomeStore.month?.total ?? null;
+  const reviewCount = categoriesStore.reviewCount;
 
   return (
-    <div className="flex-grow flex flex-col items-center py-4 md:px-8 md:py-7">
-      <div className="w-full max-w-[960px] flex flex-col gap-4 md:gap-5">
-        <div className="flex flex-wrap items-center justify-between gap-3.5">
-          <div className="flex w-full items-center gap-3.5 md:w-auto">
-            <MonthSwitcher
-              label={MONTH_AND_YEAR.format(selected)}
-              canGoForward={budgetStore.canGoForward}
-              onPrevious={() => {
-                void budgetStore.showPreviousMonth();
-              }}
-              onNext={() => {
-                void budgetStore.showNextMonth();
-              }}
-              status={<MonthStatus isComplete={summary.is_complete} compact />}
-            />
-            <span className="hidden md:inline-flex">
-              <MonthStatus isComplete={summary.is_complete} />
-            </span>
-          </div>
-          <Link to="/statistics" className="hidden items-center gap-1.75 text-lg md:inline-flex">
-            {t("fullStatistics")}
-            <ArrowRight size={16} aria-hidden="true" />
-          </Link>
-        </div>
+    <div className="flex-grow flex flex-col items-center pb-4">
+      <div className="w-full max-w-[960px] flex flex-col gap-4.5 md:gap-5">
+        <HomeHeader isComplete={summary.is_complete} />
 
         <HouseholdViewSwitch />
-
         <InstallHint />
-
         <AtRiskWarnings linkToGoals />
 
         {householdStore.showingHousehold ? (
-          <HouseholdMonthView
-            year={budgetStore.year}
-            month={budgetStore.month}
-            currency={currency}
-          />
+          <HouseholdMonthView year={year} month={month} currency={currency} />
         ) : (
           <>
             {error && <ErrorState layout="banner" title={t("loadFailed")} message={error} />}
 
-            <Card
-              variant="surface"
-              aria-busy={isLoading}
-              className={`flex flex-col gap-3 p-5 md:gap-2.5 md:px-8 md:py-7 transition-opacity ${isLoading ? "opacity-60" : ""}`}
-            >
-              <span className="text-base font-medium text-muted-foreground md:text-md">
-                {heading}
-              </span>
-              <p className="m-0 flex flex-wrap items-baseline gap-2 md:gap-3">
-                <span className="tabular-nums text-[36px] font-bold leading-none tracking-[-0.025em] md:text-[46px]">
-                  {AMOUNT.format(Number(summary.total))}
-                </span>
-                <span className="text-[16px] font-semibold text-muted-foreground md:text-xl">
-                  {currency}
-                </span>
-              </p>
-              {limit ? (
-                <LimitStatus {...limit} currency={currency}>
-                  {meta}
-                </LimitStatus>
-              ) : (
-                meta
-              )}
-              <MonthTrips trips={budgetStore.trips} currency={currency} />
-            </Card>
-
-            {summary.excluded_count > 0 && (
-              <>
-                <Link to="/receipts?status=manual_review" className="text-inherit md:hidden">
-                  <Note tone="warning">
-                    <span className="flex items-center justify-between gap-3">
-                      <span className="tabular-nums">
-                        {t("heldOutPhone", { count: summary.excluded_count, worth: heldOutWorth })}
-                      </span>
-                      <ChevronRight size={16} aria-hidden="true" className="shrink-0" />
-                    </span>
-                  </Note>
-                </Link>
-                <div className="hidden md:block">
-                  <Note tone="warning">
-                    <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                      <span className="tabular-nums">
-                        {t("heldOut", { count: summary.excluded_count, worth: heldOutWorth })}
-                      </span>
-                      <Link to="/receipts?status=manual_review" className="shrink-0 underline">
-                        {t("resolve", { count: summary.excluded_count })}
-                      </Link>
-                    </span>
-                  </Note>
-                </div>
-              </>
-            )}
-
-            <div className="md:hidden">
-              <TopCategories
+            <div className="grid gap-4.5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:items-start">
+              <MonthHero
+                summary={summary}
                 spend={budgetStore.spend}
-                hrefFor={(categoryId) => categoryItemsHref(summary, categoryId)}
-              />
-            </div>
-
-            <div className="hidden gap-5 md:grid md:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
-              <CategorySpendList
-                spend={budgetStore.spend}
-                hint={t("highestFirst")}
-                onSelect={(categoryId) => {
-                  if (categoryId) void navigate(categoryItemsHref(summary, categoryId));
+                income={incomeStore.month}
+                currency={currency}
+                onEditIncome={() => {
+                  // With regular incomes the month counts itself; a tap adds what came on top.
+                  setEditing((incomeStore.month?.regular.length ?? 0) > 0 ? "received" : "income");
+                }}
+                onEditBudget={() => {
+                  setEditing("budget");
                 }}
               />
-              <MonthReceipts
-                title={summary.is_complete ? t("biggest") : t("latest")}
-                receipts={budgetStore.receipts}
-                total={budgetStore.receiptsInMonth}
-                allHref={`/receipts?${monthQuery(summary)}`}
-                onOpen={(id) => {
-                  void receiptStore.fetchReceiptDetail(id);
-                }}
-              />
+              <div className="flex flex-col gap-3">
+                {reviewCount > 0 && (
+                  <Link
+                    to="/categories"
+                    className="flex min-h-14 items-center gap-3 rounded-card bg-tone-primary-bg px-4 py-3 text-foreground"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-primary text-md font-extrabold text-primary-foreground tabular-nums">
+                      {reviewCount}
+                    </span>
+                    <span className="flex-1 text-lg font-bold">
+                      {t("reviewShort", { count: reviewCount })}
+                    </span>
+                    <ChevronRight size={18} aria-hidden="true" />
+                  </Link>
+                )}
+                {summary.excluded_count > 0 && (
+                  <Link to="/receipts?status=manual_review" className="text-inherit">
+                    <Note tone="warning">
+                      <span className="flex items-center justify-between gap-3">
+                        <span className="tabular-nums">
+                          {t("heldOutPhone", {
+                            count: summary.excluded_count,
+                            worth: heldOutWorth,
+                          })}
+                        </span>
+                        <ChevronRight size={16} aria-hidden="true" className="shrink-0" />
+                      </span>
+                    </Note>
+                  </Link>
+                )}
+                {incomeStore.pending.map((pending) => (
+                  <PendingIncomeCard
+                    key={pending.id}
+                    pending={pending}
+                    currency={currency}
+                    onReview={() => {
+                      setReviewing(pending.id);
+                    }}
+                    onDismiss={() => {
+                      void incomeStore.dismissPending(pending.id);
+                    }}
+                  />
+                ))}
+                {askPayday && usual !== null && (
+                  <PaydayPrompt
+                    usual={usual}
+                    currency={currency}
+                    busy={confirming}
+                    onConfirm={() => {
+                      setConfirming(true);
+                      void incomeStore
+                        .receive(
+                          { amount: usual, source: t("edit.incomeSource"), kind: "salary" },
+                          today,
+                          shown,
+                        )
+                        .finally(() => {
+                          setConfirming(false);
+                        });
+                    }}
+                    onOther={() => {
+                      setEditing("income");
+                    }}
+                  />
+                )}
+                <BalanceCard
+                  balance={incomeStore.balance}
+                  currency={currency}
+                  onEdit={() => {
+                    setEditing("balance");
+                  }}
+                  onAddIncome={() => {
+                    setEditing("received");
+                  }}
+                />
+                <MonthTrips trips={budgetStore.trips} currency={currency} />
+              </div>
             </div>
+
+            <CategoryTiles
+              spend={budgetStore.spend}
+              hrefFor={(categoryId) => categoryItemsHref(summary, categoryId)}
+            />
+
+            <PriceInsight />
+
+            <RecentPurchases
+              title={summary.is_complete ? t("biggest") : t("latest")}
+              receipts={budgetStore.receipts}
+              total={budgetStore.receiptsInMonth}
+              allHref={`/receipts?${monthQuery(summary)}`}
+              onOpen={(id) => {
+                void receiptStore.fetchReceiptDetail(id);
+              }}
+            />
           </>
+        )}
+
+        {editing === "income" && (
+          <AmountDialog
+            title={t("edit.incomeTitle", { month: MONTH.format(selected) })}
+            label={t("edit.incomeLabel")}
+            hint={entries.length > 1 ? t("edit.incomeMany") : t("edit.incomeHint")}
+            initial={entries.length === 1 ? (entries[0]?.amount ?? "") : ""}
+            currency={currency}
+            onSave={(amount) =>
+              incomeStore.setMonthTotal(year, month, amount, t("edit.incomeSource"))
+            }
+            onClose={() => {
+              setEditing(null);
+            }}
+          />
+        )}
+        {editing === "budget" && (
+          <AmountDialog
+            title={t("edit.budgetTitle")}
+            label={t("edit.budgetLabel")}
+            hint={t("edit.budgetHint")}
+            initial={summary.budget_limit ?? ""}
+            currency={currency}
+            allowEmpty
+            onSave={async (amount) => {
+              const ok = await profileStore.saveQuietly({
+                budget_limit: amount === "" ? null : amount,
+              });
+              if (ok) await budgetStore.refresh();
+              return ok;
+            }}
+            onClose={() => {
+              setEditing(null);
+            }}
+          />
+        )}
+
+        {reviewing && (
+          <IncomeDialog
+            entry={null}
+            draft={incomeStore.pending.find((p) => p.id === reviewing) ?? null}
+            pendingId={reviewing}
+            defaultDay={today}
+            onClose={() => {
+              setReviewing(null);
+            }}
+            onSaved={() => {
+              void incomeStore.load(year, month);
+              void incomeStore.loadBalance(today);
+            }}
+          />
+        )}
+        {editing === "received" && (
+          <AmountDialog
+            title={t("received.title")}
+            label={t("received.label")}
+            hint={t("received.hint")}
+            initial=""
+            currency={currency}
+            onSave={(amount) =>
+              incomeStore.receive(
+                { amount, source: t("received.source"), kind: "other" },
+                today,
+                running ? shown : budgetStore.current,
+              )
+            }
+            onClose={() => {
+              setEditing(null);
+            }}
+          />
+        )}
+        {editing === "balance" && (
+          <AmountDialog
+            title={t("balance.editTitle")}
+            label={t("balance.editLabel")}
+            hint={t("balance.editHint")}
+            initial={incomeStore.balance?.balance ?? ""}
+            currency={currency}
+            onSave={async (amount) => {
+              const ok = await profileStore.saveQuietly({
+                starting_balance: amount,
+                balance_since: today,
+              });
+              if (ok) await incomeStore.loadBalance(today);
+              return ok;
+            }}
+            onClose={() => {
+              setEditing(null);
+            }}
+          />
         )}
 
         {receiptStore.selectedReceiptId && <ReceiptDetailModal />}
@@ -258,11 +346,4 @@ function monthQuery(month: { year: number; month: number }): string {
 /** One category's items in the figure's month, on the categories screen. */
 function categoryItemsHref(month: { year: number; month: number }, categoryId: string): string {
   return `/categories?view=all&category=${encodeURIComponent(categoryId)}&${monthQuery(month)}`;
-}
-
-/** The month measured against the user's limit, or null when they have not set one (D7). */
-function limitOf(summary: MonthSummary) {
-  const { budget_limit, limit_percent, limit_remaining } = summary;
-  if (budget_limit == null || limit_percent == null || limit_remaining == null) return null;
-  return { limit: budget_limit, percent: limit_percent, remaining: limit_remaining };
 }

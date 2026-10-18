@@ -24,8 +24,11 @@ import { ReceiptsPage } from "@/features/receipts/pages/ReceiptsPage";
 import { CategoriesPage } from "@/features/categories/pages/CategoriesPage";
 import { CategorisationQueuePage } from "@/features/categories/pages/CategorisationQueuePage";
 import { GoalsPage } from "@/features/goals/pages/GoalsPage";
+import { PlanPage } from "@/features/plan/PlanPage";
+import { OnboardingPage } from "@/features/onboarding/OnboardingPage";
 import { StatisticsPage } from "@/features/statistics/pages/StatisticsPage";
 import { ProductsPage } from "@/features/products/pages/ProductsPage";
+import { ExplorePage } from "@/features/products/pages/ExplorePage";
 import { TripPage } from "@/features/trips/pages/TripPage";
 import { TripsPage } from "@/features/trips/pages/TripsPage";
 import { JoinHouseholdPage } from "@/features/household/pages/JoinHouseholdPage";
@@ -38,11 +41,13 @@ import { LANGUAGES } from "@/i18n/languages";
 export const App = observer(function App() {
   const { authStore } = useStores();
   const isAuthenticated = authStore.isAuthenticated;
+  const home =
+    authStore.user?.onboarded_at === null ? <Navigate to="/welcome" replace /> : <DashboardPage />;
 
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route path="/" element={isAuthenticated ? <DashboardPage /> : <PublicLandingPage />} />
+        <Route path="/" element={isAuthenticated ? home : <PublicLandingPage />} />
         {/* The landing at each language's own address, for search engines and links (F17.2). */}
         {LANGUAGES.map((language) => (
           <Route
@@ -78,14 +83,19 @@ export const App = observer(function App() {
           <Route path="/receipts" element={<ReceiptsPage />} />
           <Route path="/categories/manage" element={<CategoriesPage />} />
           <Route path="/categories" element={<CategorisationQueuePage />} />
-          {/* Placeholders for upcoming features (prevents 404s on navigation) */}
-          <Route path="/statistics" element={<StatisticsPage />} />
-          <Route path="/statistics/products" element={<ProductsPage />} />
+          <Route path="/spending" element={<StatisticsPage />} />
+          <Route path="/statistics" element={<Navigate to="/spending" replace />} />
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/products/explore" element={<ExplorePage />} />
+          <Route path="/statistics/products" element={<Navigate to="/products" replace />} />
+          <Route path="/plan" element={<PlanPage />} />
           <Route path="/trips" element={<TripsPage />} />
           <Route path="/trips/:id" element={<TripPage />} />
           <Route path="/goals" element={<GoalsPage />} />
+          <Route path="/welcome" element={<OnboardingPage />} />
           <Route path="/upload" element={<UploadPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/settings" element={<ProfilePage />} />
+          <Route path="/profile" element={<Navigate to="/settings" replace />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboardPage />} />
             <Route path="users" element={<AdminUsersPage />} />

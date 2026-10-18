@@ -91,7 +91,20 @@
     "allPurchases_few": "Wszystkie zakupy ({{count}})",
     "allPurchases_many": "Wszystkie zakupy ({{count}})",
     "allPurchases_other": "Wszystkie zakupy ({{count}})",
-    "oneTime": "Kupiony raz w tym okresie: wykres ceny pojawi się od drugiego zakupu."
+    "oneTime": "Kupiony raz w tym okresie: wykres ceny pojawi się od drugiego zakupu.",
+    "title": "Analiza",
+    "save": "Zapisz zestaw",
+    "add": "Dodaj produkt",
+    "remove": "Usuń {{name}}",
+    "perMonth": "Miesięcznie",
+    "mostly": "głównie {{shop}}",
+    "changePill": "{{percent}}% za {{unit}}",
+    "pickFirst": "Wybierz produkty do analizy: zaznacz je na liście albo dodaj tutaj.",
+    "month": "Miesiąc",
+    "months3": "3 mies.",
+    "months6": "6 mies.",
+    "changeUnit": "{{percent}}% za {{unit}}",
+    "go": "Analizuj"
   },
   "selections": {
     "title": "Moje zestawy",
@@ -105,5 +118,33 @@
   },
   "cheaper": {
     "mark": "Taniej w {{shop}}: o {{amount}} {{currency}}/{{unit}} ({{percent}}%) niż w {{instead}}"
-  }
+  },
+  "overview": {
+    "label": "W skrócie",
+    "prices": "Zmiany cen",
+    "pricesShort": "Zmiany",
+    "most": "Najczęściej",
+    "mostShort": "Najczęściej",
+    "shops": "Gdzie taniej",
+    "shopsShort": "Gdzie taniej",
+    "noMoves": "Przez pół roku żadna cena nie zmieniła się o 5% lub więcej.",
+    "moveLine": "{{shop}} · {{first}} → {{last}} {{currency}}",
+    "noShops": "Kup to samo w dwóch sklepach, a tu je porównamy.",
+    "paidAbove": "Około {{amount}} {{currency}} przepłacone względem najtańszego sklepu w pół roku",
+    "cheapestFor_one": "najtańszy dla {{count}} produktu",
+    "cheapestFor_few": "najtańszy dla {{count}} produktów",
+    "cheapestFor_many": "najtańszy dla {{count}} produktów",
+    "cheapestFor_other": "najtańszy dla {{count}} produktu",
+    "where": "Gdzie ile kosztuje",
+    "oneShop": "Na razie kupowane tylko w jednym sklepie — nie ma z czym porównać.",
+    "exploreOne": "Zobacz miesiąc po miesiącu",
+    "shopsHint": "Dla ilu kupowanych produktów każdy sklep jest najtańszy — z Twoich paragonów."
+  },
+  "exploreHint": "Zaznacz produkty, aby zobaczyć, ile kosztują razem, w miesiącach i sklepach.",
+  "all": "Wszystkie produkty",
+  "count_one": "{{count}} produkt",
+  "count_few": "{{count}} produkty",
+  "count_many": "{{count}} produktów",
+  "count_other": "{{count}} produktu",
+  "exploreTitle": "Zbadaj kilka razem"
 }

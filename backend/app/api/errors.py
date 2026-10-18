@@ -87,6 +87,9 @@ class ProblemCode(enum.StrEnum):
     SUPER_ADMIN_ONLY = "super_admin_only"
     ADMIN_ROLE_FIXED = "admin_role_fixed"
     ALREADY_CONFIRMED = "already_confirmed"
+    DISCOUNT_TOO_LARGE = "discount_too_large"
+    INCOME_UNREADABLE = "income_unreadable"
+    NOT_INCOME = "not_income"
 
 
 class ProblemDetail(BaseModel):

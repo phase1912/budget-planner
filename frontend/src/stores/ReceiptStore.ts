@@ -281,6 +281,40 @@ export class ReceiptStore {
     });
   }
 
+  isSavingDiscount = false;
+
+  /**
+   * Take off the open receipt what was not paid — a gift card, a voucher (F23.7) — over
+   * all its lines or only `lineIds`; null removes it. The month is refetched, since it now
+   * counts what was paid.
+   */
+  async setDiscount(amount: string | null, lineIds: string[] | null = null): Promise<boolean> {
+    const id = this.selectedReceiptId;
+    if (!id) return false;
+    this.isSavingDiscount = true;
+    const response = await apiClient.PUT("/receipts/{receipt_id}/discount", {
+      params: { path: { receipt_id: id } },
+      body: { amount, line_ids: lineIds },
+    });
+    return runInAction(() => {
+      this.isSavingDiscount = false;
+      if (response.error) {
+        this.toastStore.showError(
+          errorMessage(response.error, i18n.t("messages:receipts.discountFailed")),
+        );
+        return false;
+      }
+      if (this.selectedReceiptId === id) this.receiptDetail = response.data;
+      this.onReceiptsChanged();
+      this.toastStore.showSuccess(
+        amount === null
+          ? i18n.t("messages:receipts.discountRemoved")
+          : i18n.t("messages:receipts.discountSaved"),
+      );
+      return true;
+    });
+  }
+
   async fetchReceipts(page = 1, size = 20) {
     this.applyPeriod();
     this.isLoadingList = true;

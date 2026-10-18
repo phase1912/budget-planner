@@ -269,6 +269,53 @@ one of these period queries filters one user's receipts by
 `coalesce(transaction_date, created_at)`; the `ix_receipts_user_purchased` expression
 index and `ix_line_items_receipt_id` exist for exactly that (F7.1).
 
+Every one of these sums reads `LineItem.paid`, a `column_property` of the line's total
+less its share of a receipt's unprinted discount (F23.7), never `total_price` directly;
+the price history is the one reader of the shelf price. `PUT /api/v1/receipts/{id}/discount`
+spreads the discount (`app/services/receipt_discount.py`), and a receipt update spreads
+it again, so the shares can never disagree with the lines.
+
+Income has its own table and router (F23.10): `GET/POST/PUT/DELETE /api/v1/income`
+for a month's entries, the month's figure falling back to the account's usual income
+(`app/domain/income.py`), and `GET /api/v1/income/balance?today=` for the balance
+(F23.14): the account's starting amount carried forward by income received and spending
+counted since, through the same `ReceiptRepository.month_total` the month view uses.
+`POST /api/v1/income/read` reads a payslip or transfer confirmation through
+`IncomeReaderPort` (`IncomeDocumentAdapter`, the vision model) into a draft that is not
+saved; the file stays in memory, and the confirmed entry goes through `POST /income` with
+`channel: "document"` (F23.11). A forwarded letter the vision reader calls income
+(`ExtractedReceipt.document_kind`) is read again by the same port and kept in
+`pending_incomes` instead of becoming a receipt; `GET /income/pending`,
+`POST /income/pending/{id}` (confirm) and `DELETE /income/pending/{id}` serve Home's card.
+
+Regular incomes live in `income_sources` (`/api/v1/income/regular`, F23.17) and are
+folded into the month by `month_income(recurring=…)` and into the balance by
+`regular_since`; taxes for those who pay their own (F23.16) come from the user's rate and
+fixed sum, each income's `taxed` flag, and `tax_payments` (`/api/v1/income/taxes`).
+
+Regular bills (F23.18) live in `regular_expenses` (`/api/v1/income/bills`); the month view
+returns them with `bills_total`, and the balance takes them off on their day through the
+same `Recurring` rule as regular incomes. Spending folds the period's receipts, the items
+to file and the bills into sections that open in place (`Collapsible`), and Plan's goals
+open in place with a ring each (`goalMeter`).
+
+Explore's months carry what each product cost in them (`MonthPurchases.by_product`), for
+columns stacked by product.
+
+Reading a photo stays off the event loop: `prepare_photo` (HEIC to JPEG, upright by EXIF,
+at most 3000 px) runs in a thread, the prepared bytes are read from memory rather than
+downloaded back, the kept copy is made smaller only after a recheck could have needed
+the photo again (`compress_stored`), and litellm is imported at start (`app/main.py`), not inside the first
+read — lazily, it froze every request on a new instance for 11-14 s. The browser shrinks
+photos to the same 3000 px before sending (`shrinkPhoto`), which keeps a many-shot
+receipt under Cloud Run's 32 MB request limit, and a progress poll that fails is retried
+rather than reported, since the job runs on regardless.
+
+Spending day by day (`GET /api/v1/statistics/daily`, F23.4) sums the same `paid` per UTC
+day and lists every day of the period, a quiet one as zero (`app/domain/daily_spend.py`).
+A goal is checked before it is saved by `POST /api/v1/goals/check` (F23.13): the service
+reads the last three whole months, `app/domain/goal_check.py` judges — no model call.
+
 ## Proactive advice
 
 Advice for goals at risk (BRD F7, F8.8) is prepared by a scheduled pass inside the API
@@ -339,6 +386,13 @@ instead of a token is wrong even if the pixels match, because it cannot follow a
 retheme. When a built screen and its reference in `docs/design/` disagree, the built
 screen is wrong; when implementation shows the reference itself is wrong, fix
 `docs/design/` in the same commit as the code that prompted it.
+
+Design v2 (ADR-0022, `docs/design/v2.md`) is the current look: six palettes keyed off
+`data-palette` on `<html>` (`ThemeStore`, saved on the account), the tabs Home ·
+Spending · ＋ · Products · Plan, and Settings behind the avatar. A new account is
+walked through `/welcome` once — `ProtectedRoute` and the signed-in "/" send there while
+`users.onboarded_at` is empty — and finishing or skipping it saves the choices with
+`onboarded: true` in one `PATCH /users/me`.
 
 The client is also an installable app (PWA, F9.8): `frontend/public/manifest.webmanifest`
 and the Apple meta tags in `index.html` make it open full screen from the home screen,

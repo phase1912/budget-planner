@@ -1,11 +1,10 @@
-import { CategoryIcon } from "@/shared/components";
+import { CategoryIcon, Collapsible, Switch } from "@/shared/components";
 import { useEffect, useState } from "react";
 import { CalendarX } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { Link } from "react-router-dom";
 
 import { ExportMenu } from "@/features/exports/components/ExportMenu";
-import { StatisticsTabs } from "../components/StatisticsTabs";
 import {
   Button,
   Card,
@@ -25,6 +24,13 @@ import {
 import type { Preset } from "@/stores/StatisticsStore";
 import { useStores } from "@/stores/StoreContext";
 import { CategoryChart } from "../components/CategoryChart";
+import { SpendingRing } from "../components/SpendingRing";
+import { DailyBars } from "../components/DailyBars";
+import { ItemsToFile, PeriodReceipts, RegularBills } from "../components/SpendingSections";
+import { ReceiptDetailModal } from "@/features/receipts/components/ReceiptDetailModal";
+import { DeleteReceiptDialog } from "@/features/receipts/components/DeleteReceiptDialog";
+import { EditReceiptDialog } from "@/features/receipts/components/EditReceiptDialog";
+import { isoDay } from "@/stores/StatisticsStore";
 import { Change } from "../components/Change";
 import { likeForLikeNote, periodLabel, periodName } from "../periodLabel";
 import { HouseholdStatisticsView } from "@/features/household/components/HouseholdStatisticsView";
@@ -54,7 +60,15 @@ const AMOUNT = numberFormat({
  * same figures (N6 — F7.6).
  */
 export const StatisticsPage = observer(function StatisticsPage() {
-  const { statisticsStore, authStore, exportStore, householdStore } = useStores();
+  const {
+    statisticsStore,
+    authStore,
+    exportStore,
+    householdStore,
+    receiptStore,
+    categoriesStore,
+    incomeStore,
+  } = useStores();
   const { t } = useTranslation("statistics");
   // The household's figures replace the user's own; the period controls serve both (F12.5).
   const household = householdStore.showingHousehold;
@@ -68,20 +82,21 @@ export const StatisticsPage = observer(function StatisticsPage() {
   useEffect(() => {
     void statisticsStore.load();
     void householdStore.load();
-  }, [statisticsStore, householdStore]);
+    void categoriesStore.loadReviewCount();
+    void incomeStore.loadBills();
+  }, [statisticsStore, householdStore, categoriesStore, incomeStore]);
 
   return (
-    <div className="flex-grow flex flex-col items-center py-4 md:py-10 md:px-8">
+    <div className="flex-grow flex flex-col items-center pb-4">
       <div className="w-full max-w-[1000px] flex flex-col gap-4 md:gap-5">
-        <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div className="flex flex-col gap-1">
-            <h1 className="m-0 text-[24px] font-bold tracking-[-0.02em] md:text-[28px]">
-              {t("title")}
-            </h1>
-            <p className="m-0 text-lg text-muted-foreground">{t("subtitle")}</p>
+        <header className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-col">
+            <h1 className="m-0 text-3xl font-extrabold tracking-[-0.02em]">{t("title")}</h1>
+            <span className="truncate text-md font-semibold text-muted-foreground">{period}</span>
           </div>
           {!household && (
             <ExportMenu
+              compact
               label={t("export")}
               busy={Boolean(exportStore.busy.statistics)}
               onExport={(format) => {
@@ -92,14 +107,9 @@ export const StatisticsPage = observer(function StatisticsPage() {
           )}
         </header>
 
-        <StatisticsTabs />
-
         <HouseholdViewSwitch />
 
-        <Card
-          variant="surface"
-          className="flex flex-col gap-3 px-3.5 py-3.5 md:px-4.5 lg:flex-row lg:items-center"
-        >
+        <div className="flex flex-col gap-2.5">
           <SegmentedControl<Preset>
             label={t("period")}
             size="sm"
@@ -121,38 +131,41 @@ export const StatisticsPage = observer(function StatisticsPage() {
                 shortLabel: t("presets.lastMonthShort"),
               },
               {
-                value: "last_3_months",
-                label: t("presets.last3"),
-                shortLabel: t("presets.last3Short"),
+                value: "this_year",
+                label: t("presets.year"),
+                shortLabel: t("presets.yearShort"),
               },
               { value: "custom", label: t("presets.custom") },
             ]}
           />
-          <DateRangeFilter
-            start={start}
-            end={end}
-            label={period}
-            allowAll={false}
-            isOpen={picking}
-            onOpenChange={setPicking}
-            onApply={(from, to) => {
-              if (from && to) void statisticsStore.chooseRange(from, to);
-            }}
-          />
-          {!household && (
-            <label className="flex min-h-11 cursor-pointer items-center gap-2.25 text-md font-semibold lg:ml-auto lg:min-h-0">
-              <input
-                type="checkbox"
-                className="h-4 w-4 accent-primary"
-                checked={compare}
-                onChange={(e) => {
-                  void statisticsStore.setCompare(e.target.checked);
+          <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-4">
+            {/* The header already names the period; the dates matter only for one's own. */}
+            {(preset === "custom" || picking) && (
+              <DateRangeFilter
+                start={start}
+                end={end}
+                label={period}
+                allowAll={false}
+                isOpen={picking}
+                onOpenChange={setPicking}
+                onApply={(from, to) => {
+                  if (from && to) void statisticsStore.chooseRange(from, to);
                 }}
               />
-              {t("compareWith", { period: previous ?? t("previousPeriod") })}
-            </label>
-          )}
-        </Card>
+            )}
+            {!household && (
+              <div className="md:ml-auto md:w-80">
+                <Switch
+                  checked={compare}
+                  onChange={(on) => {
+                    void statisticsStore.setCompare(on);
+                  }}
+                  label={t("compareWith", { period: previous ?? t("previousPeriod") })}
+                />
+              </div>
+            )}
+          </div>
+        </div>
 
         {household ? (
           <HouseholdStatisticsView start={start} end={end} currency={currency} />
@@ -216,116 +229,145 @@ export const StatisticsPage = observer(function StatisticsPage() {
                   </Note>
                 )}
 
-                {statistics.chart && statistics.categories.length > 0 && (
+                {statistics.categories.length > 0 && (
                   <div className={`transition-opacity ${isLoading ? "opacity-60" : ""}`}>
-                    <CategoryChart chart={statistics.chart} current={period} previous={previous} />
+                    <SpendingRing statistics={statistics} currency={currency} />
                   </div>
                 )}
 
-                <Card
-                  flush
-                  aria-busy={isLoading}
-                  className={`transition-opacity ${isLoading ? "opacity-60" : ""}`}
-                >
-                  {statistics.categories.length === 0 ? (
-                    // Receipts exist but all are held out for review, named in the note above.
-                    <p className="m-0 p-5 text-md text-muted-foreground">
-                      {t("nothingCounted", { period })}
-                    </p>
-                  ) : (
-                    <Table>
-                      <caption className="sr-only">{t("caption", { period })}</caption>
-                      <TableHeader className="bg-surface">
-                        <TableRow className="hover:bg-transparent">
-                          <TableHead>{t("cols.category")}</TableHead>
-                          <TableHead className="text-right">
-                            {/* A phone has the period right above; the column just says what it is. */}
-                            <span className="md:hidden">{t("cols.spent")}</span>
-                            <span className="hidden md:inline">{period}</span>
-                          </TableHead>
-                          <TableHead className="text-right">{t("cols.share")}</TableHead>
-                          <TableHead className="hidden text-right md:table-cell">
-                            {t("cols.items")}
-                          </TableHead>
-                          {previous && (
-                            <>
-                              <TableHead className="hidden text-right md:table-cell">
-                                {previous}
+                {/* A bar a day reads up to about two months; longer runs keep the table. */}
+                {statisticsStore.daily && statisticsStore.daily.days.length <= 62 && (
+                  <DailyBars
+                    daily={statisticsStore.daily}
+                    currency={currency}
+                    today={isoDay(new Date())}
+                  />
+                )}
+
+                <PeriodReceipts />
+                <ItemsToFile />
+                <RegularBills currency={currency} />
+                <Collapsible title={t("details")}>
+                  <div className="flex flex-col gap-4">
+                    {statistics.chart && statistics.categories.length > 0 && (
+                      <div className={`transition-opacity ${isLoading ? "opacity-60" : ""}`}>
+                        <CategoryChart
+                          chart={statistics.chart}
+                          current={period}
+                          previous={previous}
+                        />
+                      </div>
+                    )}
+
+                    <Card
+                      flush
+                      aria-busy={isLoading}
+                      className={`transition-opacity ${isLoading ? "opacity-60" : ""}`}
+                    >
+                      {statistics.categories.length === 0 ? (
+                        // Receipts exist but all are held out for review, named in the note above.
+                        <p className="m-0 p-5 text-md text-muted-foreground">
+                          {t("nothingCounted", { period })}
+                        </p>
+                      ) : (
+                        <Table>
+                          <caption className="sr-only">{t("caption", { period })}</caption>
+                          <TableHeader className="bg-surface">
+                            <TableRow className="hover:bg-transparent">
+                              <TableHead>{t("cols.category")}</TableHead>
+                              <TableHead className="text-right">
+                                {/* A phone has the period right above; the column just says what it is. */}
+                                <span className="md:hidden">{t("cols.spent")}</span>
+                                <span className="hidden md:inline">{period}</span>
                               </TableHead>
+                              <TableHead className="text-right">{t("cols.share")}</TableHead>
                               <TableHead className="hidden text-right md:table-cell">
-                                {t("cols.change")}
+                                {t("cols.items")}
                               </TableHead>
-                            </>
-                          )}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {statistics.categories.map((category) => {
-                          const name = categoryName(category.name);
-                          return (
-                            <TableRow key={category.category_id ?? "none"}>
-                              <TableCell>
-                                <span className="flex min-w-0 items-center gap-2.25 font-semibold">
-                                  <CategoryIcon name={category.name ?? ""} />
-                                  {category.category_id ? (
-                                    <Link
-                                      to={`/categories?view=all&category=${encodeURIComponent(category.category_id)}&start=${start}&end=${end}`}
-                                      className="truncate text-foreground"
-                                    >
-                                      {name}
-                                    </Link>
-                                  ) : (
-                                    <span className="truncate">{name}</span>
-                                  )}
-                                </span>
-                                {/* A phone has no items column; the count goes under the name. */}
-                                <span className="block pl-4.5 text-base tabular-nums text-muted-foreground md:hidden">
-                                  {t("items", { count: category.item_count })}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-right font-semibold tabular-nums">
-                                {AMOUNT.format(Number(category.total))}
-                                {/* A phone has no change column; the change goes under the amount. */}
-                                {category.change != null && (
-                                  <span className="block text-base font-normal md:hidden">
-                                    <Change
-                                      change={category.change}
-                                      percent={category.change_percent}
-                                      compact
-                                    />
-                                  </span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right tabular-nums text-muted-foreground">
-                                {SHARE.format(Number(category.share) / 100)}
-                              </TableCell>
-                              <TableCell className="hidden text-right tabular-nums text-muted-foreground md:table-cell">
-                                {category.item_count}
-                              </TableCell>
-                              {category.change != null && (
+                              {previous && (
                                 <>
-                                  <TableCell className="hidden text-right tabular-nums text-muted-foreground md:table-cell">
-                                    {AMOUNT.format(Number(category.previous_total))}
-                                  </TableCell>
-                                  <TableCell className="hidden text-right md:table-cell">
-                                    <Change
-                                      change={category.change}
-                                      percent={category.change_percent}
-                                    />
-                                  </TableCell>
+                                  <TableHead className="hidden text-right md:table-cell">
+                                    {previous}
+                                  </TableHead>
+                                  <TableHead className="hidden text-right md:table-cell">
+                                    {t("cols.change")}
+                                  </TableHead>
                                 </>
                               )}
                             </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  )}
-                </Card>
+                          </TableHeader>
+                          <TableBody>
+                            {statistics.categories.map((category) => {
+                              const name = categoryName(category.name);
+                              return (
+                                <TableRow key={category.category_id ?? "none"}>
+                                  <TableCell>
+                                    <span className="flex min-w-0 items-center gap-2.25 font-semibold">
+                                      <CategoryIcon name={category.name ?? ""} />
+                                      {category.category_id ? (
+                                        <Link
+                                          to={`/categories?view=all&category=${encodeURIComponent(category.category_id)}&start=${start}&end=${end}`}
+                                          className="truncate text-foreground"
+                                        >
+                                          {name}
+                                        </Link>
+                                      ) : (
+                                        <span className="truncate">{name}</span>
+                                      )}
+                                    </span>
+                                    {/* A phone has no items column; the count goes under the name. */}
+                                    <span className="block pl-4.5 text-base tabular-nums text-muted-foreground md:hidden">
+                                      {t("items", { count: category.item_count })}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="text-right font-semibold tabular-nums">
+                                    {AMOUNT.format(Number(category.total))}
+                                    {/* A phone has no change column; the change goes under the amount. */}
+                                    {category.change != null && (
+                                      <span className="block text-base font-normal md:hidden">
+                                        <Change
+                                          change={category.change}
+                                          percent={category.change_percent}
+                                          compact
+                                        />
+                                      </span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-right tabular-nums text-muted-foreground">
+                                    {SHARE.format(Number(category.share) / 100)}
+                                  </TableCell>
+                                  <TableCell className="hidden text-right tabular-nums text-muted-foreground md:table-cell">
+                                    {category.item_count}
+                                  </TableCell>
+                                  {category.change != null && (
+                                    <>
+                                      <TableCell className="hidden text-right tabular-nums text-muted-foreground md:table-cell">
+                                        {AMOUNT.format(Number(category.previous_total))}
+                                      </TableCell>
+                                      <TableCell className="hidden text-right md:table-cell">
+                                        <Change
+                                          change={category.change}
+                                          percent={category.change_percent}
+                                        />
+                                      </TableCell>
+                                    </>
+                                  )}
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </Card>
+                  </div>
+                </Collapsible>
               </>
             )}
           </>
         )}
+        {receiptStore.selectedReceiptId && <ReceiptDetailModal />}
+        <DeleteReceiptDialog />
+        <EditReceiptDialog />
       </div>
     </div>
   );

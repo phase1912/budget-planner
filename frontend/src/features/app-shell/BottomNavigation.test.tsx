@@ -12,25 +12,29 @@ function renderAt(path: string) {
   );
 }
 
-describe("BottomNavigation", () => {
-  it("offers the phone's four tabs and upload as the centre button", () => {
+describe("BottomNavigation (F23.2)", () => {
+  it("offers the four places and adding a receipt as the centre button", () => {
     renderAt("/");
-    const nav = screen.getByRole("navigation", { name: "Main" });
-    expect(nav).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
     for (const [name, href] of [
-      ["Receipts", "/receipts"],
-      ["Upload a receipt", "/upload"],
-      ["Stats", "/statistics"],
-      ["Goals", "/goals"],
+      ["Spending", "/spending"],
+      ["Add a receipt", "/upload"],
+      ["Products", "/products"],
+      ["Plan", "/plan"],
     ]) {
       expect(screen.getByRole("link", { name })).toHaveAttribute("href", href);
     }
   });
 
-  it("lights Receipts on the categories screens, which a phone reaches from there", () => {
+  it("lights Spending on the receipts and categories reached from it, Plan on trips", () => {
     renderAt("/categories/manage");
-    expect(screen.getByRole("link", { name: "Receipts" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Spending" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Home" })).not.toHaveAttribute("aria-current");
+  });
+
+  it("lights Plan on goals and trips", () => {
+    renderAt("/trips/1");
+    expect(screen.getByRole("link", { name: "Plan" })).toHaveAttribute("aria-current", "page");
   });
 });

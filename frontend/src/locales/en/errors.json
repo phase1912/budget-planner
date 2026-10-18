@@ -56,5 +56,8 @@
   "second_factor_required": "Turn on two-factor sign-in and sign in with it to open the admin pages.",
   "super_admin_only": "Only a super admin can do this.",
   "admin_role_fixed": "A super admin is set by the deployment and cannot be changed here.",
-  "already_confirmed": "This address is already confirmed."
+  "already_confirmed": "This address is already confirmed.",
+  "discount_too_large": "The discount is more than the chosen lines cost.",
+  "income_unreadable": "The document could not be read. Try a sharper photo, or enter the amount yourself.",
+  "not_income": "This doesn't look like money you received — a receipt goes in as a receipt."
 }

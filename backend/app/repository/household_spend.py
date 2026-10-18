@@ -62,7 +62,7 @@ class HouseholdSpendRepository:
                 Receipt.user_id,
                 Receipt.is_private,
                 func.count(func.distinct(Receipt.id)),
-                func.coalesce(func.sum(LineItem.total_price), 0),
+                func.coalesce(func.sum(LineItem.paid), 0),
             )
             .outerjoin(LineItem, LineItem.receipt_id == Receipt.id)
             .where(
@@ -99,9 +99,7 @@ class HouseholdSpendRepository:
         )
         count = await self.session.scalar(select(func.count()).select_from(held.subquery()))
         value = await self.session.scalar(
-            select(func.coalesce(func.sum(LineItem.total_price), 0)).where(
-                LineItem.receipt_id.in_(held)
-            )
+            select(func.coalesce(func.sum(LineItem.paid), 0)).where(LineItem.receipt_id.in_(held))
         )
         return int(count or 0), Decimal(value or 0)
 
@@ -118,7 +116,7 @@ class HouseholdSpendRepository:
                 Category.name,
                 Category.user_id,
                 func.count(LineItem.id),
-                func.coalesce(func.sum(LineItem.total_price), 0),
+                func.coalesce(func.sum(LineItem.paid), 0),
             )
             .select_from(LineItem)
             .join(Receipt, LineItem.receipt_id == Receipt.id)
@@ -130,7 +128,7 @@ class HouseholdSpendRepository:
                 _within(period),
             )
             .group_by(Category.id, Category.name, Category.user_id)
-            .order_by(func.sum(LineItem.total_price).desc(), Category.name)
+            .order_by(func.sum(LineItem.paid).desc(), Category.name)
         )
         return [
             SharedCategorySpend(category_id, name, owner_id, int(count), Decimal(total))

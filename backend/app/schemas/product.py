@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ProductVariantResponse(BaseModel):
@@ -117,11 +117,28 @@ class ProductPurchasesResponse(BaseModel):
     shops: list[ShopPriceResponse]
 
 
+class ProductSpendResponse(BaseModel):
+    """What one product cost in a month."""
+
+    product_id: uuid.UUID
+    spent: Decimal
+
+
 class MonthPurchasesResponse(BaseModel):
-    """The selection's purchases in one calendar month (`month` is its first day)."""
+    """The selection's purchases in one calendar month (`month` is its first day), and
+    what each product of it cost then."""
 
     month: date
     amounts: AmountsResponse
+    by_product: list[ProductSpendResponse] = []
+
+    @field_validator("by_product", mode="before")
+    @classmethod
+    def _listed(cls, value: object) -> object:
+        """The domain keeps a {product id: amount} map; the API lists it."""
+        if isinstance(value, dict):
+            return [{"product_id": k, "spent": v} for k, v in value.items()]
+        return value
 
 
 class ExplorationResponse(BaseModel):
@@ -130,6 +147,32 @@ class ExplorationResponse(BaseModel):
     totals: AmountsResponse
     months: list[MonthPurchasesResponse]
     products: list[ProductPurchasesResponse]
+
+
+class PriceMoveResponse(BaseModel):
+    """A product whose price for one item moved noticeably over the period (F23.5)."""
+
+    product: ProductFactsResponse
+    change: PriceChangeResponse
+    last_shop: str | None
+    history: list[Decimal]
+    shops: list[ShopPriceResponse] = []
+
+
+class ShopStandingResponse(BaseModel):
+    """A shop: cheapest for how many products, and what was paid above the cheapest there."""
+
+    shop: str
+    cheapest_for: int
+    paid_above: Decimal
+
+
+class ProductsOverviewResponse(BaseModel):
+    """Everything bought at a glance: price moves and shops (F23.5)."""
+
+    moves: list[PriceMoveResponse]
+    shops: list[ShopStandingResponse]
+    paid_above: Decimal
 
 
 class SelectionRequest(BaseModel):

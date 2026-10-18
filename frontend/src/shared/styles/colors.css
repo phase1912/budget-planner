@@ -55,6 +55,7 @@
   --radius-chip: var(--radius-chip);
   --radius-control: var(--radius-control);
   --radius-card: var(--radius-card);
+  --radius-hero: var(--radius-hero);
   --radius-pill: var(--radius-pill);
   --shadow-raised: var(--shadow-raised);
   --shadow-card: var(--shadow-card);
@@ -67,7 +68,10 @@
 }
 
 @layer base {
-  :root {
+  /* A palette's attribute restates its base, so a preview of any palette can sit inside
+     another one (Settings' palette picker, F23.1). */
+  :root,
+  [data-palette="daylight"] {
     --color-background: #ffffff;
     --color-foreground: #0f172a;
     --color-surface: #f8fafc;
@@ -136,9 +140,10 @@
     --series-3: #1baf7a;
     --series-other: #94a3b8;
 
-    --radius-chip: 10px;
-    --radius-control: 12px;
-    --radius-card: 16px;
+    --radius-chip: 12px;
+    --radius-control: 16px;
+    --radius-card: 22px;
+    --radius-hero: 28px;
     --radius-pill: 9999px;
 
     --shadow-raised: 0 1px 2px rgba(15, 23, 42, 0.08);
@@ -153,13 +158,14 @@
     --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   }
 
-  .dark {
+  .dark,
+  [data-palette="midnight"] {
     --color-background: #0f172a;
     --color-foreground: #f8fafc;
     --color-surface: #1e293b;
     --color-border: #334155;
     --color-border-strong: #475569;
-    --color-muted: #1e293b;
+    --color-muted: #0b1222;
     --color-muted-foreground: #94a3b8;
 
     --color-primary: #4ade80;
@@ -223,5 +229,127 @@
     --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-pop: 0 20px 40px rgba(0, 0, 0, 0.5);
     --ring-primary: 0 0 0 3px rgba(74, 222, 128, 0.25);
+  }
+
+  /* Palettes beyond the two base themes (F23.1): each restates the base's surfaces, its
+       primary colour and the category colours its charts use. Light ones override :root;
+       Ocean overrides .dark. Rose: */
+  [data-palette="rose"] {
+    --color-background: #ffffff;
+    --color-foreground: #3b1d2a;
+    --color-surface: #ffffff;
+    --color-border: #f6dbe2;
+    --color-border-strong: #ecc3cf;
+    --color-muted: #fdf2f4;
+    --color-muted-foreground: #7d5868;
+    --color-primary: #c93a66;
+    --color-primary-hover: #a92c53;
+    --color-primary-foreground: #ffffff;
+    --color-success: #2f7d57;
+    --tone-primary-bg: rgba(201, 58, 102, 0.1);
+    --tone-primary-border: rgba(201, 58, 102, 0.25);
+    --tone-primary-text: #a92c53;
+    --tone-neutral-bg: #fbe9ee;
+    --tone-neutral-text: #7d5868;
+    --shadow-primary: 0 10px 15px -3px rgba(201, 58, 102, 0.25);
+    --ring-primary: 0 0 0 3px rgba(201, 58, 102, 0.2);
+    --cat-groceries: #d6456f;
+    --cat-dining: #df7a2c;
+    --cat-transport: #3d8fc2;
+    --cat-utilities: #8a63d2;
+    --cat-health: #2f9e6a;
+    --cat-entertainment: #c2961a;
+    --cat-pet: #b85c9e;
+    --cat-kids: #2a9d8f;
+  }
+
+  /* Lavender: */
+  [data-palette="lavender"] {
+    --color-background: #ffffff;
+    --color-foreground: #251d3f;
+    --color-surface: #ffffff;
+    --color-border: #e4defc;
+    --color-border-strong: #cfc5f7;
+    --color-muted: #f5f3ff;
+    --color-muted-foreground: #625a84;
+    --color-primary: #6142f5;
+    --color-primary-hover: #4c2fe0;
+    --color-primary-foreground: #ffffff;
+    --color-success: #14845f;
+    --tone-primary-bg: rgba(97, 66, 245, 0.1);
+    --tone-primary-border: rgba(97, 66, 245, 0.25);
+    --tone-primary-text: #4c2fe0;
+    --tone-neutral-bg: #efebff;
+    --tone-neutral-text: #625a84;
+    --shadow-primary: 0 10px 15px -3px rgba(97, 66, 245, 0.25);
+    --ring-primary: 0 0 0 3px rgba(97, 66, 245, 0.2);
+    --cat-groceries: #6d4aff;
+    --cat-dining: #e0567a;
+    --cat-transport: #1f9cc2;
+    --cat-utilities: #d98a1c;
+    --cat-health: #17a077;
+    --cat-entertainment: #a855d8;
+    --cat-pet: #d6458f;
+    --cat-kids: #0d9488;
+  }
+
+  /* Sage: */
+  [data-palette="sage"] {
+    --color-background: #ffffff;
+    --color-foreground: #1f2a22;
+    --color-surface: #ffffff;
+    --color-border: #dfe6da;
+    --color-border-strong: #c6d2bf;
+    --color-muted: #f2f5f0;
+    --color-muted-foreground: #56665a;
+    --color-primary: #3f6a49;
+    --color-primary-hover: #2f5237;
+    --color-primary-foreground: #ffffff;
+    --color-success: #3f6a49;
+    --tone-primary-bg: rgba(63, 106, 73, 0.1);
+    --tone-primary-border: rgba(63, 106, 73, 0.25);
+    --tone-primary-text: #2f5237;
+    --tone-neutral-bg: #e8eee5;
+    --tone-neutral-text: #56665a;
+    --shadow-primary: 0 10px 15px -3px rgba(63, 106, 73, 0.25);
+    --ring-primary: 0 0 0 3px rgba(63, 106, 73, 0.2);
+    --cat-groceries: #45704f;
+    --cat-dining: #c47a48;
+    --cat-transport: #4f86b5;
+    --cat-utilities: #b0942f;
+    --cat-health: #8c66ad;
+    --cat-entertainment: #c45c5c;
+    --cat-pet: #b06a8f;
+    --cat-kids: #3b9488;
+  }
+
+  /* Ocean, dark: */
+  .dark[data-palette="ocean"] {
+    --color-background: #0a0f1f;
+    --color-foreground: #eef2ff;
+    --color-surface: #141b33;
+    --color-border: #232c4d;
+    --color-border-strong: #34406b;
+    --color-muted: #0d1428;
+    --color-muted-foreground: #9aa4c7;
+    --color-primary: #4f8cff;
+    --color-primary-hover: #7aa8ff;
+    --color-primary-foreground: #0b1530;
+    --color-success: #34d399;
+    --tone-primary-bg: rgba(79, 140, 255, 0.14);
+    --tone-primary-border: rgba(79, 140, 255, 0.32);
+    --tone-primary-text: #7aa8ff;
+    --tone-neutral-bg: rgba(238, 242, 255, 0.08);
+    --tone-neutral-text: #9aa4c7;
+    --shadow-primary: 0 10px 15px -3px rgba(79, 140, 255, 0.25);
+    --ring-primary: 0 0 0 3px rgba(79, 140, 255, 0.3);
+    --cat-groceries: #4f8cff;
+    --cat-dining: #22d3ee;
+    --cat-transport: #f472b6;
+    --cat-utilities: #facc15;
+    --cat-health: #34d399;
+    --cat-entertainment: #a78bfa;
+    --cat-pet: #fb923c;
+    --cat-kids: #2dd4bf;
   }
 }

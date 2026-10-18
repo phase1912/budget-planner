@@ -100,3 +100,21 @@ class ChartResponse(BaseModel):
 
 
 CategoryStatisticsResponse.model_rebuild()
+
+
+class DaySpendResponse(BaseModel):
+    """What was paid on one day; zero for a day without purchases."""
+
+    day: date
+    total: Decimal
+
+
+class DailySpendResponse(BaseModel):
+    """Every day of the period with its spending (F23.4).
+
+    `average` is per day passed — up to today in a running period — not per day listed.
+    """
+
+    days: list[DaySpendResponse]
+    total: Decimal
+    average: Decimal

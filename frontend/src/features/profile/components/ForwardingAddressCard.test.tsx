@@ -22,6 +22,9 @@ describe("ForwardingAddressCard", () => {
       is_admin: false,
       is_super_admin: false,
       two_factor_enabled: false,
+      dark_at_night: false,
+      travels_for_work: false,
+      pays_own_taxes: false,
     };
   });
 

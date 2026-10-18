@@ -85,8 +85,10 @@ class ItemCategoriserAdapter(ItemCategoriserPort):
         messages = [Message(role="user", content=[{"type": "text", "text": prompt}])]
 
         try:
+            # Sorting names into given categories is lookup, not reasoning: a Gemini that
+            # thinks first only adds seconds to every upload.
             parsed = await self._agent.run_structured(
-                messages, schema=CategorisationResponse, temperature=0.0
+                messages, schema=CategorisationResponse, temperature=0.0, reasoning=False
             )
         except Exception:
             logger.exception("Categorisation failed; leaving items uncategorised")

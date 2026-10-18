@@ -1,18 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
-import {
-  ArrowLeft,
-  ChartColumn,
-  CircleHelp,
-  Moon,
-  Sun,
-  LogOut,
-  Upload,
-  Settings,
-} from "lucide-react";
+import { ArrowLeft, ChartColumn, CircleHelp, Moon, Sun, LogOut, Settings } from "lucide-react";
 import { useStores } from "@/stores/StoreContext";
 import { Button } from "@/shared/components";
-import { Navigation } from "./Navigation";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/features/language/LanguageSwitcher";
@@ -75,35 +65,10 @@ export const Header = observer(() => {
         >
           {t("appName")}
         </Link>
-        {/* A phone navigates from the bottom bar instead (BottomNavigation). */}
-        {authStore.isAuthenticated && (
-          <div className="hidden md:block">
-            <Navigation />
-          </div>
-        )}
       </div>
       <div className={`items-center gap-2.5 ${uploading ? "hidden md:flex" : "flex"}`}>
         {authStore.isAuthenticated ? (
           <>
-            {/* A phone uploads from the bottom bar's centre button; a tablet has room for
-                the icon only, next to six links. */}
-            <Link to="/upload" className="hidden md:contents">
-              <Button size="compact" aria-label={t("header.upload")}>
-                <Upload size={16} className="lg:mr-2" aria-hidden="true" />
-                <span className="hidden lg:inline">{t("header.upload")}</span>
-              </Button>
-            </Link>
-            <Button
-              variant="ghost"
-              size="compact"
-              onClick={() => {
-                themeStore.toggleTheme();
-              }}
-              aria-label={t("header.toggleTheme")}
-              className="h-11 w-11 justify-center px-2 md:h-auto md:w-auto"
-            >
-              {themeStore.theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-            </Button>
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => {
@@ -123,7 +88,7 @@ export const Header = observer(() => {
                     <p className="text-sm font-semibold">{authStore.user?.email}</p>
                   </div>
                   <Link
-                    to="/profile"
+                    to="/settings"
                     onClick={() => {
                       setMenuOpen(false);
                     }}

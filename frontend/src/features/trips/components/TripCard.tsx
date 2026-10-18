@@ -18,7 +18,7 @@ export function TripCard({ trip, currency }: { trip: Trip; currency: string }) {
   return (
     <Link
       to={`/trips/${trip.id}`}
-      className="flex flex-col gap-2 rounded-card border border-border bg-background p-4 no-underline text-foreground transition-colors hover:bg-surface-hover md:flex-row md:items-center md:justify-between md:gap-4"
+      className="flex flex-col gap-2 on-surface rounded-card bg-surface p-4 no-underline text-foreground transition-colors hover:bg-surface-hover md:flex-row md:items-center md:justify-between md:gap-4"
     >
       <div className="flex min-w-0 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2">

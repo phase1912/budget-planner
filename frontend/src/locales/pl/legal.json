@@ -6,7 +6,7 @@
     "sections": {
       "data": {
         "title": "Co przechowujemy",
-        "body": "Twoje konto: imię i nazwisko, adres e-mail, skrót hasła, język, walutę i budżet; Twój plan i każdy przyznany Ci plan wraz z powodem; a jeśli włączysz logowanie dwuetapowe — jego zaszyfrowany klucz i skróty kodów odzyskiwania.\n\nTo, co dodajesz: paragony i odczytane z nich dane — sklep, datę, pozycje, kwoty, kategorie — a także podróże, cele, reguły i gospodarstwo domowe, które tworzysz. Zdjęcia paragonów i przesłane e-paragony są przechowywane jako pliki.\n\nJeśli piszesz do nas przez formularz na stronie Pomocy, Twój adres i wiadomość trafiają do nas pocztą, abyśmy mogli odpowiedzieć; sama usługa ich nie przechowuje."
+        "body": "Twoje konto: imię i nazwisko, adres e-mail, skrót hasła, język, walutę i budżet; Twój plan i każdy przyznany Ci plan wraz z powodem; a jeśli włączysz logowanie dwuetapowe — jego zaszyfrowany klucz i skróty kodów odzyskiwania.\n\nTo, co dodajesz: paragony i odczytane z nich dane — sklep, datę, pozycje, kwoty, kategorie — podróże, cele, reguły i gospodarstwo domowe, które tworzysz, a także wpisywane dochody i saldo początkowe, których nie widzi nikt z gospodarstwa. Zdjęcia paragonów i przesłane e-paragony są przechowywane jako pliki.\n\nJeśli piszesz do nas przez formularz na stronie Pomocy, Twój adres i wiadomość trafiają do nas pocztą, abyśmy mogli odpowiedzieć; sama usługa ich nie przechowuje."
       },
       "why": {
         "title": "Po co",
@@ -22,7 +22,7 @@
       },
       "rights": {
         "title": "Twoje prawa",
-        "body": "W profilu możesz pobrać wszystko, co o Tobie przechowujemy, w jednym archiwum oraz usunąć konto wraz ze wszystkimi danymi. Każdy paragon i pole profilu możesz w każdej chwili poprawić. Zgodnie z RODO możesz też wnieść sprzeciw wobec przetwarzania lub skargę do organu ochrony danych (w Polsce: PUODO)."
+        "body": "W ustawieniach możesz pobrać wszystko, co o Tobie przechowujemy, w jednym archiwum oraz usunąć konto wraz ze wszystkimi danymi. Każdy paragon i pole profilu możesz w każdej chwili poprawić. Zgodnie z RODO możesz też wnieść sprzeciw wobec przetwarzania lub skargę do organu ochrony danych (w Polsce: PUODO)."
       },
       "who": {
         "title": "Kim jesteśmy",
@@ -34,7 +34,7 @@
       },
       "ai": {
         "title": "Odczytywanie paragonów przez AI",
-        "body": "Zdjęcia paragonów i nazwy pozycji odczytuje i kategoryzuje model AI. Zamienia on jedynie to, co wydrukowano, na kwoty, które możesz sprawdzić i poprawić; nie podejmuje wobec Ciebie decyzji wywołujących skutki prawne ani podobnie istotne."
+        "body": "Zdjęcia paragonów i nazwy pozycji odczytuje i kategoryzuje model AI; tak samo odczytuje pasek wypłaty lub przelew wysłany jako dochód — sam dokument nie jest przechowywany, tylko potwierdzone kwota, data i płatnik. Zamienia on jedynie to, co wydrukowano, na kwoty, które możesz sprawdzić i poprawić; nie podejmuje wobec Ciebie decyzji wywołujących skutki prawne ani podobnie istotne."
       }
     }
   },

@@ -102,6 +102,17 @@ class TestRegister:
         user.language = None
         user.forwarding_token = "0123456789abcdef"
         user.role = "user"
+        user.palette = None
+        user.dark_at_night = False
+        user.onboarded_at = None
+        user.travels_for_work = False
+        user.usual_income = None
+        user.payday = None
+        user.starting_balance = None
+        user.pays_own_taxes = False
+        user.tax_rate = None
+        user.tax_fixed_monthly = None
+        user.balance_since = None
 
         # First execute: no existing user; second: flush creates the RT
         _, override = _make_session_override([None])
@@ -221,6 +232,17 @@ class TestLogin:
         user.language = None
         user.forwarding_token = "0123456789abcdef"
         user.role = "user"
+        user.palette = None
+        user.dark_at_night = False
+        user.onboarded_at = None
+        user.travels_for_work = False
+        user.usual_income = None
+        user.payday = None
+        user.starting_balance = None
+        user.pays_own_taxes = False
+        user.tax_rate = None
+        user.tax_fixed_monthly = None
+        user.balance_since = None
         user.password_hash = get_password_hash("SecurePass123!")
 
         _, override = _make_session_override([user])

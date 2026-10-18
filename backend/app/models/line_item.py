@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Integer, Numeric, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, column_property, mapped_column, relationship
 
 from app.models.base import Model
 
@@ -24,6 +24,13 @@ class LineItem(Model):
     quantity: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
     unit_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     total_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    # This line's part of a discount the receipt does not print — a gift card, a voucher
+    # (F23.7). What was paid for the line is `paid`; `unit_price` stays the shelf price,
+    # so price history is not moved by it.
+    discount_share: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2), nullable=False, default=Decimal(0), server_default="0"
+    )
+    paid: Mapped[Decimal] = column_property(total_price - discount_share)
     category_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
     )

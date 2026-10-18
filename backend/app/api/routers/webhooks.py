@@ -8,6 +8,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Header, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.email_ingestion import EmailIngestionAdapter
+from app.adapters.income_document_agent import IncomeDocumentAdapter
 from app.adapters.vision_agent import VisionAgentAdapter
 from app.agent.factory import agent_from_settings
 from app.api.dependencies import get_quota_service, get_storage_service
@@ -28,7 +29,8 @@ def get_email_ingestion(
     storage: Annotated[StoragePort, Depends(get_storage_service)],
 ) -> EmailIngestionAdapter:
     """Provide the email channel; tests override this to stay off the network."""
-    return EmailIngestionAdapter(storage, VisionAgentAdapter(agent_from_settings()))
+    agent = agent_from_settings()
+    return EmailIngestionAdapter(storage, VisionAgentAdapter(agent), IncomeDocumentAdapter(agent))
 
 
 @router.post(

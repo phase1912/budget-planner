@@ -6,6 +6,10 @@ import { AsyncState } from "@/stores/AsyncState";
 import i18n from "@/i18n";
 import type { Trip } from "@/stores/TripsStore";
 import { tripOnDay } from "@/stores/tripOnDay";
+import { shrinkPhoto } from "@/stores/shrinkPhoto";
+
+/** Failed polls in a row (about 2 s apart, plus each request's own wait) before giving up. */
+const POLL_FAILURES_TOLERATED = 6;
 
 /**
  * Whether a receipt's printed total still needs the user (BRD A11): none was
@@ -264,7 +268,7 @@ export class UploadStore {
       let data: { job_id?: string } | undefined;
 
       if (this.mode === "single") {
-        for (const file of this.files) {
+        for (const file of await Promise.all(this.files.map(shrinkPhoto))) {
           formData.append("files", file);
         }
         const res = await this.api.POST("/receipts/upload", {
@@ -275,7 +279,10 @@ export class UploadStore {
         response = res.response;
         data = res.data;
       } else {
-        this.lines.forEach((line, index) => {
+        const shrunk = await Promise.all(
+          this.lines.map((line) => Promise.all(line.map(shrinkPhoto))),
+        );
+        shrunk.forEach((line, index) => {
           for (const file of line) {
             formData.append(`line_${String(index)}`, file);
           }
@@ -330,13 +337,29 @@ export class UploadStore {
     }
   }
 
+  /**
+   * Follow a reading job until it is done. The job runs on the server whatever happens
+   * here, so a poll that fails — a busy instance, a dropped connection, a phone waking —
+   * is tried again; only several failures in a row, or a job the server no longer has,
+   * end it as an error.
+   */
   async pollJobStatus(jobId: string) {
     let polling = true;
+    let failures = 0;
+    const giveUp = () => {
+      runInAction(() => {
+        this.isProcessing = false;
+        this.uploadState.fail(i18n.t("messages:upload.pollingFailed"));
+        this.errorTitle = i18n.t("messages:upload.networkTitle");
+        this.errorDetails = i18n.t("messages:upload.pollingDetails");
+      });
+    };
     while (polling) {
       try {
         const res = await this.api.GET("/receipts/upload/{job_id}", {
           params: { path: { job_id: jobId } },
         });
+        if (res.data) failures = 0;
 
         if (res.data) {
           runInAction(() => {
@@ -370,17 +393,16 @@ export class UploadStore {
               polling = false;
             }
           });
-        } else {
-          runInAction(() => {
-            this.isProcessing = false;
-            this.uploadState.fail(i18n.t("messages:upload.pollingFailed"));
-            this.errorTitle = i18n.t("messages:upload.networkTitle");
-            this.errorDetails = i18n.t("messages:upload.pollingDetails");
-          });
+        } else if (res.response.status === 404 || ++failures >= POLL_FAILURES_TOLERATED) {
+          giveUp();
           polling = false;
         }
       } catch (err) {
         console.error("Polling error", err);
+        if (++failures >= POLL_FAILURES_TOLERATED) {
+          giveUp();
+          polling = false;
+        }
       }
 
       if (polling) {

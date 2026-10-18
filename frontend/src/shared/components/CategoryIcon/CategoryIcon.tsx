@@ -28,7 +28,7 @@ const ICONS: Record<string, LucideIcon> = {
 export interface CategoryIconProps {
   /** The category's stored name: a built-in one has its own picture, a user's own a tag. */
   name: string;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
 }
 
 /**
@@ -42,12 +42,19 @@ export function CategoryIcon({ name, size = "sm" }: CategoryIconProps) {
   return (
     <span
       aria-hidden="true"
-      className={`inline-flex shrink-0 items-center justify-center rounded-full ${
-        size === "sm" ? "h-6 w-6" : "h-8 w-8"
+      className={`inline-flex shrink-0 items-center justify-center ${
+        size === "sm"
+          ? "h-6 w-6 rounded-full"
+          : size === "md"
+            ? "h-8 w-8 rounded-full"
+            : "h-10 w-10 rounded-control"
       }`}
       style={{ background: `color-mix(in srgb, ${color} 18%, transparent)`, color }}
     >
-      <Icon size={size === "sm" ? 13 : 16} strokeWidth={size === "sm" ? 2.5 : 2} />
+      <Icon
+        size={size === "sm" ? 13 : size === "md" ? 16 : 20}
+        strokeWidth={size === "sm" ? 2.5 : 2}
+      />
     </span>
   );
 }

@@ -92,7 +92,8 @@ Rules that must hold at all times. Each is a candidate for a test.
 
 **Aggregation**
 
-4. A monthly total is the sum of line-item totals of `parsed` receipts in that month (D1).
+4. A monthly total is the sum of what was paid for the line items of `parsed` receipts in
+   that month (D1): each line's total less its share of an unprinted discount (5d).
 5. Receipts in `manual_review` are excluded, and their count and value are reported
    alongside the total — the number is never quietly incomplete (D3). The value is the
    sum of their lines, since the printed total may be what could not be read. One with
@@ -128,6 +129,15 @@ Rules that must hold at all times. Each is a candidate for a test.
    total, so the model can never "fix" a receipt by rewriting what was paid. Only what
    still disagrees is shown to the user, marked as already tried (`total_reconciled_by`
    = `unresolved`), with 5b's offer.
+5d. A discount the receipt does not print — a gift card, a voucher, a deal at the till —
+   is stated by the user as an amount off the receipt (F23.7, `app/domain/discount.py`).
+   It is spread over every line in proportion to what each cost, or over the lines the
+   user picks; shares are cut to the grosz and the pennies left go to the dearest line, so
+   they sum to the amount exactly. Each line keeps its printed total, so price history
+   shows the shelf price, while every spending figure — month, category, trip,
+   household, statistics, exports' totals — counts `paid` (total less share). A discount
+   larger than the lines it is spread over is refused (`discount_too_large`). Correcting
+   the lines spreads it again over all of them, or drops it if it no longer fits.
 5d. A receipt with no readable date is dated the day it was uploaded (UTC), marked as
     assumed, and stored like any other; a missing date never holds it out of the month
     or stops the upload (`app/domain/receipt_dates.py`). The wizard says the date was
@@ -509,6 +519,67 @@ Rules that must hold at all times. Each is a candidate for a test.
     orphaned object survives in storage (A12, N2).
 25. Deleting a receipt discards the transient upload-job payload that named those
     photos, so no screen can ask for an image that is gone (A12).
+
+**Income and balance**
+
+26. A month's income is the sum of the entries received in it (F23.10). With none
+    entered, the account's usual income stands in, marked as usual rather than entered,
+    so "left to spend" is right on the 1st; with neither, the month has no income figure
+    (`app/domain/income.py`). Each entry has a kind (salary, side, refund, other) and says
+    whether it was typed or read from a document.
+27. The balance is a starting amount the user states once — what the accounts hold on a
+    date, not income — carried forward: plus income received since, minus spending
+    counted since by invariant 4's rule (F23.14, `app/domain/balance.py`). Without a
+    starting amount there is no balance, never a zero.
+28. Income, its entries and the balance are their owner's alone; a household sees none of
+    them (N2, ADR-0017).
+29. Accounts made before the first-sign-in setup existed count as having done it
+    (F23.9); only new accounts are walked through it, once, on any device.
+30. From payday on (31 meaning a month's last day), a running month with no income
+    entered asks once whether the salary came; confirming records the usual income as
+    received that day. A balance at or below zero asks for missing income or a new
+    starting amount rather than showing a debt: it almost always means income not
+    entered.
+31. Income read off a document — a payslip or transfer confirmation (F23.11) — is never
+    stored as a file or written as an entry by itself: it is read in memory, shown as a
+    draft, and only what the user confirms becomes an entry, marked as from a document
+    (correcting it later keeps that mark). A document that is not money received is
+    refused. A payslip or transfer forwarded by email is told apart from a receipt by the
+    reader itself (`document_kind`, or a low `is_receipt_confidence`): it becomes a
+    pending income — kept apart from entries, counting nowhere — and its stored files are
+    deleted; confirming makes it an entry, dismissing drops it. A letter delivered twice
+    waits once.
+
+33. Regular incomes (F23.17) — a salary, a side job, a pension — are set once and count in
+    every month from the month they were added, as they reach the account; anything else
+    is entered on top by hand, through ＋ or from a document. With any regular income the
+    single usual income no longer stands in. Ending one stops it from the next month and
+    keeps it in the months it ran (one ended in its first month simply goes). The balance
+    gains each on its day of the month (a 31st in a shorter month on its last day).
+34. A user who pays their own taxes (F23.16) sets a rate and an optional fixed sum a
+    month. Each income — entry or regular — says whether the tax comes out of it: by
+    default earnings do and gifts, refunds and sales do not; a regular income is untaxed
+    until ticked, and income read off an emailed document asks the user to decide. A
+    month's taxes are the rate on its taxed income plus the fixed sum, once; "left to
+    spend" counts the income after them. Taxes paid are recorded apart: they lower the
+    balance and what is still owed, never the spending.
+
+35. Regular bills (F23.18) — rent, a subscription, a loan — go every month without a
+    receipt, from the month they were added, and stop like regular incomes do. They are
+    not purchases: they never enter a month's spending total, categories or statistics,
+    but they come off what is left of the income on Home and in Plan ("spent · bills ·
+    free"), off the balance on their day, and off what a savings goal can count on.
+
+**Goals before they are saved**
+
+32. A money goal is checked against the user's last three whole months that had receipts
+    (F23.13, `app/domain/goal_check.py`): a ceiling against the monthly spend, a category
+    cut against that category's, a savings target — a sum put aside each month —
+    against what is usually left (income minus spending). Within it: doable. Beyond it:
+    a stretch by the difference, with up to three categories it could come from, each
+    trimmed by 15 % of its monthly spend, and the total those trims make even when it
+    falls short. No months with receipts, or a savings target without any income: not
+    checkable. The check advises; it never stops a goal being saved.
 
 ## Open decisions
 

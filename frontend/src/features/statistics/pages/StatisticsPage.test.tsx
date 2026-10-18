@@ -17,7 +17,33 @@ const statisticsStore = {
   choosePreset: vi.fn(),
   chooseRange: vi.fn(),
   setCompare: vi.fn(),
+  receipts: [] as unknown[],
+  receiptCount: 0,
+  isLoadingReceipts: false,
+  loadReceipts: vi.fn(),
 };
+
+const receiptStore = { selectedReceiptId: null, fetchReceiptDetail: vi.fn() };
+const categoriesStore = {
+  reviewCount: 0,
+  reviewQueue: [] as unknown[],
+  loadReviewCount: vi.fn(),
+  fetchReviewQueue: vi.fn(),
+};
+const incomeStore = {
+  bills: [] as { id: string; name: string; amount: string }[],
+  loadBills: vi.fn(),
+};
+
+vi.mock("@/features/receipts/components/ReceiptDetailModal", () => ({
+  ReceiptDetailModal: () => null,
+}));
+vi.mock("@/features/receipts/components/DeleteReceiptDialog", () => ({
+  DeleteReceiptDialog: () => null,
+}));
+vi.mock("@/features/receipts/components/EditReceiptDialog", () => ({
+  EditReceiptDialog: () => null,
+}));
 
 const exportStore = { busy: {} as Record<string, boolean>, start: vi.fn() };
 
@@ -28,8 +54,17 @@ vi.mock("@/stores/StoreContext", () => ({
     // Not in a household: the pages show only the user's own figures (F12.5).
     householdStore: { household: null, shared: false, showingHousehold: false, load: vi.fn() },
     authStore: { user: { currency: "PLN" } },
+    receiptStore,
+    categoriesStore,
+    incomeStore,
   }),
 }));
+
+/** The chart and the table are folded until asked for. */
+function openChartAndTable() {
+  const toggle = screen.queryByRole("button", { name: /Chart and table/ });
+  if (toggle) fireEvent.click(toggle);
+}
 
 function renderPage() {
   render(
@@ -76,12 +111,13 @@ describe("StatisticsPage", () => {
   it("loads the period's statistics when opened", () => {
     renderPage();
     expect(statisticsStore.load).toHaveBeenCalled();
-    expect(screen.getByText("1 – 27 Jul 2026")).toBeInTheDocument();
+    expect(screen.getAllByText("1 – 27 Jul 2026").length).toBeGreaterThan(0);
   });
 
   it("ranks every category with its total, share and item count", () => {
     statisticsStore.statistics = july();
     renderPage();
+    openChartAndTable();
 
     const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1);
     // The item count shows twice: in its column, and under the name for a phone.
@@ -133,6 +169,7 @@ describe("StatisticsPage", () => {
       excluded_amount: "30",
     });
     renderPage();
+    openChartAndTable();
     expect(
       screen.getByText("Nothing is counted in 1 – 27 Jul 2026 until those receipts are reviewed."),
     ).toBeInTheDocument();
@@ -188,7 +225,7 @@ describe("StatisticsPage", () => {
   it("turns the comparison on from the period bar", () => {
     statisticsStore.statistics = july();
     renderPage();
-    fireEvent.click(screen.getByRole("checkbox", { name: "Compare with the previous period" }));
+    fireEvent.click(screen.getByRole("switch", { name: /Compare with the previous period/ }));
     expect(statisticsStore.setCompare).toHaveBeenCalledWith(true);
   });
 
@@ -217,12 +254,66 @@ describe("StatisticsPage", () => {
       },
     });
     renderPage();
+    openChartAndTable();
 
-    expect(screen.getByRole("checkbox", { name: "Compare with 1 – 27 Jun 2026" })).toBeChecked();
+    expect(screen.getByRole("switch", { name: /Compare with 1 – 27 Jun 2026/ })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
     expect(screen.getByText(/July is still running/)).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "1 – 27 Jun 2026" })).toBeInTheDocument();
     // In full in its own column; for a phone, just the percentage under the amount.
     expect(screen.getByText("−69.80 · −8.6%")).toBeInTheDocument();
-    expect(screen.getByText("−8.6%")).toBeInTheDocument();
+    expect(screen.getAllByText("−8.6%").length).toBeGreaterThan(0);
+  });
+
+  it("offers this month, last month and the year", () => {
+    statisticsStore.statistics = july();
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /This year/ }));
+    expect(statisticsStore.choosePreset).toHaveBeenCalledWith("this_year");
+  });
+
+  it("opens the period's receipts in place, loading them only then", () => {
+    statisticsStore.statistics = july();
+    statisticsStore.receipts = [
+      {
+        id: "r1",
+        merchant_name: "Lidl",
+        transaction_date: "2026-07-03T10:00:00Z",
+        created_at: "2026-07-03T10:00:00Z",
+        total_amount: "45.00",
+        status: "parsed",
+      },
+    ];
+    statisticsStore.receiptCount = 30;
+    renderPage();
+
+    expect(statisticsStore.loadReceipts).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: /^Receipts/ }));
+    expect(statisticsStore.loadReceipts).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: /Lidl/ }));
+    expect(receiptStore.fetchReceiptDetail).toHaveBeenCalledWith("r1");
+    expect(screen.getByRole("link", { name: /All 30 receipts/ })).toHaveAttribute(
+      "href",
+      "/receipts?start=2026-07-01&end=2026-07-27",
+    );
+    statisticsStore.receipts = [];
+  });
+
+  it("lists the month's bills and the items still to file, each folded", () => {
+    statisticsStore.statistics = july();
+    incomeStore.bills = [{ id: "b1", name: "Rent", amount: "3000.00" }];
+    categoriesStore.reviewCount = 4;
+    renderPage();
+
+    expect(screen.getByRole("button", { name: /Every month/ })).toHaveTextContent("3,000 PLN");
+    expect(screen.getByRole("button", { name: /Items without a category/ })).toHaveTextContent("4");
+    expect(screen.queryByText("Rent")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Every month/ }));
+    expect(screen.getByText("Rent")).toBeInTheDocument();
+    incomeStore.bills = [];
+    categoriesStore.reviewCount = 0;
   });
 });

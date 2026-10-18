@@ -79,7 +79,10 @@
     "deleted": "Usunięto paragon",
     "recalculated": "{{done}}. Przeliczono: {{months}}",
     "manualFailed": "Nie udało się dodać wydatku. Spróbuj ponownie.",
-    "manualAdded": "Wydatek dodany."
+    "manualAdded": "Wydatek dodany.",
+    "discountFailed": "Nie udało się zapisać rabatu. Spróbuj ponownie.",
+    "discountSaved": "Rabat uwzględniony. Miesiąc liczy to, co zapłacono.",
+    "discountRemoved": "Rabat usunięty."
   },
   "statistics": {
     "loadFailed": "Nie udało się wczytać statystyk"
@@ -150,5 +153,10 @@
     "planRevoked": "Przyznanie zostało cofnięte.",
     "appointed": "To konto jest teraz administratorem.",
     "removed": "To konto nie jest już administratorem."
+  },
+  "income": {
+    "saved": "Zapisano.",
+    "failed": "Nie udało się zapisać dochodu. Spróbuj ponownie.",
+    "readFailed": "Nie udało się odczytać dokumentu. Spróbuj ponownie albo wpisz kwotę ręcznie."
   }
 }

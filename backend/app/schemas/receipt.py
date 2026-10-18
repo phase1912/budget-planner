@@ -218,6 +218,8 @@ class LineItemResponse(BaseModel):
     quantity: Decimal
     unit_price: Decimal
     total_price: Decimal
+    discount_share: Decimal = Decimal(0)
+    """This line's part of the receipt's unprinted discount (F23.7)."""
     category_id: uuid.UUID | None
     category: CategoryResponse | None = None
     category_confidence: int | None = None
@@ -324,6 +326,8 @@ class ReceiptResponse(BaseModel):
     merchant_name: str | None
     transaction_date: datetime | None
     total_amount: Decimal | None
+    paid_discount: Decimal | None = None
+    """A discount the receipt does not print, taken off its lines (F23.7)."""
     status: str
     channel: ReceiptChannel
     is_private: bool = False
@@ -363,6 +367,14 @@ class ReceiptResponse(BaseModel):
         """Whether storage has removed the photos after 90 days; the figures stay."""
         today = datetime.now(UTC).date()
         return retention.photos_removed(self.created_at, bool(self.file_ids), today)
+
+
+class ReceiptDiscountRequest(BaseModel):
+    """What was not paid of a receipt (F23.7): null takes the discount off; `line_ids`
+    narrows it to some lines, all of them otherwise."""
+
+    amount: Decimal | None = Field(None, gt=0, max_digits=12, decimal_places=2)
+    line_ids: list[uuid.UUID] | None = None
 
 
 class ReceiptDetailResponse(ReceiptResponse):

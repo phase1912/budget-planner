@@ -93,5 +93,81 @@
     "loading": "Wczytujemy miesiąc gospodarstwa…"
   },
   "inMonth": " — {{month}}",
-  "recorded": " uwzględnionych"
+  "recorded": " uwzględnionych",
+  "hero": {
+    "label": "Ten miesiąc",
+    "ring": "Wydano {{spent}} z {{of}} {{currency}}",
+    "leftOfBudget": "zostało z budżetu",
+    "leftOfIncome": "zostało z wpływów",
+    "over": "ponad budżet",
+    "income": "Dochód",
+    "incomeUsual": "Dochód · zwykły",
+    "budget": "Budżet",
+    "add": "Dodaj",
+    "set": "Ustaw",
+    "daysLeft_one": "Został {{count}} dzień",
+    "daysLeft_few": "Zostały {{count}} dni",
+    "daysLeft_many": "Zostało {{count}} dni",
+    "daysLeft_other": "Zostało {{count}} dnia",
+    "perDay": "{{amount}} {{currency}} dziennie",
+    "kept": "Zostało",
+    "overIncome": "więcej niż wpłynęło",
+    "ringIncome": "Wydano {{spent}} z {{of}} {{currency}}, które wpłynęły",
+    "ringCategories": "Wydano {{spent}} {{currency}}, według kategorii",
+    "next": "Dotknij, aby zobaczyć kolejny widok",
+    "settings": "Ustawienia",
+    "incomeNet": "Dochód · netto"
+  },
+  "review_one": "{{count}} pozycja czeka na kategorię",
+  "review_few": "{{count}} pozycje czekają na kategorię",
+  "review_many": "{{count}} pozycji czeka na kategorię",
+  "review_other": "{{count}} pozycji czeka na kategorię",
+  "edit": {
+    "incomeTitle": "Dochód w {{month}}",
+    "incomeLabel": "Co wpłynęło",
+    "incomeHint": "Kilka kwot w tym miesiącu? Dodaj każdą w Planie.",
+    "incomeSource": "Wynagrodzenie",
+    "incomeMany": "W tym miesiącu jest kilka wpisów: zmień je w Planie.",
+    "budgetTitle": "Budżet miesięczny",
+    "budgetLabel": "Budżet",
+    "budgetHint": "Zostaw puste, aby nie mieć budżetu."
+  },
+  "balance": {
+    "title": "Na kontach",
+    "add": "Dodaj, ile masz teraz",
+    "since": "liczone od {{date}}",
+    "editTitle": "Pieniądze na kontach",
+    "editLabel": "Ile masz dzisiaj",
+    "editHint": "To nie dochód, tylko pieniądze na Twoich kartach i kontach w tej chwili. Od dziś rośnie z wpływami i maleje z każdym zakupem.",
+    "emptyTitle": "Wygląda na to, że wpłynęły pieniądze, których tu nie ma",
+    "emptyBody": "Według naszych obliczeń na kontach jest {{amount}} {{currency}}. Dodaj, co wpłynęło, albo wpisz, ile masz teraz.",
+    "addIncome": "Dodaj wpływ",
+    "correct": "Popraw saldo",
+    "forTaxes": "w tym ~{{amount}} {{currency}} na podatki"
+  },
+  "insight": {
+    "dearer": "{{name}} podrożał o {{percent}}%",
+    "cheaper": "{{name}} potaniał o {{percent}}%"
+  },
+  "reviewShort_one": "pozycja czeka na kategorię",
+  "reviewShort_few": "pozycje czekają na kategorię",
+  "reviewShort_many": "pozycji czeka na kategorię",
+  "reviewShort_other": "pozycji czeka na kategorię",
+  "received": {
+    "title": "Pieniądze, które wpłynęły",
+    "label": "Wpłynęło dzisiaj",
+    "hint": "Trafi do dochodu w tym miesiącu i do salda.",
+    "source": "Dodano na stronie Start"
+  },
+  "payday": {
+    "question": "Pensja już wpłynęła?",
+    "yes": "Tak, dodaj",
+    "other": "Inna kwota"
+  },
+  "pendingIncome": {
+    "title": "Przyszło mailem",
+    "noAmount": "Nie odczytano kwoty",
+    "review": "Sprawdź i dodaj",
+    "dismiss": "Odrzuć"
+  }
 }

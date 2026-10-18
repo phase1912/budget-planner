@@ -158,5 +158,29 @@
     "pdf": "PDF ze zdjęciami",
     "csv": "CSV",
     "photosExpire": "Zdjęcia paragonów są przechowywane 90 dni: pierwsze z tej podróży znikną {{date}}. Pobierz rozliczenie w PDF wcześniej, aby zachować je razem z nim."
-  }
+  },
+  "holidays": "Wypoczynek",
+  "business": "Podróże służbowe",
+  "hero": {
+    "day": "Dzień {{day}} z {{of}}",
+    "inDays_one": "Za {{count}} dzień",
+    "inDays_few": "Za {{count}} dni",
+    "inDays_many": "Za {{count}} dni",
+    "inDays_other": "Za {{count}} dnia",
+    "over": "Zakończona",
+    "spent": "Wydano {{amount}} {{currency}}",
+    "toReimburse": "Do zwrotu {{amount}} {{currency}}",
+    "of": "z {{amount}} {{currency}}",
+    "perDay_one": "{{amount}} {{currency}} dziennie i budżet wystarczy na {{count}} pozostały dzień",
+    "perDay_few": "{{amount}} {{currency}} dziennie i budżet wystarczy na {{count}} pozostałe dni",
+    "perDay_many": "{{amount}} {{currency}} dziennie i budżet wystarczy na {{count}} pozostałych dni",
+    "perDay_other": "{{amount}} {{currency}} dziennie i budżet wystarczy na {{count}} pozostałego dnia",
+    "overBy": "{{amount}} {{currency}} ponad budżet",
+    "holiday": "Urlop"
+  },
+  "kinds": {
+    "perDay": "{{amount}} {{currency}} dziennie",
+    "converted": "Zapłacono w {{paid}}: przeliczone po kursie NBP z dnia zakupu. Liczy się w swoim miesiącu, osobno od codziennych wydatków."
+  },
+  "categoriesTitle": "Według kategorii"
 }

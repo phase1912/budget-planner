@@ -17,6 +17,8 @@ interface ExportMenuProps {
   /** Whether an export of this kind is being written; the button says so. */
   busy: boolean;
   onExport: (format: ExportFormat) => void;
+  /** An icon button beside a screen's title (design v2), its text read out instead. */
+  compact?: boolean;
 }
 
 /**
@@ -26,7 +28,12 @@ interface ExportMenuProps {
  * saves the file when the background job is done. Closes on a choice, Escape
  * or a click elsewhere. On a phone it takes the full width, as buttons do there.
  */
-export const ExportMenu = observer(function ExportMenu({ label, busy, onExport }: ExportMenuProps) {
+export const ExportMenu = observer(function ExportMenu({
+  label,
+  busy,
+  onExport,
+  compact = false,
+}: ExportMenuProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const menu = useRef<HTMLDivElement>(null);
@@ -52,11 +59,14 @@ export const ExportMenu = observer(function ExportMenu({ label, busy, onExport }
   }, [open]);
 
   return (
-    <div ref={menu} className="relative w-full md:w-auto">
+    <div ref={menu} className={`relative ${compact ? "" : "w-full md:w-auto"}`}>
       <Button
         variant="secondary"
         size="sm"
-        className="min-h-11 w-full md:min-h-0 md:w-auto"
+        aria-label={compact ? label : undefined}
+        className={
+          compact ? "h-11 w-11 justify-center p-0" : "min-h-11 w-full md:min-h-0 md:w-auto"
+        }
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={id}
@@ -66,13 +76,13 @@ export const ExportMenu = observer(function ExportMenu({ label, busy, onExport }
         }}
       >
         <Download size={15} aria-hidden="true" />
-        {busy ? t("export.preparing") : label}
+        {!compact && (busy ? t("export.preparing") : label)}
       </Button>
       {open && (
         <ul
           id={id}
           role="menu"
-          className="absolute right-0 top-[calc(100%+6px)] z-20 m-0 flex w-full list-none flex-col gap-0.5 rounded-control border border-border bg-background p-1.5 shadow-modal md:w-56"
+          className={`absolute right-0 top-[calc(100%+6px)] z-20 m-0 flex ${compact ? "" : "w-full"} list-none flex-col gap-0.5 rounded-control border border-border bg-background p-1.5 shadow-modal ${compact ? "w-56" : "md:w-56"}`}
         >
           {FORMATS.map(({ format, label: name, hint }) => (
             <li key={format} role="none">

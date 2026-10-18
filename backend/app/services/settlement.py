@@ -151,7 +151,7 @@ def settlement_csv(data: TripSettlement, language: str | None) -> bytes:
         ]
     )
     for receipt in data.receipts:
-        amount = sum((item.total_price for item in receipt.line_items), Decimal(0))
+        amount = sum((item.paid for item in receipt.line_items), Decimal(0))
         foreign = receipt.original_currency and receipt.original_total is not None
         writer.writerow(
             [
@@ -290,7 +290,7 @@ def settlement_pdf(
 
     pdf.heading(words["receipts"])
     for receipt in data.receipts:
-        amount = sum((item.total_price for item in receipt.line_items), Decimal(0))
+        amount = sum((item.paid for item in receipt.line_items), Decimal(0))
         pdf.line_of(
             f"{_day(receipt).isoformat()} {_name(receipt, words)}"[:48],
             f"{_money(amount)} {data.currency} · {words[kind_of(receipt).value]}",

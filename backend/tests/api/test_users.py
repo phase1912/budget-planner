@@ -50,6 +50,17 @@ def _mock_user() -> User:
     user.language = None
     user.forwarding_token = "0123456789abcdef"
     user.role = "user"
+    user.palette = None
+    user.dark_at_night = False
+    user.onboarded_at = None
+    user.travels_for_work = False
+    user.usual_income = None
+    user.payday = None
+    user.starting_balance = None
+    user.pays_own_taxes = False
+    user.tax_rate = None
+    user.tax_fixed_monthly = None
+    user.balance_since = None
     return user
 
 

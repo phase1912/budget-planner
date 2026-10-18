@@ -83,7 +83,7 @@ export const ContactForm = observer(function ContactForm() {
               </label>
               <select
                 id="contact-topic"
-                className="min-h-11 rounded-control border border-border bg-background px-3 py-2 text-base text-foreground"
+                className="min-h-11 rounded-control border-2 border-transparent control-fill px-3 py-2 text-base text-foreground"
                 value={topic}
                 onChange={(event) => {
                   setTopic(event.target.value as ContactTopic);
@@ -108,7 +108,7 @@ export const ContactForm = observer(function ContactForm() {
                 rows={6}
                 minLength={10}
                 maxLength={4000}
-                className="rounded-control border border-border bg-background px-3 py-2 text-base text-foreground"
+                className="rounded-control border-2 border-transparent control-fill px-3 py-2 text-base text-foreground"
                 value={message}
                 onChange={(event) => {
                   setMessage(event.target.value);

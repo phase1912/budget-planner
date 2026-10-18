@@ -1,15 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  /* Fonts from design.css */
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Design v2 (docs/design/v2.md): Manrope, served with the app. */
+  --font-sans: "Manrope Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 
-  /* Typography scale */
-  --text-xs: 10px;
-  --text-sm: 11px;
-  --text-base: 12px;
-  --text-md: 13px;
-  --text-lg: 14px;
+  /* Typography scale, design v2: secondary 13, body 14–15, row titles 15, section titles
+     18; nothing below 12. */
+  --text-xs: 12px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 15px;
   --text-xl: 18px;
+  --text-2xl: 22px;
+  --text-3xl: 28px;
 }

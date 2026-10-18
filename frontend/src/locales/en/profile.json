@@ -1,6 +1,5 @@
 {
-  "title": "Preferences",
-  "subtitle": "Account-level settings that every figure in the product is expressed in.",
+  "title": "Settings",
   "money": {
     "title": "Money",
     "currency": "Currency",
@@ -9,7 +8,23 @@
     "recorded": "{{count}} receipts recorded in {{currency}}",
     "limit": "Monthly budget limit",
     "limitHint": "Optional. When set, spend is also shown as a percentage of it. Changing it affects presentation only — finalised months are never rewritten.",
-    "removeLimit": "Remove the limit"
+    "removeLimit": "Remove the limit",
+    "income": "Usual monthly income",
+    "payday": "Payday",
+    "noPayday": "Not set",
+    "lastDay": "Last day of the month",
+    "none": "Not set",
+    "hint": "Income entered for a month replaces the usual amount there. Months still run from the 1st.",
+    "balance": "On your accounts",
+    "balanceLabel": "What you have today",
+    "balanceHint": "Not your income: the money on your cards and accounts right now. From today it goes up with income and down with every purchase.",
+    "taxes": "I pay my own taxes",
+    "taxesHint": "Income comes in before tax and you pay it yourself — sole trader, contract work.",
+    "taxRate": "Tax on income",
+    "taxRateHint": "Your own rate, from each taxed income: PIT, flat tax, health contribution together. Gifts and things sold are not taxed unless you say so.",
+    "taxFixed": "Fixed each month",
+    "taxFixedHint": "Paid once a month whatever came in — a social contribution, a lump-sum tax. Empty for none.",
+    "percent": "{{value}} %"
   },
   "account": {
     "title": "Account",
@@ -31,7 +46,7 @@
   },
   "discard": "Discard",
   "saving": "Saving...",
-  "save": "Save preferences",
+  "save": "Save",
   "forwarding": {
     "title": "Receipts by email",
     "label": "Your forwarding address",
@@ -125,5 +140,73 @@
     "offBody": "Sign-in will ask only for your password again.",
     "password": "Password",
     "codeOrRecovery": "Code from the app or a recovery code"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "palette": "Palette",
+    "darkAtNight": "Dark at night",
+    "darkAtNightHint": "Midnight whenever your device is in dark mode.",
+    "palettes": {
+      "midnight": "Midnight",
+      "daylight": "Daylight",
+      "rose": "Rose",
+      "lavender": "Lavender",
+      "sage": "Sage",
+      "ocean": "Ocean"
+    }
+  },
+  "work": {
+    "title": "Work trips",
+    "label": "I travel for work",
+    "hint": "Shows business trips: per diem and a settlement for your employer.",
+    "open": "Open business trips"
+  },
+  "back": "Back to Home",
+  "receiptsGroup": "Receipts",
+  "sharing": "Sharing and work",
+  "household": "Household",
+  "more": "More",
+  "help": "Help",
+  "admin": "Admin",
+  "logOut": "Log out",
+  "regular": {
+    "title": "Regular income",
+    "hint": "What comes every month, already as it reaches your account. It counts by itself; anything extra you add on top.",
+    "name": "What it is",
+    "namePlaceholder": "Salary",
+    "amount": "A month, {{currency}}",
+    "day": "Comes on",
+    "anyDay": "Any day",
+    "taxed": "My tax comes out of it",
+    "taxedShort": "taxed",
+    "monthly": "every month",
+    "onDay": "on day {{day}}",
+    "remove": "Stop it",
+    "cancel": "Cancel",
+    "save": "Save",
+    "add": "Add another",
+    "addFirst": "Add a regular income",
+    "summary_one": "{{amount}} · {{count}} income",
+    "summary_other": "{{amount}} · {{count}} incomes",
+    "none": "None yet"
+  },
+  "bills": {
+    "title": "Regular bills",
+    "hint": "What goes every month without a receipt — rent, subscriptions, a loan. It counts by itself, before what you spend.",
+    "name": "What it is",
+    "namePlaceholder": "Rent",
+    "amount": "A month, {{currency}}",
+    "day": "Goes on",
+    "anyDay": "Any day",
+    "monthly": "every month",
+    "onDay": "on day {{day}}",
+    "remove": "Stop it",
+    "cancel": "Cancel",
+    "save": "Save",
+    "add": "Add another",
+    "addFirst": "Add a regular bill",
+    "summary_one": "{{amount}} · {{count}} bill",
+    "summary_other": "{{amount}} · {{count}} bills",
+    "none": "None yet"
   }
 }

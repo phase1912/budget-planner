@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Exploration } from "@/stores/ExplorationStore";
 import type { Product } from "@/stores/ProductsStore";
+import { ExplorePage } from "./ExplorePage";
 import { ProductsPage } from "./ProductsPage";
 
 const YOGHURT: Product = {
@@ -43,6 +44,8 @@ const store = vi.hoisted(() => ({
   },
   productById: (id: string) => store.products.find((p) => (p as { id: string }).id === id),
   load: vi.fn(),
+  loadOverview: vi.fn(),
+  overview: null,
   setSearch: vi.fn(),
   toggle: vi.fn((id: string) => {
     store.selected = store.selected.includes(id)
@@ -96,6 +99,13 @@ const renderPage = () =>
     </MemoryRouter>,
   );
 
+const renderExplore = () =>
+  render(
+    <MemoryRouter initialEntries={["/products/explore"]}>
+      <ExplorePage />
+    </MemoryRouter>,
+  );
+
 describe("ProductsPage (F16.1)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -108,7 +118,6 @@ describe("ProductsPage (F16.1)", () => {
   it("lists each product once, with how often, where and how it was printed", () => {
     renderPage();
 
-    expect(screen.getByRole("link", { name: "Products" })).toHaveAttribute("aria-current", "page");
     expect(
       screen.getByRole("checkbox", { name: "Select Jogurt Natural 330ml" }),
     ).toBeInTheDocument();
@@ -146,9 +155,19 @@ describe("ProductsPage (F16.1)", () => {
     expect(screen.queryByRole("button", { name: /Chleb 300g.*own/ })).not.toBeInTheDocument();
   });
 
-  it("merges the ticked products under the name the user keeps", async () => {
+  it("leads to exploring what is ticked from a bar that stays in view", () => {
     store.selected = ["p1", "p2"];
     renderPage();
+
+    expect(screen.getByRole("link", { name: /2 products selected.*Explore/ })).toHaveAttribute(
+      "href",
+      "/products/explore",
+    );
+  });
+
+  it("merges the ticked products under the name the user keeps", async () => {
+    store.selected = ["p1", "p2"];
+    renderExplore();
 
     fireEvent.click(screen.getByRole("button", { name: "Merge" }));
     fireEvent.click(screen.getByRole("radio", { name: "Chleb 300g" }));
@@ -165,8 +184,16 @@ describe("ProductsPage (F16.1)", () => {
     exploration.result = {
       totals: { times: 3, spent: "14.97", quantities: { g: "990.000" } },
       months: [
-        { month: "2026-09-01", amounts: { times: 1, spent: "4.49", quantities: {} } },
-        { month: "2026-10-01", amounts: { times: 2, spent: "10.48", quantities: {} } },
+        {
+          month: "2026-09-01",
+          amounts: { times: 1, spent: "4.49", quantities: {} },
+          by_product: [{ product_id: "p1", spent: "4.49" }],
+        },
+        {
+          month: "2026-10-01",
+          amounts: { times: 2, spent: "10.48", quantities: {} },
+          by_product: [{ product_id: "p1", spent: "10.48" }],
+        },
       ],
       products: [
         {
@@ -201,29 +228,34 @@ describe("ProductsPage (F16.1)", () => {
         },
       ],
     };
-    renderPage();
+    renderExplore();
 
     expect(exploration.setProducts).toHaveBeenCalledWith(["p1"]);
-    expect(screen.getByText("990 g")).toBeInTheDocument();
+    expect(screen.getAllByText(/990 g/).length).toBeGreaterThan(0);
+    expect(screen.getByText("3×")).toBeInTheDocument();
     expect(
       screen.getByText("Price per l went from 13.61 to 16.64 PLN (+22.3%)."),
     ).toBeInTheDocument();
     const shops = screen.getByRole("list", { name: "Prices of Jogurt Natural 330ml by shop" });
     expect(within(shops).getByText("Cheapest")).toBeInTheDocument();
     expect(within(shops).getByText("+1.52 PLN (10.1%)")).toBeInTheDocument();
-    expect(screen.getByRole("list", { name: "By month" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "By month" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /October 2026: 10.48 PLN/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     expect(screen.getByRole("figure")).toBeInTheDocument();
   });
 
   it("opens a saved selection and saves the ticked products as a new one (F16.2)", async () => {
     exploration.selections = [{ id: "s1", name: "Snacks", product_ids: ["p1", "p2"] }];
     store.selected = ["p1"];
-    renderPage();
+    renderExplore();
 
     fireEvent.click(screen.getByRole("button", { name: "Snacks" }));
     expect(store.select).toHaveBeenCalledWith(["p1", "p2"]);
 
-    fireEvent.click(screen.getByRole("button", { name: "Save as a selection" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save set" }));
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Breakfast" } });
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Save" }));
 
@@ -235,12 +267,11 @@ describe("ProductsPage (F16.1)", () => {
   it("does not offer to save a saved selection again once it is open", () => {
     exploration.selections = [{ id: "s1", name: "Snacks", product_ids: ["p1", "p2"] }];
     store.selected = ["p2", "p1"];
-    renderPage();
+    renderExplore();
 
     expect(screen.getByRole("button", { name: "Snacks" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText("Showing «Snacks»")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Save as a selection" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Clear" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Snacks" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save set" })).not.toBeInTheDocument();
   });
 
   it("says why a product bought once has no price chart", () => {
@@ -248,7 +279,13 @@ describe("ProductsPage (F16.1)", () => {
     store.selected = ["p1"];
     exploration.result = {
       totals: { times: 1, spent: "4.49", quantities: {} },
-      months: [{ month: "2026-10-01", amounts: { times: 1, spent: "4.49", quantities: {} } }],
+      months: [
+        {
+          month: "2026-10-01",
+          amounts: { times: 1, spent: "4.49", quantities: {} },
+          by_product: [{ product_id: "p1", spent: "4.49" }],
+        },
+      ],
       products: [
         {
           product: YOGHURT,
@@ -259,7 +296,7 @@ describe("ProductsPage (F16.1)", () => {
         },
       ],
     };
-    renderPage();
+    renderExplore();
 
     expect(
       screen.getByText(

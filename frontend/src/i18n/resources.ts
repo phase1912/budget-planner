@@ -15,6 +15,8 @@ import enProfile from "@/locales/en/profile.json";
 import enReceipts from "@/locales/en/receipts.json";
 import enStatistics from "@/locales/en/statistics.json";
 import enTrips from "@/locales/en/trips.json";
+import enPlan from "@/locales/en/plan.json";
+import enOnboarding from "@/locales/en/onboarding.json";
 import enUpload from "@/locales/en/upload.json";
 import plAdmin from "@/locales/pl/admin.json";
 import plAuth from "@/locales/pl/auth.json";
@@ -33,6 +35,8 @@ import plProfile from "@/locales/pl/profile.json";
 import plReceipts from "@/locales/pl/receipts.json";
 import plStatistics from "@/locales/pl/statistics.json";
 import plTrips from "@/locales/pl/trips.json";
+import plPlan from "@/locales/pl/plan.json";
+import plOnboarding from "@/locales/pl/onboarding.json";
 import plUpload from "@/locales/pl/upload.json";
 import ukAdmin from "@/locales/uk/admin.json";
 import ukAuth from "@/locales/uk/auth.json";
@@ -51,6 +55,8 @@ import ukProfile from "@/locales/uk/profile.json";
 import ukReceipts from "@/locales/uk/receipts.json";
 import ukStatistics from "@/locales/uk/statistics.json";
 import ukTrips from "@/locales/uk/trips.json";
+import ukPlan from "@/locales/uk/plan.json";
+import ukOnboarding from "@/locales/uk/onboarding.json";
 import ukUpload from "@/locales/uk/upload.json";
 
 /**
@@ -73,6 +79,8 @@ export const en = {
   messages: enMessages,
   products: enProducts,
   trips: enTrips,
+  plan: enPlan,
+  onboarding: enOnboarding,
   profile: enProfile,
   receipts: enReceipts,
   statistics: enStatistics,
@@ -96,6 +104,8 @@ export const resources = {
     messages: ukMessages,
     products: ukProducts,
     trips: ukTrips,
+    plan: ukPlan,
+    onboarding: ukOnboarding,
     profile: ukProfile,
     receipts: ukReceipts,
     statistics: ukStatistics,
@@ -116,6 +126,8 @@ export const resources = {
     messages: plMessages,
     products: plProducts,
     trips: plTrips,
+    plan: plPlan,
+    onboarding: plOnboarding,
     profile: plProfile,
     receipts: plReceipts,
     statistics: plStatistics,

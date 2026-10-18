@@ -22,7 +22,9 @@
     "processed": "Processed {{done}} of {{total}}…",
     "sending": "Sending…",
     "read": "Read these photos",
-    "noReceipt": "No receipt?"
+    "noReceipt": "No receipt?",
+    "moneyIn": "Money came in?",
+    "addIncome": "Add income"
   },
   "line": {
     "receipt": "Receipt",
@@ -179,5 +181,17 @@
   "unconfirmed": {
     "title": "Confirm your address to add receipts",
     "body": "We sent a link to {{email}}. Follow it, then come back here — receipts you photograph or forward wait for that one step."
+  },
+  "start": {
+    "camera": "Take a photo",
+    "cameraHint": "Your camera opens; a long receipt can be shot in parts",
+    "files": "Choose photos or a PDF",
+    "drop": "Drop photos or a PDF here, or choose them",
+    "filesHint": "JPEG, PNG, HEIC or PDF · up to 10 per receipt",
+    "email": "Forward an e-receipt",
+    "copy": "Copy the address",
+    "income": "Payslip or transfer",
+    "incomeHint": "Money that came in — we read the amount, the file isn't kept",
+    "reading": "Reading the document…"
   }
 }

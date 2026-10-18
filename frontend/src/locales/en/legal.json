@@ -6,7 +6,7 @@
     "sections": {
       "data": {
         "title": "What we keep",
-        "body": "Your account: name, email address, a hash of your password, language, currency and budget; your plan and any plan given to you, with the reason; and, if you turn on two-factor sign-in, its encrypted key and the hashes of your recovery codes.\n\nWhat you add: receipts and what is read from them — shop, date, items, amounts, categories — and the trips, goals, rules and household you set up. Receipt photos and forwarded e-receipts are kept as files.\n\nIf you write to us through the contact form on the Help page, your address and message are mailed to us to answer you; the service itself does not keep them."
+        "body": "Your account: name, email address, a hash of your password, language, currency and budget; your plan and any plan given to you, with the reason; and, if you turn on two-factor sign-in, its encrypted key and the hashes of your recovery codes.\n\nWhat you add: receipts and what is read from them — shop, date, items, amounts, categories — the trips, goals, rules and household you set up; and the income you enter and the balance you start from, which no household member sees. Receipt photos and forwarded e-receipts are kept as files.\n\nIf you write to us through the contact form on the Help page, your address and message are mailed to us to answer you; the service itself does not keep them."
       },
       "why": {
         "title": "Why",
@@ -22,7 +22,7 @@
       },
       "rights": {
         "title": "Your rights",
-        "body": "On Profile you can download everything held about you in one archive, and delete your account with all of it. You can correct any receipt and any profile field at any time. Under the GDPR you may also object to processing or complain to your data protection authority."
+        "body": "In Settings you can download everything held about you in one archive, and delete your account with all of it. You can correct any receipt and any profile field at any time. Under the GDPR you may also object to processing or complain to your data protection authority."
       },
       "who": {
         "title": "Who we are",
@@ -34,7 +34,7 @@
       },
       "ai": {
         "title": "Reading receipts with AI",
-        "body": "Receipt photos and names are read and categorised by an AI model. It only turns what is printed into figures you can check and correct; it makes no decision about you with legal or similarly significant effects."
+        "body": "Receipt photos and names are read and categorised by an AI model, and a payslip or transfer you send as income is read by it too — that document is not kept, only the amount, date and payer you confirm. It only turns what is printed into figures you can check and correct; it makes no decision about you with legal or similarly significant effects."
       }
     }
   },

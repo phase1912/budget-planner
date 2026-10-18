@@ -4,6 +4,7 @@ import type { components } from "@/api/schema";
 import { AsyncState } from "@/stores/AsyncState";
 import type { AuthStore } from "@/stores/AuthStore";
 import type { ToastStore } from "@/stores/ToastStore";
+import type { Palette, ThemeStore } from "@/stores/ThemeStore";
 import i18n from "@/i18n";
 import { errorMessage } from "@/api/errors";
 
@@ -14,12 +15,83 @@ export class ProfileStore {
   private readonly api: ApiClient;
   private readonly authStore: AuthStore;
   private readonly toastStore: ToastStore;
+  private readonly themeStore: ThemeStore | null;
 
-  constructor(api: ApiClient, authStore: AuthStore, toastStore: ToastStore) {
+  constructor(
+    api: ApiClient,
+    authStore: AuthStore,
+    toastStore: ToastStore,
+    themeStore: ThemeStore | null = null,
+  ) {
     this.api = api;
     this.authStore = authStore;
     this.toastStore = toastStore;
+    this.themeStore = themeStore;
     makeAutoObservable(this);
+  }
+
+  /** Paint the palette at once and keep it on the account for other devices (F23.1). */
+  async choosePalette(palette: Palette): Promise<void> {
+    this.themeStore?.setPalette(palette);
+    await this.saveQuietly({ palette });
+  }
+
+  /** Midnight whenever the device is dark, here and on the account. */
+  async chooseDarkAtNight(on: boolean): Promise<void> {
+    this.themeStore?.setDarkAtNight(on);
+    await this.saveQuietly({ dark_at_night: on });
+  }
+
+  /**
+   * Finish the first sign-in (F23.9): what was chosen, and that it is done, so it does not
+   * come back on another device. A currency the account can no longer change — it has
+   * receipts already — is left as it is rather than failing the rest.
+   */
+  async finishOnboarding(request: UserUpdateRequest): Promise<boolean> {
+    const body = { ...request, onboarded: true };
+    const first = await this.api.PATCH("/users/me", { body });
+    const locked = (first.error as { code?: string } | undefined)?.code === "currency_locked";
+    const response = locked
+      ? await this.api.PATCH("/users/me", { body: { ...body, currency: undefined } })
+      : first;
+    if (response.error !== undefined) {
+      this.toastStore.showError(
+        errorMessage(response.error, i18n.t("messages:profile.updateFailed")),
+      );
+      return false;
+    }
+    runInAction(() => {
+      this.adoptUser(response.data);
+    });
+    return true;
+  }
+
+  /**
+   * Save one setting without a toast — a switch that moves is its own confirmation. A
+   * failure is told, and the account keeps what it had.
+   */
+  async saveQuietly(request: UserUpdateRequest): Promise<boolean> {
+    try {
+      const { data, error } = await this.api.PATCH("/users/me", { body: request });
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (error || !data) {
+        this.toastStore.showError(errorMessage(error, i18n.t("messages:profile.updateFailed")));
+        return false;
+      }
+      runInAction(() => {
+        this.adoptUser(data);
+      });
+      return true;
+    } catch {
+      this.toastStore.showError(i18n.t("messages:profile.updateFailed"));
+      return false;
+    }
+  }
+
+  private adoptUser(data: Partial<NonNullable<AuthStore["user"]>>): void {
+    if (!this.authStore.user) return;
+    this.authStore.user = { ...this.authStore.user, ...data };
+    localStorage.setItem("budget_user", JSON.stringify(this.authStore.user));
   }
 
   /**

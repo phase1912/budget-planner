@@ -56,5 +56,8 @@
   "second_factor_required": "Włącz logowanie dwuetapowe i zaloguj się z nim, aby otworzyć strony administratora.",
   "super_admin_only": "Może to zrobić tylko superadministrator.",
   "admin_role_fixed": "Superadministratora ustawia konfiguracja usługi; nie można go tu zmienić.",
-  "already_confirmed": "Ten adres jest już potwierdzony."
+  "already_confirmed": "Ten adres jest już potwierdzony.",
+  "discount_too_large": "Rabat jest większy niż koszt wybranych pozycji.",
+  "income_unreadable": "Nie udało się odczytać dokumentu. Spróbuj ostrzejszego zdjęcia albo wpisz kwotę ręcznie.",
+  "not_income": "To nie wygląda na otrzymane pieniądze — paragon dodaje się jako paragon."
 }

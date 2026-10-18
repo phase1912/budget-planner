@@ -114,3 +114,18 @@ async def test_another_users_product_is_not_found(db_session: AsyncSession) -> N
     assert [p["name"] for p in (await _call(db_session, intruder, "GET", "")).json()] == [
         "Bulka 80g"
     ]
+
+
+@pytest.mark.asyncio
+async def test_the_overview_ranks_the_callers_shops_and_ignores_others(
+    db_session: AsyncSession,
+) -> None:
+    user = await UserFactory.create_async()
+    stranger = await UserFactory.create_async()
+    await _bought(db_session, user.id, "Lidl", "Mleko 1l")
+    await _bought(db_session, stranger.id, "Żabka", "Mleko 1l")
+
+    overview = await _call(db_session, user, "GET", "/overview")
+
+    assert overview.status_code == 200
+    assert overview.json() == {"moves": [], "shops": [], "paid_above": "0"}

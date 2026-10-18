@@ -10,7 +10,13 @@
     "home": "Home",
     "stats": "Stats",
     "main": "Main",
-    "receiptsAndCategories": "Receipts, categories and trips"
+    "receiptsAndCategories": "Receipts, categories and trips",
+    "spending": "Spending",
+    "products": "Products",
+    "plan": "Plan",
+    "settings": "Settings",
+    "add": "Add a receipt",
+    "addShort": "Add"
   },
   "header": {
     "back": "Back",
@@ -19,7 +25,7 @@
     "uploadReceipt": "Upload a receipt",
     "toggleTheme": "Toggle theme",
     "accountMenu": "Account menu",
-    "preferences": "Preferences",
+    "preferences": "Settings",
     "logOut": "Log out",
     "signIn": "Sign in",
     "createAccount": "Create an account",
@@ -97,5 +103,9 @@
     "privacy": "Privacy policy",
     "terms": "Terms of use",
     "label": "About the service"
+  },
+  "amountDialog": {
+    "cancel": "Cancel",
+    "save": "Save"
   }
 }

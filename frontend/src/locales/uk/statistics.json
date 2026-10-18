@@ -1,6 +1,6 @@
 {
-  "title": "Статистика",
-  "subtitle": "Суми за категоріями за будь-який період, а не лише за цілі місяці.",
+  "title": "Витрати",
+  "subtitle": "Куди пішли гроші, за категоріями, за будь-які дні.",
   "export": "Експорт",
   "period": "Період",
   "presets": {
@@ -10,7 +10,9 @@
     "last3Short": "3 місяці",
     "custom": "Свій",
     "thisMonthShort": "Цей місяць",
-    "lastMonthShort": "Минулий"
+    "lastMonthShort": "Минулий",
+    "year": "Цей рік",
+    "yearShort": "Рік"
   },
   "compareWith": "Порівняти з {{period}}",
   "previousPeriod": "попереднім періодом",
@@ -61,5 +63,35 @@
     "label": "Що переглядати",
     "categories": "Категорії",
     "products": "Товари"
+  },
+  "allReceipts": "Усі чеки",
+  "allReceiptsHint": "За цей період · пошук за магазином чи товаром",
+  "ring": {
+    "label": "Витрати за категоріями",
+    "showAll": "Показати всі категорії",
+    "picture": "Витрачено {{total}} {{currency}}, за категоріями",
+    "spent": "Витрачено"
+  },
+  "details": "Діаграма й таблиця",
+  "byDay": {
+    "title": "По днях",
+    "average": "У середньому {{amount}} {{currency}} на день",
+    "bar": "{{date}}, {{amount}} {{currency}}"
+  },
+  "sections": {
+    "receipts": "Чеки",
+    "loading": "Завантажуємо…",
+    "noReceipts": "За цей період чеків немає.",
+    "unknownShop": "Невідомий магазин",
+    "toCheck": "на перевірку",
+    "allReceipts_one": "Усі {{count}} чек · пошук",
+    "allReceipts_few": "Усі {{count}} чеки · пошук",
+    "allReceipts_many": "Усі {{count}} чеків · пошук",
+    "allReceipts_other": "Усі {{count}} чека · пошук",
+    "searchReceipts": "Пошук і фільтри чеків",
+    "toFile": "Позиції без категорії",
+    "allItems": "Усі позиції й категорії",
+    "bills": "Щомісяця",
+    "billsHint": "Квартира та інші витрати без чека — враховані в Плані й на Головній, налаштовуються в Налаштуваннях."
   }
 }

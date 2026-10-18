@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>First sign-in, step 3 — v2</title>
+<!-- Design v2 reference (F23, ADR-0022): rendered from the design canvas; static, read-only. -->
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+body{margin:0}
+button{font:inherit;cursor:pointer}
+input{font:inherit}
+</style>
+
+<style>body{background:#e9ebf0;display:flex;justify-content:center;padding:24px 0}</style>
+</head>
+<body>
+
+
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; font-family: Manrope, system-ui, sans-serif; background: #0f172a; color: #f8fafc; overflow: hidden; transition: background 0.3s">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 20px 8px; min-height: 44px">
+    
+      <button type="button" aria-label="Back" onclick="" style="width: 44px; height: 44px; border: 0; border-radius: 22px; background: #1e293b; color: #f8fafc; display: flex; align-items: center; justify-content: center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+      </button>
+    
+    
+    <div style="display: flex; gap: 6px">
+      
+        <span style="height: 6px; border-radius: 3px; width: 6px; background: #4ade80; transition: all 0.3s"></span>
+      
+        <span style="height: 6px; border-radius: 3px; width: 6px; background: #4ade80; transition: all 0.3s"></span>
+      
+        <span style="height: 6px; border-radius: 3px; width: 6px; background: #4ade80; transition: all 0.3s"></span>
+      
+        <span style="height: 6px; border-radius: 3px; width: 22px; background: #4ade80; transition: all 0.3s"></span>
+      
+        <span style="height: 6px; border-radius: 3px; width: 6px; background: #334155; transition: all 0.3s"></span>
+      
+        <span style="height: 6px; border-radius: 3px; width: 6px; background: #334155; transition: all 0.3s"></span>
+      
+    </div>
+    
+      <button type="button" onclick="" style="min-height: 44px; padding: 0 4px; border: 0; background: transparent; color: #a3b0c5; font-weight: 600; font-size: 15px">Skip</button>
+    
+    
+  </div>
+
+  <div style="flex: 1; display: flex; flex-direction: column; padding: 12px 24px 0; overflow: auto">
+
+    
+
+    
+
+    
+
+    
+      <div style="display: flex; flex-direction: column; gap: 22px">
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <h1 style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.02em">What comes in a month?</h1>
+          <p style="margin: 0; font-size: 16px; color: #a3b0c5">So Home can show what is left. Optional, and only you see it.</p>
+        </div>
+        <label style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #a3b0c5">Net income</span>
+          <span style="display: flex; align-items: baseline; gap: 8px; padding: 14px 18px; border-radius: 18px; background: #1e293b; border: 2px solid #4ade80">
+            <input value="6 800" onchange="" inputmode="numeric" aria-label="Net monthly income" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: #f8fafc; font-size: 36px; font-weight: 800">
+            <span style="font-size: 20px; font-weight: 700; color: #a3b0c5">PLN</span>
+          </span>
+        </label>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <span style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #a3b0c5">Payday</span>
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+            
+              <button type="button" onclick="" style="min-height: 48px; border-radius: 14px; border: 2px solid #334155; background: #1e293b; color: #f8fafc; font-weight: 700; font-size: 14px">1st</button>
+            
+              <button type="button" onclick="" style="min-height: 48px; border-radius: 14px; border: 2px solid #4ade80; background: #1e293b; color: #f8fafc; font-weight: 700; font-size: 14px">10th</button>
+            
+              <button type="button" onclick="" style="min-height: 48px; border-radius: 14px; border: 2px solid #334155; background: #1e293b; color: #f8fafc; font-weight: 700; font-size: 14px">25th</button>
+            
+              <button type="button" onclick="" style="min-height: 48px; border-radius: 14px; border: 2px solid #334155; background: #1e293b; color: #f8fafc; font-weight: 700; font-size: 14px">Last</button>
+            
+          </div>
+          <span style="font-size: 13px; color: #a3b0c5">Your budget month can start on payday instead of the 1st.</span>
+        </div>
+      </div>
+    
+
+    
+
+    
+  </div>
+
+  <div style="padding: 16px 24px 32px; display: flex; flex-direction: column; gap: 10px">
+    
+      <button type="button" onclick="" style="min-height: 56px; border: 0; border-radius: 18px; background: #4ade80; color: #052e16; font-weight: 800; font-size: 17px">Continue</button>
+    
+    
+    
+  </div>
+</div>
+
+</body>
+</html>

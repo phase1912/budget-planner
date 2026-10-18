@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { observable, runInAction } from "mobx";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -8,7 +9,13 @@ import type {
   GoalProgress,
   Recommendation,
 } from "@/stores/AdviceStore";
-import type { Goal, GoalCreate, GoalUpdate } from "@/stores/GoalsStore";
+import type {
+  Goal,
+  GoalCheck,
+  GoalCheckRequest,
+  GoalCreate,
+  GoalUpdate,
+} from "@/stores/GoalsStore";
 import { GoalsPage } from "./GoalsPage";
 
 const ceiling: Goal = {
@@ -56,8 +63,20 @@ const goalsStore = observable(
     update: vi.fn<(id: string, changes: GoalUpdate) => Promise<boolean>>(),
     remove: vi.fn<(id: string) => Promise<boolean>>(),
     clearSaveError: vi.fn(),
+    check: null as GoalCheck | null,
+    isChecking: false,
+    checkPlan: vi.fn<(request: GoalCheckRequest) => Promise<void>>(),
+    clearCheck: vi.fn(),
   },
-  { load: false, create: false, update: false, remove: false, clearSaveError: false },
+  {
+    load: false,
+    create: false,
+    update: false,
+    remove: false,
+    clearSaveError: false,
+    checkPlan: false,
+    clearCheck: false,
+  },
 );
 const adviceStore = observable(
   {
@@ -111,11 +130,21 @@ vi.mock("@/stores/StoreContext", () => ({
   }),
 }));
 
-function openNewGoal() {
-  render(<GoalsPage />);
+function openNewGoal(pick = "Keep the month under…") {
+  render(<GoalsPage />, { wrapper: MemoryRouter });
   fireEvent.click(screen.getByRole("button", { name: /new goal/i }));
+  fireEvent.click(screen.getByRole("button", { name: new RegExp(pick) }));
   return screen.getByRole("dialog");
 }
+
+const stretch: GoalCheck = {
+  verdict: "stretch",
+  usual: "2800",
+  gap: "300",
+  months: 3,
+  unknown: null,
+  sources: [{ category_id: "c1", name: "Groceries", monthly: "1200", cut: "180" }],
+};
 
 describe("GoalsPage", () => {
   beforeEach(() => {
@@ -124,6 +153,7 @@ describe("GoalsPage", () => {
       goalsStore.goals = [];
       goalsStore.loadError = null;
       goalsStore.saveError = null;
+      goalsStore.check = null;
       adviceStore.recommendations = [];
       adviceStore.advisingGoalId = null;
       adviceStore.outcomes.clear();
@@ -137,7 +167,7 @@ describe("GoalsPage", () => {
   });
 
   it("loads the goals and offers a first one when there are none", () => {
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     expect(goalsStore.load).toHaveBeenCalled();
     expect(screen.getByText("No goals yet")).toBeInTheDocument();
   });
@@ -146,7 +176,7 @@ describe("GoalsPage", () => {
     runInAction(() => {
       goalsStore.goals = [ceiling, eatBetter];
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     expect(screen.getByText("Stay under 3,000.00 PLN a month")).toBeInTheDocument();
     expect(screen.getByText("Fewer snacks")).toBeInTheDocument();
     expect(screen.getByText(/Lifestyle goal · set/)).toBeInTheDocument();
@@ -156,7 +186,7 @@ describe("GoalsPage", () => {
     runInAction(() => {
       goalsStore.loadError = "Token expired.";
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     expect(screen.getByText("Token expired.")).toBeInTheDocument();
   });
 
@@ -173,13 +203,56 @@ describe("GoalsPage", () => {
     expect(name).toHaveValue("Save more");
   });
 
+  it("starts from four large choices instead of a select", () => {
+    render(<GoalsPage />, { wrapper: MemoryRouter });
+    fireEvent.click(screen.getByRole("button", { name: /new goal/i }));
+
+    expect(screen.getByText("What would you like?")).toBeInTheDocument();
+    for (const choice of [
+      /Save for something/,
+      /Spend less on/,
+      /Keep the month under/,
+      /Buy better/,
+    ]) {
+      expect(screen.getByRole("button", { name: choice })).toBeInTheDocument();
+    }
+    expect(screen.queryByRole("combobox")).toBeNull();
+  });
+
+  it("checks a money goal before saving it, naming where the money could come from", async () => {
+    goalsStore.checkPlan.mockImplementation(() => {
+      runInAction(() => {
+        goalsStore.check = stretch;
+      });
+      return Promise.resolve();
+    });
+    openNewGoal();
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Ceiling" } });
+    fireEvent.change(screen.getByLabelText("Monthly ceiling, PLN"), { target: { value: "2500" } });
+    fireEvent.click(screen.getByRole("button", { name: "Check it" }));
+
+    expect(goalsStore.checkPlan).toHaveBeenCalledWith({
+      financial_kind: "spending_ceiling",
+      target_amount: "2500",
+      category_id: null,
+    });
+    expect(await screen.findByText("A stretch")).toBeInTheDocument();
+    expect(
+      screen.getByText("Your months usually come to about 2,800 PLN — 300 PLN over."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Groceries, a little less")).toBeInTheDocument();
+    expect(screen.getByText("−180 PLN")).toBeInTheDocument();
+    expect(goalsStore.create).not.toHaveBeenCalled();
+  });
+
   it("states a spending ceiling with the amount typed with a comma", async () => {
     openNewGoal();
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Ceiling" } });
     fireEvent.change(screen.getByLabelText("Monthly ceiling, PLN"), {
       target: { value: "2500,50" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Add goal" }));
+    fireEvent.click(screen.getByRole("button", { name: "Check it" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start this goal" }));
     await waitFor(() => {
       expect(goalsStore.create).toHaveBeenCalledWith({
         type: "financial",
@@ -194,16 +267,14 @@ describe("GoalsPage", () => {
   });
 
   it("asks for the category a reduction cuts", async () => {
-    openNewGoal();
-    fireEvent.change(screen.getByLabelText("What kind of goal"), {
-      target: { value: "category_reduction" },
-    });
+    openNewGoal("Spend less on");
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Fewer groceries" } });
     fireEvent.change(screen.getByLabelText("Monthly limit for that category, PLN"), {
       target: { value: "800" },
     });
-    fireEvent.change(screen.getByLabelText("Category"), { target: { value: "c1" } });
-    fireEvent.click(screen.getByRole("button", { name: "Add goal" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Groceries" }));
+    fireEvent.click(screen.getByRole("button", { name: "Check it" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start this goal" }));
     await waitFor(() => {
       expect(goalsStore.create).toHaveBeenCalledWith(
         expect.objectContaining({ financial_kind: "category_reduction", category_id: "c1" }),
@@ -212,10 +283,7 @@ describe("GoalsPage", () => {
   });
 
   it("states a lifestyle goal without an amount", async () => {
-    openNewGoal();
-    fireEvent.change(screen.getByLabelText("What kind of goal"), {
-      target: { value: "lifestyle" },
-    });
+    openNewGoal("Buy better");
     expect(screen.queryByLabelText(/PLN/)).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Eat better" } });
     fireEvent.click(screen.getByRole("button", { name: "Add goal" }));
@@ -233,11 +301,11 @@ describe("GoalsPage", () => {
       });
       return Promise.resolve(false);
     });
-    render(<GoalsPage />);
-    fireEvent.click(screen.getByRole("button", { name: /new goal/i }));
+    openNewGoal();
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Zero" } });
     fireEvent.change(screen.getByLabelText("Monthly ceiling, PLN"), { target: { value: "0" } });
-    fireEvent.click(screen.getByRole("button", { name: "Add goal" }));
+    fireEvent.click(screen.getByRole("button", { name: "Check it" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start this goal" }));
     await waitFor(() => {
       expect(goalsStore.create).toHaveBeenCalled();
     });
@@ -249,16 +317,17 @@ describe("GoalsPage", () => {
     runInAction(() => {
       goalsStore.goals = [eatBetter];
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole("button", { name: "Edit Eat better" }));
-    expect(screen.getByLabelText("What kind of goal")).toBeDisabled();
+    expect(screen.queryByRole("radiogroup", { name: "What kind of goal" })).toBeNull();
+    expect(screen.queryByRole("radio", { name: /Keep the month under/ })).toBeNull();
   });
 
   it("asks once more before removing a goal", async () => {
     runInAction(() => {
       goalsStore.goals = [ceiling];
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole("button", { name: "Edit Monthly ceiling" }));
     fireEvent.click(screen.getByRole("button", { name: "Remove goal" }));
     expect(goalsStore.remove).not.toHaveBeenCalled();
@@ -272,7 +341,7 @@ describe("GoalsPage", () => {
     runInAction(() => {
       goalsStore.goals = [eatBetter];
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     expect(screen.getByText("Groceries")).toBeInTheDocument();
     expect(screen.getByText("sweets")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Adjust what Eat better watches" }));
@@ -283,7 +352,7 @@ describe("GoalsPage", () => {
     runInAction(() => {
       goalsStore.goals = [eatBetter];
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole("button", { name: "Edit Eat better" }));
     fireEvent.click(screen.getByRole("button", { name: "Groceries", pressed: true }));
     fireEvent.click(screen.getByRole("button", { name: "Stop watching sweets" }));
@@ -304,7 +373,7 @@ describe("GoalsPage", () => {
     runInAction(() => {
       goalsStore.goals = [eatBetter];
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole("button", { name: "Edit Eat better" }));
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     await waitFor(() => {
@@ -318,7 +387,7 @@ describe("GoalsPage", () => {
       goalsStore.goals = [ceiling, eatBetter];
       adviceStore.recommendations = [cookies];
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     expect(adviceStore.load).toHaveBeenCalled();
     const eating = within(screen.getByRole("region", { name: "Advice on Eat better" }));
     const ceilingAdvice = within(screen.getByRole("region", { name: "Advice on Monthly ceiling" }));
@@ -335,7 +404,7 @@ describe("GoalsPage", () => {
       goalsStore.goals = [ceiling, eatBetter];
       adviceStore.recommendations = [cookies];
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole("button", { name: "Get advice on Monthly ceiling" }));
     expect(adviceStore.advise).toHaveBeenCalledWith("g1");
     expect(
@@ -348,7 +417,7 @@ describe("GoalsPage", () => {
       goalsStore.goals = [ceiling, eatBetter];
       adviceStore.advisingGoalId = "g2";
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     expect(screen.getByRole("button", { name: "Get advice on Monthly ceiling" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Get advice on Eat better" })).toHaveTextContent(
       "Working it out…",
@@ -365,7 +434,7 @@ describe("GoalsPage", () => {
         message: "Advice could not be worked out just now.",
       });
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     const eating = within(screen.getByRole("region", { name: "Advice on Eat better" }));
     const ceilingAdvice = within(screen.getByRole("region", { name: "Advice on Monthly ceiling" }));
     expect(eating.getByText("Advice could not be worked out just now.")).toBeInTheDocument();
@@ -384,7 +453,7 @@ describe("GoalsPage", () => {
         progress: 40,
       };
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     const eating = within(screen.getByRole("region", { name: "Advice on Eat better" }));
     expect(eating.getByText("3 receipts is not a pattern yet")).toBeInTheDocument();
     expect(eating.getByText("3 of 4 receipts · 12 of 30 days")).toBeInTheDocument();
@@ -409,7 +478,7 @@ describe("GoalsPage", () => {
         days_in_month: 31,
       });
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     const card = within(screen.getByRole("region", { name: "Advice on Monthly ceiling" }));
     expect(card.getByText("Nothing to cut this month")).toBeInTheDocument();
     expect(card.getByText("2,066.67 PLN")).toBeInTheDocument();
@@ -437,7 +506,7 @@ describe("GoalsPage", () => {
         days_in_month: 31,
       });
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     const warnings = within(screen.getByRole("list", { name: "Goals at risk" }));
     expect(warnings.getByText("Monthly ceiling is heading over its limit")).toBeInTheDocument();
     expect(warnings.getByText(/100.00 PLN over your limit/)).toBeInTheDocument();
@@ -466,7 +535,7 @@ describe("GoalsPage", () => {
         days_in_month: 31,
       });
     });
-    render(<GoalsPage />);
+    render(<GoalsPage />, { wrapper: MemoryRouter });
     expect(screen.queryByRole("list", { name: "Goals at risk" })).toBeNull();
   });
 
@@ -475,7 +544,7 @@ describe("GoalsPage", () => {
       goalsStore.goals = [eatBetter];
       adviceStore.recommendations = [cookies];
     });
-    const { rerender } = render(<GoalsPage />);
+    const { rerender } = render(<GoalsPage />, { wrapper: MemoryRouter });
     fireEvent.click(
       screen.getByRole("button", { name: "Won't follow: Stop buying the chocolate-chip cookies" }),
     );

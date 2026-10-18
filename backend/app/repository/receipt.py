@@ -317,9 +317,9 @@ class ReceiptRepository(BaseRepository[Receipt]):
         held = and_(Receipt.status != ReceiptStatus.PARSED, ~on_trip(TripKind.BUSINESS))
         stmt = (
             select(
-                func.coalesce(func.sum(case((counted, matching.c.total_price))), 0),
+                func.coalesce(func.sum(case((counted, matching.c.paid))), 0),
                 func.count().filter(held),
-                func.coalesce(func.sum(case((held, matching.c.total_price))), 0),
+                func.coalesce(func.sum(case((held, matching.c.paid))), 0),
             )
             .select_from(matching)
             .join(Receipt, Receipt.id == matching.c.receipt_id)
@@ -347,10 +347,10 @@ class ReceiptRepository(BaseRepository[Receipt]):
                 Category.id,
                 Category.name,
                 func.count(LineItem.id),
-                func.coalesce(func.sum(LineItem.total_price), 0),
+                func.coalesce(func.sum(LineItem.paid), 0),
             )
             .group_by(Category.id, Category.name)
-            .order_by(func.sum(LineItem.total_price).desc(), Category.name)
+            .order_by(func.sum(LineItem.paid).desc(), Category.name)
         )
         return [
             CategorySpend(category_id, name, int(count), Decimal(amount))
@@ -375,7 +375,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         """
         key = _purchase_key()
         receipts = func.count(func.distinct(LineItem.receipt_id))
-        spent = func.coalesce(func.sum(LineItem.total_price), 0)
+        spent = func.coalesce(func.sum(LineItem.paid), 0)
         matching = self._filtered_items(
             ItemView.ALL, search=None, period=period, category_id=None
         ).where(counted_in_budget())
@@ -455,7 +455,8 @@ class ReceiptRepository(BaseRepository[Receipt]):
     async def month_total(self, period: DateRange) -> tuple[Decimal, int]:
         """The current user's spend over `period` and how many receipts it covers (D1, D2).
 
-        Sums line-item totals, not printed receipt totals, and only over `parsed`
+        Sums what was paid for the lines (their totals less any share of an unprinted
+        discount, invariant 5d), not printed receipt totals, and only over `parsed`
         receipts: one under manual review has an unreliable total and is held
         out (domain model invariants 4 and 5). Files a receipt by its printed
         date, so a back-dated one lands in its own month, and by its upload date
@@ -466,13 +467,30 @@ class ReceiptRepository(BaseRepository[Receipt]):
             _within(period),
         )
         in_month = self._apply_ownership(in_month)
-        total_stmt = select(func.coalesce(func.sum(LineItem.total_price), 0)).where(
+        total_stmt = select(func.coalesce(func.sum(LineItem.paid), 0)).where(
             LineItem.receipt_id.in_(in_month)
         )
         count_stmt = select(func.count()).select_from(in_month.subquery())
         total: Decimal = Decimal((await self.session.execute(total_stmt)).scalar_one())
         count: int = (await self.session.execute(count_stmt)).scalar_one()
         return total, count
+
+    async def daily_totals(self, period: DateRange) -> dict[date, Decimal]:
+        """The current user's spend on each day of `period` that had any (F23.4).
+
+        Counted exactly as `month_total` — what was paid, `parsed` receipts only, filed by
+        printed date — and the day is taken in UTC, as the period's bounds are, so the
+        days add up to the month.
+        """
+        day = func.date(func.timezone("UTC", _purchased()))
+        stmt = (
+            select(day, func.coalesce(func.sum(LineItem.paid), 0))
+            .join(Receipt, LineItem.receipt_id == Receipt.id)
+            .where(counted_in_budget(), _within(period))
+            .group_by(day)
+        )
+        stmt = self._apply_ownership(stmt)
+        return {d: Decimal(total) for d, total in (await self.session.execute(stmt)).all()}
 
     async def month_under_review(self, period: DateRange) -> tuple[int, Decimal]:
         """How many of the user's receipts over `period` await review, and their value (D3).
@@ -491,7 +509,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
             )
         )
         count_stmt = select(func.count()).select_from(in_month.subquery())
-        value_stmt = select(func.coalesce(func.sum(LineItem.total_price), 0)).where(
+        value_stmt = select(func.coalesce(func.sum(LineItem.paid), 0)).where(
             LineItem.receipt_id.in_(in_month)
         )
         count: int = (await self.session.execute(count_stmt)).scalar_one()

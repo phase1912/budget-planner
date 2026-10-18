@@ -87,7 +87,7 @@ class CategoryRepository(BaseRepository[Category]):
                 Category.name,
                 Category.user_id.is_(None).label("is_builtin"),
                 func.count(LineItem.id).label("item_count"),
-                func.coalesce(func.sum(LineItem.total_price), 0).label("total_amount"),
+                func.coalesce(func.sum(LineItem.paid), 0).label("total_amount"),
             )
             .outerjoin(
                 LineItem,

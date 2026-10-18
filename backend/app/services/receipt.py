@@ -51,17 +51,20 @@ from app.models.category import Category
 from app.models.category_rule import CategoryRule
 from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
+from app.models.pending_income import PendingIncome
 from app.models.receipt import Receipt
 from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 from app.ports.categorisation import ItemCategoriserPort
 from app.ports.exchange_rates import ExchangeRatePort, ExchangeRateUnavailable
+from app.ports.income_reading import IncomeReading
 from app.ports.ingestion import ReceiptIngestionPort, UploadedFile
 from app.ports.parsing import CURRENT_PARSER_VERSION, ReceiptParserPort, ReceiptRecheckerPort
 from app.ports.storage import StoragePort, receipt_object_name
 from app.repository.category import CategoryRepository
 from app.repository.exchange_rate import CachedExchangeRates
 from app.repository.name_correction import NameCorrectionRepository
+from app.repository.pending_income import PendingIncomeRepository
 from app.repository.receipt import ReceiptRepository
 from app.schemas.extraction import ExtractedLineItem, ExtractedReceipt
 from app.schemas.receipt import (
@@ -74,6 +77,7 @@ from app.schemas.receipt import (
     UploadJobStatusResponse,
 )
 from app.services.activity import ActivityService
+from app.services.receipt_discount import respread_discount
 
 logger = logging.getLogger(__name__)
 
@@ -245,8 +249,12 @@ class ReceiptService:
                     files_data: list[dict[str, str | bytes]],
                 ) -> dict[str, object]:
                     uploads = cast(list[UploadedFile], files_data)
-                    extraction = (await photos.ingest(user, uploads)).extraction
+                    extraction = (await photos.ingest(user, uploads, compress=False)).extraction
                     extraction = await self._reconcile_total(user, extraction)
+                    # Read and re-read at full quality; only the copy kept is made smaller.
+                    await photos.compress_stored(
+                        user, cast(list[str], extraction.get("file_ids") or [])
+                    )
                     extraction = _dated(extraction, datetime.now(UTC).date())
                     apply_corrections(extraction, corrections)
                     if self.parser_port:
@@ -315,7 +323,8 @@ class ReceiptService:
         (F11.2): the receipt is categorised like an upload, with the user's
         rules, and stored straight away; anything uncertain lands in review.
         A `source_reference` already stored for this channel is skipped, so a
-        message delivered twice is one receipt.
+        message delivered twice is one receipt. A message that was money received rather
+        than a receipt waits as pending income for the user to confirm (F23.11).
         """
         session_factory = get_session_factory()
         async with session_factory() as session:
@@ -325,6 +334,9 @@ class ReceiptService:
             ):
                 return
             result = await ingestion.ingest(user, payload)
+            if result.income is not None:
+                await _keep_pending_income(session, user, result.income, source_reference)
+                return
             extraction = await self._reconcile_total(user, result.extraction)
             extraction = _dated(extraction, datetime.now(UTC).date())
             apply_corrections(extraction, await NameCorrectionRepository(session).list_for(user.id))
@@ -899,6 +911,8 @@ class ReceiptService:
         # Reassigning the collection is what lets delete-orphan drop any
         # existing line the caller did not resend.
         receipt.line_items = updated_items
+        # Corrected lines carry the receipt's unprinted discount afresh (F23.7).
+        respread_discount(receipt)
 
         await self.repository.session.flush()
         return receipt
@@ -1045,3 +1059,23 @@ def _record_manual_rate(receipt: Receipt) -> None:
     receipt.exchange_rate = (receipt.total_amount / receipt.original_total).quantize(RATE_PLACES)
     receipt.exchange_rate_date = (receipt.transaction_date or datetime.now(UTC)).date()
     receipt.exchange_rate_source = "manual"
+
+
+async def _keep_pending_income(
+    session: AsyncSession, user: User, income: IncomeReading, reference: str | None
+) -> None:
+    """Keep what a forwarded payslip or transfer says came in, to confirm (F23.11)."""
+    pending = PendingIncomeRepository(session).bypass_ownership()
+    if reference and await pending.has_reference(user.id, reference):
+        return
+    session.add(
+        PendingIncome(
+            user_id=user.id,
+            amount=income.amount,
+            received_on=income.received_on,
+            source=income.source,
+            kind=income.kind.value,
+            source_reference=reference,
+        )
+    )
+    await session.commit()

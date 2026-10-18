@@ -45,6 +45,50 @@ describe("UploadStore", () => {
     expect(store.errorTitle).toBeNull();
   });
 
+  it("keeps following the job through a few failed polls, since it runs on regardless", async () => {
+    vi.useFakeTimers();
+    const get = (mockApi as { GET: ReturnType<typeof vi.fn> }).GET;
+    get
+      .mockResolvedValueOnce({ error: { detail: "busy" }, response: { status: 503 } })
+      .mockRejectedValueOnce(new TypeError("network"))
+      .mockResolvedValueOnce({
+        data: { status: "completed", file_ids: ["f1"] },
+        response: { status: 200 },
+      });
+
+    const polling = store.pollJobStatus("job");
+    await vi.runAllTimersAsync();
+    await polling;
+    vi.useRealTimers();
+
+    expect(get).toHaveBeenCalledTimes(3);
+    expect(store.uploadState.status).toBe("success");
+  });
+
+  it("gives up at once when the server no longer has the job", async () => {
+    const get = (mockApi as { GET: ReturnType<typeof vi.fn> }).GET;
+    get.mockResolvedValue({ error: { detail: "Not Found" }, response: { status: 404 } });
+
+    await store.pollJobStatus("job");
+
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(store.uploadState.status).toBe("error");
+  });
+
+  it("gives up after failing several times in a row", async () => {
+    vi.useFakeTimers();
+    const get = (mockApi as { GET: ReturnType<typeof vi.fn> }).GET;
+    get.mockResolvedValue({ error: { detail: "busy" }, response: { status: 503 } });
+
+    const polling = store.pollJobStatus("job");
+    await vi.runAllTimersAsync();
+    await polling;
+    vi.useRealTimers();
+
+    expect(get).toHaveBeenCalledTimes(6);
+    expect(store.uploadState.status).toBe("error");
+  });
+
   it("leaves a receipt the user already has out of the selection (F11.5)", async () => {
     (mockApi as { POST: ReturnType<typeof vi.fn> }).POST.mockResolvedValue({
       data: { message: "File accepted", job_id: "test-job-id" },

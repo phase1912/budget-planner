@@ -7,6 +7,7 @@ import i18n from "@/i18n";
 import type { ToastStore } from "@/stores/ToastStore";
 
 export type Product = components["schemas"]["ProductResponse"];
+export type ProductsOverview = components["schemas"]["ProductsOverviewResponse"];
 
 /**
  * The products the user buys, matched across receipts and shops (F16.1): the list,
@@ -22,6 +23,8 @@ export class ProductsStore {
   isLoading = false;
   isSaving = false;
   loadError: string | null = null;
+  /** Price moves and shops over the last six months (F23.5); null until loaded. */
+  overview: ProductsOverview | null = null;
   private requests = 0;
   private readonly toastStore: ToastStore;
 
@@ -68,6 +71,21 @@ export class ProductsStore {
       if (!this.search) {
         this.selected = this.selected.filter((id) => response.data.some((p) => p.id === id));
       }
+    });
+  }
+
+  /** The six months' biggest price moves and each shop's standing; quiet on failure. */
+  async loadOverview(today = new Date()): Promise<void> {
+    const start = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+    const day = (d: Date) =>
+      `${String(d.getFullYear())}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const response = await settle(() =>
+      apiClient.GET("/api/v1/products/overview", {
+        params: { query: { start: day(start), end: day(today) } },
+      }),
+    );
+    runInAction(() => {
+      if (response.error === undefined) this.overview = response.data;
     });
   }
 
@@ -146,6 +164,7 @@ export class ProductsStore {
 
   /** Forget everything: a different user is signing in. */
   reset(): void {
+    this.overview = null;
     this.products = [];
     this.search = "";
     this.selected = [];

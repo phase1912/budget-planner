@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/StoreContext";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Container, Stack } from "@/shared/components/Layout/Layout";
 import { Card, CardBody } from "@/shared/components/Card/Card";
 import { Button } from "@/shared/components/Button/Button";
@@ -10,15 +10,23 @@ import { ExtractedStep } from "../components/ExtractedStep";
 
 import { ResolveStep } from "../components/ResolveStep";
 import { ReceiptQuotaNote } from "../components/ReceiptQuotaNote";
+import { AddReceiptStart } from "../components/AddReceiptStart";
 import { ManualExpenseDialog } from "@/features/receipts/components/ManualExpenseDialog";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { X } from "lucide-react";
+import { Note, SegmentedControl } from "@/shared/components";
+import { IncomeDialog } from "@/features/plan/IncomeDialog";
+import { isoDay } from "@/stores/StatisticsStore";
 import { ResendConfirmationButton } from "@/features/auth/components/ResendConfirmationButton";
 
 export const UploadPage = observer(function UploadPage() {
-  const { uploadStore, quotaStore, tripsStore, accountStore, authStore } = useStores();
+  const { uploadStore, quotaStore, tripsStore, accountStore, authStore, incomeStore } = useStores();
+  const navigate = useNavigate();
   const { t } = useTranslation(["upload", "receipts"]);
+  const { t: common } = useTranslation();
   const [addingExpense, setAddingExpense] = useState(false);
+  const [addingIncome, setAddingIncome] = useState(false);
   const [params] = useSearchParams();
   const tripId = params.get("trip");
 
@@ -36,21 +44,10 @@ export const UploadPage = observer(function UploadPage() {
       uploadStore.setFromTrip(null);
     };
   }, [tripsStore, uploadStore, tripId]);
-  const singleInputRef = useRef<HTMLInputElement>(null);
 
   const handleUploadClick = () => {
     if (!uploadStore.isAnyLineOverLimit && uploadStore.totalFilesCount > 0) {
       void uploadStore.submitUpload();
-    }
-  };
-
-  const handleSingleInitialUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    if (files.length > 0) {
-      uploadStore.addFilesToLine(0, files);
-      if (singleInputRef.current) {
-        singleInputRef.current.value = "";
-      }
     }
   };
 
@@ -119,9 +116,16 @@ export const UploadPage = observer(function UploadPage() {
         </div>
 
         <div>
-          <h1 className="m-0 text-[22px] font-bold tracking-tight md:text-[30px]">
-            {t("add.title")}
-          </h1>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/"
+              aria-label={common("header.back")}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-pill bg-surface text-foreground md:hidden"
+            >
+              <X size={20} aria-hidden="true" />
+            </Link>
+            <h1 className="m-0 text-3xl font-extrabold tracking-[-0.02em]">{t("add.title")}</h1>
+          </div>
           <p className="m-0 text-[15px] text-muted-foreground mt-1">{t("add.formats")}</p>
           {/* F20.5: cash for a tour has nothing to photograph; it is typed in instead. */}
           <p className="m-0 mt-1 text-[15px] text-muted-foreground">
@@ -136,72 +140,40 @@ export const UploadPage = observer(function UploadPage() {
               {t("receipts:manual.openLong")}
             </button>
           </p>
+          {/* Money that came in unexpectedly is added here too, on top of regular income. */}
+          <p className="m-0 text-[15px] text-muted-foreground">
+            {t("add.moneyIn")}{" "}
+            <button
+              type="button"
+              className="inline-flex min-h-11 cursor-pointer items-center bg-transparent p-0 font-semibold text-primary underline-offset-2 hover:underline md:min-h-0"
+              onClick={() => {
+                setAddingIncome(true);
+              }}
+            >
+              {t("add.addIncome")}
+            </button>
+          </p>
         </div>
 
         <ReceiptQuotaNote needed={uploadStore.lines.length} />
 
-        <div
-          className="flex w-full gap-1 border border-border rounded-control bg-muted p-1 md:inline-flex md:w-auto md:self-start"
-          role="tablist"
-        >
-          <button
-            className={`inline-flex flex-1 items-center justify-center gap-2 border-none rounded-[9px] px-4 py-[9px] text-sm cursor-pointer transition-colors md:flex-none ${
-              uploadStore.mode === "single"
-                ? "bg-background text-foreground shadow-raised"
-                : "bg-transparent text-muted-foreground hover:text-foreground"
-            }`}
-            role="tab"
-            aria-selected={uploadStore.mode === "single"}
-            onClick={() => {
-              uploadStore.setMode("single");
-            }}
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
-              <path d="M16 8H8" />
-              <path d="M16 12H8" />
-            </svg>
-            {t("add.one")}
-          </button>
-          <button
-            className={`inline-flex flex-1 items-center justify-center gap-2 border-none rounded-[9px] px-4 py-[9px] text-sm cursor-pointer transition-colors md:flex-none ${
-              uploadStore.mode === "multiple"
-                ? "bg-background text-foreground shadow-raised"
-                : "bg-transparent text-muted-foreground hover:text-foreground"
-            }`}
-            role="tab"
-            aria-selected={uploadStore.mode === "multiple"}
-            onClick={() => {
-              uploadStore.setMode("multiple");
-            }}
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polygon points="12 2 2 7 12 12 22 7 12 2" />
-              <polyline points="2 17 12 22 22 17" />
-              <polyline points="2 12 17 22 12" />
-            </svg>
-            {t("add.several")}
-            <span className="hidden md:inline">{t("add.severalWide")}</span>
-          </button>
-        </div>
+        <SegmentedControl<"single" | "multiple">
+          label={t("add.title")}
+          size="sm"
+          fill
+          value={uploadStore.mode}
+          onChange={(mode) => {
+            uploadStore.setMode(mode);
+          }}
+          options={[
+            { value: "single", label: t("add.one") },
+            {
+              value: "multiple",
+              label: `${t("add.several")}${t("add.severalWide")}`,
+              shortLabel: t("add.several"),
+            },
+          ]}
+        />
 
         <Stack className="gap-4">
           {uploadStore.lines.map((lineFiles, index) => {
@@ -233,35 +205,42 @@ export const UploadPage = observer(function UploadPage() {
           })}
 
           {uploadStore.mode === "single" && uploadStore.files.length === 0 && (
-            <Card variant="surface" className="p-5">
-              <button
-                className="inline-flex flex-row items-center justify-center gap-2 border border-dashed border-border-strong rounded-card bg-background text-primary font-medium text-sm p-4 w-full cursor-pointer hover:bg-muted"
-                onClick={() => singleInputRef.current?.click()}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 12h14" />
-                  <path d="M12 5v14" />
-                </svg>
-                {t("add.receipt")}
-              </button>
-              <input
-                type="file"
-                ref={singleInputRef}
-                className="hidden"
-                multiple
-                onChange={handleSingleInitialUpload}
-                accept="image/jpeg, image/png, image/heic, application/pdf"
-              />
-            </Card>
+            <AddReceiptStart
+              forwardingAddress={authStore.user?.forwarding_address ?? null}
+              onFiles={(files) => {
+                uploadStore.addFilesToLine(0, files);
+              }}
+              readingIncome={incomeStore.readingDocument}
+              onIncomeFile={(file) => {
+                void incomeStore.readDocument(file);
+              }}
+            />
+          )}
+          {incomeStore.readError && <Note tone="error">{incomeStore.readError}</Note>}
+          {addingIncome && (
+            <IncomeDialog
+              entry={null}
+              defaultDay={isoDay(new Date())}
+              onClose={() => {
+                setAddingIncome(false);
+              }}
+              onSaved={() => {
+                void navigate("/");
+              }}
+            />
+          )}
+          {incomeStore.draft && (
+            <IncomeDialog
+              entry={null}
+              draft={incomeStore.draft}
+              defaultDay={isoDay(new Date())}
+              onClose={() => {
+                incomeStore.clearDraft();
+              }}
+              onSaved={() => {
+                void navigate("/");
+              }}
+            />
           )}
 
           {uploadStore.mode === "multiple" && !uploadStore.isProcessing && (

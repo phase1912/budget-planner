@@ -192,7 +192,7 @@ export const ExtractedStep = observer(function ExtractedStep() {
         </div>
 
         <div className="flex flex-col gap-1">
-          <h1 className="m-0 text-[30px] font-bold tracking-tight">{t("read.title")}</h1>
+          <h1 className="m-0 text-3xl font-extrabold tracking-[-0.02em]">{t("read.title")}</h1>
           <p className="m-0 text-[15px] text-muted-foreground mt-1">
             {t("read.summaryReceipts", { count: uploadStore.lines.length })},{" "}
             {t("read.summaryItems", { count: totalItems })},{" "}

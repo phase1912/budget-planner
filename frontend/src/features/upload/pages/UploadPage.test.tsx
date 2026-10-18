@@ -1,10 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { UploadPage } from "./UploadPage";
 import { StoreProvider } from "@/stores/StoreContext";
 import { UploadStore } from "@/stores/UploadStore";
 import { QuotaStore } from "@/stores/QuotaStore";
+import { IncomeStore } from "@/stores/IncomeStore";
+import { ToastStore } from "@/stores/ToastStore";
 import type { ReceiptQuota } from "@/stores/QuotaStore";
 import type { ApiClient } from "@/api/client";
 import type { RootStore } from "@/stores/RootStore";
@@ -20,6 +22,7 @@ function quotaStore(quota: ReceiptQuota | null = null): QuotaStore {
 
 // No trips: nothing is asked about a receipt's trip (F20.1).
 const TRIPS = { trips: [], load: () => Promise.resolve() };
+const INCOME = { readingDocument: false, readError: null, draft: null };
 
 const QUOTA: ReceiptQuota = {
   limit: 10,
@@ -38,6 +41,7 @@ describe("UploadPage", () => {
       uploadStore: new UploadStore({ POST: vi.fn() } as unknown as ApiClient),
       quotaStore: quotaStore(),
       tripsStore: TRIPS,
+      incomeStore: INCOME,
       accountStore: { mustConfirm: true, state: { isLoading: false } },
       authStore: { user: { email: "new@example.com" } },
     } as unknown as RootStore;
@@ -63,7 +67,9 @@ describe("UploadPage", () => {
       uploadStore,
       quotaStore: quotaStore(),
       tripsStore: TRIPS,
+      incomeStore: INCOME,
       accountStore: { mustConfirm: false },
+      authStore: { user: { forwarding_address: "receipts-x@inbound.test" } },
     } as unknown as RootStore;
 
     render(
@@ -74,7 +80,57 @@ describe("UploadPage", () => {
       </StoreProvider>,
     );
 
-    expect(screen.getByText("Add a receipt")).toBeInTheDocument();
+    // Choosing files, with dropping them on a wider screen, and forwarding by email (F23.6).
+    expect(screen.getByRole("button", { name: /Choose photos or a PDF/ })).toBeInTheDocument();
+    expect(screen.getByText("receipts-x@inbound.test")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy the address" })).toBeInTheDocument();
+  });
+
+  it("reads a payslip as income and asks to confirm it, saving it as read from a document", async () => {
+    const api = {
+      POST: vi.fn().mockResolvedValue({
+        data: { amount: "6800.00", received_on: "2026-10-10", source: "Acme", kind: "salary" },
+        response: { status: 200 },
+      }),
+    };
+    const incomeStore = new IncomeStore(api as unknown as ApiClient, new ToastStore());
+    const mockStores = {
+      uploadStore: new UploadStore({ POST: vi.fn() } as unknown as ApiClient),
+      quotaStore: quotaStore(),
+      tripsStore: TRIPS,
+      incomeStore,
+      accountStore: { mustConfirm: false },
+      authStore: { user: { forwarding_address: null } },
+    } as unknown as RootStore;
+    const { container } = render(
+      <StoreProvider store={mockStores}>
+        <MemoryRouter>
+          <UploadPage />
+        </MemoryRouter>
+      </StoreProvider>,
+    );
+
+    const inputs = [...container.querySelectorAll<HTMLInputElement>('input[type="file"]')];
+    const payslip = new File(["%PDF"], "payslip.pdf", { type: "application/pdf" });
+    const incomeInput = inputs.at(-1);
+    if (!incomeInput) throw new Error("no file input");
+    fireEvent.change(incomeInput, { target: { files: [payslip] } });
+
+    expect(await screen.findByText("Check what we read")).toBeInTheDocument();
+    expect(screen.getByLabelText("Amount")).toHaveValue("6800.00");
+    expect(screen.getByLabelText("From")).toHaveValue("Acme");
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(api.POST).toHaveBeenLastCalledWith("/api/v1/income", {
+        body: {
+          received_on: "2026-10-10",
+          amount: "6800.00",
+          source: "Acme",
+          kind: "salary",
+          channel: "document",
+        },
+      });
+    });
   });
 
   it("renders the error panel when there is an error", () => {
@@ -88,7 +144,9 @@ describe("UploadPage", () => {
       uploadStore,
       quotaStore: quotaStore(),
       tripsStore: TRIPS,
+      incomeStore: INCOME,
       accountStore: { mustConfirm: false },
+      authStore: { user: { forwarding_address: "receipts-x@inbound.test" } },
     } as unknown as RootStore;
 
     render(
@@ -112,7 +170,9 @@ describe("UploadPage", () => {
       uploadStore,
       quotaStore: quotaStore(quota),
       tripsStore: TRIPS,
+      incomeStore: INCOME,
       accountStore: { mustConfirm: false },
+      authStore: { user: { forwarding_address: "receipts-x@inbound.test" } },
     } as unknown as RootStore;
     render(
       <StoreProvider store={stores}>

@@ -7,10 +7,16 @@
     "trips": "Podróże",
     "statistics": "Statystyki",
     "goals": "Cele",
-    "home": "Pulpit",
+    "home": "Start",
     "stats": "Statystyki",
     "main": "Menu główne",
-    "receiptsAndCategories": "Paragony, kategorie i podróże"
+    "receiptsAndCategories": "Paragony, kategorie i podróże",
+    "spending": "Wydatki",
+    "products": "Produkty",
+    "plan": "Plan",
+    "settings": "Ustawienia",
+    "add": "Dodaj paragon",
+    "addShort": "Dodaj"
   },
   "header": {
     "back": "Wstecz",
@@ -99,5 +105,9 @@
     "privacy": "Polityka prywatności",
     "terms": "Regulamin",
     "label": "O usłudze"
+  },
+  "amountDialog": {
+    "cancel": "Anuluj",
+    "save": "Zapisz"
   }
 }

@@ -99,7 +99,7 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
         <SectionTabs />
         <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col gap-1">
-            <h1 className="m-0 text-[24px] md:text-[28px] font-bold tracking-[-0.02em] text-foreground">
+            <h1 className="m-0 text-3xl font-extrabold tracking-[-0.02em] text-foreground">
               {t("queue.title")}
             </h1>
             <p className="m-0 text-lg text-muted-foreground">{t(`queue.subtitle.${queueView}`)}</p>
@@ -142,21 +142,23 @@ export const CategorisationQueuePage = observer(function CategorisationQueuePage
             ]}
           />
           <div className="flex items-center gap-2.5">
-            <DateRangeFilter
-              start={categoriesStore.queueStartDate}
-              end={categoriesStore.queueEndDate}
-              onApply={(start, end) => {
-                categoriesStore.setQueueDates(start, end);
-              }}
-            />
-            <div className="relative w-full lg:w-60">
+            <div className="shrink-0 whitespace-nowrap">
+              <DateRangeFilter
+                start={categoriesStore.queueStartDate}
+                end={categoriesStore.queueEndDate}
+                onApply={(start, end) => {
+                  categoriesStore.setQueueDates(start, end);
+                }}
+              />
+            </div>
+            <div className="relative min-w-0 flex-1 lg:w-60 lg:flex-none">
               <Search
                 size={16}
                 aria-hidden="true"
                 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
               />
               <Input
-                className="pl-9 py-2.25 text-md"
+                className="w-full pl-9 text-md"
                 type="search"
                 placeholder={t("queue.find")}
                 aria-label={t("queue.find")}

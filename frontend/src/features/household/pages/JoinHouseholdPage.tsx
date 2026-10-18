@@ -34,7 +34,7 @@ export const JoinHouseholdPage = observer(function JoinHouseholdPage() {
   }, [householdStore, code]);
 
   const join = async () => {
-    if (await householdStore.join(code)) void navigate("/profile");
+    if (await householdStore.join(code)) void navigate("/settings");
   };
 
   return (

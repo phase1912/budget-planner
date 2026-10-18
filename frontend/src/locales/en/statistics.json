@@ -1,6 +1,6 @@
 {
-  "title": "Statistics",
-  "subtitle": "Category totals over any stretch of days, not just whole months.",
+  "title": "Spending",
+  "subtitle": "Where the money went, by category, over any stretch of days.",
   "export": "Export",
   "period": "Period",
   "presets": {
@@ -10,7 +10,9 @@
     "last3Short": "3 months",
     "custom": "Custom",
     "thisMonthShort": "This month",
-    "lastMonthShort": "Last month"
+    "lastMonthShort": "Last month",
+    "year": "This year",
+    "yearShort": "Year"
   },
   "compareWith": "Compare with {{period}}",
   "previousPeriod": "the previous period",
@@ -53,5 +55,33 @@
     "label": "What to look at",
     "categories": "Categories",
     "products": "Products"
+  },
+  "allReceipts": "All receipts",
+  "allReceiptsHint": "Of this period · search by shop or product",
+  "ring": {
+    "label": "Spending by category",
+    "showAll": "Show every category",
+    "picture": "{{total}} {{currency}} spent, by category",
+    "spent": "Spent"
+  },
+  "details": "Chart and table",
+  "byDay": {
+    "title": "By day",
+    "average": "{{amount}} {{currency}} a day on average",
+    "bar": "{{date}}, {{amount}} {{currency}}"
+  },
+  "sections": {
+    "receipts": "Receipts",
+    "loading": "Loading…",
+    "noReceipts": "No receipts in this period.",
+    "unknownShop": "Unknown shop",
+    "toCheck": "to check",
+    "allReceipts_one": "All {{count}} receipt · search",
+    "allReceipts_other": "All {{count}} receipts · search",
+    "searchReceipts": "Search and filter receipts",
+    "toFile": "Items without a category",
+    "allItems": "All items and categories",
+    "bills": "Every month",
+    "billsHint": "Rent and other bills without a receipt — counted in Plan and Home, set in Settings."
   }
 }

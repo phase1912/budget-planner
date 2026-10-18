@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from app.models.line_item import LineItem
 from tests.factories.base import ModelFactory
 
@@ -19,3 +21,5 @@ class LineItemFactory(ModelFactory[LineItem]):
     user_corrected = False
     # Automatic is the normal case; a test about a manual override says so.
     is_category_manual = False
+    # No unprinted discount unless a test about one gives it (F23.7).
+    discount_share = Decimal(0)

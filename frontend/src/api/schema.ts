@@ -915,6 +915,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/receipts/{receipt_id}/discount": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Receipt Discount
+         * @description Take off a receipt what was not paid — a gift card, a voucher (F23.7); null removes it.
+         *
+         *     409 discount_too_large when it is more than the lines cost; another user's receipt is
+         *     not found (N2).
+         */
+        put: operations["set_receipt_discount_receipts__receipt_id__discount_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts/upload/{job_id}/resolve-total": {
         parameters: {
             query?: never;
@@ -1204,6 +1227,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/statistics/daily": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Daily Spend
+         * @description The caller's spending on each day between two dates, both included (F23.4).
+         *
+         *     Counted as the month's figure is (domain model invariant 4): what was paid, on
+         *     `parsed` receipts, by printed date. Every day is listed, a quiet one as zero; only the
+         *     caller's own receipts are read (N2).
+         */
+        get: operations["get_daily_spend_api_v1_statistics_daily_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/statistics/reading-accuracy": {
         parameters: {
             query?: never;
@@ -1243,6 +1290,28 @@ export interface paths {
          *     time. Only counted receipts of the caller's own (N2): another user's product is 404.
          */
         get: operations["explore_products_api_v1_products_explore_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Products Overview
+         * @description The caller's biggest price moves and each shop's standing over the period (F23.5).
+         *
+         *     Without `start` and `end`, all time. Only the caller's counted receipts (N2).
+         */
+        get: operations["products_overview_api_v1_products_overview_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1597,6 +1666,30 @@ export interface paths {
          * @description State a goal (BRD F1); a malformed one is refused with 422 and the reason.
          */
         post: operations["create_goal_api_v1_goals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Goal
+         * @description Whether a money goal is within reach, before it is saved (F23.13).
+         *
+         *     Judged on the caller's own last three whole months (N2): doable, a stretch with
+         *     where the money could come from, or unknown when there is too little to go on.
+         *     Nothing is stored.
+         */
+        post: operations["check_goal_api_v1_goals_check_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2034,6 +2127,283 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/income": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Month Income
+         * @description A month's income (YYYY-MM): its entries, or the usual amount standing in.
+         */
+        get: operations["month_income_api_v1_income_get"];
+        put?: never;
+        /**
+         * Add Income
+         * @description Record a sum that came in.
+         */
+        post: operations["add_income_api_v1_income_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Read Income Document
+         * @description Read a payslip or transfer confirmation into an entry to confirm (F23.11).
+         *
+         *     Nothing is stored: the file is read in memory and dropped, and only what the user
+         *     then confirms is saved, through `POST /income` with `channel` document. Counts
+         *     against the same reading limits as receipts (F10.6); refuses a document that is not
+         *     about money received (`not_income`) or cannot be read (`income_unreadable`).
+         */
+        post: operations["read_income_document_api_v1_income_read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pending Income
+         * @description Income read off forwarded payslips or transfers, waiting to be confirmed (F23.11).
+         */
+        get: operations["pending_income_api_v1_income_pending_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/pending/{pending_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Pending Income
+         * @description Confirm a pending income as `body` says, making it an entry; 404 if not the user's.
+         */
+        post: operations["confirm_pending_income_api_v1_income_pending__pending_id__post"];
+        /**
+         * Dismiss Pending Income
+         * @description Drop a pending income without keeping it; 404 if not the user's (N2).
+         */
+        delete: operations["dismiss_pending_income_api_v1_income_pending__pending_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/regular": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Regular Incomes
+         * @description The regular incomes still running, already net (F23.17).
+         */
+        get: operations["regular_incomes_api_v1_income_regular_get"];
+        put?: never;
+        /**
+         * Add Regular Income
+         * @description Start a regular income; it counts every month from this one on.
+         */
+        post: operations["add_regular_income_api_v1_income_regular_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/regular/{source_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Regular Income
+         * @description Change a regular income; 404 if it is not the user's (N2).
+         */
+        put: operations["change_regular_income_api_v1_income_regular__source_id__put"];
+        post?: never;
+        /**
+         * End Regular Income
+         * @description Stop a regular income from next month; past months keep it. 404 if not the user's.
+         */
+        delete: operations["end_regular_income_api_v1_income_regular__source_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/bills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Regular Bills
+         * @description The regular bills still running — rent, subscriptions (F23.18).
+         */
+        get: operations["regular_bills_api_v1_income_bills_get"];
+        put?: never;
+        /**
+         * Add Bill
+         * @description Start a regular bill; it counts every month from this one on.
+         */
+        post: operations["add_bill_api_v1_income_bills_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/bills/{bill_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Bill
+         * @description Change a regular bill; 404 if it is not the user's (N2).
+         */
+        put: operations["change_bill_api_v1_income_bills__bill_id__put"];
+        post?: never;
+        /**
+         * End Bill
+         * @description Stop a regular bill from next month; past months keep it. 404 if not the user's.
+         */
+        delete: operations["end_bill_api_v1_income_bills__bill_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/taxes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tax Payments
+         * @description A month's tax payments (YYYY-MM), for a user who pays their own (F23.16).
+         */
+        get: operations["tax_payments_api_v1_income_taxes_get"];
+        put?: never;
+        /**
+         * Pay Taxes
+         * @description Record taxes paid: they leave the balance, never the spending (F23.16).
+         */
+        post: operations["pay_taxes_api_v1_income_taxes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/taxes/{payment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Tax Payment
+         * @description Remove a tax payment; 404 if it is not the user's (N2).
+         */
+        delete: operations["delete_tax_payment_api_v1_income_taxes__payment_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/{income_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Income
+         * @description Change an entry; 404 for one that is not the user's (N2).
+         */
+        put: operations["update_income_api_v1_income__income_id__put"];
+        post?: never;
+        /**
+         * Delete Income
+         * @description Remove an entry; 404 for one that is not the user's (N2).
+         */
+        delete: operations["delete_income_api_v1_income__income_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Balance
+         * @description What the user has on `today` (their own date): the start, plus income, minus spend.
+         */
+        get: operations["balance_api_v1_income_balance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2242,6 +2612,28 @@ export interface components {
             refresh_token: string;
         };
         /**
+         * BalanceRead
+         * @description What the user has now, and how it came to be (F23.14); null fields without a start.
+         */
+        BalanceRead: {
+            /** Balance */
+            balance: string | null;
+            /** Since */
+            since: string | null;
+            /** Starting */
+            starting: string | null;
+            /** Came In */
+            came_in: string | null;
+            /** Spent */
+            spent: string | null;
+            /** Taxes Paid */
+            taxes_paid?: string | null;
+            /** Bills */
+            bills?: string | null;
+            /** For Taxes */
+            for_taxes?: string | null;
+        };
+        /**
          * BarGroupResponse
          * @description One category's bars side by side; `previous` is null without a comparison.
          */
@@ -2262,6 +2654,11 @@ export interface components {
             value: string;
             /** Height */
             height: string;
+        };
+        /** Body_read_income_document_api_v1_income_read_post */
+        Body_read_income_document_api_v1_income_read_post: {
+            /** File */
+            file: string;
         };
         /** Body_upload_receipt_receipts_upload_post */
         Body_upload_receipt_receipts_upload_post: {
@@ -2533,6 +2930,20 @@ export interface components {
             /** Total */
             total: string;
         };
+        /**
+         * DailySpendResponse
+         * @description Every day of the period with its spending (F23.4).
+         *
+         *     `average` is per day passed — up to today in a running period — not per day listed.
+         */
+        DailySpendResponse: {
+            /** Days */
+            days: components["schemas"]["DaySpendResponse"][];
+            /** Total */
+            total: string;
+            /** Average */
+            average: string;
+        };
         /** DayFiguresRead */
         DayFiguresRead: {
             /**
@@ -2550,6 +2961,19 @@ export interface components {
             confirmations: number;
             /** Receipts Read */
             receipts_read: number;
+        };
+        /**
+         * DaySpendResponse
+         * @description What was paid on one day; zero for a day without purchases.
+         */
+        DaySpendResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Total */
+            total: string;
         };
         /**
          * DayTotal
@@ -2725,6 +3149,52 @@ export interface components {
             email: string;
             /** Language */
             language?: ("en" | "uk" | "pl") | null;
+        };
+        /**
+         * GoalCheckRequest
+         * @description A money goal to check before it is saved (F23.13); `today` is the caller's date.
+         */
+        GoalCheckRequest: {
+            financial_kind: components["schemas"]["FinancialKind"];
+            /** Target Amount */
+            target_amount: number | string;
+            /** Category Id */
+            category_id?: string | null;
+            /** Today */
+            today?: string | null;
+        };
+        /**
+         * GoalCheckResponse
+         * @description The verdict: `doable`, a `stretch` with sources, or `unknown` with the reason.
+         *
+         *     `usual` is what the goal is measured against (monthly spend, the category's monthly
+         *     spend, or what is usually left for a savings target), over `months` recent months.
+         */
+        GoalCheckResponse: {
+            verdict: components["schemas"]["Verdict"];
+            /** Usual */
+            usual: string | null;
+            /** Gap */
+            gap: string;
+            /** Months */
+            months: number;
+            /** Sources */
+            sources: components["schemas"]["GoalCheckSource"][];
+            unknown: components["schemas"]["Unknown"] | null;
+        };
+        /**
+         * GoalCheckSource
+         * @description A category the gap could come from: its monthly spend and the suggested cut.
+         */
+        GoalCheckSource: {
+            /** Category Id */
+            category_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Monthly */
+            monthly: string;
+            /** Cut */
+            cut: string;
         };
         /**
          * GoalCreate
@@ -3004,6 +3474,119 @@ export interface components {
             reason?: string | null;
         };
         /**
+         * IncomeChannel
+         * @description How it reached the service: typed in, or read from a document (F23.11).
+         * @enum {string}
+         */
+        IncomeChannel: "manual" | "document";
+        /**
+         * IncomeDraft
+         * @description What a document says came in, not yet saved: the user confirms or corrects it (F23.11).
+         *
+         *     Any field the document did not show is null.
+         */
+        IncomeDraft: {
+            /** Amount */
+            amount: string | null;
+            /** Received On */
+            received_on: string | null;
+            /** Source */
+            source: string | null;
+            kind: components["schemas"]["IncomeKind"];
+        };
+        /**
+         * IncomeKind
+         * @description What a sum that came in was.
+         * @enum {string}
+         */
+        IncomeKind: "salary" | "side" | "refund" | "other";
+        /** IncomeRead */
+        IncomeRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Received On
+             * Format: date
+             */
+            received_on: string;
+            /** Amount */
+            amount: string;
+            /** Source */
+            source: string;
+            kind: components["schemas"]["IncomeKind"];
+            channel: components["schemas"]["IncomeChannel"];
+            /**
+             * Taxed
+             * @default false
+             */
+            taxed: boolean;
+        };
+        /**
+         * IncomeRequest
+         * @description A sum that came in, as the user enters it.
+         */
+        IncomeRequest: {
+            /**
+             * Received On
+             * Format: date
+             */
+            received_on: string;
+            /** Amount */
+            amount: number | string;
+            /** Source */
+            source: string;
+            /** @default salary */
+            kind: components["schemas"]["IncomeKind"];
+            /** @default manual */
+            channel: components["schemas"]["IncomeChannel"];
+            /** Taxed */
+            taxed?: boolean | null;
+        };
+        /** IncomeSourceRead */
+        IncomeSourceRead: {
+            /** Name */
+            name: string;
+            /** Amount */
+            amount: string;
+            /** Day */
+            day?: number | null;
+            /**
+             * Taxed
+             * @default false
+             */
+            taxed: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Starts On
+             * Format: date
+             */
+            starts_on: string;
+        };
+        /**
+         * IncomeSourceRequest
+         * @description A regular income, already net (F23.17); `day` is when in the month it comes.
+         */
+        IncomeSourceRequest: {
+            /** Name */
+            name: string;
+            /** Amount */
+            amount: number | string;
+            /** Day */
+            day?: number | null;
+            /**
+             * Taxed
+             * @default false
+             */
+            taxed: boolean;
+        };
+        /**
          * ItemView
          * @description The three lists on the categorisation screen (docs/design/screens/categorisation.html).
          *
@@ -3116,6 +3699,11 @@ export interface components {
             unit_price: string;
             /** Total Price */
             total_price: string;
+            /**
+             * Discount Share
+             * @default 0
+             */
+            discount_share: string;
             /** Category Id */
             category_id: string | null;
             category?: components["schemas"]["CategoryResponse"] | null;
@@ -3285,8 +3873,52 @@ export interface components {
             trips: components["schemas"]["TripResponse"][];
         };
         /**
+         * MonthIncomeRead
+         * @description A month's income: its entries, their total, or the usual amount standing in.
+         */
+        MonthIncomeRead: {
+            /** Month */
+            month: string;
+            /** Total */
+            total: string | null;
+            /** Entered */
+            entered: boolean;
+            /** Usual */
+            usual: string | null;
+            /** Entries */
+            entries: components["schemas"]["IncomeRead"][];
+            /**
+             * Taxes
+             * @default 0.00
+             */
+            taxes: string;
+            /** Net */
+            net?: string | null;
+            /**
+             * Taxes Paid
+             * @default 0.00
+             */
+            taxes_paid: string;
+            /**
+             * Regular
+             * @default []
+             */
+            regular: components["schemas"]["IncomeSourceRead"][];
+            /**
+             * Bills
+             * @default []
+             */
+            bills: components["schemas"]["RegularExpenseRead"][];
+            /**
+             * Bills Total
+             * @default 0.00
+             */
+            bills_total: string;
+        };
+        /**
          * MonthPurchasesResponse
-         * @description The selection's purchases in one calendar month (`month` is its first day).
+         * @description The selection's purchases in one calendar month (`month` is its first day), and
+         *     what each product of it cost then.
          */
         MonthPurchasesResponse: {
             /**
@@ -3295,6 +3927,11 @@ export interface components {
              */
             month: string;
             amounts: components["schemas"]["AmountsResponse"];
+            /**
+             * By Product
+             * @default []
+             */
+            by_product: components["schemas"]["ProductSpendResponse"][];
         };
         /**
          * MonthSummaryResponse
@@ -3371,6 +4008,24 @@ export interface components {
             size: number;
             /** Pages */
             pages: number;
+        };
+        /**
+         * PendingIncomeRead
+         * @description Income read off a forwarded document, waiting to be confirmed (F23.11).
+         */
+        PendingIncomeRead: {
+            /** Amount */
+            amount: string | null;
+            /** Received On */
+            received_on: string | null;
+            /** Source */
+            source: string | null;
+            kind: components["schemas"]["IncomeKind"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
         };
         /**
          * PerDiemDayResponse
@@ -3555,6 +4210,23 @@ export interface components {
             percent: string | null;
         };
         /**
+         * PriceMoveResponse
+         * @description A product whose price for one item moved noticeably over the period (F23.5).
+         */
+        PriceMoveResponse: {
+            product: components["schemas"]["ProductFactsResponse"];
+            change: components["schemas"]["PriceChangeResponse"];
+            /** Last Shop */
+            last_shop: string | null;
+            /** History */
+            history: string[];
+            /**
+             * Shops
+             * @default []
+             */
+            shops: components["schemas"]["ShopPriceResponse"][];
+        };
+        /**
          * PricePointResponse
          * @description What one purchase cost a unit, and per kg or l where the size is known.
          */
@@ -3632,6 +4304,19 @@ export interface components {
             cheaper?: components["schemas"]["CheaperShopResponse"] | null;
         };
         /**
+         * ProductSpendResponse
+         * @description What one product cost in a month.
+         */
+        ProductSpendResponse: {
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Spent */
+            spent: string;
+        };
+        /**
          * ProductVariantResponse
          * @description One way a product is printed, and how often it was bought under it (F16.1).
          */
@@ -3645,6 +4330,18 @@ export interface components {
             printed_name: string;
             /** Purchases */
             purchases: number;
+        };
+        /**
+         * ProductsOverviewResponse
+         * @description Everything bought at a glance: price moves and shops (F23.5).
+         */
+        ProductsOverviewResponse: {
+            /** Moves */
+            moves: components["schemas"]["PriceMoveResponse"][];
+            /** Shops */
+            shops: components["schemas"]["ShopStandingResponse"][];
+            /** Paid Above */
+            paid_above: string;
         };
         /**
          * ReadingAccuracyResponse
@@ -3703,6 +4400,8 @@ export interface components {
             transaction_date: string | null;
             /** Total Amount */
             total_amount: string | null;
+            /** Paid Discount */
+            paid_discount?: string | null;
             /** Status */
             status: string;
             channel: components["schemas"]["ReceiptChannel"];
@@ -3758,6 +4457,17 @@ export interface components {
              * @description Whether storage has removed the photos after 90 days; the figures stay.
              */
             readonly photos_removed: boolean;
+        };
+        /**
+         * ReceiptDiscountRequest
+         * @description What was not paid of a receipt (F23.7): null takes the discount off; `line_ids`
+         *     narrows it to some lines, all of them otherwise.
+         */
+        ReceiptDiscountRequest: {
+            /** Amount */
+            amount?: number | string | null;
+            /** Line Ids */
+            line_ids?: string[] | null;
         };
         /**
          * ReceiptOrder
@@ -3832,6 +4542,8 @@ export interface components {
             transaction_date: string | null;
             /** Total Amount */
             total_amount: string | null;
+            /** Paid Discount */
+            paid_discount?: string | null;
             /** Status */
             status: string;
             channel: components["schemas"]["ReceiptChannel"];
@@ -3985,6 +4697,37 @@ export interface components {
              */
             accept_terms: boolean;
         };
+        /** RegularExpenseRead */
+        RegularExpenseRead: {
+            /** Name */
+            name: string;
+            /** Amount */
+            amount: string;
+            /** Day */
+            day?: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Starts On
+             * Format: date
+             */
+            starts_on: string;
+        };
+        /**
+         * RegularExpenseRequest
+         * @description A bill paid every month without a receipt — rent, a subscription (F23.18).
+         */
+        RegularExpenseRequest: {
+            /** Name */
+            name: string;
+            /** Amount */
+            amount: number | string;
+            /** Day */
+            day?: number | null;
+        };
         /**
          * ResetPasswordRequest
          * @description Payload for setting a new password from a reset link (F17.8.3).
@@ -4070,6 +4813,11 @@ export interface components {
             unit_price: string;
             /** Total Price */
             total_price: string;
+            /**
+             * Discount Share
+             * @default 0
+             */
+            discount_share: string;
             /** Category Id */
             category_id: string | null;
             category?: components["schemas"]["CategoryResponse"] | null;
@@ -4217,6 +4965,18 @@ export interface components {
             above_percent: string | null;
         };
         /**
+         * ShopStandingResponse
+         * @description A shop: cheapest for how many products, and what was paid above the cheapest there.
+         */
+        ShopStandingResponse: {
+            /** Shop */
+            shop: string;
+            /** Cheapest For */
+            cheapest_for: number;
+            /** Paid Above */
+            paid_above: string;
+        };
+        /**
          * SplitProductRequest
          * @description The way of printing to take out of the product into one of its own (F16.1).
          */
@@ -4226,6 +4986,34 @@ export interface components {
              * Format: uuid
              */
             alias_id: string;
+        };
+        /** TaxPaymentRead */
+        TaxPaymentRead: {
+            /**
+             * Paid On
+             * Format: date
+             */
+            paid_on: string;
+            /** Amount */
+            amount: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
+        /**
+         * TaxPaymentRequest
+         * @description Taxes paid, by a user who pays their own (F23.16).
+         */
+        TaxPaymentRequest: {
+            /**
+             * Paid On
+             * Format: date
+             */
+            paid_on: string;
+            /** Amount */
+            amount: number | string;
         };
         /**
          * TripChoice
@@ -4335,6 +5123,8 @@ export interface components {
             transaction_date: string | null;
             /** Total Amount */
             total_amount: string | null;
+            /** Paid Discount */
+            paid_discount?: string | null;
             /** Status */
             status: string;
             channel: components["schemas"]["ReceiptChannel"];
@@ -4576,6 +5366,12 @@ export interface components {
             forget: boolean;
         };
         /**
+         * Unknown
+         * @description Why a goal could not be checked.
+         * @enum {string}
+         */
+        Unknown: "no_history" | "no_income";
+        /**
          * UpdateLineItemCategoryRequest
          * @description Update a line item's category (BRD C4).
          */
@@ -4738,6 +5534,37 @@ export interface components {
              * @default false
              */
             two_factor_enabled: boolean;
+            /** Palette */
+            palette?: ("midnight" | "daylight" | "rose" | "lavender" | "sage" | "ocean") | null;
+            /**
+             * Dark At Night
+             * @default false
+             */
+            dark_at_night: boolean;
+            /** Onboarded At */
+            onboarded_at?: string | null;
+            /**
+             * Travels For Work
+             * @default false
+             */
+            travels_for_work: boolean;
+            /** Usual Income */
+            usual_income?: string | null;
+            /** Payday */
+            payday?: number | null;
+            /** Starting Balance */
+            starting_balance?: string | null;
+            /** Balance Since */
+            balance_since?: string | null;
+            /**
+             * Pays Own Taxes
+             * @default false
+             */
+            pays_own_taxes: boolean;
+            /** Tax Rate */
+            tax_rate?: string | null;
+            /** Tax Fixed Monthly */
+            tax_fixed_monthly?: string | null;
             /**
              * Is Admin
              * @description Whether the account sees the admin pages (F17.3.3): by role, or a listed email.
@@ -4765,6 +5592,28 @@ export interface components {
             budget_limit?: number | string | null;
             /** Language */
             language?: ("en" | "uk" | "pl") | null;
+            /** Palette */
+            palette?: ("midnight" | "daylight" | "rose" | "lavender" | "sage" | "ocean") | null;
+            /** Dark At Night */
+            dark_at_night?: boolean | null;
+            /** Travels For Work */
+            travels_for_work?: boolean | null;
+            /** Usual Income */
+            usual_income?: number | string | null;
+            /** Payday */
+            payday?: number | null;
+            /** Onboarded */
+            onboarded?: boolean | null;
+            /** Starting Balance */
+            starting_balance?: number | string | null;
+            /** Balance Since */
+            balance_since?: string | null;
+            /** Pays Own Taxes */
+            pays_own_taxes?: boolean | null;
+            /** Tax Rate */
+            tax_rate?: number | string | null;
+            /** Tax Fixed Monthly */
+            tax_fixed_monthly?: number | string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -4779,6 +5628,12 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /**
+         * Verdict
+         * @description What the check concludes: in reach, a stretch, or not enough to tell.
+         * @enum {string}
+         */
+        Verdict: "doable" | "stretch" | "unknown";
     };
     responses: never;
     parameters: never;
@@ -6367,6 +7222,43 @@ export interface operations {
             };
         };
     };
+    set_receipt_discount_receipts__receipt_id__discount_put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceiptDiscountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     resolve_total_receipts_upload__job_id__resolve_total_post: {
         parameters: {
             query?: {
@@ -6903,6 +7795,43 @@ export interface operations {
             };
         };
     };
+    get_daily_spend_api_v1_statistics_daily_get: {
+        parameters: {
+            query: {
+                /** @description The caller's own date; the average counts days to it */
+                today?: string | null;
+                /** @description First day of the period, included */
+                start: string;
+                /** @description Last day of the period, included */
+                end: string;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailySpendResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_reading_accuracy_api_v1_statistics_reading_accuracy_get: {
         parameters: {
             query?: {
@@ -6959,6 +7888,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExplorationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    products_overview_api_v1_products_overview_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+                /** @description First day of the period, included */
+                start?: string | null;
+                /** @description Last day of the period, included */
+                end?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductsOverviewResponse"];
                 };
             };
             /** @description Validation Error */
@@ -7719,6 +8683,41 @@ export interface operations {
             };
         };
     };
+    check_goal_api_v1_goals_check_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalCheckRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalCheckResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     delete_goal_api_v1_goals__goal_id__delete: {
         parameters: {
             query?: {
@@ -8399,6 +9398,681 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminLogPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    month_income_api_v1_income_get: {
+        parameters: {
+            query: {
+                month: string;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthIncomeRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_income_api_v1_income_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncomeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_income_document_api_v1_income_read_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_read_income_document_api_v1_income_read_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pending_income_api_v1_income_pending_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingIncomeRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_pending_income_api_v1_income_pending__pending_id__post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                pending_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncomeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dismiss_pending_income_api_v1_income_pending__pending_id__delete: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                pending_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    regular_incomes_api_v1_income_regular_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeSourceRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_regular_income_api_v1_income_regular_post: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncomeSourceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeSourceRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_regular_income_api_v1_income_regular__source_id__put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncomeSourceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeSourceRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    end_regular_income_api_v1_income_regular__source_id__delete: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    regular_bills_api_v1_income_bills_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegularExpenseRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_bill_api_v1_income_bills_post: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegularExpenseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegularExpenseRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_bill_api_v1_income_bills__bill_id__put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                bill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegularExpenseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegularExpenseRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    end_bill_api_v1_income_bills__bill_id__delete: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                bill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tax_payments_api_v1_income_taxes_get: {
+        parameters: {
+            query: {
+                month: string;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxPaymentRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pay_taxes_api_v1_income_taxes_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaxPaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxPaymentRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_tax_payment_api_v1_income_taxes__payment_id__delete: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                payment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_income_api_v1_income__income_id__put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                income_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncomeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_income_api_v1_income__income_id__delete: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                income_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    balance_api_v1_income_balance_get: {
+        parameters: {
+            query: {
+                today: string;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BalanceRead"];
                 };
             };
             /** @description Validation Error */

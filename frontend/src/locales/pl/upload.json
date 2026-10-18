@@ -26,7 +26,9 @@
     "processed": "Przetworzono {{done}} z {{total}}…",
     "sending": "Wysyłanie…",
     "read": "Odczytaj te zdjęcia",
-    "noReceipt": "Nie masz paragonu?"
+    "noReceipt": "Nie masz paragonu?",
+    "moneyIn": "Wpłynęły pieniądze?",
+    "addIncome": "Dodaj wpływ"
   },
   "line": {
     "receipt": "Paragon",
@@ -209,5 +211,17 @@
   "unconfirmed": {
     "title": "Potwierdź adres, aby dodawać paragony",
     "body": "Wysłaliśmy link na {{email}}. Otwórz go i wróć tutaj — zdjęcia i przesłane paragony czekają tylko na ten krok."
+  },
+  "start": {
+    "camera": "Zrób zdjęcie",
+    "cameraHint": "Otworzy się aparat; długi paragon możesz sfotografować w częściach",
+    "files": "Wybierz zdjęcia lub PDF",
+    "drop": "Upuść tu zdjęcia lub PDF albo je wybierz",
+    "filesHint": "JPEG, PNG, HEIC lub PDF · do 10 na paragon",
+    "email": "Prześlij e-paragon",
+    "copy": "Skopiuj adres",
+    "income": "Pasek wypłaty lub przelew",
+    "incomeHint": "Pieniądze, które wpłynęły — odczytamy kwotę, pliku nie zapisujemy",
+    "reading": "Czytamy dokument…"
   }
 }

@@ -14,15 +14,20 @@ from app.models.exchange_rate import CachedExchangeRate
 from app.models.export_job import ExportJob
 from app.models.goal import Goal
 from app.models.household import Household, HouseholdMember
+from app.models.income import Income
+from app.models.income_source import IncomeSource
 from app.models.line_item import LineItem
 from app.models.match_override import PositionMatchOverride
 from app.models.monthly_snapshot import MonthlySnapshot
 from app.models.name_correction import NameCorrection
+from app.models.pending_income import PendingIncome
 from app.models.product import Product, ProductAlias
 from app.models.receipt import Receipt
 from app.models.recommendation import Recommendation
 from app.models.refresh_token import RefreshToken
+from app.models.regular_expense import RegularExpense
 from app.models.selection import ProductSelection
+from app.models.tax_payment import TaxPayment
 from app.models.trip import Trip
 from app.models.upload_job import UploadJob
 from app.models.user import User
@@ -38,11 +43,14 @@ __all__ = [
     "Goal",
     "Household",
     "HouseholdMember",
+    "Income",
+    "IncomeSource",
     "LineItem",
     "Model",
     "MonthlySnapshot",
     "NameCorrection",
     "PageViewCount",
+    "PendingIncome",
     "PlanGrant",
     "PositionMatchOverride",
     "Product",
@@ -51,6 +59,8 @@ __all__ = [
     "Receipt",
     "Recommendation",
     "RefreshToken",
+    "RegularExpense",
+    "TaxPayment",
     "Trip",
     "UploadJob",
     "User",

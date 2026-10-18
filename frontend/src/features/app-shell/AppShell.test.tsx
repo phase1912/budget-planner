@@ -5,7 +5,7 @@ import { StoreProvider } from "@/stores/StoreContext";
 import { AppShell } from "./AppShell";
 
 describe("AppShell", () => {
-  it("renders the brand header and theme toggle", () => {
+  it("renders the brand header and, signed out, the theme toggle", () => {
     render(
       <MemoryRouter>
         <StoreProvider>
@@ -41,7 +41,8 @@ describe("AppShell", () => {
           </StoreProvider>
         </MemoryRouter>,
       );
-      expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
+      // The phone's bottom bar and the wider screens' side menu; CSS shows one.
+      expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(2);
       unmount();
 
       render(
@@ -51,7 +52,7 @@ describe("AppShell", () => {
           </StoreProvider>
         </MemoryRouter>,
       );
-      expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
+      expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
     } finally {
       localStorage.clear();
     }

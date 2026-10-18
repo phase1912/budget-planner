@@ -94,41 +94,27 @@ async def test_without_a_parser_the_photos_are_kept_and_nothing_is_read() -> Non
 
 
 @pytest.mark.asyncio
-async def test_store_receipt_image_heic_conversion() -> None:
+async def test_an_iphone_heic_photo_is_stored_as_jpeg_browsers_can_show() -> None:
+    import io
+
+    import pillow_heif
+    from PIL import Image
+
+    pillow_heif.register_heif_opener()  # type: ignore[attr-defined]
+    heic = io.BytesIO()
+    Image.new("RGB", (40, 20), "white").save(heic, format="HEIF")
     mock_port = AsyncMock()
     user = User(id="test-user-id", email="test@test.com")
 
-    # Create a valid dummy HEIC file structure so that pillow_heif doesn't throw a parsing error.
-    # Actually, if we just mock Image.open and pillow_heif, we don't need a real HEIC file.
-    # But since the conversion logic uses real PIL, we need to mock it or provide a real image.
-    import io
-
-    from PIL import Image
-
-    # Generate a dummy JPEG to simulate the conversion output
-    dummy_img = Image.new("RGB", (10, 10))
-    dummy_io = io.BytesIO()
-    dummy_img.save(dummy_io, format="JPEG")
-    expected_jpeg_content = dummy_io.getvalue()
-
-    # We will mock Image.open to return our dummy_img
-    from unittest.mock import patch
-
-    with patch("PIL.Image.open") as mock_open:
-        mock_open.return_value = dummy_img
-        # Pass a fake HEIC signature so it enters the conversion block
-        fake_heic_bytes = b"\x00\x00\x00\x1cftypheic_fake_data"
-        file_id = await PhotoIngestionAdapter(storage_port=mock_port, parser_port=None).store_image(
-            user, fake_heic_bytes, "image/heic"
-        )
+    file_id = await PhotoIngestionAdapter(storage_port=mock_port, parser_port=None).store_image(
+        user, heic.getvalue(), "image/heic"
+    )
 
     assert "-" in file_id
-
-    # Verify that upload_file was called with the converted JPEG content and content_type
-    mock_port.upload_file.assert_called_once()
     args, _ = mock_port.upload_file.call_args
-    assert args[1] == expected_jpeg_content
+    assert args[1][:2] == b"\xff\xd8"
     assert args[2] == "image/jpeg"
+    assert Image.open(io.BytesIO(args[1])).size == (40, 20)
 
 
 @pytest.mark.asyncio

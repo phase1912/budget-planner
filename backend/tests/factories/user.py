@@ -24,3 +24,15 @@ class UserFactory(ModelFactory[User]):
     two_factor_secret = None
     two_factor_enabled_at = None
     recovery_code_hashes = None
+    # A new account's look and setup (F23): the default palette, not onboarded yet.
+    palette = None
+    dark_at_night = False
+    onboarded_at = None
+    travels_for_work = False
+    usual_income = None
+    payday = None
+    starting_balance = None
+    balance_since = None
+    pays_own_taxes = False
+    tax_rate = None
+    tax_fixed_monthly = None

@@ -1,6 +1,6 @@
 {
-  "title": "Statystyki",
-  "subtitle": "Sumy według kategorii za dowolny okres, nie tylko za pełne miesiące.",
+  "title": "Wydatki",
+  "subtitle": "Gdzie poszły pieniądze, według kategorii, w dowolnych dniach.",
   "export": "Eksport",
   "period": "Okres",
   "presets": {
@@ -10,7 +10,9 @@
     "last3Short": "3 miesiące",
     "custom": "Własny",
     "thisMonthShort": "Bieżący",
-    "lastMonthShort": "Poprzedni"
+    "lastMonthShort": "Poprzedni",
+    "year": "Ten rok",
+    "yearShort": "Rok"
   },
   "compareWith": "Porównaj z: {{period}}",
   "previousPeriod": "poprzednim okresem",
@@ -61,5 +63,35 @@
     "label": "Co przeglądać",
     "categories": "Kategorie",
     "products": "Produkty"
+  },
+  "allReceipts": "Wszystkie paragony",
+  "allReceiptsHint": "Z tego okresu · szukaj po sklepie lub produkcie",
+  "ring": {
+    "label": "Wydatki według kategorii",
+    "showAll": "Pokaż wszystkie kategorie",
+    "picture": "Wydano {{total}} {{currency}}, według kategorii",
+    "spent": "Wydano"
+  },
+  "details": "Wykres i tabela",
+  "byDay": {
+    "title": "Dzień po dniu",
+    "average": "Średnio {{amount}} {{currency}} dziennie",
+    "bar": "{{date}}, {{amount}} {{currency}}"
+  },
+  "sections": {
+    "receipts": "Paragony",
+    "loading": "Wczytujemy…",
+    "noReceipts": "Brak paragonów w tym okresie.",
+    "unknownShop": "Nieznany sklep",
+    "toCheck": "do sprawdzenia",
+    "allReceipts_one": "Wszystkie {{count}} paragon · szukaj",
+    "allReceipts_few": "Wszystkie {{count}} paragony · szukaj",
+    "allReceipts_many": "Wszystkie {{count}} paragonów · szukaj",
+    "allReceipts_other": "Wszystkie {{count}} paragonu · szukaj",
+    "searchReceipts": "Szukaj i filtruj paragony",
+    "toFile": "Pozycje bez kategorii",
+    "allItems": "Wszystkie pozycje i kategorie",
+    "bills": "Co miesiąc",
+    "billsHint": "Mieszkanie i inne wydatki bez paragonu — liczone w Planie i na stronie Start, ustawiane w Ustawieniach."
   }
 }

@@ -1,0 +1,85 @@
+{
+  "title": "Plan",
+  "income": {
+    "title": "Wpływy",
+    "month": "{{month}}",
+    "usual": "Zwykle: {{amount}} {{currency}} miesięcznie",
+    "usualNone": "Nie ustawiono zwykłego dochodu",
+    "none": "W tym miesiącu jeszcze nic nie wpisano.",
+    "add": "Dodaj dochód",
+    "edit": "Zmień dochód",
+    "date": "Data",
+    "amount": "Kwota",
+    "source": "Od kogo",
+    "sourcePlaceholder": "Wynagrodzenie, klient, zwrot…",
+    "kind": "Rodzaj",
+    "kinds": {
+      "salary": "Wynagrodzenie",
+      "side": "Dodatkowa praca",
+      "refund": "Zwrot",
+      "other": "Inne"
+    },
+    "save": "Zapisz",
+    "delete": "Usuń",
+    "cancel": "Anuluj",
+    "total": "W tym miesiącu",
+    "spent": "Wydano {{amount}}",
+    "free": "Wolne {{amount}}",
+    "fromDocument": "Sprawdź, co odczytaliśmy",
+    "fromDocumentHint": "Nic nie zostanie zapisane bez Twojego potwierdzenia. Sam plik nie jest przechowywany.",
+    "gross": "Wpłynęło",
+    "taxes": "Podatki ~",
+    "net": "Twoje",
+    "taxesPaid": "Zapłacone podatki w tym miesiącu: {{amount}} {{currency}}",
+    "payTaxes": "Podatki zapłacone",
+    "paidAmount": "Zapłacono",
+    "paidHint": "Zmniejsza saldo i to, co jeszcze do zapłaty — ale nie wydatki.",
+    "taxed": "Płacę od tego podatek",
+    "taxedShort": "z podatkiem",
+    "regular": "Co miesiąc",
+    "editRegular": "Zmień",
+    "setRegular": "Ustaw",
+    "extra": "Wpłynęło ponadto w tym miesiącu",
+    "decideTax": "Płacisz podatki samodzielnie: zdecyduj niżej, czy płacisz od tego podatek.",
+    "bills": "Stałe {{amount}}",
+    "billsTitle": "Schodzi co miesiąc",
+    "noBills": "Mieszkanie, subskrypcje — dodaj je, a będą liczone same."
+  },
+  "budget": {
+    "title": "Budżet miesięczny",
+    "none": "Nie ustawiono budżetu",
+    "set": "Ustaw budżet",
+    "spent": "Wydano {{spent}} z {{budget}} {{currency}}"
+  },
+  "holidays": {
+    "title": "Wypoczynek",
+    "none": "Brak wyjazdów — zaplanuj, aby trzymać ich wydatki osobno i w budżecie.",
+    "new": "Zaplanuj wypoczynek",
+    "all": "Wszystkie wyjazdy",
+    "left": "Zostało {{amount}} {{currency}}",
+    "spent": "Wydano {{amount}} {{currency}}"
+  },
+  "work": {
+    "title": "Podróże służbowe",
+    "open": "Otwórz podróże służbowe",
+    "count_one": "{{count}} podróż",
+    "count_few": "{{count}} podróże",
+    "count_many": "{{count}} podróży",
+    "count_other": "{{count}} podróży"
+  },
+  "goals": {
+    "title": "Cele",
+    "none": "Brak celów.",
+    "new": "Nowy cel",
+    "all": "Wszystkie cele",
+    "kinds": {
+      "financial": "Cel finansowy",
+      "lifestyle": "Cel stylu życia"
+    },
+    "ring": "{{percent}} %",
+    "paced": "{{spent}} z {{target}} {{currency}} · w normie",
+    "pacedOver": "{{spent}} z {{target}} {{currency}} · zmierza do {{projected}}",
+    "saving": "W tym miesiącu wolne {{available}} z {{target}} {{currency}} do odłożenia",
+    "edit": "Zmień cel"
+  }
+}

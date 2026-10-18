@@ -30,7 +30,7 @@ globalThis.matchMedia = () => ({ matches: false, addEventListener() {}, removeEv
 globalThis.addEventListener = () => {};
 globalThis.removeEventListener = () => {};
 globalThis.document = {
-  documentElement: { lang: "en", classList: { toggle() {}, add() {}, remove() {} } },
+  documentElement: { lang: "en", dataset: {}, classList: { toggle() {}, add() {}, remove() {} } },
 };
 
 const { render } = await import(pathToFileURL(fileURLToPath(ssr)).href);

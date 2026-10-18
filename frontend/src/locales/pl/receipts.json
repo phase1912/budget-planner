@@ -148,5 +148,21 @@
     "kindAuto": "Ustal według kategorii",
     "save": "Dodaj wydatek",
     "amountInvalid": "Wpisz kwotę większą od zera."
+  },
+  "discount": {
+    "open": "Zapłacono mniej niż na paragonie? Dodaj rabat",
+    "title": "Rabat, którego nie ma na paragonie",
+    "hint": "Karta podarunkowa, voucher, promocja przy kasie — to, czego nie zapłacono.",
+    "amount": "Niezapłacone",
+    "paid": "Zapłacono",
+    "whole": "Rozłożone na cały paragon, więc każda kategoria liczy to, co naprawdę zapłacono. Ceny na półce zostają jak na paragonie.",
+    "some": "Tylko na niektóre produkty",
+    "wholeInstead": "Rozłóż na cały paragon",
+    "which": "Odejmij od tych pozycji",
+    "remove": "Usuń rabat",
+    "cancel": "Anuluj",
+    "apply": "Zastosuj",
+    "line": "Twój rabat −{{amount}} · zapłacono {{paid}}",
+    "change": "Zmień"
   }
 }

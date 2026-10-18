@@ -24,6 +24,49 @@ const budgetStore = {
   open: vi.fn(),
   showPreviousMonth: vi.fn(),
   showNextMonth: vi.fn(),
+  refresh: vi.fn(),
+  today: "2026-09-26",
+};
+
+const incomeStore = {
+  month: null as null | {
+    total: string | null;
+    entered: boolean;
+    entries: { amount: string }[];
+    taxes?: string;
+    net?: string | null;
+    regular?: unknown[];
+    bills_total?: string;
+  },
+  balance: null as null | { balance: string | null; since: string | null },
+  receive: vi.fn().mockResolvedValue(true),
+  pending: [] as {
+    id: string;
+    amount: string | null;
+    received_on: string | null;
+    source: string | null;
+    kind: "salary" | "side" | "refund" | "other";
+  }[],
+  loadPending: vi.fn(),
+  confirmPending: vi.fn().mockResolvedValue(true),
+  dismissPending: vi.fn(),
+  saveState: { isLoading: false },
+  load: vi.fn(),
+  loadBalance: vi.fn(),
+  setMonthTotal: vi.fn().mockResolvedValue(true),
+};
+const categoriesStore = { reviewCount: 0, loadReviewCount: vi.fn() };
+const profileStore = { saveQuietly: vi.fn().mockResolvedValue(true) };
+const productsStore = { overview: null, loadOverview: vi.fn() };
+
+const authStore = {
+  user: {
+    email: "test@example.com",
+    first_name: "Anna",
+    last_name: "Smith",
+    currency: "PLN",
+    payday: null as number | null,
+  },
 };
 
 const receiptStore = {
@@ -48,24 +91,15 @@ vi.mock("@/stores/StoreContext", () => ({
     receiptStore,
     // Not in a household: the pages show only the user's own figures (F12.5).
     householdStore: { household: null, shared: false, showingHousehold: false, load: vi.fn() },
+    incomeStore,
+    categoriesStore,
+    profileStore,
+    productsStore,
     adviceStore: { warnings: [], loadProgress: vi.fn(), dismissWarning: vi.fn() },
     installStore: { dismissed: false, offersInstall: false, showsIosHint: false },
-    authStore: {
-      user: { email: "test@example.com", first_name: "Anna", last_name: "Smith", currency: "PLN" },
-    },
+    authStore,
   }),
 }));
-
-/**
- * Matches the element whose whole text is `text`, even when parts of it are
- * spans shown only on a phone or only on a wider screen: jsdom applies no CSS,
- * so both are in the text.
- */
-function wholeText(text: string) {
-  return (_: string, element: Element | null) =>
-    element?.textContent === text &&
-    !Array.from(element.children).some((child) => child.textContent === text);
-}
 
 function WhereAmI() {
   const location = useLocation();
@@ -116,6 +150,8 @@ describe("DashboardPage", () => {
       trips: [],
     });
     receiptStore.selectedReceiptId = null;
+    incomeStore.month = null;
+    categoriesStore.reviewCount = 0;
   });
 
   it("opens the month view, which picks the month to show", () => {
@@ -163,16 +199,15 @@ describe("DashboardPage", () => {
     );
   });
 
-  it("shows what the current month adds up to so far", () => {
+  it("shows what the current month adds up to so far, with nothing to measure it against", () => {
     budgetStore.summary = summary();
     renderPage();
 
-    expect(screen.getByRole("heading", { name: "September 2026" })).toBeInTheDocument();
-    expect(screen.getByText(wholeText("Spent so far in September"))).toBeInTheDocument();
-    expect(screen.getByText("1,234.50")).toBeInTheDocument();
-    expect(screen.getByText("PLN")).toBeInTheDocument();
-    expect(screen.getByText(wholeText("26 of 30 days recorded · 15 receipts"))).toBeInTheDocument();
-    expect(screen.getByText("Month-to-date · still running")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "September" })).toBeInTheDocument();
+    expect(screen.getByText("Spent so far")).toBeInTheDocument();
+    expect(screen.getByText("1,235")).toBeInTheDocument();
+    expect(screen.getByText("26 of 30 days · 15 receipts")).toBeInTheDocument();
+    expect(screen.getByText("Still running")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Next month" })).toBeDisabled();
   });
 
@@ -188,10 +223,9 @@ describe("DashboardPage", () => {
     });
     renderPage();
 
-    expect(screen.getByText(wholeText("Spent in August"))).toBeInTheDocument();
-    expect(screen.getByText(wholeText("31 of 31 days · 1 receipt"))).toBeInTheDocument();
-    expect(screen.getByText("Finalised · complete month")).toBeInTheDocument();
-    expect(screen.queryByText(/still running/)).not.toBeInTheDocument();
+    expect(screen.getByText("Spent")).toBeInTheDocument();
+    expect(screen.getByText("31 of 31 days · 1 receipt")).toBeInTheDocument();
+    expect(screen.getByText("Finalised")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Next month" }));
     expect(budgetStore.showNextMonth).toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Previous month" }));
@@ -204,33 +238,20 @@ describe("DashboardPage", () => {
     expect(screen.getByText("Server unavailable")).toBeInTheDocument();
   });
 
-  it("names the receipts held out of the total and leads to them", () => {
+  it("names the receipts held out of the total and leads to them (D3)", () => {
     budgetStore.summary = summary({ excluded_count: 2, excluded_amount: "96.4" });
     renderPage();
-
     expect(
-      screen.getByText(/2 receipts worth 96\.40 PLN are not in this total/),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Resolve them" })).toHaveAttribute(
-      "href",
-      "/receipts?status=manual_review",
-    );
+      screen.getByRole("link", { name: /2 receipts worth 96\.40 PLN sit outside this total/ }),
+    ).toHaveAttribute("href", "/receipts?status=manual_review");
   });
 
   it("speaks of a single held-out receipt in the singular", () => {
     budgetStore.summary = summary({ excluded_count: 1, excluded_amount: "201.88" });
     renderPage();
-
     expect(
-      screen.getByText(/1 receipt worth 201\.88 PLN is not in this total/),
+      screen.getByText(/1 receipt worth 201\.88 PLN sits outside this total/),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Resolve it" })).toBeInTheDocument();
-  });
-
-  it("says nothing about exclusions when every receipt is counted", () => {
-    budgetStore.summary = summary();
-    renderPage();
-    expect(screen.queryByRole("link", { name: /Resolve/ })).not.toBeInTheDocument();
   });
 
   it("lists a finished month's biggest receipts and opens one in place", () => {
@@ -244,24 +265,16 @@ describe("DashboardPage", () => {
     renderPage();
 
     expect(screen.getByRole("heading", { name: "Biggest receipts" })).toBeInTheDocument();
-    expect(screen.getByText("4 Aug · 3 items")).toBeInTheDocument();
     expect(screen.getByText("Needs your review")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "All 7" })).toHaveAttribute(
       "href",
       "/receipts?start=2026-08-01&end=2026-08-31",
     );
-
     fireEvent.click(screen.getByRole("button", { name: /PEPCO/ }));
     expect(receiptStore.fetchReceiptDetail).toHaveBeenCalledWith("pepco");
   });
 
-  it("lists a running month's latest receipts", () => {
-    budgetStore.summary = summary();
-    renderPage();
-    expect(screen.getByRole("heading", { name: "Latest receipts" })).toBeInTheDocument();
-  });
-
-  it("shows where the month went and opens a category's items for that month", () => {
+  it("shows where the month went as tiles leading to each category's items", () => {
     Object.assign(budgetStore, { year: 2026, month: 8 });
     budgetStore.summary = summary({ month: 8 });
     budgetStore.spend = [
@@ -269,41 +282,25 @@ describe("DashboardPage", () => {
     ];
     renderPage();
 
-    // The desktop breakdown and the phone's top five, one of them hidden by CSS.
-    expect(screen.getAllByRole("heading", { name: "Where it went" })).toHaveLength(2);
+    expect(screen.getByRole("heading", { name: "Where it went" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Groceries/ })).toHaveAttribute(
       "href",
       "/categories?view=all&category=groceries-id&start=2026-08-01&end=2026-08-31",
     );
-    fireEvent.click(screen.getByRole("button", { name: /Groceries/ }));
-
-    expect(screen.getByRole("status", { name: "Location" })).toHaveTextContent(
-      "/categories?view=all&category=groceries-id&start=2026-08-01&end=2026-08-31",
-    );
-  });
-
-  it("leads on to the full statistics", () => {
-    budgetStore.summary = summary();
-    budgetStore.spend = [
-      { category_id: "groceries-id", name: "Groceries", item_count: 4, total_amount: "180.50" },
-    ];
-    renderPage();
-    expect(screen.getByRole("link", { name: /Full statistics/ })).toHaveAttribute(
-      "href",
-      "/statistics",
-    );
     expect(screen.getByRole("link", { name: "All statistics" })).toHaveAttribute(
       "href",
-      "/statistics",
+      "/spending",
     );
   });
 
-  it("gives a phone the held-out receipts as one line leading to them", () => {
-    budgetStore.summary = summary({ excluded_count: 2, excluded_amount: "96.4" });
+  it("leads to the lines waiting for a category (F23.3)", () => {
+    budgetStore.summary = summary();
+    categoriesStore.reviewCount = 3;
     renderPage();
-    expect(
-      screen.getByRole("link", { name: /2 receipts worth 96\.40 PLN sits? outside this total/ }),
-    ).toHaveAttribute("href", "/receipts?status=manual_review");
+    expect(screen.getByRole("link", { name: /3 lines need a category/ })).toHaveAttribute(
+      "href",
+      "/categories",
+    );
   });
 
   it("shows the receipt dialog over the month once one is picked", () => {
@@ -314,45 +311,221 @@ describe("DashboardPage", () => {
   });
 });
 
-describe("DashboardPage — the month against its limit (D7)", () => {
+describe("DashboardPage — what is left (D7, F23.3)", () => {
   beforeEach(() => {
     Object.assign(budgetStore, { error: null, isLoading: false, receipts: [], spend: [] });
+    incomeStore.month = null;
+    incomeStore.balance = null;
+    incomeStore.pending = [];
+    authStore.user.payday = null;
   });
 
-  it("reads as a share of the limit, with what is left", () => {
-    budgetStore.summary = summary({
-      total: "1800",
-      budget_limit: "3000.00",
-      limit_percent: 60,
-      limit_remaining: "1200.00",
-    });
+  it("shows a payslip that came by email and confirms it as checked", async () => {
+    budgetStore.summary = summary();
+    incomeStore.pending = [
+      { id: "p1", amount: "7607.55", received_on: "2026-10-10", source: "ACME", kind: "salary" },
+    ];
     renderPage();
 
-    expect(screen.getByText(wholeText("60% of your 3,000.00 PLN limit"))).toBeInTheDocument();
-    expect(screen.getByText(wholeText("1,200.00 PLN left"))).toBeInTheDocument();
-    expect(screen.queryByText(/the mark is where the limit sat/)).not.toBeInTheDocument();
+    expect(screen.getByText("Came in by email · ACME")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Check and add" }));
+    expect(screen.getByLabelText("Amount")).toHaveValue("7607.55");
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await vi.waitFor(() => {
+      expect(incomeStore.confirmPending).toHaveBeenCalledWith(
+        "p1",
+        expect.objectContaining({ amount: "7607.55", source: "ACME", channel: "document" }),
+      );
+    });
   });
 
-  it("reads past 100% in the error tone and says by how much, never clamping", () => {
-    budgetStore.summary = summary({
-      total: "3248",
-      is_complete: true,
-      budget_limit: "3000.00",
-      limit_percent: 108,
-      limit_remaining: "-248.00",
-    });
+  it("dismisses a pending income without adding it", () => {
+    budgetStore.summary = summary();
+    incomeStore.pending = [
+      { id: "p1", amount: "10.00", received_on: null, source: null, kind: "other" },
+    ];
     renderPage();
 
-    const share = screen.getByText(wholeText("108% of your 3,000.00 PLN limit"));
-    expect(share).toHaveClass("text-error");
-    expect(screen.getByText(wholeText("Over by 248.00 PLN"))).toHaveClass("text-error");
-    expect(screen.getByText(/the mark is where the limit sat/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    expect(incomeStore.dismissPending).toHaveBeenCalledWith("p1");
   });
 
-  it("says nothing of a limit the user has not set", () => {
+  it("asks for income when the balance has run out, and records what came in today", async () => {
+    budgetStore.summary = summary();
+    incomeStore.balance = { balance: "-120.00", since: "2026-09-01" };
+    renderPage();
+
+    expect(screen.getByText("Looks like money came in that isn't here")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Add income" }));
+    fireEvent.change(screen.getByLabelText("Received today"), { target: { value: "500" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await vi.waitFor(() => {
+      expect(incomeStore.receive).toHaveBeenCalledWith(
+        { amount: "500", source: "Added on Home", kind: "other" },
+        "2026-09-26",
+        { year: 2026, month: 9 },
+      );
+    });
+  });
+
+  it("offers to set the balance again when it has run out", () => {
+    budgetStore.summary = summary();
+    incomeStore.balance = { balance: "0.00", since: "2026-09-01" };
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "Correct the balance" }));
+    expect(screen.getByLabelText("What you have today")).toBeInTheDocument();
+  });
+
+  it("on payday with nothing entered, records the usual salary in one tap", async () => {
+    budgetStore.summary = summary();
+    authStore.user.payday = 10;
+    incomeStore.month = { total: "6800.00", entered: false, entries: [], regular: [] };
+    renderPage();
+
+    expect(screen.getByText("Has your salary arrived?")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Yes, add it" }));
+
+    await vi.waitFor(() => {
+      expect(incomeStore.receive).toHaveBeenCalledWith(
+        { amount: "6800.00", source: "Salary", kind: "salary" },
+        "2026-09-26",
+        { year: 2026, month: 9 },
+      );
+    });
+  });
+
+  it("does not ask about the salary once the month has income entered", () => {
+    budgetStore.summary = summary();
+    authStore.user.payday = 10;
+    incomeStore.month = { total: "6800.00", entered: true, entries: [], regular: [] };
+    renderPage();
+
+    expect(screen.queryByText("Has your salary arrived?")).toBeNull();
+  });
+
+  it("reads what is left of the budget, and what was spent on a tap", () => {
+    budgetStore.summary = summary({ total: "1800", budget_limit: "3000.00" });
+    renderPage();
+
+    expect(screen.getByText("left of your budget")).toBeInTheDocument();
+    expect(screen.getByText("1,200")).toBeInTheDocument();
+    expect(screen.getByText("3,000 PLN")).toBeInTheDocument();
+    // 1 200 left over the 5 days that remain of a 30-day month on day 26.
+    expect(screen.getByText("240 PLN a day")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Tap for the next view/ }));
+    expect(screen.getByText("1,800")).toBeInTheDocument();
+  });
+
+  it("moves the ring from the budget to the income to the categories, a tap at a time", () => {
+    budgetStore.summary = summary({ total: "1800", budget_limit: "3000.00" });
+    budgetStore.spend = [
+      { category_id: "g", name: "Groceries", item_count: 4, total_amount: "1800.00" },
+    ];
+    incomeStore.month = { total: "6800.00", entered: true, entries: [], regular: [] };
+    renderPage();
+
+    expect(screen.getByText("left of your budget")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Tap for the next view/ }));
+    expect(screen.getByText("left of what came in")).toBeInTheDocument();
+    expect(screen.getByText("5,000")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Tap for the next view/ }));
+    expect(screen.getByRole("img", { name: /by category/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Tap for the next view/ }));
+    expect(screen.getByText("left of your budget")).toBeInTheDocument();
+  });
+
+  it("measures what is left against income after tax for one who pays their own", () => {
+    budgetStore.summary = summary({ total: "1800" });
+    incomeStore.month = {
+      total: "6800.00",
+      entered: true,
+      entries: [],
+      taxes: "1800.00",
+      net: "5000.00",
+    };
+    renderPage();
+
+    expect(screen.getByText("Income · after tax")).toBeInTheDocument();
+    expect(screen.getByText("5,000 PLN")).toBeInTheDocument();
+    expect(screen.getByText("3,200")).toBeInTheDocument();
+  });
+
+  it("takes the month's bills off what came in before what was spent", () => {
+    budgetStore.summary = summary({ total: "1800" });
+    incomeStore.month = {
+      total: "6800.00",
+      entered: true,
+      entries: [],
+      regular: [],
+      bills_total: "3000.00",
+    };
+    renderPage();
+
+    expect(screen.getByText("left of what came in")).toBeInTheDocument();
+    expect(screen.getByText("2,000")).toBeInTheDocument();
+  });
+
+  it("says by how much a month went over, never clamping", () => {
+    budgetStore.summary = summary({ total: "3248", is_complete: true, budget_limit: "3000.00" });
+    renderPage();
+    expect(screen.getByText("over budget")).toBeInTheDocument();
+    expect(screen.getByText("248")).toBeInTheDocument();
+  });
+
+  it("measures against the income when there is no budget, marking the usual one", () => {
+    budgetStore.summary = summary({ total: "1800" });
+    incomeStore.month = { total: "6800.00", entered: false, entries: [], regular: [] };
+    renderPage();
+    expect(screen.getByText("left of what came in")).toBeInTheDocument();
+    expect(screen.getByText("5,000")).toBeInTheDocument();
+    expect(screen.getByText("Income · usual")).toBeInTheDocument();
+  });
+
+  it("changes the month's income in place", async () => {
     budgetStore.summary = summary();
     renderPage();
-    expect(screen.queryByText(/limit/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Income/ }));
+    fireEvent.change(screen.getByLabelText("What came in"), { target: { value: "6 200,50" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await vi.waitFor(() => {
+      expect(incomeStore.setMonthTotal).toHaveBeenCalledWith(2026, 9, "6200.50", "Salary");
+    });
+  });
+
+  it("asks for what is on the accounts now, not income, and keeps it as the balance's start", async () => {
+    budgetStore.summary = summary();
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /Add what you have now/ }));
+    expect(screen.getByText(/Not your income/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("What you have today"), { target: { value: "5000" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await vi.waitFor(() => {
+      expect(profileStore.saveQuietly).toHaveBeenCalledWith({
+        starting_balance: "5000",
+        balance_since: "2026-09-26",
+      });
+    });
+  });
+
+  it("changes the budget in place, an empty one removing it", async () => {
+    budgetStore.summary = summary({ budget_limit: "3000.00" });
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /Budget/ }));
+    fireEvent.change(screen.getByLabelText("Budget"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await vi.waitFor(() => {
+      expect(profileStore.saveQuietly).toHaveBeenCalledWith({ budget_limit: null });
+    });
   });
 });
 

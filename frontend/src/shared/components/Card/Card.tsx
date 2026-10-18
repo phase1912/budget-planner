@@ -7,13 +7,15 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, variant = "default", flush = false, children, ...props }, ref) => {
-    const bgClass = variant === "surface" ? "bg-surface shadow-card" : "bg-background";
+    // Design v2: cards are flat on the palette's ground, the same surface either way;
+    // `variant` stays for callers, a dialog's inset card being the only other use.
+    const bgClass = variant === "surface" ? "bg-surface" : "bg-surface";
     const overflowClass = flush ? "overflow-hidden" : "";
 
     return (
       <div
         ref={ref}
-        className={`border border-border rounded-card ${bgClass} ${overflowClass} ${className ?? ""}`}
+        className={`on-surface rounded-card ${bgClass} ${overflowClass} ${className ?? ""}`}
         {...props}
       >
         {children}
@@ -27,7 +29,7 @@ export const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={`bg-surface border-b border-border px-4.5 py-3.5 text-xl font-semibold ${className ?? ""}`}
+      className={`bg-surface border-b border-border px-4.5 py-4 text-xl font-extrabold ${className ?? ""}`}
       {...props}
     />
   ),

@@ -81,5 +81,75 @@
     "loading": "Loading the household's month…"
   },
   "inMonth": " in {{month}}",
-  "recorded": " recorded"
+  "recorded": " recorded",
+  "hero": {
+    "label": "This month",
+    "ring": "Spent {{spent}} of {{of}} {{currency}}",
+    "leftOfBudget": "left of your budget",
+    "leftOfIncome": "left of what came in",
+    "over": "over budget",
+    "income": "Income",
+    "incomeUsual": "Income · usual",
+    "budget": "Budget",
+    "add": "Add",
+    "set": "Set",
+    "daysLeft_one": "{{count}} day left",
+    "daysLeft_other": "{{count}} days left",
+    "perDay": "{{amount}} {{currency}} a day",
+    "kept": "Kept",
+    "overIncome": "more than came in",
+    "ringIncome": "Spent {{spent}} of the {{of}} {{currency}} that came in",
+    "ringCategories": "Spent {{spent}} {{currency}}, by category",
+    "next": "Tap for the next view",
+    "settings": "Settings",
+    "incomeNet": "Income · after tax"
+  },
+  "review_one": "{{count}} line needs a category",
+  "review_other": "{{count}} lines need a category",
+  "edit": {
+    "incomeTitle": "Income in {{month}}",
+    "incomeLabel": "What came in",
+    "incomeHint": "Several sums this month? Add each in Plan.",
+    "incomeSource": "Salary",
+    "incomeMany": "This month has several entries: change them in Plan.",
+    "budgetTitle": "Monthly budget",
+    "budgetLabel": "Budget",
+    "budgetHint": "Leave it empty to have no budget."
+  },
+  "balance": {
+    "title": "On your accounts",
+    "add": "Add what you have now",
+    "since": "counted from {{date}}",
+    "editTitle": "Money on your accounts",
+    "editLabel": "What you have today",
+    "editHint": "Not your income: the money on your cards and accounts right now. From today it goes up with income and down with every purchase.",
+    "emptyTitle": "Looks like money came in that isn't here",
+    "emptyBody": "{{amount}} {{currency}} on your accounts by our count. Add what came in, or set what you have now.",
+    "addIncome": "Add income",
+    "correct": "Correct the balance",
+    "forTaxes": "of which ~{{amount}} {{currency}} for taxes"
+  },
+  "insight": {
+    "dearer": "{{name}} is {{percent}}% dearer",
+    "cheaper": "{{name}} is {{percent}}% cheaper"
+  },
+  "reviewShort_one": "line needs a category",
+  "reviewShort_other": "lines need a category",
+  "received": {
+    "title": "Money that came in",
+    "label": "Received today",
+    "hint": "It goes into this month's income and the balance.",
+    "source": "Added on Home"
+  },
+  "payday": {
+    "question": "Has your salary arrived?",
+    "yes": "Yes, add it",
+    "other": "Another amount"
+  },
+  "pendingIncome": {
+    "title": "Came in by email",
+    "noAmount": "Amount not read",
+    "review": "Check and add",
+    "dismiss": "Dismiss"
+  }
 }

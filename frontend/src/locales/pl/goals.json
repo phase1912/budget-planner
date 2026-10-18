@@ -130,5 +130,57 @@
     "left": " · zostało {{left}}",
     "estimate": "Szacunek: jeśli utrzymasz to samo dzienne tempo, {{month}} skończy się na około <b>{{projected}}</b>, {{margin}} poniżej limitu. To prognoza, nie obietnica: jedne duże zakupy mogą ją zmienić.",
     "early": "To dopiero dzień {{day}} z {{days}}, więc szacunek jest jeszcze przybliżony."
-  }
+  },
+  "pick": {
+    "title": "Czego chcesz?",
+    "savings_target": {
+      "title": "Odłożyć na coś",
+      "sub": "Podróż, auto, poduszka"
+    },
+    "category_reduction": {
+      "title": "Wydawać mniej na…",
+      "sub": "Jedzenie na mieście, paliwo, nawyk"
+    },
+    "spending_ceiling": {
+      "title": "Zmieścić miesiąc w…",
+      "sub": "Jedna kwota na wszystko"
+    },
+    "lifestyle": {
+      "title": "Kupować lepiej",
+      "sub": "Mniej słodyczy, więcej owoców — zobaczymy w paragonach"
+    }
+  },
+  "check": {
+    "run": "Sprawdź",
+    "checking": "Porównujemy z Twoimi miesiącami…",
+    "doable": "W zasięgu",
+    "stretch": "Trzeba się postarać",
+    "unknown": "Na razie nie do sprawdzenia",
+    "doableBody": {
+      "savings_target": "Zwykle na koniec miesiąca zostaje Ci około {{usual}} {{currency}}.",
+      "spending_ceiling": "Twoje miesiące zwykle wychodzą około {{usual}} {{currency}}.",
+      "category_reduction": "Zwykle wydajesz tam około {{usual}} {{currency}} miesięcznie."
+    },
+    "stretchBody": {
+      "savings_target": "Zwykle na koniec miesiąca zostaje około {{usual}} {{currency}} — brakuje {{gap}} {{currency}}.",
+      "spending_ceiling": "Twoje miesiące zwykle wychodzą około {{usual}} {{currency}} — o {{gap}} {{currency}} więcej.",
+      "category_reduction": "Zwykle wydajesz tam około {{usual}} {{currency}} miesięcznie — trzeba ograniczyć o {{gap}} {{currency}}."
+    },
+    "why": {
+      "no_history": "Nie ma jeszcze paragonów z ostatnich miesięcy do porównania. Cel można zacząć i tak.",
+      "no_income": "Dodaj zwykły dochód w ustawieniach, a cel oszczędnościowy da się sprawdzić. Zacząć można i tak."
+    },
+    "sources": "Skąd mogą się wziąć pieniądze",
+    "source": "{{name}} — trochę mniej",
+    "sourceMeta": "Teraz około {{monthly}} {{currency}} miesięcznie",
+    "cut": "−{{amount}} {{currency}}",
+    "start": "Zacznij cel",
+    "change": "Zmień kwotę",
+    "basis_one": "Na podstawie {{count}} ostatniego miesiąca",
+    "basis_few": "Na podstawie {{count}} ostatnich miesięcy",
+    "basis_many": "Na podstawie {{count}} ostatnich miesięcy",
+    "basis_other": "Na podstawie {{count}} ostatniego miesiąca",
+    "covers": "Razem −{{covered}} z {{gap}} {{currency}} miesięcznie"
+  },
+  "perMonth": "{{currency}} miesięcznie"
 }

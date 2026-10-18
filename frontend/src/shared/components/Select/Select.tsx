@@ -10,7 +10,7 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
 function borderClass(error: string | undefined, tone: SelectProps["tone"]): string {
   if (error) return "border-error text-foreground";
   if (tone === "warning") return "border-tone-warning-border text-tone-warning-text";
-  return "border-border text-foreground";
+  return "border-transparent text-foreground";
 }
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
@@ -28,9 +28,9 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         <select
           ref={ref}
           id={selectId}
-          className={`px-3 py-2.75 text-lg font-normal border rounded-control bg-background transition-shadow appearance-none
-            focus:outline-none focus:border-primary focus:shadow-[var(--ring-primary)]
-            disabled:bg-muted disabled:text-muted-foreground
+          className={`px-3 py-2.75 text-lg font-normal min-h-12 border-2 rounded-control control-fill transition-shadow appearance-none
+            focus:outline-none focus:border-primary focus:shadow-none
+            disabled:opacity-60 disabled:text-muted-foreground
             ${borderClass(error, tone)}
             ${className ?? ""}
           `}

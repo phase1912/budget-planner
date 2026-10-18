@@ -102,10 +102,12 @@ class ProductPurchases:
 
 @dataclass
 class MonthPurchases:
-    """The selection's purchases in one calendar month."""
+    """The selection's purchases in one calendar month; `by_product` is what each product
+    cost in it, for a column stacked by product (explore.html)."""
 
     month: date
     amounts: Amounts
+    by_product: dict[uuid.UUID, Decimal] = field(default_factory=dict)
 
 
 @dataclass
@@ -231,6 +233,9 @@ def explore(
         month = months.get(purchase.day.replace(day=1))
         if month is not None:
             month.amounts.add(purchase, product)
+            month.by_product[product.id] = (
+                month.by_product.get(product.id, Decimal(0)) + purchase.total
+            )
         amounts, points = per_product[product.id]
         amounts.add(purchase, product)
         points.append(

@@ -3,9 +3,9 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-23 epics · 148 features · 328 tasks written so far.
+25 epics · 167 features · 328 tasks written so far.
 
-20 epics are in the diploma project's scope; 3 are planned but out of it.
+22 epics are in the diploma project's scope; 3 are planned but out of it.
 
 | Epic | Title | BRD | Features | Groomed | Phase | Scope |
 |---|---|---|---|---|---|---|
@@ -32,6 +32,8 @@
 | E20 | Trips | — | 5 | yes | 2 | Diploma |
 | E21 | Voice and Chat Assistant | — | 6 | yes | 2 | Diploma |
 | E22 | Android App | — | 3 | yes | 2 | Diploma |
+| E23 | Improvements | — | 18 | no | 2 | Diploma |
+| E24 | Bugfixes | — | 1 | no | 2 | Diploma |
 
 ---
 
@@ -1722,4 +1724,172 @@ After the first upload by hand, every merge to main builds a signed app bundle a
 
 - **F22.3.1** Release identity in Terraform — The publishing service account and its Workload Identity binding for the repository, in infra/terraform; the steps to add it to the Play Console and to store the upload key in GitHub documented.
 - **F22.3.2** Build and release workflow — A GitHub Actions workflow building the web client and the signed AAB (versionCode from the run number), uploading it to the internal track on merge to main and to production on a manual run; the release documentation updated.
+
+---
+
+## E23 — Improvements
+
+**BRD sections:** — · **Phase:** 2 · **Scope:** Diploma
+
+What using the product feels like, after competitors were compared on the App Store (Fleur, Bloomly, Spendee, Buddy, Copilot; Billy, the Polish line-item app, at 3.7 stars): the features were stronger than theirs, the screens weaker. One branch, improvements, built in one go from the mockups at https://claude.ai/artifact/J4TvghztEyxSjmfyNWXqet — a new navigation, palettes the user chooses, colourful interactive charts, a first sign-in that sets things up, money coming in as well as going out, and a manual discount on a receipt. No issue per change: this epic lists what was improved.
+
+### F23.1 — Palettes and chart colours
+
+*Requirements: —*
+
+Six palettes — Midnight (the default, today's dark), Daylight (today's light), Rose, Lavender, Sage and Ocean — each with its own series for charts, kept on the account so every device shows the one chosen, with "dark at night" following the phone.
+
+**Demonstrated by:** In Settings tap Rose: every screen and chart turns rose at once, and stays so after signing in on another browser.
+
+### F23.2 — Navigation by what people do
+
+*Requirements: —* · *Blocked by: F23.1*
+
+Home · Spending · ＋ · Products · Plan in a bottom bar on a phone and a side menu on a tablet and desktop; Receipts becomes the history behind "All receipts", categories to review become a card on Home, trips move into Plan and Settings. Home is «Головна» in Ukrainian and «Start» in Polish.
+
+**Demonstrated by:** On a phone reach every former screen from the five tabs; on a desktop the same from the side menu.
+
+### F23.3 — Home
+
+*Requirements: —* · *Blocked by: F23.2*
+
+A ring with what is left to spend this month, income and budget editable in place, the categories as coloured tiles, the price change worth knowing, and the latest purchases.
+
+**Demonstrated by:** Open the app: what is left this month is the first thing read; tap Income, change it, and the ring follows.
+
+### F23.4 — Spending
+
+*Requirements: —* · *Blocked by: F23.2*
+
+An interactive ring by category with last month beside each, spending by day, and the way into every receipt.
+
+**Demonstrated by:** Tap Eating out: the ring highlights it and its total shows in the middle.
+
+### F23.5 — Products
+
+*Requirements: —* · *Blocked by: F23.2*
+
+Price changes across everything bought, what is bought most, which shop the usual basket is cheapest in, and exploring several products together — today's exploration, kept whole, in the new look.
+
+**Demonstrated by:** Open Products, see the milk that got dearer, open Explore, pick milk and coffee and read what they cost by month.
+
+### F23.6 — Adding a receipt
+
+*Requirements: —* · *Blocked by: F23.2*
+
+＋ offers the camera where there is one, photos and PDFs, the forwarding address, and dropping a file on a desktop; reading shows its progress, and the review is the receipt's lines in their categories.
+
+**Demonstrated by:** On a phone, ＋ → Take a photo opens the camera; on a desktop drop a PDF on the page.
+
+### F23.7 — A discount the receipt does not show
+
+*Requirements: —* · *Blocked by: F23.6*
+
+Paid 69 of the 169 printed — a gift card, a voucher, a deal at the till: the user enters the discount on the receipt, it is spread over its lines in proportion (or only over the lines chosen), the month, categories and statistics count what was paid, and price history keeps the shelf price.
+
+**Demonstrated by:** Add a 100 zł discount to a 169 zł receipt: the month grows by 69 zł, and milk's price history is unchanged.
+
+### F23.8 — Settings
+
+*Requirements: —* · *Blocked by: F23.1*
+
+Preferences become Settings: the palette, money (currency, income, payday), language, household, work trips, account and security, and the user's data, in sections that read at a glance.
+
+**Demonstrated by:** Open Settings from the avatar and change the palette, the language and the income.
+
+### F23.9 — First sign-in
+
+*Requirements: —* · *Blocked by: F23.1, F23.10*
+
+Once, after the first sign-in, and skippable: language and currency guessed from the browser, the palette, the usual monthly income and payday, and two-factor sign-in. Skipping keeps the defaults.
+
+**Demonstrated by:** Register in a Polish browser: Polski and PLN are chosen, pick Lavender, and the app opens in it; sign in elsewhere and the onboarding does not come back.
+
+### F23.10 — Money coming in
+
+*Requirements: —*
+
+Income as entries — when, how much, from what — summed per month, the usual monthly income standing in until the month's arrive; changed in place on Home and in Plan. Months stay calendar months; payday is kept for later.
+
+**Demonstrated by:** Add the salary on Home, see what is left grow; next month it shows the usual income until this month's arrives.
+
+### F23.11 — Income from a document
+
+*Requirements: —* · *Blocked by: F23.10*
+
+A payslip or transfer confirmation sent through ＋ or by email is recognised as income, not a receipt, and shown as a card to confirm before anything is written; only the amount, the date and the source are kept, the file deleted once read.
+
+**Demonstrated by:** Forward a payslip PDF: the card says "Income: 6 200 zł from ACME, 10 October"; save it and Home counts it.
+
+### F23.12 — Holidays and business trips apart
+
+*Requirements: —* · *Blocked by: F23.2*
+
+Personal trips are Holidays in Plan, with their budget and day-by-day spending; business trips, with per diem and the settlement, appear once "I travel for work" is on in Settings.
+
+**Demonstrated by:** Plan shows the holiday; turn on work trips in Settings and the business trip list appears.
+
+### F23.13 — Goals that are easy to set
+
+*Requirements: —* · *Blocked by: F23.2*
+
+A new goal starts from four large choices instead of selects, asks name, amount and date with buttons, and is checked before it is saved — doable, or a stretch with where the money could come from.
+
+**Demonstrated by:** Ask for 8 000 by June: "A stretch", with two changes that close the gap.
+
+### F23.14 — Balance
+
+*Requirements: —* · *Blocked by: F23.10*
+
+What the user has now: a starting balance entered once — in the first sign-in or in Settings, explained as "money on your accounts today", not income — that then moves by itself, up with every income entered or read, down with every purchase counted, shown on Home.
+
+**Demonstrated by:** Start with 5 000 zł; store a 169 zł receipt and the balance reads 4 831 zł; add the salary and it grows by it.
+
+### F23.15 — Assets and savings
+
+*Requirements: —* · *Blocked by: F23.14*
+
+Later, not in this branch: the third of "income · spending · assets": what else the user owns or puts aside — a savings pot, a deposit, money on another card, a car — beside the balance for a picture of everything they have, behind two-factor sign-in; whether and how it may be kept decided first (ADR-0020).
+
+**Demonstrated by:** Add a 10 000 zł deposit and see it beside the balance.
+
+### F23.16 — Paying one's own taxes
+
+*Requirements: —* · *Blocked by: F23.10, F23.14*
+
+For a sole trader or contractor, whose income comes before tax: a switch in Settings with their own rate and an optional fixed sum a month; each income says whether the tax comes out of it, "left to spend" counts what is theirs to keep, and taxes paid leave the balance without counting as spending.
+
+**Demonstrated by:** Set 12 % and 1 600 zł a month, see 20 000 zł earned leave 16 000 zł to live on, and the balance say how much of it is still owed in taxes.
+
+### F23.17 — Regular incomes
+
+*Requirements: —* · *Blocked by: F23.10, F23.14*
+
+A salary, a side job, a pension — set once in Settings or the first-sign-in setup, counted in every month by themselves, the balance gaining each on its day; anything that comes on top is added by hand through ＋ or from a document.
+
+**Demonstrated by:** Add a 10 000 zł salary on the 10th and a 1 000 zł side job; next month both count without entering anything, and 500 zł added on top joins them.
+
+### F23.18 — Regular bills
+
+*Requirements: —* · *Blocked by: F23.17*
+
+Rent, subscriptions, a loan — set once, gone every month by themselves: off what is left on Home and in Plan and off the balance on their day, never counted as purchases in Spending's figures, and listed there in their own section.
+
+**Demonstrated by:** Add rent of 3 000 zł on the 5th; Plan shows spent · bills · free, and the balance drops by 3 000 on the 5th of each month.
+
+---
+
+## E24 — Bugfixes
+
+**BRD sections:** — · **Phase:** 2 · **Scope:** Diploma
+
+Bugs found while using the product, fixed on a bugfix branch without an issue each; every batch is listed here so the board shows what was fixed and when.
+
+### F24.1 — Fixes of 15–16 October 2026
+
+*Requirements: —*
+
+Product search and selection, product names carrying a date, a saved selection offering Save again, the receipts page's default period and order, and endless loading on a phone after the server's cold start (PR #519).
+
+**Demonstrated by:** No screen of its own — each fix is seen where the bug was.
 

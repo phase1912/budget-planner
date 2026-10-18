@@ -14,6 +14,7 @@ const queueItem: ReviewQueueItem = {
   quantity: "1",
   unit_price: "20.70",
   total_price: "20.70",
+  discount_share: "0.00",
   category_id: "cat-uncat",
   category: { id: "cat-uncat", name: "Uncategorized" },
   category_confidence: 40,

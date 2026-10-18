@@ -178,3 +178,20 @@ def test_price_signals_name_cheaper_shops_and_real_rises_most_saving_first() -> 
     assert chips.monthly_items == Decimal("1.0")
     assert croutons.cheaper is None
     assert croutons.rise is not None and croutons.rise.percent == Decimal("20.0")
+
+
+def test_each_month_says_what_each_product_cost_in_it() -> None:
+    """For a column stacked by product (explore.html)."""
+    result = explore(
+        [CHIPS, CROUTONS],
+        [
+            _bought(CHIPS, date(2026, 9, 2), "Biedronka", "6.99"),
+            _bought(CHIPS, date(2026, 10, 2), "Biedronka", "6.99", "2"),
+            _bought(CROUTONS, date(2026, 10, 3), "Lidl", "3.49"),
+        ],
+        (date(2026, 9, 1), date(2026, 10, 31)),
+    )
+
+    september, october = result.months
+    assert september.by_product == {CHIPS.id: Decimal("6.99")}
+    assert october.by_product == {CHIPS.id: Decimal("13.98"), CROUTONS.id: Decimal("3.49")}

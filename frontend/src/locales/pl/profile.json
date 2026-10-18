@@ -1,6 +1,5 @@
 {
   "title": "Ustawienia",
-  "subtitle": "Ustawienia konta, w których wyrażona jest każda kwota w aplikacji.",
   "money": {
     "title": "Pieniądze",
     "currency": "Waluta",
@@ -9,7 +8,23 @@
     "recorded": "Paragonów w {{currency}}: {{count}}",
     "limit": "Miesięczny limit budżetu",
     "limitHint": "Opcjonalnie. Gdy jest ustawiony, wydatki są też pokazywane jako jego procent. Zmiana wpływa tylko na prezentację — zamknięte miesiące nigdy nie są przepisywane.",
-    "removeLimit": "Usuń limit"
+    "removeLimit": "Usuń limit",
+    "income": "Zwykły miesięczny dochód",
+    "payday": "Dzień wypłaty",
+    "noPayday": "Nie ustawiono",
+    "lastDay": "Ostatni dzień miesiąca",
+    "none": "Nie ustawiono",
+    "hint": "Dochód wpisany za miesiąc zastępuje tam zwykłą kwotę. Miesiące nadal zaczynają się 1-go.",
+    "balance": "Na kontach",
+    "balanceLabel": "Ile masz dzisiaj",
+    "balanceHint": "To nie dochód, tylko pieniądze na Twoich kartach i kontach w tej chwili. Od dziś rośnie z wpływami i maleje z każdym zakupem.",
+    "taxes": "Sam płacę podatki",
+    "taxesHint": "Dochód wpływa przed podatkiem, a płacisz go sam — JDG, B2B, umowa.",
+    "taxRate": "Podatek od dochodu",
+    "taxRateHint": "Twoja stawka od każdego opodatkowanego dochodu: PIT, ryczałt, składka zdrowotna razem. Prezenty i sprzedane rzeczy nie są opodatkowane, chyba że zaznaczysz.",
+    "taxFixed": "Stała kwota co miesiąc",
+    "taxFixedHint": "Płacona raz w miesiącu bez względu na wpływy — ZUS, ryczałt kwotowy. Puste, jeśli brak.",
+    "percent": "{{value}} %"
   },
   "account": {
     "title": "Konto",
@@ -31,7 +46,7 @@
   },
   "discard": "Odrzuć",
   "saving": "Zapisujemy…",
-  "save": "Zapisz ustawienia",
+  "save": "Zapisz",
   "forwarding": {
     "title": "Paragony e-mailem",
     "label": "Twój adres do przekazywania",
@@ -133,5 +148,77 @@
     "offBody": "Logowanie znów będzie prosić tylko o hasło.",
     "password": "Hasło",
     "codeOrRecovery": "Kod z aplikacji lub kod odzyskiwania"
+  },
+  "appearance": {
+    "title": "Wygląd",
+    "palette": "Paleta",
+    "darkAtNight": "Ciemny w nocy",
+    "darkAtNightHint": "Midnight, gdy urządzenie jest w trybie ciemnym.",
+    "palettes": {
+      "midnight": "Midnight",
+      "daylight": "Daylight",
+      "rose": "Rose",
+      "lavender": "Lavender",
+      "sage": "Sage",
+      "ocean": "Ocean"
+    }
+  },
+  "work": {
+    "title": "Podróże służbowe",
+    "label": "Jeżdżę w podróże służbowe",
+    "hint": "Pokazuje podróże służbowe: diety i rozliczenie dla pracodawcy.",
+    "open": "Otwórz podróże służbowe"
+  },
+  "back": "Na start",
+  "receiptsGroup": "Paragony",
+  "sharing": "Wspólne i praca",
+  "household": "Gospodarstwo domowe",
+  "more": "Więcej",
+  "help": "Pomoc",
+  "admin": "Panel administratora",
+  "logOut": "Wyloguj",
+  "regular": {
+    "title": "Stałe dochody",
+    "hint": "Co wpływa co miesiąc — tak, jak trafia na konto. Liczy się samo; coś ponad to dodajesz osobno.",
+    "name": "Co to jest",
+    "namePlaceholder": "Pensja",
+    "amount": "Miesięcznie, {{currency}}",
+    "day": "Wpływa",
+    "anyDay": "Dowolnego dnia",
+    "taxed": "Płacę od tego podatek",
+    "taxedShort": "z podatkiem",
+    "monthly": "co miesiąc",
+    "onDay": "{{day}}. dnia",
+    "remove": "Zakończ",
+    "cancel": "Anuluj",
+    "save": "Zapisz",
+    "add": "Dodaj kolejny",
+    "addFirst": "Dodaj stały dochód",
+    "summary_one": "{{amount}} · {{count}} dochód",
+    "summary_few": "{{amount}} · {{count}} dochody",
+    "summary_many": "{{amount}} · {{count}} dochodów",
+    "summary_other": "{{amount}} · {{count}} dochodu",
+    "none": "Na razie brak"
+  },
+  "bills": {
+    "title": "Stałe wydatki",
+    "hint": "Co schodzi co miesiąc bez paragonu — mieszkanie, subskrypcje, kredyt. Liczy się samo, jeszcze przed zakupami.",
+    "name": "Co to jest",
+    "namePlaceholder": "Mieszkanie",
+    "amount": "Miesięcznie, {{currency}}",
+    "day": "Schodzi",
+    "anyDay": "Dowolnego dnia",
+    "monthly": "co miesiąc",
+    "onDay": "{{day}}. dnia",
+    "remove": "Zakończ",
+    "cancel": "Anuluj",
+    "save": "Zapisz",
+    "add": "Dodaj kolejny",
+    "addFirst": "Dodaj stały wydatek",
+    "summary_one": "{{amount}} · {{count}} wydatek",
+    "summary_few": "{{amount}} · {{count}} wydatki",
+    "summary_many": "{{amount}} · {{count}} wydatków",
+    "summary_other": "{{amount}} · {{count}} wydatku",
+    "none": "Na razie brak"
   }
 }

@@ -87,31 +87,32 @@ export const ReceiptsPage = observer(() => {
     <div className="flex-grow flex flex-col items-center py-4 md:py-10 md:px-8">
       <div className="w-full max-w-[960px] flex flex-col gap-4 md:gap-7">
         <SectionTabs />
-        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
-          <div className="flex flex-col gap-1">
-            <h1 className="m-0 text-[24px] md:text-[28px] font-bold tracking-[-0.02em] text-foreground">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-1">
+            <h1 className="m-0 text-3xl font-extrabold tracking-[-0.02em] text-foreground">
               {t("list.title")}
             </h1>
-            <p className="m-0 text-[15px] text-muted-foreground tabular-nums">
+            <p className="m-0 text-md text-muted-foreground tabular-nums">
               {t("list.stored", { count: receiptStore.total })}
             </p>
           </div>
           {/* An export is the user's own data (N6); the household view has none to offer. */}
           {!showingHousehold && (
-            <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center">
+            <div className="flex shrink-0 items-center gap-2">
               <Button
                 variant="secondary"
                 size="sm"
-                className="min-h-11 w-full md:min-h-0 md:w-auto"
+                aria-label={t("manual.openLong")}
+                className="h-11 w-11 p-0 md:w-auto md:px-3.5"
                 onClick={() => {
                   setAddingExpense(true);
                 }}
               >
-                <PenLine size={14} aria-hidden="true" />
-                <span className="md:hidden">{t("manual.openLong")}</span>
+                <PenLine size={16} aria-hidden="true" />
                 <span className="hidden md:inline">{t("manual.open")}</span>
               </Button>
               <ExportMenu
+                compact
                 label={t("list.export")}
                 busy={Boolean(exportStore.busy.receipts)}
                 onExport={(format) => {
@@ -145,16 +146,18 @@ export const ReceiptsPage = observer(() => {
           />
         )}
 
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
           <div className="flex flex-wrap items-center gap-2.5">
             <DateFilterModal />
             <ReceiptOrderControl />
-            <StatusFilterDropdown />
-            <ChannelFilterDropdown />
+            <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-auto">
+              <StatusFilterDropdown />
+              <ChannelFilterDropdown />
+            </div>
           </div>
-          <div className="relative w-full md:w-[250px]">
+          <div className="relative w-full lg:w-[250px]">
             <svg
-              className="absolute left-3 top-[11px] text-muted-foreground pointer-events-none"
+              className="absolute left-3.5 top-4 text-muted-foreground pointer-events-none"
               width="16"
               height="16"
               viewBox="0 0 24 24"
@@ -168,7 +171,7 @@ export const ReceiptsPage = observer(() => {
               <path d="m21 21-4.3-4.3" />
             </svg>
             <Input
-              className="pl-9 py-[9px] text-[13px]"
+              className="w-full pl-10"
               type="search"
               placeholder={t("list.search")}
               aria-label={t("list.searchLabel")}

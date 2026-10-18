@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Products › Explore — v2</title>
+<!-- Design v2 reference (F23, ADR-0022): rendered from the design canvas; static, read-only. -->
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+body{margin:0}
+button{font:inherit;cursor:pointer}
+</style>
+
+<style>body{background:#e9ebf0;display:flex;justify-content:center;padding:24px 0}</style>
+</head>
+<body>
+
+
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; font-family: Manrope, system-ui, sans-serif; background: #f5f3ff; color: #251d3f; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 12px; padding: 20px 20px 8px">
+    <a href="products.html" aria-label="Back to Products" style="width: 44px; height: 44px; border-radius: 22px; background: #ffffff; color: #251d3f; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+    </a>
+    <h1 style="margin: 0; flex: 1; font-size: 22px; font-weight: 800">Explore</h1>
+    <button type="button" style="min-height: 44px; padding: 0 14px; border: 0; border-radius: 14px; background: #ebe5ff; color: #6142f5; font-weight: 800; font-size: 14px">Save set</button>
+  </div>
+
+  <div style="flex: 1; overflow: auto; padding: 8px 20px 28px; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; gap: 8px; overflow-x: auto">
+      
+        <button type="button" onclick="" style="flex-shrink: 0; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 2px solid #e4defc; background: transparent; color: #251d3f; font-weight: 700; font-size: 13px">Breakfast</button>
+      
+        <button type="button" onclick="" style="flex-shrink: 0; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 2px solid #e4defc; background: transparent; color: #251d3f; font-weight: 700; font-size: 13px">Coffee &amp; milk</button>
+      
+        <button type="button" onclick="" style="flex-shrink: 0; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 2px solid #e4defc; background: transparent; color: #251d3f; font-weight: 700; font-size: 13px">Everything</button>
+      
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 8px">
+      
+        <button type="button" onclick="" aria-pressed="true" style="display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border-radius: 999px; border: 0; background: #6d4aff26; color: #251d3f; font-weight: 700; font-size: 14px">
+          <span style="width: 10px; height: 10px; border-radius: 5px; background: #6d4aff"></span>Milk
+        </button>
+      
+        <button type="button" onclick="" aria-pressed="true" style="display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border-radius: 999px; border: 0; background: #f26b8a26; color: #251d3f; font-weight: 700; font-size: 14px">
+          <span style="width: 10px; height: 10px; border-radius: 5px; background: #f26b8a"></span>Coffee
+        </button>
+      
+        <button type="button" onclick="" aria-pressed="true" style="display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border-radius: 999px; border: 0; background: #2bb3d926; color: #251d3f; font-weight: 700; font-size: 14px">
+          <span style="width: 10px; height: 10px; border-radius: 5px; background: #2bb3d9"></span>Butter
+        </button>
+      
+        <button type="button" onclick="" aria-pressed="false" style="display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border-radius: 999px; border: 0; background: #ffffff; color: #251d3f; font-weight: 700; font-size: 14px">
+          <span style="width: 10px; height: 10px; border-radius: 5px; background: #e4defc"></span>Bread
+        </button>
+      
+        <button type="button" onclick="" aria-pressed="false" style="display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border-radius: 999px; border: 0; background: #ffffff; color: #251d3f; font-weight: 700; font-size: 14px">
+          <span style="width: 10px; height: 10px; border-radius: 5px; background: #e4defc"></span>Eggs
+        </button>
+      
+      <button type="button" style="min-height: 40px; padding: 0 12px; border-radius: 999px; border: 2px dashed #e4defc; background: transparent; color: #625a84; font-weight: 700; font-size: 14px">+ Add product</button>
+    </div>
+
+    <div role="group" aria-label="Period" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 16px; background: #ffffff">
+      
+        <button type="button" onclick="" style="min-height: 40px; border: 0; border-radius: 12px; background: transparent; color: #625a84; font-weight: 700; font-size: 13px">Month</button>
+      
+        <button type="button" onclick="" style="min-height: 40px; border: 0; border-radius: 12px; background: transparent; color: #625a84; font-weight: 700; font-size: 13px">3 months</button>
+      
+        <button type="button" onclick="" style="min-height: 40px; border: 0; border-radius: 12px; background: #6142f5; color: #ffffff; font-weight: 700; font-size: 13px">6 months</button>
+      
+        <button type="button" onclick="" style="min-height: 40px; border: 0; border-radius: 12px; background: transparent; color: #625a84; font-weight: 700; font-size: 13px">All</button>
+      
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+      
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 14px 12px; border-radius: 18px; background: #ffffff">
+          <span style="font-size: 12px; font-weight: 700; color: #625a84">Bought</span>
+          <span style="font-size: 19px; font-weight: 800">19×</span>
+        </div>
+      
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 14px 12px; border-radius: 18px; background: #ffffff">
+          <span style="font-size: 12px; font-weight: 700; color: #625a84">Spent</span>
+          <span style="font-size: 19px; font-weight: 800">625 zł</span>
+        </div>
+      
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 14px 12px; border-radius: 18px; background: #ffffff">
+          <span style="font-size: 12px; font-weight: 700; color: #625a84">A month</span>
+          <span style="font-size: 19px; font-weight: 800">104 zł</span>
+        </div>
+      
+    </div>
+
+    <section style="display: flex; flex-direction: column; gap: 12px; padding: 18px; border-radius: 24px; background: #ffffff">
+      <div style="display: flex; justify-content: space-between; align-items: baseline">
+        <h2 style="margin: 0; font-size: 17px; font-weight: 800">By month</h2>
+        <span style="font-size: 14px; font-weight: 800; color: #6142f5">Oct · 134 zł</span>
+      </div>
+      <div style="display: flex; align-items: flex-end; gap: 10px; height: 150px">
+        
+          <button type="button" onclick="" aria-label="May: 126 zł" style="flex: 1; height: 100%; border: 0; padding: 0; background: transparent; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; opacity: 1">
+            
+              <span style="display: block; width: 100%; height: 20.149253731343283%; background: #2bb3d999; border-radius: 4px"></span>
+            
+              <span style="display: block; width: 100%; height: 48.507462686567166%; background: #f26b8a99; border-radius: 4px"></span>
+            
+              <span style="display: block; width: 100%; height: 25.37313432835821%; background: #6d4aff99; border-radius: 4px"></span>
+            
+          </button>
+        
+          <button type="button" onclick="" aria-label="Jun: 56 zł" style="flex: 1; height: 100%; border: 0; padding: 0; background: transparent; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; opacity: 1">
+            
+              <span style="display: block; width: 100%; height: 13.432835820895523%; background: #2bb3d999; border-radius: 4px"></span>
+            
+              <span style="display: block; width: 100%; height: 0%; background: #f26b8a99; border-radius: 4px"></span>
+            
+              <span style="display: block; width: 100%; height: 28.35820895522388%; background: #6d4aff99; border-radius: 4px"></span>
+            
+          </button>
+        
+          <button type="button" onclick="" aria-label="Jul: 124 zł" style="flex: 1; height: 100%; border: 0; padding: 0; background: transparent; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; opacity: 1">
+            
+              <span style="display: block; width: 100%; height: 19.402985074626866%; background: #2bb3d999; border-radius: 4px"></span>
+            
+              <span style="display: block; width: 100%; height: 50%; background: #f26b8a99; border-radius: 4px"></span>
+            
+              <span style="display: block; width: 100%; height: 23.134328358208954%; background: #6d4aff99; border-radius: 4px"></span>
+            
+          </button>
+        
+          <button type="button" onclick="" aria-label="Aug: 127 zł" style="flex: 1; height: 100%; border: 0; padding: 0; background: transparent; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; opacity: 1">
+            
+              <span style="display: block; width: 100%; height: 12.686567164179104%; background: #2bb3d999; border-radius: 4px"></span>
+            
+              <span style="display: block; width: 100%; height: 52.23880597014925%; background: #f26b8a99; border-radius: 4px"></span>
+            
+              <span style="display: block; width: 100%; height: 29.850746268656714%; background: #6d4aff99; border-radius: 4px"></span>
+            
+          </button>
+        
+          <button type="button" onclick="" aria-label="Sep: 58 zł" style="flex: 1; height: 100%; border: 0; padding: 0; background: transparent; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; opacity: 1">
+            
+              <span style="display: block; width: 100%; height: 11.940298507462686%; background: #2bb3d999; border-radius: 4px"></span>
+            
+              <span style="display: block; width: 100%; height: 0%; background: #f26b8a99; border-radius: 4px"></span>
+            
+              <span style="display: block; width: 100%; height: 31.343283582089555%; background: #6d4aff99; border-radius: 4px"></span>
+            
+          </button>
+        
+          <button type="button" onclick="" aria-label="Oct: 134 zł" style="flex: 1; height: 100%; border: 0; padding: 0; background: transparent; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; opacity: 1">
+            
+              <span style="display: block; width: 100%; height: 11.194029850746269%; background: #2bb3d9; border-radius: 4px"></span>
+            
+              <span style="display: block; width: 100%; height: 55.970149253731336%; background: #f26b8a; border-radius: 4px"></span>
+            
+              <span style="display: block; width: 100%; height: 32.83582089552239%; background: #6d4aff; border-radius: 4px"></span>
+            
+          </button>
+        
+      </div>
+      <div style="display: flex; gap: 10px; font-size: 11px; font-weight: 700; color: #625a84">
+        <span style="flex: 1; text-align: center">May</span><span style="flex: 1; text-align: center">Jun</span><span style="flex: 1; text-align: center">Jul</span><span style="flex: 1; text-align: center">Aug</span><span style="flex: 1; text-align: center">Sep</span><span style="flex: 1; text-align: center">Oct</span>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; border-radius: 24px; background: #ffffff; overflow: hidden">
+      
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #e4defc">
+          <span style="width: 10px; height: 40px; border-radius: 5px; background: #6d4aff; flex-shrink: 0"></span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0">
+            <span style="font-weight: 800; font-size: 15px">Milk</span>
+            <span style="font-size: 12px; color: #625a84">11× · 11 l · mostly Biedronka</span>
+          </span>
+          <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
+            <span style="font-weight: 800; font-size: 15px">229 zł</span>
+            <span style="font-size: 12px; font-weight: 700; color: #c0264e">▲ 14% per l</span>
+          </span>
+        </div>
+      
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #e4defc">
+          <span style="width: 10px; height: 40px; border-radius: 5px; background: #f26b8a; flex-shrink: 0"></span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0">
+            <span style="font-weight: 800; font-size: 15px">Coffee</span>
+            <span style="font-size: 12px; color: #625a84">2× · 2 kg · Carrefour, Lidl</span>
+          </span>
+          <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
+            <span style="font-weight: 800; font-size: 15px">277 zł</span>
+            <span style="font-size: 12px; font-weight: 700; color: #c0264e">▲ 15% per kg</span>
+          </span>
+        </div>
+      
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #e4defc">
+          <span style="width: 10px; height: 40px; border-radius: 5px; background: #2bb3d9; flex-shrink: 0"></span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0">
+            <span style="font-weight: 800; font-size: 15px">Butter</span>
+            <span style="font-size: 12px; color: #625a84">6× · 1,2 kg · mostly Lidl</span>
+          </span>
+          <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
+            <span style="font-weight: 800; font-size: 15px">119 zł</span>
+            <span style="font-size: 12px; font-weight: 700; color: #14845f">▼ 17% per kg</span>
+          </span>
+        </div>
+      
+    </section>
+  </div>
+</div>
+
+</body>
+</html>

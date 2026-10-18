@@ -54,7 +54,7 @@ export const WelcomePanel = observer(function WelcomePanel() {
         <section className="flex flex-col gap-3 mt-4">
           <div className="flex items-baseline justify-between">
             <h2 className="text-[17px] font-semibold">{t("welcome.account")}</h2>
-            <Link to="/profile" className="text-[14px] text-primary hover:underline">
+            <Link to="/settings" className="text-[14px] text-primary hover:underline">
               {t("welcome.edit")}
             </Link>
           </div>

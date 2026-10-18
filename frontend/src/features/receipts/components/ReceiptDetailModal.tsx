@@ -22,6 +22,7 @@ import { InlineCategoryPicker } from "@/features/categories/components/InlineCat
 import { formatPurchase } from "@/shared/purchaseDate";
 import { conversionLine } from "@/shared/exchange";
 import { useTranslation } from "react-i18next";
+import { DiscountDialog } from "./DiscountDialog";
 import { numberFormat } from "@/i18n/format";
 import { categoryName } from "@/shared/categoryName";
 import { ReceiptTripSelect } from "@/features/trips/components/ReceiptTripSelect";
@@ -47,6 +48,7 @@ export const ReceiptDetailModal = observer(() => {
   const receipt = receiptStore.receiptDetail;
   const [showPhotos, setShowPhotos] = useState(false);
   const [onlyDoubtful, setOnlyDoubtful] = useState(false);
+  const [discounting, setDiscounting] = useState(false);
 
   const handleClose = () => {
     receiptStore.clearSelection();
@@ -254,6 +256,38 @@ export const ReceiptDetailModal = observer(() => {
           </div>
         )}
         {!readOnly && <ReceiptTripSelect receipt={receipt} />}
+        {!readOnly && receipt.status === "parsed" && (
+          <button
+            type="button"
+            onClick={() => {
+              setDiscounting(true);
+            }}
+            className="mb-3 flex min-h-12 w-full items-center justify-between gap-3 rounded-control border border-dashed border-border-strong px-4 py-2.5 text-left text-md font-semibold"
+          >
+            <span>
+              {receipt.paid_discount != null
+                ? t("discount.line", {
+                    amount: formatAmount(receipt.paid_discount),
+                    paid: formatAmount(
+                      (Number(receipt.total_amount ?? 0) - Number(receipt.paid_discount)).toFixed(
+                        2,
+                      ),
+                    ),
+                  })
+                : t("discount.open")}
+            </span>
+            {receipt.paid_discount != null && (
+              <span className="text-primary">{t("discount.change")}</span>
+            )}
+          </button>
+        )}
+        {discounting && (
+          <DiscountDialog
+            onClose={() => {
+              setDiscounting(false);
+            }}
+          />
+        )}
         {!readOnly && (
           <div className="flex justify-end pb-2">
             <Button

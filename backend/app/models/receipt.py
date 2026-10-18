@@ -131,6 +131,8 @@ class Receipt(Model):
         DateTime(timezone=True), nullable=True
     )
     total_amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    # A discount the receipt does not print, taken off its lines (F23.7); None for none.
+    paid_discount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     # A receipt paid in another currency keeps what was printed and the rate it was
     # converted at; its amounts above are in the account's currency (F11.7, ADR-0016).
     # A currency with no rate means the amounts are still the printed ones, held in review.

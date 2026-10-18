@@ -1,10 +1,11 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
+from app.domain.goal_check import Unknown, Verdict
 from app.domain.goals import (
     WATCHED_ITEM_MAX_LENGTH,
     WATCHED_LINES_MAX,
@@ -71,3 +72,36 @@ class GoalRead(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class GoalCheckRequest(BaseModel):
+    """A money goal to check before it is saved (F23.13); `today` is the caller's date."""
+
+    financial_kind: FinancialKind
+    target_amount: Annotated[Amount, Field(gt=0)]
+    category_id: uuid.UUID | None = None
+    today: date | None = None
+
+
+class GoalCheckSource(BaseModel):
+    """A category the gap could come from: its monthly spend and the suggested cut."""
+
+    category_id: uuid.UUID | None
+    name: str | None
+    monthly: Decimal
+    cut: Decimal
+
+
+class GoalCheckResponse(BaseModel):
+    """The verdict: `doable`, a `stretch` with sources, or `unknown` with the reason.
+
+    `usual` is what the goal is measured against (monthly spend, the category's monthly
+    spend, or what is usually left for a savings target), over `months` recent months.
+    """
+
+    verdict: Verdict
+    usual: Decimal | None
+    gap: Decimal
+    months: int
+    sources: list[GoalCheckSource]
+    unknown: Unknown | None
