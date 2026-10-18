@@ -51,7 +51,9 @@ export function MonthHero({
   const kept = income?.net ?? income?.total;
   const earned = kept == null ? null : Number(kept);
   const afterTax = Number(income?.taxes ?? 0) > 0;
-  const base = budget ?? earned;
+  // Rent and the like go before anything is bought (F23.18).
+  const bills = Number(income?.bills_total ?? 0);
+  const base = budget ?? (earned === null ? null : earned - bills);
   const left = base === null ? null : base - spent;
   const over = left !== null && left < 0;
   const daysLeft = summary.is_complete ? 0 : summary.days_in_month - summary.days_elapsed + 1;
@@ -71,10 +73,13 @@ export function MonthHero({
     });
   }
   if (earned !== null) {
-    const rest = earned - spent;
+    const rest = earned - bills - spent;
     views.push({
       key: "income",
-      segments: [{ value: spent, color: rest < 0 ? "var(--color-error)" : "var(--cat-dining)" }],
+      segments: [
+        { value: bills, color: "var(--cat-utilities)" },
+        { value: spent, color: rest < 0 ? "var(--color-error)" : "var(--cat-dining)" },
+      ],
       max: earned,
       value: WHOLE.format(Math.abs(rest)),
       label: rest < 0 ? t("hero.overIncome") : t("hero.leftOfIncome"),

@@ -1,6 +1,6 @@
-import { CategoryIcon, Switch } from "@/shared/components";
+import { CategoryIcon, Collapsible, Switch } from "@/shared/components";
 import { useEffect, useState } from "react";
-import { CalendarX, ChevronRight, ReceiptText } from "lucide-react";
+import { CalendarX } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { Link } from "react-router-dom";
 
@@ -26,6 +26,10 @@ import { useStores } from "@/stores/StoreContext";
 import { CategoryChart } from "../components/CategoryChart";
 import { SpendingRing } from "../components/SpendingRing";
 import { DailyBars } from "../components/DailyBars";
+import { ItemsToFile, PeriodReceipts, RegularBills } from "../components/SpendingSections";
+import { ReceiptDetailModal } from "@/features/receipts/components/ReceiptDetailModal";
+import { DeleteReceiptDialog } from "@/features/receipts/components/DeleteReceiptDialog";
+import { EditReceiptDialog } from "@/features/receipts/components/EditReceiptDialog";
 import { isoDay } from "@/stores/StatisticsStore";
 import { Change } from "../components/Change";
 import { likeForLikeNote, periodLabel, periodName } from "../periodLabel";
@@ -56,7 +60,15 @@ const AMOUNT = numberFormat({
  * same figures (N6 — F7.6).
  */
 export const StatisticsPage = observer(function StatisticsPage() {
-  const { statisticsStore, authStore, exportStore, householdStore } = useStores();
+  const {
+    statisticsStore,
+    authStore,
+    exportStore,
+    householdStore,
+    receiptStore,
+    categoriesStore,
+    incomeStore,
+  } = useStores();
   const { t } = useTranslation("statistics");
   // The household's figures replace the user's own; the period controls serve both (F12.5).
   const household = householdStore.showingHousehold;
@@ -70,7 +82,9 @@ export const StatisticsPage = observer(function StatisticsPage() {
   useEffect(() => {
     void statisticsStore.load();
     void householdStore.load();
-  }, [statisticsStore, householdStore]);
+    void categoriesStore.loadReviewCount();
+    void incomeStore.loadBills();
+  }, [statisticsStore, householdStore, categoriesStore, incomeStore]);
 
   return (
     <div className="flex-grow flex flex-col items-center pb-4">
@@ -117,25 +131,28 @@ export const StatisticsPage = observer(function StatisticsPage() {
                 shortLabel: t("presets.lastMonthShort"),
               },
               {
-                value: "last_3_months",
-                label: t("presets.last3"),
-                shortLabel: t("presets.last3Short"),
+                value: "this_year",
+                label: t("presets.year"),
+                shortLabel: t("presets.yearShort"),
               },
               { value: "custom", label: t("presets.custom") },
             ]}
           />
           <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-4">
-            <DateRangeFilter
-              start={start}
-              end={end}
-              label={period}
-              allowAll={false}
-              isOpen={picking}
-              onOpenChange={setPicking}
-              onApply={(from, to) => {
-                if (from && to) void statisticsStore.chooseRange(from, to);
-              }}
-            />
+            {/* The header already names the period; the dates matter only for one's own. */}
+            {(preset === "custom" || picking) && (
+              <DateRangeFilter
+                start={start}
+                end={end}
+                label={period}
+                allowAll={false}
+                isOpen={picking}
+                onOpenChange={setPicking}
+                onApply={(from, to) => {
+                  if (from && to) void statisticsStore.chooseRange(from, to);
+                }}
+              />
+            )}
             {!household && (
               <div className="md:ml-auto md:w-80">
                 <Switch
@@ -227,16 +244,11 @@ export const StatisticsPage = observer(function StatisticsPage() {
                   />
                 )}
 
-                <details className="group rounded-card bg-surface">
-                  <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between px-4 text-lg font-bold">
-                    {t("details")}
-                    <ChevronRight
-                      size={18}
-                      aria-hidden="true"
-                      className="transition-transform group-open:rotate-90"
-                    />
-                  </summary>
-                  <div className="flex flex-col gap-4 p-3 pt-0 md:p-4 md:pt-0">
+                <PeriodReceipts />
+                <ItemsToFile />
+                <RegularBills currency={currency} />
+                <Collapsible title={t("details")}>
+                  <div className="flex flex-col gap-4">
                     {statistics.chart && statistics.categories.length > 0 && (
                       <div className={`transition-opacity ${isLoading ? "opacity-60" : ""}`}>
                         <CategoryChart
@@ -348,24 +360,14 @@ export const StatisticsPage = observer(function StatisticsPage() {
                       )}
                     </Card>
                   </div>
-                </details>
+                </Collapsible>
               </>
             )}
-            <Link
-              to={`/receipts?start=${start}&end=${end}`}
-              className="flex min-h-16 items-center gap-3.5 rounded-card bg-surface px-4 py-3 text-foreground"
-            >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-tone-primary-bg text-primary">
-                <ReceiptText size={20} aria-hidden="true" />
-              </span>
-              <span className="flex flex-1 flex-col">
-                <span className="text-lg font-bold">{t("allReceipts")}</span>
-                <span className="text-md text-muted-foreground">{t("allReceiptsHint")}</span>
-              </span>
-              <ChevronRight size={18} aria-hidden="true" />
-            </Link>
           </>
         )}
+        {receiptStore.selectedReceiptId && <ReceiptDetailModal />}
+        <DeleteReceiptDialog />
+        <EditReceiptDialog />
       </div>
     </div>
   );

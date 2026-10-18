@@ -78,7 +78,13 @@
     "remove": "Remove {{name}}",
     "perMonth": "A month",
     "mostly": "mostly {{shop}}",
-    "changePill": "{{percent}}% per {{unit}}"
+    "changePill": "{{percent}}% per {{unit}}",
+    "pickFirst": "Pick the products to explore: tick them in the list, or add them here.",
+    "month": "Month",
+    "months3": "3 months",
+    "months6": "6 months",
+    "changeUnit": "{{percent}}% per {{unit}}",
+    "go": "Explore"
   },
   "selections": {
     "title": "My selections",

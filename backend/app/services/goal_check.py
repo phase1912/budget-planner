@@ -1,6 +1,7 @@
 """Checking a money goal against the user's recent months (F23.13)."""
 
 import uuid
+from collections.abc import Sequence
 from datetime import date
 from decimal import Decimal
 
@@ -13,9 +14,11 @@ from app.domain.goal_check import GoalCheck, MonthlyCategory, check_goal_plan
 from app.domain.goals import FinancialKind
 from app.domain.periods import DateRange
 from app.models.income import Income
+from app.models.regular_expense import RegularExpense
 from app.models.user import User
 from app.repository.income_source import IncomeSourceRepository
 from app.repository.receipt import ReceiptRepository
+from app.repository.regular_expense import RegularExpenseRepository
 from app.services.income import tax_rule
 
 MONTHS_BACK = 3
@@ -60,7 +63,10 @@ class GoalCheckService:
             months=n,
             monthly_spend=spend / n if n else Decimal(0),
             categories=_averaged(categories, n),
-            monthly_income=_after_taxes(user, await self._monthly_income(user, counted)),
+            monthly_income=_less_bills(
+                _after_taxes(user, await self._monthly_income(user, counted)),
+                await RegularExpenseRepository(self.session).current(),
+            ),
         )
 
     async def _monthly_income(self, user: User, months: list[DateRange]) -> Decimal | None:
@@ -81,6 +87,11 @@ class GoalCheckService:
             )
         )
         return None if entered is None else Decimal(entered) / len(months)
+
+
+def _less_bills(income: Decimal | None, bills: Sequence[RegularExpense]) -> Decimal | None:
+    """Income less the regular bills (F23.18): rent is not money a goal can take."""
+    return None if income is None else income - sum((b.amount for b in bills), Decimal(0))
 
 
 def _after_taxes(user: User, income: Decimal | None) -> Decimal | None:

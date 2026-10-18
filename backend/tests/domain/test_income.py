@@ -6,7 +6,7 @@ from decimal import Decimal
 from app.domain.balance import Balance
 from app.domain.income import (
     IncomeKind,
-    RegularIncome,
+    Recurring,
     TaxRule,
     month_income,
     regular_since,
@@ -83,7 +83,7 @@ def test_regular_incomes_count_by_themselves_and_entries_come_on_top() -> None:
 
 
 def test_a_regular_income_runs_from_its_first_month_to_its_last() -> None:
-    salary = RegularIncome(Decimal("10000"), 10, date(2026, 10, 18), date(2026, 12, 3))
+    salary = Recurring(Decimal("10000"), 10, date(2026, 10, 18), date(2026, 12, 3))
 
     assert not salary.runs_in(date(2026, 9, 1))
     assert salary.runs_in(date(2026, 10, 1)) and salary.runs_in(date(2026, 12, 1))
@@ -91,8 +91,8 @@ def test_a_regular_income_runs_from_its_first_month_to_its_last() -> None:
 
 
 def test_the_balance_gains_a_regular_income_on_the_day_it_arrives() -> None:
-    salary = RegularIncome(Decimal("10000"), 10, date(2026, 9, 1), None)
-    pension = RegularIncome(Decimal("1000"), 31, date(2026, 9, 1), None)
+    salary = Recurring(Decimal("10000"), 10, date(2026, 9, 1), None)
+    pension = Recurring(Decimal("1000"), 31, date(2026, 9, 1), None)
 
     assert regular_since([salary, pension], date(2026, 9, 15), date(2026, 10, 9)) == Decimal("1000")
     assert regular_since([salary, pension], date(2026, 9, 15), date(2026, 10, 10)) == Decimal(

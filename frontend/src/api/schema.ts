@@ -2268,6 +2268,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/income/bills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Regular Bills
+         * @description The regular bills still running — rent, subscriptions (F23.18).
+         */
+        get: operations["regular_bills_api_v1_income_bills_get"];
+        put?: never;
+        /**
+         * Add Bill
+         * @description Start a regular bill; it counts every month from this one on.
+         */
+        post: operations["add_bill_api_v1_income_bills_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/income/bills/{bill_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Bill
+         * @description Change a regular bill; 404 if it is not the user's (N2).
+         */
+        put: operations["change_bill_api_v1_income_bills__bill_id__put"];
+        post?: never;
+        /**
+         * End Bill
+         * @description Stop a regular bill from next month; past months keep it. 404 if not the user's.
+         */
+        delete: operations["end_bill_api_v1_income_bills__bill_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/income/taxes": {
         parameters: {
             query?: never;
@@ -2580,6 +2628,8 @@ export interface components {
             spent: string | null;
             /** Taxes Paid */
             taxes_paid?: string | null;
+            /** Bills */
+            bills?: string | null;
             /** For Taxes */
             for_taxes?: string | null;
         };
@@ -3854,10 +3904,21 @@ export interface components {
              * @default []
              */
             regular: components["schemas"]["IncomeSourceRead"][];
+            /**
+             * Bills
+             * @default []
+             */
+            bills: components["schemas"]["RegularExpenseRead"][];
+            /**
+             * Bills Total
+             * @default 0.00
+             */
+            bills_total: string;
         };
         /**
          * MonthPurchasesResponse
-         * @description The selection's purchases in one calendar month (`month` is its first day).
+         * @description The selection's purchases in one calendar month (`month` is its first day), and
+         *     what each product of it cost then.
          */
         MonthPurchasesResponse: {
             /**
@@ -3866,6 +3927,11 @@ export interface components {
              */
             month: string;
             amounts: components["schemas"]["AmountsResponse"];
+            /**
+             * By Product
+             * @default []
+             */
+            by_product: components["schemas"]["ProductSpendResponse"][];
         };
         /**
          * MonthSummaryResponse
@@ -4236,6 +4302,19 @@ export interface components {
             /** Variants */
             variants: components["schemas"]["ProductVariantResponse"][];
             cheaper?: components["schemas"]["CheaperShopResponse"] | null;
+        };
+        /**
+         * ProductSpendResponse
+         * @description What one product cost in a month.
+         */
+        ProductSpendResponse: {
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Spent */
+            spent: string;
         };
         /**
          * ProductVariantResponse
@@ -4617,6 +4696,37 @@ export interface components {
              * @default false
              */
             accept_terms: boolean;
+        };
+        /** RegularExpenseRead */
+        RegularExpenseRead: {
+            /** Name */
+            name: string;
+            /** Amount */
+            amount: string;
+            /** Day */
+            day?: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Starts On
+             * Format: date
+             */
+            starts_on: string;
+        };
+        /**
+         * RegularExpenseRequest
+         * @description A bill paid every month without a receipt — rent, a subscription (F23.18).
+         */
+        RegularExpenseRequest: {
+            /** Name */
+            name: string;
+            /** Amount */
+            amount: number | string;
+            /** Day */
+            day?: number | null;
         };
         /**
          * ResetPasswordRequest
@@ -9617,6 +9727,144 @@ export interface operations {
             header?: never;
             path: {
                 source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    regular_bills_api_v1_income_bills_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegularExpenseRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_bill_api_v1_income_bills_post: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegularExpenseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegularExpenseRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_bill_api_v1_income_bills__bill_id__put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                bill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegularExpenseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegularExpenseRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    end_bill_api_v1_income_bills__bill_id__delete: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                bill_id: string;
             };
             cookie?: never;
         };

@@ -199,5 +199,26 @@
     "summary_many": "{{amount}} · {{count}} доходів",
     "summary_other": "{{amount}} · {{count}} доходу",
     "none": "Поки немає"
+  },
+  "bills": {
+    "title": "Постійні витрати",
+    "hint": "Що йде щомісяця без чека — квартира, підписки, кредит. Рахується само, ще до покупок.",
+    "name": "Що це",
+    "namePlaceholder": "Квартира",
+    "amount": "На місяць, {{currency}}",
+    "day": "Списується",
+    "anyDay": "Будь-коли",
+    "monthly": "щомісяця",
+    "onDay": "{{day}}-го числа",
+    "remove": "Припинити",
+    "cancel": "Скасувати",
+    "save": "Зберегти",
+    "add": "Додати ще",
+    "addFirst": "Додати постійну витрату",
+    "summary_one": "{{amount}} · {{count}} витрата",
+    "summary_few": "{{amount}} · {{count}} витрати",
+    "summary_many": "{{amount}} · {{count}} витрат",
+    "summary_other": "{{amount}} · {{count}} витрати",
+    "none": "Поки немає"
   }
 }

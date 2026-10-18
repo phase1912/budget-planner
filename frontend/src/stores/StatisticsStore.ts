@@ -7,9 +7,11 @@ import i18n from "@/i18n";
 
 export type CategoryStatistics = components["schemas"]["CategoryStatisticsResponse"];
 export type DailySpend = components["schemas"]["DailySpendResponse"];
+type Receipt = components["schemas"]["ReceiptResponse"];
 
 /** The quick periods above the table (docs/design/screens/statistics.html). */
-export type Preset = "this_month" | "last_month" | "last_3_months" | "custom";
+export type Preset =
+  "this_month" | "last_month" | "last_3_months" | "last_6_months" | "this_year" | "custom";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 /** A local day as YYYY-MM-DD, the form the API's periods take. */
@@ -34,6 +36,11 @@ export class StatisticsStore {
   statistics: CategoryStatistics | null = null;
   /** Spending day by day over the same period (F23.4); null until loaded or if it failed. */
   daily: DailySpend | null = null;
+  /** The period's receipts, newest first, once the Spending section asks (F23.4). */
+  receipts: Receipt[] = [];
+  receiptCount = 0;
+  isLoadingReceipts = false;
+  private receiptsWanted = false;
   isLoading = false;
   error: string | null = null;
 
@@ -43,9 +50,9 @@ export class StatisticsStore {
   constructor(now: () => Date = () => new Date()) {
     this.now = now;
     [this.start, this.end] = presetDays("this_month", now());
-    makeAutoObservable<this, "request" | "now">(
+    makeAutoObservable<this, "request" | "now" | "receiptsWanted">(
       this,
-      { request: false, now: false },
+      { request: false, now: false, receiptsWanted: false },
       { autoBind: true },
     );
   }
@@ -79,6 +86,8 @@ export class StatisticsStore {
     this.request++;
     this.statistics = null;
     this.daily = null;
+    this.receipts = [];
+    this.receiptCount = 0;
     this.isLoading = false;
     this.error = null;
   }
@@ -89,6 +98,8 @@ export class StatisticsStore {
     this.isLoading = true;
     this.error = null;
     void this.loadDaily(request);
+    // A list already open follows the period.
+    if (this.receiptsWanted) void this.loadReceipts();
     try {
       const response = await apiClient.GET("/api/v1/statistics/categories", {
         params: { query: { start: this.start, end: this.end, compare: this.compare, chart: true } },
@@ -107,6 +118,32 @@ export class StatisticsStore {
         this.error =
           error instanceof Error ? error.message : i18n.t("messages:statistics.loadFailed");
         this.isLoading = false;
+      });
+    }
+  }
+
+  /**
+   * The period's receipts, for Spending's own list — not the Receipts page's, whose
+   * filters stay as the user left them there.
+   */
+  async loadReceipts(size = 20): Promise<void> {
+    this.receiptsWanted = true;
+    this.isLoadingReceipts = true;
+    const [start, end] = [this.start, this.end];
+    try {
+      const response = await apiClient.GET("/receipts", {
+        params: { query: { page: 1, size, start, end } },
+      });
+      runInAction(() => {
+        if (start === this.start && end === this.end && response.data) {
+          this.receipts = response.data.items;
+          this.receiptCount = response.data.total;
+        }
+        this.isLoadingReceipts = false;
+      });
+    } catch {
+      runInAction(() => {
+        this.isLoadingReceipts = false;
       });
     }
   }
@@ -145,5 +182,9 @@ export function presetDays(preset: Exclude<Preset, "custom">, today: Date): [str
       return [isoDay(new Date(year, month - 1, 1)), isoDay(new Date(year, month, 0))];
     case "last_3_months":
       return [isoDay(new Date(year, month - 2, 1)), isoDay(today)];
+    case "last_6_months":
+      return [isoDay(new Date(year, month - 5, 1)), isoDay(today)];
+    case "this_year":
+      return [isoDay(new Date(year, 0, 1)), isoDay(today)];
   }
 }

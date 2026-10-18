@@ -13,8 +13,9 @@ from app.models.income import Income
 from app.models.user import User
 from app.repository.income_source import IncomeSourceRepository
 from app.repository.receipt import ReceiptRepository
+from app.repository.regular_expense import RegularExpenseRepository
 from app.repository.tax_payment import TaxPaymentRepository
-from app.services.income import regular_rule, tax_rule
+from app.services.income import bill_rule, regular_rule, tax_rule
 
 
 class BalanceService:
@@ -64,4 +65,12 @@ class BalanceService:
             )
             months = (today.year - since.year) * 12 + today.month - since.month + 1
             owed = rule.on(Decimal(taxed or 0) + taxed_regular) + rule.fixed * months
-        return Balance(since, user.starting_balance, came_in, spent, paid, owed)
+        bills = regular_since(
+            (
+                bill_rule(b)
+                for b in await RegularExpenseRepository(self.session).running_since(since)
+            ),
+            since,
+            today,
+        )
+        return Balance(since, user.starting_balance, came_in, spent, paid, owed, bills)

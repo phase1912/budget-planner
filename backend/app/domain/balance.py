@@ -16,11 +16,14 @@ class Balance:
     taxes_paid: Decimal = Decimal("0.00")
     taxes_owed: Decimal = Decimal("0.00")
     """For a user who pays their own taxes (F23.16): set aside on income since `since`."""
+    bills: Decimal = Decimal("0.00")
+    """Regular bills gone since `since` (F23.18) — spending without receipts."""
 
     @property
     def now(self) -> Decimal:
-        """The starting amount, plus income since, minus counted purchases and taxes paid."""
-        return self.starting + self.came_in - self.spent - self.taxes_paid
+        """The starting amount, plus income since, minus counted purchases, regular bills
+        and taxes paid."""
+        return self.starting + self.came_in - self.spent - self.bills - self.taxes_paid
 
     @property
     def for_taxes(self) -> Decimal:

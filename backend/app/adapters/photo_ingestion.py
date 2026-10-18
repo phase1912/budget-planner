@@ -108,8 +108,14 @@ class PhotoIngestionAdapter:
         self.storage_port = storage_port
         self.parser_port = parser_port
 
-    async def ingest(self, user: User, payload: list[UploadedFile]) -> IngestionResult:
+    async def ingest(
+        self, user: User, payload: list[UploadedFile], *, compress: bool = True
+    ) -> IngestionResult:
         """Store every photo of one receipt and read them as one extraction.
+
+        With `compress` False the stored photos stay as read, for a caller that may read
+        them again — a recheck of a total that does not add up — and then calls
+        `compress_stored`; the hardest receipts are never re-read from the smaller copy.
 
         Raises whatever storage raises on upload; a parser failure is not raised
         but reported as ``{"error": "extraction_failed"}`` in the extraction.
@@ -130,9 +136,26 @@ class PhotoIngestionAdapter:
             extraction = await self._run_extraction(
                 user, file_ids, content_types, contents=[p["content"] for p in prepared]
             )
-        await self._keep_compressed(user, file_ids, prepared)
+        if compress:
+            await self._keep_compressed(user, file_ids, prepared)
         extraction["file_ids"] = file_ids
         return IngestionResult(extraction=extraction, file_ids=file_ids)
+
+    async def compress_stored(self, user: User, file_ids: list[str]) -> None:
+        """Replace stored photos, once reading is over, with their kept versions.
+
+        A photo that cannot be read back stays as it was: the receipt is never at risk.
+        """
+        for file_id in file_ids:
+            name = receipt_object_name(user.id, file_id)
+            try:
+                content = await self.storage_port.download_file(name)
+            except Exception:
+                logger.warning("Photo %s kept uncompressed: could not be read back", file_id)
+                continue
+            await self._keep_compressed(
+                user, [file_id], [{"content": content, "content_type": "image/jpeg"}]
+            )
 
     async def _keep_compressed(
         self, user: User, file_ids: list[str], payload: list[UploadedFile]

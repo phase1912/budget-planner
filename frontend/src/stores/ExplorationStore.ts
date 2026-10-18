@@ -9,7 +9,8 @@ import type { ToastStore } from "@/stores/ToastStore";
 
 export type Exploration = components["schemas"]["ExplorationResponse"];
 export type Selection = components["schemas"]["SelectionResponse"];
-export type ExplorePreset = "this_month" | "last_month" | "last_3_months" | "all" | "custom";
+export type ExplorePreset =
+  "this_month" | "last_month" | "last_3_months" | "last_6_months" | "all" | "custom";
 
 /**
  * Exploring what the user buys (F16.2): the ticked products over a period — how much,

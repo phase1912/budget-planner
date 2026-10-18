@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Exploration } from "@/stores/ExplorationStore";
 import type { Product } from "@/stores/ProductsStore";
+import { ExplorePage } from "./ExplorePage";
 import { ProductsPage } from "./ProductsPage";
 
 const YOGHURT: Product = {
@@ -98,6 +99,13 @@ const renderPage = () =>
     </MemoryRouter>,
   );
 
+const renderExplore = () =>
+  render(
+    <MemoryRouter initialEntries={["/products/explore"]}>
+      <ExplorePage />
+    </MemoryRouter>,
+  );
+
 describe("ProductsPage (F16.1)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -147,9 +155,19 @@ describe("ProductsPage (F16.1)", () => {
     expect(screen.queryByRole("button", { name: /Chleb 300g.*own/ })).not.toBeInTheDocument();
   });
 
-  it("merges the ticked products under the name the user keeps", async () => {
+  it("leads to exploring what is ticked from a bar that stays in view", () => {
     store.selected = ["p1", "p2"];
     renderPage();
+
+    expect(screen.getByRole("link", { name: /2 products selected.*Explore/ })).toHaveAttribute(
+      "href",
+      "/products/explore",
+    );
+  });
+
+  it("merges the ticked products under the name the user keeps", async () => {
+    store.selected = ["p1", "p2"];
+    renderExplore();
 
     fireEvent.click(screen.getByRole("button", { name: "Merge" }));
     fireEvent.click(screen.getByRole("radio", { name: "Chleb 300g" }));
@@ -166,8 +184,16 @@ describe("ProductsPage (F16.1)", () => {
     exploration.result = {
       totals: { times: 3, spent: "14.97", quantities: { g: "990.000" } },
       months: [
-        { month: "2026-09-01", amounts: { times: 1, spent: "4.49", quantities: {} } },
-        { month: "2026-10-01", amounts: { times: 2, spent: "10.48", quantities: {} } },
+        {
+          month: "2026-09-01",
+          amounts: { times: 1, spent: "4.49", quantities: {} },
+          by_product: [{ product_id: "p1", spent: "4.49" }],
+        },
+        {
+          month: "2026-10-01",
+          amounts: { times: 2, spent: "10.48", quantities: {} },
+          by_product: [{ product_id: "p1", spent: "10.48" }],
+        },
       ],
       products: [
         {
@@ -202,7 +228,7 @@ describe("ProductsPage (F16.1)", () => {
         },
       ],
     };
-    renderPage();
+    renderExplore();
 
     expect(exploration.setProducts).toHaveBeenCalledWith(["p1"]);
     expect(screen.getAllByText(/990 g/).length).toBeGreaterThan(0);
@@ -224,7 +250,7 @@ describe("ProductsPage (F16.1)", () => {
   it("opens a saved selection and saves the ticked products as a new one (F16.2)", async () => {
     exploration.selections = [{ id: "s1", name: "Snacks", product_ids: ["p1", "p2"] }];
     store.selected = ["p1"];
-    renderPage();
+    renderExplore();
 
     fireEvent.click(screen.getByRole("button", { name: "Snacks" }));
     expect(store.select).toHaveBeenCalledWith(["p1", "p2"]);
@@ -241,12 +267,11 @@ describe("ProductsPage (F16.1)", () => {
   it("does not offer to save a saved selection again once it is open", () => {
     exploration.selections = [{ id: "s1", name: "Snacks", product_ids: ["p1", "p2"] }];
     store.selected = ["p2", "p1"];
-    renderPage();
+    renderExplore();
 
     expect(screen.getByRole("button", { name: "Snacks" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("heading", { name: "Snacks" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Save set" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Clear" })).toBeInTheDocument();
   });
 
   it("says why a product bought once has no price chart", () => {
@@ -254,7 +279,13 @@ describe("ProductsPage (F16.1)", () => {
     store.selected = ["p1"];
     exploration.result = {
       totals: { times: 1, spent: "4.49", quantities: {} },
-      months: [{ month: "2026-10-01", amounts: { times: 1, spent: "4.49", quantities: {} } }],
+      months: [
+        {
+          month: "2026-10-01",
+          amounts: { times: 1, spent: "4.49", quantities: {} },
+          by_product: [{ product_id: "p1", spent: "4.49" }],
+        },
+      ],
       products: [
         {
           product: YOGHURT,
@@ -265,7 +296,7 @@ describe("ProductsPage (F16.1)", () => {
         },
       ],
     };
-    renderPage();
+    renderExplore();
 
     expect(
       screen.getByText(

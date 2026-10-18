@@ -10,6 +10,7 @@ import {
   Coins,
   Gauge,
   Globe,
+  House,
   Landmark,
   LogOut,
   Mail,
@@ -50,6 +51,7 @@ type Sheet =
   | "payday"
   | "balance"
   | "regular"
+  | "bills"
   | "taxRate"
   | "taxFixed"
   | "language"
@@ -84,6 +86,7 @@ export const ProfilePage = observer(function ProfilePage() {
     void profileStore.loadProfile();
     void quotaStore.load();
     void incomeStore.loadRegular();
+    void incomeStore.loadBills();
   }, [profileStore, quotaStore, incomeStore]);
 
   const initials =
@@ -193,6 +196,24 @@ export const ProfilePage = observer(function ProfilePage() {
           }
           onClick={() => {
             setSheet("regular");
+          }}
+        />
+        <SettingsRow
+          icon={House}
+          color="var(--cat-utilities)"
+          label={t("bills.title")}
+          value={
+            incomeStore.bills.length === 0
+              ? t("bills.none")
+              : t("bills.summary", {
+                  count: incomeStore.bills.length,
+                  amount: amount(
+                    String(incomeStore.bills.reduce((sum, b) => sum + Number(b.amount), 0)),
+                  ),
+                })
+          }
+          onClick={() => {
+            setSheet("bills");
           }}
         />
         {/* The single usual income came before regular incomes; kept while it is all there is. */}
@@ -491,6 +512,12 @@ export const ProfilePage = observer(function ProfilePage() {
         <SettingsSheet title={t("regular.title")} onClose={close}>
           <p className="m-0 text-md text-muted-foreground">{t("regular.hint")}</p>
           <RegularIncomes />
+        </SettingsSheet>
+      )}
+      {sheet === "bills" && (
+        <SettingsSheet title={t("bills.title")} onClose={close}>
+          <p className="m-0 text-md text-muted-foreground">{t("bills.hint")}</p>
+          <RegularIncomes kind="bill" />
         </SettingsSheet>
       )}
       {sheet === "taxRate" && (

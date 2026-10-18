@@ -40,7 +40,10 @@
     "editRegular": "Change",
     "setRegular": "Set up",
     "extra": "Came in on top this month",
-    "decideTax": "You pay your own taxes: decide below whether your tax comes out of this."
+    "decideTax": "You pay your own taxes: decide below whether your tax comes out of this.",
+    "bills": "Bills {{amount}}",
+    "billsTitle": "Goes every month",
+    "noBills": "Rent, subscriptions — add them and they count by themselves."
   },
   "budget": {
     "title": "Monthly budget",
@@ -70,6 +73,11 @@
     "kinds": {
       "financial": "Money goal",
       "lifestyle": "Lifestyle goal"
-    }
+    },
+    "ring": "{{percent}} %",
+    "paced": "{{spent}} of {{target}} {{currency}} · on track",
+    "pacedOver": "{{spent}} of {{target}} {{currency}} · heading for {{projected}}",
+    "saving": "{{available}} of {{target}} {{currency}} free to put aside this month",
+    "edit": "Change the goal"
   }
 }

@@ -4805,6 +4805,18 @@ epics:
         demo: >
           Add a 10 000 zł salary on the 10th and a 1 000 zł side job; next month both count
           without entering anything, and 500 zł added on top joins them.
+      - key: F23.18
+        title: Regular bills
+        labels: [backend, frontend, database]
+        requirements: []
+        depends_on: [F23.17]
+        intent: >
+          Rent, subscriptions, a loan — set once, gone every month by themselves: off what is
+          left on Home and in Plan and off the balance on their day, never counted as
+          purchases in Spending's figures, and listed there in their own section.
+        demo: >
+          Add rent of 3 000 zł on the 5th; Plan shows spent · bills · free, and the balance
+          drops by 3 000 on the 5th of each month.
 
   - key: E24
     title: Bugfixes

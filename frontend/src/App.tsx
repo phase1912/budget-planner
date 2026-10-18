@@ -28,6 +28,7 @@ import { PlanPage } from "@/features/plan/PlanPage";
 import { OnboardingPage } from "@/features/onboarding/OnboardingPage";
 import { StatisticsPage } from "@/features/statistics/pages/StatisticsPage";
 import { ProductsPage } from "@/features/products/pages/ProductsPage";
+import { ExplorePage } from "@/features/products/pages/ExplorePage";
 import { TripPage } from "@/features/trips/pages/TripPage";
 import { TripsPage } from "@/features/trips/pages/TripsPage";
 import { JoinHouseholdPage } from "@/features/household/pages/JoinHouseholdPage";
@@ -85,6 +86,7 @@ export const App = observer(function App() {
           <Route path="/spending" element={<StatisticsPage />} />
           <Route path="/statistics" element={<Navigate to="/spending" replace />} />
           <Route path="/products" element={<ProductsPage />} />
+          <Route path="/products/explore" element={<ExplorePage />} />
           <Route path="/statistics/products" element={<Navigate to="/products" replace />} />
           <Route path="/plan" element={<PlanPage />} />
           <Route path="/trips" element={<TripsPage />} />

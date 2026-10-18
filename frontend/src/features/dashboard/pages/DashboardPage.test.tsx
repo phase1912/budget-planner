@@ -36,6 +36,7 @@ const incomeStore = {
     taxes?: string;
     net?: string | null;
     regular?: unknown[];
+    bills_total?: string;
   },
   balance: null as null | { balance: string | null; since: string | null },
   receive: vi.fn().mockResolvedValue(true),
@@ -451,6 +452,21 @@ describe("DashboardPage — what is left (D7, F23.3)", () => {
     expect(screen.getByText("Income · after tax")).toBeInTheDocument();
     expect(screen.getByText("5,000 PLN")).toBeInTheDocument();
     expect(screen.getByText("3,200")).toBeInTheDocument();
+  });
+
+  it("takes the month's bills off what came in before what was spent", () => {
+    budgetStore.summary = summary({ total: "1800" });
+    incomeStore.month = {
+      total: "6800.00",
+      entered: true,
+      entries: [],
+      regular: [],
+      bills_total: "3000.00",
+    };
+    renderPage();
+
+    expect(screen.getByText("left of what came in")).toBeInTheDocument();
+    expect(screen.getByText("2,000")).toBeInTheDocument();
   });
 
   it("says by how much a month went over, never clamping", () => {

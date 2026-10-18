@@ -11,6 +11,8 @@ const usualOnly: MonthIncome = {
   taxes: "0.00",
   taxes_paid: "0.00",
   regular: [],
+  bills: [],
+  bills_total: "0.00",
 };
 
 describe("paydayDue", () => {

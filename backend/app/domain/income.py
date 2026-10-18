@@ -102,8 +102,9 @@ def month_income(
 
 
 @dataclass(frozen=True)
-class RegularIncome:
-    """A regular income as the rules need it: how much, on which day, over which months."""
+class Recurring:
+    """A regular income or bill as the rules need it: how much, on which day, over which
+    months (F23.17, F23.18)."""
 
     amount: Decimal
     day: int | None
@@ -124,11 +125,12 @@ class RegularIncome:
 
 
 def regular_since(
-    incomes: Iterable[RegularIncome], since: date, today: date, *, taxed_only: bool = False
+    incomes: Iterable[Recurring], since: date, today: date, *, taxed_only: bool = False
 ) -> Decimal:
-    """What regular incomes brought from `since` to `today`, both included: each month's
-    amount once it has arrived, so the balance moves on the day the salary comes. With
-    `taxed_only`, only those the user's tax comes out of — what taxes are owed on."""
+    """What regular incomes brought — or regular bills took — from `since` to `today`,
+    both included: each month's amount once its day has come, so the balance moves on the
+    day the salary arrives or the rent goes. With `taxed_only`, only those the user's tax
+    comes out of — what taxes are owed on."""
     total = Decimal("0")
     month = since.replace(day=1)
     rules = [i for i in incomes if i.taxed or not taxed_only]

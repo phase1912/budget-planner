@@ -105,12 +105,17 @@ describe("TripPage — what a trip cost, by kind (F20.2)", () => {
   it("lists every kind, a zero one too, in the account's currency", () => {
     renderPage();
 
-    const kinds = screen.getByRole("heading", { name: "By kind" }).parentElement;
-    expect(kinds).toHaveTextContent("Transport1,900.00 PLN");
-    expect(kinds).toHaveTextContent("Accommodation0.00 PLN");
-    expect(kinds).toHaveTextContent("Meals310.00 PLN");
-    expect(kinds).toHaveTextContent("Other630.00 PLN");
-    expect(screen.queryByText("Paid in:")).not.toBeInTheDocument();
+    // The kind also names each receipt's choice below; the tile is the one in a list item.
+    const tile = (kind: string) =>
+      screen
+        .getAllByText(kind)
+        .find((el) => el.closest("li")?.textContent.includes("PLN"))
+        ?.closest("li");
+    expect(tile("Transport")).toHaveTextContent("1,900 PLN");
+    expect(tile("Accommodation")).toHaveTextContent("0 PLN");
+    expect(tile("Meals")).toHaveTextContent("310 PLN");
+    expect(tile("Other")).toHaveTextContent("630 PLN");
+    expect(screen.queryByText(/converted at the NBP rate/)).not.toBeInTheDocument();
   });
 
   it("shows what was paid in each currency once one was foreign", () => {
@@ -122,9 +127,7 @@ describe("TripPage — what a trip cost, by kind (F20.2)", () => {
     });
     renderPage();
 
-    expect(screen.getByText("Paid in:")).toBeInTheDocument();
-    expect(screen.getByText("7,600.00 EGP")).toBeInTheDocument();
-    expect(screen.getByText("2,210.00 PLN")).toBeInTheDocument();
+    expect(screen.getByText(/Paid in 7,600 EGP: converted at the NBP rate/)).toBeInTheDocument();
   });
 
   it("moves a receipt to another kind in place", () => {
@@ -171,20 +174,22 @@ describe("TripPage — what a trip cost, by kind (F20.2)", () => {
     });
     renderPage();
 
-    expect(screen.getByText("87% of 3,000.00 PLN")).toBeInTheDocument();
-    expect(screen.getByText("380.00 PLN left")).toBeInTheDocument();
-    const days = screen.getByRole("heading", { name: "Day by day" }).parentElement;
-    expect(days).toHaveTextContent("10 Oct 2026");
-    expect(days).toHaveTextContent("0.00 PLN");
-    const categories = screen.getByRole("heading", { name: "By category" }).parentElement;
-    expect(categories).toHaveTextContent("Dining2,620.00 PLN");
+    expect(screen.getByText("2,620 PLN spent")).toBeInTheDocument();
+    expect(screen.getByText("of 3,000 PLN")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "11 Oct 2026, 0 PLN" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "10 Oct 2026, 1,120 PLN" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    fireEvent.click(screen.getByRole("button", { name: /By category/ }));
+    expect(screen.getByText("Dining").closest("li")).toHaveTextContent("Dining2,620.00 PLN");
   });
 
   it("says by how much a trip went over its budget", () => {
     tripsStore.current = trip({ total: "3100.00", budget: "3000.00", budget_left: "-100.00" });
     renderPage();
 
-    expect(screen.getByText("100.00 PLN over")).toBeInTheDocument();
+    expect(screen.getByText("100 PLN over the budget")).toBeInTheDocument();
   });
 
   describe("a business trip's per diem (F20.4)", () => {

@@ -11,7 +11,7 @@ from app.api.errors import NotFoundError
 from app.domain.income import (
     IncomeChannel,
     MonthIncome,
-    RegularIncome,
+    Recurring,
     TaxRule,
     month_income,
     taxed_by_default,
@@ -20,18 +20,30 @@ from app.domain.quota import next_month_start
 from app.models.income import Income
 from app.models.income_source import IncomeSource
 from app.models.pending_income import PendingIncome
+from app.models.regular_expense import RegularExpense
 from app.models.tax_payment import TaxPayment
 from app.models.user import User
 from app.repository.income import IncomeRepository
 from app.repository.income_source import IncomeSourceRepository
 from app.repository.pending_income import PendingIncomeRepository
+from app.repository.regular_expense import RegularExpenseRepository
 from app.repository.tax_payment import TaxPaymentRepository
-from app.schemas.income import IncomeRequest, IncomeSourceRequest, TaxPaymentRequest
+from app.schemas.income import (
+    IncomeRequest,
+    IncomeSourceRequest,
+    RegularExpenseRequest,
+    TaxPaymentRequest,
+)
 
 
-def regular_rule(source: IncomeSource) -> RegularIncome:
+def regular_rule(source: IncomeSource) -> Recurring:
     """A regular income as the domain rules read it."""
-    return RegularIncome(source.amount, source.day, source.starts_on, source.ends_on, source.taxed)
+    return Recurring(source.amount, source.day, source.starts_on, source.ends_on, source.taxed)
+
+
+def bill_rule(bill: RegularExpense) -> Recurring:
+    """A regular bill as the domain rules read it."""
+    return Recurring(bill.amount, bill.day, bill.starts_on, bill.ends_on)
 
 
 def tax_rule(user: User) -> TaxRule | None:
@@ -48,6 +60,7 @@ class MonthIncomeView:
     entries: list[Income]
     taxes_paid: Decimal
     regular: list[IncomeSource]
+    bills: list[RegularExpense]
 
 
 class IncomeService:
@@ -59,6 +72,7 @@ class IncomeService:
         self.pending = PendingIncomeRepository(session)
         self.tax_payments = TaxPaymentRepository(session)
         self.sources = IncomeSourceRepository(session)
+        self.bills = RegularExpenseRepository(session)
 
     async def month(self, user: User, first_day: date) -> MonthIncomeView:
         """The entries of the month starting `first_day` and its income (usual if none)."""
@@ -76,7 +90,44 @@ class IncomeService:
             recurring=((s.amount, s.taxed) for s in regular),
         )
         paid = await self.tax_payments.total(first_day, last_day)
-        return MonthIncomeView(first_day, income, entries, paid, regular)
+        bills = [
+            b for b in await self.bills.running_since(first_day) if bill_rule(b).runs_in(first_day)
+        ]
+        return MonthIncomeView(first_day, income, entries, paid, regular, bills)
+
+    async def regular_bills(self) -> list[RegularExpense]:
+        """The regular bills still running (F23.18)."""
+        return list(await self.bills.current())
+
+    async def add_bill(self, request: RegularExpenseRequest, today: date) -> RegularExpense:
+        """Start a regular bill: it counts from this month on."""
+        bill = RegularExpense(**request.model_dump(), starts_on=today)
+        self.bills.add(bill)
+        await self.session.flush()
+        return bill
+
+    async def change_bill(
+        self, bill_id: uuid.UUID, request: RegularExpenseRequest
+    ) -> RegularExpense:
+        """Change a regular bill; NotFoundError if it is not the user's (N2)."""
+        bill = await self.bills.get(bill_id)
+        if bill is None or bill.ends_on is not None:
+            raise NotFoundError("No such regular bill.")
+        for field, value in request.model_dump().items():
+            setattr(bill, field, value)
+        await self.session.flush()
+        return bill
+
+    async def end_bill(self, bill_id: uuid.UUID, today: date) -> None:
+        """Stop a regular bill from next month; past months keep it, as an income's do."""
+        bill = await self.bills.get(bill_id)
+        if bill is None or bill.ends_on is not None:
+            raise NotFoundError("No such regular bill.")
+        if bill.starts_on.replace(day=1) == today.replace(day=1):
+            await self.session.delete(bill)
+        else:
+            bill.ends_on = today
+        await self.session.flush()
 
     async def regular_incomes(self) -> list[IncomeSource]:
         """The regular incomes still running (F23.17)."""

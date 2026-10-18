@@ -12,6 +12,8 @@ export type IncomeDraft = components["schemas"]["IncomeDraft"];
 export type PendingIncome = components["schemas"]["PendingIncomeRead"];
 export type RegularIncome = components["schemas"]["IncomeSourceRead"];
 export type RegularIncomeRequest = components["schemas"]["IncomeSourceRequest"];
+export type RegularBill = components["schemas"]["RegularExpenseRead"];
+export type RegularBillRequest = components["schemas"]["RegularExpenseRequest"];
 export type IncomeEntry = components["schemas"]["IncomeRead"];
 type IncomeRequestSchema = components["schemas"]["IncomeRequest"];
 /** An entry as sent; `channel` is "manual" unless it was confirmed from a document. */
@@ -57,6 +59,8 @@ export class IncomeStore {
   pending: PendingIncome[] = [];
   /** The regular incomes still running, already net (F23.17). */
   regular: RegularIncome[] = [];
+  /** The regular bills still running — rent, subscriptions (F23.18). */
+  bills: RegularBill[] = [];
   readingDocument = false;
   readError: string | null = null;
   private readonly api: ApiClient;
@@ -233,6 +237,43 @@ export class IncomeStore {
     return ok;
   }
 
+  /** The regular bills; a failure leaves the list as it was. */
+  async loadBills(): Promise<void> {
+    const response = await settle(() => this.api.GET("/api/v1/income/bills"));
+    runInAction(() => {
+      if (response.error === undefined) this.bills = response.data;
+    });
+  }
+
+  /** Start a regular bill, counted from this month on (`today` is the user's date). */
+  async addBill(body: RegularBillRequest, today: string): Promise<boolean> {
+    const ok = await this.save(() =>
+      this.api.POST("/api/v1/income/bills", { params: { query: { today } }, body }),
+    );
+    if (ok) await this.loadBills();
+    return ok;
+  }
+
+  /** Change a regular bill's name, amount or day. */
+  async changeBill(id: string, body: RegularBillRequest): Promise<boolean> {
+    const ok = await this.save(() =>
+      this.api.PUT("/api/v1/income/bills/{bill_id}", { params: { path: { bill_id: id } }, body }),
+    );
+    if (ok) await this.loadBills();
+    return ok;
+  }
+
+  /** Stop a regular bill from next month; past months keep it. */
+  async endBill(id: string, today: string): Promise<boolean> {
+    const ok = await this.save(() =>
+      this.api.DELETE("/api/v1/income/bills/{bill_id}", {
+        params: { path: { bill_id: id }, query: { today } },
+      }),
+    );
+    if (ok) await this.loadBills();
+    return ok;
+  }
+
   /** What forwarded documents left to confirm; a failure leaves the list as it was. */
   async loadPending(): Promise<void> {
     const response = await settle(() => this.api.GET("/api/v1/income/pending"));
@@ -295,6 +336,7 @@ export class IncomeStore {
     this.draft = null;
     this.pending = [];
     this.regular = [];
+    this.bills = [];
     this.month = null;
     this.balance = null;
     this.state.reset();

@@ -19,6 +19,8 @@ const stores = vi.hoisted(() => ({
       total: "6200.00",
       entered: true,
       regular: [] as { id: string; name: string; amount: string; taxed: boolean }[],
+      bills: [] as { id: string; name: string; amount: string }[],
+      bills_total: "0.00",
       entries: [
         {
           id: "i1",
@@ -68,13 +70,34 @@ const stores = vi.hoisted(() => ({
     load: vi.fn(),
   },
   goalsStore: {
-    goals: [{ id: "g1", name: "Greece", type: "financial", target_amount: "8000.00" }],
+    goals: [
+      {
+        id: "g1",
+        name: "Greece",
+        type: "financial",
+        financial_kind: "spending_ceiling",
+        target_amount: "3000.00",
+        description: "Summer holiday",
+      },
+    ],
     load: vi.fn(),
   },
+  adviceStore: {
+    progress: new Map([
+      ["g1", { spent: "1800.00", projected: "2900.00", target: "3000.00", on_track: true }],
+    ]),
+    load: vi.fn(),
+    loadProgress: vi.fn(),
+  },
+  categoriesStore: { ensureCategories: vi.fn(), categories: [] },
   profileStore: { saveQuietly: vi.fn().mockResolvedValue(true) },
 }));
 
 vi.mock("@/stores/StoreContext", () => ({ useStores: () => stores }));
+// A goal's advice has its own tests; here it only matters that it opens in place.
+vi.mock("@/features/goals/components/GoalAdvice", () => ({
+  GoalAdvice: () => <p>Advice for the goal</p>,
+}));
 
 const renderPage = () =>
   render(
@@ -150,6 +173,19 @@ describe("PlanPage (F23.2, F23.10, F23.12)", () => {
     );
   });
 
+  it("puts the month's bills between what was spent and what is still free", () => {
+    const month = stores.incomeStore.month;
+    month.bills = [{ id: "b1", name: "Rent", amount: "3000.00" }];
+    month.bills_total = "3000.00";
+    renderPage();
+
+    expect(screen.getByText("Rent")).toBeInTheDocument();
+    expect(screen.getByText("Bills 3,000")).toBeInTheDocument();
+    expect(screen.getByText("Free 1,400")).toBeInTheDocument();
+    month.bills = [];
+    month.bills_total = "0.00";
+  });
+
   it("adds an income entry by hand", async () => {
     renderPage();
 
@@ -178,5 +214,17 @@ describe("PlanPage (F23.2, F23.10, F23.12)", () => {
     await vi.waitFor(() => {
       expect(stores.incomeStore.remove).toHaveBeenCalledWith("i1");
     });
+  });
+
+  it("shows a goal as a ring that opens in place, never on another page", () => {
+    renderPage();
+
+    expect(screen.getByRole("img", { name: "60 %" })).toBeInTheDocument();
+    expect(screen.getByText("1,800 of 3,000 PLN · on track")).toBeInTheDocument();
+    expect(screen.queryByText("Advice for the goal")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Greece/ }));
+    expect(screen.getByText("Advice for the goal")).toBeInTheDocument();
+    expect(screen.getByText("Summer holiday")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Change the goal" })).toBeInTheDocument();
   });
 });

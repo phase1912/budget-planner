@@ -40,7 +40,10 @@
     "editRegular": "Zmień",
     "setRegular": "Ustaw",
     "extra": "Wpłynęło ponadto w tym miesiącu",
-    "decideTax": "Płacisz podatki samodzielnie: zdecyduj niżej, czy płacisz od tego podatek."
+    "decideTax": "Płacisz podatki samodzielnie: zdecyduj niżej, czy płacisz od tego podatek.",
+    "bills": "Stałe {{amount}}",
+    "billsTitle": "Schodzi co miesiąc",
+    "noBills": "Mieszkanie, subskrypcje — dodaj je, a będą liczone same."
   },
   "budget": {
     "title": "Budżet miesięczny",
@@ -72,6 +75,11 @@
     "kinds": {
       "financial": "Cel finansowy",
       "lifestyle": "Cel stylu życia"
-    }
+    },
+    "ring": "{{percent}} %",
+    "paced": "{{spent}} z {{target}} {{currency}} · w normie",
+    "pacedOver": "{{spent}} z {{target}} {{currency}} · zmierza do {{projected}}",
+    "saving": "W tym miesiącu wolne {{available}} z {{target}} {{currency}} do odłożenia",
+    "edit": "Zmień cel"
   }
 }

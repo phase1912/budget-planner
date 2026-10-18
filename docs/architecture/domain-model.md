@@ -564,6 +564,12 @@ Rules that must hold at all times. Each is a candidate for a test.
     spend" counts the income after them. Taxes paid are recorded apart: they lower the
     balance and what is still owed, never the spending.
 
+35. Regular bills (F23.18) — rent, a subscription, a loan — go every month without a
+    receipt, from the month they were added, and stop like regular incomes do. They are
+    not purchases: they never enter a month's spending total, categories or statistics,
+    but they come off what is left of the income on Home and in Plan ("spent · bills ·
+    free"), off the balance on their day, and off what a savings goal can count on.
+
 **Goals before they are saved**
 
 32. A money goal is checked against the user's last three whole months that had receipts

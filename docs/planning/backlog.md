@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-25 epics · 166 features · 328 tasks written so far.
+25 epics · 167 features · 328 tasks written so far.
 
 22 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -32,7 +32,7 @@
 | E20 | Trips | — | 5 | yes | 2 | Diploma |
 | E21 | Voice and Chat Assistant | — | 6 | yes | 2 | Diploma |
 | E22 | Android App | — | 3 | yes | 2 | Diploma |
-| E23 | Improvements | — | 17 | no | 2 | Diploma |
+| E23 | Improvements | — | 18 | no | 2 | Diploma |
 | E24 | Bugfixes | — | 1 | no | 2 | Diploma |
 
 ---
@@ -1868,6 +1868,14 @@ For a sole trader or contractor, whose income comes before tax: a switch in Sett
 A salary, a side job, a pension — set once in Settings or the first-sign-in setup, counted in every month by themselves, the balance gaining each on its day; anything that comes on top is added by hand through ＋ or from a document.
 
 **Demonstrated by:** Add a 10 000 zł salary on the 10th and a 1 000 zł side job; next month both count without entering anything, and 500 zł added on top joins them.
+
+### F23.18 — Regular bills
+
+*Requirements: —* · *Blocked by: F23.17*
+
+Rent, subscriptions, a loan — set once, gone every month by themselves: off what is left on Home and in Plan and off the balance on their day, never counted as purchases in Spending's figures, and listed there in their own section.
+
+**Demonstrated by:** Add rent of 3 000 zł on the 5th; Plan shows spent · bills · free, and the balance drops by 3 000 on the 5th of each month.
 
 ---
 

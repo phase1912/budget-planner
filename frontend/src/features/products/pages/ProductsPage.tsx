@@ -3,12 +3,10 @@ import { ChartLine, ChevronRight, Package, Search, X } from "lucide-react";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 import { Card, EmptyState, ErrorState, Input, LoadingState } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
-import { ExplorePanel } from "../components/ExplorePanel";
-import { MergeProductsDialog } from "../components/MergeProductsDialog";
-import { SaveSelectionDialog } from "../components/SaveSelectionDialog";
 import { ProductRow } from "../components/ProductRow";
 import { ProductsOverview } from "../components/ProductsOverview";
 
@@ -17,16 +15,13 @@ import { ProductsOverview } from "../components/ProductsOverview";
  * bought for (F16.2).
  *
  * Opening it matches every line not yet matched, so the first visit can take a moment.
- * Products are searched by any printed name. Ticking products explores them over a period
- * — amounts, months, prices per shop — and the ticked set can be saved under a name and
- * opened again; ticking two or more also offers to merge them. Each product opens to the
- * ways it was printed, any of which can be split off.
+ * Products are searched by any printed name. Ticked products are explored on their own
+ * screen (ExplorePage) — a bar leads there — and saved sets open from here too. Each
+ * product opens to the ways it was printed, any of which can be split off.
  */
 export const ProductsPage = observer(function ProductsPage() {
   const { productsStore, authStore, explorationStore } = useStores();
   const { t } = useTranslation("products");
-  const [merging, setMerging] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState(productsStore.search);
   const currency = authStore.user?.currency ?? "PLN";
   const { products, isLoading, loadError, selected } = productsStore;
@@ -90,8 +85,8 @@ export const ProductsPage = observer(function ProductsPage() {
           />
         </div>
 
-        <a
-          href="#all-products"
+        <Link
+          to="/products/explore"
           className="flex min-h-15 items-center gap-3 rounded-card bg-primary px-4 py-3 text-primary-foreground"
         >
           <ChartLine size={22} aria-hidden="true" />
@@ -100,7 +95,7 @@ export const ProductsPage = observer(function ProductsPage() {
             <span className="text-sm opacity-90">{t("exploreHint")}</span>
           </span>
           <ChevronRight size={18} aria-hidden="true" />
-        </a>
+        </Link>
 
         <ProductsOverview currency={currency} />
 
@@ -147,21 +142,6 @@ export const ProductsPage = observer(function ProductsPage() {
           </section>
         )}
 
-        {selected.length > 0 && (
-          <div id="explore-panel" className="scroll-mt-4">
-            <ExplorePanel
-              currency={currency}
-              selectionName={openSelection?.name ?? null}
-              onSave={() => {
-                setSaving(true);
-              }}
-              onMerge={() => {
-                setMerging(true);
-              }}
-            />
-          </div>
-        )}
-
         {loadError ? (
           <ErrorState layout="banner" title={t("loadFailed")} message={loadError} />
         ) : isLoading && products.length === 0 ? (
@@ -188,19 +168,19 @@ export const ProductsPage = observer(function ProductsPage() {
           </Card>
         )}
       </div>
-      {saving && (
-        <SaveSelectionDialog
-          onClose={() => {
-            setSaving(false);
-          }}
-        />
-      )}
-      {merging && (
-        <MergeProductsDialog
-          onClose={() => {
-            setMerging(false);
-          }}
-        />
+      {/* Ticked products are explored on their own screen; this is the way there. */}
+      {selected.length > 0 && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-24 z-20 flex justify-center px-4 md:bottom-6">
+          <Link
+            to="/products/explore"
+            className="pointer-events-auto flex min-h-13 items-center gap-3 rounded-pill bg-primary px-5 text-lg font-extrabold text-primary-foreground shadow-modal"
+          >
+            {openSelection ? openSelection.name : t("picked", { count: selected.length })}
+            <span aria-hidden="true">·</span>
+            {t("explore.go")}
+            <ChevronRight size={18} aria-hidden="true" />
+          </Link>
+        </div>
       )}
     </div>
   );

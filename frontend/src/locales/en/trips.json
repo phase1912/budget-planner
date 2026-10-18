@@ -156,5 +156,23 @@
     "photosExpire": "Receipt photos are kept 90 days: the first of this trip's go on {{date}}. Download the settlement as PDF before then to keep them with it."
   },
   "holidays": "Holidays",
-  "business": "Business trips"
+  "business": "Business trips",
+  "hero": {
+    "day": "Day {{day}} of {{of}}",
+    "inDays_one": "In {{count}} day",
+    "inDays_other": "In {{count}} days",
+    "over": "Over",
+    "spent": "{{amount}} {{currency}} spent",
+    "toReimburse": "{{amount}} {{currency}} to reimburse",
+    "of": "of {{amount}} {{currency}}",
+    "perDay_one": "{{amount}} {{currency}} a day keeps you on budget for the {{count}} day left",
+    "perDay_other": "{{amount}} {{currency}} a day keeps you on budget for the {{count}} days left",
+    "overBy": "{{amount}} {{currency}} over the budget",
+    "holiday": "Holiday"
+  },
+  "kinds": {
+    "perDay": "{{amount}} {{currency}} a day",
+    "converted": "Paid in {{paid}}: converted at the NBP rate of each day. It counts in its month, shown apart from everyday spending."
+  },
+  "categoriesTitle": "By category"
 }

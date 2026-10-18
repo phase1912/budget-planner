@@ -293,9 +293,19 @@ folded into the month by `month_income(recurring=…)` and into the balance by
 `regular_since`; taxes for those who pay their own (F23.16) come from the user's rate and
 fixed sum, each income's `taxed` flag, and `tax_payments` (`/api/v1/income/taxes`).
 
+Regular bills (F23.18) live in `regular_expenses` (`/api/v1/income/bills`); the month view
+returns them with `bills_total`, and the balance takes them off on their day through the
+same `Recurring` rule as regular incomes. Spending folds the period's receipts, the items
+to file and the bills into sections that open in place (`Collapsible`), and Plan's goals
+open in place with a ring each (`goalMeter`).
+
+Explore's months carry what each product cost in them (`MonthPurchases.by_product`), for
+columns stacked by product.
+
 Reading a photo stays off the event loop: `prepare_photo` (HEIC to JPEG, upright by EXIF,
 at most 3000 px) runs in a thread, the prepared bytes are read from memory rather than
-downloaded back, and litellm is imported at start (`app/main.py`), not inside the first
+downloaded back, the kept copy is made smaller only after a recheck could have needed
+the photo again (`compress_stored`), and litellm is imported at start (`app/main.py`), not inside the first
 read — lazily, it froze every request on a new instance for 11-14 s. The browser shrinks
 photos to the same 3000 px before sending (`shrinkPhoto`), which keeps a many-shot
 receipt under Cloud Run's 32 MB request limit, and a progress poll that fails is retried

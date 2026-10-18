@@ -189,5 +189,24 @@
     "summary_one": "{{amount}} · {{count}} income",
     "summary_other": "{{amount}} · {{count}} incomes",
     "none": "None yet"
+  },
+  "bills": {
+    "title": "Regular bills",
+    "hint": "What goes every month without a receipt — rent, subscriptions, a loan. It counts by itself, before what you spend.",
+    "name": "What it is",
+    "namePlaceholder": "Rent",
+    "amount": "A month, {{currency}}",
+    "day": "Goes on",
+    "anyDay": "Any day",
+    "monthly": "every month",
+    "onDay": "on day {{day}}",
+    "remove": "Stop it",
+    "cancel": "Cancel",
+    "save": "Save",
+    "add": "Add another",
+    "addFirst": "Add a regular bill",
+    "summary_one": "{{amount}} · {{count}} bill",
+    "summary_other": "{{amount}} · {{count}} bills",
+    "none": "None yet"
   }
 }

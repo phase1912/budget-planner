@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { observer } from "mobx-react-lite";
-import { Briefcase, ChevronRight, Palmtree, Plus, Target } from "lucide-react";
+import { Briefcase, ChevronRight, Palmtree, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -9,6 +9,7 @@ import { dateFormat, numberFormat } from "@/i18n/format";
 import type { IncomeEntry } from "@/stores/IncomeStore";
 import { useStores } from "@/stores/StoreContext";
 import { IncomeDialog } from "./IncomeDialog";
+import { PlanGoals } from "./PlanGoals";
 import { RegularIncomes } from "@/features/profile/components/RegularIncomes";
 import { SettingsSheet } from "@/features/profile/components/SettingsRows";
 
@@ -27,7 +28,7 @@ export const PlanPage = observer(function PlanPage() {
   const [incomeEntry, setIncomeEntry] = useState<IncomeEntry | null | "new">(null);
   const [editingBudget, setEditingBudget] = useState(false);
   const [payingTaxes, setPayingTaxes] = useState(false);
-  const [editingRegular, setEditingRegular] = useState(false);
+  const [editingRegular, setEditingRegular] = useState<"income" | "bill" | null>(null);
   const user = authStore.user;
   const currency = user?.currency ?? "PLN";
   const { year, month } = budgetStore.current;
@@ -48,6 +49,7 @@ export const PlanPage = observer(function PlanPage() {
   const kept = income?.net ?? income?.total;
   const incomeTotal = kept == null ? null : Number(kept);
   const paysOwnTaxes = user?.pays_own_taxes === true;
+  const bills = Number(income?.bills_total ?? 0);
   const business = tripsStore.trips.filter((trip) => trip.kind === "business");
 
   return (
@@ -64,10 +66,17 @@ export const PlanPage = observer(function PlanPage() {
       >
         {incomeTotal !== null && incomeTotal > 0 && (
           <>
+            {/* Spent, then the month's bills (F23.18), then what is still free — plan.html. */}
             <span className="flex h-3.5 overflow-hidden rounded-pill bg-muted" aria-hidden="true">
               <span
-                className={spent > incomeTotal ? "bg-error" : "bg-primary"}
+                className={spent + bills > incomeTotal ? "bg-error" : "bg-primary"}
                 style={{ width: `${String(Math.min(100, (spent / incomeTotal) * 100))}%` }}
+              />
+              <span
+                className="bg-[var(--cat-utilities)]"
+                style={{
+                  width: `${String(Math.max(0, Math.min(100 - (spent / incomeTotal) * 100, (bills / incomeTotal) * 100)))}%`,
+                }}
               />
             </span>
             <span className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-bold">
@@ -75,9 +84,17 @@ export const PlanPage = observer(function PlanPage() {
                 <span className="h-2 w-2 rounded-pill bg-primary" />
                 {t("income.spent", { amount: WHOLE.format(spent) })}
               </span>
+              {bills > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-pill bg-[var(--cat-utilities)]" />
+                  {t("income.bills", { amount: WHOLE.format(bills) })}
+                </span>
+              )}
               <span className="flex items-center gap-1.5 text-muted-foreground">
                 <span className="h-2 w-2 rounded-pill bg-muted" />
-                {t("income.free", { amount: WHOLE.format(Math.max(0, incomeTotal - spent)) })}
+                {t("income.free", {
+                  amount: WHOLE.format(Math.max(0, incomeTotal - spent - bills)),
+                })}
               </span>
             </span>
           </>
@@ -126,7 +143,7 @@ export const PlanPage = observer(function PlanPage() {
             type="button"
             className="min-h-11 text-md font-bold text-primary"
             onClick={() => {
-              setEditingRegular(true);
+              setEditingRegular("income");
             }}
           >
             {(income?.regular.length ?? 0) > 0 ? t("income.editRegular") : t("income.setRegular")}
@@ -197,6 +214,34 @@ export const PlanPage = observer(function PlanPage() {
         >
           {t("income.add")}
         </AddButton>
+        <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+          <span className="text-sm font-bold tracking-[0.06em] text-muted-foreground uppercase">
+            {t("income.billsTitle")}
+          </span>
+          <button
+            type="button"
+            className="min-h-11 text-md font-bold text-primary"
+            onClick={() => {
+              setEditingRegular("bill");
+            }}
+          >
+            {(income?.bills.length ?? 0) > 0 ? t("income.editRegular") : t("income.setRegular")}
+          </button>
+        </div>
+        {income && income.bills.length > 0 ? (
+          <ul className="m-0 flex list-none flex-col divide-y divide-border p-0">
+            {income.bills.map((bill) => (
+              <li key={bill.id} className="flex min-h-12 items-center justify-between gap-3 py-1.5">
+                <span className="text-lg font-semibold">{bill.name}</span>
+                <span className="text-lg font-bold tabular-nums">
+                  −{WHOLE.format(Number(bill.amount))} {currency}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="m-0 text-base text-muted-foreground">{t("income.noBills")}</p>
+        )}
       </Section>
 
       <Section
@@ -312,39 +357,10 @@ export const PlanPage = observer(function PlanPage() {
       )}
 
       <Section title={t("goals.title")}>
-        {goalsStore.goals.length === 0 ? (
-          <p className="m-0 text-md text-muted-foreground">{t("goals.none")}</p>
-        ) : (
-          <ul className="m-0 flex list-none flex-col gap-2 p-0">
-            {goalsStore.goals.slice(0, 4).map((goal) => (
-              <li key={goal.id}>
-                <Link
-                  to="/goals"
-                  className="flex min-h-14 items-center gap-3 rounded-control border border-border px-3.5 py-2.5 text-foreground"
-                >
-                  <Target size={20} className="shrink-0 text-primary" aria-hidden="true" />
-                  <span className="flex flex-1 flex-col">
-                    <span className="text-lg font-semibold">{goal.name}</span>
-                    <span className="text-base text-muted-foreground">
-                      {t(`goals.kinds.${goal.type}`)}
-                      {goal.target_amount != null &&
-                        ` · ${WHOLE.format(Number(goal.target_amount))} ${currency}`}
-                    </span>
-                  </span>
-                  <ChevronRight size={18} aria-hidden="true" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="flex flex-col gap-2 md:flex-row md:justify-between">
-          <AddButton to="/goals?new=1">{t("goals.new")}</AddButton>
-          {goalsStore.goals.length > 0 && (
-            <Link to="/goals" className="min-h-11 text-md font-semibold text-primary">
-              {t("goals.all")}
-            </Link>
-          )}
-        </div>
+        <PlanGoals
+          currency={currency}
+          freeThisMonth={incomeTotal === null ? null : incomeTotal - spent - bills}
+        />
       </Section>
 
       {incomeEntry !== null && (
@@ -362,14 +378,14 @@ export const PlanPage = observer(function PlanPage() {
       )}
       {editingRegular && (
         <SettingsSheet
-          title={t("income.regular")}
+          title={editingRegular === "bill" ? t("income.billsTitle") : t("income.regular")}
           onClose={() => {
-            setEditingRegular(false);
+            setEditingRegular(null);
             void incomeStore.load(year, month);
             void incomeStore.loadBalance(budgetStore.today);
           }}
         >
-          <RegularIncomes />
+          <RegularIncomes kind={editingRegular} />
         </SettingsSheet>
       )}
       {payingTaxes && (

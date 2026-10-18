@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { PenLine, Pencil, Plus, Trash2, X } from "lucide-react";
+import { PenLine, Plus, X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -9,8 +9,8 @@ import { ReceiptDetailModal } from "@/features/receipts/components/ReceiptDetail
 import { formatAmount } from "@/i18n/format";
 import { formatPurchase } from "@/shared/purchaseDate";
 import {
-  BackLink,
   Button,
+  Collapsible,
   Card,
   ErrorState,
   LoadingState,
@@ -26,10 +26,11 @@ import { TripDialog } from "../components/TripDialog";
 import { PerDiemCard } from "../components/PerDiemCard";
 import { SettlementCard } from "../components/SettlementCard";
 import { TripAsking } from "../components/TripAsking";
-import { TripBudget } from "../components/TripBudget";
-import { TripSpending } from "../components/TripSpending";
+import { TripDays } from "../components/TripDays";
+import { TripHero } from "../components/TripHero";
+import { TripKinds } from "../components/TripKinds";
 import { TripStory } from "../components/TripStory";
-import { countryName, formatTripDay } from "../tripFormat";
+import { countryName } from "../tripFormat";
 
 const KINDS: ExpenseKind[] = ["transport", "accommodation", "meals", "other"];
 
@@ -88,66 +89,17 @@ export const TripPage = observer(function TripPage() {
     <div className="flex-grow flex flex-col items-center py-4 md:py-10 md:px-8">
       <div className="w-full max-w-[1000px] flex flex-col gap-4 md:gap-5">
         {/* Holidays live in Plan; business trips have their own list (F23.12). */}
-        <BackLink
-          to={trip.kind === "business" ? "/trips?kind=business" : "/plan"}
-          label={t("detail.back")}
+        <TripHero
+          trip={trip}
+          currency={currency}
+          place={place}
+          onEdit={() => {
+            setEditing(true);
+          }}
+          onDelete={() => {
+            setDeleting(true);
+          }}
         />
-
-        <header className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="m-0 text-3xl font-extrabold tracking-[-0.02em]">{trip.name}</h1>
-              <Pill size="sm" tone={trip.kind === "business" ? "info" : "accent"}>
-                {t(`kind.${trip.kind}`)}
-              </Pill>
-            </div>
-            <p className="m-0 text-lg text-muted-foreground">
-              {t("dates", {
-                start: formatTripDay(trip.start_date),
-                end: formatTripDay(trip.end_date),
-              })}
-              {place && ` · ${place}`}
-            </p>
-            {trip.purpose && <p className="m-0 text-md">{trip.purpose}</p>}
-          </div>
-          <div className="flex gap-2 [&>*]:flex-1 md:[&>*]:flex-none">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setEditing(true);
-              }}
-            >
-              <Pencil size={14} aria-hidden="true" />
-              {t("detail.edit")}
-            </Button>
-            <Button
-              variant="danger"
-              onClick={() => {
-                setDeleting(true);
-              }}
-            >
-              <Trash2 size={14} aria-hidden="true" />
-              {t("detail.delete")}
-            </Button>
-          </div>
-        </header>
-
-        <Card className="flex flex-col gap-3 p-4 md:p-5">
-          <div className="flex items-baseline justify-between gap-3">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-base text-muted-foreground">
-                {t(trip.kind === "business" ? "toReimburse" : "total")}
-              </span>
-              <span className="text-[24px] font-bold tabular-nums md:text-[28px]">
-                {formatAmount(trip.total)} {currency}
-              </span>
-            </div>
-            <span className="text-base text-muted-foreground">
-              {t("receipts", { count: trip.receipt_count })}
-            </span>
-          </div>
-          <TripBudget trip={trip} currency={currency} />
-        </Card>
 
         <TripAsking trip={trip} />
 
@@ -155,9 +107,15 @@ export const TripPage = observer(function TripPage() {
 
         {trip.kind === "business" && <SettlementCard trip={trip} />}
 
-        {trip.receipt_count > 0 && <TripSpending trip={trip} currency={currency} />}
+        {trip.receipt_count > 0 && <TripDays trip={trip} currency={currency} />}
 
-        {trip.receipt_count > 0 && <TripStory trip={trip} currency={currency} />}
+        {trip.receipt_count > 0 && <TripKinds trip={trip} currency={currency} />}
+
+        {trip.receipt_count > 0 && trip.categories.length > 0 && (
+          <Collapsible title={t("categoriesTitle")}>
+            <TripStory trip={trip} currency={currency} />
+          </Collapsible>
+        )}
 
         <section aria-labelledby="trip-receipts" className="flex flex-col gap-2.5">
           <div className="flex items-center justify-between gap-3">

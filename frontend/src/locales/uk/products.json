@@ -98,7 +98,13 @@
     "remove": "Прибрати {{name}}",
     "perMonth": "На місяць",
     "mostly": "здебільшого {{shop}}",
-    "changePill": "{{percent}}% за {{unit}}"
+    "changePill": "{{percent}}% за {{unit}}",
+    "pickFirst": "Оберіть товари для дослідження: позначте їх у списку або додайте тут.",
+    "month": "Місяць",
+    "months3": "3 міс.",
+    "months6": "6 міс.",
+    "changeUnit": "{{percent}}% за {{unit}}",
+    "go": "Дослідити"
   },
   "selections": {
     "title": "Мої набори",

@@ -199,5 +199,26 @@
     "summary_many": "{{amount}} · {{count}} dochodów",
     "summary_other": "{{amount}} · {{count}} dochodu",
     "none": "Na razie brak"
+  },
+  "bills": {
+    "title": "Stałe wydatki",
+    "hint": "Co schodzi co miesiąc bez paragonu — mieszkanie, subskrypcje, kredyt. Liczy się samo, jeszcze przed zakupami.",
+    "name": "Co to jest",
+    "namePlaceholder": "Mieszkanie",
+    "amount": "Miesięcznie, {{currency}}",
+    "day": "Schodzi",
+    "anyDay": "Dowolnego dnia",
+    "monthly": "co miesiąc",
+    "onDay": "{{day}}. dnia",
+    "remove": "Zakończ",
+    "cancel": "Anuluj",
+    "save": "Zapisz",
+    "add": "Dodaj kolejny",
+    "addFirst": "Dodaj stały wydatek",
+    "summary_one": "{{amount}} · {{count}} wydatek",
+    "summary_few": "{{amount}} · {{count}} wydatki",
+    "summary_many": "{{amount}} · {{count}} wydatków",
+    "summary_other": "{{amount}} · {{count}} wydatku",
+    "none": "Na razie brak"
   }
 }

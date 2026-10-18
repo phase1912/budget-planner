@@ -249,8 +249,12 @@ class ReceiptService:
                     files_data: list[dict[str, str | bytes]],
                 ) -> dict[str, object]:
                     uploads = cast(list[UploadedFile], files_data)
-                    extraction = (await photos.ingest(user, uploads)).extraction
+                    extraction = (await photos.ingest(user, uploads, compress=False)).extraction
                     extraction = await self._reconcile_total(user, extraction)
+                    # Read and re-read at full quality; only the copy kept is made smaller.
+                    await photos.compress_stored(
+                        user, cast(list[str], extraction.get("file_ids") or [])
+                    )
                     extraction = _dated(extraction, datetime.now(UTC).date())
                     apply_corrections(extraction, corrections)
                     if self.parser_port:

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 import { Pill, SegmentedControl } from "@/shared/components";
 import { numberFormat } from "@/i18n/format";
@@ -38,11 +39,10 @@ export const ProductsOverview = observer(function ProductsOverview({
   const [opened, setOpened] = useState<string | null>(null);
   const overview = productsStore.overview;
   const most = [...productsStore.products].sort((a, b) => b.purchases - a.purchases).slice(0, 8);
+  const navigate = useNavigate();
   const explore = (id: string) => {
     productsStore.select([id]);
-    requestAnimationFrame(() => {
-      document.getElementById("explore-panel")?.scrollIntoView({ behavior: "smooth" });
-    });
+    void navigate("/products/explore");
   };
   const widestShop = Math.max(1, ...(overview?.shops.map((s) => s.cheapest_for) ?? [1]));
 

@@ -9,14 +9,17 @@ const LONG = dateFormat({ month: "long", year: "numeric" });
 
 /**
  * What the selection cost month by month (F16.2, explore.html): a column per month,
- * tapping one names its amount and how many times it was bought; opens on the latest.
+ * stacked by product in each product's colour; tapping one names its month and amount.
+ * Opens on the latest month.
  */
 export function MonthBars({
   months,
   currency,
+  colourOf,
 }: {
   months: Exploration["months"];
   currency: string;
+  colourOf: (productId: string) => string;
 }) {
   const { t } = useTranslation("products");
   const [chosen, setChosen] = useState<string | null>(null);
@@ -26,19 +29,19 @@ export function MonthBars({
   const labelled = months.length <= 12;
 
   return (
-    <section className="flex flex-col gap-3">
+    <section className="flex flex-col gap-3 rounded-card bg-surface p-4">
       <div className="flex items-baseline justify-between gap-3">
-        <h3 className="m-0 text-lg font-extrabold">{t("explore.byMonth")}</h3>
+        <h2 className="m-0 text-xl font-extrabold">{t("explore.byMonth")}</h2>
         {selected && (
           <span className="text-md font-bold text-primary tabular-nums" aria-live="polite">
             {SHORT.format(day(selected.month))} · {formatAmount(selected.amounts.spent)} {currency}
           </span>
         )}
       </div>
-      <div className="flex h-28 items-end gap-1">
+      <div className="flex h-40 items-end gap-1.5 md:gap-2.5">
         {months.map((month) => {
-          const share = top > 0 ? Number(month.amounts.spent) / top : 0;
           const isSelected = month.month === selected?.month;
+          const total = Number(month.amounts.spent);
           return (
             <button
               key={month.month}
@@ -52,16 +55,29 @@ export function MonthBars({
               onClick={() => {
                 setChosen(month.month);
               }}
-              className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1"
+              className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5"
             >
               <span
-                className={`block w-full rounded-t-[5px] rounded-b-[2px] ${
-                  isSelected ? "bg-primary" : "bg-tone-primary-bg"
-                }`}
-                style={{ height: `${String(Math.max(4, share * 100))}%` }}
-              />
+                className={`flex w-full flex-col-reverse gap-0.5 transition-opacity ${isSelected ? "" : "opacity-60"}`}
+                style={{ height: `${String(top > 0 ? Math.max(3, (total / top) * 100) : 3)}%` }}
+              >
+                {total === 0 ? (
+                  <span className="block h-full w-full rounded-[4px] bg-muted" />
+                ) : (
+                  month.by_product.map((part) => (
+                    <span
+                      key={part.product_id}
+                      className="block w-full rounded-[5px]"
+                      style={{
+                        height: `${String((Number(part.spent) / total) * 100)}%`,
+                        background: colourOf(part.product_id),
+                      }}
+                    />
+                  ))
+                )}
+              </span>
               {labelled && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-sm text-muted-foreground">
                   {SHORT.format(day(month.month))}
                 </span>
               )}

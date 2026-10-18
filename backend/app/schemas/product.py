@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ProductVariantResponse(BaseModel):
@@ -117,11 +117,28 @@ class ProductPurchasesResponse(BaseModel):
     shops: list[ShopPriceResponse]
 
 
+class ProductSpendResponse(BaseModel):
+    """What one product cost in a month."""
+
+    product_id: uuid.UUID
+    spent: Decimal
+
+
 class MonthPurchasesResponse(BaseModel):
-    """The selection's purchases in one calendar month (`month` is its first day)."""
+    """The selection's purchases in one calendar month (`month` is its first day), and
+    what each product of it cost then."""
 
     month: date
     amounts: AmountsResponse
+    by_product: list[ProductSpendResponse] = []
+
+    @field_validator("by_product", mode="before")
+    @classmethod
+    def _listed(cls, value: object) -> object:
+        """The domain keeps a {product id: amount} map; the API lists it."""
+        if isinstance(value, dict):
+            return [{"product_id": k, "spent": v} for k, v in value.items()]
+        return value
 
 
 class ExplorationResponse(BaseModel):

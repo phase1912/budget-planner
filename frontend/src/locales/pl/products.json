@@ -98,7 +98,13 @@
     "remove": "Usuń {{name}}",
     "perMonth": "Miesięcznie",
     "mostly": "głównie {{shop}}",
-    "changePill": "{{percent}}% za {{unit}}"
+    "changePill": "{{percent}}% za {{unit}}",
+    "pickFirst": "Wybierz produkty do analizy: zaznacz je na liście albo dodaj tutaj.",
+    "month": "Miesiąc",
+    "months3": "3 mies.",
+    "months6": "6 mies.",
+    "changeUnit": "{{percent}}% za {{unit}}",
+    "go": "Analizuj"
   },
   "selections": {
     "title": "Moje zestawy",

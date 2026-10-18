@@ -104,3 +104,40 @@ def test_a_small_upright_jpeg_and_a_pdf_are_left_as_they_came() -> None:
 
     assert prepare_photo(small, "image/jpeg") == (small, "image/jpeg")
     assert prepare_photo(b"%PDF-1.7", "application/pdf") == (b"%PDF-1.7", "application/pdf")
+
+
+class Keeping(Recording):
+    """Storage that keeps what it is given, so a photo can be read back."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.objects: dict[str, bytes] = {}
+
+    async def upload_file(
+        self, name: str, content: bytes, content_type: str, metadata: Any = None
+    ) -> str:
+        self.objects[name] = content
+        return await super().upload_file(name, content, content_type, metadata)
+
+    async def download_file(self, name: str) -> bytes:
+        return self.objects[name]
+
+
+@pytest.mark.asyncio
+async def test_a_photo_that_may_be_read_again_is_kept_whole_until_reading_is_over() -> None:
+    """A recheck reads the photo as first read, never the smaller copy kept for display."""
+    storage = Keeping()
+    user = User(id=uuid.uuid4(), email="a@example.com")
+    photo = _phone_photo(2400, 1800)
+    adapter = PhotoIngestionAdapter(storage, None)  # type: ignore[arg-type]
+
+    result = await adapter.ingest(
+        user, [{"content": photo, "content_type": "image/jpeg"}], compress=False
+    )
+    [file_id] = result.file_ids
+    name = f"receipts/{user.id}/{file_id}"
+    assert storage.objects[name] == photo
+
+    await adapter.compress_stored(user, result.file_ids)
+    assert len(storage.objects[name]) < len(photo)
+    assert max(Image.open(io.BytesIO(storage.objects[name])).size) <= KEPT_PHOTO_SIDE

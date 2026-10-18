@@ -10,7 +10,9 @@
     "last3Short": "3 місяці",
     "custom": "Свій",
     "thisMonthShort": "Цей місяць",
-    "lastMonthShort": "Минулий"
+    "lastMonthShort": "Минулий",
+    "year": "Цей рік",
+    "yearShort": "Рік"
   },
   "compareWith": "Порівняти з {{period}}",
   "previousPeriod": "попереднім періодом",
@@ -75,5 +77,21 @@
     "title": "По днях",
     "average": "У середньому {{amount}} {{currency}} на день",
     "bar": "{{date}}, {{amount}} {{currency}}"
+  },
+  "sections": {
+    "receipts": "Чеки",
+    "loading": "Завантажуємо…",
+    "noReceipts": "За цей період чеків немає.",
+    "unknownShop": "Невідомий магазин",
+    "toCheck": "на перевірку",
+    "allReceipts_one": "Усі {{count}} чек · пошук",
+    "allReceipts_few": "Усі {{count}} чеки · пошук",
+    "allReceipts_many": "Усі {{count}} чеків · пошук",
+    "allReceipts_other": "Усі {{count}} чека · пошук",
+    "searchReceipts": "Пошук і фільтри чеків",
+    "toFile": "Позиції без категорії",
+    "allItems": "Усі позиції й категорії",
+    "bills": "Щомісяця",
+    "billsHint": "Квартира та інші витрати без чека — враховані в Плані й на Головній, налаштовуються в Налаштуваннях."
   }
 }

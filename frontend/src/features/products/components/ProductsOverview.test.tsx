@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 
 import { ProductsOverview } from "./ProductsOverview";
@@ -34,7 +35,7 @@ vi.mock("@/stores/StoreContext", () => ({ useStores: () => stores }));
 
 describe("ProductsOverview (F23.5)", () => {
   it("names the price that moved, says where it costs what, and opens it for exploring", () => {
-    render(<ProductsOverview currency="PLN" />);
+    render(<ProductsOverview currency="PLN" />, { wrapper: MemoryRouter });
 
     expect(screen.getByText("Biedronka · 3.49 → 3.99 PLN")).toBeInTheDocument();
     expect(screen.getByText("+14%")).toBeInTheDocument();
@@ -48,7 +49,7 @@ describe("ProductsOverview (F23.5)", () => {
   });
 
   it("ranks the shops and says what was paid above the cheapest", () => {
-    render(<ProductsOverview currency="PLN" />);
+    render(<ProductsOverview currency="PLN" />, { wrapper: MemoryRouter });
     const [bestShop] = screen.getAllByRole("button", { name: /Best shop/ });
     if (!bestShop) throw new Error("no Best shop tab");
     fireEvent.click(bestShop);
@@ -58,7 +59,7 @@ describe("ProductsOverview (F23.5)", () => {
   });
 
   it("lists what is bought most", () => {
-    render(<ProductsOverview currency="PLN" />);
+    render(<ProductsOverview currency="PLN" />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole("button", { name: /Bought most/ }));
     expect(screen.getByText("×14")).toBeInTheDocument();
   });

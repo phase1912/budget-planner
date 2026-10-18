@@ -173,6 +173,7 @@ async def test_the_balance_moves_with_income_and_counted_purchases_since_it_was_
         "came_in": "6200.00",
         "spent": "169.00",
         "taxes_paid": "0",
+        "bills": "0",
         "for_taxes": None,
     }
 
@@ -406,3 +407,68 @@ async def test_tax_comes_out_of_a_regular_income_marked_taxed(db_session: AsyncS
 
     assert (month["total"], month["taxes"], month["net"]) == ("11000.00", "2800.00", "8200.00")
     assert (balance["balance"], balance["for_taxes"]) == ("11000.00", "2800.00")
+
+
+@pytest.mark.asyncio
+async def test_a_regular_bill_counts_each_month_and_leaves_the_balance_on_its_day(
+    db_session: AsyncSession,
+) -> None:
+    """F23.18: rent of 3 000 on the 5th, from the month it was added."""
+    user = await UserFactory.create_async()
+    await _call(
+        db_session,
+        "PATCH",
+        "/users/me",
+        user=user,
+        json={"starting_balance": "5000", "balance_since": "2026-10-01"},
+    )
+    rent = (
+        await _call(
+            db_session,
+            "POST",
+            "/api/v1/income/bills?today=2026-10-01",
+            user=user,
+            json={"name": "Rent", "amount": "3000.00", "day": 5},
+        )
+    ).json()
+
+    october = (await _call(db_session, "GET", "/api/v1/income?month=2026-10", user=user)).json()
+    september = (await _call(db_session, "GET", "/api/v1/income?month=2026-09", user=user)).json()
+    before = await _call(db_session, "GET", "/api/v1/income/balance?today=2026-10-04", user=user)
+    after = await _call(db_session, "GET", "/api/v1/income/balance?today=2026-10-05", user=user)
+
+    assert ([b["name"] for b in october["bills"]], october["bills_total"]) == (["Rent"], "3000.00")
+    assert september["bills"] == []
+    assert (before.json()["balance"], after.json()["balance"]) == ("5000.00", "2000.00")
+
+    await _call(
+        db_session, "DELETE", f"/api/v1/income/bills/{rent['id']}?today=2026-11-20", user=user
+    )
+    november = (await _call(db_session, "GET", "/api/v1/income?month=2026-11", user=user)).json()
+    december = (await _call(db_session, "GET", "/api/v1/income?month=2026-12", user=user)).json()
+    assert (november["bills_total"], december["bills_total"]) == ("3000.00", "0.00")
+
+
+@pytest.mark.asyncio
+async def test_another_users_bill_cannot_be_seen_changed_or_stopped(
+    db_session: AsyncSession,
+) -> None:
+    """N2."""
+    owner = await UserFactory.create_async()
+    stranger = await UserFactory.create_async()
+    rent = (
+        await _call(
+            db_session,
+            "POST",
+            "/api/v1/income/bills",
+            user=owner,
+            json={"name": "Rent", "amount": "3000.00"},
+        )
+    ).json()
+    url = f"/api/v1/income/bills/{rent['id']}"
+
+    listed = await _call(db_session, "GET", "/api/v1/income/bills", user=stranger)
+    changed = await _call(db_session, "PUT", url, user=stranger, json={"name": "x", "amount": "1"})
+    ended = await _call(db_session, "DELETE", url, user=stranger)
+
+    assert (listed.json(), changed.status_code, ended.status_code) == ([], 404, 404)

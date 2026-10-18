@@ -160,5 +160,27 @@
     "photosExpire": "Фото чеків зберігаються 90 днів: перші фото цієї поїздки зникнуть {{date}}. Завантажте розрахунок у PDF до того, щоб зберегти їх разом із ним."
   },
   "holidays": "Відпочинок",
-  "business": "Відрядження"
+  "business": "Відрядження",
+  "hero": {
+    "day": "День {{day}} з {{of}}",
+    "inDays_one": "Через {{count}} день",
+    "inDays_few": "Через {{count}} дні",
+    "inDays_many": "Через {{count}} днів",
+    "inDays_other": "Через {{count}} дня",
+    "over": "Завершено",
+    "spent": "Витрачено {{amount}} {{currency}}",
+    "toReimburse": "До відшкодування {{amount}} {{currency}}",
+    "of": "з {{amount}} {{currency}}",
+    "perDay_one": "{{amount}} {{currency}} на день — і бюджету вистачить на {{count}} день, що лишився",
+    "perDay_few": "{{amount}} {{currency}} на день — і бюджету вистачить на {{count}} дні, що лишилися",
+    "perDay_many": "{{amount}} {{currency}} на день — і бюджету вистачить на {{count}} днів, що лишилися",
+    "perDay_other": "{{amount}} {{currency}} на день — і бюджету вистачить на {{count}} дня, що лишилися",
+    "overBy": "На {{amount}} {{currency}} понад бюджет",
+    "holiday": "Відпочинок"
+  },
+  "kinds": {
+    "perDay": "{{amount}} {{currency}} на день",
+    "converted": "Сплачено в {{paid}}: перераховано за курсом НБП на день покупки. Рахується у своєму місяці, окремо від щоденних витрат."
+  },
+  "categoriesTitle": "За категоріями"
 }

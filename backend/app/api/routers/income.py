@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import UTC, date, datetime
+from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request, Response, UploadFile, status
@@ -24,6 +25,8 @@ from app.schemas.income import (
     IncomeSourceRequest,
     MonthIncomeRead,
     PendingIncomeRead,
+    RegularExpenseRead,
+    RegularExpenseRequest,
     TaxPaymentRead,
     TaxPaymentRequest,
 )
@@ -57,6 +60,8 @@ async def month_income(
         net=view.income.net,
         taxes_paid=view.taxes_paid,
         regular=[IncomeSourceRead.model_validate(s) for s in view.regular],
+        bills=[RegularExpenseRead.model_validate(b) for b in view.bills],
+        bills_total=sum((b.amount for b in view.bills), Decimal("0.00")),
     )
 
 
@@ -165,6 +170,49 @@ async def end_regular_income(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@router.get("/bills", response_model=list[RegularExpenseRead])
+async def regular_bills(_user: CurrentUser, session: Session) -> list[RegularExpenseRead]:
+    """The regular bills still running — rent, subscriptions (F23.18)."""
+    return [
+        RegularExpenseRead.model_validate(b) for b in await IncomeService(session).regular_bills()
+    ]
+
+
+@router.post("/bills", response_model=RegularExpenseRead, status_code=status.HTTP_201_CREATED)
+async def add_bill(
+    body: RegularExpenseRequest,
+    _user: CurrentUser,
+    session: Session,
+    today: Annotated[date | None, Query(description="The caller's own date")] = None,
+) -> RegularExpenseRead:
+    """Start a regular bill; it counts every month from this one on."""
+    return RegularExpenseRead.model_validate(
+        await IncomeService(session).add_bill(body, today or datetime.now(UTC).date())
+    )
+
+
+@router.put("/bills/{bill_id}", response_model=RegularExpenseRead)
+async def change_bill(
+    bill_id: uuid.UUID, body: RegularExpenseRequest, _user: CurrentUser, session: Session
+) -> RegularExpenseRead:
+    """Change a regular bill; 404 if it is not the user's (N2)."""
+    return RegularExpenseRead.model_validate(
+        await IncomeService(session).change_bill(bill_id, body)
+    )
+
+
+@router.delete("/bills/{bill_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def end_bill(
+    bill_id: uuid.UUID,
+    _user: CurrentUser,
+    session: Session,
+    today: Annotated[date | None, Query(description="The caller's own date")] = None,
+) -> Response:
+    """Stop a regular bill from next month; past months keep it. 404 if not the user's."""
+    await IncomeService(session).end_bill(bill_id, today or datetime.now(UTC).date())
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.get("/taxes", response_model=list[TaxPaymentRead])
 async def tax_payments(
     _user: CurrentUser,
@@ -224,5 +272,6 @@ async def balance(user: CurrentUser, session: Session, today: date) -> BalanceRe
         came_in=found.came_in,
         spent=found.spent,
         taxes_paid=found.taxes_paid,
+        bills=found.bills,
         for_taxes=found.for_taxes if user.pays_own_taxes else None,
     )

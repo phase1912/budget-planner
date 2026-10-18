@@ -62,6 +62,9 @@ class MonthIncomeRead(BaseModel):
     """Tax payments recorded this month."""
     regular: list["IncomeSourceRead"] = []
     """The regular incomes counted in this month (F23.17), part of `total`."""
+    bills: list["RegularExpenseRead"] = []
+    """The regular bills of this month (F23.18): spending without receipts."""
+    bills_total: Decimal = Decimal("0.00")
 
 
 class BalanceRead(BaseModel):
@@ -73,6 +76,7 @@ class BalanceRead(BaseModel):
     came_in: Decimal | None
     spent: Decimal | None
     taxes_paid: Decimal | None = None
+    bills: Decimal | None = None
     for_taxes: Decimal | None = None
     """Of `balance`, what is still owed in taxes (F23.16); null for most users."""
 
@@ -108,6 +112,21 @@ class IncomeSourceRequest(BaseModel):
 
 
 class IncomeSourceRead(IncomeSourceRequest):
+    id: uuid.UUID
+    starts_on: date
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RegularExpenseRequest(BaseModel):
+    """A bill paid every month without a receipt — rent, a subscription (F23.18)."""
+
+    name: str = Field(min_length=1, max_length=80)
+    amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
+    day: int | None = Field(None, ge=1, le=31)
+
+
+class RegularExpenseRead(RegularExpenseRequest):
     id: uuid.UUID
     starts_on: date
 
