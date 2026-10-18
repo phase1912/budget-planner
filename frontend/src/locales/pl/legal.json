@@ -34,7 +34,7 @@
       },
       "ai": {
         "title": "Odczytywanie paragonów przez AI",
-        "body": "Zdjęcia paragonów i nazwy pozycji odczytuje i kategoryzuje model AI. Zamienia on jedynie to, co wydrukowano, na kwoty, które możesz sprawdzić i poprawić; nie podejmuje wobec Ciebie decyzji wywołujących skutki prawne ani podobnie istotne."
+        "body": "Zdjęcia paragonów i nazwy pozycji odczytuje i kategoryzuje model AI; tak samo odczytuje pasek wypłaty lub przelew wysłany jako dochód — sam dokument nie jest przechowywany, tylko potwierdzone kwota, data i płatnik. Zamienia on jedynie to, co wydrukowano, na kwoty, które możesz sprawdzić i poprawić; nie podejmuje wobec Ciebie decyzji wywołujących skutki prawne ani podobnie istotne."
       }
     }
   },

@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
 import { Button, Input, Modal, ModalBody, Select } from "@/shared/components";
-import type { IncomeEntry, IncomeRequest } from "@/stores/IncomeStore";
+import type { IncomeDraft, IncomeEntry, IncomeRequest } from "@/stores/IncomeStore";
 import { useStores } from "@/stores/StoreContext";
 
 const KINDS = ["salary", "side", "refund", "other"] as const;
@@ -12,24 +12,32 @@ interface IncomeDialogProps {
   /** The entry to change; none adds a new one dated `defaultDay`. */
   entry: IncomeEntry | null;
   defaultDay: string;
+  /** What a document said came in (F23.11): the form starts from it, saved as read. */
+  draft?: IncomeDraft | null;
   onClose: () => void;
   onSaved: () => void;
 }
 
-/** One sum that came in, added or changed by hand (F23.10); an existing one can be deleted. */
+/**
+ * One sum that came in, added or changed by hand (F23.10); an existing one can be deleted.
+ * Given a `draft` read off a payslip or transfer (F23.11), it opens filled in for the user
+ * to check: nothing is saved until they do, and then it is kept as read from a document.
+ */
 export const IncomeDialog = observer(function IncomeDialog({
   entry,
   defaultDay,
+  draft = null,
   onClose,
   onSaved,
 }: IncomeDialogProps) {
   const { incomeStore } = useStores();
   const { t } = useTranslation("plan");
   const [form, setForm] = useState<IncomeRequest>({
-    received_on: entry?.received_on ?? defaultDay,
-    amount: entry?.amount ?? "",
-    source: entry?.source ?? t("income.kinds.salary"),
-    kind: entry?.kind ?? "salary",
+    received_on: entry?.received_on ?? draft?.received_on ?? defaultDay,
+    amount: entry?.amount ?? draft?.amount ?? "",
+    source: entry?.source ?? draft?.source ?? t(`income.kinds.${draft?.kind ?? "salary"}`),
+    kind: entry?.kind ?? draft?.kind ?? "salary",
+    channel: draft ? "document" : undefined,
   });
   const amount = String(form.amount).trim().replace(",", ".").replace(/\s/g, "");
   const valid = /^\d+(\.\d{1,2})?$/.test(amount) && Number(amount) > 0 && form.source.trim() !== "";
@@ -59,8 +67,11 @@ export const IncomeDialog = observer(function IncomeDialog({
           }}
         >
           <h2 id="income-title" className="m-0 text-lg font-bold">
-            {entry ? t("income.edit") : t("income.add")}
+            {entry ? t("income.edit") : draft ? t("income.fromDocument") : t("income.add")}
           </h2>
+          {draft && (
+            <p className="m-0 text-md text-muted-foreground">{t("income.fromDocumentHint")}</p>
+          )}
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <Input
               id="income-amount"

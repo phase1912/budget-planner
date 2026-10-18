@@ -8,7 +8,7 @@ from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import NotFoundError
-from app.domain.income import IncomeChannel, MonthIncome, month_income
+from app.domain.income import MonthIncome, month_income
 from app.domain.quota import next_month_start
 from app.models.income import Income
 from app.models.user import User
@@ -41,10 +41,9 @@ class IncomeService:
     async def total_for(self, user: User, first_day: date) -> Decimal | None:
         return (await self.month(user, first_day)).income.total
 
-    async def add(
-        self, request: IncomeRequest, channel: IncomeChannel = IncomeChannel.MANUAL
-    ) -> Income:
-        income = Income(**request.model_dump(), channel=channel.value)
+    async def add(self, request: IncomeRequest) -> Income:
+        """Record a sum that came in, typed or confirmed from a document (`channel`)."""
+        income = Income(**request.model_dump())
         self.incomes.add(income)
         await self.session.flush()
         return income
@@ -54,7 +53,8 @@ class IncomeService:
         income = await self.incomes.get(income_id)
         if income is None:
             raise NotFoundError("No such income.")
-        for field, value in request.model_dump().items():
+        # How an entry came in stays as it was: correcting it does not make it typed.
+        for field, value in request.model_dump(exclude={"channel"}).items():
             setattr(income, field, value)
         await self.session.flush()
         return income

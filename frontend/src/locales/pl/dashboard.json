@@ -137,7 +137,11 @@
     "since": "liczone od {{date}}",
     "editTitle": "Pieniądze na kontach",
     "editLabel": "Ile masz dzisiaj",
-    "editHint": "To nie dochód, tylko pieniądze na Twoich kartach i kontach w tej chwili. Od dziś rośnie z wpływami i maleje z każdym zakupem."
+    "editHint": "To nie dochód, tylko pieniądze na Twoich kartach i kontach w tej chwili. Od dziś rośnie z wpływami i maleje z każdym zakupem.",
+    "emptyTitle": "Wygląda na to, że wpłynęły pieniądze, których tu nie ma",
+    "emptyBody": "Według naszych obliczeń na kontach jest {{amount}} {{currency}}. Dodaj, co wpłynęło, albo wpisz, ile masz teraz.",
+    "addIncome": "Dodaj wpływ",
+    "correct": "Popraw saldo"
   },
   "insight": {
     "dearer": "{{name}} podrożał o {{percent}}%",
@@ -146,5 +150,16 @@
   "reviewShort_one": "pozycja czeka na kategorię",
   "reviewShort_few": "pozycje czekają na kategorię",
   "reviewShort_many": "pozycji czeka na kategorię",
-  "reviewShort_other": "pozycji czeka na kategorię"
+  "reviewShort_other": "pozycji czeka na kategorię",
+  "received": {
+    "title": "Pieniądze, które wpłynęły",
+    "label": "Wpłynęło dzisiaj",
+    "hint": "Trafi do dochodu w tym miesiącu i do salda.",
+    "source": "Dodano na stronie Start"
+  },
+  "payday": {
+    "question": "Pensja już wpłynęła?",
+    "yes": "Tak, dodaj",
+    "other": "Inna kwota"
+  }
 }

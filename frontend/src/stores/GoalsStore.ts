@@ -11,6 +11,8 @@ export type GoalCreate = components["schemas"]["GoalCreate"];
 export type GoalUpdate = components["schemas"]["GoalUpdate"];
 export type GoalType = Goal["type"];
 export type FinancialKind = NonNullable<Goal["financial_kind"]>;
+export type GoalCheckRequest = components["schemas"]["GoalCheckRequest"];
+export type GoalCheck = components["schemas"]["GoalCheckResponse"];
 
 /**
  * The user's goals and the Goals screen's state (BRD F1 — F8.1).
@@ -26,6 +28,9 @@ export class GoalsStore {
   loadError: string | null = null;
   isSaving = false;
   saveError: string | null = null;
+  /** The check of a goal not yet saved (F23.13); null until asked, or when it failed. */
+  check: GoalCheck | null = null;
+  isChecking = false;
 
   private readonly toastStore: ToastStore;
   private readonly onGoalsChanged: () => void;
@@ -57,6 +62,25 @@ export class GoalsStore {
       }
       this.goals = response.data;
     });
+  }
+
+  /**
+   * Ask whether a money goal is within reach before saving it (F23.13). A failed check
+   * leaves `check` null; the goal can still be saved, the check is advice, not a gate.
+   */
+  async checkPlan(request: GoalCheckRequest): Promise<void> {
+    this.isChecking = true;
+    this.check = null;
+    const response = await settle(() => apiClient.POST("/api/v1/goals/check", { body: request }));
+    runInAction(() => {
+      this.isChecking = false;
+      this.check = response.error === undefined ? response.data : null;
+    });
+  }
+
+  clearCheck(): void {
+    this.check = null;
+    this.isChecking = false;
   }
 
   /** State a new goal; resolves to whether it was saved. */

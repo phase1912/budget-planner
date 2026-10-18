@@ -16,6 +16,19 @@ class IncomeRequest(BaseModel):
     amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
     source: str = Field(min_length=1, max_length=80)
     kind: IncomeKind = IncomeKind.SALARY
+    channel: IncomeChannel = IncomeChannel.MANUAL
+
+
+class IncomeDraft(BaseModel):
+    """What a document says came in, not yet saved: the user confirms or corrects it (F23.11).
+
+    Any field the document did not show is null.
+    """
+
+    amount: Decimal | None
+    received_on: date | None
+    source: str | None
+    kind: IncomeKind
 
 
 class IncomeRead(BaseModel):

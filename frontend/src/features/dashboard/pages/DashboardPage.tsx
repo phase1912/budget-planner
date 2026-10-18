@@ -13,6 +13,8 @@ import { ReceiptDetailModal } from "@/features/receipts/components/ReceiptDetail
 import { AtRiskWarnings } from "@/features/goals/components/AtRiskWarnings";
 import { InstallHint } from "@/features/install/InstallHint";
 import { BalanceCard } from "../components/BalanceCard";
+import { PaydayPrompt } from "../components/PaydayPrompt";
+import { paydayDue } from "@/stores/IncomeStore";
 import { CategoryTiles } from "../components/CategoryTiles";
 import { MonthHero } from "../components/MonthHero";
 import { HomeHeader } from "../components/HomeHeader";
@@ -54,7 +56,8 @@ export const DashboardPage = observer(function DashboardPage() {
   } = useStores();
   const { summary, error } = budgetStore;
   const { t } = useTranslation("dashboard");
-  const [editing, setEditing] = useState<"income" | "budget" | "balance" | null>(null);
+  const [editing, setEditing] = useState<"income" | "budget" | "balance" | "received" | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     void budgetStore.open();
@@ -98,6 +101,10 @@ export const DashboardPage = observer(function DashboardPage() {
     currency,
   });
   const entries = incomeStore.month?.entries ?? [];
+  const shown = { year, month };
+  const running = year === budgetStore.current.year && month === budgetStore.current.month;
+  const askPayday = running && paydayDue(today, authStore.user?.payday, incomeStore.month);
+  const usual = incomeStore.month?.total ?? null;
   const reviewCount = categoriesStore.reviewCount;
 
   return (
@@ -158,11 +165,36 @@ export const DashboardPage = observer(function DashboardPage() {
                     </Note>
                   </Link>
                 )}
+                {askPayday && usual !== null && (
+                  <PaydayPrompt
+                    usual={usual}
+                    currency={currency}
+                    busy={confirming}
+                    onConfirm={() => {
+                      setConfirming(true);
+                      void incomeStore
+                        .receive(
+                          { amount: usual, source: t("edit.incomeSource"), kind: "salary" },
+                          today,
+                          shown,
+                        )
+                        .finally(() => {
+                          setConfirming(false);
+                        });
+                    }}
+                    onOther={() => {
+                      setEditing("income");
+                    }}
+                  />
+                )}
                 <BalanceCard
                   balance={incomeStore.balance}
                   currency={currency}
                   onEdit={() => {
                     setEditing("balance");
+                  }}
+                  onAddIncome={() => {
+                    setEditing("received");
                   }}
                 />
                 <MonthTrips trips={budgetStore.trips} currency={currency} />
@@ -224,6 +256,25 @@ export const DashboardPage = observer(function DashboardPage() {
           />
         )}
 
+        {editing === "received" && (
+          <AmountDialog
+            title={t("received.title")}
+            label={t("received.label")}
+            hint={t("received.hint")}
+            initial=""
+            currency={currency}
+            onSave={(amount) =>
+              incomeStore.receive(
+                { amount, source: t("received.source"), kind: "other" },
+                today,
+                running ? shown : budgetStore.current,
+              )
+            }
+            onClose={() => {
+              setEditing(null);
+            }}
+          />
+        )}
         {editing === "balance" && (
           <AmountDialog
             title={t("balance.editTitle")}

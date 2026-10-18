@@ -280,6 +280,15 @@ for a month's entries, the month's figure falling back to the account's usual in
 (`app/domain/income.py`), and `GET /api/v1/income/balance?today=` for the balance
 (F23.14): the account's starting amount carried forward by income received and spending
 counted since, through the same `ReceiptRepository.month_total` the month view uses.
+`POST /api/v1/income/read` reads a payslip or transfer confirmation through
+`IncomeReaderPort` (`IncomeDocumentAdapter`, the vision model) into a draft that is not
+saved; the file stays in memory, and the confirmed entry goes through `POST /income` with
+`channel: "document"` (F23.11).
+
+Spending day by day (`GET /api/v1/statistics/daily`, F23.4) sums the same `paid` per UTC
+day and lists every day of the period, a quiet one as zero (`app/domain/daily_spend.py`).
+A goal is checked before it is saved by `POST /api/v1/goals/check` (F23.13): the service
+reads the last three whole months, `app/domain/goal_check.py` judges — no model call.
 
 ## Proactive advice
 

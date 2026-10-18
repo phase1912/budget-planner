@@ -30,7 +30,8 @@ const budgetStore = {
 
 const incomeStore = {
   month: null as null | { total: string | null; entered: boolean; entries: { amount: string }[] },
-  balance: null,
+  balance: null as null | { balance: string | null; since: string | null },
+  receive: vi.fn().mockResolvedValue(true),
   load: vi.fn(),
   loadBalance: vi.fn(),
   setMonthTotal: vi.fn().mockResolvedValue(true),
@@ -38,6 +39,16 @@ const incomeStore = {
 const categoriesStore = { reviewCount: 0, loadReviewCount: vi.fn() };
 const profileStore = { saveQuietly: vi.fn().mockResolvedValue(true) };
 const productsStore = { overview: null, loadOverview: vi.fn() };
+
+const authStore = {
+  user: {
+    email: "test@example.com",
+    first_name: "Anna",
+    last_name: "Smith",
+    currency: "PLN",
+    payday: null as number | null,
+  },
+};
 
 const receiptStore = {
   selectedReceiptId: null as string | null,
@@ -67,9 +78,7 @@ vi.mock("@/stores/StoreContext", () => ({
     productsStore,
     adviceStore: { warnings: [], loadProgress: vi.fn(), dismissWarning: vi.fn() },
     installStore: { dismissed: false, offersInstall: false, showsIosHint: false },
-    authStore: {
-      user: { email: "test@example.com", first_name: "Anna", last_name: "Smith", currency: "PLN" },
-    },
+    authStore,
   }),
 }));
 
@@ -287,6 +296,63 @@ describe("DashboardPage — what is left (D7, F23.3)", () => {
   beforeEach(() => {
     Object.assign(budgetStore, { error: null, isLoading: false, receipts: [], spend: [] });
     incomeStore.month = null;
+    incomeStore.balance = null;
+    authStore.user.payday = null;
+  });
+
+  it("asks for income when the balance has run out, and records what came in today", async () => {
+    budgetStore.summary = summary();
+    incomeStore.balance = { balance: "-120.00", since: "2026-09-01" };
+    renderPage();
+
+    expect(screen.getByText("Looks like money came in that isn't here")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Add income" }));
+    fireEvent.change(screen.getByLabelText("Received today"), { target: { value: "500" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await vi.waitFor(() => {
+      expect(incomeStore.receive).toHaveBeenCalledWith(
+        { amount: "500", source: "Added on Home", kind: "other" },
+        "2026-09-26",
+        { year: 2026, month: 9 },
+      );
+    });
+  });
+
+  it("offers to set the balance again when it has run out", () => {
+    budgetStore.summary = summary();
+    incomeStore.balance = { balance: "0.00", since: "2026-09-01" };
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "Correct the balance" }));
+    expect(screen.getByLabelText("What you have today")).toBeInTheDocument();
+  });
+
+  it("on payday with nothing entered, records the usual salary in one tap", async () => {
+    budgetStore.summary = summary();
+    authStore.user.payday = 10;
+    incomeStore.month = { total: "6800.00", entered: false, entries: [] };
+    renderPage();
+
+    expect(screen.getByText("Has your salary arrived?")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Yes, add it" }));
+
+    await vi.waitFor(() => {
+      expect(incomeStore.receive).toHaveBeenCalledWith(
+        { amount: "6800.00", source: "Salary", kind: "salary" },
+        "2026-09-26",
+        { year: 2026, month: 9 },
+      );
+    });
+  });
+
+  it("does not ask about the salary once the month has income entered", () => {
+    budgetStore.summary = summary();
+    authStore.user.payday = 10;
+    incomeStore.month = { total: "6800.00", entered: true, entries: [] };
+    renderPage();
+
+    expect(screen.queryByText("Has your salary arrived?")).toBeNull();
   });
 
   it("reads what is left of the budget, and what was spent on a tap", () => {

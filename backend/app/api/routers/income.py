@@ -1,18 +1,31 @@
 """Money coming in (F23.10)."""
 
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Request, Response, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_current_user
+from app.adapters.income_document_agent import IncomeDocumentAdapter
+from app.agent.factory import agent_from_settings
+from app.api import rate_limit
+from app.api.dependencies import get_confirmed_user, get_current_user, get_quota_service
+from app.api.rate_limit import limiter
 from app.db.session import get_db_session
 from app.models.user import User
-from app.schemas.income import BalanceRead, IncomeRead, IncomeRequest, MonthIncomeRead
+from app.ports.income_reading import IncomeReaderPort
+from app.schemas.income import (
+    BalanceRead,
+    IncomeDraft,
+    IncomeRead,
+    IncomeRequest,
+    MonthIncomeRead,
+)
 from app.services.balance import BalanceService
 from app.services.income import IncomeService
+from app.services.income_document import IncomeDocumentService
+from app.services.quota import QuotaService
 
 router = APIRouter(prefix="/api/v1/income", tags=["income"])
 
@@ -42,6 +55,37 @@ async def month_income(
 async def add_income(body: IncomeRequest, _user: CurrentUser, session: Session) -> IncomeRead:
     """Record a sum that came in."""
     return IncomeRead.model_validate(await IncomeService(session).add(body))
+
+
+def get_income_reader() -> IncomeReaderPort:
+    """Provide the income reader port; tests override this to stay off the network."""
+    return IncomeDocumentAdapter(agent_from_settings())
+
+
+@router.post("/read", response_model=IncomeDraft)
+@limiter.limit(rate_limit.UPLOAD)
+async def read_income_document(
+    request: Request,
+    file: UploadFile,
+    user: Annotated[User, Depends(get_confirmed_user)],
+    quota: Annotated[QuotaService, Depends(get_quota_service)],
+    reader: Annotated[IncomeReaderPort, Depends(get_income_reader)],
+) -> IncomeDraft:
+    """Read a payslip or transfer confirmation into an entry to confirm (F23.11).
+
+    Nothing is stored: the file is read in memory and dropped, and only what the user
+    then confirms is saved, through `POST /income` with `channel` document. Counts
+    against the same reading limits as receipts (F10.6); refuses a document that is not
+    about money received (`not_income`) or cannot be read (`income_unreadable`).
+    """
+    await quota.ensure_can_read(user, 1, datetime.now(UTC))
+    reading = await IncomeDocumentService(reader).read(await file.read())
+    return IncomeDraft(
+        amount=reading.amount,
+        received_on=reading.received_on,
+        source=reading.source,
+        kind=reading.kind,
+    )
 
 
 @router.put("/{income_id}", response_model=IncomeRead)

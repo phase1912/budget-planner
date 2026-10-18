@@ -475,6 +475,23 @@ class ReceiptRepository(BaseRepository[Receipt]):
         count: int = (await self.session.execute(count_stmt)).scalar_one()
         return total, count
 
+    async def daily_totals(self, period: DateRange) -> dict[date, Decimal]:
+        """The current user's spend on each day of `period` that had any (F23.4).
+
+        Counted exactly as `month_total` — what was paid, `parsed` receipts only, filed by
+        printed date — and the day is taken in UTC, as the period's bounds are, so the
+        days add up to the month.
+        """
+        day = func.date(func.timezone("UTC", _purchased()))
+        stmt = (
+            select(day, func.coalesce(func.sum(LineItem.paid), 0))
+            .join(Receipt, LineItem.receipt_id == Receipt.id)
+            .where(counted_in_budget(), _within(period))
+            .group_by(day)
+        )
+        stmt = self._apply_ownership(stmt)
+        return {d: Decimal(total) for d, total in (await self.session.execute(stmt)).all()}
+
     async def month_under_review(self, period: DateRange) -> tuple[int, Decimal]:
         """How many of the user's receipts over `period` await review, and their value (D3).
 

@@ -70,5 +70,10 @@
     "picture": "Витрачено {{total}} {{currency}}, за категоріями",
     "spent": "Витрачено"
   },
-  "details": "Діаграма й таблиця"
+  "details": "Діаграма й таблиця",
+  "byDay": {
+    "title": "По днях",
+    "average": "У середньому {{amount}} {{currency}} на день",
+    "bar": "{{date}}, {{amount}} {{currency}}"
+  }
 }

@@ -13,13 +13,16 @@ import { ReceiptQuotaNote } from "../components/ReceiptQuotaNote";
 import { AddReceiptStart } from "../components/AddReceiptStart";
 import { ManualExpenseDialog } from "@/features/receipts/components/ManualExpenseDialog";
 import { useTranslation } from "react-i18next";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { X } from "lucide-react";
-import { SegmentedControl } from "@/shared/components";
+import { Note, SegmentedControl } from "@/shared/components";
+import { IncomeDialog } from "@/features/plan/IncomeDialog";
+import { isoDay } from "@/stores/StatisticsStore";
 import { ResendConfirmationButton } from "@/features/auth/components/ResendConfirmationButton";
 
 export const UploadPage = observer(function UploadPage() {
-  const { uploadStore, quotaStore, tripsStore, accountStore, authStore } = useStores();
+  const { uploadStore, quotaStore, tripsStore, accountStore, authStore, incomeStore } = useStores();
+  const navigate = useNavigate();
   const { t } = useTranslation(["upload", "receipts"]);
   const { t: common } = useTranslation();
   const [addingExpense, setAddingExpense] = useState(false);
@@ -192,6 +195,24 @@ export const UploadPage = observer(function UploadPage() {
               forwardingAddress={authStore.user?.forwarding_address ?? null}
               onFiles={(files) => {
                 uploadStore.addFilesToLine(0, files);
+              }}
+              readingIncome={incomeStore.readingDocument}
+              onIncomeFile={(file) => {
+                void incomeStore.readDocument(file);
+              }}
+            />
+          )}
+          {incomeStore.readError && <Note tone="error">{incomeStore.readError}</Note>}
+          {incomeStore.draft && (
+            <IncomeDialog
+              entry={null}
+              draft={incomeStore.draft}
+              defaultDay={isoDay(new Date())}
+              onClose={() => {
+                incomeStore.clearDraft();
+              }}
+              onSaved={() => {
+                void navigate("/");
               }}
             />
           )}

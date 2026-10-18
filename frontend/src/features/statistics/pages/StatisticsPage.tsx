@@ -25,6 +25,8 @@ import type { Preset } from "@/stores/StatisticsStore";
 import { useStores } from "@/stores/StoreContext";
 import { CategoryChart } from "../components/CategoryChart";
 import { SpendingRing } from "../components/SpendingRing";
+import { DailyBars } from "../components/DailyBars";
+import { isoDay } from "@/stores/StatisticsStore";
 import { Change } from "../components/Change";
 import { likeForLikeNote, periodLabel, periodName } from "../periodLabel";
 import { HouseholdStatisticsView } from "@/features/household/components/HouseholdStatisticsView";
@@ -214,6 +216,15 @@ export const StatisticsPage = observer(function StatisticsPage() {
                   <div className={`transition-opacity ${isLoading ? "opacity-60" : ""}`}>
                     <SpendingRing statistics={statistics} currency={currency} />
                   </div>
+                )}
+
+                {/* A bar a day reads up to about two months; longer runs keep the table. */}
+                {statisticsStore.daily && statisticsStore.daily.days.length <= 62 && (
+                  <DailyBars
+                    daily={statisticsStore.daily}
+                    currency={currency}
+                    today={isoDay(new Date())}
+                  />
                 )}
 
                 <details className="group rounded-card bg-surface">

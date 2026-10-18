@@ -121,12 +121,27 @@
     "since": "counted from {{date}}",
     "editTitle": "Money on your accounts",
     "editLabel": "What you have today",
-    "editHint": "Not your income: the money on your cards and accounts right now. From today it goes up with income and down with every purchase."
+    "editHint": "Not your income: the money on your cards and accounts right now. From today it goes up with income and down with every purchase.",
+    "emptyTitle": "Looks like money came in that isn't here",
+    "emptyBody": "{{amount}} {{currency}} on your accounts by our count. Add what came in, or set what you have now.",
+    "addIncome": "Add income",
+    "correct": "Correct the balance"
   },
   "insight": {
     "dearer": "{{name}} is {{percent}}% dearer",
     "cheaper": "{{name}} is {{percent}}% cheaper"
   },
   "reviewShort_one": "line needs a category",
-  "reviewShort_other": "lines need a category"
+  "reviewShort_other": "lines need a category",
+  "received": {
+    "title": "Money that came in",
+    "label": "Received today",
+    "hint": "It goes into this month's income and the balance.",
+    "source": "Added on Home"
+  },
+  "payday": {
+    "question": "Has your salary arrived?",
+    "yes": "Yes, add it",
+    "other": "Another amount"
+  }
 }

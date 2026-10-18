@@ -24,7 +24,9 @@
     "cancel": "Cancel",
     "total": "This month",
     "spent": "Spent {{amount}}",
-    "free": "Free {{amount}}"
+    "free": "Free {{amount}}",
+    "fromDocument": "Check what we read",
+    "fromDocumentHint": "Nothing is saved until you do. The file itself is not kept."
   },
   "budget": {
     "title": "Monthly budget",

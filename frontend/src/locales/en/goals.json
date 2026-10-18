@@ -124,5 +124,55 @@
     "left": " · {{left}} left",
     "estimate": "Estimate: if you keep spending at the same daily rate, {{month}} would end at about <b>{{projected}}</b>, {{margin}} under your limit. It is a forecast, not a promise: one big shop can change it.",
     "early": "It is only day {{day}} of {{days}}, so the estimate is still rough."
-  }
+  },
+  "pick": {
+    "title": "What would you like?",
+    "savings_target": {
+      "title": "Save for something",
+      "sub": "A trip, a car, a cushion"
+    },
+    "category_reduction": {
+      "title": "Spend less on…",
+      "sub": "Eating out, fuel, a habit"
+    },
+    "spending_ceiling": {
+      "title": "Keep the month under…",
+      "sub": "One number for everything"
+    },
+    "lifestyle": {
+      "title": "Buy better",
+      "sub": "Fewer sweets, more fruit — we read it off receipts"
+    }
+  },
+  "check": {
+    "run": "Check it",
+    "checking": "Checking against your months…",
+    "doable": "Within reach",
+    "stretch": "A stretch",
+    "unknown": "Can't check yet",
+    "doableBody": {
+      "savings_target": "You usually have about {{usual}} {{currency}} left at the end of a month.",
+      "spending_ceiling": "Your months usually come to about {{usual}} {{currency}}.",
+      "category_reduction": "You usually spend about {{usual}} {{currency}} a month there."
+    },
+    "stretchBody": {
+      "savings_target": "You usually have about {{usual}} {{currency}} left at the end of a month — {{gap}} {{currency}} short.",
+      "spending_ceiling": "Your months usually come to about {{usual}} {{currency}} — {{gap}} {{currency}} over.",
+      "category_reduction": "You usually spend about {{usual}} {{currency}} a month there — {{gap}} {{currency}} to cut."
+    },
+    "why": {
+      "no_history": "There are no receipts from recent months to compare it with yet. You can still start it.",
+      "no_income": "Add your usual income in Settings and a savings goal can be checked. You can still start it."
+    },
+    "sources": "Where it could come from",
+    "source": "{{name}}, a little less",
+    "sourceMeta": "About {{monthly}} {{currency}} a month now",
+    "cut": "−{{amount}} {{currency}}",
+    "start": "Start this goal",
+    "change": "Change the amount",
+    "basis_one": "Based on {{count}} recent month",
+    "basis_other": "Based on {{count}} recent months",
+    "covers": "Together −{{covered}} of the {{gap}} {{currency}} a month"
+  },
+  "perMonth": "{{currency}} a month"
 }

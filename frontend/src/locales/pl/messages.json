@@ -156,6 +156,7 @@
   },
   "income": {
     "saved": "Zapisano.",
-    "failed": "Nie udało się zapisać dochodu. Spróbuj ponownie."
+    "failed": "Nie udało się zapisać dochodu. Spróbuj ponownie.",
+    "readFailed": "Nie udało się odczytać dokumentu. Spróbuj ponownie albo wpisz kwotę ręcznie."
   }
 }

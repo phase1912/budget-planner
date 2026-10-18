@@ -217,6 +217,9 @@
     "drop": "Upuść tu zdjęcia lub PDF albo je wybierz",
     "filesHint": "JPEG, PNG, HEIC lub PDF · do 10 na paragon",
     "email": "Prześlij e-paragon",
-    "copy": "Skopiuj adres"
+    "copy": "Skopiuj adres",
+    "income": "Pasek wypłaty lub przelew",
+    "incomeHint": "Pieniądze, które wpłynęły — odczytamy kwotę, pliku nie zapisujemy",
+    "reading": "Czytamy dokument…"
   }
 }

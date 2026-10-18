@@ -62,5 +62,10 @@
     "picture": "{{total}} {{currency}} spent, by category",
     "spent": "Spent"
   },
-  "details": "Chart and table"
+  "details": "Chart and table",
+  "byDay": {
+    "title": "By day",
+    "average": "{{amount}} {{currency}} a day on average",
+    "bar": "{{date}}, {{amount}} {{currency}}"
+  }
 }

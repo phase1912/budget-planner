@@ -535,6 +535,27 @@ Rules that must hold at all times. Each is a candidate for a test.
     them (N2, ADR-0017).
 29. Accounts made before the first-sign-in setup existed count as having done it
     (F23.9); only new accounts are walked through it, once, on any device.
+30. From payday on (31 meaning a month's last day), a running month with no income
+    entered asks once whether the salary came; confirming records the usual income as
+    received that day. A balance at or below zero asks for missing income or a new
+    starting amount rather than showing a debt: it almost always means income not
+    entered.
+31. Income read off a document — a payslip or transfer confirmation (F23.11) — is never
+    stored as a file or written as an entry by itself: it is read in memory, shown as a
+    draft, and only what the user confirms becomes an entry, marked as from a document
+    (correcting it later keeps that mark). A document that is not money received is
+    refused.
+
+**Goals before they are saved**
+
+32. A money goal is checked against the user's last three whole months that had receipts
+    (F23.13, `app/domain/goal_check.py`): a ceiling against the monthly spend, a category
+    cut against that category's, a savings target — a sum put aside each month —
+    against what is usually left (income minus spending). Within it: doable. Beyond it:
+    a stretch by the difference, with up to three categories it could come from, each
+    trimmed by 15 % of its monthly spend, and the total those trims make even when it
+    falls short. No months with receipts, or a savings target without any income: not
+    checkable. The check advises; it never stops a goal being saved.
 
 ## Open decisions
 

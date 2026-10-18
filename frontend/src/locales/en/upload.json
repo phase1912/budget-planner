@@ -187,6 +187,9 @@
     "drop": "Drop photos or a PDF here, or choose them",
     "filesHint": "JPEG, PNG, HEIC or PDF · up to 10 per receipt",
     "email": "Forward an e-receipt",
-    "copy": "Copy the address"
+    "copy": "Copy the address",
+    "income": "Payslip or transfer",
+    "incomeHint": "Money that came in — we read the amount, the file isn't kept",
+    "reading": "Reading the document…"
   }
 }

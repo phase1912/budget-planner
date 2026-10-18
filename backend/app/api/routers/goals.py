@@ -1,5 +1,7 @@
 import uuid
 from collections.abc import Sequence
+from dataclasses import asdict
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
@@ -14,8 +16,15 @@ from app.models.user import User
 from app.ports.goal_mapping import GoalMapperPort
 from app.repository.category import CategoryRepository
 from app.repository.goal import GoalRepository
-from app.schemas.goal import GoalCreate, GoalRead, GoalUpdate
+from app.schemas.goal import (
+    GoalCheckRequest,
+    GoalCheckResponse,
+    GoalCreate,
+    GoalRead,
+    GoalUpdate,
+)
 from app.services.goal import GoalService
+from app.services.goal_check import GoalCheckService
 
 router = APIRouter(prefix="/api/v1/goals", tags=["goals"])
 
@@ -47,6 +56,28 @@ async def list_goals(current_user: CurrentUser, service: Service) -> Sequence[Go
 async def create_goal(request: GoalCreate, current_user: CurrentUser, service: Service) -> Goal:
     """State a goal (BRD F1); a malformed one is refused with 422 and the reason."""
     return await service.create(current_user.id, request)
+
+
+@router.post("/check", response_model=GoalCheckResponse)
+async def check_goal(
+    request: GoalCheckRequest,
+    current_user: CurrentUser,
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> GoalCheckResponse:
+    """Whether a money goal is within reach, before it is saved (F23.13).
+
+    Judged on the caller's own last three whole months (N2): doable, a stretch with
+    where the money could come from, or unknown when there is too little to go on.
+    Nothing is stored.
+    """
+    result = await GoalCheckService(session).check(
+        current_user,
+        request.financial_kind,
+        request.target_amount,
+        request.category_id,
+        request.today or datetime.now(UTC).date(),
+    )
+    return GoalCheckResponse.model_validate(asdict(result))
 
 
 @router.patch("/{goal_id}", response_model=GoalRead)

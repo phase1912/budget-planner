@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Camera, Check, Copy, FileUp, Mail } from "lucide-react";
+import { Banknote, Camera, Check, Copy, FileUp, Mail } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 const ACCEPT = "image/jpeg, image/png, image/heic, application/pdf";
@@ -13,17 +13,28 @@ interface AddReceiptStartProps {
   onFiles: (files: File[]) => void;
   /** The account's receipt forwarding address, to copy (F11.2). */
   forwardingAddress: string | null;
+  /** A payslip or transfer confirmation picked, to be read as income (F23.11). */
+  onIncomeFile: (file: File) => void;
+  /** Whether such a document is being read now. */
+  readingIncome: boolean;
 }
 
 /**
  * The ways a receipt comes in (F23.6): the phone's own camera where there is one — the
  * browser opens it, no app needed — photos or a PDF from the device, forwarding an
- * e-receipt by email, and on a desktop dropping files on the page.
+ * e-receipt by email, and on a desktop dropping files on the page. Money that came in
+ * starts here too: a payslip or transfer confirmation, read into an entry to confirm.
  */
-export function AddReceiptStart({ onFiles, forwardingAddress }: AddReceiptStartProps) {
+export function AddReceiptStart({
+  onFiles,
+  forwardingAddress,
+  onIncomeFile,
+  readingIncome,
+}: AddReceiptStartProps) {
   const { t } = useTranslation("upload");
   const camera = useRef<HTMLInputElement>(null);
   const files = useRef<HTMLInputElement>(null);
+  const income = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [copied, setCopied] = useState(false);
   const take = (list: FileList | null) => {
@@ -102,6 +113,36 @@ export function AddReceiptStart({ onFiles, forwardingAddress }: AddReceiptStartP
         tabIndex={-1}
         onChange={(event) => {
           take(event.target.files);
+          event.target.value = "";
+        }}
+      />
+
+      <button
+        type="button"
+        disabled={readingIncome}
+        className={`${tile} min-h-20 bg-surface disabled:opacity-70`}
+        onClick={() => income.current?.click()}
+      >
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-tone-primary-bg text-primary">
+          <Banknote size={24} aria-hidden="true" />
+        </span>
+        <span className="flex flex-col" aria-live="polite">
+          <span className="text-lg font-bold">
+            {readingIncome ? t("start.reading") : t("start.income")}
+          </span>
+          <span className="text-md text-muted-foreground">{t("start.incomeHint")}</span>
+        </span>
+      </button>
+      <input
+        ref={income}
+        type="file"
+        accept={ACCEPT}
+        className="hidden"
+        aria-hidden="true"
+        tabIndex={-1}
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) onIncomeFile(file);
           event.target.value = "";
         }}
       />

@@ -8,11 +8,31 @@ import { AsyncState } from "@/stores/AsyncState";
 import type { ToastStore } from "@/stores/ToastStore";
 
 export type MonthIncome = components["schemas"]["MonthIncomeRead"];
+export type IncomeDraft = components["schemas"]["IncomeDraft"];
 export type IncomeEntry = components["schemas"]["IncomeRead"];
-export type IncomeRequest = components["schemas"]["IncomeRequest"];
+type IncomeRequestSchema = components["schemas"]["IncomeRequest"];
+/** An entry as sent; `channel` is "manual" unless it was confirmed from a document. */
+export type IncomeRequest = Omit<IncomeRequestSchema, "channel"> &
+  Partial<Pick<IncomeRequestSchema, "channel">>;
 export type Balance = components["schemas"]["BalanceRead"];
 
 const pad = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * Whether Home should ask if the salary has arrived (F23.10): in the running month, once
+ * its payday is reached (31 meaning the month's last day, whatever its length), while
+ * nothing is entered yet and a usual income is known to offer.
+ */
+export function paydayDue(
+  today: string,
+  payday: number | null | undefined,
+  month: MonthIncome | null,
+): boolean {
+  if (!payday || !month || month.entered || month.total == null) return false;
+  const [year, monthNumber, day] = today.split("-").map(Number) as [number, number, number];
+  const lastDay = new Date(year, monthNumber, 0).getDate();
+  return day >= Math.min(payday, lastDay);
+}
 
 /**
  * Money coming in (F23.10): one month's entries and total — the usual income standing in
@@ -25,6 +45,10 @@ export class IncomeStore {
   month: MonthIncome | null = null;
   /** What the user has now (F23.14); null until loaded, `balance` null until a start is set. */
   balance: Balance | null = null;
+  /** What a document says came in, waiting for the user to confirm (F23.11). */
+  draft: IncomeDraft | null = null;
+  readingDocument = false;
+  readError: string | null = null;
   private readonly api: ApiClient;
   private readonly toastStore: ToastStore;
   private request = 0;
@@ -92,12 +116,33 @@ export class IncomeStore {
   }
 
   add(body: IncomeRequest): Promise<boolean> {
-    return this.save(() => this.api.POST("/api/v1/income", { body }));
+    return this.save(() =>
+      this.api.POST("/api/v1/income", { body: { channel: "manual", ...body } }),
+    );
   }
 
+  /**
+   * Record money that came in today — the salary confirmed on payday, or what Home asks
+   * for when the balance runs out — then re-read the shown month and the balance, both of
+   * which it moves. `today` is the user's own date, as the balance is reckoned on it.
+   */
+  async receive(
+    body: Omit<IncomeRequest, "received_on">,
+    today: string,
+    shown: { year: number; month: number },
+  ): Promise<boolean> {
+    const ok = await this.add({ ...body, received_on: today });
+    if (ok) await Promise.all([this.load(shown.year, shown.month), this.loadBalance(today)]);
+    return ok;
+  }
+
+  /** Change an entry; how it came in stays as it was, whatever `channel` says. */
   update(id: string, body: IncomeRequest): Promise<boolean> {
     return this.save(() =>
-      this.api.PUT("/api/v1/income/{income_id}", { params: { path: { income_id: id } }, body }),
+      this.api.PUT("/api/v1/income/{income_id}", {
+        params: { path: { income_id: id } },
+        body: { channel: "manual", ...body },
+      }),
     );
   }
 
@@ -117,8 +162,35 @@ export class IncomeStore {
     });
   }
 
+  /**
+   * Have a payslip or transfer confirmation read (F23.11). Nothing is saved: the draft
+   * waits in `draft` for the user to confirm or correct; a refusal is in `readError`.
+   */
+  async readDocument(file: File): Promise<void> {
+    this.readingDocument = true;
+    this.readError = null;
+    this.draft = null;
+    const body = new FormData();
+    body.append("file", file);
+    const response = await settle(() =>
+      // @ts-expect-error openapi-fetch types do not correctly handle FormData
+      this.api.POST("/api/v1/income/read", { body }),
+    );
+    runInAction(() => {
+      this.readingDocument = false;
+      if (response.error === undefined) this.draft = response.data;
+      else this.readError = errorMessage(response.error, i18n.t("messages:income.readFailed"));
+    });
+  }
+
+  clearDraft(): void {
+    this.draft = null;
+    this.readError = null;
+  }
+
   reset(): void {
     this.request++;
+    this.draft = null;
     this.month = null;
     this.balance = null;
     this.state.reset();

@@ -6,6 +6,7 @@ import { errorMessage } from "@/api/errors";
 import i18n from "@/i18n";
 
 export type CategoryStatistics = components["schemas"]["CategoryStatisticsResponse"];
+export type DailySpend = components["schemas"]["DailySpendResponse"];
 
 /** The quick periods above the table (docs/design/screens/statistics.html). */
 export type Preset = "this_month" | "last_month" | "last_3_months" | "custom";
@@ -31,6 +32,8 @@ export class StatisticsStore {
   /** Whether each category is also measured against the previous period (E3). */
   compare = false;
   statistics: CategoryStatistics | null = null;
+  /** Spending day by day over the same period (F23.4); null until loaded or if it failed. */
+  daily: DailySpend | null = null;
   isLoading = false;
   error: string | null = null;
 
@@ -75,6 +78,7 @@ export class StatisticsStore {
   reset(): void {
     this.request++;
     this.statistics = null;
+    this.daily = null;
     this.isLoading = false;
     this.error = null;
   }
@@ -84,6 +88,7 @@ export class StatisticsStore {
     const request = ++this.request;
     this.isLoading = true;
     this.error = null;
+    void this.loadDaily(request);
     try {
       const response = await apiClient.GET("/api/v1/statistics/categories", {
         params: { query: { start: this.start, end: this.end, compare: this.compare, chart: true } },
@@ -102,6 +107,24 @@ export class StatisticsStore {
         this.error =
           error instanceof Error ? error.message : i18n.t("messages:statistics.loadFailed");
         this.isLoading = false;
+      });
+    }
+  }
+
+  /** The days of the period; without them Spending still shows its ring and table. */
+  private async loadDaily(request: number): Promise<void> {
+    try {
+      const response = await apiClient.GET("/api/v1/statistics/daily", {
+        params: { query: { start: this.start, end: this.end, today: isoDay(this.now()) } },
+      });
+      if (request !== this.request) return;
+      runInAction(() => {
+        this.daily = response.error ? null : response.data;
+      });
+    } catch {
+      if (request !== this.request) return;
+      runInAction(() => {
+        this.daily = null;
       });
     }
   }

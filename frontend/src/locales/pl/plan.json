@@ -24,7 +24,9 @@
     "cancel": "Anuluj",
     "total": "W tym miesiącu",
     "spent": "Wydano {{amount}}",
-    "free": "Wolne {{amount}}"
+    "free": "Wolne {{amount}}",
+    "fromDocument": "Sprawdź, co odczytaliśmy",
+    "fromDocumentHint": "Nic nie zostanie zapisane bez Twojego potwierdzenia. Sam plik nie jest przechowywany."
   },
   "budget": {
     "title": "Budżet miesięczny",

@@ -13,6 +13,7 @@ changes in a way that could alter results (BRD A15).
 from __future__ import annotations
 
 import base64
+import logging
 from decimal import Decimal
 
 from app.agent.core import Agent
@@ -162,48 +163,15 @@ class VisionAgentAdapter:
         self, prompt: str, images: list[bytes], mime_types: list[str] | None
     ) -> ExtractedReceipt:
         resolved_types = mime_types or ["image/jpeg"] * len(images)
-
-        import io
-
-        import pillow_heif
-        from PIL import Image
-
-        # Register HEIF opener with Pillow
-        pillow_heif.register_heif_opener()  # type: ignore[attr-defined]
-
-        processed_images = []
-        processed_types = []
-
-        for img_bytes, mime in zip(images, resolved_types, strict=True):
-            if (
-                mime.lower() in ("image/heic", "image/heif")
-                or img_bytes.startswith(b"\x00\x00\x00\x1cftypheic")
-                or img_bytes.startswith(b"\x00\x00\x00\x18ftypheic")
-            ):
-                # Convert HEIC to JPEG
-                try:
-                    img: Image.Image = Image.open(io.BytesIO(img_bytes))
-                    if img.mode not in ("RGB", "L"):
-                        img = img.convert("RGB")
-                    out = io.BytesIO()
-                    img.save(out, format="JPEG")
-                    processed_images.append(out.getvalue())
-                    processed_types.append("image/jpeg")
-                except Exception as e:
-                    import logging
-
-                    logging.error(f"HEIC conversion failed: {e}")
-
-                    # Fallback to original if conversion fails
-                    processed_images.append(img_bytes)
-                    processed_types.append(mime)
-            else:
-                processed_images.append(img_bytes)
-                processed_types.append(mime)
+        readable = [
+            readable_input(data, mime) for data, mime in zip(images, resolved_types, strict=True)
+        ]
+        processed_images = [data for data, _ in readable]
+        processed_types = [mime for _, mime in readable]
 
         content_parts: list[dict[str, object]] = [{"type": "text", "text": prompt}]
         for img_bytes, mime in zip(processed_images, processed_types, strict=True):
-            content_parts.append(_content_part(img_bytes, mime))
+            content_parts.append(content_part(img_bytes, mime))
 
         messages = [
             Message(role="user", content=content_parts),
@@ -214,7 +182,35 @@ class VisionAgentAdapter:
         )
 
 
-def _content_part(data: bytes, mime: str) -> dict[str, object]:
+def readable_input(data: bytes, mime: str) -> tuple[bytes, str]:
+    """A photo the model can read: HEIC (an iPhone's default) becomes JPEG, the rest
+    passes through. A conversion that fails sends the original, which the model may
+    still read or refuse like any unreadable photo."""
+    if not (
+        mime.lower() in ("image/heic", "image/heif")
+        or data.startswith(b"\x00\x00\x00\x1cftypheic")
+        or data.startswith(b"\x00\x00\x00\x18ftypheic")
+    ):
+        return data, mime
+    import io
+
+    import pillow_heif
+    from PIL import Image
+
+    pillow_heif.register_heif_opener()  # type: ignore[attr-defined]
+    try:
+        img: Image.Image = Image.open(io.BytesIO(data))
+        if img.mode not in ("RGB", "L"):
+            img = img.convert("RGB")
+        out = io.BytesIO()
+        img.save(out, format="JPEG")
+        return out.getvalue(), "image/jpeg"
+    except Exception:
+        logging.getLogger(__name__).exception("HEIC conversion failed")
+        return data, mime
+
+
+def content_part(data: bytes, mime: str) -> dict[str, object]:
     """One input of the extraction request: an image, a PDF, or a receipt's text.
 
     Text and PDF come from emailed receipts (F11.2). A PDF goes in LiteLLM's

@@ -70,5 +70,10 @@
     "picture": "Wydano {{total}} {{currency}}, według kategorii",
     "spent": "Wydano"
   },
-  "details": "Wykres i tabela"
+  "details": "Wykres i tabela",
+  "byDay": {
+    "title": "Dzień po dniu",
+    "average": "Średnio {{amount}} {{currency}} dziennie",
+    "bar": "{{date}}, {{amount}} {{currency}}"
+  }
 }

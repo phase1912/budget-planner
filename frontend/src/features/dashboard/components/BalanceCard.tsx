@@ -1,6 +1,7 @@
-import { Landmark, Pencil } from "lucide-react";
+import { CircleAlert, Landmark, Pencil } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { Button } from "@/shared/components";
 import { dateFormat, numberFormat } from "@/i18n/format";
 import type { Balance } from "@/stores/IncomeStore";
 
@@ -11,16 +12,47 @@ interface BalanceCardProps {
   balance: Balance | null;
   currency: string;
   onEdit: () => void;
+  onAddIncome: () => void;
 }
 
 /**
  * What the user has now (F23.14): the money on their accounts as they entered it once,
  * moved since by income and counted purchases. Without a start it invites one — and says
- * plainly that it is what is on the accounts today, not income.
+ * plainly that it is what is on the accounts today, not income. At zero or below it asks
+ * for what is missing instead: such a balance almost always means income not entered,
+ * not a debt, so it offers to add income or to set the balance again.
  */
-export function BalanceCard({ balance, currency, onEdit }: BalanceCardProps) {
+export function BalanceCard({ balance, currency, onEdit, onAddIncome }: BalanceCardProps) {
   const { t } = useTranslation("dashboard");
   const known = balance?.balance != null;
+
+  if (known && Number(balance.balance) <= 0) {
+    return (
+      <section
+        aria-label={t("balance.title")}
+        className="flex flex-col gap-3 rounded-card bg-tone-warning-bg px-4 py-3.5 text-tone-warning-text"
+      >
+        <span className="flex items-start gap-3">
+          <CircleAlert size={20} aria-hidden="true" className="mt-0.5 shrink-0" />
+          <span className="flex flex-col gap-1">
+            <span className="text-lg font-bold">{t("balance.emptyTitle")}</span>
+            <span className="text-md tabular-nums">
+              {t("balance.emptyBody", { amount: WHOLE.format(Number(balance.balance)), currency })}
+            </span>
+          </span>
+        </span>
+        <span className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          <Button size="sm" className="min-h-11" onClick={onAddIncome}>
+            {t("balance.addIncome")}
+          </Button>
+          <Button variant="secondary" size="sm" className="min-h-11" onClick={onEdit}>
+            {t("balance.correct")}
+          </Button>
+        </span>
+      </section>
+    );
+  }
+
   return (
     <button
       type="button"

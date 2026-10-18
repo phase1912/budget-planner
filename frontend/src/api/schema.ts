@@ -1227,6 +1227,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/statistics/daily": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Daily Spend
+         * @description The caller's spending on each day between two dates, both included (F23.4).
+         *
+         *     Counted as the month's figure is (domain model invariant 4): what was paid, on
+         *     `parsed` receipts, by printed date. Every day is listed, a quiet one as zero; only the
+         *     caller's own receipts are read (N2).
+         */
+        get: operations["get_daily_spend_api_v1_statistics_daily_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/statistics/reading-accuracy": {
         parameters: {
             query?: never;
@@ -1642,6 +1666,30 @@ export interface paths {
          * @description State a goal (BRD F1); a malformed one is refused with 422 and the reason.
          */
         post: operations["create_goal_api_v1_goals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Goal
+         * @description Whether a money goal is within reach, before it is saved (F23.13).
+         *
+         *     Judged on the caller's own last three whole months (N2): doable, a stretch with
+         *     where the money could come from, or unknown when there is too little to go on.
+         *     Nothing is stored.
+         */
+        post: operations["check_goal_api_v1_goals_check_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2103,6 +2151,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/income/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Read Income Document
+         * @description Read a payslip or transfer confirmation into an entry to confirm (F23.11).
+         *
+         *     Nothing is stored: the file is read in memory and dropped, and only what the user
+         *     then confirms is saved, through `POST /income` with `channel` document. Counts
+         *     against the same reading limits as receipts (F10.6); refuses a document that is not
+         *     about money received (`not_income`) or cannot be read (`income_unreadable`).
+         */
+        post: operations["read_income_document_api_v1_income_read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/income/{income_id}": {
         parameters: {
             query?: never;
@@ -2392,6 +2465,11 @@ export interface components {
             /** Height */
             height: string;
         };
+        /** Body_read_income_document_api_v1_income_read_post */
+        Body_read_income_document_api_v1_income_read_post: {
+            /** File */
+            file: string;
+        };
         /** Body_upload_receipt_receipts_upload_post */
         Body_upload_receipt_receipts_upload_post: {
             /** Files */
@@ -2662,6 +2740,20 @@ export interface components {
             /** Total */
             total: string;
         };
+        /**
+         * DailySpendResponse
+         * @description Every day of the period with its spending (F23.4).
+         *
+         *     `average` is per day passed — up to today in a running period — not per day listed.
+         */
+        DailySpendResponse: {
+            /** Days */
+            days: components["schemas"]["DaySpendResponse"][];
+            /** Total */
+            total: string;
+            /** Average */
+            average: string;
+        };
         /** DayFiguresRead */
         DayFiguresRead: {
             /**
@@ -2679,6 +2771,19 @@ export interface components {
             confirmations: number;
             /** Receipts Read */
             receipts_read: number;
+        };
+        /**
+         * DaySpendResponse
+         * @description What was paid on one day; zero for a day without purchases.
+         */
+        DaySpendResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Total */
+            total: string;
         };
         /**
          * DayTotal
@@ -2854,6 +2959,52 @@ export interface components {
             email: string;
             /** Language */
             language?: ("en" | "uk" | "pl") | null;
+        };
+        /**
+         * GoalCheckRequest
+         * @description A money goal to check before it is saved (F23.13); `today` is the caller's date.
+         */
+        GoalCheckRequest: {
+            financial_kind: components["schemas"]["FinancialKind"];
+            /** Target Amount */
+            target_amount: number | string;
+            /** Category Id */
+            category_id?: string | null;
+            /** Today */
+            today?: string | null;
+        };
+        /**
+         * GoalCheckResponse
+         * @description The verdict: `doable`, a `stretch` with sources, or `unknown` with the reason.
+         *
+         *     `usual` is what the goal is measured against (monthly spend, the category's monthly
+         *     spend, or what is usually left for a savings target), over `months` recent months.
+         */
+        GoalCheckResponse: {
+            verdict: components["schemas"]["Verdict"];
+            /** Usual */
+            usual: string | null;
+            /** Gap */
+            gap: string;
+            /** Months */
+            months: number;
+            /** Sources */
+            sources: components["schemas"]["GoalCheckSource"][];
+            unknown: components["schemas"]["Unknown"] | null;
+        };
+        /**
+         * GoalCheckSource
+         * @description A category the gap could come from: its monthly spend and the suggested cut.
+         */
+        GoalCheckSource: {
+            /** Category Id */
+            category_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Monthly */
+            monthly: string;
+            /** Cut */
+            cut: string;
         };
         /**
          * GoalCreate
@@ -3139,6 +3290,21 @@ export interface components {
          */
         IncomeChannel: "manual" | "document";
         /**
+         * IncomeDraft
+         * @description What a document says came in, not yet saved: the user confirms or corrects it (F23.11).
+         *
+         *     Any field the document did not show is null.
+         */
+        IncomeDraft: {
+            /** Amount */
+            amount: string | null;
+            /** Received On */
+            received_on: string | null;
+            /** Source */
+            source: string | null;
+            kind: components["schemas"]["IncomeKind"];
+        };
+        /**
          * IncomeKind
          * @description What a sum that came in was.
          * @enum {string}
@@ -3179,6 +3345,8 @@ export interface components {
             source: string;
             /** @default salary */
             kind: components["schemas"]["IncomeKind"];
+            /** @default manual */
+            channel: components["schemas"]["IncomeChannel"];
         };
         /**
          * ItemView
@@ -4832,6 +5000,12 @@ export interface components {
             forget: boolean;
         };
         /**
+         * Unknown
+         * @description Why a goal could not be checked.
+         * @enum {string}
+         */
+        Unknown: "no_history" | "no_income";
+        /**
          * UpdateLineItemCategoryRequest
          * @description Update a line item's category (BRD C4).
          */
@@ -5073,6 +5247,12 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /**
+         * Verdict
+         * @description What the check concludes: in reach, a stretch, or not enough to tell.
+         * @enum {string}
+         */
+        Verdict: "doable" | "stretch" | "unknown";
     };
     responses: never;
     parameters: never;
@@ -7234,6 +7414,43 @@ export interface operations {
             };
         };
     };
+    get_daily_spend_api_v1_statistics_daily_get: {
+        parameters: {
+            query: {
+                /** @description The caller's own date; the average counts days to it */
+                today?: string | null;
+                /** @description First day of the period, included */
+                start: string;
+                /** @description Last day of the period, included */
+                end: string;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailySpendResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_reading_accuracy_api_v1_statistics_reading_accuracy_get: {
         parameters: {
             query?: {
@@ -8085,6 +8302,41 @@ export interface operations {
             };
         };
     };
+    check_goal_api_v1_goals_check_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalCheckRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalCheckResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     delete_goal_api_v1_goals__goal_id__delete: {
         parameters: {
             query?: {
@@ -8832,6 +9084,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IncomeRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_income_document_api_v1_income_read_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_read_income_document_api_v1_income_read_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeDraft"];
                 };
             };
             /** @description Validation Error */
