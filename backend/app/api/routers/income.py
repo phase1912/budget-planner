@@ -56,14 +56,8 @@ def _regular(row: IncomeSource, sharing: Sharing) -> IncomeSourceRead:
 
 
 def _bill(row: RegularExpense, sharing: Sharing) -> RegularExpenseRead:
-    """A regular bill as the caller sees it: whose it is, its split and their part (F12.8)."""
-    return RegularExpenseRead.model_validate(row).model_copy(
-        update={**asdict(sharing.whose(row)), "split": row.split, "my_part": sharing.part_of(row)}
-    )
-
-
-def _this_month() -> date:
-    return datetime.now(UTC).date().replace(day=1)
+    """A regular bill as the caller sees it: whose it is (F12.8)."""
+    return RegularExpenseRead.model_validate(row).model_copy(update=asdict(sharing.whose(row)))
 
 
 @router.get("", response_model=MonthIncomeRead)
@@ -76,7 +70,7 @@ async def month_income(
     first_day = date.fromisoformat(f"{month}-01")
     service = IncomeService(session)
     view = await service.month(user, first_day)
-    sharing = await service.sharing(first_day)
+    sharing = await service.sharing()
     return MonthIncomeRead(
         month=month,
         total=view.income.total,
@@ -97,7 +91,7 @@ async def add_income(body: IncomeRequest, _user: CurrentUser, session: Session) 
     """Record a sum that came in; `shared` puts it in the household's money (F12.8)."""
     service = IncomeService(session)
     income = await service.add(body)
-    return _income(income, await service.sharing(_this_month()))
+    return _income(income, await service.sharing())
 
 
 def get_income_reader() -> IncomeReaderPort:
@@ -146,7 +140,7 @@ async def confirm_pending_income(
     """Confirm a pending income as `body` says, making it an entry; 404 if not the user's."""
     service = IncomeService(session)
     income = await service.confirm(pending_id, body)
-    return _income(income, await service.sharing(_this_month()))
+    return _income(income, await service.sharing())
 
 
 @router.delete("/pending/{pending_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -162,7 +156,7 @@ async def dismiss_pending_income(
 async def regular_incomes(_user: CurrentUser, session: Session) -> list[IncomeSourceRead]:
     """The regular incomes still running, already net — the caller's and shared (F23.17)."""
     service = IncomeService(session)
-    sharing = await service.sharing(_this_month())
+    sharing = await service.sharing()
     return [_regular(s, sharing) for s in await service.regular_incomes()]
 
 
@@ -176,7 +170,7 @@ async def add_regular_income(
     """Start a regular income; it counts every month from this one on."""
     service = IncomeService(session)
     source = await service.add_regular(body, today or datetime.now(UTC).date())
-    return _regular(source, await service.sharing(_this_month()))
+    return _regular(source, await service.sharing())
 
 
 @router.put("/regular/{source_id}", response_model=IncomeSourceRead)
@@ -186,7 +180,7 @@ async def change_regular_income(
     """Change a regular income; 404 unless the caller's or their household's (N2, F12.8)."""
     service = IncomeService(session)
     source = await service.change_regular(source_id, body)
-    return _regular(source, await service.sharing(_this_month()))
+    return _regular(source, await service.sharing())
 
 
 @router.delete("/regular/{source_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -205,7 +199,7 @@ async def end_regular_income(
 async def regular_bills(_user: CurrentUser, session: Session) -> list[RegularExpenseRead]:
     """The regular bills still running — the caller's and shared (F23.18, F12.8)."""
     service = IncomeService(session)
-    sharing = await service.sharing(_this_month())
+    sharing = await service.sharing()
     return [_bill(b, sharing) for b in await service.regular_bills()]
 
 
@@ -219,7 +213,7 @@ async def add_bill(
     """Start a regular bill; it counts every month from this one on."""
     service = IncomeService(session)
     bill = await service.add_bill(body, today or datetime.now(UTC).date())
-    return _bill(bill, await service.sharing(_this_month()))
+    return _bill(bill, await service.sharing())
 
 
 @router.put("/bills/{bill_id}", response_model=RegularExpenseRead)
@@ -229,7 +223,7 @@ async def change_bill(
     """Change a regular bill; 404 unless the caller's or their household's (N2, F12.8)."""
     service = IncomeService(session)
     bill = await service.change_bill(bill_id, body)
-    return _bill(bill, await service.sharing(_this_month()))
+    return _bill(bill, await service.sharing())
 
 
 @router.delete("/bills/{bill_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -26,7 +26,7 @@ const api = apiClient as unknown as Record<
 const ME = "me-id";
 const ANNA = "anna-id";
 
-function household(myRole: "owner" | "member", withAnna = true): Household {
+function household(myRole: "owner" | "member" | "child", withAnna = true): Household {
   const members = [
     {
       user_id: ME,
@@ -51,6 +51,7 @@ function household(myRole: "owner" | "member", withAnna = true): Household {
     name: "Home",
     my_role: myRole,
     members,
+    owner_sets_budget: false,
     invite_code: myRole === "owner" ? "c0de" : null,
   };
 }
@@ -214,11 +215,60 @@ describe("HouseholdCard", () => {
     });
   });
 
-  it("shows a member the budget the owner set", async () => {
-    api.GET.mockResolvedValue({ data: { ...household("member"), budget_limit: "1500.00" } });
+  it("shows an adult the budget read-only while the owner keeps it (F12.10)", async () => {
+    api.GET.mockResolvedValue({
+      data: { ...household("member"), budget_limit: "1500.00", owner_sets_budget: true },
+    });
     renderCard();
 
-    expect(await screen.findByText(/1,500.00 PLN a month, set by the owner/)).toBeInTheDocument();
+    expect(await screen.findByText(/1,500.00 PLN a month/)).toBeInTheDocument();
     expect(screen.queryByLabelText(/Household budget a month/)).not.toBeInTheDocument();
+  });
+
+  it("lets an adult change the budget the owner has not kept (F12.8)", async () => {
+    api.GET.mockResolvedValue({ data: household("member") });
+    renderCard();
+
+    expect(await screen.findByLabelText(/Household budget a month/)).toBeInTheDocument();
+  });
+
+  it("lets the owner mark a member as a child (F12.10)", async () => {
+    api.GET.mockResolvedValue({ data: household("owner") });
+    api.PUT.mockResolvedValue({ data: household("owner") });
+    renderCard();
+
+    const roles = await screen.findByRole("group", { name: "Role of Anna R" });
+    fireEvent.click(within(roles).getByRole("button", { name: "Child" }));
+
+    await waitFor(() => {
+      expect(api.PUT).toHaveBeenCalledWith("/api/v1/household/members/{user_id}/role", {
+        params: { path: { user_id: ANNA } },
+        body: { role: "child" },
+      });
+    });
+  });
+
+  it("lets the owner keep the budget to themselves (F12.10)", async () => {
+    api.GET.mockResolvedValue({ data: household("owner") });
+    api.PUT.mockResolvedValue({ data: { ...household("owner"), owner_sets_budget: true } });
+    renderCard();
+
+    fireEvent.click(await screen.findByRole("switch", { name: /Only I change the shared budget/ }));
+
+    await waitFor(() => {
+      expect(api.PUT).toHaveBeenCalledWith("/api/v1/household/budget/keeper", {
+        body: { owner_only: true },
+      });
+    });
+  });
+
+  it("tells a child what their place allows and offers no changes (F12.10)", async () => {
+    api.GET.mockResolvedValue({ data: household("child") });
+    renderCard();
+
+    expect(await screen.findByText(/You are in the household as a child/)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Household budget a month/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: /Role of/ })).not.toBeInTheDocument();
   });
 });

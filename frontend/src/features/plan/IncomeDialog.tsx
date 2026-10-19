@@ -2,7 +2,7 @@ import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
-import { Button, Input, Modal, ModalBody, Select, Switch } from "@/shared/components";
+import { Button, Input, Modal, ModalBody, Note, Select, Switch } from "@/shared/components";
 import type { IncomeDraft, IncomeEntry, IncomeRequest } from "@/stores/IncomeStore";
 import { useStores } from "@/stores/StoreContext";
 
@@ -35,7 +35,9 @@ export const IncomeDialog = observer(function IncomeDialog({
 }: IncomeDialogProps) {
   const { incomeStore, authStore, householdStore } = useStores();
   // Inside a household, money that comes in is the family's unless the user says otherwise (F12.8).
-  const inHousehold = householdStore.household !== null;
+  const mayShare = householdStore.mayShare;
+  // A child sees the family's money and changes none of it (F12.10).
+  const readOnly = householdStore.isChild && entry?.shared === true;
   const paysOwnTaxes = authStore.user?.pays_own_taxes === true;
   const { t } = useTranslation("plan");
   const [form, setForm] = useState<IncomeRequest>({
@@ -45,7 +47,7 @@ export const IncomeDialog = observer(function IncomeDialog({
     kind: entry?.kind ?? draft?.kind ?? "salary",
     channel: draft ? "document" : undefined,
     taxed: entry?.taxed,
-    shared: entry?.shared ?? inHousehold,
+    shared: entry?.shared ?? mayShare,
   });
   // Until the user flips it, a new entry is taxed by its kind, as the server decides (F23.16).
   const taxed = form.taxed ?? (form.kind === "salary" || form.kind === "side");
@@ -150,7 +152,8 @@ export const IncomeDialog = observer(function IncomeDialog({
               ariaLabel={t("income.taxed")}
             />
           )}
-          {inHousehold && (
+          {readOnly && <Note tone="info">{t("income.childReadOnly")}</Note>}
+          {mayShare && (
             <Switch
               checked={form.shared}
               onChange={(value) => {
@@ -161,7 +164,7 @@ export const IncomeDialog = observer(function IncomeDialog({
             />
           )}
           <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-between">
-            {entry ? (
+            {entry && !readOnly ? (
               <Button
                 type="button"
                 variant="danger"
@@ -185,9 +188,11 @@ export const IncomeDialog = observer(function IncomeDialog({
               >
                 {t("income.cancel")}
               </Button>
-              <Button type="submit" className="w-full md:w-auto" disabled={!valid || busy}>
-                {t("income.save")}
-              </Button>
+              {!readOnly && (
+                <Button type="submit" className="w-full md:w-auto" disabled={!valid || busy}>
+                  {t("income.save")}
+                </Button>
+              )}
             </div>
           </div>
         </form>

@@ -14,7 +14,7 @@ const stores = vi.hoisted(() => ({
       pays_own_taxes: false,
     },
   },
-  householdStore: { household: null, loaded: true, load: vi.fn() },
+  householdStore: { household: null, mayShare: false, loaded: true, load: vi.fn() },
   incomeStore: {
     month: {
       total: "6200.00",

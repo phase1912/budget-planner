@@ -42,7 +42,8 @@
     "bills": "Stałe {{amount}}",
     "billsTitle": "Schodzi co miesiąc",
     "noBills": "Mieszkanie, subskrypcje — dodaj je, a będą liczone same.",
-    "shared": "Wspólne z rodziną"
+    "shared": "Wspólne z rodziną",
+    "childReadOnly": "To jest wspólne z rodziną. Zmieniają to tylko dorośli."
   },
   "budget": {
     "title": "Budżet miesięczny",

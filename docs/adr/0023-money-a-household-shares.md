@@ -19,24 +19,25 @@ its centre.
   `user_id` stays the author.
 - **Every member reads and changes what is shared.** The three repositories widen their
   ownership filter from "the caller wrote it" to "the caller wrote it, or it is shared with
-  the household the caller belongs to" (`SharedWithHousehold`). Roles that may only read
-  (a child) come with F12.10.
+  the household the caller belongs to" (`SharedWithHousehold`). A child only reads them
+  (F12.10, domain model 11m).
 - **Each member's own view counts their own and the shared in full.** Shared money is every
-  member's money; a shared bill also says each member's part, divided equally or by the
-  members' regular incomes, attributed to whoever wrote them. The household view (F12.9)
-  counts the shared ones once.
+  member's money. A shared bill is never divided into parts per member: the budget is
+  shared, so the bill comes out of it once, whole. (A first version divided it equally or
+  by income; dropped the same week, once a child in the household made a "part" absurd.)
+  The household view (F12.9) counts the shared ones once.
 - **Leaving takes one's sharing back.** A member who leaves or is removed gets back, as their
   own, what they shared; what the others shared stays with the household. Deleting the
   household returns everything to its authors (`ON DELETE SET NULL`).
-- **The household budget is changed by any member,** no longer by the owner only. Whether only
-  the owner may is a household setting that comes with F12.10.
+- **The household budget is changed by any member,** no longer by the owner only. The owner may keep
+  it to themselves, a household setting (F12.10).
 
 ## Consequences
 
 - N2's access tests gain the shared case: a member reads and writes a shared row, a stranger
   and a departed member do not (`tests/api/test_shared_money.py`,
   `tests/security/test_cross_household_access.py`).
-- Dividing a shared bill by income reads the members' regular-income totals. Only the
-  resulting parts are returned, never another member's own incomes.
+- `regular_expenses.split`, written by the first version, is no longer read; a later
+  migration drops it (ADR-0014: the running code stops using a column first).
 - Accounts (F23.15) will carry the same `household_id`, so a joint account is shared the same
   way.

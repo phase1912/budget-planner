@@ -1,6 +1,5 @@
 """Regular incomes of an account (F23.17)."""
 
-import uuid
 from collections.abc import Sequence
 from datetime import date
 
@@ -34,17 +33,3 @@ class IncomeSourceRepository(SharedWithHousehold[IncomeSource]):
             .order_by(IncomeSource.created_at)
         )
         return (await self.session.execute(self._apply_ownership(stmt))).scalars().all()
-
-    async def running_of(
-        self, user_ids: Sequence[uuid.UUID], first_day: date
-    ) -> Sequence[IncomeSource]:
-        """The regular incomes the given household members wrote, running from `first_day`.
-
-        Only to divide a shared bill by income (F12.8): amounts, never shown one by one.
-        The caller passes their own household's members.
-        """
-        stmt = select(IncomeSource).where(
-            IncomeSource.user_id.in_(user_ids),
-            or_(IncomeSource.ends_on.is_(None), IncomeSource.ends_on >= first_day),
-        )
-        return (await self.session.execute(stmt)).scalars().all()

@@ -23,6 +23,7 @@ const HOME: Household = {
   name: "Home",
   my_role: "owner",
   budget_limit: "1000.00",
+  owner_sets_budget: false,
   invite_code: "c0de",
   members: [
     {
@@ -74,6 +75,8 @@ describe("household views (F12.5)", () => {
 
   it("shows what is left together, the shared money and who spends what (F12.9)", async () => {
     store.authStore.user = { id: "me" } as typeof store.authStore.user;
+    // Signing someone in resets the household, as for a different user.
+    store.householdStore.household = HOME;
     const month = {
       year: 2026,
       month: 10,
@@ -165,10 +168,41 @@ describe("household views (F12.5)", () => {
       screen.getByText(/Others’ private receipts count as money only: 120 PLN/),
     ).toBeInTheDocument();
 
+    expect(screen.getByRole("button", { name: /Family budget/ })).toBeInTheDocument();
+
     fireEvent.click(screen.getByRole("button", { name: "Categories" }));
     expect(screen.getByText("You 77% · Anna 23%")).toBeInTheDocument();
     expect(screen.getAllByText("Uncategorized")).toHaveLength(1);
     expect(screen.getByText("You 50% · Anna 50%")).toBeInTheDocument();
+  });
+
+  it("shows a child the family budget without a way to change it (F12.10)", async () => {
+    store.householdStore.household = { ...HOME, my_role: "child" };
+    api.GET.mockImplementation((path: string) =>
+      Promise.resolve({
+        data: path.includes("months")
+          ? {
+              year: 2026,
+              month: 10,
+              total: "0",
+              receipt_count: 0,
+              is_complete: false,
+              days_elapsed: 10,
+              days: 31,
+              excluded_count: 0,
+              excluded_amount: "0",
+              limit: { limit: "1000.00", percent: 0, remaining: "1000.00" },
+              shared_income: "0",
+              shared_bills: "0",
+              members: [],
+            }
+          : null,
+      }),
+    );
+    renderWith(store, <HouseholdMonthView year={2026} month={10} currency="PLN" />);
+
+    expect(await screen.findByText("1,000 PLN")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Family budget/ })).not.toBeInTheDocument();
   });
 
   it("ranks the household's categories with private spending as one row", async () => {

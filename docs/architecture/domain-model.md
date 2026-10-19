@@ -39,7 +39,7 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | **ExportJob** | One export of the user's receipts or statistics as CSV or JSON, written in the background: the filters it was asked with, its status, and where the finished file is stored (N6). | User |
 | **Goal** | A financial or lifestyle objective the user declared. A financial goal is one of three kinds: a monthly spending ceiling, a savings target, or a cap on one category (F1). | User |
 | **Household** | A group of users keeping one budget (E12, ADR-0017): a name, an invite code, an optional monthly budget. Reads its members' receipts, never owns them. | Its owner |
-| **HouseholdMember** | A user's place in a household, as `owner` or `member`. One household per user. | Household |
+| **HouseholdMember** | A user's place in a household, as `owner`, `member` (an adult) or `child` (F12.10). One household per user. | Household |
 | **PlanGrant** | A plan an admin gave the account from one moment to another, with the reason and who gave it; taken back by setting `revoked_at`, never deleted (F18.6.3, ADR-0021). | User |
 | **AdminAction** | One thing an admin did to an account, for the log super admins read (F18.6.3). Survives either account's deletion with that side emptied. | — |
 | **Recommendation** | Advice on one goal: the category, recurring purchase or priced product it targets, what to do and why. Asking again replaces the goal's advice, except advice the user marked won't-follow or not helpful (F8.9), which stays. Carries its projected impact (F8.5). | User |
@@ -247,10 +247,16 @@ Rules that must hold at all times. Each is a candidate for a test.
 11l. An income, a regular income or a regular bill is either its author's or shared with the
     author's household (F12.8, ADR-0023). A shared one is seen and changed by every member;
     the author's own by the author alone. Each member's own view counts their own and the
-    shared ones in full; a shared bill also shows each member's part, divided equally or by
-    the members' regular incomes (attributed to whoever wrote them). The household's budget
-    is changed by any member. A member who leaves, or is removed, takes back what they
+    shared ones in full; a shared bill is the family's whole and is never divided into
+    parts per member. The household's budget
+    is changed by any adult. A member who leaves, or is removed, takes back what they
     shared; what the others shared stays with the household.
+11m. A member is an adult or a child, as the owner marks them; whoever joins by the invite
+    link is an adult, and the owner is always one (F12.10). A child sees everything the
+    household shares and changes none of it: no shared income, bill or budget, and nothing
+    of theirs becomes shared. Their receipts are never hidden from the family; ones hidden
+    before they became a child stay hidden. The owner may keep the household budget to
+    themselves; otherwise every adult changes it.
 
 11l. Each line keeps the reader's confidence in it. A line below
     `ocr_confidence_threshold` is doubtful: marked "check this" in the wizard and on the

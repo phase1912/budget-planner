@@ -42,7 +42,8 @@
     "bills": "Bills {{amount}}",
     "billsTitle": "Goes every month",
     "noBills": "Rent, subscriptions — add them and they count by themselves.",
-    "shared": "Shared with the family"
+    "shared": "Shared with the family",
+    "childReadOnly": "This is the family’s. Only the adults change it."
   },
   "budget": {
     "title": "Monthly budget",

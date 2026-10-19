@@ -60,7 +60,12 @@
     "inviteMade": "Nowy link jest gotowy. Stary już nie działa.",
     "inviteInvalid": "Ten link z zaproszeniem jest nieprawidłowy.",
     "joinFailed": "Nie udało się dołączyć do gospodarstwa",
-    "joined": "Witaj w gospodarstwie."
+    "joined": "Witaj w gospodarstwie.",
+    "roleFailed": "Nie udało się zmienić roli",
+    "roleSaved": "Rola zmieniona.",
+    "keeperFailed": "Nie udało się zapisać, kto zmienia budżet",
+    "keeperOn": "Teraz tylko Ty zmieniasz budżet gospodarstwa.",
+    "keeperOff": "Teraz budżet gospodarstwa może zmienić każda osoba dorosła."
   },
   "receipts": {
     "privacyFailed": "Nie udało się zmienić, kto go widzi",

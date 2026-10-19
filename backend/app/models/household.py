@@ -6,7 +6,7 @@ import uuid
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Numeric, String, text
+from sqlalchemy import Boolean, ForeignKey, Numeric, String, false, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Model
@@ -16,10 +16,16 @@ if TYPE_CHECKING:
 
 
 class HouseholdRole(enum.StrEnum):
-    """What a member may do: the owner manages the household, a member may only leave."""
+    """What a member may do (F12.10).
+
+    The owner is an adult who also invites and removes people; a member is an adult, who
+    sees and changes everything shared; a child adds receipts and sees the family's
+    month but changes nothing shared.
+    """
 
     OWNER = "owner"
     MEMBER = "member"
+    CHILD = "child"
 
 
 class Household(Model):
@@ -44,6 +50,10 @@ class Household(Model):
 
     # What the household agreed to spend a month, set by its owner (F12.5, D7); optional.
     budget_limit: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    # Off, every adult changes the budget; on, the owner alone does (F12.10).
+    owner_sets_budget: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
 
     members: Mapped[list["HouseholdMember"]] = relationship(
         "HouseholdMember",

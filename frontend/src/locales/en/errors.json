@@ -59,5 +59,7 @@
   "already_confirmed": "This address is already confirmed.",
   "discount_too_large": "The discount is more than the chosen lines cost.",
   "income_unreadable": "The document could not be read. Try a sharper photo, or enter the amount yourself.",
-  "not_income": "This doesn't look like money you received — a receipt goes in as a receipt."
+  "not_income": "This doesn't look like money you received — a receipt goes in as a receipt.",
+  "child_read_only": "A child in the household can only look at what it shares.",
+  "owner_role_fixed": "The owner is always an adult."
 }

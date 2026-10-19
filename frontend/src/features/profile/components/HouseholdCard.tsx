@@ -5,15 +5,16 @@ import { Check, Copy, RefreshCw } from "lucide-react";
 import { Button } from "@/shared/components/Button/Button";
 import { Card, CardBody, CardHeader } from "@/shared/components/Card/Card";
 import { Input } from "@/shared/components/Input/Input";
-import { Pill } from "@/shared/components";
-import type { HouseholdMember } from "@/stores/HouseholdStore";
+import { Pill, SegmentedControl, Switch } from "@/shared/components";
+import type { HouseholdMember, MemberRole } from "@/stores/HouseholdStore";
 import { useStores } from "@/stores/StoreContext";
 import { useTranslation } from "react-i18next";
 import { formatAmount } from "@/i18n/format";
 
 /**
  * The user's household on Profile (E12 — F12.2, ADR-0017): start one, see who is in it,
- * and — as its owner — rename it and remove members, or leave it as a member. Every
+ * and — as its owner — rename it, mark members as adults or children, keep the budget
+ * to themselves and remove members (F12.10), or leave it as a member. Every
  * action that takes someone out is confirmed first, because their access ends at once.
  *
  * It sits inside Profile's preferences form, so it has no form of its own: Enter in its
@@ -172,6 +173,8 @@ const HouseholdDetails = observer(function HouseholdDetails() {
         ))}
       </ul>
 
+      <Roles />
+
       <HouseholdBudget />
 
       {householdStore.isOwner && <InviteLink />}
@@ -206,8 +209,8 @@ const HouseholdDetails = observer(function HouseholdDetails() {
 });
 
 /**
- * What the household means to spend a month (F12.5, D7): the owner sets or removes it,
- * members see it. The household's month on the dashboard is measured against it.
+ * What the household means to spend a month (F12.5, D7): any adult sets or removes it,
+ * or the owner alone when they keep it (F12.10); everyone else sees it. The household's month on the dashboard is measured against it.
  */
 const HouseholdBudget = observer(function HouseholdBudget() {
   const { householdStore, authStore } = useStores();
@@ -222,7 +225,7 @@ const HouseholdBudget = observer(function HouseholdBudget() {
     if (valid) void householdStore.setBudget(value.trim() === "" ? null : amount.toFixed(2));
   };
 
-  if (!householdStore.isOwner) {
+  if (!householdStore.mayChangeBudget) {
     return (
       <p className="m-0 text-md text-muted-foreground">
         {current
@@ -339,6 +342,45 @@ const InviteLink = observer(function InviteLink() {
   );
 });
 
+/**
+ * What each role may do (F12.10), and — for the owner — whether only they change the
+ * household budget. A child is told plainly what their place in the family allows.
+ */
+const Roles = observer(function Roles() {
+  const { householdStore } = useStores();
+  const { t } = useTranslation("household");
+  const household = householdStore.household;
+  if (!household) return null;
+
+  return (
+    <div className="flex flex-col gap-3">
+      {householdStore.isChild ? (
+        <p className="m-0 text-md leading-relaxed text-muted-foreground">{t("card.childNote")}</p>
+      ) : (
+        <details className="rounded-control border border-border p-3">
+          <summary className="min-h-11 cursor-pointer content-center font-semibold text-foreground">
+            {t("card.rolesTitle")}
+          </summary>
+          <ul className="m-0 mt-2 flex list-none flex-col gap-1.5 p-0 text-md leading-relaxed text-muted-foreground">
+            <li>{t("card.rolesAdult")}</li>
+            <li>{t("card.rolesChild")}</li>
+            <li>{t("card.rolesOwner")}</li>
+          </ul>
+        </details>
+      )}
+      {householdStore.isOwner && household.members.length > 1 && (
+        <Switch
+          checked={household.owner_sets_budget}
+          disabled={householdStore.saveState.isLoading}
+          onChange={(on) => void householdStore.keepBudget(on)}
+          label={t("card.keepBudget")}
+          hint={t("card.keepBudgetHint")}
+        />
+      )}
+    </div>
+  );
+});
+
 const MemberRow = observer(function MemberRow({
   member,
   isMe,
@@ -350,6 +392,7 @@ const MemberRow = observer(function MemberRow({
   const { t } = useTranslation("household");
   const [confirming, setConfirming] = useState(false);
   const fullName = `${member.first_name} ${member.last_name}`.trim();
+  const mayMark = householdStore.isOwner && member.role !== "owner";
 
   return (
     <li className="flex flex-col gap-3 p-3">
@@ -357,14 +400,33 @@ const MemberRow = observer(function MemberRow({
         <div className="flex min-w-0 flex-col gap-0.5">
           <span className="flex flex-wrap items-center gap-2 font-semibold text-foreground">
             {fullName}
-            {member.role === "owner" && (
+            {member.role === "owner" ? (
               <Pill size="sm" tone="success">
                 {t("card.owner")}
               </Pill>
+            ) : (
+              !mayMark && (
+                <Pill size="sm">{member.role === "child" ? t("card.child") : t("card.adult")}</Pill>
+              )
             )}
             {isMe && <Pill size="sm">{t("card.you")}</Pill>}
           </span>
           <span className="break-all text-md text-muted-foreground">{member.email}</span>
+          {mayMark && (
+            <div className="mt-2">
+              <SegmentedControl<MemberRole>
+                label={t("card.roleOf", { name: fullName })}
+                size="sm"
+                fill
+                value={member.role === "child" ? "child" : "adult"}
+                onChange={(role) => void householdStore.setRole(member.user_id, role)}
+                options={[
+                  { value: "adult", label: t("card.adult") },
+                  { value: "child", label: t("card.child") },
+                ]}
+              />
+            </div>
+          )}
         </div>
         {householdStore.isOwner && !isMe && !confirming && (
           <Button

@@ -1,10 +1,10 @@
 """What came in during a month (F23.10)."""
 
 import calendar
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, timedelta
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 from enum import StrEnum
 
 
@@ -140,19 +140,3 @@ def regular_since(
                 total += income.amount
         month = (month.replace(day=28) + timedelta(days=4)).replace(day=1)
     return total
-
-
-def share_of_bill(
-    amount: Decimal, split: str | None, mine: Decimal, everyone: Sequence[Decimal]
-) -> Decimal:
-    """One member's part of a shared bill (F12.8), to the grosz.
-
-    `everyone` holds each member's regular income, `mine` the caller's among them.
-    "income" divides in proportion to them; "equal" — or "income" while nobody has a
-    regular income to divide by — gives each member the same part.
-    """
-    members = max(len(everyone), 1)
-    total = sum(everyone, Decimal(0))
-    if split == "income" and total > 0:
-        return (amount * mine / total).quantize(CENT, rounding=ROUND_HALF_UP)
-    return (amount / members).quantize(CENT, rounding=ROUND_HALF_UP)

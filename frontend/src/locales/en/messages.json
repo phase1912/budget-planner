@@ -60,7 +60,12 @@
     "inviteMade": "New invite link made. The old one no longer works.",
     "inviteInvalid": "This invite link is not valid.",
     "joinFailed": "Could not join the household",
-    "joined": "Welcome to the household."
+    "joined": "Welcome to the household.",
+    "roleFailed": "Could not change the role",
+    "roleSaved": "Role changed.",
+    "keeperFailed": "Could not save who changes the budget",
+    "keeperOn": "Only you change the household budget now.",
+    "keeperOff": "Every adult can change the household budget now."
   },
   "receipts": {
     "privacyFailed": "Could not change who sees it",

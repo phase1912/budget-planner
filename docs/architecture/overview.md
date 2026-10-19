@@ -156,9 +156,14 @@ query in it returns a private receipt's merchant, items, category or date.
 Money a household shares (F12.8, ADR-0023) — incomes, regular incomes and regular bills —
 is read and changed through `SharedWithHousehold` (`app/repository/shared.py`), the one
 place the ownership filter is widened: a row the caller wrote, or one whose `household_id`
-is the household the caller belongs to now. `IncomeService.sharing` says whose each row is
-and divides shared bills; leaving or removal (`HouseholdService._take_back`) returns a
+is the household the caller belongs to now. `IncomeService.sharing` says whose each row is;
+leaving or removal (`HouseholdService._take_back`) returns a
 member's shared rows to them in the same transaction.
+
+Roles (F12.10): the membership row says `owner`, `member` (an adult) or `child`. A child
+is refused every shared write in one place, `refuse_child` in `app/services/household.py`,
+which `IncomeService` calls when a row is or would become shared, and which the household
+budget and a receipt's privacy call too.
 
 These rules are held together by one suite, `backend/tests/security/test_cross_household_access.py`
 (F12.6): it builds a household with an owner, a member, a removed member and a stranger

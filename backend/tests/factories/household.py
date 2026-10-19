@@ -16,11 +16,13 @@ class HouseholdFactory(ModelFactory[Household]):
     invite_code = Use(lambda: secrets.token_hex(16))
     # No budget unless a test about the household budget sets one (F12.5).
     budget_limit = None
+    # Every adult changes the budget unless a test about keeping it says otherwise (F12.10).
+    owner_sets_budget = False
     members: ClassVar[list[HouseholdMember]] = []
 
 
 class HouseholdMemberFactory(ModelFactory[HouseholdMember]):
-    """An ordinary member unless a test makes them the owner (ADR-0017)."""
+    """An adult member unless a test makes them the owner or a child (ADR-0017, F12.10)."""
 
     __model__ = HouseholdMember
     # Generated `household` and `user` objects would overwrite the ids a test passes in.
