@@ -37,8 +37,6 @@
     "taxed": "I pay tax on this",
     "taxedShort": "taxed",
     "regular": "Every month",
-    "editRegular": "Change",
-    "setRegular": "Set up",
     "extra": "Came in on top this month",
     "decideTax": "You pay your own taxes: decide below whether your tax comes out of this.",
     "bills": "Bills {{amount}}",

@@ -37,8 +37,6 @@
     "taxed": "Płacę od tego podatek",
     "taxedShort": "z podatkiem",
     "regular": "Co miesiąc",
-    "editRegular": "Zmień",
-    "setRegular": "Ustaw",
     "extra": "Wpłynęło ponadto w tym miesiącu",
     "decideTax": "Płacisz podatki samodzielnie: zdecyduj niżej, czy płacisz od tego podatek.",
     "bills": "Stałe {{amount}}",

@@ -32,9 +32,21 @@ const stores = vi.hoisted(() => ({
         },
       ],
     },
+    regular: [] as {
+      id: string;
+      name: string;
+      amount: string;
+      day: number | null;
+      taxed: boolean;
+    }[],
+    bills: [] as { id: string; name: string; amount: string; day: number | null }[],
     saveState: { isLoading: false },
     load: vi.fn(),
     loadBalance: vi.fn(),
+    loadRegular: vi.fn(),
+    loadBills: vi.fn(),
+    addBill: vi.fn().mockResolvedValue(true),
+    endBill: vi.fn().mockResolvedValue(true),
     payTaxes: vi.fn().mockResolvedValue(true),
     add: vi.fn().mockResolvedValue(true),
     update: vi.fn().mockResolvedValue(true),
@@ -177,6 +189,7 @@ describe("PlanPage (F23.2, F23.10, F23.12)", () => {
     const month = stores.incomeStore.month;
     month.bills = [{ id: "b1", name: "Rent", amount: "3000.00" }];
     month.bills_total = "3000.00";
+    stores.incomeStore.bills = [{ id: "b1", name: "Rent", amount: "3000.00", day: 5 }];
     renderPage();
 
     expect(screen.getByText("Rent")).toBeInTheDocument();
@@ -184,6 +197,23 @@ describe("PlanPage (F23.2, F23.10, F23.12)", () => {
     expect(screen.getByText("Free 1,400")).toBeInTheDocument();
     month.bills = [];
     month.bills_total = "0.00";
+    stores.incomeStore.bills = [];
+  });
+
+  it("stops a bill and adds another right in the list, then refreshes the month", async () => {
+    stores.incomeStore.bills = [{ id: "b1", name: "Rent", amount: "3000.00", day: 5 }];
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /Rent/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Stop it" }));
+    await vi.waitFor(() => {
+      expect(stores.incomeStore.endBill).toHaveBeenCalledWith("b1", expect.any(String));
+    });
+    expect(stores.incomeStore.load).toHaveBeenCalledTimes(2);
+
+    fireEvent.click(screen.getByRole("button", { name: "Add another bill" }));
+    expect(screen.getByLabelText("What it is")).toBeInTheDocument();
+    stores.incomeStore.bills = [];
   });
 
   it("adds an income entry by hand", async () => {
