@@ -101,6 +101,7 @@ describe("UploadPage", () => {
       incomeStore,
       accountStore: { mustConfirm: false },
       authStore: { user: { forwarding_address: null } },
+      householdStore: { household: null },
     } as unknown as RootStore;
     const { container } = render(
       <StoreProvider store={mockStores}>
@@ -128,6 +129,7 @@ describe("UploadPage", () => {
           source: "Acme",
           kind: "salary",
           channel: "document",
+          shared: false,
         },
       });
     });

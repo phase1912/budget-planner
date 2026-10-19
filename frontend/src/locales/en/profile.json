@@ -208,5 +208,17 @@
     "summary_one": "{{amount}} · {{count}} bill",
     "summary_other": "{{amount}} · {{count}} bills",
     "none": "None yet"
+  },
+  "whose": {
+    "title": "Whose is it?",
+    "shared": "Shared with family",
+    "onlyMine": "Only mine",
+    "split": "How to split it",
+    "equal": "Equally",
+    "income": "By income",
+    "addedBy": "added by {{name}}",
+    "yourPart": "your part {{amount}} {{currency}}",
+    "sharedChip": "Shared",
+    "mineChip": "Mine"
   }
 }

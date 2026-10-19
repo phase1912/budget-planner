@@ -388,7 +388,7 @@ async def test_no_one_but_the_owner_changes_a_receipt(
     ("method", "path", "body"),
     [
         ("PATCH", "", {"name": "Mine now"}),
-        ("PUT", "/budget", {"budget_limit": "1.00"}),
+        # The budget is the family's money and any member changes it (F12.8).
         ("POST", "/invite/regenerate", None),
         ("DELETE", "/members/{owner}", None),
     ],

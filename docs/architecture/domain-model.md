@@ -244,6 +244,13 @@ Rules that must hold at all times. Each is a candidate for a test.
     them (F12.5).
 11k. An account with no receipts yet takes the household's currency when it joins, as it
     could on Profile; one with receipts in another currency is refused (F12.3, D1).
+11l. An income, a regular income or a regular bill is either its author's or shared with the
+    author's household (F12.8, ADR-0023). A shared one is seen and changed by every member;
+    the author's own by the author alone. Each member's own view counts their own and the
+    shared ones in full; a shared bill also shows each member's part, divided equally or by
+    the members' regular incomes (attributed to whoever wrote them). The household's budget
+    is changed by any member. A member who leaves, or is removed, takes back what they
+    shared; what the others shared stays with the household.
 
 11l. Each line keeps the reader's confidence in it. A line below
     `ocr_confidence_threshold` is doubtful: marked "check this" in the wizard and on the

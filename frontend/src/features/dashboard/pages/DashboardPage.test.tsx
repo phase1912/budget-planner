@@ -363,7 +363,7 @@ describe("DashboardPage — what is left (D7, F23.3)", () => {
 
     await vi.waitFor(() => {
       expect(incomeStore.receive).toHaveBeenCalledWith(
-        { amount: "500", source: "Added on Home", kind: "other" },
+        { amount: "500", source: "Added on Home", kind: "other", shared: false },
         "2026-09-26",
         { year: 2026, month: 9 },
       );
@@ -390,7 +390,7 @@ describe("DashboardPage — what is left (D7, F23.3)", () => {
 
     await vi.waitFor(() => {
       expect(incomeStore.receive).toHaveBeenCalledWith(
-        { amount: "6800.00", source: "Salary", kind: "salary" },
+        { amount: "6800.00", source: "Salary", kind: "salary", shared: false },
         "2026-09-26",
         { year: 2026, month: 9 },
       );

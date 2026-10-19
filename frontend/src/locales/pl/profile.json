@@ -220,5 +220,17 @@
     "summary_many": "{{amount}} · {{count}} wydatków",
     "summary_other": "{{amount}} · {{count}} wydatku",
     "none": "Na razie brak"
+  },
+  "whose": {
+    "title": "Czyje to jest?",
+    "shared": "Wspólne z rodziną",
+    "onlyMine": "Tylko moje",
+    "split": "Jak dzielić",
+    "equal": "Po równo",
+    "income": "Według dochodów",
+    "addedBy": "dodane przez: {{name}}",
+    "yourPart": "Twoja część {{amount}} {{currency}}",
+    "sharedChip": "Wspólne",
+    "mineChip": "Moje"
   }
 }

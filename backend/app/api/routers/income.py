@@ -1,6 +1,7 @@
 """Money coming in (F23.10)."""
 
 import uuid
+from dataclasses import asdict
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Annotated
@@ -14,6 +15,9 @@ from app.api import rate_limit
 from app.api.dependencies import get_confirmed_user, get_current_user, get_quota_service
 from app.api.rate_limit import limiter
 from app.db.session import get_db_session
+from app.models.income import Income
+from app.models.income_source import IncomeSource
+from app.models.regular_expense import RegularExpense
 from app.models.user import User
 from app.ports.income_reading import IncomeReaderPort
 from app.schemas.income import (
@@ -31,7 +35,7 @@ from app.schemas.income import (
     TaxPaymentRequest,
 )
 from app.services.balance import BalanceService
-from app.services.income import IncomeService
+from app.services.income import IncomeService, Sharing
 from app.services.income_document import IncomeDocumentService
 from app.services.quota import QuotaService
 
@@ -39,6 +43,27 @@ router = APIRouter(prefix="/api/v1/income", tags=["income"])
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
 Session = Annotated[AsyncSession, Depends(get_db_session)]
+
+
+def _income(row: Income, sharing: Sharing) -> IncomeRead:
+    """An entry as the caller sees it: whose it is (F12.8)."""
+    return IncomeRead.model_validate(row).model_copy(update=asdict(sharing.whose(row)))
+
+
+def _regular(row: IncomeSource, sharing: Sharing) -> IncomeSourceRead:
+    """A regular income as the caller sees it: whose it is (F12.8)."""
+    return IncomeSourceRead.model_validate(row).model_copy(update=asdict(sharing.whose(row)))
+
+
+def _bill(row: RegularExpense, sharing: Sharing) -> RegularExpenseRead:
+    """A regular bill as the caller sees it: whose it is, its split and their part (F12.8)."""
+    return RegularExpenseRead.model_validate(row).model_copy(
+        update={**asdict(sharing.whose(row)), "split": row.split, "my_part": sharing.part_of(row)}
+    )
+
+
+def _this_month() -> date:
+    return datetime.now(UTC).date().replace(day=1)
 
 
 @router.get("", response_model=MonthIncomeRead)
@@ -49,26 +74,30 @@ async def month_income(
 ) -> MonthIncomeRead:
     """A month's income (YYYY-MM): its entries, or the usual amount standing in."""
     first_day = date.fromisoformat(f"{month}-01")
-    view = await IncomeService(session).month(user, first_day)
+    service = IncomeService(session)
+    view = await service.month(user, first_day)
+    sharing = await service.sharing(first_day)
     return MonthIncomeRead(
         month=month,
         total=view.income.total,
         entered=view.income.entered,
         usual=user.usual_income,
-        entries=[IncomeRead.model_validate(e) for e in view.entries],
+        entries=[_income(e, sharing) for e in view.entries],
         taxes=view.income.taxes,
         net=view.income.net,
         taxes_paid=view.taxes_paid,
-        regular=[IncomeSourceRead.model_validate(s) for s in view.regular],
-        bills=[RegularExpenseRead.model_validate(b) for b in view.bills],
+        regular=[_regular(s, sharing) for s in view.regular],
+        bills=[_bill(b, sharing) for b in view.bills],
         bills_total=sum((b.amount for b in view.bills), Decimal("0.00")),
     )
 
 
 @router.post("", response_model=IncomeRead, status_code=status.HTTP_201_CREATED)
 async def add_income(body: IncomeRequest, _user: CurrentUser, session: Session) -> IncomeRead:
-    """Record a sum that came in."""
-    return IncomeRead.model_validate(await IncomeService(session).add(body))
+    """Record a sum that came in; `shared` puts it in the household's money (F12.8)."""
+    service = IncomeService(session)
+    income = await service.add(body)
+    return _income(income, await service.sharing(_this_month()))
 
 
 def get_income_reader() -> IncomeReaderPort:
@@ -115,7 +144,9 @@ async def confirm_pending_income(
     pending_id: uuid.UUID, body: IncomeRequest, _user: CurrentUser, session: Session
 ) -> IncomeRead:
     """Confirm a pending income as `body` says, making it an entry; 404 if not the user's."""
-    return IncomeRead.model_validate(await IncomeService(session).confirm(pending_id, body))
+    service = IncomeService(session)
+    income = await service.confirm(pending_id, body)
+    return _income(income, await service.sharing(_this_month()))
 
 
 @router.delete("/pending/{pending_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -129,10 +160,10 @@ async def dismiss_pending_income(
 
 @router.get("/regular", response_model=list[IncomeSourceRead])
 async def regular_incomes(_user: CurrentUser, session: Session) -> list[IncomeSourceRead]:
-    """The regular incomes still running, already net (F23.17)."""
-    return [
-        IncomeSourceRead.model_validate(s) for s in await IncomeService(session).regular_incomes()
-    ]
+    """The regular incomes still running, already net — the caller's and shared (F23.17)."""
+    service = IncomeService(session)
+    sharing = await service.sharing(_this_month())
+    return [_regular(s, sharing) for s in await service.regular_incomes()]
 
 
 @router.post("/regular", response_model=IncomeSourceRead, status_code=status.HTTP_201_CREATED)
@@ -143,19 +174,19 @@ async def add_regular_income(
     today: Annotated[date | None, Query(description="The caller's own date")] = None,
 ) -> IncomeSourceRead:
     """Start a regular income; it counts every month from this one on."""
-    return IncomeSourceRead.model_validate(
-        await IncomeService(session).add_regular(body, today or datetime.now(UTC).date())
-    )
+    service = IncomeService(session)
+    source = await service.add_regular(body, today or datetime.now(UTC).date())
+    return _regular(source, await service.sharing(_this_month()))
 
 
 @router.put("/regular/{source_id}", response_model=IncomeSourceRead)
 async def change_regular_income(
     source_id: uuid.UUID, body: IncomeSourceRequest, _user: CurrentUser, session: Session
 ) -> IncomeSourceRead:
-    """Change a regular income; 404 if it is not the user's (N2)."""
-    return IncomeSourceRead.model_validate(
-        await IncomeService(session).change_regular(source_id, body)
-    )
+    """Change a regular income; 404 unless the caller's or their household's (N2, F12.8)."""
+    service = IncomeService(session)
+    source = await service.change_regular(source_id, body)
+    return _regular(source, await service.sharing(_this_month()))
 
 
 @router.delete("/regular/{source_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -172,10 +203,10 @@ async def end_regular_income(
 
 @router.get("/bills", response_model=list[RegularExpenseRead])
 async def regular_bills(_user: CurrentUser, session: Session) -> list[RegularExpenseRead]:
-    """The regular bills still running — rent, subscriptions (F23.18)."""
-    return [
-        RegularExpenseRead.model_validate(b) for b in await IncomeService(session).regular_bills()
-    ]
+    """The regular bills still running — the caller's and shared (F23.18, F12.8)."""
+    service = IncomeService(session)
+    sharing = await service.sharing(_this_month())
+    return [_bill(b, sharing) for b in await service.regular_bills()]
 
 
 @router.post("/bills", response_model=RegularExpenseRead, status_code=status.HTTP_201_CREATED)
@@ -186,19 +217,19 @@ async def add_bill(
     today: Annotated[date | None, Query(description="The caller's own date")] = None,
 ) -> RegularExpenseRead:
     """Start a regular bill; it counts every month from this one on."""
-    return RegularExpenseRead.model_validate(
-        await IncomeService(session).add_bill(body, today or datetime.now(UTC).date())
-    )
+    service = IncomeService(session)
+    bill = await service.add_bill(body, today or datetime.now(UTC).date())
+    return _bill(bill, await service.sharing(_this_month()))
 
 
 @router.put("/bills/{bill_id}", response_model=RegularExpenseRead)
 async def change_bill(
     bill_id: uuid.UUID, body: RegularExpenseRequest, _user: CurrentUser, session: Session
 ) -> RegularExpenseRead:
-    """Change a regular bill; 404 if it is not the user's (N2)."""
-    return RegularExpenseRead.model_validate(
-        await IncomeService(session).change_bill(bill_id, body)
-    )
+    """Change a regular bill; 404 unless the caller's or their household's (N2, F12.8)."""
+    service = IncomeService(session)
+    bill = await service.change_bill(bill_id, body)
+    return _bill(bill, await service.sharing(_this_month()))
 
 
 @router.delete("/bills/{bill_id}", status_code=status.HTTP_204_NO_CONTENT)

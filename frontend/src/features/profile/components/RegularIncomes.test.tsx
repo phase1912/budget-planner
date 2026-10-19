@@ -5,6 +5,7 @@ import { RegularIncomes } from "./RegularIncomes";
 
 const stores = vi.hoisted(() => ({
   authStore: { user: { currency: "PLN", pays_own_taxes: false } },
+  householdStore: { household: null as { id: string } | null, loaded: true, load: vi.fn() },
   incomeStore: {
     regular: [] as {
       id: string;
@@ -14,7 +15,10 @@ const stores = vi.hoisted(() => ({
       taxed: boolean;
       starts_on: string;
     }[],
+    bills: [] as Record<string, unknown>[],
     loadRegular: vi.fn(),
+    loadBills: vi.fn(),
+    addBill: vi.fn().mockResolvedValue(true),
     addRegular: vi.fn().mockResolvedValue(true),
     changeRegular: vi.fn().mockResolvedValue(true),
     endRegular: vi.fn().mockResolvedValue(true),
@@ -28,6 +32,48 @@ describe("RegularIncomes (F23.17)", () => {
     vi.clearAllMocks();
     stores.authStore.user.pays_own_taxes = false;
     stores.incomeStore.regular = [];
+    stores.incomeStore.bills = [];
+    stores.householdStore.household = null;
+  });
+
+  it("in a family, shares a new bill by default, split as chosen (F12.8)", async () => {
+    stores.householdStore.household = { id: "h1" };
+    stores.incomeStore.bills = [
+      {
+        id: "b1",
+        name: "Flat",
+        amount: "3000.00",
+        day: 5,
+        starts_on: "2026-10-01",
+        shared: true,
+        mine: false,
+        added_by: "Anna",
+        split: "income",
+        my_part: "2700.00",
+      },
+    ];
+    render(<RegularIncomes kind="bill" />);
+
+    expect(screen.getByText("Shared")).toBeInTheDocument();
+    expect(screen.getByText(/added by Anna/)).toBeInTheDocument();
+    expect(screen.getByText(/your part 2,700 PLN/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add another bill" }));
+    expect(screen.getByRole("radio", { name: "Shared with family" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    fireEvent.click(screen.getByRole("radio", { name: "By income" }));
+    fireEvent.change(screen.getByLabelText("What it is"), { target: { value: "Internet" } });
+    fireEvent.change(screen.getByLabelText("A month, PLN"), { target: { value: "69" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => {
+      expect(stores.incomeStore.addBill).toHaveBeenCalledWith(
+        { name: "Internet", amount: "69", day: null, shared: true, split: "income" },
+        expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      );
+    });
   });
 
   it("adds a regular income, counted from this month", async () => {
@@ -42,7 +88,7 @@ describe("RegularIncomes (F23.17)", () => {
 
     await waitFor(() => {
       expect(stores.incomeStore.addRegular).toHaveBeenCalledWith(
-        { name: "Salary", amount: "10000", day: 10, taxed: false },
+        { name: "Salary", amount: "10000", day: 10, taxed: false, shared: false },
         expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       );
     });

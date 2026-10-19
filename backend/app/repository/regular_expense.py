@@ -7,11 +7,11 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.regular_expense import RegularExpense
-from app.repository.base import BaseRepository
+from app.repository.shared import SharedWithHousehold
 
 
-class RegularExpenseRepository(BaseRepository[RegularExpense]):
-    """Regular bills of the signed-in user only (N2)."""
+class RegularExpenseRepository(SharedWithHousehold[RegularExpense]):
+    """Regular bills of the signed-in user and those their household shares (N2, F12.8)."""
 
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(RegularExpense, session)

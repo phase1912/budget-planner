@@ -33,7 +33,9 @@ export const IncomeDialog = observer(function IncomeDialog({
   onClose,
   onSaved,
 }: IncomeDialogProps) {
-  const { incomeStore, authStore } = useStores();
+  const { incomeStore, authStore, householdStore } = useStores();
+  // Inside a household, money that comes in is the family's unless the user says otherwise (F12.8).
+  const inHousehold = householdStore.household !== null;
   const paysOwnTaxes = authStore.user?.pays_own_taxes === true;
   const { t } = useTranslation("plan");
   const [form, setForm] = useState<IncomeRequest>({
@@ -43,6 +45,7 @@ export const IncomeDialog = observer(function IncomeDialog({
     kind: entry?.kind ?? draft?.kind ?? "salary",
     channel: draft ? "document" : undefined,
     taxed: entry?.taxed,
+    shared: entry?.shared ?? inHousehold,
   });
   // Until the user flips it, a new entry is taxed by its kind, as the server decides (F23.16).
   const taxed = form.taxed ?? (form.kind === "salary" || form.kind === "side");
@@ -145,6 +148,16 @@ export const IncomeDialog = observer(function IncomeDialog({
               }}
               label={t("income.taxed")}
               ariaLabel={t("income.taxed")}
+            />
+          )}
+          {inHousehold && (
+            <Switch
+              checked={form.shared}
+              onChange={(value) => {
+                setForm((f) => ({ ...f, shared: value }));
+              }}
+              label={t("income.shared")}
+              ariaLabel={t("income.shared")}
             />
           )}
           <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-between">

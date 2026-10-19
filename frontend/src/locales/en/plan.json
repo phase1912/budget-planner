@@ -41,7 +41,8 @@
     "decideTax": "You pay your own taxes: decide below whether your tax comes out of this.",
     "bills": "Bills {{amount}}",
     "billsTitle": "Goes every month",
-    "noBills": "Rent, subscriptions — add them and they count by themselves."
+    "noBills": "Rent, subscriptions — add them and they count by themselves.",
+    "shared": "Shared with the family"
   },
   "budget": {
     "title": "Monthly budget",

@@ -123,6 +123,7 @@ export class IncomeStore {
           amount,
           source,
           kind: "salary",
+          shared: false,
         };
     const ok = entries[0] ? await this.update(entries[0].id, body) : await this.add(body);
     if (ok) await this.load(year, month);
