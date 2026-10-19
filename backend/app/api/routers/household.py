@@ -21,7 +21,11 @@ from app.repository.household_spend import HouseholdSpendRepository
 from app.schemas.household import (
     HouseholdBudgetRequest,
     HouseholdCategoryResponse,
+    HouseholdDailyMemberResponse,
+    HouseholdDailyResponse,
+    HouseholdDayResponse,
     HouseholdInvite,
+    HouseholdMemberDayResponse,
     HouseholdMemberRead,
     HouseholdMonthResponse,
     HouseholdName,
@@ -239,4 +243,34 @@ async def get_household_statistics(
         ],
         private_total=stats.private_total,
         private_share=stats.private_share,
+    )
+
+
+@router.get("/daily", response_model=HouseholdDailyResponse)
+async def get_household_daily(
+    period: Annotated[DateRange, Depends(required_period)],
+    current_user: CurrentUser,
+    budget: Budget,
+) -> HouseholdDailyResponse:
+    """Each member's spending on each day between two dates, both included (F12.5, F23.4).
+
+    Shared receipts by their day; the caller's own private ones too, while the other
+    members' private spending is one undated figure (ADR-0017). 404 outside a household.
+    """
+    daily = await budget.daily(current_user, period)
+    return HouseholdDailyResponse(
+        members=[
+            HouseholdDailyMemberResponse(user_id=member, first_name=name)
+            for member, name in daily.members
+        ],
+        days=[
+            HouseholdDayResponse(
+                day=d.day,
+                members=[
+                    HouseholdMemberDayResponse(user_id=m.user_id, total=m.total) for m in d.members
+                ],
+            )
+            for d in daily.days
+        ],
+        undated_private=daily.undated_private,
     )

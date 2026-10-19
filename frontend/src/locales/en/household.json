@@ -56,5 +56,11 @@
     "remove": "Remove",
     "removeLabel": "Remove {{name}}",
     "removeQuestion": "{{name}} will no longer see the household's receipts, and it will no longer see theirs."
+  },
+  "daily": {
+    "title": "By day",
+    "you": "You",
+    "bar": "{{date}}: {{amounts}} {{currency}}",
+    "undatedPrivate": "Others' private receipts, {{amount}} {{currency}}, count in the total but are not shown by day."
   }
 }

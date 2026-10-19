@@ -248,3 +248,28 @@ async def test_every_action_is_logged_and_only_super_admins_read_the_log(
         ("email_confirmed", admin.email, "client@example.com"),
     ]
     assert log[1]["details"]["reason"] == "Trial"
+
+
+@pytest.mark.asyncio
+async def test_an_admin_shows_the_first_sign_in_setup_again_even_to_themselves(
+    db_session: AsyncSession, super_admins: None
+) -> None:
+    boss = await UserFactory.create_async(email=BOSS, onboarded_at=datetime.now(UTC))
+    admin = await UserFactory.create_async(role="admin", onboarded_at=datetime.now(UTC))
+    user = await UserFactory.create_async(onboarded_at=datetime.now(UTC), currency="PLN")
+
+    for target in (user, admin):
+        url = f"/api/v1/admin/users/{target.id}"
+        restarted = await _call(db_session, "POST", f"{url}/restart-onboarding", user=admin)
+        assert restarted.status_code == 204
+        assert (await _call(db_session, "GET", url, user=admin)).json()["onboarded_at"] is None
+    # Only the "done" mark goes: what the setup chose before stays.
+    assert user.currency == "PLN"
+
+    plain = await UserFactory.create_async()
+    refused = await _call(
+        db_session, "POST", f"/api/v1/admin/users/{user.id}/restart-onboarding", user=plain
+    )
+    assert refused.status_code == 403
+    log = (await _call(db_session, "GET", "/api/v1/admin/log", user=boss)).json()["items"]
+    assert [e["action"] for e in log] == ["onboarding_restarted", "onboarding_restarted"]

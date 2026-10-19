@@ -18,6 +18,7 @@ from app.schemas.product import (
     MergeProductsRequest,
     ProductResponse,
     ProductsOverviewResponse,
+    RenameProductRequest,
     SelectionRequest,
     SelectionResponse,
     SplitProductRequest,
@@ -148,6 +149,21 @@ async def merge_products(
     Answers with the products list as it now is. Another user's product is not found (N2).
     """
     await service.merge(current_user.id, product_id, request.product_ids)
+    return await _listed(service, current_user, "")
+
+
+@router.patch("/{product_id}", response_model=list[ProductResponse])
+async def rename_product(
+    product_id: uuid.UUID,
+    request: RenameProductRequest,
+    current_user: CurrentUser,
+    service: Service,
+) -> list[ProductResponse]:
+    """Give a product the name it is shown under (F16.1); receipts keep matching it.
+
+    Answers with the products list as it now is. Another user's product is not found (N2).
+    """
+    await service.rename(current_user.id, product_id, request.name)
     return await _listed(service, current_user, "")
 
 

@@ -2,7 +2,7 @@
 
 import uuid
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
 from app.api.errors import NotFoundError, ProblemCode
@@ -66,6 +66,35 @@ class HouseholdStatistics:
     private_share: Decimal
 
 
+@dataclass(frozen=True)
+class MemberDay:
+    """What one member spent on one day; zero on a day they bought nothing."""
+
+    user_id: uuid.UUID
+    total: Decimal
+
+
+@dataclass(frozen=True)
+class HouseholdDay:
+    """One day of the period with each member's spending on it."""
+
+    day: date
+    members: list[MemberDay]
+
+
+@dataclass(frozen=True)
+class HouseholdDaily:
+    """The household's spending day by day, per member (F12.5, F23.4).
+
+    `undated_private` is the other members' private spending of the period: it counts in
+    the household's totals, but has no day here, since a date would say too much (ADR-0017).
+    """
+
+    members: list[tuple[uuid.UUID, str]]
+    days: list[HouseholdDay]
+    undated_private: Decimal
+
+
 class HouseholdBudgetService:
     """BR-4 and BR-5 over a household's members, for any one of them.
 
@@ -120,6 +149,32 @@ class HouseholdBudgetService:
             private_total=private_total,
             private_share=_share(private_total, total),
         )
+
+    async def daily(self, user: User, period: DateRange) -> HouseholdDaily:
+        """Every day of `period` with each member's spending, the viewer's private included.
+
+        Raises NotFoundError outside a household.
+        """
+        household = await self._household(user)
+        members = [(m.user_id, m.user.first_name) for m in household.members]
+        ids = [member for member, _ in members]
+        totals = await self.spend.daily_by_member(period, ids, user.id)
+        undated = sum(
+            (
+                s.private_total
+                for s in await self.spend.by_member(period, ids)
+                if s.user_id != user.id
+            ),
+            Decimal(0),
+        )
+        days = [
+            HouseholdDay(
+                spent_on,
+                [MemberDay(member, totals.get((spent_on, member), Decimal(0))) for member in ids],
+            )
+            for spent_on in (period.start + timedelta(days=n) for n in range(period.days))
+        ]
+        return HouseholdDaily(members=members, days=days, undated_private=undated)
 
     async def _household(self, user: User) -> Household:
         household = await self.households.mine(user)

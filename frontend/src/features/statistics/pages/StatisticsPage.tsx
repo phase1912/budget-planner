@@ -35,6 +35,7 @@ import { Change } from "../components/Change";
 import { likeForLikeNote, periodLabel, periodName } from "../periodLabel";
 import { HouseholdStatisticsView } from "@/features/household/components/HouseholdStatisticsView";
 import { HouseholdViewSwitch } from "@/features/household/components/HouseholdViewSwitch";
+import { HouseholdDailyBars } from "@/features/household/components/HouseholdDailyBars";
 import { numberFormat } from "@/i18n/format";
 import { useTranslation } from "react-i18next";
 import { categoryName } from "@/shared/categoryName";
@@ -168,7 +169,10 @@ export const StatisticsPage = observer(function StatisticsPage() {
         </div>
 
         {household ? (
-          <HouseholdStatisticsView start={start} end={end} currency={currency} />
+          <>
+            <HouseholdStatisticsView start={start} end={end} currency={currency} />
+            <HouseholdDailyBars currency={currency} today={isoDay(new Date())} />
+          </>
         ) : (
           <>
             {statistics && statistics.receipt_count > 0 && comparison && (

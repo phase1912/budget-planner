@@ -122,7 +122,10 @@
     "exploreFailed": "These purchases could not be loaded.",
     "saveSelectionFailed": "The selection could not be saved. Try again.",
     "selectionSaved": "Selection saved.",
-    "deleteSelectionFailed": "The selection could not be deleted. Try again."
+    "deleteSelectionFailed": "The selection could not be deleted. Try again.",
+    "selectionUpdated": "Selection updated.",
+    "renamed": "Product renamed.",
+    "renameFailed": "The product could not be renamed. Try again."
   },
   "trips": {
     "loadFailed": "Your trips could not be loaded.",
@@ -150,7 +153,8 @@
     "planGranted": "The plan is granted.",
     "planRevoked": "The grant is taken back.",
     "appointed": "The account is now an admin.",
-    "removed": "The account is no longer an admin."
+    "removed": "The account is no longer an admin.",
+    "onboardingRestarted": "The setup will open on the next visit."
   },
   "income": {
     "saved": "Saved.",

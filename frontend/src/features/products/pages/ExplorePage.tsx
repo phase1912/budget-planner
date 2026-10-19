@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { reaction } from "mobx";
-import { Plus, Search, X } from "lucide-react";
+import { Pencil, Plus, RotateCcw, Search, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -24,6 +24,7 @@ import { PriceChart } from "../components/PriceChart";
 import { ShopPrices } from "../components/ShopPrices";
 import { SaveSelectionDialog } from "../components/SaveSelectionDialog";
 import { MergeProductsDialog } from "../components/MergeProductsDialog";
+import { RenameProductDialog } from "../components/RenameProductDialog";
 import { productColour } from "../productColours";
 
 const PERCENT = numberFormat({ maximumFractionDigits: 0 });
@@ -43,6 +44,7 @@ export const ExplorePage = observer(function ExplorePage() {
   const [saving, setSaving] = useState(false);
   const [merging, setMerging] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
   const { result, isLoading, error, preset, start, end } = explorationStore;
   const selected = productsStore.selected;
   const openSet = explorationStore.selectionMatching(selected);
@@ -74,6 +76,7 @@ export const ExplorePage = observer(function ExplorePage() {
 
   const colourOf = (id: string) => productColour(selected.indexOf(id));
   const tile = "flex flex-col gap-0.5 rounded-card bg-surface p-3.5";
+  const saveLabel = explorationStore.changedSet ? t("explore.saveChanges") : t("explore.save");
 
   return (
     <div className="flex-grow flex flex-col items-center pb-4">
@@ -87,16 +90,18 @@ export const ExplorePage = observer(function ExplorePage() {
             <button
               type="button"
               className="min-h-11 shrink-0 rounded-control bg-tone-primary-bg px-4 text-lg font-extrabold text-primary"
+              aria-label={saveLabel}
               onClick={() => {
                 setSaving(true);
               }}
             >
-              {t("explore.save")}
+              <span className="md:hidden">{t("explore.saveShort")}</span>
+              <span className="hidden md:inline">{saveLabel}</span>
             </button>
           )}
         </header>
 
-        {explorationStore.selections.length > 0 && (
+        {(explorationStore.selections.length > 0 || selected.length > 0) && (
           <ul aria-label={t("selections.title")} className="m-0 flex list-none flex-wrap gap-2 p-0">
             {explorationStore.selections.map((set) => (
               <li key={set.id}>
@@ -105,6 +110,7 @@ export const ExplorePage = observer(function ExplorePage() {
                   aria-pressed={openSet?.id === set.id}
                   onClick={() => {
                     productsStore.select(set.product_ids);
+                    explorationStore.openSet(set.id);
                   }}
                   className={`min-h-11 rounded-pill border-2 px-4 text-md font-bold ${
                     openSet?.id === set.id
@@ -116,6 +122,21 @@ export const ExplorePage = observer(function ExplorePage() {
                 </button>
               </li>
             ))}
+            {selected.length > 0 && (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    productsStore.clearSelection();
+                    explorationStore.openSet(null);
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-pill px-3.5 text-md font-bold text-muted-foreground"
+                >
+                  <RotateCcw size={14} aria-hidden="true" />
+                  {t("selections.clear")}
+                </button>
+              </li>
+            )}
           </ul>
         )}
 
@@ -291,6 +312,16 @@ export const ExplorePage = observer(function ExplorePage() {
                         </button>
                         {isOpen && (
                           <div className="flex flex-col gap-3 px-4 pb-4">
+                            <button
+                              type="button"
+                              className="flex min-h-11 items-center gap-1.5 self-start text-md font-bold text-primary"
+                              onClick={() => {
+                                setRenaming({ id, name: product.product.name });
+                              }}
+                            >
+                              <Pencil size={14} aria-hidden="true" />
+                              {t("rename.open")}
+                            </button>
                             <CheaperMark product={listedProduct(id)} currency={currency} />
                             {product.change && (
                               <p className="m-0 text-md">
@@ -351,6 +382,16 @@ export const ExplorePage = observer(function ExplorePage() {
           onClose={() => {
             setSaving(false);
           }}
+        />
+      )}
+      {renaming && (
+        <RenameProductDialog
+          productId={renaming.id}
+          current={renaming.name}
+          onClose={() => {
+            setRenaming(null);
+          }}
+          onRenamed={() => void explorationStore.load()}
         />
       )}
       {merging && (

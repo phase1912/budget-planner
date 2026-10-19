@@ -104,7 +104,9 @@
     "months3": "3 mies.",
     "months6": "6 mies.",
     "changeUnit": "{{percent}}% za {{unit}}",
-    "go": "Analizuj"
+    "go": "Analizuj",
+    "saveChanges": "Zapisz zmiany",
+    "saveShort": "Zapisz"
   },
   "selections": {
     "title": "Moje zestawy",
@@ -114,7 +116,12 @@
     "placeholder": "Przekąski",
     "save": "Zapisz",
     "delete": "Usuń zestaw „{{name}}”",
-    "showing": "Otwarto «{{name}}»"
+    "showing": "Otwarto «{{name}}»",
+    "updateTitle": "Zapisz zmiany w «{{name}}»",
+    "update": "Zaktualizuj «{{name}}»",
+    "orNew": "Albo zostaw «{{name}}» bez zmian i zapisz te produkty jako nowy zestaw:",
+    "saveNew": "Zapisz jako nowy",
+    "clear": "Wyczyść wybór"
   },
   "cheaper": {
     "mark": "Taniej w {{shop}}: o {{amount}} {{currency}}/{{unit}} ({{percent}}%) niż w {{instead}}"
@@ -146,5 +153,13 @@
   "count_few": "{{count}} produkty",
   "count_many": "{{count}} produktów",
   "count_other": "{{count}} produktu",
-  "exploreTitle": "Zbadaj kilka razem"
+  "exploreTitle": "Zbadaj kilka razem",
+  "rename": {
+    "open": "Zmień nazwę",
+    "label": "Zmień nazwę: {{name}}",
+    "title": "Zmień nazwę produktu",
+    "name": "Nazwa",
+    "hint": "Na paragonach nadal będzie drukowany po swojemu — takie paragony i tak trafią do tego produktu.",
+    "save": "Zapisz"
+  }
 }

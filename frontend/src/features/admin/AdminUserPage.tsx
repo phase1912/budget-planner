@@ -128,7 +128,7 @@ const Account = observer(function Account({ card }: { card: AdminUserCard }) {
 });
 
 const Support = observer(function Support({ card }: { card: AdminUserCard }) {
-  const { adminStore } = useStores();
+  const { adminStore, authStore } = useStores();
   const { t } = useTranslation("admin");
   const busy = adminStore.actionState.isLoading;
   return (
@@ -164,8 +164,26 @@ const Support = observer(function Support({ card }: { card: AdminUserCard }) {
         >
           {t("user.sendReset")}
         </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          className="w-full md:w-auto"
+          disabled={busy || card.onboarded_at === null}
+          onClick={() => {
+            void adminStore.restartOnboarding(card.id).then((ok) => {
+              // One's own account goes to the setup straight away, to test it.
+              const me = authStore.user;
+              if (ok && me?.id === card.id) authStore.updateUser({ ...me, onboarded_at: null });
+            });
+          }}
+        >
+          {t("user.restartOnboarding")}
+        </Button>
       </div>
       <p className="m-0 text-base text-muted-foreground">{t("user.resetNote")}</p>
+      <p className="m-0 text-base text-muted-foreground">
+        {card.onboarded_at === null ? t("user.onboardingPending") : t("user.onboardingNote")}
+      </p>
     </Section>
   );
 });

@@ -1,4 +1,5 @@
-import { ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, Pencil } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
@@ -8,6 +9,7 @@ import type { Product } from "@/stores/ProductsStore";
 import { useStores } from "@/stores/StoreContext";
 import { productSize } from "../productSize";
 import { CheaperMark } from "./CheaperMark";
+import { RenameProductDialog } from "./RenameProductDialog";
 
 const DAY = dateFormat({ day: "numeric", month: "short" });
 
@@ -28,6 +30,7 @@ export const ProductRow = observer(function ProductRow({
   const size = productSize(product.size_amount, product.size_unit);
   const selected = productsStore.selected.includes(product.id);
   const splittable = product.variants.length > 1;
+  const [renaming, setRenaming] = useState(false);
 
   return (
     <li className="flex gap-3 px-3 py-3 md:px-4.5">
@@ -100,6 +103,25 @@ export const ProductRow = observer(function ProductRow({
           </details>
         )}
       </div>
+      <button
+        type="button"
+        aria-label={t("rename.label", { name: product.name })}
+        className="flex h-11 w-11 shrink-0 items-center justify-center self-start rounded-pill text-muted-foreground hover:bg-muted hover:text-foreground md:h-8 md:w-8"
+        onClick={() => {
+          setRenaming(true);
+        }}
+      >
+        <Pencil size={15} aria-hidden="true" />
+      </button>
+      {renaming && (
+        <RenameProductDialog
+          productId={product.id}
+          current={product.name}
+          onClose={() => {
+            setRenaming(false);
+          }}
+        />
+      )}
     </li>
   );
 });

@@ -124,7 +124,10 @@
     "exploreFailed": "Nie udało się wczytać zakupów.",
     "saveSelectionFailed": "Nie udało się zapisać zestawu. Spróbuj ponownie.",
     "selectionSaved": "Zestaw zapisany.",
-    "deleteSelectionFailed": "Nie udało się usunąć zestawu. Spróbuj ponownie."
+    "deleteSelectionFailed": "Nie udało się usunąć zestawu. Spróbuj ponownie.",
+    "selectionUpdated": "Zestaw zaktualizowany.",
+    "renamed": "Nazwa produktu zmieniona.",
+    "renameFailed": "Nie udało się zmienić nazwy produktu. Spróbuj ponownie."
   },
   "trips": {
     "loadFailed": "Nie udało się wczytać podróży.",
@@ -152,7 +155,8 @@
     "planGranted": "Plan został przyznany.",
     "planRevoked": "Przyznanie zostało cofnięte.",
     "appointed": "To konto jest teraz administratorem.",
-    "removed": "To konto nie jest już administratorem."
+    "removed": "To konto nie jest już administratorem.",
+    "onboardingRestarted": "Konfiguracja otworzy się przy następnej wizycie."
   },
   "income": {
     "saved": "Zapisano.",

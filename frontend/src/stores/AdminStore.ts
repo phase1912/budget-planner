@@ -170,6 +170,15 @@ export class AdminStore {
     );
   }
 
+  /** Show the account the first-sign-in setup again on its next visit (F23.9). */
+  restartOnboarding(userId: string): Promise<boolean> {
+    return this.act(userId, "admin.onboardingRestarted", () =>
+      this.api.POST("/api/v1/admin/users/{user_id}/restart-onboarding", {
+        params: { path: { user_id: userId } },
+      }),
+    );
+  }
+
   /** Give the paid plan for `days` more days, with the reason kept in the log. */
   grantPlan(userId: string, days: number, reason: string): Promise<boolean> {
     return this.act(userId, "admin.planGranted", () =>
@@ -221,7 +230,8 @@ export class AdminStore {
       | "admin.planGranted"
       | "admin.planRevoked"
       | "admin.appointed"
-      | "admin.removed",
+      | "admin.removed"
+      | "admin.onboardingRestarted",
     send: () => Promise<{ error?: unknown }>,
   ): Promise<boolean> {
     this.actionState.start();

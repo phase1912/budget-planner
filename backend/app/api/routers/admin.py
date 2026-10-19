@@ -95,6 +95,7 @@ async def user_card(user_id: uuid.UUID, _admin: Admin, session: Session) -> Admi
         last_name=user.last_name,
         created_at=user.created_at,
         email_confirmed_at=user.email_confirmed_at,
+        onboarded_at=user.onboarded_at,
         language=user.language,
         terms_version=user.terms_version,
         is_admin=service.is_admin(user),
@@ -126,6 +127,13 @@ async def user_card(user_id: uuid.UUID, _admin: Admin, session: Session) -> Admi
 async def confirm_email(user_id: uuid.UUID, admin: Admin, session: Session) -> Response:
     """Mark the account's address confirmed (F18.6.2)."""
     await _service(session).confirm_email(admin, user_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/users/{user_id}/restart-onboarding", status_code=status.HTTP_204_NO_CONTENT)
+async def restart_onboarding(user_id: uuid.UUID, admin: Admin, session: Session) -> Response:
+    """Show the account the first-sign-in setup again on its next visit (F23.9)."""
+    await _service(session).restart_onboarding(admin, user_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

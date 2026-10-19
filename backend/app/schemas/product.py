@@ -54,6 +54,19 @@ class MergeProductsRequest(BaseModel):
     product_ids: list[uuid.UUID] = Field(min_length=1, max_length=50)
 
 
+class RenameProductRequest(BaseModel):
+    """The name a product is shown under from now on; how receipts print it is unchanged."""
+
+    name: str = Field(min_length=1, max_length=255)
+
+    @field_validator("name")
+    @classmethod
+    def _not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("A name cannot be blank")
+        return value.strip()
+
+
 class SplitProductRequest(BaseModel):
     """The way of printing to take out of the product into one of its own (F16.1)."""
 

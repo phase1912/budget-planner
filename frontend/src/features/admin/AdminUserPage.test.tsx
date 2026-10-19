@@ -12,6 +12,7 @@ const CARD: AdminUserCard = {
   last_name: "Lee",
   created_at: "2026-09-01T10:00:00Z",
   email_confirmed_at: null,
+  onboarded_at: "2026-09-01T10:05:00Z",
   language: "uk",
   terms_version: "2026-10",
   is_admin: false,
@@ -38,7 +39,7 @@ const CARD: AdminUserCard = {
 };
 
 const stores = vi.hoisted(() => ({
-  authStore: { user: { is_super_admin: false } },
+  authStore: { user: { id: "me", is_super_admin: false }, updateUser: vi.fn() },
   adminStore: {
     card: null as AdminUserCard | null,
     cardState: { error: null as string | null },
@@ -47,6 +48,7 @@ const stores = vi.hoisted(() => ({
     confirmEmail: vi.fn(),
     sendConfirmation: vi.fn(),
     sendPasswordReset: vi.fn(),
+    restartOnboarding: vi.fn().mockResolvedValue(true),
     grantPlan: vi.fn().mockResolvedValue(true),
     revokeGrant: vi.fn(),
     setAdmin: vi.fn(),
@@ -68,7 +70,7 @@ describe("AdminUserPage (F18.6.2-3)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     stores.adminStore.card = CARD;
-    stores.authStore.user = { is_super_admin: false };
+    stores.authStore.user = { id: "me", is_super_admin: false };
   });
 
   it("shows the account, its plan, grants and activity, and offers the support actions", () => {
@@ -109,10 +111,26 @@ describe("AdminUserPage (F18.6.2-3)", () => {
     renderPage();
     expect(screen.queryByRole("button", { name: "Make admin" })).not.toBeInTheDocument();
 
-    stores.authStore.user = { is_super_admin: true };
+    stores.authStore.user = { id: "me", is_super_admin: true };
     renderPage();
     fireEvent.click(screen.getByRole("button", { name: "Make admin" }));
     fireEvent.click(screen.getByRole("button", { name: "Yes" }));
     expect(stores.adminStore.setAdmin).toHaveBeenCalledWith("u1", true);
+  });
+
+  it("shows the setup again, and on one's own account opens it at once", async () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Show the setup again" }));
+    await Promise.resolve();
+    expect(stores.adminStore.restartOnboarding).toHaveBeenCalledWith("u1");
+    expect(stores.authStore.updateUser).not.toHaveBeenCalled();
+
+    stores.authStore.user = { id: "u1", is_super_admin: false };
+    fireEvent.click(screen.getByRole("button", { name: "Show the setup again" }));
+    await vi.waitFor(() => {
+      expect(stores.authStore.updateUser).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "u1", onboarded_at: null }),
+      );
+    });
   });
 });

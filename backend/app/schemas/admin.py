@@ -53,6 +53,7 @@ class AdminUserCard(BaseModel):
     last_name: str
     created_at: datetime
     email_confirmed_at: datetime | None
+    onboarded_at: datetime | None
     language: str | None
     terms_version: str | None
     is_admin: bool

@@ -27,6 +27,8 @@ export class ExplorationStore {
   isLoading = false;
   error: string | null = null;
   selections: Selection[] = [];
+  /** The saved selection the ticks were opened from, so a change to them can be kept in it. */
+  openedSetId: string | null = null;
   isSaving = false;
   private requests = 0;
   private readonly toastStore: ToastStore;
@@ -98,6 +100,21 @@ export class ExplorationStore {
     });
   }
 
+  /** Remember which saved selection the ticks came from (null: none, or forgotten). */
+  openSet(id: string | null): void {
+    this.openedSetId = id;
+  }
+
+  /**
+   * The saved selection the ticks were opened from, once they no longer match it: a
+   * product added or taken away. Saving then offers to keep the change in it rather than
+   * to start a new selection.
+   */
+  get changedSet(): Selection | undefined {
+    if (this.productIds.length === 0 || this.selectionMatching(this.productIds)) return undefined;
+    return this.selections.find((selection) => selection.id === this.openedSetId);
+  }
+
   async loadSelections(): Promise<void> {
     const response = await settle(() => apiClient.GET("/api/v1/products/selections"));
     runInAction(() => {
@@ -125,7 +142,34 @@ export class ExplorationStore {
       this.selections = [...this.selections, response.data].sort((a, b) =>
         a.name.localeCompare(b.name),
       );
+      this.openedSetId = response.data.id;
       this.toastStore.showSuccess(i18n.t("messages:products.selectionSaved"));
+    });
+    return response.error === undefined;
+  }
+
+  /** Keep the ticked products in a saved selection, under its own name; true when kept. */
+  async updateSelection(id: string): Promise<boolean> {
+    const selection = this.selections.find((s) => s.id === id);
+    if (!selection || this.isSaving || this.productIds.length === 0) return false;
+    this.isSaving = true;
+    const response = await settle(() =>
+      apiClient.PUT("/api/v1/products/selections/{selection_id}", {
+        params: { path: { selection_id: id } },
+        body: { name: selection.name, product_ids: this.productIds },
+      }),
+    );
+    runInAction(() => {
+      this.isSaving = false;
+      if (response.error) {
+        this.toastStore.showError(
+          errorMessage(response.error, i18n.t("messages:products.saveSelectionFailed")),
+        );
+        return;
+      }
+      const updated = response.data;
+      this.selections = this.selections.map((s) => (s.id === id ? updated : s));
+      this.toastStore.showSuccess(i18n.t("messages:products.selectionUpdated"));
     });
     return response.error === undefined;
   }
@@ -144,6 +188,7 @@ export class ExplorationStore {
         return;
       }
       this.selections = this.selections.filter((s) => s.id !== id);
+      if (this.openedSetId === id) this.openedSetId = null;
     });
   }
 
@@ -152,6 +197,7 @@ export class ExplorationStore {
     this.productIds = [];
     this.result = null;
     this.selections = [];
+    this.openedSetId = null;
     this.error = null;
     this.choosePreset("this_month");
   }
