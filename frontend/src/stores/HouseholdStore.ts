@@ -14,6 +14,7 @@ export type HouseholdMonth = components["schemas"]["HouseholdMonthResponse"];
 export type HouseholdStatistics = components["schemas"]["HouseholdStatisticsResponse"];
 export type HouseholdDaily = components["schemas"]["HouseholdDailyResponse"];
 export type HouseholdView = "mine" | "household";
+export type MemberRole = components["schemas"]["MemberRoleRequest"]["role"];
 
 /** Today by the browser's own calendar, as YYYY-MM-DD: whether a month is over is the user's call (ADR-0009). */
 function localToday(now: Date): string {
@@ -53,6 +54,22 @@ export class HouseholdStore {
   /** Whether the user owns their household and may manage it. */
   get isOwner(): boolean {
     return this.household?.my_role === "owner";
+  }
+
+  /** Whether the user is a child here: they see what is shared and change none of it (F12.10). */
+  get isChild(): boolean {
+    return this.household?.my_role === "child";
+  }
+
+  /** Whether what the user adds may go to the family: they are in one, as an adult (F12.8, F12.10). */
+  get mayShare(): boolean {
+    return this.household !== null && !this.isChild;
+  }
+
+  /** Whether the user changes the household budget: any adult, or the owner alone when they keep it. */
+  get mayChangeBudget(): boolean {
+    if (!this.household || this.isChild) return false;
+    return !this.household.owner_sets_budget || this.isOwner;
   }
 
   /** Whether there is anyone to share with: a household of one has no household view. */
@@ -126,7 +143,7 @@ export class HouseholdStore {
     });
   }
 
-  /** Set or clear the household's monthly budget; the owner only (F12.5, D7). */
+  /** Set or clear the household's monthly budget (F12.5, D7); see `mayChangeBudget`. */
   async setBudget(limit: string | null): Promise<boolean> {
     return this.save(
       () => apiClient.PUT("/api/v1/household/budget", { body: { budget_limit: limit } }),
@@ -173,6 +190,28 @@ export class HouseholdStore {
         }),
       i18n.t("messages:household.removeFailed"),
       i18n.t("messages:household.removed"),
+    );
+  }
+
+  /** The owner marks a member as an adult or a child (F12.10). */
+  async setRole(userId: string, role: MemberRole): Promise<boolean> {
+    return this.save(
+      () =>
+        apiClient.PUT("/api/v1/household/members/{user_id}/role", {
+          params: { path: { user_id: userId } },
+          body: { role },
+        }),
+      i18n.t("messages:household.roleFailed"),
+      i18n.t("messages:household.roleSaved"),
+    );
+  }
+
+  /** The owner decides whether only they change the household budget (F12.10). */
+  async keepBudget(ownerOnly: boolean): Promise<boolean> {
+    return this.save(
+      () => apiClient.PUT("/api/v1/household/budget/keeper", { body: { owner_only: ownerOnly } }),
+      i18n.t("messages:household.keeperFailed"),
+      ownerOnly ? i18n.t("messages:household.keeperOn") : i18n.t("messages:household.keeperOff"),
     );
   }
 

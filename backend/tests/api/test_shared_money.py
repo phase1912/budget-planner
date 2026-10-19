@@ -93,27 +93,18 @@ async def test_someone_outside_the_household_sees_and_changes_nothing_shared(
 
 
 @pytest.mark.asyncio
-async def test_a_shared_bill_split_by_income_gives_each_their_part(
+async def test_a_shared_bill_is_the_familys_whole_never_divided_into_parts(
     db_session: AsyncSession,
 ) -> None:
+    """ADR-0023: it comes out of the shared budget once, so nobody is shown a part."""
     me, anna = await _couple()
-    for user, amount in ((me, "9000.00"), (anna, "1000.00")):
-        response = await _call(
-            db_session,
-            user,
-            "POST",
-            f"/api/v1/income/regular{TODAY}",
-            {"name": "Work", "amount": amount, "day": 10},
-        )
-        assert response.status_code == 201
-    await _bill(db_session, me, shared=True, split="income")
+    await _bill(db_session, me, shared=True)
 
     mine = (await _call(db_session, me, "GET", "/api/v1/income/bills")).json()[0]
     hers = (await _call(db_session, anna, "GET", "/api/v1/income/bills")).json()[0]
 
-    assert mine["split"] == "income"
-    assert Decimal(mine["my_part"]) == Decimal("2700.00")
-    assert Decimal(hers["my_part"]) == Decimal("300.00")
+    assert Decimal(mine["amount"]) == Decimal(hers["amount"]) == Decimal("3000.00")
+    assert "my_part" not in hers and "split" not in hers
 
 
 @pytest.mark.asyncio

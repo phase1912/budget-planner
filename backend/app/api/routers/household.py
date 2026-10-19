@@ -19,6 +19,7 @@ from app.models.user import User
 from app.repository.household import HouseholdRepository
 from app.repository.household_spend import HouseholdSpendRepository
 from app.schemas.household import (
+    BudgetKeeperRequest,
     HouseholdBudgetRequest,
     HouseholdCategoryResponse,
     HouseholdDailyMemberResponse,
@@ -33,6 +34,7 @@ from app.schemas.household import (
     HouseholdStatisticsResponse,
     JoinRequest,
     LimitUsageResponse,
+    MemberRoleRequest,
     MemberShareResponse,
     MemberTotalResponse,
 )
@@ -74,6 +76,7 @@ def _read(household: Household, user: User) -> HouseholdRead:
         my_role=my_role,
         members=members,
         budget_limit=household.budget_limit,
+        owner_sets_budget=household.owner_sets_budget,
         invite_code=household.invite_code if my_role == HouseholdRole.OWNER else None,
     )
 
@@ -164,8 +167,26 @@ Budget = Annotated[HouseholdBudgetService, Depends(get_household_budget_service)
 async def set_household_budget(
     body: HouseholdBudgetRequest, current_user: CurrentUser, service: Service
 ) -> HouseholdRead:
-    """Set or clear the household's monthly budget (F12.5, D7): any member may (F12.8)."""
+    """Set or clear the household's monthly budget (F12.5, D7): any adult may (F12.8),
+    or the owner alone when they keep it (F12.10); 403 for a child."""
     return _read(await service.set_budget(current_user, body.budget_limit), current_user)
+
+
+@router.put("/budget/keeper", response_model=HouseholdRead)
+async def keep_household_budget(
+    body: BudgetKeeperRequest, current_user: CurrentUser, service: Service
+) -> HouseholdRead:
+    """The owner decides whether only they change the budget (F12.10); 403 for others."""
+    return _read(await service.keep_budget(current_user, body.owner_only), current_user)
+
+
+@router.put("/members/{user_id}/role", response_model=HouseholdRead)
+async def set_member_role(
+    user_id: uuid.UUID, body: MemberRoleRequest, current_user: CurrentUser, service: Service
+) -> HouseholdRead:
+    """The owner marks a member as an adult or a child (F12.10); 403 for others, 404 for
+    someone outside the household, 409 for the owner themselves."""
+    return _read(await service.set_role(current_user, user_id, body.role), current_user)
 
 
 @router.get("/months/{year}/{month}", response_model=HouseholdMonthResponse)

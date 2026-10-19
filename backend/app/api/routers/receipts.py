@@ -659,11 +659,14 @@ async def set_receipt_privacy(
     """Hide a receipt from the owner's household, or share it again (F12.4, ADR-0017).
 
     The household still counts a private receipt's money; only its owner may change
-    this, so another member's receipt is not found (N2).
+    this, so another member's receipt is not found (N2). A child's receipts stay seen by
+    the family (F12.10): 403 child_read_only.
     """
     receipt = await ReceiptRepository(session).get_with_items(receipt_id)
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
+    if request_data.is_private:
+        await HouseholdService(HouseholdRepository(session)).may_hide_receipts(current_user)
     receipt.is_private = request_data.is_private
     await session.commit()
     return await receipt_detail(session, receipt, current_user)

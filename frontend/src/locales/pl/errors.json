@@ -59,5 +59,7 @@
   "already_confirmed": "Ten adres jest już potwierdzony.",
   "discount_too_large": "Rabat jest większy niż koszt wybranych pozycji.",
   "income_unreadable": "Nie udało się odczytać dokumentu. Spróbuj ostrzejszego zdjęcia albo wpisz kwotę ręcznie.",
-  "not_income": "To nie wygląda na otrzymane pieniądze — paragon dodaje się jako paragon."
+  "not_income": "To nie wygląda na otrzymane pieniądze — paragon dodaje się jako paragon.",
+  "child_read_only": "Dziecko w gospodarstwie może tylko przeglądać to, co wspólne.",
+  "owner_role_fixed": "Właściciel jest zawsze osobą dorosłą."
 }

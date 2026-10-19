@@ -18,18 +18,17 @@ interface Draft {
   day: string;
   taxed: boolean;
   shared: boolean;
-  split: "equal" | "income";
 }
 
-const EMPTY: Draft = { name: "", amount: "", day: "", taxed: false, shared: false, split: "equal" };
+const EMPTY: Draft = { name: "", amount: "", day: "", taxed: false, shared: false };
 
 /**
  * Regular incomes or regular bills, edited in place (F23.17, F23.18): a salary, a side
  * job, a pension — or rent, a subscription — each counted every month by itself from now
  * on. For one who pays their own taxes, an income says whether the tax comes out of it
  * (F23.16). Inside a household each one is the family's or the user's own (F12.8): a
- * shared bill is split equally or by income and says the user's part, and a row another
- * member added says who. Used in Settings, Plan and the first-sign-in setup: a row opens
+ * shared bill is the family's whole, never divided, and a row another member added says
+ * who. Used in Settings, Plan and the first-sign-in setup: a row opens
  * for changes in place, with Stop beside Save, so nothing else has to be opened.
  */
 export const RegularIncomes = observer(function RegularIncomes({
@@ -45,6 +44,7 @@ export const RegularIncomes = observer(function RegularIncomes({
 }) {
   const { incomeStore, authStore, householdStore } = useStores();
   const inHousehold = householdStore.household !== null;
+  const mayShare = householdStore.mayShare;
   const { t } = useTranslation("profile");
   const currency = chosenCurrency ?? authStore.user?.currency ?? "PLN";
   const bill = kind === "bill";
@@ -76,10 +76,9 @@ export const RegularIncomes = observer(function RegularIncomes({
             day: income.day == null ? "" : String(income.day),
             taxed: "taxed" in income && income.taxed,
             shared: income.shared,
-            split: "split" in income && income.split === "income" ? "income" : "equal",
           }
         : // A new one in a household is the family's unless the user says otherwise.
-          { ...EMPTY, shared: inHousehold },
+          { ...EMPTY, shared: mayShare },
     );
   };
   const save = async () => {
@@ -87,13 +86,13 @@ export const RegularIncomes = observer(function RegularIncomes({
       name: draft.name.trim(),
       amount,
       day: draft.day ? Number(draft.day) : null,
-      shared: inHousehold && draft.shared,
+      shared: mayShare && draft.shared,
     };
     const today = isoDay(new Date());
     const ok = bill
       ? editing === "new"
-        ? await incomeStore.addBill({ ...base, split: draft.split }, today)
-        : await incomeStore.changeBill(editing ?? "", { ...base, split: draft.split })
+        ? await incomeStore.addBill(base, today)
+        : await incomeStore.changeBill(editing ?? "", base)
       : editing === "new"
         ? await incomeStore.addRegular({ ...base, taxed: draft.taxed }, today)
         : await incomeStore.changeRegular(editing ?? "", { ...base, taxed: draft.taxed });
@@ -144,7 +143,7 @@ export const RegularIncomes = observer(function RegularIncomes({
           <option value="31">{t("money.lastDay")}</option>
         </Select>
       </div>
-      {inHousehold && (
+      {mayShare && (
         <div className="flex flex-col gap-2">
           <span className="text-md font-semibold text-muted-foreground">{t("whose.title")}</span>
           <div role="radiogroup" aria-label={t("whose.title")} className="grid grid-cols-2 gap-2">
@@ -165,26 +164,6 @@ export const RegularIncomes = observer(function RegularIncomes({
               </button>
             ))}
           </div>
-          {bill && draft.shared && (
-            <div role="radiogroup" aria-label={t("whose.split")} className="grid grid-cols-2 gap-2">
-              {(["equal", "income"] as const).map((split) => (
-                <button
-                  key={split}
-                  type="button"
-                  role="radio"
-                  aria-checked={draft.split === split}
-                  onClick={() => {
-                    setDraft((d) => ({ ...d, split }));
-                  }}
-                  className={`min-h-11 rounded-control border px-3 text-md font-semibold ${
-                    draft.split === split ? "border-primary bg-tone-primary-bg" : "border-border"
-                  }`}
-                >
-                  {t(`whose.${split}`)}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       )}
       {paysOwnTaxes && (
@@ -249,12 +228,15 @@ export const RegularIncomes = observer(function RegularIncomes({
               <li key={income.id}>{form}</li>
             ) : (
               <li key={income.id}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    open(income);
-                  }}
-                  className="control-fill flex min-h-14 w-full items-center gap-3 rounded-card px-3.5 py-2.5 text-left"
+                <Row
+                  // A child sees the family's money and changes none of it (F12.10).
+                  onOpen={
+                    householdStore.isChild && income.shared
+                      ? undefined
+                      : () => {
+                          open(income);
+                        }
+                  }
                 >
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="flex min-w-0 items-center gap-2">
@@ -282,12 +264,6 @@ export const RegularIncomes = observer(function RegularIncomes({
                           ? t("regular.taxedShort")
                           : null,
                         income.added_by ? t("whose.addedBy", { name: income.added_by }) : null,
-                        "my_part" in income && income.shared && income.my_part != null
-                          ? t("whose.yourPart", {
-                              amount: WHOLE.format(Number(income.my_part)),
-                              currency,
-                            })
-                          : null,
                       ]
                         .filter(Boolean)
                         .join(" · ")}
@@ -296,8 +272,7 @@ export const RegularIncomes = observer(function RegularIncomes({
                   <span className="shrink-0 text-lg font-extrabold tabular-nums">
                     {WHOLE.format(Number(income.amount))} {currency}
                   </span>
-                  <Pencil size={15} aria-hidden="true" className="shrink-0 text-muted-foreground" />
-                </button>
+                </Row>
               </li>
             ),
           )}
@@ -320,3 +295,16 @@ export const RegularIncomes = observer(function RegularIncomes({
     </div>
   );
 });
+
+/** One income or bill in the list: opens for changes, or only shows when it may not change. */
+function Row({ onOpen, children }: { onOpen?: () => void; children: React.ReactNode }) {
+  const className =
+    "control-fill flex min-h-14 w-full items-center gap-3 rounded-card px-3.5 py-2.5 text-left";
+  if (!onOpen) return <div className={className}>{children}</div>;
+  return (
+    <button type="button" onClick={onOpen} className={className}>
+      {children}
+      <Pencil size={15} aria-hidden="true" className="shrink-0 text-muted-foreground" />
+    </button>
+  );
+}

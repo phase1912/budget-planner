@@ -33,5 +33,6 @@ class RegularExpense(Model):
     day: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     starts_on: Mapped[date] = mapped_column(Date, nullable=False)
     ends_on: Mapped[date | None] = mapped_column(Date, nullable=True)
-    # How a shared bill is divided among the members: "equal" or "income" (F12.8).
+    # No longer read: a shared bill is never divided (ADR-0023). Dropped by a later
+    # migration, once no running code maps it (ADR-0014).
     split: Mapped[str | None] = mapped_column(String(8), nullable=True)

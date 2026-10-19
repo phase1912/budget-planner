@@ -225,11 +225,7 @@
     "title": "Чиє це?",
     "shared": "Спільне з родиною",
     "onlyMine": "Тільки моє",
-    "split": "Як ділити",
-    "equal": "Порівну",
-    "income": "За доходами",
     "addedBy": "додано: {{name}}",
-    "yourPart": "ваша частка {{amount}} {{currency}}",
     "sharedChip": "Спільне",
     "mineChip": "Моє"
   }

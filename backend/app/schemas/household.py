@@ -3,6 +3,7 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -37,6 +38,7 @@ class HouseholdRead(BaseModel):
     my_role: str
     members: list[HouseholdMemberRead]
     budget_limit: Decimal | None = None
+    owner_sets_budget: bool = False
     invite_code: str | None = Field(
         default=None, description="The secret of the invite link; shown to the owner only."
     )
@@ -62,6 +64,18 @@ class HouseholdBudgetRequest(BaseModel):
     """The household's monthly budget; null removes it (F12.5)."""
 
     budget_limit: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
+
+
+class MemberRoleRequest(BaseModel):
+    """What the owner makes a member: an adult, or a child who changes nothing (F12.10)."""
+
+    role: Literal["adult", "child"]
+
+
+class BudgetKeeperRequest(BaseModel):
+    """Whether only the owner changes the household budget (F12.10)."""
+
+    owner_only: bool
 
 
 class MemberShareResponse(BaseModel):

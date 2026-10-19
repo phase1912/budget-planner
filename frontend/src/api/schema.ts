@@ -556,9 +556,51 @@ export interface paths {
         get?: never;
         /**
          * Set Household Budget
-         * @description Set or clear the household's monthly budget (F12.5, D7): any member may (F12.8).
+         * @description Set or clear the household's monthly budget (F12.5, D7): any adult may (F12.8),
+         *     or the owner alone when they keep it (F12.10); 403 for a child.
          */
         put: operations["set_household_budget_api_v1_household_budget_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/household/budget/keeper": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Keep Household Budget
+         * @description The owner decides whether only they change the budget (F12.10); 403 for others.
+         */
+        put: operations["keep_household_budget_api_v1_household_budget_keeper_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/household/members/{user_id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Member Role
+         * @description The owner marks a member as an adult or a child (F12.10); 403 for others, 404 for
+         *     someone outside the household, 409 for the owner themselves.
+         */
+        put: operations["set_member_role_api_v1_household_members__user_id__role_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -928,7 +970,8 @@ export interface paths {
          * @description Hide a receipt from the owner's household, or share it again (F12.4, ADR-0017).
          *
          *     The household still counts a private receipt's money; only its owner may change
-         *     this, so another member's receipt is not found (N2).
+         *     this, so another member's receipt is not found (N2). A child's receipts stay seen by
+         *     the family (F12.10): 403 child_read_only.
          */
         put: operations["set_receipt_privacy_receipts__receipt_id__privacy_put"];
         post?: never;
@@ -2733,6 +2776,14 @@ export interface components {
             files: string[];
         };
         /**
+         * BudgetKeeperRequest
+         * @description Whether only the owner changes the household budget (F12.10).
+         */
+        BudgetKeeperRequest: {
+            /** Owner Only */
+            owner_only: boolean;
+        };
+        /**
          * CategoryCreate
          * @description A new custom category (BRD C6).
          */
@@ -3574,6 +3625,11 @@ export interface components {
             /** Budget Limit */
             budget_limit?: string | null;
             /**
+             * Owner Sets Budget
+             * @default false
+             */
+            owner_sets_budget: boolean;
+            /**
              * Invite Code
              * @description The secret of the invite link; shown to the owner only.
              */
@@ -3969,6 +4025,17 @@ export interface components {
          * @enum {string}
          */
         Meal: "breakfast" | "lunch" | "dinner";
+        /**
+         * MemberRoleRequest
+         * @description What the owner makes a member: an adult, or a child who changes nothing (F12.10).
+         */
+        MemberRoleRequest: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "adult" | "child";
+        };
         /**
          * MemberShareResponse
          * @description One member's part of the month: shared spend, and private spend as one sum.
@@ -4902,8 +4969,6 @@ export interface components {
             amount: string;
             /** Day */
             day?: number | null;
-            /** Split */
-            split?: ("equal" | "income") | null;
             /**
              * Id
              * Format: uuid
@@ -4914,15 +4979,13 @@ export interface components {
              * Format: date
              */
             starts_on: string;
-            /** My Part */
-            my_part?: string | null;
         };
         /**
          * RegularExpenseRequest
          * @description A bill paid every month without a receipt — rent, a subscription (F23.18).
          *
-         *     A shared one (F12.8) is split among the household's members equally or by their
-         *     regular incomes; `split` is ignored for one that is the caller's own.
+         *     A shared one (F12.8) is the family's as a whole: it comes out of the shared budget
+         *     once and is never divided into parts per member (ADR-0023).
          */
         RegularExpenseRequest: {
             /** Name */
@@ -4936,8 +4999,6 @@ export interface components {
              * @default false
              */
             shared: boolean;
-            /** Split */
-            split?: ("equal" | "income") | null;
         };
         /**
          * RenameProductRequest
@@ -6810,6 +6871,78 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["HouseholdBudgetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    keep_household_budget_api_v1_household_budget_keeper_put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetKeeperRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_member_role_api_v1_household_members__user_id__role_put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberRoleRequest"];
             };
         };
         responses: {

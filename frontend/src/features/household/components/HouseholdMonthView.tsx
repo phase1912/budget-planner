@@ -54,7 +54,8 @@ function uncategorisedAsOne(rows: readonly CategoryRow[]): CategoryRow[] {
  * the household budget, or else of the shared income after the shared bills — the shared
  * money of the month, and who spends what: each member's share as a ring, by category or
  * by day. Another member's private receipts count as one sum and never say what or when
- * (ADR-0017). Any member changes the household budget here (F12.8).
+ * (ADR-0017). An adult changes the household budget here (F12.8), unless the owner keeps
+ * it to themselves (F12.10).
  */
 export const HouseholdMonthView = observer(function HouseholdMonthView({
   year,
@@ -158,22 +159,34 @@ export const HouseholdMonthView = observer(function HouseholdMonthView({
               </dd>
             </div>
           ))}
-          <button
-            type="button"
-            onClick={() => {
-              setEditingBudget(true);
-            }}
-            className="flex min-h-11 flex-col items-start justify-center rounded-chip text-left"
-          >
-            <span className="text-sm font-semibold text-muted-foreground">
-              {t("household.budget")}
-            </span>
-            <span
-              className={`text-lg font-extrabold tabular-nums md:text-xl ${budget === null ? "text-primary" : ""}`}
+          {householdStore.mayChangeBudget ? (
+            <button
+              type="button"
+              onClick={() => {
+                setEditingBudget(true);
+              }}
+              className="flex min-h-11 flex-col items-start justify-center rounded-chip text-left"
             >
-              {budget === null ? t("hero.set") : `${WHOLE.format(Number(budget))} ${currency}`}
-            </span>
-          </button>
+              <span className="text-sm font-semibold text-muted-foreground">
+                {t("household.budget")}
+              </span>
+              <span
+                className={`text-lg font-extrabold tabular-nums md:text-xl ${budget === null ? "text-primary" : ""}`}
+              >
+                {budget === null ? t("hero.set") : `${WHOLE.format(Number(budget))} ${currency}`}
+              </span>
+            </button>
+          ) : (
+            // A child, or an adult while the owner keeps the budget, only reads it (F12.10).
+            <div className="flex min-h-11 flex-col justify-center">
+              <dt className="text-sm font-semibold text-muted-foreground">
+                {t("household.budget")}
+              </dt>
+              <dd className="m-0 text-lg font-extrabold tabular-nums md:text-xl">
+                {budget === null ? "—" : `${WHOLE.format(Number(budget))} ${currency}`}
+              </dd>
+            </div>
+          )}
         </dl>
       </section>
 

@@ -388,9 +388,12 @@ async def test_no_one_but_the_owner_changes_a_receipt(
     ("method", "path", "body"),
     [
         ("PATCH", "", {"name": "Mine now"}),
-        # The budget is the family's money and any member changes it (F12.8).
+        # The budget is the family's money and any adult changes it (F12.8), unless the
+        # owner keeps it (F12.10) — which only the owner decides.
+        ("PUT", "/budget/keeper", {"owner_only": True}),
         ("POST", "/invite/regenerate", None),
         ("DELETE", "/members/{owner}", None),
+        ("PUT", "/members/{owner}/role", {"role": "child"}),
     ],
 )
 async def test_a_member_cannot_manage_the_household(

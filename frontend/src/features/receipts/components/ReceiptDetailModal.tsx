@@ -229,7 +229,8 @@ export const ReceiptDetailModal = observer(() => {
             }}
           />
         )}
-        {!readOnly && inSharedHousehold && (
+        {/* A child's receipts stay seen by the family; one hidden before can still be shown. */}
+        {!readOnly && inSharedHousehold && (!householdStore.isChild || receipt.is_private) && (
           <div className="mb-3 flex min-h-11 items-start gap-3 rounded-control border border-border p-3">
             <input
               id="receipt-private"

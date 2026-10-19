@@ -101,7 +101,7 @@ describe("UploadPage", () => {
       incomeStore,
       accountStore: { mustConfirm: false },
       authStore: { user: { forwarding_address: null } },
-      householdStore: { household: null },
+      householdStore: { household: null, mayShare: false },
     } as unknown as RootStore;
     const { container } = render(
       <StoreProvider store={mockStores}>

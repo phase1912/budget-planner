@@ -1,9 +1,10 @@
-"""The household rules: one per user, an owner who manages it, members who may leave,
-and joining by the owner's invite link (F12.2, F12.3, ADR-0017)."""
+"""The household rules: one per user, an owner who manages it, adults and children who
+may leave, and joining by the owner's invite link (F12.2, F12.3, F12.10, ADR-0017)."""
 
 import secrets
 import uuid
 from decimal import Decimal
+from typing import Literal
 
 from sqlalchemy import update
 
@@ -134,14 +135,53 @@ class HouseholdService:
         return HouseholdReaders(reader_id=user.id, member_ids=members)
 
     async def set_budget(self, user: User, limit: Decimal | None) -> Household:
-        """Set or clear what the household means to spend a month (any member, D7, F12.8).
+        """Set or clear what the household means to spend a month (D7, F12.8).
 
-        Like a personal limit it is presentation only: months are measured against it
-        as it stands, never rewritten by it.
+        Any adult may, unless the owner keeps it to themselves (F12.10); a child never
+        does (PermissionDeniedError). Like a personal limit it is presentation only:
+        months are measured against it as it stands, never rewritten by it.
         """
         membership = await self._membership(user)
+        refuse_child(membership)
+        if membership.household.owner_sets_budget and membership.role != HouseholdRole.OWNER:
+            raise PermissionDeniedError(
+                "Only the household's owner changes its budget.", code=ProblemCode.OWNER_ONLY
+            )
         membership.household.budget_limit = limit
         return membership.household
+
+    async def keep_budget(self, user: User, owner_only: bool) -> Household:
+        """Whether only the owner changes the household budget (owner only, F12.10)."""
+        membership = await self._owned_by(user)
+        membership.household.owner_sets_budget = owner_only
+        return membership.household
+
+    async def set_role(
+        self, user: User, member_user_id: uuid.UUID, role: Literal["adult", "child"]
+    ) -> Household:
+        """The owner marks a member as an adult or a child (F12.10).
+
+        The owner's own role never changes here (DomainError); someone outside the
+        household is not found (N2). A child's receipts stay as they were: only new
+        ones can no longer be hidden.
+        """
+        membership = await self._owned_by(user)
+        target = next(
+            (m for m in membership.household.members if m.user_id == member_user_id), None
+        )
+        if target is None:
+            raise NotFoundError(
+                "No such member in your household.", code=ProblemCode.MEMBER_NOT_FOUND
+            )
+        if target.role == HouseholdRole.OWNER:
+            raise DomainError("The owner is always an adult.", code=ProblemCode.OWNER_ROLE_FIXED)
+        target.role = HouseholdRole.CHILD if role == "child" else HouseholdRole.MEMBER
+        await self.households.session.flush()
+        return membership.household
+
+    async def may_hide_receipts(self, user: User) -> None:
+        """Refuse a child hiding a receipt from the family (F12.10): theirs stay seen."""
+        refuse_child(await self.households.membership_of(user.id))
 
     async def regenerate_invite(self, user: User) -> Household:
         """Give the household a new invite link; the old one stops working at once (owner)."""
@@ -209,11 +249,6 @@ class HouseholdService:
                 .where(model.user_id == member_id, model.household_id == household_id)
                 .values(household_id=None)
             )
-        await self.households.session.execute(
-            update(RegularExpense)
-            .where(RegularExpense.user_id == member_id, RegularExpense.household_id.is_(None))
-            .values(split=None)
-        )
 
     async def _membership(self, user: User) -> HouseholdMember:
         membership = await self.households.membership_of(user.id)
@@ -230,6 +265,15 @@ class HouseholdService:
                 "Only the household's owner can do this.", code=ProblemCode.OWNER_ONLY
             )
         return membership
+
+
+def refuse_child(membership: HouseholdMember | None) -> None:
+    """A child changes nothing the household shares (F12.10): PermissionDeniedError."""
+    if membership is not None and membership.role == HouseholdRole.CHILD:
+        raise PermissionDeniedError(
+            "A child in the household can only look at what it shares.",
+            code=ProblemCode.CHILD_READ_ONLY,
+        )
 
 
 def _currency_of(household: Household) -> str | None:
