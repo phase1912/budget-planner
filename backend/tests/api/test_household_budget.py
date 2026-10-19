@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime
 from decimal import Decimal
+from typing import Any
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -215,3 +216,63 @@ async def test_a_members_own_category_says_whose_it_is(db_session: AsyncSession)
     [row] = (await _call(db_session, me, "GET", STATS)).json()["categories"]
 
     assert (row["name"], row["owner_id"]) == ("Pets", str(anna.id))
+
+
+# --- day by day ------------------------------------------------------------------
+
+DAILY = "/api/v1/household/daily?start=2026-10-01&end=2026-10-07"
+
+
+def _by_day(body: dict[str, Any], member: User) -> dict[str, Decimal]:
+    return {
+        d["day"]: Decimal(m["total"])
+        for d in body["days"]
+        for m in d["members"]
+        if m["user_id"] == str(member.id) and Decimal(m["total"]) > 0
+    }
+
+
+@pytest.mark.asyncio
+async def test_each_members_spending_is_drawn_on_its_day(db_session: AsyncSession) -> None:
+    me, anna = await _couple()
+    await _spent(me, "30.00", day=2)
+    await _spent(anna, "12.50", day=2)
+    await _spent(anna, "8.00", day=5)
+
+    body = (await _call(db_session, me, "GET", DAILY)).json()
+
+    assert len(body["days"]) == 7
+    assert {m["first_name"] for m in body["members"]} == {"Bohdan", "Anna"}
+    assert _by_day(body, me) == {"2026-10-02": Decimal("30.00")}
+    assert _by_day(body, anna) == {"2026-10-02": Decimal("12.50"), "2026-10-05": Decimal("8.00")}
+
+
+@pytest.mark.asyncio
+async def test_another_members_private_spending_has_no_day_but_ones_own_does(
+    db_session: AsyncSession,
+) -> None:
+    """ADR-0017: a date and an amount say too much, so only the owner sees the day."""
+    me, anna = await _couple()
+    await _spent(me, "15.00", day=3, private=True)
+    await _spent(anna, "40.00", day=4, private=True)
+
+    mine = (await _call(db_session, me, "GET", DAILY)).json()
+    hers = (await _call(db_session, anna, "GET", DAILY)).json()
+
+    assert _by_day(mine, me) == {"2026-10-03": Decimal("15.00")}
+    assert _by_day(mine, anna) == {}
+    assert Decimal(mine["undated_private"]) == Decimal("40.00")
+    assert _by_day(hers, anna) == {"2026-10-04": Decimal("40.00")}
+    assert _by_day(hers, me) == {}
+    assert Decimal(hers["undated_private"]) == Decimal("15.00")
+
+
+@pytest.mark.asyncio
+async def test_the_daily_view_is_not_found_outside_a_household(db_session: AsyncSession) -> None:
+    loner = await UserFactory.create_async()
+    stranger, _ = await _couple()
+    await _spent(stranger, "99.00", day=2)
+
+    response = await _call(db_session, loner, "GET", DAILY)
+
+    assert response.status_code == 404

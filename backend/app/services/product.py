@@ -320,6 +320,19 @@ class ProductService:
         await self._follow(user_id, {str(src.id) for src in sources if src}, [str(target.id)])
         await self.session.flush()
 
+    async def rename(self, user_id: uuid.UUID, product_id: uuid.UUID, name: str) -> None:
+        """Show a product under a name of the user's choosing (F16.1).
+
+        Only the shown name changes: matching goes by how receipts print it (the aliases),
+        so later receipts still find the product. Raises NotFoundError for a product that
+        is not the user's (N2).
+        """
+        product = await self.products.get(user_id, product_id)
+        if product is None:
+            raise NotFoundError("Product not found")
+        product.name = name
+        await self.session.flush()
+
     async def split(self, user_id: uuid.UUID, product_id: uuid.UUID, alias_id: uuid.UUID) -> None:
         """Take one way of printing out of a product into a product of its own (F16.1).
 

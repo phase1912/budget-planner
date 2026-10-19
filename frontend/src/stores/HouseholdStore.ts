@@ -12,6 +12,7 @@ export type HouseholdMember = components["schemas"]["HouseholdMemberRead"];
 export type HouseholdInvite = components["schemas"]["HouseholdInvite"];
 export type HouseholdMonth = components["schemas"]["HouseholdMonthResponse"];
 export type HouseholdStatistics = components["schemas"]["HouseholdStatisticsResponse"];
+export type HouseholdDaily = components["schemas"]["HouseholdDailyResponse"];
 export type HouseholdView = "mine" | "household";
 
 /** Today by the browser's own calendar, as YYYY-MM-DD: whether a month is over is the user's call (ADR-0009). */
@@ -34,10 +35,13 @@ export class HouseholdStore {
   readonly monthState = new AsyncState();
   statistics: HouseholdStatistics | null = null;
   readonly statisticsState = new AsyncState();
+  /** Each member's spending day by day over the statistics' period. */
+  daily: HouseholdDaily | null = null;
   // Only the latest request may land: switching month or period quickly must not let
   // an older answer arrive last and overwrite the one asked for.
   private monthRequest = 0;
   private statisticsRequest = 0;
+  private dailyRequest = 0;
   readonly saveState = new AsyncState();
   private readonly toastStore: ToastStore;
 
@@ -104,6 +108,21 @@ export class HouseholdStore {
       }
       this.statistics = response.data;
       this.statisticsState.succeed();
+    });
+  }
+
+  /**
+   * Each member's spending day by day between two dates (F12.5, F23.4). A failure only
+   * leaves the chart out: the categories still show.
+   */
+  async loadDaily(start: string, end: string): Promise<void> {
+    const request = ++this.dailyRequest;
+    const response = await settle(() =>
+      apiClient.GET("/api/v1/household/daily", { params: { query: { start, end } } }),
+    );
+    runInAction(() => {
+      if (request !== this.dailyRequest) return;
+      this.daily = response.error ? null : response.data;
     });
   }
 
@@ -220,6 +239,7 @@ export class HouseholdStore {
     this.view = "mine";
     this.month = null;
     this.statistics = null;
+    this.daily = null;
   }
 
   private async save(

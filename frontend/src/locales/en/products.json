@@ -84,7 +84,9 @@
     "months3": "3 months",
     "months6": "6 months",
     "changeUnit": "{{percent}}% per {{unit}}",
-    "go": "Explore"
+    "go": "Explore",
+    "saveChanges": "Save changes",
+    "saveShort": "Save"
   },
   "selections": {
     "title": "My selections",
@@ -94,7 +96,12 @@
     "placeholder": "Snacks",
     "save": "Save",
     "delete": "Delete the selection {{name}}",
-    "showing": "Showing «{{name}}»"
+    "showing": "Showing «{{name}}»",
+    "updateTitle": "Save the changes to «{{name}}»",
+    "update": "Update «{{name}}»",
+    "orNew": "Or keep «{{name}}» as it was and save these products as a new selection:",
+    "saveNew": "Save as new",
+    "clear": "Clear the ticks"
   },
   "cheaper": {
     "mark": "Cheaper at {{shop}}: {{amount}} {{currency}}/{{unit}} less ({{percent}}%) than at {{instead}}"
@@ -122,5 +129,13 @@
   "all": "All products",
   "count_one": "{{count}} product",
   "count_other": "{{count}} products",
-  "exploreTitle": "Explore several together"
+  "exploreTitle": "Explore several together",
+  "rename": {
+    "open": "Rename",
+    "label": "Rename {{name}}",
+    "title": "Rename the product",
+    "name": "Name",
+    "hint": "Receipts keep printing it their way — they will still be found under this product.",
+    "save": "Save"
+  }
 }

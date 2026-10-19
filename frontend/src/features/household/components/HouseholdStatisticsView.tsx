@@ -35,6 +35,7 @@ export const HouseholdStatisticsView = observer(function HouseholdStatisticsView
 
   useEffect(() => {
     void householdStore.loadStatistics(start, end);
+    void householdStore.loadDaily(start, end);
   }, [householdStore, start, end]);
 
   if (!stats) {

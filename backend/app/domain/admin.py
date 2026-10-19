@@ -21,6 +21,7 @@ class AdminActionKind(StrEnum):
     PLAN_REVOKED = "plan_revoked"
     ADMIN_APPOINTED = "admin_appointed"
     ADMIN_REMOVED = "admin_removed"
+    ONBOARDING_RESTARTED = "onboarding_restarted"
 
 
 def grant_period(

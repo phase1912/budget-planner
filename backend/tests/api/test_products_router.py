@@ -117,6 +117,38 @@ async def test_another_users_product_is_not_found(db_session: AsyncSession) -> N
 
 
 @pytest.mark.asyncio
+async def test_a_renamed_product_keeps_its_purchases_and_later_receipts_still_find_it(
+    db_session: AsyncSession,
+) -> None:
+    user = await UserFactory.create_async()
+    await _bought(db_session, user.id, "Biedronka", "MlkoSpoz2 1l")
+    product = (await _call(db_session, user, "GET", "")).json()[0]
+
+    renamed = await _call(db_session, user, "PATCH", f"/{product['id']}", {"name": "  Milk 2%  "})
+    await _bought(db_session, user.id, "Biedronka", "MlkoSpoz2 1l")
+    listed = (await _call(db_session, user, "GET", "")).json()
+
+    assert renamed.status_code == 200
+    assert [p["name"] for p in renamed.json()] == ["Milk 2%"]
+    assert [(p["id"], p["name"], p["purchases"]) for p in listed] == [(product["id"], "Milk 2%", 2)]
+    blank = await _call(db_session, user, "PATCH", f"/{product['id']}", {"name": "   "})
+    assert blank.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_another_users_product_cannot_be_renamed(db_session: AsyncSession) -> None:
+    """N2: a product of someone else's is not found, and keeps its name."""
+    owner, intruder = await UserFactory.create_async(), await UserFactory.create_async()
+    await _bought(db_session, owner.id, "Biedronka", "Chleb 300g")
+    theirs = (await _call(db_session, owner, "GET", "")).json()[0]
+
+    response = await _call(db_session, intruder, "PATCH", f"/{theirs['id']}", {"name": "Mine"})
+
+    assert response.status_code == 404
+    assert (await _call(db_session, owner, "GET", "")).json()[0]["name"] == "Chleb 300g"
+
+
+@pytest.mark.asyncio
 async def test_the_overview_ranks_the_callers_shops_and_ignores_others(
     db_session: AsyncSession,
 ) -> None:

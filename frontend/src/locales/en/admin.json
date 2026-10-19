@@ -128,7 +128,10 @@
     "confirmAppoint": "The account will see the admin pages once it signs in with two-factor sign-in.",
     "confirmRemove": "The account will no longer see the admin pages.",
     "cancel": "Cancel",
-    "yes": "Yes"
+    "yes": "Yes",
+    "restartOnboarding": "Show the setup again",
+    "onboardingNote": "The first-sign-in setup opens on the next visit; what was chosen stays. On your own account it opens now.",
+    "onboardingPending": "The setup opens on the next visit."
   },
   "days": {
     "d_one": "{{count}} day",
@@ -157,7 +160,8 @@
       "plan_granted": "Granted a plan",
       "plan_revoked": "Took back a plan",
       "admin_appointed": "Appointed an admin",
-      "admin_removed": "Removed an admin"
+      "admin_removed": "Removed an admin",
+      "onboarding_restarted": "Showed the setup again"
     }
   }
 }

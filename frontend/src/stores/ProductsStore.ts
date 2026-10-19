@@ -126,6 +126,24 @@ export class ProductsStore {
     });
   }
 
+  /**
+   * Show a product under a name of the user's choosing. Only the shown name changes:
+   * receipts printed the old way still find the product.
+   */
+  async rename(productId: string, name: string): Promise<boolean> {
+    if (this.isSaving || !name.trim()) return false;
+    this.isSaving = true;
+    const response = await settle(() =>
+      apiClient.PATCH("/api/v1/products/{product_id}", {
+        params: { path: { product_id: productId } },
+        body: { name: name.trim() },
+      }),
+    );
+    return this.settleChange(response, i18n.t("messages:products.renameFailed"), () => {
+      this.toastStore.showSuccess(i18n.t("messages:products.renamed"));
+    });
+  }
+
   /** Take one way of printing out of a product into a product of its own. */
   async split(productId: string, aliasId: string): Promise<boolean> {
     if (this.isSaving) return false;

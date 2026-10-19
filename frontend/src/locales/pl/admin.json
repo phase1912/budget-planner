@@ -128,7 +128,10 @@
     "confirmAppoint": "Konto zobaczy strony administratora, gdy zaloguje się dwuetapowo.",
     "confirmRemove": "Konto nie będzie już widzieć stron administratora.",
     "cancel": "Anuluj",
-    "yes": "Tak"
+    "yes": "Tak",
+    "restartOnboarding": "Pokaż konfigurację ponownie",
+    "onboardingNote": "Konfiguracja pierwszego logowania otworzy się przy następnej wizycie; wybrane wcześniej zostanie. Na własnym koncie — od razu.",
+    "onboardingPending": "Konfiguracja otworzy się przy następnej wizycie."
   },
   "days": {
     "d_one": "{{count}} dzień",
@@ -159,7 +162,8 @@
       "plan_granted": "Przyznał(a) plan",
       "plan_revoked": "Cofnął/cofnęła plan",
       "admin_appointed": "Nadał(a) admina",
-      "admin_removed": "Odebrał(a) admina"
+      "admin_removed": "Odebrał(a) admina",
+      "onboarding_restarted": "Pokazano konfigurację ponownie"
     }
   }
 }

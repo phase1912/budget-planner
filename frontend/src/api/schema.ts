@@ -613,6 +613,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/household/daily": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Household Daily
+         * @description Each member's spending on each day between two dates, both included (F12.5, F23.4).
+         *
+         *     Shared receipts by their day; the caller's own private ones too, while the other
+         *     members' private spending is one undated figure (ADR-0017). 404 outside a household.
+         */
+        get: operations["get_household_daily_api_v1_household_daily_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts/upload": {
         parameters: {
             query?: never;
@@ -1413,6 +1436,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products/{product_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Rename Product
+         * @description Give a product the name it is shown under (F16.1); receipts keep matching it.
+         *
+         *     Answers with the products list as it now is. Another user's product is not found (N2).
+         */
+        patch: operations["rename_product_api_v1_products__product_id__patch"];
+        trace?: never;
+    };
     "/api/v1/products/{product_id}/split": {
         parameters: {
             query?: never;
@@ -2007,6 +2052,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/users/{user_id}/restart-onboarding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restart Onboarding
+         * @description Show the account the first-sign-in setup again on its next visit (F23.9).
+         */
+        post: operations["restart_onboarding_api_v1_admin_users__user_id__restart_onboarding_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/users/{user_id}/send-confirmation": {
         parameters: {
             query?: never;
@@ -2497,6 +2562,8 @@ export interface components {
             created_at: string;
             /** Email Confirmed At */
             email_confirmed_at: string | null;
+            /** Onboarded At */
+            onboarded_at: string | null;
             /** Language */
             language: string | null;
             /** Terms Version */
@@ -3349,6 +3416,47 @@ export interface components {
             share: string;
         };
         /**
+         * HouseholdDailyMemberResponse
+         * @description A member as the daily chart names them.
+         */
+        HouseholdDailyMemberResponse: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** First Name */
+            first_name: string;
+        };
+        /**
+         * HouseholdDailyResponse
+         * @description The household's spending day by day, per member (F12.5, F23.4).
+         *
+         *     `undated_private` is the other members' private spending of the period, which counts in
+         *     the household's totals but is never placed on a day (ADR-0017).
+         */
+        HouseholdDailyResponse: {
+            /** Members */
+            members: components["schemas"]["HouseholdDailyMemberResponse"][];
+            /** Days */
+            days: components["schemas"]["HouseholdDayResponse"][];
+            /** Undated Private */
+            undated_private: string;
+        };
+        /**
+         * HouseholdDayResponse
+         * @description One day with each member's spending on it, in the order of `members`.
+         */
+        HouseholdDayResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Members */
+            members: components["schemas"]["HouseholdMemberDayResponse"][];
+        };
+        /**
          * HouseholdInvite
          * @description What an invite link shows before joining: whose household it is, and how big.
          */
@@ -3359,6 +3467,19 @@ export interface components {
             owner_name: string;
             /** Member Count */
             member_count: number;
+        };
+        /**
+         * HouseholdMemberDayResponse
+         * @description What one member spent on a day.
+         */
+        HouseholdMemberDayResponse: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Total */
+            total: string;
         };
         /**
          * HouseholdMemberRead
@@ -4727,6 +4848,14 @@ export interface components {
             amount: number | string;
             /** Day */
             day?: number | null;
+        };
+        /**
+         * RenameProductRequest
+         * @description The name a product is shown under from now on; how receipts print it is unchanged.
+         */
+        RenameProductRequest: {
+            /** Name */
+            name: string;
         };
         /**
          * ResetPasswordRequest
@@ -6684,6 +6813,41 @@ export interface operations {
             };
         };
     };
+    get_household_daily_api_v1_household_daily_get: {
+        parameters: {
+            query: {
+                /** @description First day of the period, included */
+                start: string;
+                /** @description Last day of the period, included */
+                end: string;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdDailyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     upload_receipt_receipts_upload_post: {
         parameters: {
             query?: {
@@ -8139,6 +8303,43 @@ export interface operations {
             };
         };
     };
+    rename_product_api_v1_products__product_id__patch: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameProductRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     split_product_api_v1_products__product_id__split_post: {
         parameters: {
             query?: {
@@ -9182,6 +9383,37 @@ export interface operations {
         };
     };
     confirm_email_api_v1_admin_users__user_id__confirm_email_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restart_onboarding_api_v1_admin_users__user_id__restart_onboarding_post: {
         parameters: {
             query?: {
                 token?: string | null;

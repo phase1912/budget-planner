@@ -55,6 +55,7 @@ const store = vi.hoisted(() => ({
   clearSelection: vi.fn(),
   merge: vi.fn().mockResolvedValue(true),
   split: vi.fn(),
+  rename: vi.fn().mockResolvedValue(true),
   select: vi.fn((ids: string[]) => {
     store.selected = [...ids];
   }),
@@ -75,7 +76,17 @@ const exploration = vi.hoisted(() => ({
   choosePreset: vi.fn(),
   chooseRange: vi.fn(),
   saveSelection: vi.fn().mockResolvedValue(true),
+  updateSelection: vi.fn().mockResolvedValue(true),
   deleteSelection: vi.fn(),
+  load: vi.fn(),
+  openedSetId: null as string | null,
+  openSet: vi.fn((id: string | null) => {
+    exploration.openedSetId = id;
+  }),
+  get changedSet() {
+    if (exploration.selectionMatching(store.selected)) return undefined;
+    return exploration.selections.find((s) => s.id === exploration.openedSetId);
+  },
   selectionMatching: (ids: readonly string[]) =>
     exploration.selections.find(
       (selection) =>
@@ -113,6 +124,7 @@ describe("ProductsPage (F16.1)", () => {
     store.selected = [];
     exploration.result = null;
     exploration.selections = [];
+    exploration.openedSetId = null;
   });
 
   it("lists each product once, with how often, where and how it was printed", () => {
@@ -261,6 +273,45 @@ describe("ProductsPage (F16.1)", () => {
 
     await vi.waitFor(() => {
       expect(exploration.saveSelection).toHaveBeenCalledWith("Breakfast");
+    });
+  });
+
+  it("keeps a product added to an opened selection in that selection, not a new one", async () => {
+    exploration.selections = [{ id: "s1", name: "Snacks", product_ids: ["p1"] }];
+    // "Snacks" was opened, then bread was added to it.
+    exploration.openedSetId = "s1";
+    store.selected = ["p1", "p2"];
+    renderExplore();
+
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Update «Snacks»" }));
+
+    await vi.waitFor(() => {
+      expect(exploration.updateSelection).toHaveBeenCalledWith("s1");
+    });
+    expect(exploration.saveSelection).not.toHaveBeenCalled();
+  });
+
+  it("clears every tick at once from beside the saved selections", () => {
+    store.selected = ["p1", "p2"];
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear the ticks" }));
+
+    expect(store.clearSelection).toHaveBeenCalled();
+    expect(exploration.openSet).toHaveBeenCalledWith(null);
+  });
+
+  it("renames a product from its row in the list", async () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: `Rename ${YOGHURT.name}` }));
+    const field = screen.getByLabelText("Name");
+    fireEvent.change(field, { target: { value: "Greek yoghurt" } });
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Save" }));
+
+    await vi.waitFor(() => {
+      expect(store.rename).toHaveBeenCalledWith(YOGHURT.id, "Greek yoghurt");
     });
   });
 

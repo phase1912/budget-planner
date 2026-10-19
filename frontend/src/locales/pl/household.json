@@ -58,5 +58,11 @@
     "remove": "Usuń",
     "removeLabel": "Usuń: {{name}}",
     "removeQuestion": "{{name}} nie będzie już widzieć paragonów gospodarstwa, a ono paragonów tej osoby."
+  },
+  "daily": {
+    "title": "Dzień po dniu",
+    "you": "Ty",
+    "bar": "{{date}}: {{amounts}} {{currency}}",
+    "undatedPrivate": "Prywatne paragony innych, {{amount}} {{currency}}, liczą się do sumy, ale nie są pokazywane według dni."
   }
 }

@@ -3,9 +3,10 @@
 import uuid
 from collections.abc import Collection
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.periods import DateRange
@@ -13,7 +14,7 @@ from app.domain.trips import TripKind
 from app.models.category import Category
 from app.models.line_item import LineItem
 from app.models.receipt import Receipt, ReceiptStatus
-from app.repository.receipt import _within, counted_in_budget, on_trip
+from app.repository.receipt import _purchased, _within, counted_in_budget, on_trip
 
 
 @dataclass(frozen=True)
@@ -136,3 +137,30 @@ class HouseholdSpendRepository:
                 await self.session.execute(stmt)
             ).all()
         ]
+
+    async def daily_by_member(
+        self, period: DateRange, member_ids: Collection[uuid.UUID], viewer_id: uuid.UUID
+    ) -> dict[tuple[date, uuid.UUID], Decimal]:
+        """Each member's spend on each day of `period` that had any, as the viewer may see it.
+
+        A shared receipt counts on its day for its owner. A private one counts by day only
+        for the viewer's own: another member's has no date in the household (ADR-0017).
+        Days are taken in UTC, as the personal daily figures are, so they add up alike.
+        """
+        day = func.date(func.timezone("UTC", _purchased()))
+        stmt = (
+            select(day, Receipt.user_id, func.coalesce(func.sum(LineItem.paid), 0))
+            .select_from(LineItem)
+            .join(Receipt, LineItem.receipt_id == Receipt.id)
+            .where(
+                Receipt.user_id.in_(member_ids),
+                counted_in_budget(),
+                _within(period),
+                or_(Receipt.is_private.is_(False), Receipt.user_id == viewer_id),
+            )
+            .group_by(day, Receipt.user_id)
+        )
+        return {
+            (spent_on, user_id): Decimal(total)
+            for spent_on, user_id, total in (await self.session.execute(stmt)).all()
+        }

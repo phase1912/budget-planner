@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChartLine, ChevronRight, Package, Search, X } from "lucide-react";
+import { ChartLine, ChevronRight, Package, RotateCcw, Search, X } from "lucide-react";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
@@ -103,7 +103,7 @@ export const ProductsPage = observer(function ProductsPage() {
           {t("all")}
         </h2>
 
-        {explorationStore.selections.length > 0 && (
+        {(explorationStore.selections.length > 0 || selected.length > 0) && (
           <section aria-label={t("selections.title")} className="flex flex-col gap-1.5">
             <h2 className="m-0 text-base font-medium text-muted-foreground">
               {t("selections.title")}
@@ -124,6 +124,7 @@ export const ProductsPage = observer(function ProductsPage() {
                     }`}
                     onClick={() => {
                       productsStore.select(selection.product_ids);
+                      explorationStore.openSet(selection.id);
                     }}
                   >
                     {selection.name}
@@ -138,6 +139,21 @@ export const ProductsPage = observer(function ProductsPage() {
                   </button>
                 </li>
               ))}
+              {selected.length > 0 && (
+                <li>
+                  <button
+                    type="button"
+                    className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-pill px-3.5 text-md font-semibold text-muted-foreground hover:bg-muted hover:text-foreground md:min-h-0 md:py-1.5"
+                    onClick={() => {
+                      productsStore.clearSelection();
+                      explorationStore.openSet(null);
+                    }}
+                  >
+                    <RotateCcw size={14} aria-hidden="true" />
+                    {t("selections.clear")}
+                  </button>
+                </li>
+              )}
             </ul>
           </section>
         )}

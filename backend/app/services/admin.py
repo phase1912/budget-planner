@@ -122,6 +122,17 @@ class AdminService:
         self._log(admin, user, AdminActionKind.EMAIL_CONFIRMED)
         await self.session.flush()
 
+    async def restart_onboarding(self, admin: User, user_id: uuid.UUID) -> None:
+        """Show the account the first-sign-in setup again on its next visit (F23.9).
+
+        Used to test the setup on a real account, the admin's own included: what was
+        chosen there before stays as it is, only the "done" mark is taken away.
+        """
+        user = await self._target(user_id)
+        user.onboarded_at = None
+        self._log(admin, user, AdminActionKind.ONBOARDING_RESTARTED)
+        await self.session.flush()
+
     async def confirmation_letter(self, admin: User, user_id: uuid.UUID) -> Letter:
         """A fresh confirmation letter for an unconfirmed account; DomainError if confirmed."""
         user = await self._target(user_id)

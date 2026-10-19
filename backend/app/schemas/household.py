@@ -1,7 +1,7 @@
 """Household API models (F12.2)."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -118,3 +118,36 @@ class HouseholdStatisticsResponse(BaseModel):
     categories: list[HouseholdCategoryResponse]
     private_total: Decimal
     private_share: Decimal
+
+
+class HouseholdMemberDayResponse(BaseModel):
+    """What one member spent on a day."""
+
+    user_id: uuid.UUID
+    total: Decimal
+
+
+class HouseholdDayResponse(BaseModel):
+    """One day with each member's spending on it, in the order of `members`."""
+
+    day: date
+    members: list[HouseholdMemberDayResponse]
+
+
+class HouseholdDailyMemberResponse(BaseModel):
+    """A member as the daily chart names them."""
+
+    user_id: uuid.UUID
+    first_name: str
+
+
+class HouseholdDailyResponse(BaseModel):
+    """The household's spending day by day, per member (F12.5, F23.4).
+
+    `undated_private` is the other members' private spending of the period, which counts in
+    the household's totals but is never placed on a day (ADR-0017).
+    """
+
+    members: list[HouseholdDailyMemberResponse]
+    days: list[HouseholdDayResponse]
+    undated_private: Decimal

@@ -234,6 +234,8 @@ Rules that must hold at all times. Each is a candidate for a test.
     or removal revokes it at once (N2).
 11h. A private receipt counts in the household's totals and budget, but the household sees
     only one sum per member per month, never its merchant, items, category or date (N2).
+    The household's day-by-day chart therefore places a private receipt on its day only
+    for its owner; for the others the period's private spending is one undated sum.
 11i. A user belongs to at most one household, and its members share one account currency,
     in which its totals are (D1).
 11j. A household's month is the sum of its members' months, counted by the same rules (D1-D3),
@@ -270,7 +272,8 @@ Rules that must hold at all times. Each is a candidate for a test.
     told apart only by such a date are merged into the most bought one.
     Merging folds products into one that keeps its name; splitting takes one way of
     printing, with its lines, into a product of its own. Both hold for later receipts
-    (F16.1).
+    (F16.1). The user may rename a product: only the shown name changes, matching still
+    goes by how receipts print it, so later receipts find it under the new name.
 
 11p. Exploring products counts only counted receipts — the month's own rule (D3) — by the
     purchase day, else the upload day, over whole days (ADR-0012). Quantities are kept
