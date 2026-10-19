@@ -1,177 +1,268 @@
 {
   "meta": {
-    "title": "Budget Agent — budżet z Twoich paragonów",
-    "description": "Fotografuj paragony: każda pozycja jest odczytana, przypisana do kategorii i produktu i zamieniona w porady, które można sprawdzić. Cele, wspólny budżet domowy i podróże z dietami według polskich przepisów."
+    "title": "Budget Agent — wiedz, na co poszedł każdy grosz",
+    "description": "Zrób zdjęcie paragonu: każda pozycja zostanie odczytana, przypisana do kategorii i produktu, a ceny porównane między sklepami. Dochody, rachunki i podatki, wspólny budżet rodziny, cele sprawdzane przez AI. Dowolna waluta."
   },
-  "title1": "Zrób zdjęcie paragonu.",
-  "title2": "Dostań budżet.",
-  "lead": "Każda pozycja odczytana ze zdjęcia, przypisana do kategorii i produktu i zamieniona w porady z Twoich własnych zakupów — a nie ogólne wskazówki.",
-  "createAccount": "Załóż konto",
+  "hero": {
+    "title": "Wiedz, na co poszedł każdy grosz.",
+    "lead": "Zrób zdjęcie paragonu. Każda pozycja zostanie odczytana, przypisana i wyceniona — zobaczysz, ile zostało w tym miesiącu, co podrożało i gdzie jest taniej. W dowolnej walucie.",
+    "start": "Zacznij od jednego paragonu",
+    "see": "Co możesz zrobić",
+    "free": "Za darmo · 10 paragonów miesięcznie · bez karty"
+  },
   "haveOne": "Mam już konto",
-  "free": "Za darmo w wersji beta. Bez karty.",
-  "nav": {
-    "label": "Na tej stronie",
-    "features": "Co potrafi",
-    "faq": "Pytania"
+  "phones": {
+    "spending": {
+      "title": "Wydatki",
+      "caption": "Na co poszło"
+    },
+    "home": {
+      "title": "Cześć, Anno",
+      "caption": "Ile zostało",
+      "ring": "zostało w tym miesiącu",
+      "rows": [
+        {
+          "name": "Dochód po podatku",
+          "sub": "zostało 14 dni"
+        },
+        {
+          "name": "Tempo",
+          "sub": "dziennie do końca miesiąca"
+        }
+      ]
+    },
+    "products": {
+      "title": "Produkty",
+      "caption": "Gdzie taniej"
+    }
+  },
+  "versus": {
+    "others": "Większość aplikacji budżetowych",
+    "othersShop": "Supermarket",
+    "othersText": "Jedna kwota w „Spożywcze”. Jedzenie? Chemia? Kredki dla dzieci? Nie wiadomo.",
+    "ours": "Budget Agent widzi każdą pozycję",
+    "lines": [
+      {
+        "name": "Banany 1,1 kg",
+        "category": "Spożywcze"
+      },
+      {
+        "name": "Wybielacz 750 ml",
+        "category": "Dom"
+      },
+      {
+        "name": "Kredki dla dzieci",
+        "category": "Dzieci"
+      },
+      {
+        "name": "Czerwone wino",
+        "category": "Przyjemności"
+      }
+    ]
   },
   "steps": {
+    "title": "Trzy kroki, po minucie każdy",
     "shoot": {
-      "title": "Zrób zdjęcie",
-      "text": "Jedno zdjęcie, kilka nachodzących na siebie przy długim paragonie albo prześlij e-paragon mailem."
+      "title": "Zrób zdjęcie albo przekaż",
+      "text": "Jedno zdjęcie, kilka nachodzących na siebie przy długim paragonie albo e-paragon wysłany na Twój adres."
     },
     "check": {
-      "title": "Sprawdź odczyt",
-      "text": "Wszystko niejasne oznaczamy, zamiast po cichu zgadywać."
+      "title": "Sprawdź, co odczytano",
+      "text": "Każda pozycja z ceną i kategorią. Wszystko niepewne zostanie oznaczone, a nie po cichu zgadnięte."
     },
     "see": {
-      "title": "Zobacz, gdzie poszły pieniądze",
-      "text": "Wydatki miesiąca według kategorii i produktów, na tle ustawionego limitu."
+      "title": "Zobacz, ile zostało",
+      "text": "Miesiąc według kategorii, Twoje dochody i rachunki oraz ile każdy produkt kosztuje w każdym sklepie."
     }
   },
-  "features": {
-    "title": "Co potrafi",
-    "receipts": {
-      "eyebrow": "Paragony",
-      "title": "Każda pozycja, nie tylko suma",
-      "text": "Paragon jest czytany pozycja po pozycji — nazwa, ilość, cena — i każda trafia do kategorii. Długi paragon można sfotografować w częściach, e-paragony przychodzą mailem, a gotówkę bez paragonu można wpisać ręcznie.",
+  "showcase": {
+    "title": "Co możesz zrobić",
+    "note": "Miesiąc przykładowej rodziny.",
+    "home": {
+      "label": "Start",
+      "title": "Ile zostało w tym miesiącu",
+      "screen": "Start",
+      "text": "Jeden pierścień na miesiąc: ile zostało z budżetu, z dochodu po rachunkach i podatkach albo na co poszły pieniądze — dotknięcie przełącza widok.",
       "points": [
-        "Sumy, które się nie zgadzają, wyjaśniamy, a nie ukrywamy",
-        "Zagraniczne paragony po kursie NBP z dnia zakupu",
-        "Twoje poprawki zapamiętujemy na następny raz"
+        "Dochód po podatku, stałe rachunki odjęte od razu",
+        "Dzienne tempo na pozostałe dni",
+        "Wszystko, co na Ciebie czeka, w jednym miejscu"
+      ],
+      "rows": [
+        {
+          "name": "Zostało w tym miesiącu",
+          "sub": "jeszcze 14 dni"
+        },
+        {
+          "name": "Czynsz",
+          "sub": "stały rachunek · 5. dnia"
+        },
+        {
+          "name": "Odłożone na podatki",
+          "sub": "jeśli płacisz sam(a)"
+        },
+        {
+          "name": "Wydano do tej pory",
+          "sub": "42 paragony"
+        }
       ]
     },
     "spending": {
-      "eyebrow": "Wydatki",
-      "title": "Gdzie naprawdę idą pieniądze",
-      "text": "Miesiąc według kategorii na tle limitu, a każdy produkt — we wszystkich sklepach: ile kosztował wtedy i teraz i gdzie jest taniej.",
+      "label": "Wydatki",
+      "title": "Na co poszły pieniądze",
+      "screen": "Wydatki",
+      "text": "Kategorie na tle poprzedniego miesiąca, dzień po dniu, i paragony za każdą — dla Ciebie albo całej rodziny.",
       "points": [
-        "Jeden produkt, jakkolwiek drukuje go sklep",
+        "Ten miesiąc, poprzedni, rok albo własne daty",
+        "Słupek na dzień, w dwóch kolorach dla pary",
+        "Każdy paragon jedno dotknięcie dalej"
+      ],
+      "rows": [
+        {
+          "name": "Spożywcze",
+          "sub": "▲ 5% wobec poprzedniego"
+        },
+        {
+          "name": "Jedzenie na mieście",
+          "sub": "▼ 18% wobec poprzedniego"
+        },
+        {
+          "name": "Transport",
+          "sub": "jak w poprzednim"
+        },
+        {
+          "name": "Dom",
+          "sub": "▲ 17% wobec poprzedniego"
+        }
+      ]
+    },
+    "products": {
+      "label": "Produkty",
+      "title": "To samo mleko taniej obok",
+      "screen": "Produkty",
+      "text": "Jeden produkt, jakkolwiek drukuje go każdy sklep, jego cena w czasie i sklep, w którym był tańszy — z Twoich własnych paragonów.",
+      "points": [
         "Historia cen według produktu i sklepu",
-        "Znacznik, gdy inny sklep sprzedaje taniej"
-      ]
-    },
-    "goals": {
-      "eyebrow": "Cele",
-      "title": "Porady z Twoich zakupów",
-      "text": "Ustaw cel — mniej na jedzenie na mieście, odłożyć na urlop, jeść mniej słodyczy — i dostań porady, które wskazują to, co faktycznie kupujesz, i ile da każda zmiana.",
-      "points": [
-        "Tylko propozycje widoczne w Twoich paragonach",
-        "Ostrzeżenie, gdy miesiąc zmierza ponad limit",
-        "Odrzucona porada się nie powtarza"
-      ]
-    },
-    "household": {
-      "eyebrow": "Dom",
-      "title": "Jeden budżet dla rodziny",
-      "text": "Zaproś partnera lub rodzinę linkiem: każdy prowadzi swoje paragony, a dom widzi wspólny miesiąc i jego limit.",
-      "points": [
-        "Prywatny paragon: kwota się liczy, szczegóły zostają Twoje",
-        "Kto ile wydał w każdej kategorii",
-        "Limit domu obok Twojego"
-      ]
-    },
-    "trips": {
-      "eyebrow": "Podróże",
-      "title": "Urlopy i delegacje",
-      "text": "Urlop ma własny budżet i historię dzień po dniu. Delegacja nie wchodzi do Twojego budżetu i jest rozliczana z dietami według polskich przepisów — gotowa do oddania.",
-      "points": [
-        "Paragony dołączają do podróży według dat",
-        "Diety krajowe i zagraniczne, każda doba i posiłek osobno",
-        "Rozliczenie w PDF ze zdjęciami paragonów lub CSV"
-      ]
-    }
-  },
-  "preview": {
-    "receipt": {
-      "merchant": "Biedronka",
-      "date": "14 paź, 18:42",
-      "lines": ["Mleko 3,2% 1 l", "Chleb żytni", "Banany 1,2 kg", "Jogurt naturalny"],
-      "categories": ["Groceries", "Groceries", "Groceries", "Groceries"],
-      "flag": "1 pozycja do sprawdzenia"
-    },
-    "spending": {
-      "month": "Październik",
-      "limit": "68% limitu 3 000",
-      "categories": ["Groceries", "Dining", "Transport", "Entertainment"],
-      "product": "Jogurt naturalny 330 g",
-      "cheaper": "o 0,80 taniej w Lidlu"
-    },
-    "goal": {
-      "name": "Mniej na jedzenie na mieście",
-      "advice": "Gotuj w domu w dni robocze zamiast 3 obiadów w Pasta Bar",
-      "saves": "oszczędza ok. {{amount}} miesięcznie",
-      "pace": "W normie: 420 z 600 do 20. dnia"
-    },
-    "household": {
-      "name": "Kowalscy",
-      "members": ["Anna", "Marek"],
-      "shared": "Wydane razem w tym miesiącu",
-      "private": "Prywatne — Marek"
-    },
-    "trip": {
-      "name": "Berlin, wizyta u klienta",
-      "kind": "Służbowa",
-      "perDiem": "Diety: 3 doby w Niemczech",
-      "toReimburse": "Do zwrotu",
-      "holiday": "Egipt",
-      "budgetLeft": "zostało 380 z 3 000"
-    },
-    "intake": {
-      "title": "Dodane w tym tygodniu",
-      "items": [
+        "Znacznik, gdy gdzie indziej jest taniej",
+        "Zestawy produktów do obserwowania razem"
+      ],
+      "rows": [
         {
-          "name": "Biedronka",
-          "how": "3 zdjęcia długiego paragonu"
+          "name": "Mleko 1 l",
+          "sub": "taniej w sklepie za rogiem"
         },
         {
-          "name": "Allegro",
-          "how": "e-paragon przesłany mailem"
+          "name": "Kawa 1 kg",
+          "sub": "▲ 12% od wiosny"
         },
         {
-          "name": "Wycieczka do piramid",
-          "how": "wpisane ręcznie, bez paragonu"
+          "name": "Chleb żytni",
+          "sub": "zwykle w supermarkecie"
         },
         {
-          "name": "Kawiarnia w Wiedniu",
-          "how": "20,00 EUR po kursie NBP"
+          "name": "Jogurt naturalny",
+          "sub": "taniej w sklepie za rogiem"
+        }
+      ]
+    },
+    "plan": {
+      "label": "Plan",
+      "title": "Dochody, rachunki, urlopy, cele",
+      "screen": "Plan",
+      "text": "Stałe dochody i rachunki ustawiasz raz, podatki — jeśli płacisz je sam(a), urlop z własnym budżetem i cele, które AI sprawdza na Twoich prawdziwych zakupach.",
+      "points": [
+        "Wydane · rachunki · wolne na jednym pasku",
+        "Cele z radami z Twoich paragonów",
+        "Delegacje z dietami i rozliczeniem"
+      ],
+      "rows": [
+        {
+          "name": "Wynagrodzenie",
+          "sub": "stałe · 10. dnia"
+        },
+        {
+          "name": "Urlop nad morzem",
+          "sub": "zostało 380 z 3 000"
+        },
+        {
+          "name": "Rzadziej na mieście",
+          "sub": "w tempie · 420 z 600"
+        },
+        {
+          "name": "Na rower",
+          "sub": "62% · do marca"
         }
       ]
     }
   },
-  "privacyTitle": "Twoje paragony zostają Twoje",
-  "privacy": "Zdjęcia paragonów i odczytane dane są szyfrowane i widoczne tylko dla Ciebie — oraz dla Twojego domu, chyba że oznaczysz paragon jako prywatny.",
-  "faq": {
-    "title": "Pytania",
+  "features": {
+    "title": "Stworzone pod to, jak rodzina naprawdę wydaje",
     "items": [
       {
-        "q": "Czy to jest darmowe?",
-        "a": "Tak, dopóki serwis jest w wersji beta. Do rejestracji nie potrzebujesz karty."
+        "title": "Każda pozycja, nie tylko suma",
+        "text": "Nazwa, ilość i cena każdej pozycji; rozbieżność z sumą wyjaśniona, a pominięty rabat dodasz jednym dotknięciem."
       },
       {
-        "q": "Jakie paragony potrafi odczytać?",
-        "a": "Drukowane paragony z każdego sklepu — jednym zdjęciem lub kilkoma nachodzącymi na siebie — oraz e-paragony przesłane mailem. Paragony w innej walucie są przeliczane po kursie NBP z ich dnia."
+        "title": "Ceny w Twoich sklepach",
+        "text": "Każdy produkt, jakkolwiek wydrukowany, historia jego cen i gdzie jest taniej — tylko z Twoich paragonów."
       },
       {
-        "q": "A jeśli zapłaciłem gotówką i nie mam paragonu?",
-        "a": "Wpisz wydatek ręcznie: co to było, kiedy, ile i w jakiej walucie. Liczy się jak każdy paragon."
+        "title": "Dochody, podatki i rachunki",
+        "text": "Stałe dochody i rachunki ustawiasz raz; jeśli płacisz podatki sam(a), Start pokaże, co naprawdę jest Twoje."
       },
       {
-        "q": "Kto widzi moje paragony?",
-        "a": "Tylko Ty. Jeśli prowadzisz wspólny budżet domowy, jego członkowie też widzą Twoje paragony — poza oznaczonymi jako prywatne, których kwota i tak liczy się we wspólnej sumie."
+        "title": "Jeden budżet dla rodziny",
+        "text": "Zaproś linkiem. Każdy trzyma swoje paragony; prywatne liczą się tylko jako kwota."
       },
       {
-        "q": "Czy nadaje się do delegacji?",
-        "a": "Tak. Delegacja nie wchodzi do Twojego budżetu; serwis liczy diety według polskiego rozporządzenia, odejmuje zapewnione posiłki i zaliczkę i daje rozliczenie w PDF lub CSV."
+        "title": "Urlopy i delegacje",
+        "text": "Urlop z własnym budżetem; delegacja poza Twoim budżetem, rozliczona z dietami w PDF lub CSV."
       },
       {
-        "q": "W jakich językach jest dostępny?",
-        "a": "Po angielsku, ukraińsku i polsku. Kwoty mogą być w dowolnej walucie, w której prowadzisz budżet."
+        "title": "Twoje paragony są Twoje",
+        "text": "Szyfrowane w spoczynku, widoczne tylko dla Ciebie i Twojej rodziny, usuwane razem z kontem."
       }
     ]
   },
+  "free": {
+    "title": "Na start za darmo. Naprawdę.",
+    "text": "10 odczytanych paragonów miesięcznie ze wszystkimi funkcjami. Wydatki wpisane ręcznie się nie liczą. Bez karty i bez okresu próbnego, który się kończy.",
+    "amount": "10",
+    "unit": "paragonów miesięcznie"
+  },
+  "faq": {
+    "title": "O co ludzie pytają",
+    "items": [
+      {
+        "q": "Czy to jest darmowe?",
+        "a": "Tak, w czasie bety: 10 odczytanych paragonów miesięcznie ze wszystkimi funkcjami. Wydatki wpisane ręcznie się nie liczą."
+      },
+      {
+        "q": "Jakie kraje i waluty?",
+        "a": "Dowolne. Konto ma własną walutę, a paragon w innej jest przeliczany po kursie z jego dnia. Aplikacja mówi po angielsku, ukraińsku i polsku, kolejne języki wkrótce."
+      },
+      {
+        "q": "Jakie paragony odczytuje?",
+        "a": "Zdjęcia i pliki PDF paragonów ze sklepów oraz e-paragony przesłane mailem. Długi paragon można sfotografować w kilku nachodzących częściach."
+      },
+      {
+        "q": "A jeśli płatność była gotówką i nie ma paragonu?",
+        "a": "Wpisz wydatek ręcznie: co, kiedy i ile. Liczy się jak każdy paragon."
+      },
+      {
+        "q": "Kto widzi moje paragony?",
+        "a": "Tylko Ty — i Twoja rodzina, chyba że oznaczysz paragon jako prywatny. Dane są szyfrowane w spoczynku i usuwane razem z kontem."
+      },
+      {
+        "q": "Czy jest aplikacja na telefon?",
+        "a": "Działa w każdej przeglądarce telefonu i można ją dodać do ekranu głównego. Aplikacja na Androida jest w drodze."
+      }
+    ],
+    "more": "Wszystkie odpowiedzi w Pomocy"
+  },
   "final": {
-    "title": "Zacznij od jednego paragonu",
-    "text": "Wystarczy zdjęcie i minuta."
+    "title": "Pierwszy paragon zajmie minutę.",
+    "start": "Załóż darmowe konto"
   },
   "languages": "Także"
 }

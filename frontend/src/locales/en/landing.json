@@ -1,177 +1,268 @@
 {
   "meta": {
-    "title": "Budget Agent — a budget from your receipts",
-    "description": "Photograph your receipts: every line is read, sorted into categories and products, and turned into advice you can check. Goals, a shared household budget and trips with Polish per diem."
+    "title": "Budget Agent — know where every cent went",
+    "description": "Photograph a receipt: every line is read, sorted into categories and products, and priced across shops. Income, bills and taxes counted, a shared family budget, goals the AI checks. Any currency."
   },
-  "title1": "Photograph a receipt.",
-  "title2": "Get a budget.",
-  "lead": "Every line item read off the photo, sorted into categories and products, and turned into advice built from your own purchases — not generic tips.",
-  "createAccount": "Create an account",
+  "hero": {
+    "title": "Know where every cent went.",
+    "lead": "Snap a receipt. Every line is read, sorted and priced — so you see what is left this month, what got dearer, and where it is cheaper. In any currency.",
+    "start": "Start with one receipt",
+    "see": "See what you can do",
+    "free": "Free · 10 receipts a month · no card"
+  },
   "haveOne": "I already have one",
-  "free": "Free while in beta. No card needed.",
-  "nav": {
-    "label": "On this page",
-    "features": "What it does",
-    "faq": "Questions"
+  "phones": {
+    "spending": {
+      "title": "Spending",
+      "caption": "Where it went"
+    },
+    "home": {
+      "title": "Hi, Anna",
+      "caption": "What is left",
+      "ring": "left this month",
+      "rows": [
+        {
+          "name": "Income after tax",
+          "sub": "14 days left"
+        },
+        {
+          "name": "Pace",
+          "sub": "a day until month end"
+        }
+      ]
+    },
+    "products": {
+      "title": "Products",
+      "caption": "Where it is cheaper"
+    }
+  },
+  "versus": {
+    "others": "Most budget apps",
+    "othersShop": "Supermarket",
+    "othersText": "One total filed under “Groceries”. Was it food? Cleaning? The kids’ crayons? Nobody knows.",
+    "ours": "Budget Agent sees every line",
+    "lines": [
+      {
+        "name": "Bananas 1.1 kg",
+        "category": "Groceries"
+      },
+      {
+        "name": "Bleach 750 ml",
+        "category": "Household"
+      },
+      {
+        "name": "Kids’ crayons",
+        "category": "Kids"
+      },
+      {
+        "name": "Red wine",
+        "category": "Treats"
+      }
+    ]
   },
   "steps": {
+    "title": "Three steps, a minute each",
     "shoot": {
-      "title": "Shoot it",
-      "text": "One photo, several overlapping ones for a long receipt, or forward the e-receipt by email."
+      "title": "Photograph or forward",
+      "text": "One photo, a few overlapping ones for a long receipt, or the e-receipt sent to your own address."
     },
     "check": {
-      "title": "Check what we read",
-      "text": "Anything unclear is flagged for you rather than quietly guessed."
+      "title": "Check what was read",
+      "text": "Every line with its price and category. Anything unsure is marked for you, never quietly guessed."
     },
     "see": {
-      "title": "See where it went",
-      "text": "Month-to-date spend by category and product, against a limit you set."
+      "title": "See what is left",
+      "text": "The month by category, your income and bills, and what each product costs in each shop."
     }
   },
-  "features": {
-    "title": "What it does",
-    "receipts": {
-      "eyebrow": "Receipts",
-      "title": "Every line, not just the total",
-      "text": "The receipt is read line by line — name, quantity, price — and every line lands in a category. Long receipts can be shot in parts; e-receipts arrive by email; cash without a receipt is typed in.",
+  "showcase": {
+    "title": "See what you can do",
+    "note": "A sample household’s month.",
+    "home": {
+      "label": "Home",
+      "title": "What is left this month",
+      "screen": "Home",
+      "text": "One ring for the month: what is left of the budget, of the income after bills and taxes, or where the money went — a tap switches between them.",
       "points": [
-        "Totals that don't add up are explained, not hidden",
-        "Foreign receipts converted at the NBP rate of their day",
-        "Your corrections are remembered for next time"
+        "Income after tax, regular bills taken off first",
+        "A daily pace for the days left",
+        "Anything waiting for you, in one place"
+      ],
+      "rows": [
+        {
+          "name": "Left this month",
+          "sub": "14 days to go"
+        },
+        {
+          "name": "Rent",
+          "sub": "regular bill · on the 5th"
+        },
+        {
+          "name": "Taxes set aside",
+          "sub": "if you pay your own"
+        },
+        {
+          "name": "Spent so far",
+          "sub": "42 receipts"
+        }
       ]
     },
     "spending": {
-      "eyebrow": "Spending",
-      "title": "Where the money really goes",
-      "text": "The month by category, against your limit, and each product you buy across every shop — what it cost then and now, and where it is cheaper.",
+      "label": "Spending",
+      "title": "Where the money went",
+      "screen": "Spending",
+      "text": "Categories against last month, day by day, and the receipts behind each — for you or the whole household.",
       "points": [
-        "One product, however each shop prints it",
+        "This month, last month, the year or your own dates",
+        "A bar a day, in two colours for a couple",
+        "Every receipt one tap away"
+      ],
+      "rows": [
+        {
+          "name": "Groceries",
+          "sub": "▲ 5% vs last month"
+        },
+        {
+          "name": "Eating out",
+          "sub": "▼ 18% vs last month"
+        },
+        {
+          "name": "Transport",
+          "sub": "same as last month"
+        },
+        {
+          "name": "Household",
+          "sub": "▲ 17% vs last month"
+        }
+      ]
+    },
+    "products": {
+      "label": "Products",
+      "title": "The same milk, cheaper next door",
+      "screen": "Products",
+      "text": "One product however each shop prints it, its price over time, and the shop that sold it for less — from your own receipts.",
+      "points": [
         "Price history per product and shop",
-        "A mark when another shop sells it for less"
-      ]
-    },
-    "goals": {
-      "eyebrow": "Goals",
-      "title": "Advice built from your purchases",
-      "text": "Set a goal — spend less on eating out, save for a holiday, eat fewer sweets — and get advice that names what you actually buy, with what each change would save you.",
-      "points": [
-        "Only suggestions it can point to in your receipts",
-        "A warning when the month is heading over",
-        "Advice you turn down is not repeated"
-      ]
-    },
-    "household": {
-      "eyebrow": "Household",
-      "title": "One budget for the family",
-      "text": "Invite your partner or family with a link: everyone keeps their own receipts, the household sees the shared month and its limit.",
-      "points": [
-        "Mark a receipt private: its money counts, its details stay yours",
-        "Who spent what, per category",
-        "A household limit beside your own"
-      ]
-    },
-    "trips": {
-      "eyebrow": "Trips",
-      "title": "Holidays and business trips",
-      "text": "A holiday gets its own budget and day-by-day story. A business trip stays out of your budget and is settled with the per diem under Polish rules, ready to hand in.",
-      "points": [
-        "Receipts join a trip by their dates",
-        "Per diem at home and abroad, each day and meal itemised",
-        "Settlement as PDF with receipt photos, or CSV"
-      ]
-    }
-  },
-  "preview": {
-    "receipt": {
-      "merchant": "Biedronka",
-      "date": "14 Oct, 18:42",
-      "lines": ["Milk 3.2% 1L", "Rye bread", "Bananas 1.2 kg", "Natural yoghurt"],
-      "categories": ["Groceries", "Groceries", "Groceries", "Groceries"],
-      "flag": "1 line to check"
-    },
-    "spending": {
-      "month": "October",
-      "limit": "68% of your 3,000 limit",
-      "categories": ["Groceries", "Dining", "Transport", "Entertainment"],
-      "product": "Natural yoghurt 330 g",
-      "cheaper": "0.80 cheaper at Lidl"
-    },
-    "goal": {
-      "name": "Spend less on eating out",
-      "advice": "Cook at home on weekdays instead of the 3 lunches at Pasta Bar",
-      "saves": "saves about {{amount}} a month",
-      "pace": "On pace: 420 of 600 by day 20"
-    },
-    "household": {
-      "name": "The Kowalskis",
-      "members": ["Anna", "Marek"],
-      "shared": "Spent together this month",
-      "private": "Private — Marek"
-    },
-    "trip": {
-      "name": "Berlin, client visit",
-      "kind": "Business",
-      "perDiem": "Per diem: 3 days in Germany",
-      "toReimburse": "To reimburse",
-      "holiday": "Egypt",
-      "budgetLeft": "380 left of 3,000"
-    },
-    "intake": {
-      "title": "Added this week",
-      "items": [
+        "A mark when another shop is cheaper",
+        "Sets of products to watch together"
+      ],
+      "rows": [
         {
-          "name": "Biedronka",
-          "how": "3 photos of a long receipt"
+          "name": "Milk 1 l",
+          "sub": "cheaper at the corner shop"
         },
         {
-          "name": "Allegro",
-          "how": "e-receipt forwarded by email"
+          "name": "Coffee 1 kg",
+          "sub": "▲ 12% since spring"
         },
         {
-          "name": "Pyramids tour",
-          "how": "typed in, no receipt"
+          "name": "Rye bread",
+          "sub": "mostly at the supermarket"
         },
         {
-          "name": "Café in Vienna",
-          "how": "20.00 EUR at the NBP rate"
+          "name": "Natural yoghurt",
+          "sub": "cheaper at the corner shop"
+        }
+      ]
+    },
+    "plan": {
+      "label": "Plan",
+      "title": "Income, bills, holidays, goals",
+      "screen": "Plan",
+      "text": "Regular income and bills set once, taxes if you pay them yourself, a holiday with its own budget, and goals the AI checks against what you really buy.",
+      "points": [
+        "Spent · bills · free in one bar",
+        "Goals with advice from your receipts",
+        "Business trips with a per diem and a settlement"
+      ],
+      "rows": [
+        {
+          "name": "Salary",
+          "sub": "regular · on the 10th"
+        },
+        {
+          "name": "Holiday by the sea",
+          "sub": "380 left of 3,000"
+        },
+        {
+          "name": "Eat out less",
+          "sub": "on pace · 420 of 600"
+        },
+        {
+          "name": "Save for a bike",
+          "sub": "62% · by March"
         }
       ]
     }
   },
-  "privacyTitle": "Your receipts stay yours",
-  "privacy": "Receipt photos and their extracted data are encrypted at rest and visible only to you — and to your household, unless you mark a receipt private.",
-  "faq": {
-    "title": "Questions",
+  "features": {
+    "title": "Made for how a family really spends",
     "items": [
       {
-        "q": "Is it free?",
-        "a": "Yes, while the service is in beta. You need no card to sign up."
+        "title": "Every line, not just the total",
+        "text": "Name, quantity and price of each line; totals that do not add up are explained, and a missed discount is one tap."
       },
       {
-        "q": "Which receipts can it read?",
-        "a": "Printed receipts from any shop, photographed in one or several overlapping shots, and e-receipts forwarded by email. Receipts in other currencies are converted at the NBP rate of their date."
+        "title": "Prices across your shops",
+        "text": "Each product however it is printed, its price history and where it is cheaper — from your receipts only."
       },
       {
-        "q": "What if I paid in cash and have no receipt?",
-        "a": "Type the expense in: what it was, when, how much and in which currency. It counts like any receipt."
+        "title": "Income, taxes and bills",
+        "text": "Regular income and bills set once; if you pay your own taxes, Home shows what is really yours."
       },
       {
-        "q": "Who can see my receipts?",
-        "a": "Only you. If you share a household budget, its members see your receipts too — except those you mark private, whose money still counts in the shared total."
+        "title": "One budget for the family",
+        "text": "Invite with a link. Everyone keeps their receipts; private ones count as money only."
       },
       {
-        "q": "Does it work for business trips?",
-        "a": "Yes. A business trip stays out of your own budget; the service works out the per diem under the Polish regulation, takes off meals provided and the advance, and gives you the settlement as PDF or CSV."
+        "title": "Holidays and business trips",
+        "text": "A holiday with its own budget; a business trip kept out of yours and settled with a per diem, as PDF or CSV."
       },
       {
-        "q": "Which languages is it in?",
-        "a": "English, Ukrainian and Polish. Amounts can be in any currency you keep your budget in."
+        "title": "Your receipts stay yours",
+        "text": "Encrypted at rest, seen only by you and your household, deleted with your account."
       }
     ]
   },
+  "free": {
+    "title": "Free to start. Really.",
+    "text": "10 receipts read a month with every feature. Expenses you type in never count. No card, no trial that runs out.",
+    "amount": "10",
+    "unit": "receipts a month"
+  },
+  "faq": {
+    "title": "Questions people ask",
+    "items": [
+      {
+        "q": "Is it free?",
+        "a": "Yes while in beta: 10 receipts read a month with every feature. Expenses typed in by hand never count."
+      },
+      {
+        "q": "Which countries and currencies?",
+        "a": "Any. Your account keeps its own currency, and a receipt in another one is converted at the rate of its day. The app speaks English, Ukrainian and Polish, with more languages to come."
+      },
+      {
+        "q": "Which receipts can it read?",
+        "a": "Photos and PDFs of shop receipts, and e-receipts forwarded by email. A long receipt can be shot in a few overlapping parts."
+      },
+      {
+        "q": "What if I paid in cash and have no receipt?",
+        "a": "Type it in: what, when and how much. It counts like any receipt."
+      },
+      {
+        "q": "Who sees my receipts?",
+        "a": "Only you — and your household, unless you mark a receipt private. Data is encrypted at rest and deleted with your account."
+      },
+      {
+        "q": "Is there a phone app?",
+        "a": "It works in any phone browser and can be added to the home screen. An Android app is on its way."
+      }
+    ],
+    "more": "All answers in Help"
+  },
   "final": {
-    "title": "Start with one receipt",
-    "text": "It takes a photo and a minute."
+    "title": "Your first receipt takes a minute.",
+    "start": "Create a free account"
   },
   "languages": "Also in"
 }

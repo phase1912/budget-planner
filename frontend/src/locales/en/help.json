@@ -1,63 +1,173 @@
 {
   "title": "Help",
-  "intro": "Answers to the usual questions, by area. Didn't find yours? Write to us at the bottom of the page.",
+  "intro": "How the app works, step by step, and answers to the usual questions. Search, pick a topic, or write to us at the bottom of the page.",
+  "heading": "How can we help?",
+  "search": "Search the help",
+  "searchPlaceholder": "Search: tax, rent, e-receipt, family…",
+  "steps": {
+    "title": "Start here: the app in four steps",
+    "label": "Steps",
+    "add": {
+      "title": "Add a receipt",
+      "how": [
+        "Tap ＋ in the middle of the bottom bar.",
+        "Take a photo, choose photos or a PDF, or forward the e-receipt to your own address.",
+        "Wait a few seconds while every line is read."
+      ]
+    },
+    "check": {
+      "title": "Check what was read",
+      "how": [
+        "Look over the lines and their categories.",
+        "Anything unsure is marked in yellow — fix it with the pencil.",
+        "Tap Save. Nothing is stored before that."
+      ]
+    },
+    "see": {
+      "title": "See where it went",
+      "how": [
+        "Home shows what is left this month — tap the ring to switch views.",
+        "Spending shows the categories and each day.",
+        "Products shows what each thing costs in each shop."
+      ]
+    },
+    "plan": {
+      "title": "Plan the month",
+      "how": [
+        "Add your salary and rent once in Plan.",
+        "Set a goal and let the AI check it.",
+        "Plan a holiday with its own budget."
+      ]
+    }
+  },
+  "topics": "Topics",
+  "answers": {
+    "common": "Common questions",
+    "for": "Answers for “{{query}}”",
+    "all": "Show all",
+    "none": "Nothing matches “{{query}}”. Write to us below — a person answers.",
+    "count_one": "{{count}} answer",
+    "count_other": "{{count}} answers",
+    "where": "In the app:"
+  },
   "areas": {
     "receipts": {
       "title": "Receipts",
       "items": {
         "photo": {
           "q": "How do I add a receipt?",
-          "a": "Press Upload (the + on a phone) and take a photo or choose one: JPEG, PNG, HEIC or a PDF. Shop, date, every line and the total are read off it; check them and save."
+          "a": "Tap ＋ and take a photo, or choose photos or a PDF. The shop, the date, every line and the total are read; check them and tap Save.",
+          "where": "＋ › Take a photo"
         },
         "long": {
           "q": "A long receipt doesn't fit in one photo",
-          "a": "Take it in several overlapping photos, up to 10 for one receipt. Lines caught in two photos are counted once."
+          "a": "Shoot it in parts that overlap a little, up to 10 photos. A line caught in two photos is counted once.",
+          "where": "＋ › Take a photo"
         },
         "email": {
           "q": "How do I forward an e-receipt?",
-          "a": "Profile shows your personal forwarding address. Forward the shop's e-mail receipt there from the address of your account, and it appears on Receipts a moment later — up to 20 a day."
+          "a": "Settings shows your own forwarding address. Forward the shop's email there from your account's address and the receipt appears a minute later — up to 20 a day.",
+          "where": "Settings › Receipts by email"
+        },
+        "total": {
+          "q": "The total doesn't match the lines",
+          "a": "Usually a discount was missed: tap “Add the discount” and it is spread over the lines. If a line is missing, open the receipt and fix it. A discount not printed on the receipt at all is added from the receipt too.",
+          "where": "Spending › a receipt › Fix"
         },
         "manual": {
           "q": "A purchase without a receipt",
-          "a": "On Receipts or the upload screen choose “No receipt” and type in what, when and how much. It counts like any receipt, marked as having no document."
+          "a": "On the ＋ screen choose “No receipt” and type what, when and how much. It counts like any receipt.",
+          "where": "＋ › No receipt"
         },
         "limit": {
           "q": "How many receipts can I add?",
-          "a": "Reading a receipt costs a model call, so each account has a monthly limit of receipts read, shown on the upload screen and on Profile. Expenses typed in by hand don't count."
+          "a": "Reading a receipt costs a model call, so the free plan reads 10 a month; the count is on the ＋ screen and in Settings. Expenses typed in by hand never count.",
+          "where": "Settings › Plan"
         },
         "foreign": {
           "q": "A receipt in another currency",
-          "a": "It is converted into your account's currency at the National Bank of Poland's rate, and both amounts are kept on the receipt."
+          "a": "It is converted into your account's currency at the rate of its day, and both amounts are kept on the receipt.",
+          "where": "Spending › a receipt"
         }
       }
     },
-    "categories": {
-      "title": "Categories",
+    "spending": {
+      "title": "Spending",
       "items": {
-        "how": {
-          "q": "How are lines categorised?",
-          "a": "Each line is put in a category as it is read. Lines the reader was unsure of wait on the Categories screen for a look."
+        "where": {
+          "q": "Where do I see what I spent?",
+          "a": "Spending shows the month by category against the one before, a bar for each day and the receipts behind it. Switch to last month, the year or your own dates.",
+          "where": "Spending"
         },
-        "fix": {
+        "category": {
           "q": "A line is in the wrong category",
-          "a": "Open the receipt and pick another category for the line. A name you correct for a shop is remembered for that shop's later receipts."
+          "a": "Open the receipt and pick another category for the line. Lines the app was unsure of wait for you on Spending, and a name you correct for a shop is remembered next time.",
+          "where": "Spending › Items without a category"
         },
-        "rules": {
-          "q": "Can I set my own rules?",
-          "a": "Yes: on Categories → Manage, create your own categories and rules — a keyword that always sends matching lines to a category."
+        "family": {
+          "q": "Seeing the family's spending",
+          "a": "In a household, switch Spending from “Mine” to the family: the categories of everyone's shared receipts and a bar a day in a colour per person.",
+          "where": "Spending › Mine / Family"
+        }
+      }
+    },
+    "products": {
+      "title": "Products",
+      "items": {
+        "cheaper": {
+          "q": "Where is the same product cheaper?",
+          "a": "Products lists everything you buy however each shop prints it. A product shows its price in each shop, and a mark when another of your shops sold it for less recently.",
+          "where": "Products"
+        },
+        "rename": {
+          "q": "A product has a strange name",
+          "a": "Tap the pencil beside it and give it your own name. Receipts that print it the old way still land in it.",
+          "where": "Products › pencil"
+        },
+        "sets": {
+          "q": "Watching several products together",
+          "a": "Tick them and open Explore: months, totals and prices side by side. Save them as a set to open again; change a set and save the changes into it.",
+          "where": "Products › Explore"
+        }
+      }
+    },
+    "income": {
+      "title": "Income and bills",
+      "items": {
+        "salary": {
+          "q": "How do I add my salary?",
+          "a": "Settings › Regular income: the amount and the day it comes. It counts every month by itself; money that came once is added from ＋.",
+          "where": "Settings › Regular income"
+        },
+        "taxes": {
+          "q": "I pay my own taxes",
+          "a": "Turn on “I pay my own taxes” in Settings › Money: a rate on each taxed income and a fixed sum a month if you have one. Home then shows what is yours after taxes.",
+          "where": "Settings › Money"
+        },
+        "bills": {
+          "q": "Rent and other fixed bills",
+          "a": "Settings › Regular bills: rent, subscriptions, a loan — set once, taken off every month on their day.",
+          "where": "Settings › Regular bills"
+        },
+        "balance": {
+          "q": "What is the balance on Home?",
+          "a": "What is on your accounts now: the amount you entered once, plus income, less purchases and bills since. If it reaches zero, income is probably missing — Home asks.",
+          "where": "Home › Balance"
         }
       }
     },
     "goals": {
-      "title": "Goals and advice",
+      "title": "Goals",
       "items": {
         "kinds": {
           "q": "What goals can I set?",
-          "a": "Money goals — a spending ceiling or a sum to save — and lifestyle ones, such as eating out less, which are mapped to the categories they depend on."
+          "a": "Save for something, spend less on a category, or a habit such as eating out less. The AI checks the goal against what you actually buy and says whether it is doable.",
+          "where": "Plan › Goals"
         },
         "advice": {
           "q": "When do I get advice?",
-          "a": "Once there are about 30 days of receipts. Advice is worked out from what you actually bought and says how much each step would change."
+          "a": "Once there are about 30 days of receipts. Advice names what you actually bought and how much each step would change.",
+          "where": "Plan › a goal"
         }
       }
     },
@@ -65,63 +175,69 @@
       "title": "Household",
       "items": {
         "share": {
-          "q": "How do I share a budget with my family?",
-          "a": "On Profile, create a household and send the invite link. Members see each other's receipts, read only, and the household's month and budget."
+          "q": "Sharing a budget with family",
+          "a": "Create a household in Settings and send the link. Each person keeps their own receipts; Home and Spending can show the family together.",
+          "where": "Settings › Household"
         },
         "private": {
-          "q": "Can I keep a receipt to myself?",
-          "a": "Yes: mark it private. It still counts in the household's total, but the others don't see what is on it."
+          "q": "Keeping a receipt to myself",
+          "a": "Mark it private: its money counts in the family's total, but nobody else sees what, where or when.",
+          "where": "Spending › a receipt › Private"
         }
       }
     },
     "trips": {
-      "title": "Trips and per diem",
+      "title": "Holidays and trips",
       "items": {
-        "kinds": {
-          "q": "Personal and business trips",
-          "a": "A personal trip is your own money: it stays in the month, shown apart, with a budget of its own. A business trip is your employer's: it stays out of your budget and gets a per diem and a settlement."
+        "holiday": {
+          "q": "A holiday with its own budget",
+          "a": "Plan › Holidays: dates and a budget. Receipts from those days join it, and you see each day and what is left.",
+          "where": "Plan › Holidays"
+        },
+        "business": {
+          "q": "Business trips",
+          "a": "Turn on business trips in Settings › Work trips. A business trip stays out of your budget and gets a per diem and a settlement for your employer as PDF or CSV.",
+          "where": "Settings › Work trips"
         },
         "perdiem": {
           "q": "How is the per diem counted?",
-          "a": "Under the Polish business-travel regulation, from the departure and return times you enter: in Poland 45 zł a day, abroad the destination's rate; part days by hours, and meals provided reduce it."
-        },
-        "settlement": {
-          "q": "How do I get the settlement for my employer?",
-          "a": "On the business trip's page enter the advance you received and download the settlement as a PDF with every receipt's photo, or as CSV: expenses + per diem − advance."
-        }
-      }
-    },
-    "data": {
-      "title": "Exports and your data",
-      "items": {
-        "export": {
-          "q": "How do I export my data?",
-          "a": "Receipts and Statistics export the list or table on screen as CSV or JSON. Profile → “Download everything” gives one archive with all your data and the photos still kept. Export files are kept 7 days."
-        },
-        "photos": {
-          "q": "Why did a receipt's photo disappear?",
-          "a": "Receipt photos are kept 90 days, then deleted; the lines and totals read from them stay. Download a business trip's settlement as PDF before then to keep its photos."
-        },
-        "delete": {
-          "q": "How do I delete my account?",
-          "a": "Profile → Delete account, with your password. Everything goes for good; download your data first if you may need it."
+          "a": "From the departure and return times you enter, by the official daily rates — today those of Poland, at home and abroad; part days by hours, and meals provided reduce it. More countries will follow.",
+          "where": "Plan › a business trip"
         }
       }
     },
     "account": {
-      "title": "Account",
+      "title": "Account and data",
       "items": {
         "confirm": {
           "q": "I didn't get the confirmation email",
-          "a": "Look in spam, then press “Send again” on the banner. Until the address is confirmed you can look around but not add receipts."
+          "a": "Look in spam, then press “Send again” on the banner. Until the address is confirmed you can look around but not add receipts.",
+          "where": "Home › banner"
         },
         "password": {
           "q": "I forgot my password",
-          "a": "On the sign-in screen press “Forgot your password?” and follow the link sent to you within an hour."
+          "a": "On the sign-in screen press “Forgot your password?” and follow the link in the email.",
+          "where": "Sign in"
         },
         "install": {
-          "q": "Can I install it as an app?",
-          "a": "Yes: Profile shows how to add it to the home screen of your phone or computer; it opens like an app."
+          "q": "Can I put it on my phone's home screen?",
+          "a": "Yes: open it in your phone's browser and choose “Add to Home screen”. It then opens like an app.",
+          "where": "Your phone's browser"
+        },
+        "export": {
+          "q": "Downloading my data",
+          "a": "Settings › Your data gives one archive with everything you keep here and the photos still kept. Lists on screen can be exported as CSV or JSON.",
+          "where": "Settings › Your data"
+        },
+        "photos": {
+          "q": "Why did a receipt's photo disappear?",
+          "a": "Receipt photos are kept 90 days, then deleted; the lines and totals read from them stay.",
+          "where": "Spending › a receipt"
+        },
+        "delete": {
+          "q": "Deleting my account",
+          "a": "Settings › Your data › Delete account, with your password. Everything goes for good; download your data first if you may need it.",
+          "where": "Settings › Your data"
         }
       }
     }

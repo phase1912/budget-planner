@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -16,50 +16,83 @@ function renderPage(language?: "en" | "uk" | "pl") {
   );
 }
 
-describe("PublicLandingPage (F17.2)", () => {
+describe("PublicLandingPage (F17.2, F17.11)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     languageStore.language = "en";
   });
 
-  it("states the promise and leads to sign-up and sign-in", () => {
+  it("states the promise and leads to sign-up, sign-in and the tour", () => {
     renderPage();
 
     expect(
-      screen.getByRole("heading", { level: 1, name: "Photograph a receipt. Get a budget." }),
+      screen.getByRole("heading", { level: 1, name: "Know where every cent went." }),
     ).toBeInTheDocument();
-    expect(screen.getAllByRole("link", { name: /Create an account/ })[0]).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Start with one receipt" })).toHaveAttribute(
       "href",
       "/register",
     );
-    expect(screen.getAllByRole("link", { name: "I already have one" })[0]).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "See what you can do" })).toHaveAttribute(
+      "href",
+      "#see",
+    );
+    expect(screen.getByRole("link", { name: "I already have one" })).toHaveAttribute(
       "href",
       "/login",
     );
   });
 
-  it("walks through each thing the product does", () => {
+  it("names no country, shop or currency", () => {
+    const { container } = render(
+      <MemoryRouter>
+        <PublicLandingPage />
+      </MemoryRouter>,
+    );
+
+    expect(container.textContent).not.toMatch(/zł|PLN|złot|Biedronka|Lidl|NBP|Poland|Polish rules/);
+  });
+
+  it("shows every line where other apps show one total", () => {
+    renderPage();
+
+    const ours = screen.getByRole("region", { name: "Budget Agent sees every line" });
+    expect(within(ours).getByText("Kids’ crayons")).toBeInTheDocument();
+    expect(within(ours).getByText("Household")).toBeInTheDocument();
+  });
+
+  it("tours Home, Spending, Products and Plan one tab at a time", () => {
+    renderPage();
+
+    const tour = screen.getByRole("region", { name: "See what you can do" });
+    expect(
+      within(tour).getByRole("heading", { level: 3, name: "What is left this month" }),
+    ).toBeInTheDocument();
+    fireEvent.click(within(tour).getByRole("button", { name: "Products" }));
+    expect(
+      within(tour).getByRole("heading", { level: 3, name: "The same milk, cheaper next door" }),
+    ).toBeInTheDocument();
+    expect(within(tour).getByText("Price history per product and shop")).toBeInTheDocument();
+  });
+
+  it("lists what the product does and answers the usual questions", () => {
     renderPage();
 
     for (const title of [
       "Every line, not just the total",
-      "Where the money really goes",
-      "Advice built from your purchases",
+      "Prices across your shops",
+      "Income, taxes and bills",
       "One budget for the family",
       "Holidays and business trips",
+      "Your receipts stay yours",
     ]) {
       expect(screen.getByRole("heading", { level: 3, name: title })).toBeInTheDocument();
     }
-  });
-
-  it("answers the usual questions", () => {
-    renderPage();
-
-    const faq = screen.getByRole("region", { name: "Questions" });
-    expect(within(faq).getByText("Is it free?")).toBeInTheDocument();
-    expect(
-      within(faq).getByText("What if I paid in cash and have no receipt?"),
-    ).toBeInTheDocument();
+    const faq = screen.getByRole("region", { name: "Questions people ask" });
+    expect(within(faq).getByText("Which countries and currencies?")).toBeInTheDocument();
+    expect(within(faq).getByRole("link", { name: "All answers in Help" })).toHaveAttribute(
+      "href",
+      "/help",
+    );
   });
 
   it("links each language's own address", () => {
@@ -101,10 +134,10 @@ describe("PublicLandingPage (F17.2)", () => {
       </MemoryRouter>,
     );
 
-    const previews = container.querySelectorAll("figure");
-    expect(previews.length).toBeGreaterThanOrEqual(5);
-    previews.forEach((preview) => {
-      expect(preview).toHaveAttribute("aria-hidden", "true");
+    const phones = container.querySelectorAll("figure > div");
+    expect(phones.length).toBe(4);
+    phones.forEach((phone) => {
+      expect(phone).toHaveAttribute("aria-hidden", "true");
     });
   });
 });

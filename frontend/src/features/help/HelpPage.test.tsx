@@ -22,20 +22,75 @@ const renderHelp = () =>
     </MemoryRouter>,
   );
 
-describe("HelpPage (F17.10)", () => {
+describe("HelpPage (F17.10, F17.11)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     stores.contactStore.state = { status: "idle", error: null, isLoading: false };
   });
 
-  it("answers by area, every answer with an address of its own", () => {
+  it("answers by area, every answer with an address of its own and where it lives", () => {
     renderHelp();
 
-    const perDiem = screen.getByRole("link", { name: "How is the per diem counted?" });
-    expect(perDiem).toHaveAttribute("href", "#trips-perdiem");
-    expect(document.getElementById("trips-perdiem")).not.toBeNull();
-    expect(screen.getByRole("heading", { level: 2, name: "Trips and per diem" })).toBeVisible();
-    expect(screen.getByText(/in Poland 45 zł a day/)).toBeInTheDocument();
+    const perDiem = document.getElementById("trips-perdiem");
+    expect(perDiem?.tagName).toBe("DETAILS");
+    expect(
+      screen.getByRole("heading", { level: 3, name: "How is the per diem counted?" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Settings › Regular bills")).toBeInTheDocument();
+  });
+
+  it("opens the answer a link points to", () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    render(
+      <MemoryRouter initialEntries={["/help#income-taxes"]}>
+        <HelpPage />
+      </MemoryRouter>,
+    );
+
+    expect(document.getElementById("income-taxes")).toHaveAttribute("open");
+  });
+
+  it("finds answers by a word and says when nothing matches", () => {
+    renderHelp();
+
+    fireEvent.change(screen.getByLabelText("Search the help"), { target: { value: "rent" } });
+
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Answers for “rent”" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 3, name: "Rent and other fixed bills" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 3, name: "How do I add a receipt?" })).toBeNull();
+
+    fireEvent.change(screen.getByLabelText("Search the help"), { target: { value: "zebra" } });
+    expect(screen.getByText(/Nothing matches “zebra”/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Show all" }));
+    expect(
+      screen.getByRole("heading", { level: 3, name: "How do I add a receipt?" }),
+    ).toBeInTheDocument();
+  });
+
+  it("narrows the answers to a topic", () => {
+    renderHelp();
+
+    fireEvent.click(screen.getByRole("button", { name: /Products/ }));
+
+    expect(screen.getByRole("heading", { level: 2, name: "Products" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 3, name: "A product has a strange name" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 3, name: "I forgot my password" })).toBeNull();
+  });
+
+  it("walks through the app in four steps", () => {
+    renderHelp();
+
+    fireEvent.click(screen.getByRole("tab", { name: /Plan the month/ }));
+
+    expect(screen.getByRole("tabpanel")).toHaveTextContent(
+      "Add your salary and rent once in Plan.",
+    );
   });
 
   it("sends a question with the signed-in user's address filled in", () => {
