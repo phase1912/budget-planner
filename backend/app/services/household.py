@@ -5,8 +5,13 @@ import secrets
 import uuid
 from decimal import Decimal
 
+from sqlalchemy import update
+
 from app.api.errors import DomainError, NotFoundError, PermissionDeniedError, ProblemCode
 from app.models.household import Household, HouseholdMember, HouseholdRole
+from app.models.income import Income
+from app.models.income_source import IncomeSource
+from app.models.regular_expense import RegularExpense
 from app.models.user import User
 from app.repository.household import HouseholdRepository
 from app.repository.receipt import HouseholdReaders, ReceiptRepository
@@ -69,6 +74,7 @@ class HouseholdService:
                 "Remove the other members before leaving the household you own.",
                 code=ProblemCode.OWNER_CANNOT_LEAVE,
             )
+        await self._take_back(user.id, household.id)
         await self.households.remove_member(membership)
 
     async def depart(self, user: User) -> None:
@@ -110,6 +116,7 @@ class HouseholdService:
             raise NotFoundError(
                 "No such member in your household.", code=ProblemCode.MEMBER_NOT_FOUND
             )
+        await self._take_back(target.user_id, membership.household_id)
         await self.households.remove_member(target)
         membership.household.members.remove(target)
         return membership.household
@@ -127,12 +134,12 @@ class HouseholdService:
         return HouseholdReaders(reader_id=user.id, member_ids=members)
 
     async def set_budget(self, user: User, limit: Decimal | None) -> Household:
-        """Set or clear what the household means to spend a month (owner only, D7).
+        """Set or clear what the household means to spend a month (any member, D7, F12.8).
 
         Like a personal limit it is presentation only: months are measured against it
         as it stands, never rewritten by it.
         """
-        membership = await self._owned_by(user)
+        membership = await self._membership(user)
         membership.household.budget_limit = limit
         return membership.household
 
@@ -189,6 +196,24 @@ class HouseholdService:
 
     async def _household(self, user: User) -> Household:
         return (await self._membership(user)).household
+
+    async def _take_back(self, member_id: uuid.UUID, household_id: uuid.UUID) -> None:
+        """What a departing member shared becomes theirs alone again (F12.8).
+
+        What the others shared stays with the household; the member stops seeing it with
+        their membership.
+        """
+        for model in (Income, IncomeSource, RegularExpense):
+            await self.households.session.execute(
+                update(model)
+                .where(model.user_id == member_id, model.household_id == household_id)
+                .values(household_id=None)
+            )
+        await self.households.session.execute(
+            update(RegularExpense)
+            .where(RegularExpense.user_id == member_id, RegularExpense.household_id.is_(None))
+            .values(split=None)
+        )
 
     async def _membership(self, user: User) -> HouseholdMember:
         membership = await self.households.membership_of(user.id)

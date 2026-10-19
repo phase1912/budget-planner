@@ -14,6 +14,7 @@ const stores = vi.hoisted(() => ({
       pays_own_taxes: false,
     },
   },
+  householdStore: { household: null, loaded: true, load: vi.fn() },
   incomeStore: {
     month: {
       total: "6200.00",
@@ -231,6 +232,7 @@ describe("PlanPage (F23.2, F23.10, F23.12)", () => {
         amount: "600",
         source: "Side project",
         kind: "side",
+        shared: false,
       });
     });
   });

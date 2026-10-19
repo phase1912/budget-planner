@@ -7,13 +7,15 @@ from decimal import Decimal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.errors import NotFoundError
+from app.api.errors import DomainError, NotFoundError, ProblemCode
+from app.core.context import current_user_id
 from app.domain.income import (
     IncomeChannel,
     MonthIncome,
     Recurring,
     TaxRule,
     month_income,
+    share_of_bill,
     taxed_by_default,
 )
 from app.domain.quota import next_month_start
@@ -23,6 +25,7 @@ from app.models.pending_income import PendingIncome
 from app.models.regular_expense import RegularExpense
 from app.models.tax_payment import TaxPayment
 from app.models.user import User
+from app.repository.household import HouseholdRepository
 from app.repository.income import IncomeRepository
 from app.repository.income_source import IncomeSourceRepository
 from app.repository.pending_income import PendingIncomeRepository
@@ -51,6 +54,40 @@ def tax_rule(user: User) -> TaxRule | None:
     if not user.pays_own_taxes:
         return None
     return TaxRule(user.tax_rate or Decimal(0), user.tax_fixed_monthly or Decimal(0))
+
+
+@dataclass(frozen=True)
+class Whose:
+    """Whose a sum is, for the caller (F12.8): the household's, and who wrote it."""
+
+    shared: bool
+    mine: bool
+    added_by: str | None
+
+
+@dataclass(frozen=True)
+class Sharing:
+    """What the caller's household knows, to say whose each sum is and divide bills."""
+
+    me: uuid.UUID
+    names: dict[uuid.UUID, str]
+    incomes: dict[uuid.UUID, Decimal]
+
+    def whose(self, row: Income | IncomeSource | RegularExpense) -> Whose:
+        """Shared or not, and who wrote it when it was not the caller."""
+        mine = row.user_id == self.me
+        return Whose(
+            row.household_id is not None, mine, None if mine else self.names.get(row.user_id)
+        )
+
+    def part_of(self, bill: RegularExpense) -> Decimal:
+        """The caller's part of a bill: the whole of their own, their share of a shared one."""
+        if bill.household_id is None:
+            return bill.amount
+        everyone = list(self.incomes.values()) or [Decimal(0)]
+        return share_of_bill(
+            bill.amount, bill.split, self.incomes.get(self.me, Decimal(0)), everyone
+        )
 
 
 @dataclass(frozen=True)
@@ -95,13 +132,48 @@ class IncomeService:
         ]
         return MonthIncomeView(first_day, income, entries, paid, regular, bills)
 
+    async def _scope(self, shared: bool) -> uuid.UUID | None:
+        """The household a sum goes to when shared (F12.8), None when it is the caller's.
+
+        DomainError when it is meant to be shared but the caller has no household.
+        """
+        if not shared:
+            return None
+        membership = await HouseholdRepository(self.session).membership_of(_me())
+        if membership is None:
+            raise DomainError(
+                "Only a member of a household can share with it.",
+                code=ProblemCode.NOT_IN_HOUSEHOLD,
+            )
+        return membership.household_id
+
+    async def sharing(self, first_day: date) -> Sharing:
+        """Who is in the caller's household, by name, and their regular incomes (F12.8)."""
+        me = _me()
+        membership = await HouseholdRepository(self.session).membership_of(me)
+        if membership is None:
+            return Sharing(me, {}, {})
+        members = membership.household.members
+        names = {m.user_id: m.user.first_name for m in members}
+        incomes = {m.user_id: Decimal(0) for m in members}
+        for source in await self.sources.running_of(list(names), first_day):
+            if regular_rule(source).runs_in(first_day):
+                incomes[source.user_id] += source.amount
+        return Sharing(me, names, incomes)
+
     async def regular_bills(self) -> list[RegularExpense]:
         """The regular bills still running (F23.18)."""
         return list(await self.bills.current())
 
     async def add_bill(self, request: RegularExpenseRequest, today: date) -> RegularExpense:
         """Start a regular bill: it counts from this month on."""
-        bill = RegularExpense(**request.model_dump(), starts_on=today)
+        household = await self._scope(request.shared)
+        bill = RegularExpense(
+            **request.model_dump(exclude={"shared", "split"}),
+            household_id=household,
+            split=(request.split or "equal") if household else None,
+            starts_on=today,
+        )
         self.bills.add(bill)
         await self.session.flush()
         return bill
@@ -113,8 +185,10 @@ class IncomeService:
         bill = await self.bills.get(bill_id)
         if bill is None or bill.ends_on is not None:
             raise NotFoundError("No such regular bill.")
-        for field, value in request.model_dump().items():
+        for field, value in request.model_dump(exclude={"shared", "split"}).items():
             setattr(bill, field, value)
+        bill.household_id = await self._scope(request.shared)
+        bill.split = (request.split or bill.split or "equal") if bill.household_id else None
         await self.session.flush()
         return bill
 
@@ -135,7 +209,11 @@ class IncomeService:
 
     async def add_regular(self, request: IncomeSourceRequest, today: date) -> IncomeSource:
         """Start a regular income: it counts from this month on."""
-        source = IncomeSource(**request.model_dump(), starts_on=today)
+        source = IncomeSource(
+            **request.model_dump(exclude={"shared"}),
+            household_id=await self._scope(request.shared),
+            starts_on=today,
+        )
         self.sources.add(source)
         await self.session.flush()
         return source
@@ -147,8 +225,9 @@ class IncomeService:
         source = await self.sources.get(source_id)
         if source is None or source.ends_on is not None:
             raise NotFoundError("No such regular income.")
-        for field, value in request.model_dump().items():
+        for field, value in request.model_dump(exclude={"shared"}).items():
             setattr(source, field, value)
+        source.household_id = await self._scope(request.shared)
         await self.session.flush()
         return source
 
@@ -174,10 +253,10 @@ class IncomeService:
         and is kept even while the user does not pay their own taxes, so switching that on
         later reads the past right.
         """
-        data = request.model_dump()
+        data = request.model_dump(exclude={"shared"})
         if data["taxed"] is None:
             data["taxed"] = taxed_by_default(request.kind)
-        income = Income(**data)
+        income = Income(**data, household_id=await self._scope(request.shared))
         self.incomes.add(income)
         await self.session.flush()
         return income
@@ -188,10 +267,11 @@ class IncomeService:
         if income is None:
             raise NotFoundError("No such income.")
         # How an entry came in stays as it was: correcting it does not make it typed.
-        for field, value in request.model_dump(exclude={"channel"}).items():
+        for field, value in request.model_dump(exclude={"channel", "shared"}).items():
             if field == "taxed" and value is None:
                 continue
             setattr(income, field, value)
+        income.household_id = await self._scope(request.shared)
         await self.session.flush()
         return income
 
@@ -238,3 +318,13 @@ class IncomeService:
         """Drop a pending income without making it an entry; NotFoundError if not the user's."""
         if not await self.pending.delete(pending_id):
             raise NotFoundError("No such pending income.")
+
+
+def _me() -> uuid.UUID:
+    """The signed-in user, as the request context holds them."""
+    me = current_user_id.get()
+    if me is None:
+        from app.api.errors import AuthenticationError
+
+        raise AuthenticationError("No user context available.")
+    return me

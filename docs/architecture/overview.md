@@ -153,6 +153,13 @@ The household's month and statistics (F12.5) come from `HouseholdBudgetService`
 only: per member, shared and private apart, and per category over shared receipts. No
 query in it returns a private receipt's merchant, items, category or date.
 
+Money a household shares (F12.8, ADR-0023) — incomes, regular incomes and regular bills —
+is read and changed through `SharedWithHousehold` (`app/repository/shared.py`), the one
+place the ownership filter is widened: a row the caller wrote, or one whose `household_id`
+is the household the caller belongs to now. `IncomeService.sharing` says whose each row is
+and divides shared bills; leaving or removal (`HouseholdService._take_back`) returns a
+member's shared rows to them in the same transaction.
+
 These rules are held together by one suite, `backend/tests/security/test_cross_household_access.py`
 (F12.6): it builds a household with an owner, a member, a removed member and a stranger
 elsewhere, then walks every read that reaches or adds up another member's receipts and

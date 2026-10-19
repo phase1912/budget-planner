@@ -163,7 +163,7 @@ Budget = Annotated[HouseholdBudgetService, Depends(get_household_budget_service)
 async def set_household_budget(
     body: HouseholdBudgetRequest, current_user: CurrentUser, service: Service
 ) -> HouseholdRead:
-    """Set or clear the household's monthly budget (F12.5, D7); 403 unless the owner."""
+    """Set or clear the household's monthly budget (F12.5, D7): any member may (F12.8)."""
     return _read(await service.set_budget(current_user, body.budget_limit), current_user)
 
 

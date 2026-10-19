@@ -144,15 +144,25 @@ async def test_the_month_is_measured_against_the_household_budget(
 
 
 @pytest.mark.asyncio
-async def test_only_the_owner_sets_the_household_budget(db_session: AsyncSession) -> None:
+async def test_any_member_sets_the_household_budget_and_a_stranger_cannot(
+    db_session: AsyncSession,
+) -> None:
+    """F12.8: the family's budget is everyone's to change; outside the household it is 404."""
     me, anna = await _couple()
+    stranger = await UserFactory.create_async()
 
     response = await _call(
         db_session, anna, "PUT", "/api/v1/household/budget", {"budget_limit": "5.00"}
     )
+    refused = await _call(
+        db_session, stranger, "PUT", "/api/v1/household/budget", {"budget_limit": "1.00"}
+    )
 
-    assert response.status_code == 403
-    assert (await _call(db_session, me, "GET", MONTH)).json()["limit"] is None
+    assert response.status_code == 200
+    assert Decimal((await _call(db_session, me, "GET", MONTH)).json()["limit"]["limit"]) == Decimal(
+        "5.00"
+    )
+    assert refused.status_code == 404
 
 
 @pytest.mark.asyncio

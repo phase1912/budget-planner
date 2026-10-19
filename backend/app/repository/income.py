@@ -7,11 +7,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.income import Income
-from app.repository.base import BaseRepository
+from app.repository.shared import SharedWithHousehold
 
 
-class IncomeRepository(BaseRepository[Income]):
-    """Income entries of the signed-in user only (N2)."""
+class IncomeRepository(SharedWithHousehold[Income]):
+    """Income entries of the signed-in user and those their household shares (N2, F12.8)."""
 
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(Income, session)

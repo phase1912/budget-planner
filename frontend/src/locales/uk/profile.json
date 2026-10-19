@@ -220,5 +220,17 @@
     "summary_many": "{{amount}} · {{count}} витрат",
     "summary_other": "{{amount}} · {{count}} витрати",
     "none": "Поки немає"
+  },
+  "whose": {
+    "title": "Чиє це?",
+    "shared": "Спільне з родиною",
+    "onlyMine": "Тільки моє",
+    "split": "Як ділити",
+    "equal": "Порівну",
+    "income": "За доходами",
+    "addedBy": "додано: {{name}}",
+    "yourPart": "ваша частка {{amount}} {{currency}}",
+    "sharedChip": "Спільне",
+    "mineChip": "Моє"
   }
 }

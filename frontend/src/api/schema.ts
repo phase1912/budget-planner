@@ -556,7 +556,7 @@ export interface paths {
         get?: never;
         /**
          * Set Household Budget
-         * @description Set or clear the household's monthly budget (F12.5, D7); 403 unless the owner.
+         * @description Set or clear the household's monthly budget (F12.5, D7): any member may (F12.8).
          */
         put: operations["set_household_budget_api_v1_household_budget_put"];
         post?: never;
@@ -2207,7 +2207,7 @@ export interface paths {
         put?: never;
         /**
          * Add Income
-         * @description Record a sum that came in.
+         * @description Record a sum that came in; `shared` puts it in the household's money (F12.8).
          */
         post: operations["add_income_api_v1_income_post"];
         delete?: never;
@@ -2294,7 +2294,7 @@ export interface paths {
         };
         /**
          * Regular Incomes
-         * @description The regular incomes still running, already net (F23.17).
+         * @description The regular incomes still running, already net — the caller's and shared (F23.17).
          */
         get: operations["regular_incomes_api_v1_income_regular_get"];
         put?: never;
@@ -2319,7 +2319,7 @@ export interface paths {
         get?: never;
         /**
          * Change Regular Income
-         * @description Change a regular income; 404 if it is not the user's (N2).
+         * @description Change a regular income; 404 unless the caller's or their household's (N2, F12.8).
          */
         put: operations["change_regular_income_api_v1_income_regular__source_id__put"];
         post?: never;
@@ -2342,7 +2342,7 @@ export interface paths {
         };
         /**
          * Regular Bills
-         * @description The regular bills still running — rent, subscriptions (F23.18).
+         * @description The regular bills still running — the caller's and shared (F23.18, F12.8).
          */
         get: operations["regular_bills_api_v1_income_bills_get"];
         put?: never;
@@ -2367,7 +2367,7 @@ export interface paths {
         get?: never;
         /**
          * Change Bill
-         * @description Change a regular bill; 404 if it is not the user's (N2).
+         * @description Change a regular bill; 404 unless the caller's or their household's (N2, F12.8).
          */
         put: operations["change_bill_api_v1_income_bills__bill_id__put"];
         post?: never;
@@ -3624,6 +3624,18 @@ export interface components {
         /** IncomeRead */
         IncomeRead: {
             /**
+             * Shared
+             * @default false
+             */
+            shared: boolean;
+            /**
+             * Mine
+             * @default true
+             */
+            mine: boolean;
+            /** Added By */
+            added_by?: string | null;
+            /**
              * Id
              * Format: uuid
              */
@@ -3665,9 +3677,26 @@ export interface components {
             channel: components["schemas"]["IncomeChannel"];
             /** Taxed */
             taxed?: boolean | null;
+            /**
+             * Shared
+             * @default false
+             */
+            shared: boolean;
         };
         /** IncomeSourceRead */
         IncomeSourceRead: {
+            /**
+             * Shared
+             * @default false
+             */
+            shared: boolean;
+            /**
+             * Mine
+             * @default true
+             */
+            mine: boolean;
+            /** Added By */
+            added_by?: string | null;
             /** Name */
             name: string;
             /** Amount */
@@ -3693,6 +3722,8 @@ export interface components {
         /**
          * IncomeSourceRequest
          * @description A regular income, already net (F23.17); `day` is when in the month it comes.
+         *
+         *     `shared` puts it in the household's money (F12.8): every member sees and changes it.
          */
         IncomeSourceRequest: {
             /** Name */
@@ -3706,6 +3737,11 @@ export interface components {
              * @default false
              */
             taxed: boolean;
+            /**
+             * Shared
+             * @default false
+             */
+            shared: boolean;
         };
         /**
          * ItemView
@@ -4820,12 +4856,26 @@ export interface components {
         };
         /** RegularExpenseRead */
         RegularExpenseRead: {
+            /**
+             * Shared
+             * @default false
+             */
+            shared: boolean;
+            /**
+             * Mine
+             * @default true
+             */
+            mine: boolean;
+            /** Added By */
+            added_by?: string | null;
             /** Name */
             name: string;
             /** Amount */
             amount: string;
             /** Day */
             day?: number | null;
+            /** Split */
+            split?: ("equal" | "income") | null;
             /**
              * Id
              * Format: uuid
@@ -4836,10 +4886,15 @@ export interface components {
              * Format: date
              */
             starts_on: string;
+            /** My Part */
+            my_part?: string | null;
         };
         /**
          * RegularExpenseRequest
          * @description A bill paid every month without a receipt — rent, a subscription (F23.18).
+         *
+         *     A shared one (F12.8) is split among the household's members equally or by their
+         *     regular incomes; `split` is ignored for one that is the caller's own.
          */
         RegularExpenseRequest: {
             /** Name */
@@ -4848,6 +4903,13 @@ export interface components {
             amount: number | string;
             /** Day */
             day?: number | null;
+            /**
+             * Shared
+             * @default false
+             */
+            shared: boolean;
+            /** Split */
+            split?: ("equal" | "income") | null;
         };
         /**
          * RenameProductRequest

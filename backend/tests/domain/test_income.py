@@ -113,3 +113,19 @@ def test_a_taxed_regular_income_is_taxed_every_month_an_untaxed_one_is_not() -> 
 
     assert result.taxes == Decimal("2800.00")
     assert result.net == Decimal("8200.00")
+
+
+def test_a_shared_bill_divides_by_income_or_equally() -> None:
+    """F12.8: by income in proportion; equally, or by income while nobody earns."""
+    from app.domain.income import share_of_bill
+
+    rent = Decimal("3000.00")
+    assert share_of_bill(
+        rent, "income", Decimal("9000"), [Decimal("9000"), Decimal("1000")]
+    ) == Decimal("2700.00")
+    assert share_of_bill(
+        rent, "equal", Decimal("9000"), [Decimal("9000"), Decimal("1000")]
+    ) == Decimal("1500.00")
+    assert share_of_bill(
+        rent, "income", Decimal("0"), [Decimal("0"), Decimal("0"), Decimal("0")]
+    ) == Decimal("1000.00")

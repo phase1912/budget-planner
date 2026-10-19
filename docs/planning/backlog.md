@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-25 epics · 169 features · 330 tasks written so far.
+25 epics · 176 features · 342 tasks written so far.
 
 22 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -21,7 +21,7 @@
 | E9 | Web Client Foundation | — | 8 | yes | 1 | Diploma |
 | E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 6 | no | 1 | Out of scope |
 | E11 | Alternative Receipt Intake | — | 6 | yes | 2 | Diploma |
-| E12 | Household & Shared Budgets | — | 6 | yes | 2 | Diploma |
+| E12 | Household & Shared Budgets | — | 10 | yes | 2 | Diploma |
 | E13 | Aggregated Purchase Analytics | — | 8 | yes | 2 | Diploma |
 | E14 | B2B Export & Accounting Integrations | — | 8 | no | 2 | Out of scope |
 | E15 | Receipt Accuracy & Trust | — | 4 | yes | 2 | Diploma |
@@ -30,7 +30,7 @@
 | E18 | Subscriptions and Payments | — | 6 | yes | 2 | Out of scope |
 | E19 | Advertising | — | 4 | yes | 2 | Diploma |
 | E20 | Trips | — | 5 | yes | 2 | Diploma |
-| E21 | Voice and Chat Assistant | — | 6 | yes | 2 | Diploma |
+| E21 | Voice and Chat Assistant | — | 9 | yes | 2 | Diploma |
 | E22 | Android App | — | 3 | yes | 2 | Diploma |
 | E23 | Improvements | — | 19 | no | 2 | Diploma |
 | E24 | Bugfixes | — | 1 | no | 2 | Diploma |
@@ -1054,6 +1054,48 @@ One suite that walks every household-aware endpoint as the owner, a member, a re
 
 - **F12.6.1** Cross-household access suite — A parametrised suite over every endpoint E12 adds or widens: membership grants read only, removal revokes at once, a private receipt's details are never in any response to anyone but its owner, and every write stays owner-only.
 
+### F12.8 — Shared money in the family
+
+*Requirements: —* · *Blocked by: F12.5, F23.17, F23.18*
+
+Today an income, a regular bill or the budget one adult sets is invisible to the other: the family's money is not the family's. Each of them is either "mine" or "shared with the family". A shared one is seen and changed by every adult in the household; a shared bill is split equally or by income. When a member adds one, the app asks once whether it is shared, shared being the default inside a household.
+
+**Demonstrated by:** Add the 3 000 zł flat as a shared bill split by income on your phone; on your wife's phone Plan shows it, she changes it to 3 100, and your Plan follows.
+
+- **F12.8.1** Shared or mine on incomes, bills and the budget — A household scope on regular incomes, regular bills, one-off incomes and the household budget, readable and writable by every adult member (not by a child, F12.10); a split (equal or by income) on shared bills; the household month counts shared ones once. Domain model and ADR-0017 updated; cross-household and child-cannot-write tests (N2).
+- **F12.8.2** Whose it is, on Plan and Settings — "Shared with family / Only mine" when adding or changing one (canvas F_Shared), a chip on every row (Shared, Mine, the member's name), who added it, and the split with each one's part. Checked at 375, 768 and 1280 px.
+
+### F12.9 — The family's month on Home
+
+*Requirements: —* · *Blocked by: F12.8*
+
+Switching Home to the family still shows the first design. The family's month in the new one (canvas F_Home): what is left together, the shared income, bills and budget, and who spends what — each member's share in percent, as a ring, by category or by day — with others' private receipts as one undated sum (ADR-0017).
+
+**Demonstrated by:** Switch Home to Family: the ring says what is left together; "Who spends what" shows you 62 % and Anna 38 %; tap Categories, then By day.
+
+- **F12.9.1** Family Home in the new design — The household month and statistics endpoints extended with each member's share overall and per category; Home's Family view rebuilt after canvas F_Home with the chart switch (share, categories, by day). Checked at 375, 768 and 1280 px.
+
+### F12.10 — Adults and children
+
+*Requirements: N2* · *Blocked by: F12.8*
+
+A family is not only two adults. A member is an adult or a child: a child adds their receipts and sees the family's month but changes nothing shared. The owner is an adult who also invites and removes people; whether only the owner may change the shared budget is the owner's choice.
+
+**Demonstrated by:** Mark Max as a child: on his phone he adds a receipt, but the flat and the budget open read-only.
+
+- **F12.10.1** Roles and what each may do — A role on the membership (adult, child), set by the owner (canvas F_Members); every shared write refuses a child; "only the owner changes the budget" setting; access tests for each role. Checked at 375, 768 and 1280 px.
+
+### F12.11 — What the family buys, line by line
+
+*Requirements: —* · *Blocked by: F12.9, F16.1*
+
+What no bank-fed budget can show, because it never sees a receipt's lines: who buys what, products the family bought twice the same day or week, what on one receipt is the family's and what is one person's, and a family goal's advice naming the products to change.
+
+**Demonstrated by:** Home shows "Bought twice this week: bread and milk, you both, on Tuesday"; a family goal "save 500 a month" lists the swaps that make it, by product.
+
+- **F12.11.1** Who buys what and bought twice — Per member per product over a period from shared receipts only (ADR-0017), the same product bought by two members within a few days, and a card for it on the family Home. Checked at 375, 768 and 1280 px.
+- **F12.11.2** Family goal advice by product — The goal check (F23.13) over the household's shared lines, naming products and the member-neutral swaps that reach the goal, from the family's own prices.
+
 ---
 
 ## E13 — Aggregated Purchase Analytics
@@ -1695,6 +1737,37 @@ The rest of what the screens create or change about the user's purchases, never 
 
 - **F21.6.1** Remaining write tools — Write tools for a receipt's trip, a line's category, a new trip and a product selection, each a card saved through its service; a test that no tool exists for settings, the account or deleting anything. Checked at 375, 768 and 1280 px.
 
+### F21.7 — Everything by voice, approved on a card
+
+*Requirements: —* · *Blocked by: F21.1, F23.15, F12.8*
+
+Anything the user can create or change on a screen can be asked for in the chat — incomes, bills, the budget, goals, accounts and their rules — and removed too, the user's account and settings excepted. Nothing is written until a card shows what was understood: it looks like the screen it belongs to, every field on it can be changed, and Approve (a tap, or saying "approve") saves it. Intent decides the branch the agent takes (an agent graph; LangGraph open source is the candidate).
+
+**Demonstrated by:** Say "raise the budget to 2 500 and stop the gym bill": two cards, change one amount, say "approve"; Plan shows both.
+
+- **F21.7.1** Reusable approve cards — One card component per entity built from the same pieces as its screen (Plan rows, the account card, the goal card), editable fields, Approve and Cancel, and approval by voice. Checked at 375, 768 and 1280 px.
+- **F21.7.2** Intent routing and write tools for every entity — Intent classification routing to read, create, change or remove branches; tools for incomes, bills, the budget, goals, accounts, rules and transfers, each saving only through its service after approval; a test that settings and the account have no tool. Supersedes F21.6.1's "nothing is deleted" for these entities.
+
+### F21.8 — A receipt told, not photographed
+
+*Requirements: —* · *Blocked by: F21.2, F21.7*
+
+"I was at Biedronka today: milk 4, bread 5, apples 7.50" becomes a receipt card with its lines and categories; Approve stores it as a receipt of that shop with our own id, no photo, marked as told. One photo receipt can also be sent into the chat.
+
+**Demonstrated by:** Dictate a shopping trip, fix one price on the card, approve: it is in Spending and its products in Products like any receipt.
+
+- **F21.8.1** Told receipts and a photo in the chat — A receipt channel "told" with lines from speech or text, categorised as read ones are; a single photo sent in the chat goes through the upload pipeline and comes back as a card. Checked at 375, 768 and 1280 px.
+
+### F21.9 — One AI budget a month
+
+*Requirements: —* · *Blocked by: F18.2, F21.1*
+
+Reading receipts and talking to the assistant spend one monthly budget, worth the plan's receipts (10 free, 200 paid), charged by the tokens really used; typing by hand stays free. The user sees one meter.
+
+**Demonstrated by:** Ask three questions and read one receipt: the meter shows what is left in receipts' worth.
+
+- **F21.9.1** Credits by tokens — The cost of a read measured (F18.2.1), credits charged per call by tokens, a cap per message, the quota (F10.6) moved onto credits and the meter on the ＋ screen and in Settings. Checked at 375, 768 and 1280 px.
+
 ---
 
 ## E22 — Android App
@@ -1856,13 +1929,13 @@ What the user has now: a starting balance entered once — in the first sign-in 
 
 **Demonstrated by:** Start with 5 000 zł; store a 169 zł receipt and the balance reads 4 831 zł; add the salary and it grows by it.
 
-### F23.15 — Assets and savings
+### F23.15 — Accounts and money between them
 
-*Requirements: —* · *Blocked by: F23.14*
+*Requirements: —* · *Blocked by: F23.14, F12.8*
 
-Later, not in this branch: the third of "income · spending · assets": what else the user owns or puts aside — a savings pot, a deposit, money on another card, a car — beside the balance for a picture of everything they have, behind two-factor sign-in; whether and how it may be kept decided first (ADR-0020).
+Where the money is, for a family with a business too: accounts the user names (personal, business, deposit — a deposit just an amount for now), each personal or shared with the family. Money arrives ON an account FROM outside (income) or from another own account (a transfer, neither income nor spending). A business account carries the tax rule (a rate per payment in — common ones offered, any one allowed), so a payment shows the tax and the clean amount at once; regular bills (ZUS, an accountant) and regular transfers ("6 000 to our card on the 10th") belong to an account and post themselves on their day — a day already past this month starts next month. A regular income is exact or about (230 000 a year ÷ 12): an "about" one shows as expected on its day until the real amount is confirmed; a bonus is a one-off. Every account keeps a bank-like history; this month's entries can be changed, earlier months are closed. Income from email whose account is unknown waits in "To check" with the account to pick. Without accounts, everything works as today.
 
-**Demonstrated by:** Add a 10 000 zł deposit and see it beside the balance.
+**Demonstrated by:** Add a shared business account with 5 % tax, ZUS 1 600 on the 20th and 6 000 to "Our card" on the 10th; press ＋, enter 10 000 from a client and see −500 tax, 9 500 clean; on the 10th the transfer appears in both histories by itself.
 
 ### F23.16 — Paying one's own taxes
 

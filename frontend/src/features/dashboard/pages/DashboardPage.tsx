@@ -192,7 +192,12 @@ export const DashboardPage = observer(function DashboardPage() {
                       setConfirming(true);
                       void incomeStore
                         .receive(
-                          { amount: usual, source: t("edit.incomeSource"), kind: "salary" },
+                          {
+                            amount: usual,
+                            source: t("edit.incomeSource"),
+                            kind: "salary",
+                            shared: householdStore.household !== null,
+                          },
                           today,
                           shown,
                         )
@@ -298,7 +303,12 @@ export const DashboardPage = observer(function DashboardPage() {
             currency={currency}
             onSave={(amount) =>
               incomeStore.receive(
-                { amount, source: t("received.source"), kind: "other" },
+                {
+                  amount,
+                  source: t("received.source"),
+                  kind: "other",
+                  shared: householdStore.household !== null,
+                },
                 today,
                 running ? shown : budgetStore.current,
               )

@@ -41,7 +41,8 @@
     "decideTax": "Płacisz podatki samodzielnie: zdecyduj niżej, czy płacisz od tego podatek.",
     "bills": "Stałe {{amount}}",
     "billsTitle": "Schodzi co miesiąc",
-    "noBills": "Mieszkanie, subskrypcje — dodaj je, a będą liczone same."
+    "noBills": "Mieszkanie, subskrypcje — dodaj je, a będą liczone same.",
+    "shared": "Wspólne z rodziną"
   },
   "budget": {
     "title": "Budżet miesięczny",

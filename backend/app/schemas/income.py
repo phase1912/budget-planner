@@ -3,10 +3,23 @@
 import uuid
 from datetime import date
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.domain.income import IncomeChannel, IncomeKind
+
+
+class Whose(BaseModel):
+    """Whose a sum is, as the caller sees it (F12.8).
+
+    `shared` — the household's; `mine` — the caller wrote it; `added_by` — the first name
+    of the member who did, when that is someone else.
+    """
+
+    shared: bool = False
+    mine: bool = True
+    added_by: str | None = None
 
 
 class IncomeRequest(BaseModel):
@@ -18,6 +31,8 @@ class IncomeRequest(BaseModel):
     kind: IncomeKind = IncomeKind.SALARY
     channel: IncomeChannel = IncomeChannel.MANUAL
     taxed: bool | None = None
+    # Shared with the household (F12.8): every member sees and changes it.
+    shared: bool = False
     """Whether taxes are set aside from it (F23.16); left out, earnings are and gifts,
     refunds and sales are not — and a change leaves it as it was."""
 
@@ -34,7 +49,7 @@ class IncomeDraft(BaseModel):
     kind: IncomeKind
 
 
-class IncomeRead(BaseModel):
+class IncomeRead(Whose):
     id: uuid.UUID
     received_on: date
     amount: Decimal
@@ -103,15 +118,19 @@ class TaxPaymentRead(TaxPaymentRequest):
 
 
 class IncomeSourceRequest(BaseModel):
-    """A regular income, already net (F23.17); `day` is when in the month it comes."""
+    """A regular income, already net (F23.17); `day` is when in the month it comes.
+
+    `shared` puts it in the household's money (F12.8): every member sees and changes it.
+    """
 
     name: str = Field(min_length=1, max_length=80)
     amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
     day: int | None = Field(None, ge=1, le=31)
     taxed: bool = False
+    shared: bool = False
 
 
-class IncomeSourceRead(IncomeSourceRequest):
+class IncomeSourceRead(IncomeSourceRequest, Whose):
     id: uuid.UUID
     starts_on: date
 
@@ -119,16 +138,24 @@ class IncomeSourceRead(IncomeSourceRequest):
 
 
 class RegularExpenseRequest(BaseModel):
-    """A bill paid every month without a receipt — rent, a subscription (F23.18)."""
+    """A bill paid every month without a receipt — rent, a subscription (F23.18).
+
+    A shared one (F12.8) is split among the household's members equally or by their
+    regular incomes; `split` is ignored for one that is the caller's own.
+    """
 
     name: str = Field(min_length=1, max_length=80)
     amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
     day: int | None = Field(None, ge=1, le=31)
+    shared: bool = False
+    split: Literal["equal", "income"] | None = None
 
 
-class RegularExpenseRead(RegularExpenseRequest):
+class RegularExpenseRead(RegularExpenseRequest, Whose):
     id: uuid.UUID
     starts_on: date
+    # The caller's part of a shared bill, by its split; the whole for one's own.
+    my_part: Decimal | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
