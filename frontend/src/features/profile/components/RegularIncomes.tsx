@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Button, Input, Select, Switch } from "@/shared/components";
@@ -25,15 +25,19 @@ const EMPTY: Draft = { name: "", amount: "", day: "", taxed: false };
  * Regular incomes or regular bills, edited in place (F23.17, F23.18): a salary, a side
  * job, a pension — or rent, a subscription — each counted every month by itself from now
  * on. For one who pays their own taxes, an income says whether the tax comes out of it
- * (F23.16). Used in Settings, Plan and the first-sign-in setup.
+ * (F23.16). Used in Settings, Plan and the first-sign-in setup: a row opens for changes
+ * in place, with Stop beside Save, so nothing else has to be opened.
  */
 export const RegularIncomes = observer(function RegularIncomes({
   currency: chosenCurrency,
   kind = "income",
+  onChanged,
 }: {
   /** The currency being chosen, before it is saved — in the first-sign-in setup. */
   currency?: string;
   kind?: "income" | "bill";
+  /** Called after one is added, changed or stopped — Plan refreshes the month's figures. */
+  onChanged?: () => void;
 }) {
   const { incomeStore, authStore } = useStores();
   const { t } = useTranslation("profile");
@@ -75,12 +79,14 @@ export const RegularIncomes = observer(function RegularIncomes({
       : editing === "new"
         ? await incomeStore.addRegular({ ...base, taxed: draft.taxed }, today)
         : await incomeStore.changeRegular(editing ?? "", { ...base, taxed: draft.taxed });
-    if (ok) setEditing(null);
+    if (!ok) return;
+    setEditing(null);
+    onChanged?.();
   };
 
   const form = (
     <form
-      className="flex flex-col gap-3 rounded-card control-fill p-3.5"
+      className="flex flex-col gap-3 rounded-card border-2 border-primary p-3.5"
       onSubmit={(event) => {
         event.preventDefault();
         if (valid) void save();
@@ -142,7 +148,9 @@ export const RegularIncomes = observer(function RegularIncomes({
               void (
                 bill ? incomeStore.endBill(editing, today) : incomeStore.endRegular(editing, today)
               ).then((ok) => {
-                if (ok) setEditing(null);
+                if (!ok) return;
+                setEditing(null);
+                onChanged?.();
               });
             }}
           >
@@ -207,6 +215,7 @@ export const RegularIncomes = observer(function RegularIncomes({
                   <span className="shrink-0 text-lg font-extrabold tabular-nums">
                     {WHOLE.format(Number(income.amount))} {currency}
                   </span>
+                  <Pencil size={15} aria-hidden="true" className="shrink-0 text-muted-foreground" />
                 </button>
               </li>
             ),

@@ -32,7 +32,7 @@ describe("App Router", () => {
       </MemoryRouter>,
     );
     expect(
-      screen.getByRole("heading", { name: "Photograph a receipt. Get a budget." }),
+      screen.getByRole("heading", { level: 1, name: "Know where every cent went." }),
     ).toBeInTheDocument();
   });
 });

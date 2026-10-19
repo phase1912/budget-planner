@@ -11,7 +11,6 @@ import { useStores } from "@/stores/StoreContext";
 import { IncomeDialog } from "./IncomeDialog";
 import { PlanGoals } from "./PlanGoals";
 import { RegularIncomes } from "@/features/profile/components/RegularIncomes";
-import { SettingsSheet } from "@/features/profile/components/SettingsRows";
 
 const WHOLE = numberFormat({ maximumFractionDigits: 0 });
 const MONTH = dateFormat({ month: "long", year: "numeric" });
@@ -28,7 +27,6 @@ export const PlanPage = observer(function PlanPage() {
   const [incomeEntry, setIncomeEntry] = useState<IncomeEntry | null | "new">(null);
   const [editingBudget, setEditingBudget] = useState(false);
   const [payingTaxes, setPayingTaxes] = useState(false);
-  const [editingRegular, setEditingRegular] = useState<"income" | "bill" | null>(null);
   const user = authStore.user;
   const currency = user?.currency ?? "PLN";
   const { year, month } = budgetStore.current;
@@ -41,6 +39,11 @@ export const PlanPage = observer(function PlanPage() {
   }, [incomeStore, budgetStore, tripsStore, goalsStore, year, month]);
 
   const income = incomeStore.month;
+  // A regular income or bill changed in place: the month's figures and the balance follow.
+  const refresh = () => {
+    void incomeStore.load(year, month);
+    void incomeStore.loadBalance(budgetStore.today);
+  };
   const summary = budgetStore.summary;
   const budget = user?.budget_limit == null ? null : Number(user.budget_limit);
   const spent = summary?.month === month ? Number(summary.total) : 0;
@@ -135,39 +138,10 @@ export const PlanPage = observer(function PlanPage() {
             </Button>
           </div>
         )}
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-sm font-bold tracking-[0.06em] text-muted-foreground uppercase">
-            {t("income.regular")}
-          </span>
-          <button
-            type="button"
-            className="min-h-11 text-md font-bold text-primary"
-            onClick={() => {
-              setEditingRegular("income");
-            }}
-          >
-            {(income?.regular.length ?? 0) > 0 ? t("income.editRegular") : t("income.setRegular")}
-          </button>
-        </div>
-        {income && income.regular.length > 0 ? (
-          <ul className="m-0 flex list-none flex-col divide-y divide-border p-0">
-            {income.regular.map((regular) => (
-              <li key={regular.id} className="flex min-h-12 items-center gap-3 py-1.5">
-                <span className="flex flex-1 flex-col">
-                  <span className="text-lg font-semibold">{regular.name}</span>
-                  {paysOwnTaxes && regular.taxed && (
-                    <span className="text-base text-muted-foreground">
-                      {t("income.taxedShort")}
-                    </span>
-                  )}
-                </span>
-                <span className="text-lg font-bold tabular-nums">
-                  {WHOLE.format(Number(regular.amount))} {currency}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
+        <span className="text-sm font-bold tracking-[0.06em] text-muted-foreground uppercase">
+          {t("income.regular")}
+        </span>
+        {income?.regular.length === 0 && (
           <p className="m-0 text-base text-muted-foreground">
             {MONTH.format(new Date(year, month - 1, 1))} ·{" "}
             {user?.usual_income != null
@@ -175,6 +149,7 @@ export const PlanPage = observer(function PlanPage() {
               : t("income.usualNone")}
           </p>
         )}
+        <RegularIncomes kind="income" onChanged={refresh} />
         <span className="text-sm font-bold tracking-[0.06em] text-muted-foreground uppercase">
           {t("income.extra")}
         </span>
@@ -214,34 +189,10 @@ export const PlanPage = observer(function PlanPage() {
         >
           {t("income.add")}
         </AddButton>
-        <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
-          <span className="text-sm font-bold tracking-[0.06em] text-muted-foreground uppercase">
-            {t("income.billsTitle")}
-          </span>
-          <button
-            type="button"
-            className="min-h-11 text-md font-bold text-primary"
-            onClick={() => {
-              setEditingRegular("bill");
-            }}
-          >
-            {(income?.bills.length ?? 0) > 0 ? t("income.editRegular") : t("income.setRegular")}
-          </button>
-        </div>
-        {income && income.bills.length > 0 ? (
-          <ul className="m-0 flex list-none flex-col divide-y divide-border p-0">
-            {income.bills.map((bill) => (
-              <li key={bill.id} className="flex min-h-12 items-center justify-between gap-3 py-1.5">
-                <span className="text-lg font-semibold">{bill.name}</span>
-                <span className="text-lg font-bold tabular-nums">
-                  −{WHOLE.format(Number(bill.amount))} {currency}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="m-0 text-base text-muted-foreground">{t("income.noBills")}</p>
-        )}
+        <span className="border-t border-border pt-3 text-sm font-bold tracking-[0.06em] text-muted-foreground uppercase">
+          {t("income.billsTitle")}
+        </span>
+        <RegularIncomes kind="bill" onChanged={refresh} />
       </Section>
 
       <Section
@@ -375,18 +326,6 @@ export const PlanPage = observer(function PlanPage() {
             void incomeStore.loadBalance(budgetStore.today);
           }}
         />
-      )}
-      {editingRegular && (
-        <SettingsSheet
-          title={editingRegular === "bill" ? t("income.billsTitle") : t("income.regular")}
-          onClose={() => {
-            setEditingRegular(null);
-            void incomeStore.load(year, month);
-            void incomeStore.loadBalance(budgetStore.today);
-          }}
-        >
-          <RegularIncomes kind={editingRegular} />
-        </SettingsSheet>
       )}
       {payingTaxes && (
         <AmountDialog

@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-25 epics · 167 features · 328 tasks written so far.
+25 epics · 169 features · 330 tasks written so far.
 
 22 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -26,13 +26,13 @@
 | E14 | B2B Export & Accounting Integrations | — | 8 | no | 2 | Out of scope |
 | E15 | Receipt Accuracy & Trust | — | 4 | yes | 2 | Diploma |
 | E16 | Personal Price History | — | 4 | yes | 2 | Diploma |
-| E17 | Landing, Search and Analytics | — | 10 | yes | 2 | Diploma |
+| E17 | Landing, Search and Analytics | — | 11 | yes | 2 | Diploma |
 | E18 | Subscriptions and Payments | — | 6 | yes | 2 | Out of scope |
 | E19 | Advertising | — | 4 | yes | 2 | Diploma |
 | E20 | Trips | — | 5 | yes | 2 | Diploma |
 | E21 | Voice and Chat Assistant | — | 6 | yes | 2 | Diploma |
 | E22 | Android App | — | 3 | yes | 2 | Diploma |
-| E23 | Improvements | — | 18 | no | 2 | Diploma |
+| E23 | Improvements | — | 19 | no | 2 | Diploma |
 | E24 | Bugfixes | — | 1 | no | 2 | Diploma |
 
 ---
@@ -1423,6 +1423,17 @@ A user with a question finds the answer without leaving the product, and when th
 - **F17.10.1** Help page — /help with questions and answers grouped by area, each answer linkable, in three languages through the locales, prerendered with the public pages, linked from the header, the account menu, the phone's profile menu and the footer. Checked at 375, 768 and 1280 px.
 - **F17.10.2** Contact form — A form — reply address (filled in for a signed-in user), topic, message — whose submission is mailed to the administrators (admin_emails) through the EmailSender port, rate-limited per address and IP, with a honeypot field against bots and a length limit; the sender gets a copy confirming it was received. Checked at 375, 768 and 1280 px.
 
+### F17.11 — The public site in the new design
+
+*Requirements: —* · *Blocked by: F17.2, F17.10, F23.2*
+
+The landing and Help still show the first design and the app as it was before E23: old screens, old paths (Profile, Categories, Receipts) and Polish shops and złoty on the front page. The product is for any country, so the public pages say nothing tied to one: amounts follow the visitor's language, shops are generic. The landing follows variant C of the design canvas — a large headline over three phones showing the real screens, "one total vs every line", three steps, a tabbed "see what you can do" over Home, Spending, Products and Plan, the features, a free card, questions and a closing call. Help becomes something to use, not to read through: a search, the app in four steps, topics that filter the answers, each answer saying where in the app the thing is, and the contact form beneath.
+
+**Demonstrated by:** On a phone, open the landing, tap through Home, Spending, Products and Plan in "see what you can do", then open Help, search "rent" and follow the answer to Plan › Regular bills; switch the language to Polish and see both pages in it.
+
+- **F17.11.1** Landing in the new design — The landing rebuilt after the canvas's "Landing C" (docs/design/v2.md): hero with three phones drawn with the app's own ring, colours and rows on sample data, "most apps see one total, Budget Agent sees every line", three steps, the tabbed Home / Spending / Products / Plan showcase, six feature cards, the free plan, the questions and the closing call, in the v2 tokens and palette. No country, shop or currency is named; sample amounts are formatted for the page's language. All text through the locales in en, uk and pl, still prerendered with its title, description and previews per language. Checked at 375, 768 and 1280 px.
+- **F17.11.2** Help that is easy to use — /help rebuilt after the canvas's "Help" (docs/design/v2.md): a search over questions and answers, "the app in four steps" (add a receipt, check what was read, see where it went, plan the month), topic cards that filter the answers (receipts, spending, products, income and bills, goals, household, holidays and trips, account and data), answers rewritten for the app as it is now, each with where it lives ("Plan › Regular bills"), each still linkable, and the contact form of F17.10.2 beneath. Three languages, prerendered. Checked at 375, 768 and 1280 px.
+
 ---
 
 ## E18 — Subscriptions and Payments
@@ -1876,6 +1887,14 @@ A salary, a side job, a pension — set once in Settings or the first-sign-in se
 Rent, subscriptions, a loan — set once, gone every month by themselves: off what is left on Home and in Plan and off the balance on their day, never counted as purchases in Spending's figures, and listed there in their own section.
 
 **Demonstrated by:** Add rent of 3 000 zł on the 5th; Plan shows spent · bills · free, and the balance drops by 3 000 on the 5th of each month.
+
+### F23.19 — Where receipts and categories live
+
+*Requirements: —*
+
+Not decided yet. Spending mixes the receipts list and the categories behind one switch, which reads as clutter. Keep the receipts list (a receipt is still fixed or deleted from it) and the review of uncertain items; move managing categories and the remembered rules to Settings. Three ways are drawn in the design canvas (https://claude.ai/artifact/J4TvghztEyxSjmfyNWXqet): A — receipts stay in Spending, items sorted card by card; B — a clean Spending with a category drill-down and receipts as their own history with search and filters; C — one "To check" inbox for receipts that do not add up, items without a category and income from email. Pick one with the user, update docs/design, then build it.
+
+**Demonstrated by:** Open Spending and see no receipts/categories switch; fix or delete a receipt from its history; sort uncategorised items one at a time; rename a category in Settings.
 
 ---
 

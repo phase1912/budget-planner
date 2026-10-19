@@ -1,127 +1,245 @@
 {
   "title": "Pomoc",
-  "intro": "Odpowiedzi na typowe pytania według obszarów. Nie ma Twojego? Napisz do nas na dole strony.",
+  "intro": "Jak działa aplikacja krok po kroku i odpowiedzi na częste pytania. Szukaj, wybierz temat albo napisz do nas na dole strony.",
+  "heading": "W czym pomóc?",
+  "search": "Szukaj w pomocy",
+  "searchPlaceholder": "Szukaj: podatki, czynsz, e-paragon, rodzina…",
+  "steps": {
+    "title": "Zacznij tutaj: aplikacja w czterech krokach",
+    "label": "Kroki",
+    "add": {
+      "title": "Dodaj paragon",
+      "how": [
+        "Dotknij ＋ na środku dolnego paska.",
+        "Zrób zdjęcie, wybierz zdjęcia lub PDF albo przekaż e-paragon na swój adres.",
+        "Poczekaj kilka sekund, aż każda pozycja zostanie odczytana."
+      ]
+    },
+    "check": {
+      "title": "Sprawdź, co odczytano",
+      "how": [
+        "Przejrzyj pozycje i ich kategorie.",
+        "Wszystko niepewne jest zaznaczone na żółto — popraw ołówkiem.",
+        "Dotknij Zapisz. Wcześniej nic nie jest zapisywane."
+      ]
+    },
+    "see": {
+      "title": "Zobacz, na co poszło",
+      "how": [
+        "Start pokazuje, ile zostało w tym miesiącu — dotknij pierścienia, by zmienić widok.",
+        "Wydatki pokazują kategorie i każdy dzień.",
+        "Produkty pokazują, ile co kosztuje w każdym sklepie."
+      ]
+    },
+    "plan": {
+      "title": "Zaplanuj miesiąc",
+      "how": [
+        "Dodaj wynagrodzenie i czynsz raz w Planie.",
+        "Ustaw cel — AI go sprawdzi.",
+        "Zaplanuj urlop z własnym budżetem."
+      ]
+    }
+  },
+  "topics": "Tematy",
+  "answers": {
+    "common": "Częste pytania",
+    "for": "Odpowiedzi dla „{{query}}”",
+    "all": "Pokaż wszystko",
+    "none": "Nic nie pasuje do „{{query}}”. Napisz do nas poniżej — odpowie człowiek.",
+    "count_one": "{{count}} odpowiedź",
+    "count_few": "{{count}} odpowiedzi",
+    "count_many": "{{count}} odpowiedzi",
+    "count_other": "{{count}} odpowiedzi",
+    "where": "W aplikacji:"
+  },
   "areas": {
     "receipts": {
       "title": "Paragony",
       "items": {
         "photo": {
           "q": "Jak dodać paragon?",
-          "a": "Naciśnij „Prześlij” (+ na telefonie) i zrób zdjęcie paragonu lub wybierz plik: JPEG, PNG, HEIC albo PDF. Sklep, data, każda pozycja i suma zostaną odczytane; sprawdź je i zapisz."
+          "a": "Dotknij ＋ i zrób zdjęcie albo wybierz zdjęcia lub PDF. Sklep, data, każda pozycja i suma zostaną odczytane; sprawdź je i dotknij Zapisz.",
+          "where": "＋ › Zrób zdjęcie"
         },
         "long": {
           "q": "Długi paragon nie mieści się na jednym zdjęciu",
-          "a": "Zrób kilka zachodzących na siebie zdjęć, do 10 na jeden paragon. Pozycje widoczne na dwóch zdjęciach liczą się raz."
+          "a": "Sfotografuj go w częściach lekko na siebie nachodzących, do 10 zdjęć. Pozycja widoczna na dwóch zdjęciach liczy się raz.",
+          "where": "＋ › Zrób zdjęcie"
         },
         "email": {
-          "q": "Jak przesłać e-paragon?",
-          "a": "W profilu znajdziesz swój adres do przekazywania. Przekaż tam e-mail z paragonem sklepu z adresu swojego konta, a pojawi się w paragonach po chwili — do 20 dziennie."
+          "q": "Jak przekazać e-paragon?",
+          "a": "W Ustawienia › Paragony e-mailem jest Twój adres. Prześlij tam maila ze sklepu z adresu swojego konta — paragon pojawi się po minucie, do 20 dziennie.",
+          "where": "Ustawienia › Paragony e-mailem"
+        },
+        "total": {
+          "q": "Suma nie zgadza się z pozycjami",
+          "a": "Zwykle pominięto rabat: dotknij „Dodaj rabat”, a zostanie rozłożony na pozycje. Jeśli brakuje pozycji, otwórz paragon i popraw. Rabat, którego w ogóle nie ma na paragonie, też dodaje się z paragonu.",
+          "where": "Wydatki › paragon › Popraw"
         },
         "manual": {
           "q": "Zakup bez paragonu",
-          "a": "W paragonach lub na ekranie przesyłania wybierz „Bez paragonu” i wpisz co, kiedy i za ile. Liczy się jak każdy paragon, oznaczony jako bez dokumentu."
+          "a": "Na ekranie ＋ wybierz „Bez paragonu” i wpisz co, kiedy i ile. Liczy się jak każdy paragon.",
+          "where": "＋ › Bez paragonu"
         },
         "limit": {
           "q": "Ile paragonów mogę dodać?",
-          "a": "Odczytanie paragonu to wywołanie modelu, więc każde konto ma miesięczny limit odczytanych paragonów, widoczny na ekranie przesyłania i w profilu. Wydatki wpisane ręcznie się nie liczą."
+          "a": "Odczytanie paragonu kosztuje wywołanie modelu, więc plan darmowy odczytuje 10 miesięcznie; licznik jest na ekranie ＋ i w Ustawieniach. Wydatki wpisane ręcznie się nie liczą.",
+          "where": "Ustawienia › Plan"
         },
         "foreign": {
           "q": "Paragon w innej walucie",
-          "a": "Jest przeliczany na walutę konta po kursie Narodowego Banku Polskiego, a obie kwoty zostają przy paragonie."
+          "a": "Jest przeliczany na walutę konta po kursie z jego dnia, a obie kwoty zostają na paragonie.",
+          "where": "Wydatki › paragon"
         }
       }
     },
-    "categories": {
-      "title": "Kategorie",
+    "spending": {
+      "title": "Wydatki",
       "items": {
-        "how": {
-          "q": "Jak pozycje trafiają do kategorii?",
-          "a": "Każda pozycja dostaje kategorię przy odczycie. Te, co do których odczyt nie był pewny, czekają na sprawdzenie na ekranie Kategorie."
+        "where": {
+          "q": "Gdzie zobaczę, ile wydano?",
+          "a": "Wydatki pokazują miesiąc według kategorii na tle poprzedniego, słupek na każdy dzień i paragony za nimi. Możesz wybrać poprzedni miesiąc, rok albo własne daty.",
+          "where": "Wydatki"
         },
-        "fix": {
+        "category": {
           "q": "Pozycja jest w złej kategorii",
-          "a": "Otwórz paragon i wybierz dla pozycji inną kategorię. Nazwa poprawiona dla sklepu zostanie zapamiętana przy jego kolejnych paragonach."
+          "a": "Otwórz paragon i wybierz dla pozycji inną kategorię. Pozycje, których aplikacja nie była pewna, czekają w Wydatkach, a poprawiona dla sklepu nazwa zostanie zapamiętana.",
+          "where": "Wydatki › Pozycje bez kategorii"
         },
-        "rules": {
-          "q": "Czy mogę ustawić własne reguły?",
-          "a": "Tak: w Kategorie → Zarządzaj utwórz własne kategorie i reguły — słowo kluczowe, które zawsze kieruje pasujące pozycje do danej kategorii."
+        "family": {
+          "q": "Jak zobaczyć wydatki rodziny?",
+          "a": "W rodzinie przełącz Wydatki z „Moje” na rodzinę: kategorie wspólnych paragonów wszystkich i słupek na dzień w kolorze każdej osoby.",
+          "where": "Wydatki › Moje / Rodzina"
+        }
+      }
+    },
+    "products": {
+      "title": "Produkty",
+      "items": {
+        "cheaper": {
+          "q": "Gdzie ten sam produkt jest tańszy?",
+          "a": "Produkty pokazują wszystko, co kupujesz, jakkolwiek drukuje to każdy sklep. Produkt ma cenę w każdym sklepie i znacznik, gdy inny Twój sklep sprzedał go ostatnio taniej.",
+          "where": "Produkty"
+        },
+        "rename": {
+          "q": "Produkt ma dziwną nazwę",
+          "a": "Dotknij ołówka obok i nadaj własną nazwę. Paragony drukujące go po staremu i tak do niego trafią.",
+          "where": "Produkty › ołówek"
+        },
+        "sets": {
+          "q": "Obserwowanie kilku produktów razem",
+          "a": "Zaznacz je i otwórz „Analiza”: miesiące, sumy i ceny obok siebie. Zapisz jako zestaw, by otwierać ponownie; zmień zestaw i zapisz w nim zmiany.",
+          "where": "Produkty › Analiza"
+        }
+      }
+    },
+    "income": {
+      "title": "Dochody i rachunki",
+      "items": {
+        "salary": {
+          "q": "Jak dodać wynagrodzenie?",
+          "a": "Ustawienia › Stałe dochody: kwota i dzień, w którym przychodzi. Liczy się co miesiąc samo; jednorazowe wpływy dodaje się przez ＋.",
+          "where": "Ustawienia › Stałe dochody"
+        },
+        "taxes": {
+          "q": "Podatki płacę sam(a)",
+          "a": "Włącz „Sam płacę podatki” w Ustawienia › Pieniądze: stawka od każdego opodatkowanego dochodu i stała kwota miesięcznie, jeśli jest. Start pokaże, co jest Twoje po podatkach.",
+          "where": "Ustawienia › Pieniądze"
+        },
+        "bills": {
+          "q": "Czynsz i inne stałe rachunki",
+          "a": "Ustawienia › Stałe wydatki: czynsz, subskrypcje, kredyt — ustawiane raz i odejmowane co miesiąc w swoim dniu.",
+          "where": "Ustawienia › Stałe wydatki"
+        },
+        "balance": {
+          "q": "Czym jest saldo na Starcie?",
+          "a": "Tym, co teraz masz na kontach: kwota wpisana raz, plus dochody, minus zakupy i rachunki od tamtej pory. Jeśli spadło do zera, pewnie brakuje dochodu — Start zapyta.",
+          "where": "Start › Saldo"
         }
       }
     },
     "goals": {
-      "title": "Cele i porady",
+      "title": "Cele",
       "items": {
         "kinds": {
           "q": "Jakie cele mogę ustawić?",
-          "a": "Finansowe — limit wydatków albo kwotę do odłożenia — oraz dotyczące stylu życia, np. rzadsze jedzenie na mieście, powiązane z kategoriami, od których zależą."
+          "a": "Oszczędzać na coś, wydawać mniej w kategorii albo nawyk, np. rzadziej jeść na mieście. AI sprawdza cel na Twoich prawdziwych zakupach i mówi, czy jest wykonalny.",
+          "where": "Plan › Cele"
         },
         "advice": {
-          "q": "Kiedy pojawiają się porady?",
-          "a": "Gdy zbierze się około 30 dni paragonów. Porady wynikają z tego, co faktycznie kupujesz, i pokazują, ile zmieni każdy krok."
+          "q": "Kiedy pojawią się porady?",
+          "a": "Gdy zbierze się około 30 dni paragonów. Porada wymienia to, co naprawdę kupujesz, i ile zmieni każdy krok.",
+          "where": "Plan › cel"
         }
       }
     },
     "household": {
-      "title": "Gospodarstwo domowe",
+      "title": "Rodzina",
       "items": {
         "share": {
-          "q": "Jak prowadzić wspólny budżet z rodziną?",
-          "a": "W profilu utwórz gospodarstwo i wyślij link z zaproszeniem. Członkowie widzą swoje paragony (tylko do odczytu), miesiąc i budżet gospodarstwa."
+          "q": "Wspólny budżet z rodziną",
+          "a": "Utwórz gospodarstwo domowe w Ustawieniach i wyślij link. Każdy trzyma swoje paragony; Start i Wydatki mogą pokazywać rodzinę razem.",
+          "where": "Ustawienia › Gospodarstwo domowe"
         },
         "private": {
-          "q": "Czy mogę zachować paragon dla siebie?",
-          "a": "Tak: oznacz go jako prywatny. Wlicza się do sumy gospodarstwa, ale inni nie widzą, co na nim jest."
+          "q": "Paragon tylko dla siebie",
+          "a": "Oznacz go jako prywatny: jego kwota liczy się do sumy rodziny, ale nikt inny nie widzi co, gdzie i kiedy.",
+          "where": "Wydatki › paragon › Prywatny"
         }
       }
     },
     "trips": {
-      "title": "Podróże i diety",
+      "title": "Urlopy i podróże",
       "items": {
-        "kinds": {
-          "q": "Podróże prywatne i służbowe",
-          "a": "Podróż prywatna to Twoje pieniądze: zostaje w miesiącu, pokazana osobno, z własnym budżetem. Służbowa to pieniądze pracodawcy: nie wchodzi do Twojego budżetu i ma dietę oraz rozliczenie."
+        "holiday": {
+          "q": "Urlop z własnym budżetem",
+          "a": "Plan › Wypoczynek: daty i budżet. Paragony z tych dni do niego trafiają, widać każdy dzień i ile zostało.",
+          "where": "Plan › Wypoczynek"
+        },
+        "business": {
+          "q": "Delegacje",
+          "a": "Włącz delegacje w Ustawienia › Podróże służbowe. Delegacja jest poza Twoim budżetem, ma diety i rozliczenie dla pracodawcy w PDF lub CSV.",
+          "where": "Ustawienia › Podróże służbowe"
         },
         "perdiem": {
-          "q": "Jak liczona jest dieta?",
-          "a": "Według rozporządzenia w sprawie podróży służbowych, z godzin wyjazdu i powrotu, które wpisujesz: w kraju 45 zł za dobę, za granicą stawka kraju docelowego; niepełne doby według godzin, a zapewnione posiłki ją zmniejszają."
-        },
-        "settlement": {
-          "q": "Jak dostać rozliczenie dla pracodawcy?",
-          "a": "Na stronie podróży służbowej wpisz otrzymaną zaliczkę i pobierz rozliczenie jako PDF ze zdjęciem każdego paragonu albo CSV: wydatki + dieta − zaliczka."
-        }
-      }
-    },
-    "data": {
-      "title": "Eksport i Twoje dane",
-      "items": {
-        "export": {
-          "q": "Jak wyeksportować dane?",
-          "a": "Paragony i Statystyki eksportują listę lub tabelę z ekranu do CSV albo JSON. Profil → „Pobierz wszystko” daje jedno archiwum ze wszystkimi Twoimi danymi i zdjęciami, które jeszcze przechowujemy. Pliki eksportu są przechowywane 7 dni."
-        },
-        "photos": {
-          "q": "Dlaczego zniknęło zdjęcie paragonu?",
-          "a": "Zdjęcia paragonów są przechowywane 90 dni, potem usuwane; odczytane z nich pozycje i kwoty zostają. Pobierz rozliczenie podróży służbowej jako PDF wcześniej, aby zachować jej zdjęcia."
-        },
-        "delete": {
-          "q": "Jak usunąć konto?",
-          "a": "Profil → Usuń konto, z hasłem. Wszystko zniknie na zawsze; najpierw pobierz swoje dane, jeśli mogą się przydać."
+          "q": "Jak liczone są diety?",
+          "a": "Na podstawie wpisanych godzin wyjazdu i powrotu, według oficjalnych stawek — obecnie polskich, w kraju i za granicą; niepełne dni według godzin, a zapewnione posiłki je obniżają. Kolejne kraje wkrótce.",
+          "where": "Plan › delegacja"
         }
       }
     },
     "account": {
-      "title": "Konto",
+      "title": "Konto i dane",
       "items": {
         "confirm": {
-          "q": "Nie dostałem e-maila z potwierdzeniem",
-          "a": "Sprawdź spam, potem naciśnij „Wyślij ponownie” na pasku. Dopóki adres nie jest potwierdzony, możesz przeglądać, ale nie dodawać paragonów."
+          "q": "Nie przyszedł mail z potwierdzeniem",
+          "a": "Sprawdź spam, potem dotknij „Wyślij ponownie” na banerze. Dopóki adres nie jest potwierdzony, możesz się rozglądać, ale nie dodawać paragonów.",
+          "where": "Start › baner"
         },
         "password": {
           "q": "Nie pamiętam hasła",
-          "a": "Na ekranie logowania naciśnij „Nie pamiętasz hasła?” i otwórz link z wiadomości w ciągu godziny."
+          "a": "Na ekranie logowania dotknij „Nie pamiętasz hasła?” i otwórz link z maila.",
+          "where": "Logowanie"
         },
         "install": {
-          "q": "Czy mogę zainstalować to jak aplikację?",
-          "a": "Tak: w profilu pokazujemy, jak dodać ją do ekranu głównego telefonu lub komputera; otwiera się jak aplikacja."
+          "q": "Czy można dodać ją do ekranu głównego telefonu?",
+          "a": "Tak: otwórz ją w przeglądarce telefonu i wybierz „Dodaj do ekranu głównego”. Potem otwiera się jak aplikacja.",
+          "where": "Przeglądarka telefonu"
+        },
+        "export": {
+          "q": "Pobranie moich danych",
+          "a": "Ustawienia › Twoje dane dają jedno archiwum ze wszystkim, co tu trzymasz, i zachowanymi jeszcze zdjęciami. Listy na ekranie można wyeksportować do CSV lub JSON.",
+          "where": "Ustawienia › Twoje dane"
+        },
+        "photos": {
+          "q": "Dlaczego zniknęło zdjęcie paragonu?",
+          "a": "Zdjęcia paragonów są przechowywane 90 dni, potem usuwane; odczytane z nich pozycje i sumy zostają.",
+          "where": "Wydatki › paragon"
+        },
+        "delete": {
+          "q": "Usunięcie konta",
+          "a": "Ustawienia › Twoje dane › Usuń konto, z hasłem. Wszystko znika na zawsze; najpierw pobierz dane, jeśli mogą się przydać.",
+          "where": "Ustawienia › Twoje dane"
         }
       }
     }
