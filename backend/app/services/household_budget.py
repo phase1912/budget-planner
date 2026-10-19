@@ -1,7 +1,7 @@
 """The household's month and statistics (F12.5, ADR-0017, BRD BR-4, BR-5)."""
 
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
@@ -12,6 +12,7 @@ from app.models.household import Household
 from app.models.user import User
 from app.repository.household_spend import HouseholdSpendRepository, SharedCategorySpend
 from app.services.household import HouseholdService
+from app.services.income import bill_rule, regular_rule
 
 
 @dataclass(frozen=True)
@@ -45,6 +46,9 @@ class HouseholdMonth:
     excluded_amount: Decimal
     limit: LimitUsage | None
     members: list[MemberShare]
+    # What the household shares this month (F12.8): income in, bills out.
+    shared_income: Decimal = Decimal(0)
+    shared_bills: Decimal = Decimal(0)
 
 
 @dataclass(frozen=True)
@@ -53,6 +57,8 @@ class CategoryShare:
 
     spend: SharedCategorySpend
     share: Decimal
+    # Who bought it, by member (F12.9).
+    members: dict[uuid.UUID, Decimal] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -122,6 +128,12 @@ class HouseholdBudgetService:
             reverse=True,
         )
         total = sum((m.total for m in shares), Decimal(0))
+        entries, sources, bills = await self.spend.shared_money(household.id, days)
+        first = days.start
+        shared_income = sum((e.amount for e in entries), Decimal(0)) + sum(
+            (s.amount for s in sources if regular_rule(s).runs_in(first)), Decimal(0)
+        )
+        shared_bills = sum((b.amount for b in bills if bill_rule(b).runs_in(first)), Decimal(0))
         return HouseholdMonth(
             month=month,
             progress=month.progress(today),
@@ -131,6 +143,8 @@ class HouseholdBudgetService:
             excluded_amount=excluded_amount,
             limit=limit_usage(total, household.budget_limit),
             members=shares,
+            shared_income=shared_income,
+            shared_bills=shared_bills,
         )
 
     async def statistics(self, user: User, period: DateRange) -> HouseholdStatistics:
@@ -138,6 +152,7 @@ class HouseholdBudgetService:
         household = await self._household(user)
         members = [m.user_id for m in household.members]
         categories = await self.spend.shared_categories(period, members)
+        split = await self.spend.category_members(period, members)
         private_total = sum(
             (s.private_total for s in await self.spend.by_member(period, members)), Decimal(0)
         )
@@ -145,7 +160,10 @@ class HouseholdBudgetService:
         return HouseholdStatistics(
             period=period,
             total=total,
-            categories=[CategoryShare(c, _share(c.total, total)) for c in categories],
+            categories=[
+                CategoryShare(c, _share(c.total, total), split.get(c.category_id, {}))
+                for c in categories
+            ],
             private_total=private_total,
             private_share=_share(private_total, total),
         )

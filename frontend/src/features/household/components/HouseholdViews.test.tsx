@@ -13,7 +13,10 @@ vi.mock("@/api/client", () => ({
   apiClient: { GET: vi.fn(), POST: vi.fn(), PUT: vi.fn(), use: vi.fn() },
 }));
 
-const api = apiClient as unknown as Record<"GET", ReturnType<typeof vi.fn>>;
+const api = apiClient as unknown as Record<
+  "GET",
+  ReturnType<typeof vi.fn<(path: string, options?: unknown) => Promise<unknown>>>
+>;
 
 const HOME: Household = {
   id: "h1",
@@ -69,50 +72,103 @@ describe("household views (F12.5)", () => {
     expect(screen.queryByRole("button", { name: "Home" })).not.toBeInTheDocument();
   });
 
-  it("shows the month against the household budget and who spent what", async () => {
-    api.GET.mockResolvedValue({
-      data: {
-        year: 2026,
-        month: 10,
-        total: "250.00",
-        receipt_count: 3,
-        is_complete: false,
-        days_elapsed: 10,
-        days: 31,
-        excluded_count: 0,
-        excluded_amount: "0",
-        limit: { limit: "1000.00", percent: 25, remaining: "750.00" },
-        members: [
-          {
-            user_id: "anna",
-            first_name: "Anna",
-            shared_total: "30.00",
-            private_total: "120.00",
-            total: "150.00",
-          },
-          {
-            user_id: "me",
-            first_name: "Bohdan",
-            shared_total: "100.00",
-            private_total: "0",
-            total: "100.00",
-          },
-        ],
-      },
-    });
-    renderWith(store, <HouseholdMonthView year={2026} month={10} currency="PLN" />);
-
-    expect(await screen.findByText("250.00")).toBeInTheDocument();
-    expect(screen.getByText(/25% of the household.s 1,000.00 PLN limit/)).toBeInTheDocument();
-    expect(screen.getByText("Anna")).toBeInTheDocument();
-    expect(screen.getByText("60%")).toBeInTheDocument();
-    expect(screen.getByText("of which private: 120.00 PLN")).toBeInTheDocument();
-    expect(api.GET).toHaveBeenCalledWith(
-      "/api/v1/household/months/{year}/{month}",
-      expect.objectContaining({
-        params: expect.objectContaining({ path: { year: 2026, month: 10 } }) as unknown,
+  it("shows what is left together, the shared money and who spends what (F12.9)", async () => {
+    store.authStore.user = { id: "me" } as typeof store.authStore.user;
+    const month = {
+      year: 2026,
+      month: 10,
+      total: "250.00",
+      receipt_count: 3,
+      is_complete: false,
+      days_elapsed: 10,
+      days: 31,
+      excluded_count: 0,
+      excluded_amount: "0",
+      limit: { limit: "1000.00", percent: 25, remaining: "750.00" },
+      shared_income: "9000.00",
+      shared_bills: "3000.00",
+      members: [
+        {
+          user_id: "anna",
+          first_name: "Anna",
+          shared_total: "30.00",
+          private_total: "120.00",
+          total: "150.00",
+        },
+        {
+          user_id: "me",
+          first_name: "Bohdan",
+          shared_total: "100.00",
+          private_total: "0",
+          total: "100.00",
+        },
+      ],
+    };
+    const stats = {
+      start: "2026-10-01",
+      end: "2026-10-31",
+      total: "250.00",
+      private_total: "120.00",
+      private_share: "48.0",
+      categories: [
+        {
+          category_id: "c1",
+          name: "Groceries",
+          owner_id: null,
+          item_count: 4,
+          total: "130.00",
+          share: "52.0",
+          members: [
+            { user_id: "me", total: "100.00" },
+            { user_id: "anna", total: "30.00" },
+          ],
+        },
+        {
+          category_id: "c8",
+          name: "Uncategorized",
+          owner_id: null,
+          item_count: 1,
+          total: "10.00",
+          share: "4.0",
+          members: [{ user_id: "me", total: "10.00" }],
+        },
+        {
+          category_id: null,
+          name: null,
+          owner_id: null,
+          item_count: 1,
+          total: "10.00",
+          share: "4.0",
+          members: [{ user_id: "anna", total: "10.00" }],
+        },
+      ],
+    };
+    api.GET.mockImplementation((path: string) =>
+      Promise.resolve({
+        data: path.includes("months")
+          ? month
+          : path.includes("statistics")
+            ? stats
+            : path === "/api/v1/household"
+              ? HOME
+              : null,
       }),
     );
+    renderWith(store, <HouseholdMonthView year={2026} month={10} currency="PLN" />);
+
+    expect(await screen.findByText("750")).toBeInTheDocument();
+    expect(screen.getByText("left together")).toBeInTheDocument();
+    expect(screen.getByText("9,000 PLN")).toBeInTheDocument();
+    expect(screen.getByText("1,000 PLN")).toBeInTheDocument();
+    expect(screen.getByText("60%")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Others’ private receipts count as money only: 120 PLN/),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Categories" }));
+    expect(screen.getByText("You 77% · Anna 23%")).toBeInTheDocument();
+    expect(screen.getAllByText("Uncategorized")).toHaveLength(1);
+    expect(screen.getByText("You 50% · Anna 50%")).toBeInTheDocument();
   });
 
   it("ranks the household's categories with private spending as one row", async () => {
@@ -183,7 +239,12 @@ describe("household views (F12.5)", () => {
     );
 
     await waitFor(() => {
-      expect(api.GET).toHaveBeenCalledTimes(2);
+      expect(api.GET).toHaveBeenCalledWith(
+        "/api/v1/household/months/{year}/{month}",
+        expect.objectContaining({
+          params: expect.objectContaining({ path: { year: 2026, month: 9 } }) as unknown,
+        }),
+      );
     });
   });
 

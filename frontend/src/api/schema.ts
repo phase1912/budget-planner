@@ -3414,6 +3414,11 @@ export interface components {
             total: string;
             /** Share */
             share: string;
+            /**
+             * Members
+             * @default []
+             */
+            members: components["schemas"]["MemberTotalResponse"][];
         };
         /**
          * HouseholdDailyMemberResponse
@@ -3531,6 +3536,16 @@ export interface components {
             limit: components["schemas"]["LimitUsageResponse"] | null;
             /** Members */
             members: components["schemas"]["MemberShareResponse"][];
+            /**
+             * Shared Income
+             * @default 0
+             */
+            shared_income: string;
+            /**
+             * Shared Bills
+             * @default 0
+             */
+            shared_bills: string;
         };
         /**
          * HouseholdName
@@ -3970,6 +3985,19 @@ export interface components {
             shared_total: string;
             /** Private Total */
             private_total: string;
+            /** Total */
+            total: string;
+        };
+        /**
+         * MemberTotalResponse
+         * @description What one member spent of something (F12.9).
+         */
+        MemberTotalResponse: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
             /** Total */
             total: string;
         };

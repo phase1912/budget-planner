@@ -4,13 +4,11 @@ import { useTranslation } from "react-i18next";
 
 import { dateFormat, numberFormat } from "@/i18n/format";
 import { useStores } from "@/stores/StoreContext";
+import { memberColours } from "../memberColours";
 
 const WHOLE = numberFormat({ maximumFractionDigits: 0 });
 const DAY = dateFormat({ day: "numeric", month: "short" });
 const LONG_DAY = dateFormat({ day: "numeric", month: "long" });
-
-/** The viewer is always the primary colour; the others take the next ones in turn. */
-const OTHERS = ["var(--cat-dining)", "var(--cat-entertainment)", "var(--cat-health)"];
 
 const asDate = (day: string) => new Date(`${day}T00:00:00`);
 
@@ -23,9 +21,12 @@ const asDate = (day: string) => new Date(`${day}T00:00:00`);
 export const HouseholdDailyBars = observer(function HouseholdDailyBars({
   currency,
   today,
+  bare = false,
 }: {
   currency: string;
   today: string;
+  /** Inside another card (the family Home): no card or title of its own. */
+  bare?: boolean;
 }) {
   const { householdStore, authStore } = useStores();
   const { t } = useTranslation("household");
@@ -37,11 +38,9 @@ export const HouseholdDailyBars = observer(function HouseholdDailyBars({
   const members = [...daily.members].sort(
     (a, b) => Number(b.user_id === me) - Number(a.user_id === me),
   );
-  const colourOf = new Map(
-    members.map((m, i) => [
-      m.user_id,
-      m.user_id === me ? "var(--color-primary)" : OTHERS[(i - 1) % OTHERS.length],
-    ]),
+  const colourOf = memberColours(
+    members.map((m) => m.user_id),
+    me,
   );
   const nameOf = (id: string) =>
     id === me ? t("daily.you") : (members.find((m) => m.user_id === id)?.first_name ?? "");
@@ -66,9 +65,14 @@ export const HouseholdDailyBars = observer(function HouseholdDailyBars({
     }));
 
   return (
-    <section className="flex flex-col gap-3 rounded-card bg-surface p-4 md:p-5">
+    <section
+      aria-label={t("daily.title")}
+      className={
+        bare ? "flex flex-col gap-3" : "flex flex-col gap-3 rounded-card bg-surface p-4 md:p-5"
+      }
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h2 className="m-0 text-xl font-extrabold">{t("daily.title")}</h2>
+        {!bare && <h2 className="m-0 text-xl font-extrabold">{t("daily.title")}</h2>}
         {selected && (
           <span className="text-md font-bold tabular-nums" aria-live="polite">
             {DAY.format(asDate(selected.day))} ·{" "}

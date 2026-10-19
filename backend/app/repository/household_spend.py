@@ -12,8 +12,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.periods import DateRange
 from app.domain.trips import TripKind
 from app.models.category import Category
+from app.models.income import Income
+from app.models.income_source import IncomeSource
 from app.models.line_item import LineItem
 from app.models.receipt import Receipt, ReceiptStatus
+from app.models.regular_expense import RegularExpense
 from app.repository.receipt import _purchased, _within, counted_in_budget, on_trip
 
 
@@ -164,3 +167,60 @@ class HouseholdSpendRepository:
             (spent_on, user_id): Decimal(total)
             for spent_on, user_id, total in (await self.session.execute(stmt)).all()
         }
+
+    async def category_members(
+        self, period: DateRange, member_ids: Collection[uuid.UUID]
+    ) -> dict[uuid.UUID | None, dict[uuid.UUID, Decimal]]:
+        """Each shared category's spend split by the member who bought it (F12.9).
+
+        Shared receipts only, as `shared_categories`: a private receipt's category would
+        say what it was (ADR-0017).
+        """
+        stmt = (
+            select(LineItem.category_id, Receipt.user_id, func.coalesce(func.sum(LineItem.paid), 0))
+            .select_from(LineItem)
+            .join(Receipt, LineItem.receipt_id == Receipt.id)
+            .where(
+                Receipt.user_id.in_(member_ids),
+                counted_in_budget(),
+                Receipt.is_private.is_(False),
+                _within(period),
+            )
+            .group_by(LineItem.category_id, Receipt.user_id)
+        )
+        split: dict[uuid.UUID | None, dict[uuid.UUID, Decimal]] = {}
+        for category_id, user_id, total in (await self.session.execute(stmt)).all():
+            split.setdefault(category_id, {})[user_id] = Decimal(total)
+        return split
+
+    async def shared_money(
+        self, household_id: uuid.UUID, period: DateRange
+    ) -> tuple[list[Income], list[IncomeSource], list[RegularExpense]]:
+        """What the household shares (F12.8) that may count in `period`: income entries of it,
+        and the regular incomes and bills not ended before it starts. The caller applies the
+        recurring rules to say which run in the month.
+        """
+        entries = await self.session.execute(
+            select(Income).where(
+                Income.household_id == household_id,
+                Income.received_on >= period.start,
+                Income.received_on <= period.end,
+            )
+        )
+        sources = await self.session.execute(
+            select(IncomeSource).where(
+                IncomeSource.household_id == household_id,
+                or_(IncomeSource.ends_on.is_(None), IncomeSource.ends_on >= period.start),
+            )
+        )
+        bills = await self.session.execute(
+            select(RegularExpense).where(
+                RegularExpense.household_id == household_id,
+                or_(RegularExpense.ends_on.is_(None), RegularExpense.ends_on >= period.start),
+            )
+        )
+        return (
+            list(entries.scalars().all()),
+            list(sources.scalars().all()),
+            list(bills.scalars().all()),
+        )
