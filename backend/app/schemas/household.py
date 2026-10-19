@@ -82,6 +82,13 @@ class LimitUsageResponse(BaseModel):
     remaining: Decimal
 
 
+class MemberTotalResponse(BaseModel):
+    """What one member spent of something (F12.9)."""
+
+    user_id: uuid.UUID
+    total: Decimal
+
+
 class HouseholdMonthResponse(BaseModel):
     """The household's month: its total, how far through it is, and who spent what."""
 
@@ -96,6 +103,9 @@ class HouseholdMonthResponse(BaseModel):
     excluded_amount: Decimal
     limit: LimitUsageResponse | None
     members: list[MemberShareResponse]
+    # What the household shares this month (F12.8): income in and bills out.
+    shared_income: Decimal = Decimal(0)
+    shared_bills: Decimal = Decimal(0)
 
 
 class HouseholdCategoryResponse(BaseModel):
@@ -107,6 +117,8 @@ class HouseholdCategoryResponse(BaseModel):
     item_count: int
     total: Decimal
     share: Decimal
+    # Who bought it, by member (F12.9); shared receipts only.
+    members: list[MemberTotalResponse] = []
 
 
 class HouseholdStatisticsResponse(BaseModel):

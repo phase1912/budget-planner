@@ -34,6 +34,7 @@ from app.schemas.household import (
     JoinRequest,
     LimitUsageResponse,
     MemberShareResponse,
+    MemberTotalResponse,
 )
 from app.services.household import HouseholdService
 from app.services.household_budget import HouseholdBudgetService
@@ -211,6 +212,8 @@ async def get_household_month(
             )
             for m in summary.members
         ],
+        shared_income=summary.shared_income,
+        shared_bills=summary.shared_bills,
     )
 
 
@@ -238,6 +241,10 @@ async def get_household_statistics(
                 item_count=c.spend.item_count,
                 total=c.spend.total,
                 share=c.share,
+                members=[
+                    MemberTotalResponse(user_id=member, total=amount)
+                    for member, amount in c.members.items()
+                ],
             )
             for c in stats.categories
         ],

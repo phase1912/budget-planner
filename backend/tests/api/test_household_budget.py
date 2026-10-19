@@ -286,3 +286,48 @@ async def test_the_daily_view_is_not_found_outside_a_household(db_session: Async
     response = await _call(db_session, loner, "GET", DAILY)
 
     assert response.status_code == 404
+
+
+# --- the family's month on Home (F12.9) -------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_the_month_says_what_the_family_shares_coming_in_and_going_out(
+    db_session: AsyncSession,
+) -> None:
+    me, anna = await _couple()
+    for body in (
+        {"name": "Salary", "amount": "9000.00", "day": 10, "shared": True},
+        {"name": "Side job", "amount": "500.00", "day": 10},
+    ):
+        made = await _call(db_session, me, "POST", "/api/v1/income/regular?today=2026-10-01", body)
+        assert made.status_code == 201
+    flat = await _call(
+        db_session,
+        anna,
+        "POST",
+        "/api/v1/income/bills?today=2026-10-01",
+        {"name": "Flat", "amount": "3000.00", "day": 5, "shared": True},
+    )
+    assert flat.status_code == 201
+
+    body = (await _call(db_session, anna, "GET", MONTH)).json()
+
+    assert Decimal(body["shared_income"]) == Decimal("9000.00")
+    assert Decimal(body["shared_bills"]) == Decimal("3000.00")
+
+
+@pytest.mark.asyncio
+async def test_statistics_split_each_shared_category_by_who_bought_it(
+    db_session: AsyncSession,
+) -> None:
+    me, anna = await _couple()
+    groceries = await CategoryFactory.create_async(name="Groceries F12.9", user_id=None)
+    await _spent(me, "60.00", category=groceries)
+    await _spent(anna, "40.00", category=groceries)
+    await _spent(anna, "500.00", category=groceries, private=True)
+
+    body = (await _call(db_session, me, "GET", STATS)).json()
+
+    split = {m["user_id"]: Decimal(m["total"]) for m in body["categories"][0]["members"]}
+    assert split == {str(me.id): Decimal("60.00"), str(anna.id): Decimal("40.00")}

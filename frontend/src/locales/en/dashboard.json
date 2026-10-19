@@ -72,13 +72,28 @@
   "household": {
     "spentTogether": "Spent together",
     "spentTogetherSoFar": "Spent together so far",
-    "thisMonth": " this month",
     "underReview_one": "{{count}} receipt worth {{amount}} {{currency}} is under review and not in this total. Each member resolves their own.",
     "underReview_other": "{{count}} receipts worth {{amount}} {{currency}} are under review and not in this total. Each member resolves their own.",
-    "who": "Who spent what",
-    "private": "of which private: {{amount}} {{currency}}",
+    "who": "Who spends what",
     "loadFailed": "The household's month could not be loaded",
-    "loading": "Loading the household's month…"
+    "loading": "Loading the household's month…",
+    "you": "You",
+    "income": "Income",
+    "bills": "Bills",
+    "budget": "Family budget",
+    "budgetHint": "Any adult in the family can change it.",
+    "shared": "Shared",
+    "ourMonth": "Our month",
+    "ring": "Spent together {{spent}} {{currency}}",
+    "leftTogether": "left together",
+    "over": "over the budget",
+    "together": "{{amount}} {{currency}} together",
+    "charts": {
+      "share": "Share",
+      "categories": "Categories",
+      "days": "By day"
+    },
+    "othersPrivate": "Others’ private receipts count as money only: {{amount}} {{currency}} this month, with no shop or day."
   },
   "inMonth": " in {{month}}",
   "recorded": " recorded",
