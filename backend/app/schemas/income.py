@@ -32,6 +32,9 @@ class IncomeRequest(BaseModel):
     taxed: bool | None = None
     # Shared with the household (F12.8): every member sees and changes it.
     shared: bool = False
+    # The account it reached (F23.15); a shared account makes it shared, a business one
+    # sets its tax aside.
+    account_id: uuid.UUID | None = None
     """Whether taxes are set aside from it (F23.16); left out, earnings are and gifts,
     refunds and sales are not — and a change leaves it as it was."""
 
@@ -56,6 +59,11 @@ class IncomeRead(Whose):
     kind: IncomeKind
     channel: IncomeChannel
     taxed: bool = False
+    account_id: uuid.UUID | None = None
+    tax: Decimal | None = None
+    """Set aside on a business account when it came in (F23.15)."""
+    source_id: uuid.UUID | None = None
+    """The regular income whose month it confirms (F23.15)."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -93,6 +101,8 @@ class BalanceRead(BaseModel):
     bills: Decimal | None = None
     for_taxes: Decimal | None = None
     """Of `balance`, what is still owed in taxes (F23.16); null for most users."""
+    from_accounts: bool = False
+    """The money on the user's accounts (F23.15), not a balance carried from a start."""
 
 
 class PendingIncomeRead(IncomeDraft):
@@ -104,10 +114,11 @@ class PendingIncomeRead(IncomeDraft):
 
 
 class TaxPaymentRequest(BaseModel):
-    """Taxes paid, by a user who pays their own (F23.16)."""
+    """Taxes paid, by a user who pays their own (F23.16), from an account if they keep any."""
 
     paid_on: date
     amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
+    account_id: uuid.UUID | None = None
 
 
 class TaxPaymentRead(TaxPaymentRequest):
@@ -127,6 +138,9 @@ class IncomeSourceRequest(BaseModel):
     day: int | None = Field(None, ge=1, le=31)
     taxed: bool = False
     shared: bool = False
+    account_id: uuid.UUID | None = None
+    about: bool = False
+    """It varies (F23.15): expected on its day until what really came is confirmed."""
 
 
 class IncomeSourceRead(IncomeSourceRequest, Whose):
@@ -147,6 +161,7 @@ class RegularExpenseRequest(BaseModel):
     amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
     day: int | None = Field(None, ge=1, le=31)
     shared: bool = False
+    account_id: uuid.UUID | None = None
 
 
 class RegularExpenseRead(RegularExpenseRequest, Whose):

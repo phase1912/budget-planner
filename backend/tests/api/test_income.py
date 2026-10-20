@@ -175,6 +175,7 @@ async def test_the_balance_moves_with_income_and_counted_purchases_since_it_was_
         "taxes_paid": "0",
         "bills": "0",
         "for_taxes": None,
+        "from_accounts": False,
     }
 
 

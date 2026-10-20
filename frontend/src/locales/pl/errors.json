@@ -61,5 +61,7 @@
   "income_unreadable": "Nie udało się odczytać dokumentu. Spróbuj ostrzejszego zdjęcia albo wpisz kwotę ręcznie.",
   "not_income": "To nie wygląda na otrzymane pieniądze — paragon dodaje się jako paragon.",
   "child_read_only": "Dziecko w gospodarstwie może tylko przeglądać to, co wspólne.",
-  "owner_role_fixed": "Właściciel jest zawsze osobą dorosłą."
+  "owner_role_fixed": "Właściciel jest zawsze osobą dorosłą.",
+  "month_closed": "Ten miesiąc jest zamknięty: zmieniać można tylko wpisy z bieżącego miesiąca.",
+  "same_account": "Wybierz dwa różne konta."
 }

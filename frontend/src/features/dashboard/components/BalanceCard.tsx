@@ -1,5 +1,6 @@
-import { CircleAlert, Landmark, Pencil } from "lucide-react";
+import { ChevronRight, CircleAlert, Landmark, Pencil } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 import { Button } from "@/shared/components";
 import { dateFormat, numberFormat } from "@/i18n/format";
@@ -21,10 +22,39 @@ interface BalanceCardProps {
  * plainly that it is what is on the accounts today, not income. At zero or below it asks
  * for what is missing instead: such a balance almost always means income not entered,
  * not a debt, so it offers to add income or to set the balance again.
+ *
+ * Once the user keeps accounts (F23.15) it is their sum, and opens them instead: there a
+ * negative balance is an overdraft the bank shows, and correcting it is done per account.
  */
 export function BalanceCard({ balance, currency, onEdit, onAddIncome }: BalanceCardProps) {
   const { t } = useTranslation("dashboard");
   const known = balance?.balance != null;
+
+  if (known && balance.from_accounts) {
+    return (
+      <Link
+        to="/accounts"
+        className="flex min-h-16 items-center gap-3.5 rounded-card bg-surface px-4 py-3 text-left text-foreground no-underline"
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-tone-primary-bg text-primary">
+          <Landmark size={20} aria-hidden="true" />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-base font-medium text-muted-foreground">{t("balance.title")}</span>
+          <span className="text-xl font-bold tabular-nums">
+            {WHOLE.format(Number(balance.balance))} {currency}
+          </span>
+          {balance.for_taxes != null && Number(balance.for_taxes) > 0 && (
+            <span className="text-md font-semibold text-tone-warning-text tabular-nums">
+              {t("balance.forTaxes", { amount: WHOLE.format(Number(balance.for_taxes)), currency })}
+            </span>
+          )}
+          <span className="text-sm text-muted-foreground">{t("balance.accounts")}</span>
+        </span>
+        <ChevronRight size={18} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+      </Link>
+    );
+  }
 
   if (known && Number(balance.balance) <= 0) {
     return (

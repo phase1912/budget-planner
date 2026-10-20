@@ -76,7 +76,7 @@ describe("RegularIncomes (F23.17)", () => {
 
     await waitFor(() => {
       expect(stores.incomeStore.addBill).toHaveBeenCalledWith(
-        { name: "Internet", amount: "69", day: null, shared: true },
+        { name: "Internet", amount: "69", day: null, shared: true, account_id: null },
         expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       );
     });
@@ -94,7 +94,15 @@ describe("RegularIncomes (F23.17)", () => {
 
     await waitFor(() => {
       expect(stores.incomeStore.addRegular).toHaveBeenCalledWith(
-        { name: "Salary", amount: "10000", day: 10, taxed: false, shared: false },
+        {
+          name: "Salary",
+          amount: "10000",
+          day: 10,
+          taxed: false,
+          shared: false,
+          account_id: null,
+          about: false,
+        },
         expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       );
     });

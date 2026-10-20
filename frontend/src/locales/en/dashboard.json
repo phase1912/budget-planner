@@ -142,7 +142,8 @@
     "emptyBody": "{{amount}} {{currency}} on your accounts by our count. Add what came in, or set what you have now.",
     "addIncome": "Add income",
     "correct": "Correct the balance",
-    "forTaxes": "of which ~{{amount}} {{currency}} for taxes"
+    "forTaxes": "of which ~{{amount}} {{currency}} for taxes",
+    "accounts": "Your accounts"
   },
   "insight": {
     "dearer": "{{name}} is {{percent}}% dearer",

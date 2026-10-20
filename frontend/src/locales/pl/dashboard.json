@@ -158,7 +158,8 @@
     "emptyBody": "Według naszych obliczeń na kontach jest {{amount}} {{currency}}. Dodaj, co wpłynęło, albo wpisz, ile masz teraz.",
     "addIncome": "Dodaj wpływ",
     "correct": "Popraw saldo",
-    "forTaxes": "w tym ~{{amount}} {{currency}} na podatki"
+    "forTaxes": "w tym ~{{amount}} {{currency}} na podatki",
+    "accounts": "Twoje konta"
   },
   "insight": {
     "dearer": "{{name}} podrożał o {{percent}}%",

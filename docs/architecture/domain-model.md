@@ -39,6 +39,9 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | **ExportJob** | One export of the user's receipts or statistics as CSV or JSON, written in the background: the filters it was asked with, its status, and where the finished file is stored (N6). | User |
 | **Goal** | A financial or lifestyle objective the user declared. A financial goal is one of three kinds: a monthly spending ceiling, a savings target, or a cap on one category (F1). | User |
 | **Household** | A group of users keeping one budget (E12, ADR-0017): a name, an invite code, an optional monthly budget. Reads its members' receipts, never owns them. | Its owner |
+| **Account** | Where some of the money is (F23.15, ADR-0024): a personal card, a business account or a deposit, its author's or shared with their household. Holds an opening amount on a day; a business one has a tax rate; one may be the card purchases are paid from. | User or Household |
+| **AccountMove** | Money between accounts (a transfer), out of one (a bill) or a correction of one, that is not income from outside; or this month's occurrence of a rule as the user changed it. | Account |
+| **RegularTransfer** | Money moved from one account to another every month by itself. | Account |
 | **HouseholdMember** | A user's place in a household, as `owner`, `member` (an adult) or `child` (F12.10). One household per user. | Household |
 | **PlanGrant** | A plan an admin gave the account from one moment to another, with the reason and who gave it; taken back by setting `revoked_at`, never deleted (F18.6.3, ADR-0021). | User |
 | **AdminAction** | One thing an admin did to an account, for the log super admins read (F18.6.3). Survives either account's deletion with that side emptied. | — |
@@ -585,6 +588,23 @@ Rules that must hold at all times. Each is a candidate for a test.
     not purchases: they never enter a month's spending total, categories or statistics,
     but they come off what is left of the income on Home and in Plan ("spent · bills ·
     free"), off the balance on their day, and off what a savings goal can count on.
+36. Accounts (F23.15, ADR-0024) say where the money is. Without any, everything above
+    holds as it was. With them, the balance is the money on every account the user sees —
+    their own and their household's shared ones — each carried from its opening amount by
+    what reached and left it; a transfer between two accounts is neither income nor
+    spending. Purchases come off the user's own purchase card, else the family's shared
+    one; any sum with no account of its own lands the same way (a shared sum on the
+    shared card). Income from outside on a business account sets the account's rate aside
+    and counts in the month at once, clean of it; a personal account and a transfer are
+    never taxed, and fixed sums such as social contributions are the account's bills.
+    Rules — regular incomes, bills and transfers — post on their day, read from the rule
+    and never stored ahead, and a rule never starts on a day already past this month: it
+    starts next month. An "about" income is expected on its day and counts in the balance
+    only once confirmed with what really came, which counts that month only. This
+    month's entries can be changed — a rule's occurrence by a change that stands in for
+    it, 0 skipping it — and earlier months are closed. Another member's own money on a
+    shared card shows only as theirs, and their private purchases as one undated sum a
+    month (ADR-0017). A child sees shared accounts and moves nothing on them (11m).
 
 **Goals before they are saved**
 

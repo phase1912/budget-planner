@@ -30,6 +30,15 @@ class IncomeSource(Model):
     household_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("households.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    # The account it reached or leaves (F23.15); None: the author's purchase card, or
+    # nowhere while they have no accounts.
+    account_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    # "About" (F23.15): expected on its day until the user confirms what really came.
+    about: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
     name: Mapped[str] = mapped_column(String(80), nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     day: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)

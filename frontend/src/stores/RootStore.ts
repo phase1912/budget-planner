@@ -29,6 +29,7 @@ import { AnalyticsStore } from "@/stores/AnalyticsStore";
 import { AdminStore } from "@/stores/AdminStore";
 import { TwoFactorStore } from "@/stores/TwoFactorStore";
 import { IncomeStore } from "@/stores/IncomeStore";
+import { BankAccountsStore } from "@/stores/BankAccountsStore";
 
 /**
  * Single instantiation point for every MobX store in the client (F9.2.1). Feature
@@ -64,6 +65,7 @@ export class RootStore {
   readonly adminStore: AdminStore;
   readonly twoFactorStore: TwoFactorStore;
   readonly incomeStore: IncomeStore;
+  readonly bankAccountsStore: BankAccountsStore;
 
   constructor() {
     this.themeStore = new ThemeStore();
@@ -83,6 +85,7 @@ export class RootStore {
     this.adminStore = new AdminStore(apiClient, this.toastStore);
     this.twoFactorStore = new TwoFactorStore(apiClient, this.authStore, this.toastStore);
     this.incomeStore = new IncomeStore(apiClient, this.toastStore);
+    this.bankAccountsStore = new BankAccountsStore(apiClient, this.toastStore);
     this.budgetStore = new BudgetStore();
     // Any receipt change may have recalculated the month on screen (BRD D6, F6.5).
     const refreshMonth = () => void this.budgetStore.refresh();
@@ -138,6 +141,7 @@ export class RootStore {
         this.productsStore.reset();
         this.explorationStore.reset();
         this.tripsStore.reset();
+        this.bankAccountsStore.reset();
         this.householdStore.reset();
         this.receiptStore.resetScope();
         this.adminStore.reset();

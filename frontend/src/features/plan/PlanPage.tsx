@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { observer } from "mobx-react-lite";
-import { Briefcase, ChevronRight, Palmtree, Plus } from "lucide-react";
+import { Briefcase, ChevronRight, Landmark, Palmtree, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -194,6 +194,21 @@ export const PlanPage = observer(function PlanPage() {
         </span>
         <RegularIncomes kind="bill" onChanged={refresh} />
       </Section>
+
+      {/* Where the money is (F23.15): every account, the family's included. */}
+      <Link
+        to="/accounts"
+        className="flex min-h-16 min-w-0 items-center gap-3.5 rounded-card bg-surface px-4 py-3 text-foreground no-underline"
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-tone-primary-bg text-primary">
+          <Landmark size={20} aria-hidden="true" />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-lg font-extrabold">{t("accounts.title")}</span>
+          <span className="text-md text-muted-foreground">{t("accounts.hint")}</span>
+        </span>
+        <ChevronRight size={18} aria-hidden="true" className="shrink-0 text-muted-foreground" />
+      </Link>
 
       <Section
         title={t("budget.title")}

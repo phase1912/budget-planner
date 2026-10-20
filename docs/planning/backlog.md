@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-25 epics · 176 features · 342 tasks written so far.
+25 epics · 177 features · 342 tasks written so far.
 
 22 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -32,7 +32,7 @@
 | E20 | Trips | — | 5 | yes | 2 | Diploma |
 | E21 | Voice and Chat Assistant | — | 9 | yes | 2 | Diploma |
 | E22 | Android App | — | 3 | yes | 2 | Diploma |
-| E23 | Improvements | — | 19 | no | 2 | Diploma |
+| E23 | Improvements | — | 20 | no | 2 | Diploma |
 | E24 | Bugfixes | — | 1 | no | 2 | Diploma |
 
 ---
@@ -1937,6 +1937,9 @@ Where the money is, for a family with a business too: accounts the user names (p
 
 **Demonstrated by:** Add a shared business account with 5 % tax, ZUS 1 600 on the 20th and 6 000 to "Our card" on the 10th; press ＋, enter 10 000 from a client and see −500 tax, 9 500 clean; on the 10th the transfer appears in both histories by itself.
 
+- **F23.15.1** Accounts, entries and dated rules — Accounts (name, kind, owner or household, opening amount), entries (income from outside, transfer between own accounts, bill, adjustment) and monthly rules (income exact/about, bill, transfer) posted by date — never for a day already past when the rule is made; this month's entries editable, earlier months closed; the tax rule on business accounts. The balance (F23.14) becomes the sum of the accounts the user sees when there are any. Domain model and an ADR; ownership and cross-household tests (N2).
+- **F23.15.2** Accounts screens — Where the money is (canvas F_Accounts), one account with ＋ Money in, Move and its history (F_Account), its rules (F_Rules), and "To check" for expected income and email income without an account (F_Check). Checked at 375, 768 and 1280 px.
+
 ### F23.16 — Paying one's own taxes
 
 *Requirements: —* · *Blocked by: F23.10, F23.14*
@@ -1968,6 +1971,14 @@ Rent, subscriptions, a loan — set once, gone every month by themselves: off wh
 Not decided yet. Spending mixes the receipts list and the categories behind one switch, which reads as clutter. Keep the receipts list (a receipt is still fixed or deleted from it) and the review of uncertain items; move managing categories and the remembered rules to Settings. Three ways are drawn in the design canvas (https://claude.ai/artifact/J4TvghztEyxSjmfyNWXqet): A — receipts stay in Spending, items sorted card by card; B — a clean Spending with a category drill-down and receipts as their own history with search and filters; C — one "To check" inbox for receipts that do not add up, items without a category and income from email. Pick one with the user, update docs/design, then build it.
 
 **Demonstrated by:** Open Spending and see no receipts/categories switch; fix or delete a receipt from its history; sort uncategorised items one at a time; rename a category in Settings.
+
+### F23.20 — A receipt paid from another card
+
+*Requirements: —* · *Blocked by: F23.15*
+
+Purchases come off the purchase card (F23.15): one's own, else the family's shared one. Sometimes a receipt was paid from another — fuel or a cola on the business card. Changing a receipt's card moves its amount to that account's history and balance; the ledger already reads purchases per buyer, so only where one receipt lands changes.
+
+**Demonstrated by:** Open a fuel receipt, choose the business card, and see it leave "Our card" and appear in the business account's history that day.
 
 ---
 

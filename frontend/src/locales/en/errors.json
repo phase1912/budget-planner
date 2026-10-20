@@ -61,5 +61,7 @@
   "income_unreadable": "The document could not be read. Try a sharper photo, or enter the amount yourself.",
   "not_income": "This doesn't look like money you received — a receipt goes in as a receipt.",
   "child_read_only": "A child in the household can only look at what it shares.",
-  "owner_role_fixed": "The owner is always an adult."
+  "owner_role_fixed": "The owner is always an adult.",
+  "month_closed": "That month is closed: only this month’s entries can change.",
+  "same_account": "Choose two different accounts."
 }

@@ -16,6 +16,7 @@ from app.repository.receipt import ReceiptRepository
 from app.repository.regular_expense import RegularExpenseRepository
 from app.repository.tax_payment import TaxPaymentRepository
 from app.services.income import bill_rule, regular_rule, tax_rule
+from app.services.money_accounts import AccountService, Overview
 
 
 class BalanceService:
@@ -32,7 +33,15 @@ class BalanceService:
         self.session = session
 
     async def balance_of(self, user: User, today: date) -> Balance | None:
-        """The balance on `today`, or None when the user has not entered a starting one."""
+        """The balance on `today`, or None when the user has not entered a starting one.
+
+        Once the user sees any account, the balance is the money on them all (F23.15):
+        what reached and left them since each one opened, transfers between them
+        cancelling out, and the starting balance no longer used.
+        """
+        accounts = await AccountService(self.session).overview(today)
+        if accounts.accounts:
+            return _from_accounts(accounts)
         if user.starting_balance is None or user.balance_since is None:
             return None
         since = min(user.balance_since, today)
@@ -74,3 +83,23 @@ class BalanceService:
             today,
         )
         return Balance(since, user.starting_balance, came_in, spent, paid, owed, bills)
+
+
+def _from_accounts(overview: Overview) -> Balance:
+    """The accounts' ledgers added up into one balance, from their earliest opening day.
+
+    Money moved between two accounts the user sees cancels out; money from or to one they
+    do not see (another member's own account) counts as having come in or gone.
+    """
+    ledgers = [a.ledger for a in overview.accounts]
+    moved = sum((ledger.moved_in - ledger.moved_out for ledger in ledgers), Decimal("0.00"))
+    return Balance(
+        since=min(a.account.opening_on for a in overview.accounts),
+        starting=sum((ledger.opening for ledger in ledgers), Decimal("0.00")),
+        came_in=sum((ledger.came_in for ledger in ledgers), Decimal("0.00")) + moved,
+        spent=sum((ledger.purchases for ledger in ledgers), Decimal("0.00")),
+        taxes_paid=sum((ledger.taxes_paid for ledger in ledgers), Decimal("0.00")),
+        taxes_owed=sum((ledger.taxes for ledger in ledgers), Decimal("0.00")),
+        bills=sum((ledger.bills for ledger in ledgers), Decimal("0.00")),
+        from_accounts=True,
+    )

@@ -81,5 +81,9 @@
     "pacedOver": "{{spent}} z {{target}} {{currency}} · zmierza do {{projected}}",
     "saving": "W tym miesiącu wolne {{available}} z {{target}} {{currency}} do odłożenia",
     "edit": "Zmień cel"
+  },
+  "accounts": {
+    "title": "Gdzie są pieniądze",
+    "hint": "Karty, konto firmowe, oszczędności — i pieniądze między nimi"
   }
 }
