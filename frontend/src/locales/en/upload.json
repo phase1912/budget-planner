@@ -22,9 +22,7 @@
     "read": "Read these photos",
     "noReceipt": "No receipt?",
     "moneyIn": "Money came in?",
-    "addIncome": "Add income",
-    "orSay": "Or just say it:",
-    "toAssistant": "tell the assistant"
+    "addIncome": "Add income"
   },
   "line": {
     "receipt": "Receipt",
@@ -185,6 +183,8 @@
     "body": "We sent a link to {{email}}. Follow it, then come back here — receipts you photograph or forward wait for that one step."
   },
   "start": {
+    "assistant": "Tell the assistant",
+    "assistantHint": "No receipt? Write “taxi 45, coffee 12” — it prepares cards for you to approve",
     "camera": "Take a photo",
     "cameraHint": "Your camera opens; a long receipt can be shot in parts",
     "files": "Choose photos or a PDF",

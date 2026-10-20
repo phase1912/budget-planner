@@ -1,30 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
-import { List, Mic, MicOff, Plus, SendHorizontal } from "lucide-react";
+import { List, Plus, SendHorizontal } from "lucide-react";
 
 import { dateFormat } from "@/i18n/format";
 import { Button } from "@/shared/components";
-import { canListen, isApproval, listen } from "@/shared/speech";
 import { useStores } from "@/stores/StoreContext";
 import { ApproveCard } from "./components/ApproveCard";
 
 const WHEN = dateFormat({ day: "numeric", month: "short" });
 
 /**
- * The assistant (F21.1, F21.7): ask about the month or say what to record, typed or spoken —
- * speech is turned into text by the browser. What it proposes comes as cards, saved only
- * when approved; saying "approve" saves the waiting one. Conversations are kept and listed,
+ * The assistant (F21.1, F21.7): ask about the month or say what to record. Messages may be
+ * sent one after another; each is answered in turn. What it proposes comes as cards, saved
+ * only when approved. Voice input is hidden until a speech service is good enough
+ * (`@/shared/speech` stays for it). Conversations are kept and listed,
  * newest first, each reopened where it was left — beside the chat on a desktop, behind a
  * button on a phone.
  */
 export const AssistantPage = observer(function AssistantPage() {
-  const { assistantStore, budgetStore, languageStore } = useStores();
+  const { assistantStore, budgetStore, categoriesStore } = useStores();
   const { t } = useTranslation("assistant");
   const [text, setText] = useState("");
   const [listing, setListing] = useState(false);
-  const [listening, setListening] = useState(false);
-  const stop = useRef<(() => void) | null>(null);
   const end = useRef<HTMLDivElement>(null);
   const today = budgetStore.today;
   const open = assistantStore.open;
@@ -32,39 +30,16 @@ export const AssistantPage = observer(function AssistantPage() {
 
   useEffect(() => {
     void assistantStore.loadConversations();
-  }, [assistantStore]);
+    // An expense card picks from the user's categories (F21.3).
+    if (categoriesStore.categories.length === 0) void categoriesStore.fetchCategories();
+  }, [assistantStore, categoriesStore]);
   useEffect(() => {
     // Not every environment scrolls (tests); the newest message is a nicety there.
     if ("scrollIntoView" in (end.current ?? {})) end.current?.scrollIntoView({ block: "end" });
-  }, [messages.length, assistantStore.pending]);
+  }, [messages.length, assistantStore.pending.length]);
 
   const send = (said: string) => {
-    void assistantStore.send(said, today).then((ok) => {
-      if (ok) setText("");
-    });
-  };
-  const toggleMic = () => {
-    if (listening) {
-      stop.current?.();
-      return;
-    }
-    stop.current = listen(
-      languageStore.language,
-      (heard, final) => {
-        setText(heard);
-        if (!final) return;
-        if (isApproval(heard) && assistantStore.waitingCard) {
-          assistantStore.approveByVoice();
-          setText("");
-        } else {
-          send(heard);
-        }
-      },
-      () => {
-        setListening(false);
-      },
-    );
-    setListening(stop.current !== null);
+    if (assistantStore.send(said, today)) setText("");
   };
 
   const list = (
@@ -135,15 +110,12 @@ export const AssistantPage = observer(function AssistantPage() {
         ) : (
           <>
             <ol className="m-0 flex flex-1 list-none flex-col gap-3 p-0" aria-live="polite">
-              {messages.length === 0 && !assistantStore.pending && (
+              {messages.length === 0 && assistantStore.pending.length === 0 && (
                 <li className="flex flex-col gap-3 rounded-card bg-surface p-5">
                   <h2 className="m-0 text-xl font-extrabold">{t("empty.title")}</h2>
                   <p className="m-0 text-md leading-relaxed text-muted-foreground">
                     {t("empty.body")}
                   </p>
-                  {canListen() && (
-                    <p className="m-0 text-sm text-muted-foreground">{t("voiceNote")}</p>
-                  )}
                   <div className="flex flex-wrap gap-2">
                     {t("examples", { returnObjects: true }).map((example) => (
                       <button
@@ -178,15 +150,18 @@ export const AssistantPage = observer(function AssistantPage() {
                   </li>
                 ),
               )}
-              {assistantStore.pending && (
-                <>
-                  <li className="max-w-[85%] self-end rounded-card bg-primary px-4 py-2.5 text-lg text-primary-foreground">
-                    {assistantStore.pending}
-                  </li>
-                  <li className="self-start rounded-card bg-surface px-4 py-2.5 text-lg text-muted-foreground">
-                    {t("thinking")}
-                  </li>
-                </>
+              {assistantStore.pending.map((waiting, i) => (
+                <li
+                  key={`${String(i)}-${waiting}`}
+                  className="max-w-[85%] self-end rounded-card bg-primary px-4 py-2.5 text-lg whitespace-pre-wrap text-primary-foreground"
+                >
+                  {waiting}
+                </li>
+              ))}
+              {assistantStore.pending.length > 0 && (
+                <li className="self-start rounded-card bg-surface px-4 py-2.5 text-lg text-muted-foreground">
+                  {t("thinking")}
+                </li>
               )}
             </ol>
             <div ref={end} />
@@ -218,27 +193,10 @@ export const AssistantPage = observer(function AssistantPage() {
                 }}
                 className="control-fill min-h-11 min-w-0 flex-1 resize-none rounded-control px-3 py-2.5 text-lg"
               />
-              {canListen() && (
-                <button
-                  type="button"
-                  aria-label={listening ? t("stop") : t("listen")}
-                  aria-pressed={listening}
-                  onClick={toggleMic}
-                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-pill ${
-                    listening ? "bg-error text-primary-foreground" : "control-fill text-primary"
-                  }`}
-                >
-                  {listening ? (
-                    <MicOff size={20} aria-hidden="true" />
-                  ) : (
-                    <Mic size={20} aria-hidden="true" />
-                  )}
-                </button>
-              )}
               <button
                 type="submit"
                 aria-label={t("send")}
-                disabled={!text.trim() || assistantStore.sendState.isLoading}
+                disabled={!text.trim()}
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-pill bg-primary text-primary-foreground disabled:opacity-50"
               >
                 <SendHorizontal size={20} aria-hidden="true" />

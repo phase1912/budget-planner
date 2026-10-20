@@ -14,12 +14,14 @@ from app.models.conversation import ConversationMessage
 from app.ports.assistant import (
     AssistantContext,
     AssistantReply,
+    CheckTool,
     ReadTool,
     ToolCall,
     ToolSpec,
     Turn,
 )
 from app.services.assistant import AssistantService, CardState, _history
+from app.services.assistant_tools import BudgetArgs, Toolbox
 from app.services.quota import QuotaService
 from tests.factories.user import UserFactory
 
@@ -37,6 +39,7 @@ class StubAssistant:
         tools: Sequence[ToolSpec],
         read: ReadTool,
         context: AssistantContext,
+        check: CheckTool | None = None,
     ) -> AssistantReply:
         return AssistantReply(self.reply_text, self.proposals)
 
@@ -152,3 +155,27 @@ def test_history_builder_formatting() -> None:
     assert turns[1].role == "assistant"
     assert "Hi there" in turns[1].text
     assert "approved by the user and saved" in turns[1].text
+
+
+@pytest.mark.parametrize(
+    ("written", "amount"),
+    [
+        ("2 500", "2500"),
+        ("2500 zł", "2500"),
+        ("12,50", "12.50"),
+        ("1,234.50", "1234.50"),
+        ("1.234,50", "1234.50"),
+        (2500, "2500"),
+    ],
+)
+def test_an_amount_spelled_as_people_write_it_still_makes_a_card(
+    written: object, amount: str
+) -> None:
+    assert BudgetArgs.model_validate({"amount": written}).amount == Decimal(amount)
+
+
+def test_a_write_call_that_cannot_be_a_card_says_why() -> None:
+    toolbox = Toolbox(None, None, date(2026, 10, 20))  # type: ignore[arg-type]
+    assert toolbox.check(ToolCall("set_monthly_budget", {"amount": "2 500"})) is None
+    assert "amount" in (toolbox.check(ToolCall("set_monthly_budget", {})) or "")
+    assert toolbox.check(ToolCall("delete_account", {})) == "no write tool delete_account"

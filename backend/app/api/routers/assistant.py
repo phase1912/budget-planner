@@ -10,11 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.assistant_agent import AssistantAdapter
 from app.agent.factory import agent_from_settings
 from app.api import rate_limit
-from app.api.dependencies import get_current_user, get_quota_service
+from app.api.dependencies import get_current_user, get_exchange_rates, get_quota_service
 from app.api.rate_limit import limiter
 from app.db.session import get_db_session
 from app.models.user import User
 from app.ports.assistant import AssistantPort
+from app.ports.exchange_rates import ExchangeRatePort
 from app.schemas.assistant import (
     CardFields,
     ConversationRead,
@@ -39,9 +40,10 @@ def get_assistant_service(
     session: Annotated[AsyncSession, Depends(get_db_session)],
     assistant: Annotated[AssistantPort, Depends(get_assistant)],
     quota: Annotated[QuotaService, Depends(get_quota_service)],
+    rates: Annotated[ExchangeRatePort | None, Depends(get_exchange_rates)],
 ) -> AssistantService:
     """Conversations and cards, bound to the request's session."""
-    return AssistantService(session, assistant, quota)
+    return AssistantService(session, assistant, quota, rates)
 
 
 Service = Annotated[AssistantService, Depends(get_assistant_service)]

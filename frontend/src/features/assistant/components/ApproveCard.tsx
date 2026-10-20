@@ -2,16 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { Check, Landmark, Receipt, Target, X } from "lucide-react";
+import { Check, Landmark, Receipt, ShoppingBag, Target, X } from "lucide-react";
 
 import { Button, Input, Select, Switch } from "@/shared/components";
 import { numberFormat } from "@/i18n/format";
+import { categoryName } from "@/shared/categoryName";
 import type { ChatMessage } from "@/stores/AssistantStore";
 import { useStores } from "@/stores/StoreContext";
 
 const WHOLE = numberFormat({ maximumFractionDigits: 2 });
 const DAYS = Array.from({ length: 28 }, (_, i) => i + 1);
-const ICONS = { budget: Target, income: Landmark, bill: Receipt } as const;
+const ICONS = { budget: Target, income: Landmark, bill: Receipt, expense: ShoppingBag } as const;
 
 type Fields = Record<string, unknown>;
 
@@ -30,7 +31,7 @@ export const ApproveCard = observer(function ApproveCard({
   message: ChatMessage;
   today: string;
 }) {
-  const { assistantStore, authStore, householdStore } = useStores();
+  const { assistantStore, authStore, householdStore, categoriesStore } = useStores();
   const { t } = useTranslation("assistant");
   const currency = authStore.user?.currency ?? "PLN";
   const card = message.card;
@@ -85,6 +86,46 @@ export const ApproveCard = observer(function ApproveCard({
       </span>
 
       {card.kind === "budget" && amount}
+      {card.kind === "expense" && (
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            label={t("card.description")}
+            value={text(fields.description)}
+            maxLength={255}
+            disabled={!proposed}
+            containerClassName="col-span-2"
+            onChange={(e) => {
+              set("description")(e.target.value);
+            }}
+          />
+          {amount}
+          <Input
+            type="date"
+            label={t("card.spent_on")}
+            value={text(fields.spent_on)}
+            disabled={!proposed}
+            onChange={(e) => {
+              set("spent_on")(e.target.value);
+            }}
+          />
+          <div className="col-span-2">
+            <Select
+              label={t("card.category")}
+              value={text(fields.category_id)}
+              disabled={!proposed}
+              onChange={(e) => {
+                set("category_id")(e.target.value);
+              }}
+            >
+              {categoriesStore.categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {categoryName(c.name)}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </div>
+      )}
       {card.kind === "income" && (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {amount}
@@ -140,7 +181,7 @@ export const ApproveCard = observer(function ApproveCard({
           </Select>
         </div>
       )}
-      {card.kind !== "budget" && householdStore.mayShare && (
+      {(card.kind === "income" || card.kind === "bill") && householdStore.mayShare && (
         <Switch
           checked={fields.shared === true}
           disabled={!proposed}
@@ -166,7 +207,6 @@ export const ApproveCard = observer(function ApproveCard({
               {t("card.approve")}
             </Button>
           </div>
-          <span className="text-center text-sm text-muted-foreground">{t("card.sayApprove")}</span>
         </div>
       ) : (
         message.card_state === "saved" && (
@@ -174,9 +214,15 @@ export const ApproveCard = observer(function ApproveCard({
             <span className="font-bold tabular-nums">
               {WHOLE.format(Number(fields.amount))} {currency}
             </span>
-            <Link to="/plan" className="font-bold text-primary">
-              {t("card.openPlan")}
-            </Link>
+            {card.kind === "expense" ? (
+              <Link to="/receipts" className="font-bold text-primary">
+                {t("card.openReceipts")}
+              </Link>
+            ) : (
+              <Link to="/plan" className="font-bold text-primary">
+                {t("card.openPlan")}
+              </Link>
+            )}
           </span>
         )
       )}

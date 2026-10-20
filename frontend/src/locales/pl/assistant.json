@@ -7,11 +7,13 @@
     "title": "Zapytaj albo powiedz, co zapisać",
     "body": "Zapytaj, jak idzie miesiąc, albo powiedz, co zapisać. Pokażę to jako kartę — nic się nie zapisze, dopóki nie zatwierdzisz."
   },
-  "examples": ["Jak idzie mój miesiąc?", "Wpłynęła pensja: 9 000 od Acme", "Ustaw budżet na 2 500"],
-  "placeholder": "Napisz lub powiedz",
+  "examples": [
+    "Jak idzie mój miesiąc?",
+    "Wczoraj taxi 45, kawa 12",
+    "Wpłynęła pensja: 9 000 od Acme"
+  ],
+  "placeholder": "Napisz wiadomość",
   "send": "Wyślij",
-  "listen": "Mów",
-  "stop": "Przestań słuchać",
   "thinking": "Myślę…",
   "failed": "Nie udało się odpowiedzieć. Spróbuj powiedzieć to inaczej.",
   "card": {
@@ -30,8 +32,11 @@
     "dismiss": "Anuluj",
     "saved": "Zapisano",
     "dismissed": "Anulowano",
-    "sayApprove": "albo powiedz „zatwierdzam”",
-    "openPlan": "Otwórz Plan"
-  },
-  "voiceNote": "Gdy mówisz, mowę na tekst zamienia przeglądarka (w Chrome — Google); do nas trafia tylko tekst."
+    "openPlan": "Otwórz Plan",
+    "expense": "Wydatek",
+    "description": "Co to było",
+    "spent_on": "Data",
+    "category": "Kategoria",
+    "openReceipts": "Otwórz Wydatki"
+  }
 }

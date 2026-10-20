@@ -158,16 +158,6 @@ export const UploadPage = observer(function UploadPage() {
               {t("add.addIncome")}
             </button>
           </p>
-          {/* Saying it is a way to add too: the assistant turns it into a card (F21.1). */}
-          <p className="m-0 text-[15px] text-muted-foreground">
-            {t("add.orSay")}{" "}
-            <Link
-              to="/assistant"
-              className="inline-flex min-h-11 items-center font-semibold text-primary underline-offset-2 hover:underline md:min-h-0"
-            >
-              {t("add.toAssistant")}
-            </Link>
-          </p>
         </div>
 
         <ReceiptQuotaNote needed={uploadStore.lines.length} />

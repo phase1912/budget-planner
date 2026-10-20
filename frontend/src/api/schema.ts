@@ -3311,7 +3311,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "budget" | "income" | "bill";
+            kind: "budget" | "income" | "bill" | "expense";
             /** Fields */
             fields: {
                 [key: string]: unknown;

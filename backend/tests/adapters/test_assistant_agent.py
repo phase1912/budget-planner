@@ -122,3 +122,43 @@ async def test_second_look_returns_first_answer_when_agent_fails_or_makes_no_pro
         [Turn("user", "Hello")], read_only_tools, AsyncMock(), CONTEXT
     )
     assert reply3 == AssistantReply("Read only.", [])
+
+
+def test_tool_arguments_travel_as_a_json_string_with_no_open_object_in_the_schema() -> None:
+    schema = Step.model_json_schema()
+    assert schema["$defs"]["StepCall"]["properties"]["args"]["type"] == "string"
+    assert StepCall(tool="t", args='{"amount": 2500}').arguments() == {"amount": 2500}
+    assert StepCall(tool="t", args="not json").arguments() == {}
+
+
+@pytest.mark.asyncio
+async def test_a_write_with_wrong_arguments_goes_back_to_the_model_to_be_fixed() -> None:
+    agent = AsyncMock()
+    agent.run_structured.side_effect = [
+        Step(say="", calls=[StepCall(tool="set_monthly_budget", args={"amount": "lots"})]),
+        Step(
+            say="Budżet 2500.", calls=[StepCall(tool="set_monthly_budget", args={"amount": 2500})]
+        ),
+    ]
+
+    def check(call: ToolCall) -> str | None:
+        return None if isinstance(call.args.get("amount"), int) else "amount: not a number"
+
+    reply = await AssistantAdapter(agent).reply(
+        [Turn("user", "Budżet 2500")], TOOLS, AsyncMock(), CONTEXT, check
+    )
+
+    assert reply.proposals == [ToolCall("set_monthly_budget", {"amount": 2500})]
+    retry_prompt = agent.run_structured.call_args_list[1].args[0]
+    assert "amount: not a number" in retry_prompt[-1].content
+
+
+@pytest.mark.asyncio
+async def test_it_is_told_to_answer_in_the_language_the_user_wrote_in() -> None:
+    agent = AsyncMock()
+    agent.run_structured.return_value = Step(say="Привет", calls=[])
+
+    await AssistantAdapter(agent).reply([Turn("user", "привет")], TOOLS[:1], AsyncMock(), CONTEXT)
+
+    system = agent.run_structured.call_args_list[0].args[0][0].content
+    assert "language of the user's last message" in system

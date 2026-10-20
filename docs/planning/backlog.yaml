@@ -4506,26 +4506,30 @@ epics:
               list, a store owning it all; three languages. Checked at 375, 768 and 1280 px.
       - key: F21.2
         title: Speaking to the assistant
-        labels: [frontend, backend, ai]
+        labels: [frontend]
         requirements: []
         depends_on: [F21.1]
         intent: >
           A microphone button beside the text field: the user speaks in Polish, Ukrainian or
-          English, the recording goes to the model, which understands audio directly, and the
-          words it heard appear as the user's message before the answer. The audio itself is
-          never stored, only what was understood.
+          English and the browser's own recognition turns it into text — free, and no sound
+          ever reaches the service (ADR-0025, decided over sending audio to the model, which
+          would cost each message). The words appear as the user's message before the
+          answer; saying "approve" saves the card waiting for it. Where a browser cannot
+          recognise speech, no microphone is shown. Hidden for now (2026-10-20): the
+          browser's recognition proved too poor in use; the code stays in `@/shared/speech`
+          and the microphone returns once a free recogniser is good enough.
         demo: >
-          Hold the microphone and say "wczoraj taxi 45 złotych": the message "wczoraj taxi 45
-          złotych" appears, then the assistant's answer.
+          Tap the microphone and say "wczoraj taxi 45 złotych": the message appears, then the
+          assistant's card.
         tasks:
           - key: F21.2.1
-            title: Voice recording and transcription
-            labels: [frontend, backend, ai]
+            title: Speech to text in the browser
+            labels: [frontend]
             detail: >
-              Recording in the browser (MediaRecorder; the microphone permission asked for and a
-              refusal explained), a size and length limit, the audio sent to the model with the
-              conversation and discarded after; the transcript stored as the user's message.
-              Checked at 375, 768 and 1280 px and in the installed app on a phone.
+              The Web Speech API in the user's language, words shown as they are heard and
+              sent when the phrase ends, "approve" in three languages saving the waiting card,
+              the microphone hidden where unsupported, and the privacy policy saying the
+              browser's maker may recognise the sound. Checked at 375, 768 and 1280 px.
       - key: F21.3
         title: Expenses by voice
         labels: [backend, frontend, ai]

@@ -22,6 +22,7 @@ from app.models.user import User
 from app.ports.assistant import (
     AssistantContext,
     AssistantReply,
+    CheckTool,
     ReadTool,
     ToolCall,
     ToolSpec,
@@ -29,6 +30,7 @@ from app.ports.assistant import (
 )
 from app.services.assistant_tools import Card, Toolbox
 from app.services.quota import QuotaService
+from tests.factories.category import CategoryFactory
 from tests.factories.upload_job import UploadJobFactory
 from tests.factories.user import UserFactory
 
@@ -50,6 +52,7 @@ class ScriptedAssistant:
         tools: Sequence[ToolSpec],
         read: ReadTool,
         context: AssistantContext,
+        check: CheckTool | None = None,
     ) -> AssistantReply:
         self.seen = list(history)
         self.read_results = [await read(call) for call in self.reads]
@@ -423,3 +426,72 @@ async def test_invalid_write_args_drops_proposal(db_session: AsyncSession) -> No
     said = await _say(db_session, user, "Invalid proposals", assistant)
     # Neither invalid proposal should produce a card message
     assert len(said["messages"]) == 2  # user + assistant text, no cards
+
+
+@pytest.mark.asyncio
+async def test_two_expenses_said_at_once_become_two_cards_and_count_once_approved(
+    db_session: AsyncSession,
+) -> None:
+    """F21.3: 'yesterday taxi 45, coffee 12' — two cards, each in a category of the user's."""
+    user = await UserFactory.create_async(currency="PLN")
+    assistant = ScriptedAssistant(
+        proposals=[
+            ToolCall(
+                "add_expense",
+                {
+                    "description": "Taxi",
+                    "amount": "45",
+                    "spent_on": "2026-10-19",
+                    "category": "transport",
+                },
+            ),
+            ToolCall("add_expense", {"description": "Coffee", "amount": "12", "category": "Cafés"}),
+        ]
+    )
+
+    said = await _say(db_session, user, "Yesterday taxi 45, coffee 12", assistant)
+    taxi, coffee = said["messages"][-2:]
+    listed_before = (await _call(db_session, user, "GET", "/receipts")).json()
+    saved = await _call(
+        db_session,
+        user,
+        "POST",
+        f"{URL}/cards/{taxi['id']}/save",
+        {"fields": taxi["card"]["fields"]},
+    )
+    listed = (await _call(db_session, user, "GET", "/receipts")).json()
+
+    assert (taxi["card"]["kind"], coffee["card"]["kind"]) == ("expense", "expense")
+    assert taxi["card"]["fields"]["spent_on"] == "2026-10-19"
+    assert coffee["card"]["fields"]["spent_on"] == "2026-10-20"
+    # A category the user does not have falls back to Other rather than to nothing.
+    assert coffee["card"]["fields"]["category_id"] is not None
+    assert listed_before["items"] == []
+    assert saved.json()["saved_ref"].startswith("receipt:")
+    assert [(r["merchant_name"], Decimal(r["total_amount"])) for r in listed["items"]] == [
+        ("Taxi", Decimal("45.00"))
+    ]
+
+
+@pytest.mark.asyncio
+async def test_an_expense_card_never_saves_into_another_users_category(
+    db_session: AsyncSession,
+) -> None:
+    """N2: the card's category is checked again when it is approved."""
+    me = await UserFactory.create_async()
+    stranger = await UserFactory.create_async()
+    theirs = await CategoryFactory.create_async(user_id=stranger.id, name="Their secret")
+    assistant = ScriptedAssistant(
+        proposals=[ToolCall("add_expense", {"description": "X", "amount": "5"})]
+    )
+    card = (await _say(db_session, me, "X 5", assistant))["messages"][-1]
+
+    saved = await _call(
+        db_session,
+        me,
+        "POST",
+        f"{URL}/cards/{card['id']}/save",
+        {"fields": {**card["card"]["fields"], "category_id": str(theirs.id)}},
+    )
+
+    assert saved.status_code == 404

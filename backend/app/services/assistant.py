@@ -13,6 +13,7 @@ from app.api.errors import DomainError, NotFoundError, ProblemCode
 from app.models.conversation import Conversation, ConversationMessage
 from app.models.user import User
 from app.ports.assistant import AssistantContext, AssistantPort, Turn
+from app.ports.exchange_rates import ExchangeRatePort
 from app.services.assistant_tools import Card, Toolbox, tool_specs
 from app.services.quota import QuotaService
 
@@ -36,11 +37,16 @@ class AssistantService:
     """
 
     def __init__(
-        self, session: AsyncSession, assistant: AssistantPort, quota: QuotaService
+        self,
+        session: AsyncSession,
+        assistant: AssistantPort,
+        quota: QuotaService,
+        rates: ExchangeRatePort | None = None,
     ) -> None:
         self.session = session
         self.assistant = assistant
         self.quota = quota
+        self.rates = rates
 
     async def conversations(self, user: User) -> Sequence[Conversation]:
         """The user's conversations, the latest touched first."""
@@ -82,18 +88,24 @@ class AssistantService:
         conversation.messages.append(
             ConversationMessage(user_id=user.id, role="user", text=text.strip())
         )
-        toolbox = Toolbox(self.session, user, today)
+        toolbox = Toolbox(self.session, user, today, self.rates)
         reply = await self.assistant.reply(
             _history(conversation.messages),
             tool_specs(),
             toolbox.read,
-            AssistantContext(user.language or "en", user.currency, today.isoformat()),
+            AssistantContext(
+                user.language or "en",
+                user.currency,
+                today.isoformat(),
+                tuple(c.name for c in await toolbox.categories()),
+            ),
+            toolbox.check,
         )
         conversation.messages.append(
             ConversationMessage(user_id=user.id, role="assistant", text=reply.text)
         )
         for proposal in reply.proposals:
-            card = toolbox.propose(proposal)
+            card = await toolbox.propose(proposal)
             if card is not None:
                 conversation.messages.append(
                     ConversationMessage(
@@ -119,7 +131,7 @@ class AssistantService:
         """
         message = await self._card(user, message_id)
         card = Card(str(message.card["kind"]) if message.card else "", fields)
-        message.saved_ref = await Toolbox(self.session, user, today).save(card)
+        message.saved_ref = await Toolbox(self.session, user, today, self.rates).save(card)
         message.card = {"kind": card.kind, "fields": fields}
         message.card_state = CardState.SAVED
         await self.session.flush()
