@@ -3349,6 +3349,60 @@ epics:
             detail: >
               A panel in Preferences showing the share of receipts corrected, the shops behind
               them and the trend.
+      - key: F15.5
+        title: Receipts from any country, read right
+        labels: [backend, ai]
+        requirements: [A9, A10, A11]
+        depends_on: [F3.4]
+        intent: >
+          The reader was written for Polish receipts: its rules named OPUST, SUMA PLN and kaucja,
+          and a Ukrainian receipt failed on its first discount, its rounding line and a
+          McDonald's menu whose priced add-on was folded into the meal. The product is for
+          Europe, so reading starts from rules that hold on any receipt — a discount is its own
+          negative line, a footer sum of discounts or a payment is no line, a menu's unpriced
+          parts are not lines but a priced add-on is — and adds short notes per country and,
+          where a chain prints its own way, per shop. The model also gets a fixed budget to
+          think before it answers, the photo is turned upright and made legible first, and a
+          set of receipts with their right answers measures every change, so an improvement is
+          a number rather than an impression.
+        demo: >
+          Read the Sushizoom, McDonald's and Biedronka receipts of the evaluation set: every
+          line, discount and total right, and the script reports the share of lines read right
+          before and after.
+        tasks:
+          - key: F15.5.1
+            title: Reading rules for any receipt, with notes per country and per shop
+            labels: [backend, ai]
+            detail: >
+              One table of conventions (app/domain/receipt_conventions.py): general rules every
+              receipt follows, then per country (PL, UA, DE, CZ, SK, AT, FR, NL, DK, SE, CH and
+              more by adding a row) the words for discount, deposit, rounding, subtotal, amount to
+              pay, payment and VAT marks, then per chain what it prints differently. The prompt is
+              built from it, the reconciliation rules take their words from it, so a country
+              added once is understood by both. Parser version bumped.
+          - key: F15.5.2
+            title: A fixed thinking budget for reading
+            labels: [backend, ai]
+            detail: >
+              Reading with thinking switched off made the model transcribe without checking
+              itself. Give it a fixed budget (Gemini thinkingBudget through LiteLLM) and raise the
+              token limit by as much, so thoughts can never cut the JSON off; local models keep
+              their own setting.
+          - key: F15.5.3
+            title: Photos made legible before reading
+            labels: [backend]
+            detail: >
+              Turn the photo upright from its EXIF orientation, trim plain margins, make it grey
+              and stretch its contrast for faded thermal paper, and keep it within the size the
+              model reads at full detail. A photo that cannot be processed is sent as it was.
+          - key: F15.5.4
+            title: An evaluation set and score
+            labels: [backend, ai]
+            detail: >
+              Receipts with their right lines and totals, from the repository's own fixtures and
+              receipts their owners agreed to share, and a script that reads each with the
+              configured model and reports lines right, totals that agree and the time and
+              tokens spent — run before and after a reading change.
 
   - key: E16
     title: Personal Price History

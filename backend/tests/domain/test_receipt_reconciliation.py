@@ -5,6 +5,7 @@ from typing import Any
 from app.domain.receipt_reconciliation import (
     Reconciliation,
     accepts_recheck,
+    is_deposit,
     reconcile_by_rules,
 )
 
@@ -133,3 +134,17 @@ def test_a_ukrainian_discount_read_without_its_minus_is_flipped() -> None:
     how, _ = reconcile_by_rules(reading) or (None, None)
 
     assert how == Reconciliation.DISCOUNT_SIGN
+
+
+def test_a_german_deposit_and_a_czech_discount_are_known_by_their_words() -> None:
+    deposit = _reading("10,00", _line("Wasser", "10.00"), _line("Pfand", "0.25"))
+    discount = _reading("90.00", _line("Káva", "100.00"), _line("Sleva", "10.00"))
+
+    assert (reconcile_by_rules(deposit) or (None,))[0] == Reconciliation.DEPOSIT
+    assert (reconcile_by_rules(discount) or (None,))[0] == Reconciliation.DISCOUNT_SIGN
+
+
+def test_a_shampoo_named_like_a_deposit_word_is_not_a_deposit() -> None:
+    assert not is_deposit("Pantene Shampoo 400ml")
+    assert is_deposit("Pant 2 kr")
+    assert is_deposit("Kaucja butelka")

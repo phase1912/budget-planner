@@ -18,6 +18,7 @@ from decimal import Decimal
 
 from app.agent.core import Agent
 from app.agent.types import ImageContent, Message
+from app.domain.receipt_conventions import prompt_notes
 from app.schemas.extraction import ExtractedReceipt
 
 EXTRACTION_MAX_TOKENS = 8192
@@ -27,7 +28,11 @@ A small local model at temperature 0 can fall into repeating one line over and o
 until it hits its limit; this bounds that to minutes instead of the default 32k.
 """
 
-RECEIPT_EXTRACTION_PROMPT = """\
+READING_THINKING_BUDGET = 2048
+"""Tokens the model may think before it answers (F15.5): enough to check that the lines add
+up and to place a wrapped name or a menu's parts, on top of the answer's own limit."""
+
+RECEIPT_EXTRACTION_PROMPT_HEAD = """\
 You are a receipt parser. You will be given one or more photos of a single \
 receipt (the same physical receipt may be photographed in overlapping shots).
 
@@ -44,15 +49,13 @@ Extract the following into the JSON schema provided:
   hire), "accommodation" (hotel, hostel, guesthouse, apartment rental), "meals" \
   (restaurant, café, bar, or a shop selling mostly food and drink) or "other" \
   (souvenirs, clothes, pharmacy, anything else)
-- receipt_total: the amount actually paid. When the footer prints both a goods \
-  subtotal ("SUMA PLN") and an amount to pay ("DO ZAPŁATY", "RAZEM DO ZAPŁATY", \
-  "Total due"), take the amount to pay
+- receipt_total: the receipt's total to pay, as the reading rules below define it
 - fiscal_register_id, fiscal_receipt_number: the fiscal numbers that identify this \
-  receipt, exactly as printed — in Poland the register number beside the fiscal logo \
-  (e.g. "ECA 2201079960") and the printout number of the PARAGON FISKALNY (e.g. \
-  "nr:85503"), in Ukraine the ФН of the register and the receipt's fiscal number. Use \
-  the fiscal receipt's numbers, never those of a non-fiscal printout (NIEFISKALNY) on \
-  the same paper. Null when the receipt prints none
+  receipt, exactly as printed — the register's number and the receipt's own number, \
+  e.g. in Poland "ECA 2201079960" beside the fiscal logo and "nr:85503" of the PARAGON \
+  FISKALNY, in Ukraine the ФН of the register and the receipt's fiscal number. Use the \
+  fiscal receipt's numbers, never those of a non-fiscal printout (NIEFISKALNY) on the \
+  same paper. Null when the receipt prints none
 - items_sum_matches_total: true if the sum of line item totals equals the \
   receipt total, false if they differ, null if either side is missing
 
@@ -74,34 +77,22 @@ a transfer they received, a refund confirmation; "other" for anything else.
 IMPORTANT:
 1. Return ONLY valid JSON matching the schema. No extra text or explanation. Always extract
    all line items if visible.
-2. For prices, give the number only. Receipts print a VAT class letter next to
-   each amount ("7,49A", "13,99C") and a unit next to each quantity ("10szt") —
-   leave those out and keep the decimal separator as printed ("7,49", "10").
-   If a line has no price printed at all, return an empty string for it rather
-   than repeating the VAT letter.
+2. For prices, give the number only, without VAT marks or units ("7,49A" is "7,49",
+   "10szt" is "10"), keeping the decimal separator as printed. If a line has no price
+   printed at all, return an empty string for it rather than repeating the VAT mark.
 3. If quantity or unit price is not explicitly printed for an item, infer them (e.g., quantity "1",
    unit_price same as total_price). DO NOT skip line items just because these details are implicit.
-4. Receipts come from many countries; the rules below hold whatever the language.
-   A discount printed under a product ("OPUST", "Rabat", "Upust", "Знижка", "Скидка",
-   "Discount", "Rabatt", "Sleva") is a line item of its own with a NEGATIVE total_price,
-   exactly as printed under the product it reduces; the product keeps its full price.
-   A footer line that sums those discounts ("Знижка -48.90" above "Сума", "Rabaty
-   razem", "Total savings") repeats them: it is NEVER a line item, or the discount is
-   counted twice. A footer rounding of the amount to pay ("Округлення -0.11",
-   "Zaokrąglenie", "Rounding") IS a line item, with its sign, named as printed. Totals
-   and payments ("Сума", "Разом", "До сплати", "Готівка", "Картка", "Gotówka", "Karta",
-   "Cash", "Change", "Решта") are never line items; receipt_total is what was paid.
-5. Returnable-packaging deposits ("kaucja", "OPAKOWANIA ZWROTNE", e.g. "But Plastik kaucja
-   6 x 0,50 = 3,00") are line items too, with a positive total; a deposit handed back
-   ("zwrot kaucji") is a line with a negative total. Together with the products they make
-   up the amount to pay. List each deposit once: a section heading ("OPAKOWANIA ZWROTNE
-   WYDANIA") or a section sum ("OPAKOWANIA ZWROTNE SUMA") is not a line of its own.
-   Likewise "SUMA PLN", "PTU" and "DO ZAPŁATY" are totals, never line items.
-6. NEVER invent an amount you cannot read. If a price is unreadable, cut off or hidden, return an
+4. NEVER invent an amount you cannot read. If a price is unreadable, cut off or hidden, return an
    empty string for it. "0" means the receipt actually printed a zero, and nothing else. Guessing
    zero silently understates what the user spent, which is worse than admitting the line is
    unreadable.
+5. Before answering, check that the line totals add up to receipt_total; if they do not,
+   look again for a missed discount, deposit or rounding line, a menu part read as an
+   item, or a footer sum read as one.
+
+Reading rules:
 """
+RECEIPT_EXTRACTION_PROMPT = RECEIPT_EXTRACTION_PROMPT_HEAD + prompt_notes()
 
 
 RECHECK_PROMPT = """\
@@ -114,13 +105,14 @@ The lines sum to {lines_sum}; the amount to pay you read is {printed_total}; the
 difference is {gap}.
 
 Look at the photos again, line by line, and find what was misread. Common causes:
-- a discount line ("OPUST", "Rabat", "Знижка") missed, or read without its minus sign;
+- a discount line missed, or read without its minus sign;
 - a footer sum of the discounts listed as a line, counting them twice;
-- a rounding line ("Округлення", "Zaokrąglenie") missed;
+- a rounding line missed;
+- a menu's unpriced part listed as an item, or a priced add-on folded into the menu;
 - a line read twice, or one skipped where the photos overlap;
 - a misread digit in a price, or a total that is not quantity x unit price;
-- a deposit ("kaucja", "OPAKOWANIA ZWROTNE") missing from the lines, or the goods \
-  subtotal ("SUMA PLN") taken instead of the amount to pay ("DO ZAPŁATY").
+- a deposit missing from the lines, or the goods subtotal taken instead of the \
+  amount to pay.
 
 Do not change the amount to pay unless you misread it; fix the lines. Return the \
 complete corrected reading in the same JSON schema, following the same rules as before:
@@ -177,7 +169,8 @@ class VisionAgentAdapter:
     ) -> ExtractedReceipt:
         resolved_types = mime_types or ["image/jpeg"] * len(images)
         readable = [
-            readable_input(data, mime) for data, mime in zip(images, resolved_types, strict=True)
+            legible(*readable_input(data, mime))
+            for data, mime in zip(images, resolved_types, strict=True)
         ]
         processed_images = [data for data, _ in readable]
         processed_types = [mime for _, mime in readable]
@@ -191,7 +184,10 @@ class VisionAgentAdapter:
         ]
 
         return await self._agent.run_structured(
-            messages, schema=ExtractedReceipt, max_tokens=EXTRACTION_MAX_TOKENS, reasoning=False
+            messages,
+            schema=ExtractedReceipt,
+            max_tokens=EXTRACTION_MAX_TOKENS,
+            thinking_budget=READING_THINKING_BUDGET,
         )
 
 
@@ -220,6 +216,46 @@ def readable_input(data: bytes, mime: str) -> tuple[bytes, str]:
         return out.getvalue(), "image/jpeg"
     except Exception:
         logging.getLogger(__name__).exception("HEIC conversion failed")
+        return data, mime
+
+
+PHOTO_TYPES = ("image/jpeg", "image/png", "image/webp")
+LEGIBLE_SIDE = 3072
+"""The longest side a photo is sent at: a long receipt keeps its small print, and a 48 MP
+original does not cost four times the tokens for nothing more to read."""
+MARGIN_THRESHOLD = 40
+"""How far from the background colour a pixel must be to count as receipt, not table."""
+
+
+def legible(data: bytes, mime: str) -> tuple[bytes, str]:
+    """A photo made easier to read (F15.5): turned upright from its EXIF orientation —
+    phones store a sideways photo and only note the turn — cropped to what differs from
+    its background, grey, with its contrast stretched for faded thermal paper, and no
+    larger than LEGIBLE_SIDE. PDFs and text pass through; a photo that cannot be processed
+    is sent as it was."""
+    if mime not in PHOTO_TYPES:
+        return data, mime
+    import io
+
+    from PIL import Image, ImageChops, ImageOps
+
+    try:
+        image = ImageOps.exif_transpose(Image.open(io.BytesIO(data)))
+        grey = ImageOps.grayscale(image)
+        background = Image.new("L", grey.size, grey.getpixel((0, 0)))
+        differs = ImageChops.difference(grey, background).point(
+            lambda v: 255 if v > MARGIN_THRESHOLD else 0
+        )
+        box = differs.getbbox()
+        if box:
+            grey = grey.crop(box)
+        grey = ImageOps.autocontrast(grey, cutoff=1)
+        grey.thumbnail((LEGIBLE_SIDE, LEGIBLE_SIDE))
+        out = io.BytesIO()
+        grey.save(out, format="JPEG", quality=92)
+        return out.getvalue(), "image/jpeg"
+    except Exception:
+        logging.getLogger(__name__).exception("Preparing a photo for reading failed")
         return data, mime
 
 

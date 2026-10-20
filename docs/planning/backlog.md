@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-25 epics · 177 features · 342 tasks written so far.
+25 epics · 178 features · 346 tasks written so far.
 
 22 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -24,7 +24,7 @@
 | E12 | Household & Shared Budgets | — | 10 | yes | 2 | Diploma |
 | E13 | Aggregated Purchase Analytics | — | 8 | yes | 2 | Diploma |
 | E14 | B2B Export & Accounting Integrations | — | 8 | no | 2 | Out of scope |
-| E15 | Receipt Accuracy & Trust | — | 4 | yes | 2 | Diploma |
+| E15 | Receipt Accuracy & Trust | — | 5 | yes | 2 | Diploma |
 | E16 | Personal Price History | — | 4 | yes | 2 | Diploma |
 | E17 | Landing, Search and Analytics | — | 11 | yes | 2 | Diploma |
 | E18 | Subscriptions and Payments | — | 6 | yes | 2 | Out of scope |
@@ -1288,6 +1288,19 @@ How often reading needs correcting, by shop and over time, measured from what us
 
 - **F15.4.1** Accuracy figures from corrections — Count receipts and lines changed after reading, per merchant and per month, from the stored corrections and mismatch fixes.
 - **F15.4.2** Accuracy panel — A panel in Preferences showing the share of receipts corrected, the shops behind them and the trend.
+
+### F15.5 — Receipts from any country, read right
+
+*Requirements: A9, A10, A11* · *Blocked by: F3.4*
+
+The reader was written for Polish receipts: its rules named OPUST, SUMA PLN and kaucja, and a Ukrainian receipt failed on its first discount, its rounding line and a McDonald's menu whose priced add-on was folded into the meal. The product is for Europe, so reading starts from rules that hold on any receipt — a discount is its own negative line, a footer sum of discounts or a payment is no line, a menu's unpriced parts are not lines but a priced add-on is — and adds short notes per country and, where a chain prints its own way, per shop. The model also gets a fixed budget to think before it answers, the photo is turned upright and made legible first, and a set of receipts with their right answers measures every change, so an improvement is a number rather than an impression.
+
+**Demonstrated by:** Read the Sushizoom, McDonald's and Biedronka receipts of the evaluation set: every line, discount and total right, and the script reports the share of lines read right before and after.
+
+- **F15.5.1** Reading rules for any receipt, with notes per country and per shop — One table of conventions (app/domain/receipt_conventions.py): general rules every receipt follows, then per country (PL, UA, DE, CZ, SK, AT, FR, NL, DK, SE, CH and more by adding a row) the words for discount, deposit, rounding, subtotal, amount to pay, payment and VAT marks, then per chain what it prints differently. The prompt is built from it, the reconciliation rules take their words from it, so a country added once is understood by both. Parser version bumped.
+- **F15.5.2** A fixed thinking budget for reading — Reading with thinking switched off made the model transcribe without checking itself. Give it a fixed budget (Gemini thinkingBudget through LiteLLM) and raise the token limit by as much, so thoughts can never cut the JSON off; local models keep their own setting.
+- **F15.5.3** Photos made legible before reading — Turn the photo upright from its EXIF orientation, trim plain margins, make it grey and stretch its contrast for faded thermal paper, and keep it within the size the model reads at full detail. A photo that cannot be processed is sent as it was.
+- **F15.5.4** An evaluation set and score — Receipts with their right lines and totals, from the repository's own fixtures and receipts their owners agreed to share, and a script that reads each with the configured model and reports lines right, totals that agree and the time and tokens spent — run before and after a reading change.
 
 ---
 

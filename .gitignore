@@ -41,3 +41,6 @@ frontend/openapi.json
 .agents
 CLAUDE.md
 AGENTS.md
+
+# Receipts for scoring the reader (F15.5.4): people's data, never committed
+backend/evaluation/receipts/
