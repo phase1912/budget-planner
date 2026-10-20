@@ -81,6 +81,15 @@ export class StatisticsStore {
     return this.load();
   }
 
+  /**
+   * Open on a run of days, compared or not, as a link asked for it — the assistant's
+   * answer card (F21.4) — and fetch it once.
+   */
+  show(start: string, end: string, compare: boolean): Promise<void> {
+    this.compare = compare;
+    return this.chooseRange(start, end);
+  }
+
   /** Forget the figures: a different user is signing in. */
   reset(): void {
     this.request++;

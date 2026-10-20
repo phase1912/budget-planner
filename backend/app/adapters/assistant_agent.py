@@ -47,6 +47,17 @@ EXAMPLES = "Examples:\n" + "\n".join(
             "Ile wydałem w tym miesiącu?",
             {"say": "", "calls": [{"tool": "month_summary", "args": "{}"}]},
         ),
+        (
+            "How much did I spend on groceries this month compared to last?",
+            {
+                "say": "",
+                "calls": [{"tool": "spending_by_category", "args": '{"compare": true}'}],
+            },
+        ),
+        (
+            "Де найдешевше молоко?",
+            {"say": "", "calls": [{"tool": "product_prices", "args": '{"name": "молоко"}'}]},
+        ),
     )
 )
 """A few answers shown whole: a small model follows an example better than a rule."""
@@ -109,7 +120,9 @@ def _system(tools: Sequence[ToolSpec], context: AssistantContext) -> str:
         "the user asks to record or change something, call the tool again, even if a similar "
         "card was proposed before. Only a card the history marks as saved was saved.\n"
         "To answer about the user's money, call a read tool first and use only its numbers; "
-        "never invent figures. Settings, the account and deleting anything are done on the "
+        "never invent figures. A chart or a link to the screen is shown below your answer by "
+        "itself: do not describe it, say the figures that answer the question.\n"
+        "Settings, the account and deleting anything are done on the "
         "screens, not by you: say so if asked. Amounts are plain numbers like 2500 or 12.50, "
         "without spaces or currency.\n"
         f"Tools:\n{listed}\n"

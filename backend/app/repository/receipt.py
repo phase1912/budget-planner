@@ -475,6 +475,21 @@ class ReceiptRepository(BaseRepository[Receipt]):
         count: int = (await self.session.execute(count_stmt)).scalar_one()
         return total, count
 
+    async def shop_spend(self, period: DateRange, shop: str | None) -> Decimal:
+        """What the user paid over `period` at shops whose name contains `shop` (F21.4).
+
+        Counted as `month_total` is; with no shop, the whole period's spend.
+        """
+        receipts = select(Receipt.id).where(counted_in_budget(), _within(period))
+        if shop:
+            receipts = receipts.where(
+                Receipt.merchant_name.ilike(f"%{_escape_like(shop)}%", escape="\\")
+            )
+        stmt = select(func.coalesce(func.sum(LineItem.paid), 0)).where(
+            LineItem.receipt_id.in_(self._apply_ownership(receipts))
+        )
+        return Decimal((await self.session.execute(stmt)).scalar_one())
+
     async def daily_totals(self, period: DateRange) -> dict[date, Decimal]:
         """The current user's spend on each day of `period` that had any (F23.4).
 

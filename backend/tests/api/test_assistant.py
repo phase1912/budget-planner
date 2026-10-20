@@ -1,5 +1,6 @@
 """Talking to the assistant, against a real database and a scripted model (F21.1, F21.7, N2)."""
 
+import json
 import uuid
 from collections.abc import AsyncIterator, Sequence
 from datetime import UTC, date, datetime
@@ -18,6 +19,8 @@ from app.core.config import get_settings
 from app.core.context import current_user_id
 from app.db.session import get_db_session
 from app.main import create_app
+from app.models.category import Category
+from app.models.receipt import ReceiptStatus
 from app.models.user import User
 from app.ports.assistant import (
     AssistantContext,
@@ -31,6 +34,8 @@ from app.ports.assistant import (
 from app.services.assistant_tools import Card, Toolbox
 from app.services.quota import QuotaService
 from tests.factories.category import CategoryFactory
+from tests.factories.line_item import LineItemFactory
+from tests.factories.receipt import ReceiptFactory
 from tests.factories.upload_job import UploadJobFactory
 from tests.factories.user import UserFactory
 
@@ -495,3 +500,121 @@ async def test_an_expense_card_never_saves_into_another_users_category(
     )
 
     assert saved.status_code == 404
+
+
+async def _bought(
+    user: User,
+    day: date,
+    shop: str,
+    *lines: tuple[str, str],
+    category: Category | None = None,
+) -> None:
+    receipt = await ReceiptFactory.create_async(
+        user_id=user.id,
+        merchant_name=shop,
+        transaction_date=datetime(day.year, day.month, day.day, 12, tzinfo=UTC),
+        total_amount=sum((Decimal(amount) for _, amount in lines), Decimal(0)),
+        status=ReceiptStatus.PARSED,
+        file_ids=[],
+    )
+    for name, amount in lines:
+        await LineItemFactory.create_async(
+            receipt=receipt,
+            name=name,
+            quantity=Decimal(1),
+            unit_price=Decimal(amount),
+            total_price=Decimal(amount),
+            category=category,
+        )
+
+
+def _answers(conversation: dict[str, Any]) -> list[dict[str, Any]]:
+    return [m["card"]["fields"] for m in conversation["messages"] if m["card_state"] == "shown"]
+
+
+@pytest.mark.asyncio
+async def test_a_month_against_the_one_before_comes_with_its_chart_and_a_link(
+    db_session: AsyncSession,
+) -> None:
+    user = await UserFactory.create_async()
+    food = await CategoryFactory.create_async(user_id=user.id, name="Groceries")
+    await _bought(user, date(2026, 10, 5), "Lidl", ("Mleko", "100.00"), category=food)
+    await _bought(user, date(2026, 9, 5), "Lidl", ("Mleko", "60.00"), category=food)
+    assistant = ScriptedAssistant(
+        reads=[ToolCall("spending_by_category", {"month": "2026-10", "compare": True})]
+    )
+
+    conversation = await _say(db_session, user, "Groceries vs last month?", assistant)
+
+    figures = json.loads(assistant.read_results[0])
+    assert figures["spent"] == "100.00"
+    assert figures["before"]["spent"] == "60.00"
+    assert figures["categories"][0] == {"name": "Groceries", "spent": "100.00", "before": "60.00"}
+    [card] = _answers(conversation)
+    assert card["to"] == "/spending?start=2026-10-01&end=2026-10-31&compare=1"
+    assert card["previous_start"] == "2026-09-01"
+    assert card["chart"]["groups"][0]["name"] == "Groceries"
+
+
+@pytest.mark.asyncio
+async def test_a_shop_or_an_item_is_answered_from_the_users_own_receipts_only(
+    db_session: AsyncSession,
+) -> None:
+    user = await UserFactory.create_async()
+    other = await UserFactory.create_async()
+    await _bought(user, date(2026, 10, 3), "Lidl Sp. z o.o.", ("Kawa", "20.00"), ("Chleb", "5.00"))
+    await _bought(user, date(2026, 10, 9), "Biedronka", ("Kawa", "18.00"))
+    await _bought(other, date(2026, 10, 4), "Lidl", ("Kawa", "999.00"))
+    assistant = ScriptedAssistant(
+        reads=[
+            ToolCall("receipts", {"shop": "lidl", "month": "2026-10"}),
+            ToolCall("receipts", {"item": "kawa", "month": "2026-10"}),
+        ]
+    )
+
+    conversation = await _say(db_session, user, "Lidl and coffee this month?", assistant)
+
+    shop, item = (json.loads(r) for r in assistant.read_results)
+    assert (shop["receipts"], shop["spent"]) == (1, "25.00")
+    assert (item["receipts"], item["spent_on_item"]) == (2, "38.00")
+    assert [c["to"] for c in _answers(conversation)] == [
+        "/receipts?start=2026-10-01&end=2026-10-31&q=kawa"
+    ]
+
+
+@pytest.mark.asyncio
+async def test_a_products_prices_name_the_cheaper_shop_and_link_to_explore(
+    db_session: AsyncSession,
+) -> None:
+    user = await UserFactory.create_async()
+    other = await UserFactory.create_async()
+    await _bought(user, date(2026, 10, 3), "Lidl", ("Mleko 2%", "3.49"))
+    await _bought(user, date(2026, 10, 10), "Biedronka", ("Mleko 2%", "3.99"))
+    await _bought(other, date(2026, 10, 10), "Żabka", ("Mleko 2%", "9.99"))
+    assistant = ScriptedAssistant(reads=[ToolCall("product_prices", {"name": "mleko"})])
+
+    conversation = await _say(db_session, user, "Where is milk cheapest?", assistant)
+
+    [product] = json.loads(assistant.read_results[0])["products"]
+    assert product["times_bought"] == 2
+    assert {s["shop"]: s["latest"] for s in product["shops"]} == {
+        "Lidl": "3.49",
+        "Biedronka": "3.99",
+    }
+    [card] = _answers(conversation)
+    assert card["to"].startswith("/products/explore?products=")
+
+
+@pytest.mark.asyncio
+async def test_a_period_ending_before_it_starts_is_told_back_not_raised(
+    db_session: AsyncSession,
+) -> None:
+    user = await UserFactory.create_async()
+    assistant = ScriptedAssistant(
+        reads=[ToolCall("spending_by_category", {"start": "2026-10-20", "end": "2026-10-01"})]
+    )
+
+    conversation = await _say(db_session, user, "Spending?", assistant)
+
+    assert "error" in assistant.read_results[0]
+    assert _answers(conversation) == []

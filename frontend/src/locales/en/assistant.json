@@ -38,5 +38,12 @@
     "spent_on": "Date",
     "category": "Category",
     "openReceipts": "Open Spending"
+  },
+  "answer": {
+    "spending": "Open in Spending",
+    "receipts": "Open these receipts",
+    "products": "Open the prices",
+    "hidden_one": "One more category is on the Spending screen.",
+    "hidden_other": "{{count}} more categories are on the Spending screen."
   }
 }

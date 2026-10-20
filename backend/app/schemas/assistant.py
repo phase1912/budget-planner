@@ -23,9 +23,10 @@ class CardFields(BaseModel):
 
 
 class CardRead(BaseModel):
-    """A proposed action: what kind of thing it creates or changes, and its fields."""
+    """A proposed action: what kind of thing it creates or changes, and its fields — or an
+    answer card (`answer`, F21.4): a chart and a link to the screen with the same filters."""
 
-    kind: Literal["budget", "income", "bill", "expense"]
+    kind: Literal["budget", "income", "bill", "expense", "answer"]
     fields: dict[str, Any]
 
 
@@ -36,7 +37,7 @@ class MessageRead(BaseModel):
     role: Literal["user", "assistant"]
     text: str
     card: CardRead | None = None
-    card_state: Literal["proposed", "saved", "dismissed"] | None = None
+    card_state: Literal["proposed", "saved", "dismissed", "shown"] | None = None
     saved_ref: str | None = None
     created_at: datetime
 

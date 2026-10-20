@@ -66,6 +66,21 @@ describe("StatisticsStore", () => {
     });
   });
 
+  it("opens on the period and comparison an assistant's link asks for, in one fetch", async () => {
+    vi.mocked(apiClient.GET).mockResolvedValue({ data: JULY, response: new Response() });
+    const store = new StatisticsStore(() => new Date(2026, 6, 27));
+
+    await store.show("2026-07-01", "2026-07-31", true);
+
+    expect(apiClient.GET).toHaveBeenCalledWith("/api/v1/statistics/categories", {
+      params: { query: { start: "2026-07-01", end: "2026-07-31", compare: true, chart: true } },
+    });
+    const categoryCalls = vi
+      .mocked(apiClient.GET)
+      .mock.calls.filter((call: unknown[]) => String(call[0]).endsWith("/categories"));
+    expect(categoryCalls).toHaveLength(1);
+  });
+
   it("puts a range picked the wrong way round the right way round", async () => {
     vi.mocked(apiClient.GET).mockResolvedValue({ data: JULY, response: new Response() });
     const store = new StatisticsStore();

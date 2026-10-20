@@ -50,7 +50,8 @@ export const ApproveCard = observer(function ApproveCard({
     heard.current = assistantStore.approveSignal;
     if (assistantStore.waitingCard?.id === message.id) approve();
   });
-  if (!card) return null;
+  // An answer card (F21.4) has nothing to approve; `AnswerCard` shows it.
+  if (!card || card.kind === "answer") return null;
   const Icon = ICONS[card.kind];
   const proposed = message.card_state === "proposed";
   const set = (name: string) => (value: unknown) => {

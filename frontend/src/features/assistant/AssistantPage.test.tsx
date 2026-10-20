@@ -217,4 +217,71 @@ describe("the assistant (F21.1, F21.7)", () => {
     expect(["Approve.", "підтверджую", "Zatwierdzam!"].map(isApproval)).toEqual([true, true, true]);
     expect(isApproval("approve the budget of 2500")).toBe(false);
   });
+
+  it("answers a question with the chart and a link to the screen with the same period (F21.4)", async () => {
+    const answered = {
+      ...CONVERSATION,
+      messages: [
+        {
+          ...CARD,
+          id: "q1",
+          role: "user",
+          text: "Groceries vs last month?",
+          card: null,
+          card_state: null,
+        },
+        {
+          ...CARD,
+          id: "q2",
+          text: "Groceries: 100 now, 60 in September.",
+          card: null,
+          card_state: null,
+        },
+        {
+          ...CARD,
+          id: "q3",
+          card_state: "shown",
+          card: {
+            kind: "answer",
+            fields: {
+              screen: "spending",
+              to: "/spending?start=2026-10-01&end=2026-10-31&compare=1",
+              start: "2026-10-01",
+              end: "2026-10-31",
+              previous_start: "2026-09-01",
+              previous_end: "2026-09-30",
+              chart: {
+                scale_max: "100",
+                ticks: ["0", "50", "100"],
+                hidden: 0,
+                groups: [
+                  {
+                    category_id: null,
+                    name: "Groceries",
+                    current: { value: "100.00", height: "100" },
+                    previous: { value: "60.00", height: "60" },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      ],
+    };
+    api.POST.mockResolvedValue({ data: answered });
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText("Write a message"), {
+      target: { value: "Groceries vs last month?" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+
+    expect(await screen.findByText("Groceries: 100 now, 60 in September.")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Category by category" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open in Spending" })).toHaveAttribute(
+      "href",
+      "/spending?start=2026-10-01&end=2026-10-31&compare=1",
+    );
+    expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
+  });
 });

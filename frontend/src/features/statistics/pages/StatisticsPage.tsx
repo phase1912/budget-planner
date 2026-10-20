@@ -1,8 +1,8 @@
-import { CategoryIcon, Collapsible, Switch } from "@/shared/components";
+import { CategoryChart, CategoryIcon, Collapsible, Switch } from "@/shared/components";
 import { useEffect, useState } from "react";
 import { CalendarX } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { ExportMenu } from "@/features/exports/components/ExportMenu";
 import {
@@ -23,7 +23,6 @@ import {
 } from "@/shared/components";
 import type { Preset } from "@/stores/StatisticsStore";
 import { useStores } from "@/stores/StoreContext";
-import { CategoryChart } from "../components/CategoryChart";
 import { SpendingRing } from "../components/SpendingRing";
 import { DailyBars } from "../components/DailyBars";
 import { ItemsToFile, PeriodReceipts, RegularBills } from "../components/SpendingSections";
@@ -49,6 +48,8 @@ const AMOUNT = numberFormat({
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
 /**
  * Statistics (docs/design/screens/statistics.html): every category's total, share
  * of the period's spend and item count, biggest first (BRD E1, E4 — F7.1), over
@@ -80,12 +81,24 @@ export const StatisticsPage = observer(function StatisticsPage() {
   const comparison = statistics?.comparison ?? null;
   const previous = comparison ? periodLabel(comparison.start, comparison.end) : null;
 
+  const [searchParams] = useSearchParams();
+  const linkedStart = searchParams.get("start");
+  const linkedEnd = searchParams.get("end");
+  const linkedCompare = searchParams.get("compare") === "1";
+
   useEffect(() => {
-    void statisticsStore.load();
+    // `?start=…&end=…[&compare=1]` is the assistant's link to the figures it answered with.
+    if (linkedStart && linkedEnd && ISO_DAY.test(linkedStart) && ISO_DAY.test(linkedEnd)) {
+      void statisticsStore.show(linkedStart, linkedEnd, linkedCompare);
+    } else {
+      void statisticsStore.load();
+    }
+  }, [statisticsStore, linkedStart, linkedEnd, linkedCompare]);
+  useEffect(() => {
     void householdStore.load();
     void categoriesStore.loadReviewCount();
     void incomeStore.loadBills();
-  }, [statisticsStore, householdStore, categoriesStore, incomeStore]);
+  }, [householdStore, categoriesStore, incomeStore]);
 
   return (
     <div className="flex-grow flex flex-col items-center pb-4">
