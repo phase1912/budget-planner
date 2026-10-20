@@ -35,7 +35,7 @@ from app.schemas.income import (
     TaxPaymentRequest,
 )
 from app.services.balance import BalanceService
-from app.services.income import IncomeService, Sharing
+from app.services.income import IncomeService, Sharing, bill_rule, regular_rule
 from app.services.income_document import IncomeDocumentService
 from app.services.quota import QuotaService
 
@@ -50,14 +50,22 @@ def _income(row: Income, sharing: Sharing) -> IncomeRead:
     return IncomeRead.model_validate(row).model_copy(update=asdict(sharing.whose(row)))
 
 
-def _regular(row: IncomeSource, sharing: Sharing) -> IncomeSourceRead:
-    """A regular income as the caller sees it: whose it is (F12.8)."""
-    return IncomeSourceRead.model_validate(row).model_copy(update=asdict(sharing.whose(row)))
+def _regular(row: IncomeSource, sharing: Sharing, month: date | None = None) -> IncomeSourceRead:
+    """A regular income as the caller sees it: whose it is (F12.8), and what it comes to in
+    `month` when one is asked about (F23.21)."""
+    this_month = regular_rule(row).in_month(month) if month else None
+    return IncomeSourceRead.model_validate(row).model_copy(
+        update={**asdict(sharing.whose(row)), "this_month": this_month}
+    )
 
 
-def _bill(row: RegularExpense, sharing: Sharing) -> RegularExpenseRead:
-    """A regular bill as the caller sees it: whose it is (F12.8)."""
-    return RegularExpenseRead.model_validate(row).model_copy(update=asdict(sharing.whose(row)))
+def _bill(row: RegularExpense, sharing: Sharing, month: date | None = None) -> RegularExpenseRead:
+    """A regular bill as the caller sees it: whose it is (F12.8), and what it comes to in
+    `month` when one is asked about (F23.21)."""
+    this_month = bill_rule(row).in_month(month) if month else None
+    return RegularExpenseRead.model_validate(row).model_copy(
+        update={**asdict(sharing.whose(row)), "this_month": this_month}
+    )
 
 
 @router.get("", response_model=MonthIncomeRead)
@@ -80,9 +88,9 @@ async def month_income(
         taxes=view.income.taxes,
         net=view.income.net,
         taxes_paid=view.taxes_paid,
-        regular=[_regular(s, sharing) for s in view.regular],
-        bills=[_bill(b, sharing) for b in view.bills],
-        bills_total=sum((b.amount for b in view.bills), Decimal("0.00")),
+        regular=[_regular(s, sharing, first_day) for s in view.regular],
+        bills=[_bill(b, sharing, first_day) for b in view.bills],
+        bills_total=sum((bill_rule(b).in_month(first_day) for b in view.bills), Decimal("0.00")),
     )
 
 

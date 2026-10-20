@@ -23,6 +23,7 @@ from app.models.pending_income import PendingIncome
 from app.models.user import User
 from app.ports.income_reading import IncomeReading
 from app.schemas.extraction import ExtractedReceipt
+from tests.api.income_card import on_a_card
 from tests.api.test_inbound_email import (
     SECRET,
     RecordingStorage,
@@ -103,7 +104,7 @@ async def _api(
         base_url="http://test",
         headers={"Authorization": f"Bearer {create_access_token(user.id)}"},
     ) as client:
-        return await client.request(method, url, json=json)
+        return await client.request(method, url, json=on_a_card(method, url, json))
 
 
 async def _pending(session: AsyncSession, user: User) -> list[PendingIncome]:

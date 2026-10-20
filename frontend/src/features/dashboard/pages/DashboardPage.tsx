@@ -55,10 +55,19 @@ export const DashboardPage = observer(function DashboardPage() {
     categoriesStore,
     profileStore,
     productsStore,
+    bankAccountsStore,
   } = useStores();
   const { summary, error } = budgetStore;
   const { t } = useTranslation("dashboard");
-  const [editing, setEditing] = useState<"income" | "budget" | "balance" | "received" | null>(null);
+  const [editing, setEditing] = useState<
+    "income" | "budget" | "balance" | "received" | "newCard" | null
+  >(null);
+  // Income lands on a card (F23.21): with none yet, it is added where the card is made too.
+  const addIncome = (quick: "income" | "received") => {
+    setEditing(
+      bankAccountsStore.loaded && bankAccountsStore.accounts.length === 0 ? "newCard" : quick,
+    );
+  };
   const [confirming, setConfirming] = useState(false);
   const [reviewing, setReviewing] = useState<string | null>(null);
 
@@ -68,7 +77,8 @@ export const DashboardPage = observer(function DashboardPage() {
     void categoriesStore.loadReviewCount();
     void productsStore.loadOverview();
     void incomeStore.loadPending();
-  }, [budgetStore, householdStore, categoriesStore, productsStore, incomeStore]);
+    if (!bankAccountsStore.loaded) void bankAccountsStore.load(budgetStore.today);
+  }, [budgetStore, householdStore, categoriesStore, productsStore, incomeStore, bankAccountsStore]);
 
   const { year, month } = budgetStore;
   useEffect(() => {
@@ -134,7 +144,7 @@ export const DashboardPage = observer(function DashboardPage() {
                 currency={currency}
                 onEditIncome={() => {
                   // With regular incomes the month counts itself; a tap adds what came on top.
-                  setEditing((incomeStore.month?.regular.length ?? 0) > 0 ? "received" : "income");
+                  addIncome((incomeStore.month?.regular.length ?? 0) > 0 ? "received" : "income");
                 }}
                 onEditBudget={() => {
                   setEditing("budget");
@@ -206,20 +216,23 @@ export const DashboardPage = observer(function DashboardPage() {
                         });
                     }}
                     onOther={() => {
-                      setEditing("income");
+                      addIncome("income");
                     }}
                   />
                 )}
-                <BalanceCard
-                  balance={incomeStore.balance}
-                  currency={currency}
-                  onEdit={() => {
-                    setEditing("balance");
-                  }}
-                  onAddIncome={() => {
-                    setEditing("received");
-                  }}
-                />
+                {/* A budget alone keeps no balance (F23.21): it shows once there is one. */}
+                {incomeStore.balance?.balance != null && (
+                  <BalanceCard
+                    balance={incomeStore.balance}
+                    currency={currency}
+                    onEdit={() => {
+                      setEditing("balance");
+                    }}
+                    onAddIncome={() => {
+                      addIncome("received");
+                    }}
+                  />
+                )}
                 <MonthTrips trips={budgetStore.trips} currency={currency} />
               </div>
             </div>
@@ -279,6 +292,20 @@ export const DashboardPage = observer(function DashboardPage() {
           />
         )}
 
+        {editing === "newCard" && (
+          <IncomeDialog
+            entry={null}
+            defaultDay={today}
+            onClose={() => {
+              setEditing(null);
+            }}
+            onSaved={() => {
+              void incomeStore.load(year, month);
+              void incomeStore.loadBalance(today);
+              void bankAccountsStore.load(today);
+            }}
+          />
+        )}
         {reviewing && (
           <IncomeDialog
             entry={null}

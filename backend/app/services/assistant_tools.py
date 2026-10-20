@@ -27,7 +27,7 @@ from app.ports.exchange_rates import ExchangeRatePort
 from app.repository.category import CategoryRepository
 from app.repository.receipt import ReceiptRepository
 from app.repository.snapshot import MonthlySnapshotRepository
-from app.schemas.income import IncomeRequest, RegularExpenseRequest
+from app.schemas.income import IncomeRequest, NewCard, RegularExpenseRequest
 from app.schemas.user import UserUpdateRequest
 from app.services.assistant_reads import (
     Answer,
@@ -37,7 +37,7 @@ from app.services.assistant_reads import (
     SpendingReads,
 )
 from app.services.budget import BudgetService
-from app.services.income import IncomeService
+from app.services.income import CARD_NAMES, IncomeService
 from app.services.manual_expense import ManualExpense, record_expense
 from app.services.user import UserService
 
@@ -113,6 +113,9 @@ class BillArgs(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     amount: Amount = Field(description="Per month")
     day: int | None = Field(None, ge=1, le=31, description="Day of the month; 31 is the last")
+    weekday: int | None = Field(
+        None, ge=0, le=6, description="Weekly on this weekday, 0 Monday … 6 Sunday"
+    )
     shared: bool = Field(False, description="Shared with the family")
 
 
@@ -150,7 +153,7 @@ READS: dict[str, tuple[str, type[BaseModel]]] = {
 WRITES: dict[str, tuple[str, type[BaseModel]]] = {
     "set_monthly_budget": ("Propose the user's monthly spending budget.", BudgetArgs),
     "add_income": ("Propose recording money that came in.", IncomeArgs),
-    "add_bill": ("Propose a bill that goes every month by itself.", BillArgs),
+    "add_bill": ("Propose a bill that goes every month or every week by itself.", BillArgs),
     "add_expense": (
         "Propose money spent without a receipt — one call per thing bought.",
         ExpenseArgs,
@@ -297,13 +300,24 @@ class Toolbox:
                     source=args.source,
                     kind=args.kind,
                     shared=args.shared,
+                    # Income lands on a card (F23.21): with none yet, the approved card
+                    # makes one under its usual name.
+                    new_card=NewCard(
+                        name=CARD_NAMES[args.shared].get(
+                            self.user.language or "en", CARD_NAMES[args.shared]["en"]
+                        )
+                    ),
                 )
             )
             return f"income:{entry.id}"
         assert isinstance(args, BillArgs)
         bill = await income.add_bill(
             RegularExpenseRequest(
-                name=args.name, amount=args.amount, day=args.day, shared=args.shared
+                name=args.name,
+                amount=args.amount,
+                day=None if args.weekday is not None else args.day,
+                weekday=args.weekday,
+                shared=args.shared,
             ),
             self.today,
         )
@@ -329,6 +343,8 @@ class Toolbox:
         )
 
     async def _month_summary(self, month: BudgetMonth) -> str:
+        first_day = date(month.year, month.month, 1)
+        incomes = IncomeService(self.session)
         summary = await BudgetService(
             ReceiptRepository(self.session), MonthlySnapshotRepository(self.session)
         ).month_summary(
@@ -337,14 +353,14 @@ class Toolbox:
             user_id=self.user.id,
             now=datetime.now(UTC),
             limit=self.user.budget_limit,
+            bills=await incomes.bills_in(first_day),
         )
-        income = await IncomeService(self.session).month(
-            self.user, date(month.year, month.month, 1)
-        )
+        income = await incomes.month(self.user, first_day)
         return json.dumps(
             {
                 "month": f"{month.year}-{month.month:02d}",
                 "spent": str(summary.total),
+                "bills": str(summary.bills),
                 "receipts": summary.receipt_count,
                 "budget": str(summary.limit.limit) if summary.limit else None,
                 "left_of_budget": str(summary.limit.remaining) if summary.limit else None,

@@ -132,9 +132,9 @@ class HouseholdBudgetService:
         entries, sources, bills = await self.spend.shared_money(household.id, days)
         first = days.start
         shared_income = sum((e.amount for e in entries), Decimal(0)) + sum(
-            (s.amount for s in sources if regular_rule(s).runs_in(first)), Decimal(0)
+            (regular_rule(s).in_month(first) for s in sources), Decimal(0)
         )
-        shared_bills = sum((b.amount for b in bills if bill_rule(b).runs_in(first)), Decimal(0))
+        shared_bills = sum((bill_rule(b).in_month(first) for b in bills), Decimal(0))
         return HouseholdMonth(
             month=month,
             progress=month.progress(today),

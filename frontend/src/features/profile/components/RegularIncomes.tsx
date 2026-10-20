@@ -3,29 +3,48 @@ import { observer } from "mobx-react-lite";
 import { Pencil, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { Button, Input, Select, Switch } from "@/shared/components";
+import {
+  Button,
+  Input,
+  RepeatField,
+  Switch,
+  useRepeatLabel,
+  type Repeat,
+} from "@/shared/components";
+import { NewCardFields } from "@/features/money-accounts/components/NewCardFields";
+import {
+  newCardBody,
+  useCardName,
+  type NewCard,
+} from "@/features/money-accounts/components/newCard";
 import { numberFormat } from "@/i18n/format";
 import type { RegularBill, RegularIncome } from "@/stores/IncomeStore";
 import { isoDay } from "@/stores/StatisticsStore";
 import { useStores } from "@/stores/StoreContext";
 
 const WHOLE = numberFormat({ maximumFractionDigits: 0 });
-const DAYS = Array.from({ length: 30 }, (_, i) => i + 1);
 
 interface Draft {
   name: string;
   amount: string;
-  day: string;
+  repeat: Repeat;
   taxed: boolean;
   shared: boolean;
 }
 
-const EMPTY: Draft = { name: "", amount: "", day: "", taxed: false, shared: false };
+const EMPTY: Draft = {
+  name: "",
+  amount: "",
+  repeat: { day: null, weekday: null },
+  taxed: false,
+  shared: false,
+};
 
 /**
  * Regular incomes or regular bills, edited in place (F23.17, F23.18): a salary, a side
- * job, a pension — or rent, a subscription — each counted every month by itself from now
- * on. For one who pays their own taxes, an income says whether the tax comes out of it
+ * job, a pension — or rent, a subscription — each counted by itself from now on, monthly
+ * on a day or weekly on a weekday (F23.21). A first income with no card yet makes the
+ * card it lands on; a bill needs none. For one who pays their own taxes, an income says whether the tax comes out of it
  * (F23.16). Inside a household each one is the family's or the user's own (F12.8): a
  * shared bill is the family's whole, never divided, and a row another member added says
  * who. Used in Settings, Plan and the first-sign-in setup: a row opens
@@ -59,6 +78,12 @@ export const RegularIncomes = observer(function RegularIncomes({
   // The id of the income open for changes, "new" for one being added, or null.
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY);
+  const repeatLabel = useRepeatLabel();
+  const cardName = useCardName();
+  // Income is bookkeeping (F23.21): with no card yet, the first one makes it.
+  const needsCard = !bill && !withAccounts;
+  const [card, setCard] = useState<NewCard>({ name: "", opening: "" });
+  const newCard = needsCard ? newCardBody(card) : null;
 
   useEffect(() => {
     void (bill ? incomeStore.loadBills() : incomeStore.loadRegular());
@@ -70,7 +95,11 @@ export const RegularIncomes = observer(function RegularIncomes({
   }, [householdStore]);
 
   const amount = draft.amount.trim().replace(",", ".").replace(/\s/g, "");
-  const valid = draft.name.trim() !== "" && /^\d+(\.\d{1,2})?$/.test(amount) && Number(amount) > 0;
+  const valid =
+    draft.name.trim() !== "" &&
+    /^\d+(\.\d{1,2})?$/.test(amount) &&
+    Number(amount) > 0 &&
+    (!needsCard || newCard !== null);
   const open = (income: RegularIncome | RegularBill | null) => {
     setEditing(income?.id ?? "new");
     setDraft(
@@ -78,13 +107,14 @@ export const RegularIncomes = observer(function RegularIncomes({
         ? {
             name: income.name,
             amount: income.amount,
-            day: income.day == null ? "" : String(income.day),
+            repeat: { day: income.day ?? null, weekday: income.weekday ?? null },
             taxed: "taxed" in income && income.taxed,
             shared: income.shared,
           }
         : // A new one in a household is the family's unless the user says otherwise.
           { ...EMPTY, shared: mayShare },
     );
+    setCard({ name: cardName(mayShare), opening: "" });
   };
   const save = async () => {
     // A change keeps the account it is on and whether it varies (F23.15).
@@ -92,7 +122,8 @@ export const RegularIncomes = observer(function RegularIncomes({
     const base = {
       name: draft.name.trim(),
       amount,
-      day: draft.day ? Number(draft.day) : null,
+      day: draft.repeat.day,
+      weekday: draft.repeat.weekday,
       shared: mayShare && draft.shared,
       account_id: original?.account_id ?? null,
     };
@@ -103,8 +134,16 @@ export const RegularIncomes = observer(function RegularIncomes({
         ? await incomeStore.addBill(base, today)
         : await incomeStore.changeBill(editing ?? "", base)
       : editing === "new"
-        ? await incomeStore.addRegular({ ...base, taxed: draft.taxed, about: false }, today)
-        : await incomeStore.changeRegular(editing ?? "", { ...base, taxed: draft.taxed, about });
+        ? await incomeStore.addRegular(
+            { ...base, taxed: draft.taxed, about: false, new_card: newCard },
+            today,
+          )
+        : await incomeStore.changeRegular(editing ?? "", {
+            ...base,
+            taxed: draft.taxed,
+            about,
+            new_card: newCard,
+          });
     if (!ok) return;
     setEditing(null);
     onChanged?.();
@@ -127,31 +166,21 @@ export const RegularIncomes = observer(function RegularIncomes({
           setDraft((d) => ({ ...d, name: e.target.value }));
         }}
       />
-      <div className="grid grid-cols-2 gap-3">
-        <Input
-          label={t(`${words}.amount`, { currency })}
-          inputMode="decimal"
-          value={draft.amount}
-          onChange={(e) => {
-            setDraft((d) => ({ ...d, amount: e.target.value }));
-          }}
-        />
-        <Select
-          label={t(`${words}.day`)}
-          value={draft.day}
-          onChange={(e) => {
-            setDraft((d) => ({ ...d, day: e.target.value }));
-          }}
-        >
-          <option value="">{t(`${words}.anyDay`)}</option>
-          {DAYS.map((day) => (
-            <option key={day} value={day}>
-              {day}
-            </option>
-          ))}
-          <option value="31">{t("money.lastDay")}</option>
-        </Select>
-      </div>
+      <Input
+        label={t(`${words}.amount`, { currency })}
+        inputMode="decimal"
+        value={draft.amount}
+        onChange={(e) => {
+          setDraft((d) => ({ ...d, amount: e.target.value }));
+        }}
+      />
+      <RepeatField
+        value={draft.repeat}
+        onChange={(repeat) => {
+          setDraft((d) => ({ ...d, repeat }));
+        }}
+      />
+      {needsCard && <NewCardFields value={card} onChange={setCard} currency={currency} />}
       {mayShare && !withAccounts && (
         <div className="flex flex-col gap-2">
           <span className="text-md font-semibold text-muted-foreground">{t("whose.title")}</span>
@@ -264,11 +293,7 @@ export const RegularIncomes = observer(function RegularIncomes({
                     </span>
                     <span className="text-md text-muted-foreground">
                       {[
-                        income.day == null
-                          ? t(`${words}.monthly`)
-                          : income.day === 31
-                            ? t("money.lastDay")
-                            : t(`${words}.onDay`, { day: income.day }),
+                        repeatLabel({ day: income.day ?? null, weekday: income.weekday ?? null }),
                         paysOwnTaxes && "taxed" in income && income.taxed
                           ? t("regular.taxedShort")
                           : null,

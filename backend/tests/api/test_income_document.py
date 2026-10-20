@@ -128,7 +128,13 @@ async def test_a_confirmed_draft_is_kept_as_read_from_a_document_even_once_corre
 
     app = create_app()
     app.dependency_overrides[get_db_session] = same_session
-    entry = {"received_on": "2026-10-10", "amount": "6800.00", "source": "Acme", "kind": "salary"}
+    entry = {
+        "received_on": "2026-10-10",
+        "amount": "6800.00",
+        "source": "Acme",
+        "kind": "salary",
+        "new_card": {"name": "My card"},
+    }
     async with AsyncClient(
         transport=ASGITransport(app=app),
         base_url="http://test",

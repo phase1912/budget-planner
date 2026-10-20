@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
 import { dateFormat } from "@/i18n/format";
-import { Button, Input, Modal, ModalBody, Select } from "@/shared/components";
+import { Button, Input, Modal, ModalBody, RepeatField, Select } from "@/shared/components";
 import type { BankAccount, TransferRule } from "@/stores/BankAccountsStore";
 import type { RegularBill, RegularIncome } from "@/stores/IncomeStore";
 import { useStores } from "@/stores/StoreContext";
@@ -20,9 +20,9 @@ export type Rule =
   | { kind: "transfer"; rule: TransferRule };
 
 /**
- * Something that happens on an account every month by itself (F23.15, canvas F_Rules):
- * income that comes in — always the same, or about and confirmed each month — a bill
- * that goes, or a transfer to another account. It says when it first runs: this month,
+ * Something that happens on an account by itself (F23.15, canvas F_Rules): income that
+ * comes in — always the same, or about and confirmed each month — a bill that goes, both
+ * monthly or weekly (F23.21), or a monthly transfer to another account. It says when it first runs: this month,
  * or next month when its day has already passed. An existing one can be changed or
  * stopped from next month.
  */
@@ -47,6 +47,9 @@ export const RuleDialog = observer(function RuleDialog({
   const [name, setName] = useState(editing?.rule.name ?? "");
   const [amountText, setAmountText] = useState(editing ? String(Number(editing.rule.amount)) : "");
   const [day, setDay] = useState(editing?.rule.day == null ? "" : String(editing.rule.day));
+  const [weekday, setWeekday] = useState<number | null>(
+    editing && editing.kind !== "transfer" ? (editing.rule.weekday ?? null) : null,
+  );
   const [about, setAbout] = useState(editing?.kind === "income" && editing.rule.about);
   const [to, setTo] = useState(
     editing?.kind === "transfer" ? editing.rule.to_account_id : (others[0]?.id ?? ""),
@@ -58,6 +61,7 @@ export const RuleDialog = observer(function RuleDialog({
     amount !== null && Number(amount) > 0 && (transfer ? to !== "" : name.trim() !== "");
   const busy = bankAccountsStore.saveState.isLoading || incomeStore.saveState.isLoading;
   const first = firstRun(dayNumber, new Date(`${today}T00:00:00`));
+  const weekly = !transfer && weekday !== null;
 
   const done = (ok: boolean) => {
     if (!ok) return;
@@ -75,7 +79,8 @@ export const RuleDialog = observer(function RuleDialog({
       const body = {
         name: name.trim(),
         amount,
-        day: dayNumber,
+        day: weekly ? null : dayNumber,
+        weekday: weekly ? weekday : null,
         taxed: false,
         shared,
         account_id: account.id,
@@ -87,7 +92,14 @@ export const RuleDialog = observer(function RuleDialog({
           : await incomeStore.addRegular(body, today),
       );
     } else if (kind === "bill") {
-      const body = { name: name.trim(), amount, day: dayNumber, shared, account_id: account.id };
+      const body = {
+        name: name.trim(),
+        amount,
+        day: weekly ? null : dayNumber,
+        weekday: weekly ? weekday : null,
+        shared,
+        account_id: account.id,
+      };
       done(
         editing?.kind === "bill"
           ? await incomeStore.changeBill(editing.rule.id, body)
@@ -177,15 +189,15 @@ export const RuleDialog = observer(function RuleDialog({
               setName(e.target.value);
             }}
           />
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label={t("rule.amount", { currency })}
-              inputMode="decimal"
-              value={amountText}
-              onChange={(e) => {
-                setAmountText(e.target.value);
-              }}
-            />
+          <Input
+            label={t("rule.amount", { currency })}
+            inputMode="decimal"
+            value={amountText}
+            onChange={(e) => {
+              setAmountText(e.target.value);
+            }}
+          />
+          {transfer ? (
             <Select
               label={t("rule.day")}
               value={day}
@@ -201,7 +213,15 @@ export const RuleDialog = observer(function RuleDialog({
               ))}
               <option value="31">{t("rule.lastDay")}</option>
             </Select>
-          </div>
+          ) : (
+            <RepeatField
+              value={{ day: dayNumber, weekday }}
+              onChange={(repeat) => {
+                setDay(repeat.day === null ? "" : String(repeat.day));
+                setWeekday(repeat.weekday);
+              }}
+            />
+          )}
           {kind === "income" && (
             <>
               <Choice<"exact" | "about">
@@ -222,7 +242,7 @@ export const RuleDialog = observer(function RuleDialog({
               )}
             </>
           )}
-          {!editing && (
+          {!editing && !weekly && (
             <p className="m-0 rounded-control bg-muted px-3 py-2.5 text-md">
               {first.nextMonth
                 ? t("rule.firstNext", { date: DATE.format(first.date) })

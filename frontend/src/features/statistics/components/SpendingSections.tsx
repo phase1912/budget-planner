@@ -3,7 +3,7 @@ import { ChevronRight, House } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-import { Collapsible } from "@/shared/components";
+import { Collapsible, useRepeatLabel } from "@/shared/components";
 import { InlineCategoryPicker } from "@/features/categories/components/InlineCategoryPicker";
 import { dateFormat, formatAmount, numberFormat } from "@/i18n/format";
 import { useStores } from "@/stores/StoreContext";
@@ -124,11 +124,13 @@ export const ItemsToFile = observer(function ItemsToFile() {
 
 /** The bills that go every month without a receipt (F23.18), as part of what is spent. */
 export const RegularBills = observer(function RegularBills({ currency }: { currency: string }) {
-  const { incomeStore } = useStores();
+  const { incomeStore, statisticsStore } = useStores();
   const { t } = useTranslation("statistics");
+  const repeatLabel = useRepeatLabel();
   const bills = incomeStore.bills;
   if (bills.length === 0) return null;
-  const total = bills.reduce((sum, bill) => sum + Number(bill.amount), 0);
+  // What they came to over the period on show: a weekly one as often as it fell (F23.21).
+  const total = Number(statisticsStore.statistics?.bills_total ?? 0);
   return (
     <Collapsible title={t("sections.bills")} aside={`${WHOLE.format(total)} ${currency}`}>
       <p className="m-0 text-md text-muted-foreground">{t("sections.billsHint")}</p>
@@ -136,7 +138,12 @@ export const RegularBills = observer(function RegularBills({ currency }: { curre
         {bills.map((bill) => (
           <li key={bill.id} className="flex min-h-12 items-center gap-3">
             <House size={18} aria-hidden="true" className="text-muted-foreground" />
-            <span className="flex-1 text-lg font-semibold">{bill.name}</span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-lg font-semibold">{bill.name}</span>
+              <span className="text-sm text-muted-foreground">
+                {repeatLabel({ day: bill.day ?? null, weekday: bill.weekday ?? null })}
+              </span>
+            </span>
             <span className="text-lg font-bold tabular-nums">
               {WHOLE.format(Number(bill.amount))} {currency}
             </span>

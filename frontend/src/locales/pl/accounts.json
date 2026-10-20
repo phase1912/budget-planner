@@ -16,7 +16,7 @@
   "othersOwn": "Własne konta innych osób pozostają ich: widzisz tylko wspólne.",
   "empty": {
     "title": "Wiedz, gdzie są pieniądze",
-    "body": "Dodaj karty, konto firmowe lub oszczędności. Zakupy schodzą z karty, którą płacisz, a konto firmowe samo odkłada podatek."
+    "body": "Dodaj karty, konto firmowe lub oszczędności — jeśli chcesz. Bez nich aplikacja i tak liczy wydatki względem budżetu; z nimi zakupy schodzą z karty, którą płacisz, a konto firmowe samo odkłada podatek."
   },
   "add": "Dodaj konto",
   "move": "Przelej pieniądze",
@@ -40,8 +40,8 @@
   "moneyIn": "Wpłata",
   "moveShort": "Przelew",
   "edit": "Zmień",
-  "every": "Co miesiąc",
-  "addRule": "Dodaj comiesięczną opłatę lub przelew",
+  "every": "Regularne",
+  "addRule": "Dodaj regularną opłatę lub przelew",
   "noRules": "Nic jeszcze nie wpływa ani nie schodzi samo.",
   "history": "Historia",
   "noHistory": "W tym miesiącu na koncie jeszcze nic nie ma.",
@@ -119,7 +119,7 @@
     "submit": "Przelej"
   },
   "rule": {
-    "title": "Co miesiąc",
+    "title": "Regularnie",
     "kind": "Co to jest",
     "income": "Wpływa",
     "bill": "Opłata",
@@ -168,5 +168,13 @@
     "which": "Na które konto wpłynęło?",
     "save": "Zapisz",
     "dismiss": "To nie dochód"
+  },
+  "newCard": {
+    "title": "Gdzie trafiają pieniądze?",
+    "hint": "Nie masz jeszcze karty. Dochody prowadzi się na karcie — utworzymy ją teraz razem z tym dochodem.",
+    "name": "Nazwa karty",
+    "opening": "Teraz na niej, {{currency}} (opcjonalnie)",
+    "defaultName": "Moja karta",
+    "defaultShared": "Nasza karta"
   }
 }

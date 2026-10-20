@@ -125,7 +125,8 @@
     "ringCategories": "Spent {{spent}} {{currency}}, by category",
     "next": "Tap for the next view",
     "settings": "Settings",
-    "incomeNet": "Income · after tax"
+    "incomeNet": "Income · after tax",
+    "ringBills": "{{spent}} on purchases and {{bills}} on bills of {{of}} {{currency}}"
   },
   "review_one": "{{count}} line needs a category",
   "review_other": "{{count}} lines need a category",

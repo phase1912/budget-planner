@@ -21,6 +21,18 @@ class Whose(BaseModel):
     added_by: str | None = None
 
 
+class NewCard(BaseModel):
+    """The card income lands on, made with it when the user has none (F23.21).
+
+    Income is bookkeeping: it is always on a card, so adding the first income asks where
+    the money lands. `opening` is what is on it now; left at zero, the card counts from
+    this income on.
+    """
+
+    name: str = Field(min_length=1, max_length=80)
+    opening: Decimal = Field(Decimal("0.00"), max_digits=12, decimal_places=2)
+
+
 class IncomeRequest(BaseModel):
     """A sum that came in, as the user enters it."""
 
@@ -33,8 +45,9 @@ class IncomeRequest(BaseModel):
     # Shared with the household (F12.8): every member sees and changes it.
     shared: bool = False
     # The account it reached (F23.15); a shared account makes it shared, a business one
-    # sets its tax aside.
+    # sets its tax aside. Left out, the purchase card; with none, `new_card` (F23.21).
     account_id: uuid.UUID | None = None
+    new_card: NewCard | None = None
     """Whether taxes are set aside from it (F23.16); left out, earnings are and gifts,
     refunds and sales are not — and a change leaves it as it was."""
 
@@ -136,16 +149,23 @@ class IncomeSourceRequest(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
     day: int | None = Field(None, ge=1, le=31)
+    weekday: int | None = Field(None, ge=0, le=6)
+    """Weekly on this weekday (0 Monday … 6 Sunday) instead of monthly on `day` (F23.21)."""
     taxed: bool = False
     shared: bool = False
     account_id: uuid.UUID | None = None
+    new_card: NewCard | None = None
     about: bool = False
     """It varies (F23.15): expected on its day until what really came is confirmed."""
 
 
 class IncomeSourceRead(IncomeSourceRequest, Whose):
+    new_card: None = Field(None, exclude=True)
+
     id: uuid.UUID
     starts_on: date
+    this_month: Decimal | None = None
+    """What it comes to in the month asked about: a weekly one, as often as it falls."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -160,6 +180,8 @@ class RegularExpenseRequest(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
     day: int | None = Field(None, ge=1, le=31)
+    weekday: int | None = Field(None, ge=0, le=6)
+    """Weekly on this weekday (0 Monday … 6 Sunday) instead of monthly on `day` (F23.21)."""
     shared: bool = False
     account_id: uuid.UUID | None = None
 
@@ -167,6 +189,8 @@ class RegularExpenseRequest(BaseModel):
 class RegularExpenseRead(RegularExpenseRequest, Whose):
     id: uuid.UUID
     starts_on: date
+    this_month: Decimal | None = None
+    """What it comes to in the month asked about: a weekly one, as often as it falls."""
 
     model_config = ConfigDict(from_attributes=True)
 

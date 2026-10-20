@@ -598,20 +598,26 @@ Rules that must hold at all times. Each is a candidate for a test.
     spend" counts the income after them. Taxes paid are recorded apart: they lower the
     balance and what is still owed, never the spending.
 
-35. Regular bills (F23.18) — rent, a subscription, a loan — go every month without a
-    receipt, from the month they were added, and stop like regular incomes do. They are
-    not purchases: they never enter a month's spending total, categories or statistics,
-    but they come off what is left of the income on Home and in Plan ("spent · bills ·
-    free"), off the balance on their day, and off what a savings goal can count on.
-36. Accounts (F23.15, ADR-0024) say where the money is. Without any, everything above
-    holds as it was. With them, the balance is the money on every account the user sees —
+35. Regular bills (F23.18) — rent, a subscription, a loan — go without a receipt, monthly
+    on a day or weekly on a weekday (F23.21), from the month they were added, and stop
+    like regular incomes do. A weekly one counts in a month as often as its weekday falls
+    in it, from its first day on — never an average. They are spending: they count in the
+    month's budget beside the receipts (their own segment of Home's ring, their own row
+    in Spending) and come off what is left of the income, but they never join the
+    receipts' total or the categories. On a card they also come off its balance on their
+    day; with no card they need none.
+36. Accounts (F23.15, ADR-0024, ADR-0027) say where the money is, and are never required:
+    without any, the budget, the receipts and the bills hold as above, with no balance. With them, the balance is the money on every account the user sees —
     their own and their household's shared ones — each carried from its opening amount by
     what reached and left it; a transfer between two accounts is neither income nor
-    spending. Every new income, regular income and bill is on an account: one named on
-    none goes on the purchase card, opened by itself when there is none — the first
-    account taking over the starting balance (amount and day), so no figure moves — and
-    stays as shared as the user said; on an account the user picked, whose it is follows
-    the account. An account with its own tax rate sets tax aside by it; on any other the
+    spending. Income is bookkeeping, so it is always on a card: one named on none lands on
+    the purchase card, and with none the user names the card it lands on, made with it
+    (F23.21) — counting from the income's day, or from today when the user says what is on
+    it now; the first card takes over a starting balance kept before cards (amount and
+    day), so no figure moves. A bill or a tax payment named on none needs no card; once
+    there is a purchase card it pays it, and a card that stops being the purchase card
+    keeps what it paid that way. A sum stays as shared as the user said; on an account the
+    user picked, whose it is follows the account. An account with its own tax rate sets tax aside by it; on any other the
     user's own rule (F23.16) still does, its fixed sum a month included. Money from
     another of one's own accounts is entered as a transfer, never as income — a business
     account's income already counts once, when it arrives. Purchases come off the user's own purchase card, else the family's shared

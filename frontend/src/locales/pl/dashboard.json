@@ -139,7 +139,8 @@
     "ringCategories": "Wydano {{spent}} {{currency}}, według kategorii",
     "next": "Dotknij, aby zobaczyć kolejny widok",
     "settings": "Ustawienia",
-    "incomeNet": "Dochód · netto"
+    "incomeNet": "Dochód · netto",
+    "ringBills": "{{spent}} na zakupy i {{bills}} na rachunki z {{of}} {{currency}}"
   },
   "review_one": "{{count}} pozycja czeka na kategorię",
   "review_few": "{{count}} pozycje czekają na kategorię",

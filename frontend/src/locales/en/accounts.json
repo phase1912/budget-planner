@@ -16,7 +16,7 @@
   "othersOwn": "Others’ own accounts stay theirs: you see only the shared ones.",
   "empty": {
     "title": "Keep track of where the money is",
-    "body": "Add your cards, a business account or savings. Purchases come off the card you pay with, and a business account sets its tax aside by itself."
+    "body": "Add your cards, a business account or savings — if you want to. Without them the app still counts what you spend against the budget; with them, purchases come off the card you pay with and a business account sets its tax aside by itself."
   },
   "add": "Add account",
   "move": "Move money",
@@ -40,8 +40,8 @@
   "moneyIn": "Money in",
   "moveShort": "Move",
   "edit": "Edit",
-  "every": "Every month",
-  "addRule": "Add a monthly payment or transfer",
+  "every": "Regular",
+  "addRule": "Add a regular payment or transfer",
   "noRules": "Nothing goes in or out by itself yet.",
   "history": "History",
   "noHistory": "Nothing on this account this month yet.",
@@ -117,7 +117,7 @@
     "submit": "Move"
   },
   "rule": {
-    "title": "Every month",
+    "title": "Regular",
     "kind": "What it is",
     "income": "Comes in",
     "bill": "A bill",
@@ -166,5 +166,13 @@
     "which": "Which account did it come to?",
     "save": "Save",
     "dismiss": "Not income"
+  },
+  "newCard": {
+    "title": "Where does the money land?",
+    "hint": "You have no card yet. Income is kept on one — it is made now, with this income.",
+    "name": "Card name",
+    "opening": "On it now, {{currency}} (optional)",
+    "defaultName": "My card",
+    "defaultShared": "Our card"
   }
 }

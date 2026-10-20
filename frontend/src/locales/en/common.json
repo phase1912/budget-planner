@@ -108,5 +108,18 @@
   "amountDialog": {
     "cancel": "Cancel",
     "save": "Save"
+  },
+  "repeat": {
+    "label": "How often",
+    "monthly": "Monthly",
+    "weekly": "Weekly",
+    "day": "Day of the month",
+    "weekday": "Day of the week",
+    "anyDay": "Any day",
+    "lastDay": "Last day",
+    "every": "every {{weekday}}",
+    "everyMonth": "every month",
+    "onDay": "on day {{day}}",
+    "onLastDay": "on the last day"
   }
 }

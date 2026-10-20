@@ -982,10 +982,11 @@ async def test_an_income_named_on_no_account_goes_on_the_purchase_card(
 
 
 @pytest.mark.asyncio
-async def test_the_first_income_opens_the_card_with_the_balance_kept_so_far(
+async def test_income_with_no_card_asks_for_one_and_keeps_the_balance_so_far(
     db_session: AsyncSession,
 ) -> None:
-    """F23.15: someone without accounts is never asked to make one; the first sum opens it."""
+    """F23.21: income is bookkeeping, so it lands on a card — made with it when asked, and
+    carrying over the balance started before cards (F23.14), so no figure moves."""
     me = await UserFactory.create_async(
         currency="PLN",
         language="uk",
@@ -993,16 +994,15 @@ async def test_the_first_income_opens_the_card_with_the_balance_kept_so_far(
         balance_since=date(2026, 10, 1),
     )
     today = datetime.now(UTC).date().isoformat()
+    gift = {"received_on": today, "amount": "100.00", "source": "Gift", "kind": "other"}
 
+    refused = await _call(db_session, me, "POST", "/api/v1/income", {**gift, "new_card": None})
     added = await _call(
-        db_session,
-        me,
-        "POST",
-        "/api/v1/income",
-        {"received_on": today, "amount": "100.00", "source": "Gift", "kind": "other"},
+        db_session, me, "POST", "/api/v1/income", {**gift, "new_card": {"name": "Моя картка"}}
     )
     accounts = await _accounts(db_session, me, 20)
 
+    assert (refused.status_code, refused.json()["code"]) == (409, "needs_card")
     assert added.status_code == 201, added.text
     card = accounts["Моя картка"]
     assert (card["for_purchases"], card["opening"], card["opening_on"]) == (
@@ -1013,7 +1013,59 @@ async def test_the_first_income_opens_the_card_with_the_balance_kept_so_far(
 
 
 @pytest.mark.asyncio
-async def test_a_shared_income_with_no_card_opens_the_familys(db_session: AsyncSession) -> None:
+async def test_a_card_made_with_its_balance_now_counts_from_today(
+    db_session: AsyncSession,
+) -> None:
+    """What is on it now already holds the income: the card counts from today."""
+    me = await UserFactory.create_async(currency="PLN")
+    today = datetime.now(UTC).date()
+
+    await _call(
+        db_session,
+        me,
+        "POST",
+        "/api/v1/income",
+        {
+            "received_on": today.isoformat(),
+            "amount": "100.00",
+            "source": "Gift",
+            "new_card": {"name": "Card", "opening": "700.00"},
+        },
+    )
+    card = (await _accounts(db_session, me, today.day))["Card"]
+
+    assert (card["opening"], card["opening_on"]) == ("700.00", today.isoformat())
+
+
+@pytest.mark.asyncio
+async def test_a_bill_with_no_card_opens_none_and_a_card_later_pays_it(
+    db_session: AsyncSession,
+) -> None:
+    """F23.21: a bill alone is spending, not bookkeeping; the purchase card pays it once
+    there is one, and keeps it when another card takes over."""
+    me = await UserFactory.create_async(currency="PLN")
+    today = datetime.now(UTC).date()
+
+    bill = await _call(
+        db_session,
+        me,
+        "POST",
+        f"/api/v1/income/bills{on(1)}",
+        {"name": "Internet", "amount": "60.00", "day": 28},
+    )
+    before = await _accounts(db_session, me, today.day)
+    first = await _open(db_session, me, name="First", opening="0.00", for_purchases=True)
+    await _open(db_session, me, name="Second", opening="0.00", for_purchases=True)
+    pinned = (await _call(db_session, me, "GET", "/api/v1/income/bills")).json()
+
+    assert bill.status_code == 201, bill.text
+    assert bill.json()["account_id"] is None
+    assert [name for name in before if name != "_total"] == []
+    assert pinned[0]["account_id"] == first["id"]
+
+
+@pytest.mark.asyncio
+async def test_a_shared_income_with_no_card_makes_the_familys(db_session: AsyncSession) -> None:
     me, anna = await _couple()
     today = datetime.now(UTC).date().isoformat()
 
@@ -1022,7 +1074,13 @@ async def test_a_shared_income_with_no_card_opens_the_familys(db_session: AsyncS
         me,
         "POST",
         "/api/v1/income",
-        {"received_on": today, "amount": "9000.00", "source": "Acme", "shared": True},
+        {
+            "received_on": today,
+            "amount": "9000.00",
+            "source": "Acme",
+            "shared": True,
+            "new_card": {"name": "Our card"},
+        },
     )
     hers = await _accounts(db_session, anna, 20)
 

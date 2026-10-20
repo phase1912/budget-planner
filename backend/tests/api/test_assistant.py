@@ -174,7 +174,8 @@ async def test_nothing_is_written_until_the_card_is_approved(db_session: AsyncSe
 async def test_an_approved_income_card_is_recorded_as_on_the_plan(
     db_session: AsyncSession,
 ) -> None:
-    user = await UserFactory.create_async()
+    """With no card yet, the approved income makes "My card" to land on (F23.21)."""
+    user = await UserFactory.create_async(language="en")
     assistant = ScriptedAssistant(
         proposals=[ToolCall("add_income", {"amount": "9000", "source": "Acme"})]
     )
@@ -191,9 +192,11 @@ async def test_an_approved_income_card_is_recorded_as_on_the_plan(
 
     assert card["card"]["fields"]["received_on"] == "2026-10-20"
     assert saved.json()["saved_ref"].startswith("income:")
+    accounts = (await _call(db_session, user, "GET", "/api/v1/accounts")).json()["accounts"]
     assert [(e["source"], Decimal(e["amount"])) for e in month["entries"]] == [
         ("Acme", Decimal("9000.00"))
     ]
+    assert [a["name"] for a in accounts] == ["My card"]
 
 
 @pytest.mark.asyncio

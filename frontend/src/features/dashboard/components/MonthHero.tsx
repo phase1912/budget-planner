@@ -51,9 +51,9 @@ export function MonthHero({
   const kept = income?.net ?? income?.total;
   const earned = kept == null ? null : Number(kept);
   const afterTax = Number(income?.taxes ?? 0) > 0;
-  // Rent and the like go before anything is bought (F23.18).
-  const bills = Number(income?.bills_total ?? 0);
-  const base = budget ?? (earned === null ? null : earned - bills);
+  // Rent and the like are spending too (F23.18), and count against the budget (F23.21).
+  const bills = Number(summary.bills_total);
+  const base = budget !== null ? budget - bills : earned === null ? null : earned - bills;
   const left = base === null ? null : base - spent;
   const over = left !== null && left < 0;
   const daysLeft = summary.is_complete ? 0 : summary.days_in_month - summary.days_elapsed + 1;
@@ -62,14 +62,26 @@ export function MonthHero({
   // The ring's views, each in its own colour of the palette; a tap moves to the next.
   const views: View[] = [];
   if (budget !== null) {
-    const rest = budget - spent;
+    const rest = budget - bills - spent;
     views.push({
       key: "budget",
-      segments: [{ value: spent, color: rest < 0 ? "var(--color-error)" : "var(--color-primary)" }],
+      // Bills are their own segment, so what the receipts took stays readable (F23.21).
+      segments: [
+        { value: bills, color: "var(--cat-utilities)" },
+        { value: spent, color: rest < 0 ? "var(--color-error)" : "var(--color-primary)" },
+      ],
       max: budget,
       value: WHOLE.format(Math.abs(rest)),
       label: rest < 0 ? t("hero.over") : t("hero.leftOfBudget"),
-      picture: t("hero.ring", { spent: AMOUNT.format(spent), of: AMOUNT.format(budget), currency }),
+      picture:
+        bills > 0
+          ? t("hero.ringBills", {
+              spent: AMOUNT.format(spent),
+              bills: AMOUNT.format(bills),
+              of: AMOUNT.format(budget),
+              currency,
+            })
+          : t("hero.ring", { spent: AMOUNT.format(spent), of: AMOUNT.format(budget), currency }),
     });
   }
   if (earned !== null) {

@@ -191,6 +191,15 @@ Rules are never posted ahead: a month's occurrence is read from the rule unless 
 household widening above; moves and monthly transfers are visible through the accounts
 they touch (`app/repository/money_accounts.py`).
 
+Accounts are optional (F23.21, ADR-0027). `IncomeService._place` puts a bill or a tax
+payment on the named card, the purchase card, or none; `IncomeService._land` puts income on
+a card always, making it from the request's `new_card` when there is none, else refusing
+with `needs_card`. Regular rules are monthly on a `day` or weekly on a `weekday`
+(`Recurring.days_in` in `app/domain/income.py`); every consumer — the ledger, the month's
+income, the household budget, the balance — reads a rule's days and amounts from it. The
+month's bills (`IncomeService.bills_in`, `bills_between`) count against the budget in
+`BudgetService.month_summary` and appear beside the categories in the statistics response.
+
 These rules are held together by one suite, `backend/tests/security/test_cross_household_access.py`
 (F12.6): it builds a household with an owner, a member, a removed member and a stranger
 elsewhere, then walks every read that reaches or adds up another member's receipts and

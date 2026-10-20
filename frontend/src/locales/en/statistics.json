@@ -62,7 +62,8 @@
     "label": "Spending by category",
     "showAll": "Show every category",
     "picture": "{{total}} {{currency}} spent, by category",
-    "spent": "Spent"
+    "spent": "Spent",
+    "bills": "Regular bills"
   },
   "details": "Chart and table",
   "byDay": {
@@ -81,7 +82,7 @@
     "searchReceipts": "Search and filter receipts",
     "toFile": "Items without a category",
     "allItems": "All items and categories",
-    "bills": "Every month",
-    "billsHint": "Rent and other bills without a receipt — counted in Plan and Home, set in Settings."
+    "bills": "Regular bills",
+    "billsHint": "Rent, subscriptions and other bills without a receipt — part of the spending and the budget, set in Settings."
   }
 }

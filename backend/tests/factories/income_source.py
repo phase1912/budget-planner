@@ -14,6 +14,7 @@ class IncomeSourceFactory(ModelFactory[IncomeSource]):
     name = Use(lambda: "Salary")
     amount = Use(lambda: Decimal("9000.00"))
     day = None
+    weekday = None
     ends_on = None
     household_id = None
     account_id = None

@@ -1,9 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
-import { Button, Input, Modal, ModalBody, Note, Select, Switch } from "@/shared/components";
+import {
+  Button,
+  Input,
+  Modal,
+  ModalBody,
+  Note,
+  RepeatField,
+  Select,
+  Switch,
+  type Repeat,
+} from "@/shared/components";
 import { Choice } from "@/features/money-accounts/components/Choice";
+import { NewCardFields } from "@/features/money-accounts/components/NewCardFields";
+import {
+  newCardBody,
+  useCardName,
+  type NewCard,
+} from "@/features/money-accounts/components/newCard";
 import { purchaseCardId } from "@/stores/BankAccountsStore";
 import type { IncomeDraft, IncomeEntry, IncomeRequest } from "@/stores/IncomeStore";
 import { useStores } from "@/stores/StoreContext";
@@ -28,8 +44,9 @@ interface IncomeDialogProps {
  * Given a `draft` read off a payslip or transfer (F23.11), it opens filled in for the user
  * to check: nothing is saved until they do, and then it is kept as read from a document.
  *
- * With accounts (F23.15) every sum lands on one — the purchase card unless another is
- * picked — and whose it is follows the account. A new one may come every month (a regular
+ * Income is bookkeeping (F23.21): every sum lands on a card — the purchase card unless
+ * another is picked — and with none yet, the dialog makes the card with it. Whose it is
+ * follows the card. A new one may come every month (a regular
  * income, exact or about) or from another of the user's accounts, which makes it a
  * transfer, never income.
  */
@@ -49,6 +66,7 @@ export const IncomeDialog = observer(function IncomeDialog({
   const [fromId, setFromId] = useState("");
   const [monthly, setMonthly] = useState(false);
   const [day, setDay] = useState("");
+  const [repeat, setRepeat] = useState<Repeat>({ day: null, weekday: null });
   const [about, setAbout] = useState(false);
   // Inside a household, money that comes in is the family's unless the user says otherwise (F12.8).
   const mayShare = householdStore.mayShare;
@@ -56,6 +74,14 @@ export const IncomeDialog = observer(function IncomeDialog({
   const readOnly = householdStore.isChild && entry?.shared === true;
   const paysOwnTaxes = authStore.user?.pays_own_taxes === true;
   const { t } = useTranslation("plan");
+  const cardName = useCardName();
+  const [card, setCard] = useState<NewCard>({ name: cardName(mayShare), opening: "" });
+  // Whether a card exists is known only once accounts are read; until then none is offered.
+  const needsCard = bankAccountsStore.loaded && !withAccounts;
+  const newCard = needsCard ? newCardBody(card) : null;
+  useEffect(() => {
+    if (!bankAccountsStore.loaded) void bankAccountsStore.load(defaultDay);
+  }, [bankAccountsStore, defaultDay]);
   const [form, setForm] = useState<IncomeRequest>({
     received_on: entry?.received_on ?? draft?.received_on ?? defaultDay,
     amount: entry?.amount ?? draft?.amount ?? "",
@@ -74,7 +100,8 @@ export const IncomeDialog = observer(function IncomeDialog({
   const valid =
     /^\d+(\.\d{1,2})?$/.test(amount) &&
     Number(amount) > 0 &&
-    (transfer ? fromId !== "" && fromId !== form.account_id : form.source.trim() !== "");
+    (transfer ? fromId !== "" && fromId !== form.account_id : form.source.trim() !== "") &&
+    (!needsCard || newCard !== null);
   const busy = incomeStore.saveState.isLoading || bankAccountsStore.saveState.isLoading;
   const done = (ok: boolean) => {
     if (ok) {
@@ -96,7 +123,7 @@ export const IncomeDialog = observer(function IncomeDialog({
           onSubmit={(event) => {
             event.preventDefault();
             if (!valid) return;
-            const body = { ...form, amount, source: form.source.trim() };
+            const body = { ...form, amount, source: form.source.trim(), new_card: newCard };
             const dayNumber = day === "" ? null : Number(day);
             const to = form.account_id ?? "";
             const saved = entry
@@ -123,7 +150,9 @@ export const IncomeDialog = observer(function IncomeDialog({
                         {
                           name: body.source,
                           amount,
-                          day: dayNumber,
+                          day: repeat.day,
+                          weekday: repeat.weekday,
+                          new_card: newCard,
                           taxed,
                           shared: body.shared,
                           account_id: body.account_id,
@@ -163,8 +192,12 @@ export const IncomeDialog = observer(function IncomeDialog({
               ))}
             </Select>
           )}
-          {!withAccounts && (
-            <p className="m-0 text-md text-muted-foreground">{t("income.cardOpens")}</p>
+          {needsCard && !readOnly && (
+            <NewCardFields
+              value={card}
+              onChange={setCard}
+              currency={authStore.user?.currency ?? "PLN"}
+            />
           )}
           {fresh && withAccounts && accounts.length > 1 && (
             <Choice<"outside" | "own">
@@ -209,7 +242,7 @@ export const IncomeDialog = observer(function IncomeDialog({
               }}
               required
             />
-            {monthly ? (
+            {monthly && transfer ? (
               <Select
                 id="income-day"
                 label={t("income.day")}
@@ -226,7 +259,7 @@ export const IncomeDialog = observer(function IncomeDialog({
                 ))}
                 <option value="31">{t("income.lastDay")}</option>
               </Select>
-            ) : (
+            ) : monthly ? null : (
               <Input
                 id="income-date"
                 type="date"
@@ -276,6 +309,7 @@ export const IncomeDialog = observer(function IncomeDialog({
               ariaLabel={t("income.monthly")}
             />
           )}
+          {monthly && !transfer && <RepeatField value={repeat} onChange={setRepeat} />}
           {monthly && !transfer && (
             <Choice<"exact" | "about">
               label={t("income.howMuch")}

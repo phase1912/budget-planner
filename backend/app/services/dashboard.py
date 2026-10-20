@@ -46,6 +46,7 @@ class DashboardService:
         user_id: uuid.UUID,
         now: datetime,
         limit: Decimal | None,
+        bills: Decimal = Decimal("0.00"),
     ) -> MonthDashboard:
         """The month's figure, where it went and its receipts column.
 
@@ -55,7 +56,7 @@ class DashboardService:
         calendar, as for the finalised label (D4, ADR-0009).
         """
         summary = await self.budget.month_summary(
-            month, today, user_id=user_id, now=now, limit=limit
+            month, today, user_id=user_id, now=now, limit=limit, bills=bills
         )
         days = DateRange.of_month(month)
         order = ReceiptOrder.LARGEST if summary.progress.is_complete else ReceiptOrder.NEWEST

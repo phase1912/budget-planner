@@ -37,7 +37,8 @@
     "description": "What it was",
     "spent_on": "Date",
     "category": "Category",
-    "openReceipts": "Open Spending"
+    "openReceipts": "Open Spending",
+    "newCard": "Approving makes the card “{{name}}” it lands on."
   },
   "answer": {
     "spending": "Open in Spending",

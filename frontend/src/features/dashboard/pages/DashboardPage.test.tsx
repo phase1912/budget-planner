@@ -28,6 +28,18 @@ const budgetStore = {
   today: "2026-09-26",
 };
 
+const bankAccountsStore = {
+  // Most of Home is seen by someone with a card; a test without one says so.
+  accounts: [
+    { id: "card", name: "My card", kind: "personal", for_purchases: true, shared: false },
+  ] as Record<string, unknown>[],
+  loaded: true,
+  any: true,
+  load: vi.fn(),
+  byId: () => undefined,
+  saveState: { isLoading: false },
+};
+
 const incomeStore = {
   month: null as null | {
     total: string | null;
@@ -90,14 +102,7 @@ vi.mock("@/stores/StoreContext", () => ({
     budgetStore,
     receiptStore,
     // Not in a household: the pages show only the user's own figures (F12.5).
-    bankAccountsStore: {
-      accounts: [],
-      loaded: true,
-      any: true,
-      load: vi.fn(),
-      byId: () => undefined,
-      saveState: { isLoading: false },
-    },
+    bankAccountsStore,
     householdStore: {
       household: null,
       mayShare: false,
@@ -136,6 +141,7 @@ function summary(overrides: Partial<MonthSummary> = {}): MonthSummary {
     year: 2026,
     month: 9,
     total: "1234.5",
+    bills_total: "0.00",
     receipt_count: 15,
     has_receipts: true,
     excluded_count: 0,
@@ -469,7 +475,7 @@ describe("DashboardPage — what is left (D7, F23.3)", () => {
   });
 
   it("takes the month's bills off what came in before what was spent", () => {
-    budgetStore.summary = summary({ total: "1800" });
+    budgetStore.summary = summary({ total: "1800", bills_total: "3000.00" });
     incomeStore.month = {
       total: "6800.00",
       entered: true,
@@ -512,11 +518,21 @@ describe("DashboardPage — what is left (D7, F23.3)", () => {
     });
   });
 
-  it("asks for what is on the accounts now, not income, and keeps it as the balance's start", async () => {
-    budgetStore.summary = summary();
+  it("keeps no balance with a budget alone, and counts bills against the budget (F23.21)", () => {
+    budgetStore.summary = summary({ total: "300", budget_limit: "2000.00", bills_total: "60.00" });
     renderPage();
 
-    fireEvent.click(screen.getByRole("button", { name: /Add what you have now/ }));
+    expect(screen.queryByRole("button", { name: /Add what you have now/ })).toBeNull();
+    expect(screen.getByText("left of your budget")).toBeInTheDocument();
+    expect(screen.getByText("1,640")).toBeInTheDocument();
+  });
+
+  it("corrects a balance kept from a start in place, as what is there now", async () => {
+    budgetStore.summary = summary();
+    incomeStore.balance = { balance: "4000.00", since: "2026-09-01" };
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /On your accounts/ }));
     expect(screen.getByText(/Not your income/)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("What you have today"), { target: { value: "5000" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
@@ -527,6 +543,19 @@ describe("DashboardPage — what is left (D7, F23.3)", () => {
         balance_since: "2026-09-26",
       });
     });
+    incomeStore.balance = null;
+  });
+
+  it("with no card yet, adds income where the card it lands on is made (F23.21)", () => {
+    budgetStore.summary = summary();
+    const cards = bankAccountsStore.accounts;
+    bankAccountsStore.accounts = [];
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /Income/ }));
+
+    expect(screen.getByRole("group", { name: "Where does the money land?" })).toBeInTheDocument();
+    bankAccountsStore.accounts = cards;
   });
 
   it("changes the budget in place, an empty one removing it", async () => {

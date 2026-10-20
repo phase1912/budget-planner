@@ -28,6 +28,8 @@ class MonthSummary:
     progress: MonthProgress
     finalised_at: datetime | None = None
     limit: LimitUsage | None = None
+    bills: Decimal = Decimal("0.00")
+    """The month's regular bills (F23.21): spending too, measured against the limit."""
 
 
 class BudgetService:
@@ -45,6 +47,7 @@ class BudgetService:
         user_id: uuid.UUID,
         now: datetime,
         limit: Decimal | None = None,
+        bills: Decimal = Decimal("0.00"),
     ) -> MonthSummary:
         """Sum the month's line items by transaction date, not upload date (D1, D2).
 
@@ -60,10 +63,12 @@ class BudgetService:
         running ahead, which must not freeze a month still in progress.
 
         `limit` is the user's monthly limit as it stands now; the figure is
-        measured against it (D7), never stored with it.
+        measured against it (D7), never stored with it. `bills` are the month's regular
+        bills (F23.21): they count against the limit beside the receipts, and are kept
+        apart from `total`, which stays what the receipts came to.
         """
         summary = await self._figure(month, today, user_id=user_id, now=now)
-        return replace(summary, limit=limit_usage(summary.total, limit))
+        return replace(summary, bills=bills, limit=limit_usage(summary.total + bills, limit))
 
     async def _figure(
         self, month: BudgetMonth, today: date, *, user_id: uuid.UUID, now: datetime

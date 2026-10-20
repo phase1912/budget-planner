@@ -16,6 +16,7 @@ from app.db.session import get_db_session
 from app.main import create_app
 from app.models.household import Household, HouseholdMember, HouseholdRole
 from app.models.user import User
+from tests.api.income_card import on_a_card
 from tests.factories.household import HouseholdFactory, HouseholdMemberFactory
 from tests.factories.receipt import ReceiptFactory
 from tests.factories.user import UserFactory
@@ -39,7 +40,7 @@ async def _call(
         base_url="http://test",
         headers={"Authorization": f"Bearer {token}"},
     ) as client:
-        return await client.request(method, url, json=json)
+        return await client.request(method, url, json=on_a_card(method, url, json))
 
 
 async def _household_of(owner: User, *members: User) -> Household:

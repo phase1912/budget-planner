@@ -109,7 +109,7 @@ describe("OnboardingPage", () => {
     });
     // Regular incomes are saved as they are added (F23.17), in the PLN just chosen.
     fireEvent.click(await screen.findByRole("button", { name: "Add a regular income" }));
-    expect(screen.getByLabelText("A month, PLN")).toBeInTheDocument();
+    expect(screen.getByLabelText("Each time, PLN")).toBeInTheDocument();
     next();
     expect(screen.getByRole("radio", { name: /Just me for now/ })).toHaveAttribute(
       "aria-checked",

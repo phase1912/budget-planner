@@ -16,6 +16,7 @@ from app.schemas.budget import MonthDashboardResponse, MonthSummaryResponse
 from app.schemas.receipt import CategorySpendResponse, ReceiptResponse
 from app.services.budget import BudgetService, MonthSummary
 from app.services.dashboard import DashboardService
+from app.services.income import IncomeService
 from app.services.trip import TripService
 
 router = APIRouter(prefix="/api/v1/budget", tags=["budget"])
@@ -45,6 +46,7 @@ async def get_month_summary(
         user_id=current_user.id,
         now=now,
         limit=current_user.budget_limit,
+        bills=await IncomeService(session).bills_in(date(year, month, 1)),
     )
     return _month_response(summary)
 
@@ -74,6 +76,7 @@ async def get_month_dashboard(
         user_id=current_user.id,
         now=now,
         limit=current_user.budget_limit,
+        bills=await IncomeService(session).bills_in(date(year, month, 1)),
     )
     return MonthDashboardResponse(
         summary=_month_response(dashboard.summary),
@@ -115,4 +118,5 @@ def _month_response(summary: MonthSummary) -> MonthSummaryResponse:
         budget_limit=usage.limit if usage else None,
         limit_percent=usage.percent if usage else None,
         limit_remaining=usage.remaining if usage else None,
+        bills_total=summary.bills,
     )

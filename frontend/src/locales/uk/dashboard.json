@@ -139,7 +139,8 @@
     "ringCategories": "Витрачено {{spent}} {{currency}}, за категоріями",
     "next": "Торкніться, щоб побачити наступне",
     "settings": "Налаштування",
-    "incomeNet": "Дохід · чистими"
+    "incomeNet": "Дохід · чистими",
+    "ringBills": "{{spent}} на покупки й {{bills}} на рахунки з {{of}} {{currency}}"
   },
   "review_one": "{{count}} позиція чекає категорії",
   "review_few": "{{count}} позиції чекають категорії",
