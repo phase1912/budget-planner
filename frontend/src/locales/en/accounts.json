@@ -62,6 +62,7 @@
     "bill": "bill",
     "adjustment": "correction",
     "tax_paid": "taxes paid",
+    "tax_due": "taxes due",
     "receipts_one": "{{count}} receipt",
     "receipts_other": "{{count}} receipts",
     "byRule": "by the rule",

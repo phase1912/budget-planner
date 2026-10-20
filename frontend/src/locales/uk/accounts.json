@@ -62,6 +62,7 @@
     "bill": "платіж",
     "adjustment": "коригування",
     "tax_paid": "сплачено податки",
+    "tax_due": "нарахований податок",
     "receipts_one": "{{count}} чек",
     "receipts_few": "{{count}} чеки",
     "receipts_many": "{{count}} чеків",

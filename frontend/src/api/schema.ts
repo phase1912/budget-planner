@@ -3727,7 +3727,7 @@ export interface components {
          * @description What one line of an account's history is.
          * @enum {string}
          */
-        EntryKind: "income" | "expected" | "transfer_in" | "transfer_out" | "bill" | "adjustment" | "purchases" | "tax_paid";
+        EntryKind: "income" | "expected" | "transfer_in" | "transfer_out" | "bill" | "adjustment" | "purchases" | "tax_paid" | "tax_due";
         /**
          * EntryRead
          * @description One line of an account's history.

@@ -62,6 +62,7 @@
     "bill": "opłata",
     "adjustment": "korekta",
     "tax_paid": "zapłacone podatki",
+    "tax_due": "należny podatek",
     "receipts_one": "{{count}} paragon",
     "receipts_few": "{{count}} paragony",
     "receipts_many": "{{count}} paragonów",
