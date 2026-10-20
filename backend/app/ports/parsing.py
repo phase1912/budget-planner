@@ -16,7 +16,7 @@ from typing import Protocol
 
 from app.schemas.extraction import ExtractedReceipt
 
-CURRENT_PARSER_VERSION = "7"
+CURRENT_PARSER_VERSION = "8"
 
 
 class ReceiptParserPort(Protocol):
