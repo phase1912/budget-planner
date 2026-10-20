@@ -1,9 +1,17 @@
+import io
 from unittest.mock import MagicMock
 
 import pytest
+from PIL import Image
 
-from app.adapters.vision_agent import RECEIPT_EXTRACTION_PROMPT, VisionAgentAdapter
+from app.adapters.vision_agent import (
+    LEGIBLE_SIDE,
+    RECEIPT_EXTRACTION_PROMPT,
+    VisionAgentAdapter,
+    legible,
+)
 from app.agent.core import Agent
+from app.domain.receipt_conventions import COUNTRIES
 from app.schemas.extraction import ExtractedReceipt
 
 
@@ -48,3 +56,46 @@ async def test_vision_agent_adapter_formats_messages() -> None:
     # Content block 2: Image 2
     assert message.content[2]["type"] == "image_url"
     assert message.content[2]["image_url"]["url"].startswith("data:image/png;base64,")
+
+
+def _photo(size: tuple[int, int], orientation: int | None = None) -> bytes:
+    """A receipt-like photo: a white strip with dark print on a mid-grey table."""
+    image = Image.new("RGB", size, (128, 128, 128))
+    strip = (size[0] // 4, size[1] // 8, size[0] * 3 // 4, size[1] * 7 // 8)
+    image.paste((250, 250, 250), strip)
+    image.paste((20, 20, 20), (strip[0] + 5, strip[1] + 5, strip[0] + 30, strip[1] + 10))
+    out = io.BytesIO()
+    exif = Image.Exif()
+    if orientation:
+        exif[0x0112] = orientation
+    image.save(out, format="JPEG", exif=exif)
+    return out.getvalue()
+
+
+def test_a_sideways_photo_is_turned_upright_and_cut_to_the_receipt() -> None:
+    data, mime = legible(_photo((400, 200), orientation=6), "image/jpeg")
+
+    prepared = Image.open(io.BytesIO(data))
+    assert mime == "image/jpeg"
+    assert prepared.mode == "L"
+    assert prepared.height > prepared.width
+    assert prepared.width < 200
+
+
+def test_a_huge_photo_is_sent_no_larger_than_the_model_reads_in_full() -> None:
+    data, _ = legible(_photo((5000, 9000)), "image/jpeg")
+
+    assert max(Image.open(io.BytesIO(data)).size) <= LEGIBLE_SIDE
+
+
+def test_what_is_not_a_readable_photo_goes_as_it_came() -> None:
+    assert legible(b"%PDF-1.4", "application/pdf") == (b"%PDF-1.4", "application/pdf")
+    assert legible(b"not an image", "image/jpeg") == (b"not an image", "image/jpeg")
+
+
+def test_the_prompt_carries_every_countrys_words_and_the_menu_rule() -> None:
+    for country in COUNTRIES:
+        assert f"- {country.code} ({country.currency})" in RECEIPT_EXTRACTION_PROMPT
+    assert "Знижка".lower() in RECEIPT_EXTRACTION_PROMPT
+    assert "two prices are two items" in RECEIPT_EXTRACTION_PROMPT
+    assert "mcdonald" in RECEIPT_EXTRACTION_PROMPT

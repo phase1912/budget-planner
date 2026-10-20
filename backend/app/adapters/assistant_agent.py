@@ -30,6 +30,9 @@ logger = logging.getLogger(__name__)
 MAX_STEPS = 4
 """Rounds of reading before the assistant must answer: a question needs one or two."""
 HISTORY = 20
+THINKING_BUDGET = 1024
+"""What Gemini may think before each step, added on top of the answer's limit: left
+unbounded, its thoughts filled the limit and the answer came back empty."""
 """The latest messages the assistant reads back; older ones are not needed to go on."""
 LANGUAGE_NAMES = {"en": "English", "uk": "Ukrainian", "pl": "Polish"}
 EXAMPLES = "Examples:\n" + "\n".join(
@@ -155,7 +158,9 @@ class AssistantAdapter(AssistantPort):
         read_any = False
         for _ in range(MAX_STEPS):
             try:
-                step = await self._agent.run_structured(messages, Step, max_tokens=2048)
+                step = await self._agent.run_structured(
+                    messages, Step, max_tokens=2048, thinking_budget=THINKING_BUDGET
+                )
             except AgentError:
                 logger.exception("The assistant's model call failed")
                 return AssistantReply(said or "", proposals)
@@ -210,6 +215,7 @@ class AssistantAdapter(AssistantPort):
                 ],
                 Step,
                 max_tokens=1024,
+                thinking_budget=THINKING_BUDGET,
             )
         except AgentError:
             return AssistantReply(said)

@@ -143,13 +143,15 @@ class Agent:
         temperature: float | None = None,
         max_tokens: int = 32768,
         reasoning: bool = True,
+        thinking_budget: int | None = None,
     ) -> T:
         """Send messages and parse the response into a Pydantic model.
 
         ``reasoning=False`` asks a hosted reasoning model (Gemini 2.5) to answer without
-        thinking first: its thoughts share ``max_tokens`` with the answer, so a long one
-        cut a receipt's JSON off mid-string. Reading a receipt is transcription, not
-        reasoning; other callers keep it.
+        thinking first: its thoughts share ``max_tokens`` with the answer, so an unbounded
+        one could cut the JSON off mid-string. ``thinking_budget`` instead lets it think up
+        to that many tokens and adds them to ``max_tokens``, so the answer keeps its full
+        room (F15.5); providers without a thinking budget ignore it.
 
         Uses ``response_format`` with the JSON schema derived from the Pydantic
         model so providers that support structured output (Gemini, OpenAI, newer
@@ -181,7 +183,10 @@ class Agent:
                 },
             }
         kwargs.update(self._provider_kwargs())
-        if not reasoning and "gemini" in self.model.lower():
+        if thinking_budget and "gemini" in self.model.lower():
+            kwargs["thinking"] = {"type": "enabled", "budget_tokens": thinking_budget}
+            kwargs["max_tokens"] = max_tokens + thinking_budget
+        elif not reasoning and "gemini" in self.model.lower():
             kwargs["reasoning_effort"] = "disable"
 
         try:

@@ -303,6 +303,30 @@ async def test_a_receipt_is_read_by_gemini_without_thinking_first(
 
 @pytest.mark.asyncio
 @patch("litellm.acompletion")
+async def test_a_thinking_budget_is_added_to_the_answers_room_not_taken_from_it(
+    mock_acompletion: MagicMock,
+) -> None:
+    """Thoughts bounded and on top of the limit can no longer cut the JSON off (F15.5)."""
+    mock_acompletion.return_value = _answer('{"name": "test", "value": 42}')
+    messages = [Message(role="user", content="Extract this")]
+
+    await Agent(model="vertex_ai/gemini-2.5-flash").run_structured(
+        messages, schema=MockSchema, max_tokens=8192, thinking_budget=2048
+    )
+    await Agent(model="openai/qwen/qwen3.5-9b").run_structured(
+        messages, schema=MockSchema, max_tokens=8192, thinking_budget=2048
+    )
+
+    gemini, local = (call.kwargs for call in mock_acompletion.call_args_list)
+    assert gemini["thinking"] == {"type": "enabled", "budget_tokens": 2048}
+    assert gemini["max_tokens"] == 8192 + 2048
+    assert "reasoning_effort" not in gemini
+    assert "thinking" not in local
+    assert local["max_tokens"] == 8192
+
+
+@pytest.mark.asyncio
+@patch("litellm.acompletion")
 async def test_an_answer_cut_off_at_the_token_limit_says_so(mock_acompletion: MagicMock) -> None:
     mock_acompletion.return_value = _answer('{"name": "unterminated', finish_reason="length")
 

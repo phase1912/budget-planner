@@ -102,8 +102,12 @@ Rules that must hold at all times. Each is a candidate for a test.
    sum of their lines, since the printed total may be what could not be read. One with
    no readable date is reported in the month it was uploaded, so it always surfaces
    somewhere; a month's receipts list places it the same way, so list and total agree.
-5a. A discount printed under a product ("Rabat", "OPUST", "Знижка", "Discount" — the rule
-   holds in any language) is read as a line of its own with a negative total, where it
+5a. How receipts are printed in each country, and by chains that print their own way, is
+   one table (`app/domain/receipt_conventions.py`, ADR-0026): the reader's prompt and the
+   reconciliation rules both take their words from it. A menu's unpriced parts are not
+   lines, but a part with a price of its own is. A discount printed under a product
+   ("Rabat", "OPUST", "Знижка", "Rabatt", "Sleva" — the rule holds in any language) is
+   read as a line of its own with a negative total, where it
    was printed, and the product keeps its full price, so a receipt's lines add up to
    what was actually paid. A till's rounding of the amount to pay ("Округлення",
    "Zaokrąglenie") is a line too, with its sign. It takes the category of the nearest product above it on

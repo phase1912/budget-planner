@@ -9,12 +9,17 @@ reaches the user, told that the app already tried.
 
 import copy
 import enum
-import re
 from collections.abc import Callable
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from app.domain.discounts import printed_amount
+from app.domain.receipt_conventions import (
+    DEPOSIT_WORDS,
+    DISCOUNT_WORDS,
+    ROUNDING_WORDS,
+    TOTAL_WORDS,
+)
 from app.domain.receipt_totals import lines_match_total
 
 
@@ -39,27 +44,6 @@ class Reconciliation(enum.StrEnum):
     """Nothing worked: the user is asked, told that the app already tried."""
 
 
-DEPOSIT_LINE = re.compile(r"kaucj|opakowa\w* zwrotn|\bdeposit\b|\bpfand\b|\bzastaw", re.IGNORECASE)
-"""Returnable-packaging deposits: Poland's system kaucyjny since October 2025, and kin."""
-
-DISCOUNT_LINE = re.compile(
-    r"\b(opust|rabat|upust|zni[żz]k|promocj|discount|sleva|remise|sconto|descuento)"
-    r"|(знижк|скидк|акці|акци)",
-    re.IGNORECASE,
-)
-"""Names receipts give a line that takes money off, Polish, Ukrainian and others.
-
-Cyrillic has no word boundary in Python's ASCII sense, hence its own alternative."""
-
-SUMMARY_LINE = re.compile(
-    r"\b(suma|razem|total|ptu|wydania|opakowania zwrotne)\b|(сума|разом|всього|до сплати)",
-    re.IGNORECASE,
-)
-"""Footer lines that repeat amounts already counted: a section header or subtotal."""
-
-ROUNDING_NAME = re.compile(r"zaokr|rounding|rundung|arrondi|округл", re.IGNORECASE)
-"""A till's rounding of the amount to pay: a negative line, but not a discount."""
-
 ROUNDING_LINE = "Rounding"
 """The name of a rounding line the reader missed; one it read keeps its printed name."""
 
@@ -75,7 +59,7 @@ Rule = Callable[[dict[str, Any], Decimal], dict[str, Any] | None]
 
 def is_deposit(name: str) -> bool:
     """Whether a line is a returnable-packaging deposit, or one handed back."""
-    return bool(DEPOSIT_LINE.search(name))
+    return bool(DEPOSIT_WORDS.search(name))
 
 
 def _items(extraction: dict[str, Any]) -> list[dict[str, Any]]:
@@ -134,7 +118,7 @@ def _discount_signs(extraction: dict[str, Any], printed: Decimal) -> dict[str, A
     unsigned = [
         i
         for i in _counted(extraction)
-        if DISCOUNT_LINE.search(str(items[i].get("name") or ""))
+        if DISCOUNT_WORDS.search(str(items[i].get("name") or ""))
         and (printed_amount(items[i].get("total_price")) or Decimal(0)) > 0
     ]
     candidates = [[i] for i in unsigned] + ([unsigned] if len(unsigned) > 1 else [])
@@ -155,7 +139,7 @@ def _discount_total(extraction: dict[str, Any], printed: Decimal) -> dict[str, A
     amounts = {
         i: printed_amount(items[i].get("total_price")) or Decimal(0)
         for i in _counted(extraction)
-        if not ROUNDING_NAME.search(str(items[i].get("name") or ""))
+        if not ROUNDING_WORDS.search(str(items[i].get("name") or ""))
     }
     discounts = [i for i, amount in amounts.items() if amount < 0]
     for i in reversed(discounts):
@@ -194,7 +178,7 @@ def _rounding(extraction: dict[str, Any], printed: Decimal) -> dict[str, Any] | 
 
 
 def _is_summary(item: dict[str, Any]) -> bool:
-    return bool(SUMMARY_LINE.search(str(item.get("name") or "")))
+    return bool(TOTAL_WORDS.search(str(item.get("name") or "")))
 
 
 def _repeated_line(extraction: dict[str, Any], printed: Decimal) -> dict[str, Any] | None:

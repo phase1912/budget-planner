@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.adapters.assistant_agent import AssistantAdapter, Step, StepCall
+from app.adapters.assistant_agent import THINKING_BUDGET, AssistantAdapter, Step, StepCall
 from app.agent.core import AgentError
 from app.ports.assistant import AssistantContext, AssistantReply, ToolCall, ToolSpec, Turn
 
@@ -162,3 +162,14 @@ async def test_it_is_told_to_answer_in_the_language_the_user_wrote_in() -> None:
 
     system = agent.run_structured.call_args_list[0].args[0][0].content
     assert "language of the user's last message" in system
+
+
+@pytest.mark.asyncio
+async def test_every_step_gives_the_model_a_bounded_time_to_think() -> None:
+    agent = AsyncMock()
+    agent.run_structured.side_effect = [Step(say="Hi", calls=[]), Step(say="", calls=[])]
+
+    await AssistantAdapter(agent).reply([Turn("user", "hi")], TOOLS, AsyncMock(), CONTEXT)
+
+    budgets = [c.kwargs["thinking_budget"] for c in agent.run_structured.call_args_list]
+    assert budgets == [THINKING_BUDGET, THINKING_BUDGET]
