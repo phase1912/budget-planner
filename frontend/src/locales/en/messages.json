@@ -170,5 +170,11 @@
     "loadFailed": "Your accounts could not be loaded",
     "saved": "Saved.",
     "failed": "That could not be saved. Try again."
+  },
+  "assistant": {
+    "loadFailed": "Your conversations could not be loaded",
+    "sendFailed": "The message could not be sent. Try again.",
+    "saveFailed": "The card could not be saved",
+    "saved": "Saved."
   }
 }

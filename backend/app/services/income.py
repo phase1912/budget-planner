@@ -2,14 +2,15 @@
 
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import DomainError, NotFoundError, ProblemCode
 from app.core.context import current_user_id
-from app.domain.accounts import first_month, is_closed, tax_on
+from app.domain.accounts import AccountKind, first_month, is_closed, tax_on
 from app.domain.income import (
     IncomeChannel,
     MonthIncome,
@@ -19,7 +20,7 @@ from app.domain.income import (
     taxed_by_default,
 )
 from app.domain.quota import next_month_start
-from app.models.account import Account
+from app.models.account import Account, AccountMove
 from app.models.income import Income
 from app.models.income_source import IncomeSource
 from app.models.pending_income import PendingIncome
@@ -29,7 +30,7 @@ from app.models.user import User
 from app.repository.household import HouseholdRepository
 from app.repository.income import IncomeRepository
 from app.repository.income_source import IncomeSourceRepository
-from app.repository.money_accounts import AccountRepository
+from app.repository.money_accounts import AccountRepository, purchase_card
 from app.repository.pending_income import PendingIncomeRepository
 from app.repository.regular_expense import RegularExpenseRepository
 from app.repository.tax_payment import TaxPaymentRepository
@@ -114,17 +115,28 @@ class IncomeService:
             for s in await self.sources.running_since(first_day)
             if regular_rule(s).runs_in(first_day) and s.id not in confirmed
         ]
-        # On an account the account's own rule sets tax aside, not the user's (F23.15).
+        # An account with its own rate sets tax aside by it (F23.15); on any other the
+        # user's own rule does, as it did before accounts.
         rates = {a.id: a.tax_rate for a in await AccountRepository(self.session).visible()}
-        set_aside = sum((e.tax or Decimal(0) for e in entries if e.account_id), Decimal(0)) + sum(
-            (tax_on(s.amount, rates.get(s.account_id)) for s in regular if s.account_id),
+
+        def by_user(account_id: uuid.UUID | None) -> bool:
+            return not rates.get(account_id) if account_id else True
+
+        set_aside = sum(
+            (e.tax or Decimal(0) for e in entries if not by_user(e.account_id)), Decimal(0)
+        ) + sum(
+            (
+                tax_on(s.amount, rates[s.account_id])
+                for s in regular
+                if s.account_id is not None and not by_user(s.account_id)
+            ),
             Decimal(0),
         )
         income = month_income(
-            ((e.amount, e.taxed and e.account_id is None) for e in entries),
+            ((e.amount, e.taxed and by_user(e.account_id)) for e in entries),
             user.usual_income,
             tax_rule(user),
-            recurring=((s.amount, s.taxed and s.account_id is None) for s in regular),
+            recurring=((s.amount, s.taxed and by_user(s.account_id)) for s in regular),
             set_aside=set_aside,
         )
         paid = await self.tax_payments.total(first_day, last_day)
@@ -155,17 +167,93 @@ class IncomeService:
     ) -> tuple[uuid.UUID | None, Account | None]:
         """The household and account a sum goes to (F12.8, F23.15).
 
-        On an account it is shared exactly when the account is; NotFoundError for an
-        account the caller does not see (N2), and a child puts nothing on a shared one.
+        Every sum is on an account: left out, it goes on the caller's purchase card —
+        their own, else the family's — opened for them when there is none, and is shared
+        as `shared` says. On an account the user picked it is shared exactly when the
+        account is. NotFoundError for an account the caller does not see (N2); a child
+        shares nothing and puts nothing on a shared account.
         """
+        accounts = AccountRepository(self.session)
         if account_id is None:
-            return await self._scope(shared), None
-        account = await AccountRepository(self.session).get(account_id)
+            # Landed on the purchase card, a sum stays as shared as the user said it is.
+            household = await self._scope(shared)
+            visible = await accounts.visible()
+            card = purchase_card(visible, _me()) or await self._open_card(shared, first=not visible)
+            return household, card
+        account = await accounts.get(account_id)
         if account is None:
             raise NotFoundError("No such account.")
         if account.household_id is not None:
             refuse_child(await HouseholdRepository(self.session).membership_of(_me()))
         return account.household_id, account
+
+    async def _open_card(self, shared: bool, *, first: bool) -> Account:
+        """Open the card a user's money lands on, when they have none (F23.15).
+
+        The first account carries over the balance as the user started it (F23.14), so
+        opening it changes no figure; otherwise it starts at zero on the 1st of this month,
+        so a sum entered for an earlier day of it still counts. A sum meant for the family
+        opens the family's card.
+        """
+        user = await self.session.get(User, _me())
+        assert user is not None
+        household = await self._scope(shared)
+        # The first account takes over the balance as it was started (F23.14): the same
+        # amount on the same day, so the ledger replays exactly what the balance counted.
+        if first and user.starting_balance is not None and user.balance_since is not None:
+            opening, opening_on = user.starting_balance, user.balance_since
+        else:
+            opening, opening_on = Decimal("0.00"), datetime.now(UTC).date().replace(day=1)
+        card = Account(
+            user_id=user.id,
+            household_id=household,
+            name=CARD_NAMES[bool(household)].get(
+                user.language or "en", CARD_NAMES[bool(household)]["en"]
+            ),
+            kind=AccountKind.PERSONAL,
+            opening=opening,
+            opening_on=opening_on,
+            for_purchases=True,
+        )
+        self.session.add(card)
+        await self.session.flush()
+        return card
+
+    async def _from_this_month[R: (IncomeSource, RegularExpense)](self, rule: R) -> R:
+        """The rule a change applies to: itself if it started this month, else a new version.
+
+        A rule is read again for every month it runs, so changing it in place would rewrite
+        months already closed (F23.15). One that started earlier ends with last month and
+        a copy carries on from this month, taking over this month's confirmations and
+        changed occurrences, so nothing counts twice; the change is then made to the copy.
+        """
+        this_month = datetime.now(UTC).date().replace(day=1)
+        if rule.starts_on >= this_month:
+            return rule
+        copy = type(rule)(
+            **{
+                column.key: getattr(rule, column.key)
+                for column in type(rule).__table__.columns
+                if column.key not in {"id", "created_at", "updated_at", "starts_on", "ends_on"}
+            },
+            starts_on=this_month,
+        )
+        rule.ends_on = this_month - timedelta(days=1)
+        self.session.add(copy)
+        await self.session.flush()
+        if isinstance(rule, IncomeSource):
+            await self.session.execute(
+                update(Income)
+                .where(Income.source_id == rule.id, Income.received_on >= this_month)
+                .values(source_id=copy.id)
+            )
+        else:
+            await self.session.execute(
+                update(AccountMove)
+                .where(AccountMove.bill_id == rule.id, AccountMove.moved_on >= this_month)
+                .values(bill_id=copy.id)
+            )
+        return copy
 
     async def _may_change(self, row: Income | IncomeSource | RegularExpense) -> None:
         """A shared row is changed by the household's adults only (F12.10)."""
@@ -186,9 +274,10 @@ class IncomeService:
 
     async def add_bill(self, request: RegularExpenseRequest, today: date) -> RegularExpense:
         """Start a regular bill: it counts from this month on."""
-        household, _ = await self._place(request.shared, request.account_id)
+        household, account = await self._place(request.shared, request.account_id)
         bill = RegularExpense(
-            **request.model_dump(exclude={"shared"}),
+            **request.model_dump(exclude={"shared", "account_id"}),
+            account_id=account.id if account else None,
             household_id=household,
             starts_on=_starts_on(request.day, today),
         )
@@ -204,9 +293,11 @@ class IncomeService:
         if bill is None or bill.ends_on is not None:
             raise NotFoundError("No such regular bill.")
         await self._may_change(bill)
+        bill = await self._from_this_month(bill)
         for field, value in request.model_dump(exclude={"shared"}).items():
             setattr(bill, field, value)
-        bill.household_id, _ = await self._place(request.shared, request.account_id)
+        bill.household_id, account = await self._place(request.shared, request.account_id)
+        bill.account_id = account.id if account else None
         await self.session.flush()
         return bill
 
@@ -228,9 +319,10 @@ class IncomeService:
 
     async def add_regular(self, request: IncomeSourceRequest, today: date) -> IncomeSource:
         """Start a regular income: from this month, or the next when its day has passed."""
-        household, _ = await self._place(request.shared, request.account_id)
+        household, account = await self._place(request.shared, request.account_id)
         source = IncomeSource(
-            **request.model_dump(exclude={"shared"}),
+            **request.model_dump(exclude={"shared", "account_id"}),
+            account_id=account.id if account else None,
             household_id=household,
             starts_on=_starts_on(request.day, today),
         )
@@ -246,9 +338,11 @@ class IncomeService:
         if source is None or source.ends_on is not None:
             raise NotFoundError("No such regular income.")
         await self._may_change(source)
+        source = await self._from_this_month(source)
         for field, value in request.model_dump(exclude={"shared"}).items():
             setattr(source, field, value)
-        source.household_id, _ = await self._place(request.shared, request.account_id)
+        source.household_id, account = await self._place(request.shared, request.account_id)
+        source.account_id = account.id if account else None
         await self.session.flush()
         return source
 
@@ -278,9 +372,10 @@ class IncomeService:
         data = request.model_dump(exclude={"shared"})
         if data["taxed"] is None:
             data["taxed"] = taxed_by_default(request.kind)
+        # A late document may land in a closed month on its own date: adding is allowed,
+        # only changing or removing what a closed month holds is not (F23.15).
         household, account = await self._place(request.shared, request.account_id)
-        if account is not None:
-            _open_month(request.received_on)
+        data["account_id"] = account.id if account else None
         income = Income(
             **data,
             household_id=household,
@@ -304,6 +399,7 @@ class IncomeService:
                 continue
             setattr(income, field, value)
         income.household_id, account = await self._place(request.shared, request.account_id)
+        income.account_id = account.id if account else None
         if account is not None:
             _open_month(income.received_on)
         income.tax = tax_on(income.amount, account.tax_rate) or None if account else None
@@ -323,8 +419,11 @@ class IncomeService:
 
     async def pay_taxes(self, request: TaxPaymentRequest) -> TaxPayment:
         """Record taxes paid (F23.16): they leave the balance, never the spending."""
-        await self._place(False, request.account_id)
-        payment = TaxPayment(**request.model_dump())
+        _, account = await self._place(False, request.account_id)
+        payment = TaxPayment(
+            **request.model_dump(exclude={"account_id"}),
+            account_id=account.id if account else None,
+        )
         self.tax_payments.add(payment)
         await self.session.flush()
         return payment
@@ -361,6 +460,13 @@ class IncomeService:
         """Drop a pending income without making it an entry; NotFoundError if not the user's."""
         if not await self.pending.delete(pending_id):
             raise NotFoundError("No such pending income.")
+
+
+CARD_NAMES = {
+    False: {"en": "My card", "uk": "Моя картка", "pl": "Moja karta"},
+    True: {"en": "Our card", "uk": "Наша картка", "pl": "Nasza karta"},
+}
+"""What a card opened by itself is called, in the user's language."""
 
 
 def _starts_on(day: int | None, today: date) -> date:

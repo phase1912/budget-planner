@@ -35,14 +35,19 @@ export const RegularIncomes = observer(function RegularIncomes({
   currency: chosenCurrency,
   kind = "income",
   onChanged,
+  hideAdd = false,
 }: {
   /** The currency being chosen, before it is saved — in the first-sign-in setup. */
   currency?: string;
   kind?: "income" | "bill";
   /** Called after one is added, changed or stopped — Plan refreshes the month's figures. */
   onChanged?: () => void;
+  /** Plan adds incomes through its one dialog (F23.15): the list only shows and changes. */
+  hideAdd?: boolean;
 }) {
-  const { incomeStore, authStore, householdStore } = useStores();
+  const { incomeStore, authStore, householdStore, bankAccountsStore } = useStores();
+  // With accounts, whose a sum is follows its account (F23.15): no separate choice.
+  const withAccounts = bankAccountsStore.accounts.length > 0;
   const inHousehold = householdStore.household !== null;
   const mayShare = householdStore.mayShare;
   const { t } = useTranslation("profile");
@@ -147,7 +152,7 @@ export const RegularIncomes = observer(function RegularIncomes({
           <option value="31">{t("money.lastDay")}</option>
         </Select>
       </div>
-      {mayShare && (
+      {mayShare && !withAccounts && (
         <div className="flex flex-col gap-2">
           <span className="text-md font-semibold text-muted-foreground">{t("whose.title")}</span>
           <div role="radiogroup" aria-label={t("whose.title")} className="grid grid-cols-2 gap-2">
@@ -267,6 +272,11 @@ export const RegularIncomes = observer(function RegularIncomes({
                         paysOwnTaxes && "taxed" in income && income.taxed
                           ? t("regular.taxedShort")
                           : null,
+                        income.account_id && bankAccountsStore.byId(income.account_id)
+                          ? t("onAccount", {
+                              name: bankAccountsStore.byId(income.account_id)?.name,
+                            })
+                          : null,
                         income.added_by ? t("whose.addedBy", { name: income.added_by }) : null,
                       ]
                         .filter(Boolean)
@@ -284,7 +294,7 @@ export const RegularIncomes = observer(function RegularIncomes({
       )}
       {editing === "new" ? (
         form
-      ) : (
+      ) : hideAdd ? null : (
         <button
           type="button"
           onClick={() => {

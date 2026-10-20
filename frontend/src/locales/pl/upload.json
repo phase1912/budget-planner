@@ -26,7 +26,9 @@
     "read": "Odczytaj te zdjęcia",
     "noReceipt": "Nie masz paragonu?",
     "moneyIn": "Wpłynęły pieniądze?",
-    "addIncome": "Dodaj wpływ"
+    "addIncome": "Dodaj wpływ",
+    "orSay": "Albo po prostu powiedz:",
+    "toAssistant": "asystentowi"
   },
   "line": {
     "receipt": "Paragon",

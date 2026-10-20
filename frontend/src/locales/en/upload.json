@@ -22,7 +22,9 @@
     "read": "Read these photos",
     "noReceipt": "No receipt?",
     "moneyIn": "Money came in?",
-    "addIncome": "Add income"
+    "addIncome": "Add income",
+    "orSay": "Or just say it:",
+    "toAssistant": "tell the assistant"
   },
   "line": {
     "receipt": "Receipt",

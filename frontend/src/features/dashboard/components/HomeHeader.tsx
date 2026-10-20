@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -12,11 +12,13 @@ const MONTH_AND_YEAR = dateFormat({ month: "long", year: "numeric" });
 
 /**
  * Home's top (design v2): a greeting, the month between its arrows — never past the
- * current one (D2) — whether it is still running (D4), and the avatar that opens Settings.
+ * current one (D2) — whether it is still running (D4), the assistant to ask about it
+ * (F21.1) and the avatar that opens Settings. Wider screens reach both from the side menu.
  */
 export const HomeHeader = observer(function HomeHeader({ isComplete }: { isComplete: boolean }) {
   const { authStore, budgetStore } = useStores();
   const { t } = useTranslation("dashboard");
+  const { t: common } = useTranslation("common");
   const user = authStore.user;
   const hour = new Date().getHours();
   const greeting =
@@ -66,6 +68,13 @@ export const HomeHeader = observer(function HomeHeader({ isComplete }: { isCompl
           </span>
         </nav>
       </div>
+      <Link
+        to="/assistant"
+        aria-label={common("nav.assistant")}
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-pill control-fill text-primary md:hidden"
+      >
+        <MessageCircle size={20} aria-hidden="true" />
+      </Link>
       <Link
         to="/settings"
         aria-label={t("hero.settings")}

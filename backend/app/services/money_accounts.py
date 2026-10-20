@@ -3,10 +3,10 @@
 
 import uuid
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import DomainError, NotFoundError, ProblemCode
@@ -24,13 +24,14 @@ from app.domain.accounts import (
     next_month,
     tax_on,
 )
-from app.domain.income import Recurring
+from app.domain.income import Recurring, TaxRule
 from app.domain.periods import DateRange
 from app.models.account import Account, AccountMove, RegularTransfer
 from app.models.household import HouseholdMember
 from app.models.income import Income
 from app.models.income_source import IncomeSource
 from app.models.regular_expense import RegularExpense
+from app.models.user import User
 from app.repository.household import HouseholdRepository
 from app.repository.money_accounts import (
     AccountMoneyRepository,
@@ -40,6 +41,7 @@ from app.repository.money_accounts import (
 )
 from app.repository.regular_expense import RegularExpenseRepository
 from app.services.household import refuse_child
+from app.services.income import tax_rule
 
 
 @dataclass(frozen=True)
@@ -76,6 +78,8 @@ class Family:
     names: dict[uuid.UUID, str]
     own_card: dict[uuid.UUID, uuid.UUID]
     shared_card: uuid.UUID | None
+    rules: dict[uuid.UUID, TaxRule]
+    """The tax rule of each member who pays their own taxes (F23.16)."""
 
     @property
     def authors(self) -> list[uuid.UUID]:
@@ -140,7 +144,9 @@ class AccountService:
         family = await self._family()
         entries = await self._entries(accounts, family, today)
         own = [e for e in entries if e.account_id == account_id]
-        month = [e for e in own if e.day.replace(day=1) == first_day]
+        month = [
+            e for e in own if e.day.replace(day=1) == first_day and e.kind != EntryKind.TAX_DUE
+        ]
         view = AccountView(
             account,
             ledger_of(account.opening, own),
@@ -237,8 +243,8 @@ class AccountService:
         today: date,
     ) -> Income:
         """Record money from outside on an account: income, taxed on a business account."""
+        # Added on its own date even into a closed month, as a bank books a late payment.
         account = await self._writable(account_id)
-        self._open_month(received_on, today)
         income = Income(
             amount=amount,
             source=source,
@@ -286,7 +292,6 @@ class AccountService:
             raise DomainError("Choose two different accounts.", code=ProblemCode.SAME_ACCOUNT)
         source = await self._writable(from_id)
         target = await self._writable(to_id)
-        self._open_month(moved_on, today)
         move = AccountMove(
             kind=MoveKind.TRANSFER,
             name=name or f"{source.name} → {target.name}",
@@ -466,11 +471,33 @@ class AccountService:
     async def change_transfer_rule(
         self, rule_id: uuid.UUID, *, amount: Decimal, day: int | None, name: str
     ) -> RegularTransfer:
-        """Change a monthly transfer from now on."""
+        """Change a monthly transfer from this month on; earlier months keep the old one."""
         rule = await self.transfers.get(rule_id)
         if rule is None or rule.ends_on is not None:
             raise NotFoundError("No such monthly transfer.")
         await self._writable(rule.from_account_id)
+        this_month = datetime.now(UTC).date().replace(day=1)
+        if rule.starts_on < this_month:
+            # Changed in place, earlier months would be read with the new amount: the old
+            # version ends with last month and a new one carries on (closed months, F23.15).
+            copy = RegularTransfer(
+                user_id=rule.user_id,
+                name=rule.name,
+                amount=rule.amount,
+                day=rule.day,
+                starts_on=this_month,
+                from_account_id=rule.from_account_id,
+                to_account_id=rule.to_account_id,
+            )
+            rule.ends_on = this_month - timedelta(days=1)
+            self.session.add(copy)
+            await self.session.flush()
+            await self.session.execute(
+                update(AccountMove)
+                .where(AccountMove.rule_id == rule.id, AccountMove.moved_on >= this_month)
+                .values(rule_id=copy.id)
+            )
+            rule = copy
         rule.amount, rule.day, rule.name = amount, day, name or rule.name
         await self.session.flush()
         return rule
@@ -518,7 +545,8 @@ class AccountService:
                 kind=EntryKind.INCOME,
                 name=self._name(income.source, income.user_id, income.household_id, family),
                 amount=income.amount,
-                tax=income.tax or Decimal("0.00"),
+                tax=income.tax
+                or self._own_tax(income.amount, income.taxed, income.user_id, target, seen, family),
                 ref=self._ref("income", income.id, income.user_id, income.household_id, family),
                 by_rule=income.source_id is not None,
             )
@@ -540,7 +568,10 @@ class AccountService:
                     kind=EntryKind.EXPECTED if source.about else EntryKind.INCOME,
                     name=self._name(source.name, source.user_id, source.household_id, family),
                     amount=source.amount,
-                    tax=tax_on(source.amount, seen[target].tax_rate),
+                    tax=tax_on(source.amount, seen[target].tax_rate)
+                    or self._own_tax(
+                        source.amount, source.taxed, source.user_id, target, seen, family
+                    ),
                     ref=self._ref("source", source.id, source.user_id, source.household_id, family),
                     by_rule=True,
                     upcoming=day > today,
@@ -633,6 +664,20 @@ class AccountService:
                     **common,
                 )
 
+        for author, own_rule in family.rules.items():
+            card = family.card_of(author, False)
+            if not own_rule.fixed or card not in seen:
+                continue
+            for month in months_between(start, today):
+                add(
+                    card,
+                    max(month, seen[card].opening_on),
+                    kind=EntryKind.TAX_DUE,
+                    name="",
+                    amount=Decimal("0.00"),
+                    tax=own_rule.fixed,
+                )
+
         for payment in await self.money.tax_payments(family.authors, today):
             target = payment.account_id or family.card_of(payment.user_id, False)
             add(
@@ -680,6 +725,22 @@ class AccountService:
                 author="private",
             )
         return entries
+
+    @staticmethod
+    def _own_tax(
+        amount: Decimal,
+        taxed: bool,
+        author: uuid.UUID,
+        target: uuid.UUID | None,
+        seen: dict[uuid.UUID, Account],
+        family: Family,
+    ) -> Decimal:
+        """Tax set aside by the author's own rule (F23.16), on an account without a rate."""
+        rule = family.rules.get(author)
+        account = seen.get(target) if target else None
+        if not taxed or rule is None or account is None or account.tax_rate:
+            return Decimal("0.00")
+        return rule.on(amount)
 
     def _name(
         self, name: str, author: uuid.UUID, household: uuid.UUID | None, family: Family
@@ -729,7 +790,13 @@ class AccountService:
         )
         own = {c.user_id: c.id for c in cards if c.household_id is None}
         shared = next((c.id for c in cards if c.household_id is not None), None)
-        return Family(me, membership, names, own, shared)
+        users = (
+            [m.user for m in membership.household.members]
+            if membership
+            else [u for u in [await self.session.get(User, me)] if u is not None]
+        )
+        rules = {u.id: rule for u in users if (rule := tax_rule(u)) is not None}
+        return Family(me, membership, names, own, shared, rules)
 
     async def _scope(self, shared: bool) -> uuid.UUID | None:
         if not shared:
@@ -772,6 +839,7 @@ class AccountService:
 
     @staticmethod
     def _open_month(day: date, today: date) -> None:
+        """Refuse changing or removing what a closed month holds; adding to it is allowed."""
         if is_closed(day, today):
             raise DomainError(
                 "That month is closed: only this month's entries can change.",

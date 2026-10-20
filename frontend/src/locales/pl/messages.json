@@ -172,5 +172,11 @@
     "loadFailed": "Nie udało się wczytać kont",
     "saved": "Zapisano.",
     "failed": "Nie udało się zapisać. Spróbuj ponownie."
+  },
+  "assistant": {
+    "loadFailed": "Nie udało się wczytać rozmów",
+    "sendFailed": "Nie udało się wysłać wiadomości. Spróbuj ponownie.",
+    "saveFailed": "Nie udało się zapisać karty",
+    "saved": "Zapisano."
   }
 }

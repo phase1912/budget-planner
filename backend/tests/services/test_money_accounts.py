@@ -129,14 +129,19 @@ async def test_money_in_change_income_and_closed_month(db_session: AsyncSession)
     assert inc.amount == Decimal("500.00")
     assert inc.tax == Decimal("50.00")
 
-    # Closed month error on money_in
+    # A late payment is added on its own date, even into a closed month...
+    late = await service.money_in(
+        biz.id,
+        amount=Decimal("100.00"),
+        source="Past",
+        received_on=date(2026, 9, 30),
+        today=today,
+    )
+    assert late.received_on == date(2026, 9, 30)
+    # ...but what a closed month holds is never changed.
     with pytest.raises(DomainError) as exc_info:
-        await service.money_in(
-            biz.id,
-            amount=Decimal("100.00"),
-            source="Past",
-            received_on=date(2026, 9, 30),
-            today=today,
+        await service.change_income(
+            late.id, amount=Decimal("1.00"), received_on=date(2026, 9, 30), today=today
         )
     assert exc_info.value.code == ProblemCode.MONTH_CLOSED
 

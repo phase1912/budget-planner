@@ -31,7 +31,9 @@ money is, what of it belongs to the tax office, or what moved where.
   family's shared one, which then pays for every member. A sum with no account of its own
   lands the same way. Choosing the card for each receipt comes later; the ledger already
   reads purchases per buyer, so it will only change where a receipt lands.
-- **Closed months.** Only this month's entries change; earlier months stay as they are.
+- **Closed months.** Only this month's entries change or go; earlier months keep what they
+  hold. A late entry — a payslip for last month arriving now — is still added on its own
+  date, as a bank books a late payment.
 - **Sharing follows ADR-0023.** An account is its author's or the household's. A sum on
   a shared account is shared. A member who leaves takes their shared accounts back. A
   child moves nothing on a shared account.

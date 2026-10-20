@@ -228,5 +228,6 @@
     "addedBy": "dodane przez: {{name}}",
     "sharedChip": "Wspólne",
     "mineChip": "Moje"
-  }
+  },
+  "onAccount": "na „{{name}}”"
 }

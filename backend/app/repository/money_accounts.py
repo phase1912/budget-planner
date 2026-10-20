@@ -33,6 +33,20 @@ def visible_accounts() -> Select[tuple[uuid.UUID]]:
     )
 
 
+def purchase_card(accounts: Sequence[Account], user_id: uuid.UUID) -> Account | None:
+    """The card a user's purchases — and any sum they put on no account — land on (F23.15):
+    their own marked card, else the family's shared one."""
+    own = next(
+        (
+            a
+            for a in accounts
+            if a.for_purchases and a.household_id is None and a.user_id == user_id
+        ),
+        None,
+    )
+    return own or next((a for a in accounts if a.for_purchases and a.household_id), None)
+
+
 class AccountRepository(SharedWithHousehold[Account]):
     """The signed-in user's accounts and the ones their household shares (N2, F12.8)."""
 

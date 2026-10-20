@@ -268,7 +268,10 @@ async def test_an_about_income_waits_to_be_confirmed_and_a_bonus_counts_once(
 
 
 @pytest.mark.asyncio
-async def test_earlier_months_are_closed(db_session: AsyncSession) -> None:
+async def test_a_closed_month_takes_a_late_entry_but_keeps_what_it_holds(
+    db_session: AsyncSession,
+) -> None:
+    """F23.15: a late document is added on its own date; a closed month's entries stay."""
     me = await UserFactory.create_async(currency="PLN")
     card = await _open(db_session, me, name="Card", opening="500.00")
     deposit = await _open(db_session, me, name="Deposit", kind="deposit", opening="0.00")
@@ -285,8 +288,20 @@ async def test_earlier_months_are_closed(db_session: AsyncSession) -> None:
             "moved_on": "2026-10-30",
         },
     )
+    october = await _history(db_session, me, card["id"], 2, month="2026-10")
+    move_id = october["entries"][0]["ref_id"]
+    changed = await _call(
+        db_session,
+        me,
+        "PUT",
+        f"{URL}/moves/{move_id}?today=2026-11-02",
+        {"amount": "1.00", "moved_on": "2026-10-30"},
+    )
+    removed = await _call(db_session, me, "DELETE", f"{URL}/moves/{move_id}?today=2026-11-02")
 
-    assert (back_dated.status_code, back_dated.json()["code"]) == (409, "month_closed")
+    assert back_dated.status_code == 201
+    assert (changed.status_code, changed.json()["code"]) == (409, "month_closed")
+    assert removed.json()["code"] == "month_closed"
 
 
 @pytest.mark.asyncio
@@ -804,14 +819,16 @@ async def test_occurrence_for_transfer_and_bill_edge_cases(db_session: AsyncSess
         {"name": "No Acc Bill", "amount": "50.00", "day": 5},
     )
     bill_no_acc_id = bill_no_acc.json()["id"]
-    err_res = await _call(
+    # A bill named on no account goes on the purchase card, so its month can be changed.
+    assert bill_no_acc.json()["account_id"] == card["id"]
+    changed = await _call(
         db_session,
         me,
         "PUT",
         f"{URL}/occurrences/{bill_no_acc_id}{on(5)}",
         {"kind": "bill", "amount": "60.00"},
     )
-    assert err_res.status_code == 409
+    assert changed.status_code == 204
 
     bill_404 = await _call(
         db_session,
@@ -934,3 +951,118 @@ async def test_regular_income_sources_in_ledger(db_session: AsyncSession) -> Non
     hist_day15 = await _history(db_session, me, card["id"], 15)
     sal15 = next(e for e in hist_day15["entries"] if e["name"] == "Salary")
     assert sal15["upcoming"] is False
+
+
+@pytest.mark.asyncio
+async def test_an_income_named_on_no_account_goes_on_the_purchase_card(
+    db_session: AsyncSession,
+) -> None:
+    """F23.15: once there are accounts, every income is on one — the card by default."""
+    me = await UserFactory.create_async(currency="PLN")
+    card = await _open(db_session, me, name="Card", opening="0.00")
+
+    income = await _call(
+        db_session,
+        me,
+        "POST",
+        "/api/v1/income",
+        # Today's: an earlier month is closed once there are accounts.
+        {"received_on": datetime.now(UTC).date().isoformat(), "amount": "500.00", "source": "Gift"},
+    )
+    regular = await _call(
+        db_session,
+        me,
+        "POST",
+        f"/api/v1/income/regular{on(1)}",
+        {"name": "Salary", "amount": "9000.00", "day": 10},
+    )
+
+    assert income.json()["account_id"] == card["id"]
+    assert regular.json()["account_id"] == card["id"]
+
+
+@pytest.mark.asyncio
+async def test_the_first_income_opens_the_card_with_the_balance_kept_so_far(
+    db_session: AsyncSession,
+) -> None:
+    """F23.15: someone without accounts is never asked to make one; the first sum opens it."""
+    me = await UserFactory.create_async(
+        currency="PLN",
+        language="uk",
+        starting_balance=Decimal("5000.00"),
+        balance_since=date(2026, 10, 1),
+    )
+    today = datetime.now(UTC).date().isoformat()
+
+    added = await _call(
+        db_session,
+        me,
+        "POST",
+        "/api/v1/income",
+        {"received_on": today, "amount": "100.00", "source": "Gift", "kind": "other"},
+    )
+    accounts = await _accounts(db_session, me, 20)
+
+    assert added.status_code == 201, added.text
+    card = accounts["Моя картка"]
+    assert (card["for_purchases"], card["opening"], card["opening_on"]) == (
+        True,
+        "5000.00",
+        "2026-10-01",
+    )
+
+
+@pytest.mark.asyncio
+async def test_a_shared_income_with_no_card_opens_the_familys(db_session: AsyncSession) -> None:
+    me, anna = await _couple()
+    today = datetime.now(UTC).date().isoformat()
+
+    await _call(
+        db_session,
+        me,
+        "POST",
+        "/api/v1/income",
+        {"received_on": today, "amount": "9000.00", "source": "Acme", "shared": True},
+    )
+    hers = await _accounts(db_session, anna, 20)
+
+    assert hers["Our card"]["shared"] is True
+
+
+@pytest.mark.asyncio
+async def test_ones_own_tax_rule_holds_on_a_card_without_a_rate(db_session: AsyncSession) -> None:
+    """F23.16 with F23.15: a card has no rate, so the user's own rule sets tax aside."""
+    me = await UserFactory.create_async(
+        currency="PLN",
+        pays_own_taxes=True,
+        tax_rate=Decimal("12.00"),
+        tax_fixed_monthly=Decimal("0.00"),
+    )
+    await _open(db_session, me, name="Card", opening="0.00", for_purchases=True)
+
+    await _call(
+        db_session,
+        me,
+        "POST",
+        "/api/v1/income",
+        {
+            "received_on": datetime.now(UTC).date().isoformat(),
+            "amount": "10000.00",
+            "source": "Client",
+            "kind": "side",
+        },
+    )
+    month = (
+        await _call(db_session, me, "GET", f"/api/v1/income?month={datetime.now(UTC):%Y-%m}")
+    ).json()
+    balance = (
+        await _call(
+            db_session,
+            me,
+            "GET",
+            f"/api/v1/income/balance?today={datetime.now(UTC).date().isoformat()}",
+        )
+    ).json()
+
+    assert Decimal(month["taxes"]) == Decimal("1200.00")
+    assert Decimal(balance["for_taxes"]) == Decimal("1200.00")

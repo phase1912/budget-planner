@@ -16,7 +16,8 @@
     "plan": "Plan",
     "settings": "Settings",
     "add": "Add a receipt",
-    "addShort": "Add"
+    "addShort": "Add",
+    "assistant": "Assistant"
   },
   "header": {
     "back": "Back",

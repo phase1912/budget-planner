@@ -101,6 +101,14 @@ describe("UploadPage", () => {
       incomeStore,
       accountStore: { mustConfirm: false },
       authStore: { user: { forwarding_address: null } },
+      bankAccountsStore: {
+        accounts: [],
+        loaded: true,
+        any: true,
+        load: vi.fn(),
+        byId: () => undefined,
+        saveState: { isLoading: false },
+      },
       householdStore: { household: null, mayShare: false },
     } as unknown as RootStore;
     const { container } = render(

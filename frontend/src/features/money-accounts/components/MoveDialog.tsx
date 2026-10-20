@@ -100,7 +100,6 @@ export const MoveDialog = observer(function MoveDialog({
               type="date"
               label={t("moveDialog.date")}
               value={day}
-              min={`${today.slice(0, 7)}-01`}
               onChange={(e) => {
                 setDay(e.target.value);
               }}

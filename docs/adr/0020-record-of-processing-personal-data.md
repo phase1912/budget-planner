@@ -21,6 +21,7 @@ data. Wording to be reviewed in the E18 legal investigation.
 | Account: name, email, password hash (Argon2id), language, currency, budget, forwarding token, when the email was confirmed, when and which terms were accepted | Signing in, letters about the account, showing figures | Contract, 6(1)(b) | Until the account is deleted |
 | Receipts: merchant, date, lines, amounts, category, fiscal numbers, exchange rates; trips, per diem times, goals, advice, categories and rules, products, household membership | The service itself: reading receipts and budgeting | Contract, 6(1)(b) | Until the account is deleted |
 | Income and balance (F23.10, F23.14): entries of money received (amount, date, kind, note), the usual income and payday, a starting balance and its date; the chosen palette and whether setup was done (F23.1, F23.9). A payslip or transfer document sent to be read (F23.11) is read in memory by the model and never stored — only the amount, date and payer the user confirms | Showing what is left and what the user has; the look they chose | Contract, 6(1)(b) | Until the account is deleted; never shared with a household |
+| Conversations with the assistant (F21.1, ADR-0025): what the user wrote or said (as text — speech is turned into text by the browser's own recogniser, which in Chrome sends the sound to Google under the browser's terms; this service never receives sound), the assistant's answers and the cards it proposed, with whether each was saved | Answering the user and doing what they approved | Contract, 6(1)(b) | Until the user or the account deletes them; in the full export (F17.9) |
 | Receipt photos and forwarded e-receipts (files) | Reading them; showing the receipt; a trip's settlement | Contract, 6(1)(b) | 90 days, then deleted by storage; the figures read from them stay (F17.9.3) |
 | Export files | Giving the user their data or a settlement | Contract, 6(1)(b); art. 15/20 | 7 days |
 | Messages through the contact form: reply address, topic, text (F17.10) | Answering the person who wrote | Legitimate interest, 6(1)(f); a data request, art. 12 | Not stored by the service: mailed to the support mailbox (F22.1.2) and a copy to the sender; kept there as long as the correspondence needs |
@@ -50,7 +51,7 @@ All on Google, as the operator's processor under the Cloud Data Processing Adden
 - **Google Cloud, `us-central1` (Iowa, USA):** Cloud Run (backend), the PostgreSQL
   virtual machine and its snapshots, Cloud Storage (photos, exports), Secret Manager,
   Cloud Logging, App Engine (mail in and out, ADR-0013, ADR-0019).
-- **Vertex AI Gemini, `us-central1`:** reads receipt photos and names; under Google
+- **Vertex AI Gemini, `us-central1`:** reads receipt photos and names, and answers the assistant's conversations (F21.1); under Google
   Cloud's terms, customer data is not used to train models.
 - **Firebase Hosting:** serves the web app's static files from Google's global CDN;
   it holds no user data beyond request logs.
