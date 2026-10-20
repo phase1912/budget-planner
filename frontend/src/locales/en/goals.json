@@ -172,7 +172,10 @@
     "change": "Change the amount",
     "basis_one": "Based on {{count}} recent month",
     "basis_other": "Based on {{count}} recent months",
-    "covers": "Together −{{covered}} of the {{gap}} {{currency}} a month"
+    "covers": "Together −{{covered}} of the {{gap}} {{currency}} a month",
+    "swaps": "Cheaper where you already shop",
+    "swapsFamily": "Cheaper where your family already shops",
+    "swapMeta": "At {{shop}} instead of {{instead}} · a month"
   },
   "perMonth": "{{currency}} a month"
 }

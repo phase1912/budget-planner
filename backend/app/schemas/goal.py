@@ -92,6 +92,15 @@ class GoalCheckSource(BaseModel):
     cut: Decimal
 
 
+class GoalCheckSwap(BaseModel):
+    """A product to buy at `shop` instead of `instead_of`, and what that saves a month."""
+
+    name: str
+    shop: str
+    instead_of: str
+    monthly_saving: Decimal
+
+
 class GoalCheckResponse(BaseModel):
     """The verdict: `doable`, a `stretch` with sources, or `unknown` with the reason.
 
@@ -105,3 +114,6 @@ class GoalCheckResponse(BaseModel):
     months: int
     sources: list[GoalCheckSource]
     unknown: Unknown | None
+    swaps: list[GoalCheckSwap] = []
+    """Products to buy where the family has seen them cheaper (F12.11)."""
+    family: bool = False

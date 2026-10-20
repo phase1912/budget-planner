@@ -8,8 +8,8 @@
     "start": "Set up in a minute",
     "defaults": "Use the defaults and start",
     "perk1": "Line-by-line receipts",
-    "perk2": "Price changes",
-    "perk3": "Goals that adapt"
+    "perk2": "A budget for the family",
+    "perk3": "Where the money is"
   },
   "money": {
     "title": "Language and money",
@@ -28,9 +28,7 @@
     "amount": "Usual net income",
     "payday": "Payday",
     "none": "Not set",
-    "last": "Last day",
-    "balance": "On your accounts today",
-    "balanceHint": "Not income: what your cards and accounts hold now. From today it moves by itself."
+    "last": "Last day"
   },
   "security": {
     "title": "Lock it with a code",
@@ -51,7 +49,43 @@
     "income": "Income",
     "twoFactor": "Two-factor",
     "on": "Next",
-    "off": "Later"
+    "off": "Later",
+    "accounts": "Accounts",
+    "family": "Family",
+    "alone": "Just me"
   },
-  "next": "Continue"
+  "next": "Continue",
+  "accounts": {
+    "title": "Where is your money?",
+    "body": "Start with the card you pay with: purchases come off it by themselves.",
+    "cardName": "Card name",
+    "cardDefault": "My card",
+    "cardDefaultShared": "Our card",
+    "onIt": "On it now",
+    "cardHint": "Leave the amount empty to skip; add accounts later on Plan.",
+    "cardHintShared": "It is shared with your family, and pays for everyone’s purchases.",
+    "business": "I also have a business account",
+    "businessHint": "Money from clients sets your tax aside, and the rest counts as the family’s income.",
+    "tax": "Tax on money from clients",
+    "own": "Own",
+    "ownRate": "Your rate, %",
+    "later": "Savings, a shared card and monthly transfers can be added any time.",
+    "businessDefault": "Business",
+    "familyCard": "Your family pays for purchases from “{{name}}”: they come off it for you too."
+  },
+  "family": {
+    "title": "Budget together?",
+    "body": "Share receipts, income and bills with your family. Each of you keeps private what you want.",
+    "alone": "Just me for now",
+    "aloneHint": "You can start a family later in Settings",
+    "family": "With my family",
+    "familyHint": "Invite them with a link",
+    "name": "Family name",
+    "nameDefault": "Home",
+    "start": "Start the family",
+    "in": "You keep a budget with “{{name}}”.",
+    "invite": "Send this link to whoever you share money with:",
+    "copy": "Copy the link",
+    "copied": "Copied"
+  }
 }

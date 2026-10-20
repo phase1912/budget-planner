@@ -11,7 +11,7 @@ import {
   SegmentedControl,
 } from "@/shared/components";
 import { categoryName } from "@/shared/categoryName";
-import { numberFormat } from "@/i18n/format";
+import { dateFormat, numberFormat } from "@/i18n/format";
 import { isoDay } from "@/stores/StatisticsStore";
 import type { HouseholdStatistics } from "@/stores/HouseholdStore";
 import { useStores } from "@/stores/StoreContext";
@@ -20,8 +20,9 @@ import { HouseholdDailyBars } from "./HouseholdDailyBars";
 
 const WHOLE = numberFormat({ maximumFractionDigits: 0 });
 const PERCENT = numberFormat({ style: "percent", maximumFractionDigits: 0 });
+const DAY = dateFormat({ day: "numeric", month: "short" });
 
-type Chart = "share" | "categories" | "days";
+type Chart = "share" | "categories" | "products" | "days";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -80,6 +81,7 @@ export const HouseholdMonthView = observer(function HouseholdMonthView({
     void householdStore.loadMonth(year, month);
     void householdStore.loadStatistics(start, end);
     void householdStore.loadDaily(start, end);
+    void householdStore.loadLines(start, end);
   }, [householdStore, year, month, start, end]);
 
   if (!summary) {
@@ -222,6 +224,7 @@ export const HouseholdMonthView = observer(function HouseholdMonthView({
             options={[
               { value: "share", label: t("household.charts.share") },
               { value: "categories", label: t("household.charts.categories") },
+              { value: "products", label: t("household.charts.products") },
               { value: "days", label: t("household.charts.days") },
             ]}
           />
@@ -318,6 +321,52 @@ export const HouseholdMonthView = observer(function HouseholdMonthView({
           </ul>
         )}
 
+        {chart === "products" &&
+          ((householdStore.lines?.products.length ?? 0) === 0 ? (
+            <p className="m-0 text-md text-muted-foreground">{t("household.noProducts")}</p>
+          ) : (
+            <ul className="m-0 flex list-none flex-col gap-3 p-0">
+              {(householdStore.lines?.products ?? []).map((product) => {
+                const whole = Number(product.total);
+                const part = (id: string) =>
+                  Number(product.members.find((x) => x.user_id === id)?.total ?? 0);
+                return (
+                  <li key={product.name} className="flex flex-col gap-1.5">
+                    <span className="flex justify-between gap-3 text-md font-bold">
+                      <span className="min-w-0 truncate">{product.name}</span>
+                      <span className="shrink-0 tabular-nums">
+                        {WHOLE.format(whole)} {currency}
+                      </span>
+                    </span>
+                    <span
+                      className="flex h-2.5 overflow-hidden rounded-pill bg-muted"
+                      aria-hidden="true"
+                    >
+                      {people.map((m) => (
+                        <span
+                          key={m.user_id}
+                          style={{
+                            width: `${String(whole > 0 ? (part(m.user_id) / whole) * 100 : 0)}%`,
+                            background: colourOf.get(m.user_id),
+                          }}
+                        />
+                      ))}
+                    </span>
+                    <span className="text-sm text-muted-foreground tabular-nums">
+                      {people
+                        .filter((m) => part(m.user_id) > 0)
+                        .map(
+                          (m) =>
+                            `${nameOf(m.user_id, m.first_name)} ${PERCENT.format(whole > 0 ? part(m.user_id) / whole : 0)}`,
+                        )
+                        .join(" · ")}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          ))}
+
         {chart === "days" && (
           <HouseholdDailyBars currency={currency} today={isoDay(new Date())} bare />
         )}
@@ -328,6 +377,41 @@ export const HouseholdMonthView = observer(function HouseholdMonthView({
           </p>
         )}
       </section>
+
+      {(householdStore.lines?.twice.length ?? 0) > 0 && (
+        <section
+          aria-labelledby="bought-twice"
+          className="flex flex-col gap-3 rounded-hero bg-surface p-4 md:p-6"
+        >
+          <h2 id="bought-twice" className="m-0 text-xl font-extrabold">
+            {t("household.twice.title")}
+          </h2>
+          <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+            {(householdStore.lines?.twice ?? []).map((item) => {
+              const who = item.members.map((id) =>
+                nameOf(id, summary.members.find((m) => m.user_id === id)?.first_name ?? ""),
+              );
+              return (
+                <li key={`${item.name}-${item.days.join()}`} className="flex flex-col gap-0.5">
+                  <span className="flex justify-between gap-3">
+                    <span className="min-w-0 truncate text-lg font-bold">{item.name}</span>
+                    <span className="shrink-0 text-md font-semibold text-muted-foreground tabular-nums">
+                      {WHOLE.format(Number(item.paid))} {currency}
+                    </span>
+                  </span>
+                  <span className="text-md text-muted-foreground">
+                    {t("household.twice.line", {
+                      who: who.join(t("household.twice.and")),
+                      days: item.days.map((d) => DAY.format(new Date(`${d}T00:00:00`))).join(", "),
+                    })}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="m-0 text-sm text-muted-foreground">{t("household.twice.hint")}</p>
+        </section>
+      )}
 
       {editingBudget && (
         <AmountDialog

@@ -7,6 +7,7 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from app.api.errors import NotFoundError, ProblemCode
 from app.domain.budget import BudgetMonth, LimitUsage, MonthProgress, limit_usage
+from app.domain.family_lines import ProductByMember, Twice, bought_twice, who_buys
 from app.domain.periods import DateRange
 from app.models.household import Household
 from app.models.user import User
@@ -193,6 +194,17 @@ class HouseholdBudgetService:
             for spent_on in (period.start + timedelta(days=n) for n in range(period.days))
         ]
         return HouseholdDaily(members=members, days=days, undated_private=undated)
+
+    async def lines(
+        self, user: User, period: DateRange
+    ) -> tuple[list[Twice], list[ProductByMember]]:
+        """What the family bought twice over `period`, and who buys which products (F12.11).
+
+        Shared receipts only (ADR-0017). Raises NotFoundError outside a household.
+        """
+        household = await self._household(user)
+        lines = await self.spend.shared_lines(period, [m.user_id for m in household.members])
+        return bought_twice(lines), who_buys(lines)
 
     async def _household(self, user: User) -> Household:
         household = await self.households.mine(user)

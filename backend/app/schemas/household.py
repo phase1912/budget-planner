@@ -167,6 +167,30 @@ class HouseholdDailyMemberResponse(BaseModel):
     first_name: str
 
 
+class TwiceResponse(BaseModel):
+    """A product two members bought within three days (F12.11)."""
+
+    name: str
+    members: list[uuid.UUID]
+    days: list[date]
+    paid: Decimal
+
+
+class ProductMembersResponse(BaseModel):
+    """What the family paid for one product, and by whom (F12.11)."""
+
+    name: str
+    total: Decimal
+    members: list[MemberTotalResponse]
+
+
+class HouseholdLinesResponse(BaseModel):
+    """What the family buys, line by line: products bought twice, and who buys what."""
+
+    twice: list[TwiceResponse]
+    products: list[ProductMembersResponse]
+
+
 class HouseholdDailyResponse(BaseModel):
     """The household's spending day by day, per member (F12.5, F23.4).
 

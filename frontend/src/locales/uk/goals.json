@@ -180,7 +180,10 @@
     "basis_few": "На основі {{count}} останніх місяців",
     "basis_many": "На основі {{count}} останніх місяців",
     "basis_other": "На основі {{count}} останнього місяця",
-    "covers": "Разом −{{covered}} з {{gap}} {{currency}} на місяць"
+    "covers": "Разом −{{covered}} з {{gap}} {{currency}} на місяць",
+    "swaps": "Дешевше там, де ви вже купуєте",
+    "swapsFamily": "Дешевше там, де ваша родина вже купує",
+    "swapMeta": "У {{shop}} замість {{instead}} · на місяць"
   },
   "perMonth": "{{currency}} на місяць"
 }

@@ -13,6 +13,7 @@ export type HouseholdInvite = components["schemas"]["HouseholdInvite"];
 export type HouseholdMonth = components["schemas"]["HouseholdMonthResponse"];
 export type HouseholdStatistics = components["schemas"]["HouseholdStatisticsResponse"];
 export type HouseholdDaily = components["schemas"]["HouseholdDailyResponse"];
+export type HouseholdLines = components["schemas"]["HouseholdLinesResponse"];
 export type HouseholdView = "mine" | "household";
 export type MemberRole = components["schemas"]["MemberRoleRequest"]["role"];
 
@@ -38,11 +39,14 @@ export class HouseholdStore {
   readonly statisticsState = new AsyncState();
   /** Each member's spending day by day over the statistics' period. */
   daily: HouseholdDaily | null = null;
+  /** What the family buys line by line over the statistics' period (F12.11). */
+  lines: HouseholdLines | null = null;
   // Only the latest request may land: switching month or period quickly must not let
   // an older answer arrive last and overwrite the one asked for.
   private monthRequest = 0;
   private statisticsRequest = 0;
   private dailyRequest = 0;
+  private linesRequest = 0;
   readonly saveState = new AsyncState();
   private readonly toastStore: ToastStore;
 
@@ -140,6 +144,21 @@ export class HouseholdStore {
     runInAction(() => {
       if (request !== this.dailyRequest) return;
       this.daily = response.error ? null : response.data;
+    });
+  }
+
+  /**
+   * Products two members bought within three days, and who buys what, between two dates
+   * (F12.11). A failure only leaves the cards out.
+   */
+  async loadLines(start: string, end: string): Promise<void> {
+    const request = ++this.linesRequest;
+    const response = await settle(() =>
+      apiClient.GET("/api/v1/household/lines", { params: { query: { start, end } } }),
+    );
+    runInAction(() => {
+      if (request !== this.linesRequest) return;
+      this.lines = response.error ? null : response.data;
     });
   }
 
@@ -279,6 +298,7 @@ export class HouseholdStore {
     this.month = null;
     this.statistics = null;
     this.daily = null;
+    this.lines = null;
   }
 
   private async save(

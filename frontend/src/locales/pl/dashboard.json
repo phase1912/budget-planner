@@ -103,9 +103,17 @@
     "charts": {
       "share": "Udział",
       "categories": "Kategorie",
-      "days": "Dzień po dniu"
+      "days": "Dzień po dniu",
+      "products": "Produkty"
     },
-    "othersPrivate": "Prywatne paragony innych liczą się tylko kwotą: {{amount}} {{currency}} w tym miesiącu, bez sklepu i dnia."
+    "othersPrivate": "Prywatne paragony innych liczą się tylko kwotą: {{amount}} {{currency}} w tym miesiącu, bez sklepu i dnia.",
+    "noProducts": "W tym miesiącu nie ma jeszcze wspólnych paragonów z produktami.",
+    "twice": {
+      "title": "Kupione dwa razy",
+      "line": "{{who}} · {{days}}",
+      "and": " i ",
+      "hint": "Ten sam produkt kupiony przez dwie osoby w ciągu trzech dni — warto ustalić, kto go kupuje."
+    }
   },
   "inMonth": " — {{month}}",
   "recorded": " uwzględnionych",
