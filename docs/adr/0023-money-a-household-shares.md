@@ -37,7 +37,7 @@ its centre.
 - N2's access tests gain the shared case: a member reads and writes a shared row, a stranger
   and a departed member do not (`tests/api/test_shared_money.py`,
   `tests/security/test_cross_household_access.py`).
-- `regular_expenses.split`, written by the first version, is no longer read; a later
-  migration drops it (ADR-0014: the running code stops using a column first).
+- `regular_expenses.split`, written by the first version, stopped being read in F12.10 and
+  is dropped by the next migration (F23.15), as ADR-0014 asks: code first, column after.
 - Accounts (F23.15) will carry the same `household_id`, so a joint account is shared the same
   way.

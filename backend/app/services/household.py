@@ -6,9 +6,10 @@ import uuid
 from decimal import Decimal
 from typing import Literal
 
-from sqlalchemy import update
+from sqlalchemy import select, update
 
 from app.api.errors import DomainError, NotFoundError, PermissionDeniedError, ProblemCode
+from app.models.account import Account
 from app.models.household import Household, HouseholdMember, HouseholdRole
 from app.models.income import Income
 from app.models.income_source import IncomeSource
@@ -238,12 +239,26 @@ class HouseholdService:
         return (await self._membership(user)).household
 
     async def _take_back(self, member_id: uuid.UUID, household_id: uuid.UUID) -> None:
-        """What a departing member shared becomes theirs alone again (F12.8).
+        """What a departing member shared becomes theirs alone again (F12.8, F23.15).
 
         What the others shared stays with the household; the member stops seeing it with
-        their membership.
+        their membership. A shared account they opened goes with them, no longer paying for
+        anyone's purchases but theirs, and only if they have no card of their own.
         """
-        for model in (Income, IncomeSource, RegularExpense):
+        own_card = await self.households.session.scalar(
+            select(Account.id).where(
+                Account.user_id == member_id,
+                Account.household_id.is_(None),
+                Account.for_purchases.is_(True),
+            )
+        )
+        if own_card is not None:
+            await self.households.session.execute(
+                update(Account)
+                .where(Account.user_id == member_id, Account.household_id == household_id)
+                .values(for_purchases=False)
+            )
+        for model in (Income, IncomeSource, RegularExpense, Account):
             await self.households.session.execute(
                 update(model)
                 .where(model.user_id == member_id, model.household_id == household_id)

@@ -4989,6 +4989,7 @@ epics:
         labels: [backend, frontend, database, security]
         requirements: []
         depends_on: [F23.14, F12.8]
+        groomed: true
         intent: >
           Where the money is, for a family with a business too: accounts the user names
           (personal, business, deposit — a deposit just an amount for now), each personal or
@@ -5081,6 +5082,20 @@ epics:
         demo: >
           Open Spending and see no receipts/categories switch; fix or delete a receipt from
           its history; sort uncategorised items one at a time; rename a category in Settings.
+      - key: F23.20
+        title: A receipt paid from another card
+        labels: [backend, frontend]
+        requirements: []
+        depends_on: [F23.15]
+        intent: >
+          Purchases come off the purchase card (F23.15): one's own, else the family's shared
+          one. Sometimes a receipt was paid from another — fuel or a cola on the business
+          card. Changing a receipt's card moves its amount to that account's history and
+          balance; the ledger already reads purchases per buyer, so only where one receipt
+          lands changes.
+        demo: >
+          Open a fuel receipt, choose the business card, and see it leave "Our card" and
+          appear in the business account's history that day.
 
   - key: E24
     title: Bugfixes

@@ -18,6 +18,8 @@ class Balance:
     """For a user who pays their own taxes (F23.16): set aside on income since `since`."""
     bills: Decimal = Decimal("0.00")
     """Regular bills gone since `since` (F23.18) — spending without receipts."""
+    from_accounts: bool = False
+    """Added up from the user's accounts (F23.15) rather than carried from a start."""
 
     @property
     def now(self) -> Decimal:

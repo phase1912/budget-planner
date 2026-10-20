@@ -158,7 +158,8 @@
     "emptyBody": "За нашим підрахунком на рахунках {{amount}} {{currency}}. Додайте, що надійшло, або вкажіть, скільки маєте зараз.",
     "addIncome": "Додати надходження",
     "correct": "Уточнити баланс",
-    "forTaxes": "з них ~{{amount}} {{currency}} на податки"
+    "forTaxes": "з них ~{{amount}} {{currency}} на податки",
+    "accounts": "Ваші рахунки"
   },
   "insight": {
     "dearer": "{{name}} подорожчав на {{percent}}%",

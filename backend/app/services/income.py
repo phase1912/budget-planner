@@ -2,13 +2,14 @@
 
 import uuid
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import DomainError, NotFoundError, ProblemCode
 from app.core.context import current_user_id
+from app.domain.accounts import first_month, is_closed, tax_on
 from app.domain.income import (
     IncomeChannel,
     MonthIncome,
@@ -18,6 +19,7 @@ from app.domain.income import (
     taxed_by_default,
 )
 from app.domain.quota import next_month_start
+from app.models.account import Account
 from app.models.income import Income
 from app.models.income_source import IncomeSource
 from app.models.pending_income import PendingIncome
@@ -27,6 +29,7 @@ from app.models.user import User
 from app.repository.household import HouseholdRepository
 from app.repository.income import IncomeRepository
 from app.repository.income_source import IncomeSourceRepository
+from app.repository.money_accounts import AccountRepository
 from app.repository.pending_income import PendingIncomeRepository
 from app.repository.regular_expense import RegularExpenseRepository
 from app.repository.tax_payment import TaxPaymentRepository
@@ -105,16 +108,24 @@ class IncomeService:
         """The entries of the month starting `first_day` and its income (usual if none)."""
         last_day = date.fromordinal(next_month_start(first_day).toordinal() - 1)
         entries = list(await self.incomes.between(first_day, last_day))
+        confirmed = {e.source_id for e in entries if e.source_id}
         regular = [
             s
             for s in await self.sources.running_since(first_day)
-            if regular_rule(s).runs_in(first_day)
+            if regular_rule(s).runs_in(first_day) and s.id not in confirmed
         ]
+        # On an account the account's own rule sets tax aside, not the user's (F23.15).
+        rates = {a.id: a.tax_rate for a in await AccountRepository(self.session).visible()}
+        set_aside = sum((e.tax or Decimal(0) for e in entries if e.account_id), Decimal(0)) + sum(
+            (tax_on(s.amount, rates.get(s.account_id)) for s in regular if s.account_id),
+            Decimal(0),
+        )
         income = month_income(
-            ((e.amount, e.taxed) for e in entries),
+            ((e.amount, e.taxed and e.account_id is None) for e in entries),
             user.usual_income,
             tax_rule(user),
-            recurring=((s.amount, s.taxed) for s in regular),
+            recurring=((s.amount, s.taxed and s.account_id is None) for s in regular),
+            set_aside=set_aside,
         )
         paid = await self.tax_payments.total(first_day, last_day)
         bills = [
@@ -139,6 +150,23 @@ class IncomeService:
             )
         return membership.household_id
 
+    async def _place(
+        self, shared: bool, account_id: uuid.UUID | None
+    ) -> tuple[uuid.UUID | None, Account | None]:
+        """The household and account a sum goes to (F12.8, F23.15).
+
+        On an account it is shared exactly when the account is; NotFoundError for an
+        account the caller does not see (N2), and a child puts nothing on a shared one.
+        """
+        if account_id is None:
+            return await self._scope(shared), None
+        account = await AccountRepository(self.session).get(account_id)
+        if account is None:
+            raise NotFoundError("No such account.")
+        if account.household_id is not None:
+            refuse_child(await HouseholdRepository(self.session).membership_of(_me()))
+        return account.household_id, account
+
     async def _may_change(self, row: Income | IncomeSource | RegularExpense) -> None:
         """A shared row is changed by the household's adults only (F12.10)."""
         if row.household_id is not None:
@@ -158,10 +186,11 @@ class IncomeService:
 
     async def add_bill(self, request: RegularExpenseRequest, today: date) -> RegularExpense:
         """Start a regular bill: it counts from this month on."""
+        household, _ = await self._place(request.shared, request.account_id)
         bill = RegularExpense(
             **request.model_dump(exclude={"shared"}),
-            household_id=await self._scope(request.shared),
-            starts_on=today,
+            household_id=household,
+            starts_on=_starts_on(request.day, today),
         )
         self.bills.add(bill)
         await self.session.flush()
@@ -177,7 +206,7 @@ class IncomeService:
         await self._may_change(bill)
         for field, value in request.model_dump(exclude={"shared"}).items():
             setattr(bill, field, value)
-        bill.household_id = await self._scope(request.shared)
+        bill.household_id, _ = await self._place(request.shared, request.account_id)
         await self.session.flush()
         return bill
 
@@ -187,7 +216,7 @@ class IncomeService:
         if bill is None or bill.ends_on is not None:
             raise NotFoundError("No such regular bill.")
         await self._may_change(bill)
-        if bill.starts_on.replace(day=1) == today.replace(day=1):
+        if bill.starts_on.replace(day=1) >= today.replace(day=1):
             await self.session.delete(bill)
         else:
             bill.ends_on = today
@@ -198,11 +227,12 @@ class IncomeService:
         return list(await self.sources.current())
 
     async def add_regular(self, request: IncomeSourceRequest, today: date) -> IncomeSource:
-        """Start a regular income: it counts from this month on."""
+        """Start a regular income: from this month, or the next when its day has passed."""
+        household, _ = await self._place(request.shared, request.account_id)
         source = IncomeSource(
             **request.model_dump(exclude={"shared"}),
-            household_id=await self._scope(request.shared),
-            starts_on=today,
+            household_id=household,
+            starts_on=_starts_on(request.day, today),
         )
         self.sources.add(source)
         await self.session.flush()
@@ -218,7 +248,7 @@ class IncomeService:
         await self._may_change(source)
         for field, value in request.model_dump(exclude={"shared"}).items():
             setattr(source, field, value)
-        source.household_id = await self._scope(request.shared)
+        source.household_id, _ = await self._place(request.shared, request.account_id)
         await self.session.flush()
         return source
 
@@ -232,7 +262,7 @@ class IncomeService:
         if source is None or source.ends_on is not None:
             raise NotFoundError("No such regular income.")
         await self._may_change(source)
-        if source.starts_on.replace(day=1) == today.replace(day=1):
+        if source.starts_on.replace(day=1) >= today.replace(day=1):
             await self.session.delete(source)
         else:
             source.ends_on = today
@@ -248,7 +278,14 @@ class IncomeService:
         data = request.model_dump(exclude={"shared"})
         if data["taxed"] is None:
             data["taxed"] = taxed_by_default(request.kind)
-        income = Income(**data, household_id=await self._scope(request.shared))
+        household, account = await self._place(request.shared, request.account_id)
+        if account is not None:
+            _open_month(request.received_on)
+        income = Income(
+            **data,
+            household_id=household,
+            tax=tax_on(request.amount, account.tax_rate) or None if account else None,
+        )
         self.incomes.add(income)
         await self.session.flush()
         return income
@@ -259,12 +296,17 @@ class IncomeService:
         if income is None:
             raise NotFoundError("No such income.")
         await self._may_change(income)
+        if income.account_id is not None:
+            _open_month(income.received_on)
         # How an entry came in stays as it was: correcting it does not make it typed.
         for field, value in request.model_dump(exclude={"channel", "shared"}).items():
             if field == "taxed" and value is None:
                 continue
             setattr(income, field, value)
-        income.household_id = await self._scope(request.shared)
+        income.household_id, account = await self._place(request.shared, request.account_id)
+        if account is not None:
+            _open_month(income.received_on)
+        income.tax = tax_on(income.amount, account.tax_rate) or None if account else None
         await self.session.flush()
         return income
 
@@ -275,10 +317,13 @@ class IncomeService:
         if income is None:
             raise NotFoundError("No such income.")
         await self._may_change(income)
+        if income.account_id is not None:
+            _open_month(income.received_on)
         await self.incomes.delete(income_id)
 
     async def pay_taxes(self, request: TaxPaymentRequest) -> TaxPayment:
         """Record taxes paid (F23.16): they leave the balance, never the spending."""
+        await self._place(False, request.account_id)
         payment = TaxPayment(**request.model_dump())
         self.tax_payments.add(payment)
         await self.session.flush()
@@ -316,6 +361,22 @@ class IncomeService:
         """Drop a pending income without making it an entry; NotFoundError if not the user's."""
         if not await self.pending.delete(pending_id):
             raise NotFoundError("No such pending income.")
+
+
+def _starts_on(day: int | None, today: date) -> date:
+    """When a rule made `today` starts: today, or the 1st of next month when its day has
+    already passed this month — a rule never posts on a day gone by (F23.15)."""
+    start = first_month(day, today)
+    return today if start <= today else start
+
+
+def _open_month(day: date) -> None:
+    """Refuse changing what an account shows for a closed month (F23.15)."""
+    if is_closed(day, datetime.now(UTC).date()):
+        raise DomainError(
+            "That month is closed: only this month's entries can change.",
+            code=ProblemCode.MONTH_CLOSED,
+        )
 
 
 def _me() -> uuid.UUID:

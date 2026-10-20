@@ -71,6 +71,7 @@ def month_income(
     usual: Decimal | None,
     taxes: TaxRule | None = None,
     recurring: Iterable[tuple[Decimal, bool]] = (),
+    set_aside: Decimal = Decimal("0.00"),
 ) -> MonthIncome:
     """The month's income: its entries summed, else the account's usual income.
 
@@ -83,6 +84,9 @@ def month_income(
     `recurring` are the (amount, taxed) regular incomes running this month (F23.17): they
     count by themselves, and with them the usual income no longer stands in — entries come
     on top. A taxed one is taxed like a taxed entry.
+
+    `set_aside` is tax already worked out elsewhere — by a business account's rate
+    (F23.15) — and joins the month's taxes as it is.
     """
     listed = list(entries)
     regular_listed = list(recurring)
@@ -97,8 +101,10 @@ def month_income(
     else:
         total, taxed, entered = usual, usual or Decimal("0"), False
     if taxes is None:
-        return MonthIncome(total=total, entered=entered)
-    return MonthIncome(total=total, entered=entered, taxes=taxes.on(taxed) + taxes.fixed)
+        return MonthIncome(total=total, entered=entered, taxes=set_aside)
+    return MonthIncome(
+        total=total, entered=entered, taxes=taxes.on(taxed) + taxes.fixed + set_aside
+    )
 
 
 @dataclass(frozen=True)

@@ -298,5 +298,6 @@ async def balance(user: CurrentUser, session: Session, today: date) -> BalanceRe
         spent=found.spent,
         taxes_paid=found.taxes_paid,
         bills=found.bills,
-        for_taxes=found.for_taxes if user.pays_own_taxes else None,
+        for_taxes=found.for_taxes if user.pays_own_taxes or found.from_accounts else None,
+        from_accounts=found.from_accounts,
     )

@@ -233,6 +233,7 @@ describe("PlanPage (F23.2, F23.10, F23.12)", () => {
         source: "Side project",
         kind: "side",
         shared: false,
+        account_id: null,
       });
     });
   });

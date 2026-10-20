@@ -81,5 +81,9 @@
     "pacedOver": "{{spent}} з {{target}} {{currency}} · йде до {{projected}}",
     "saving": "Цього місяця вільно {{available}} з {{target}} {{currency}}, щоб відкласти",
     "edit": "Змінити ціль"
+  },
+  "accounts": {
+    "title": "Де гроші",
+    "hint": "Картки, бізнес-рахунок, заощадження — і гроші між ними"
   }
 }

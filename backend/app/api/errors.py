@@ -71,6 +71,8 @@ class ProblemCode(enum.StrEnum):
     OWNER_ONLY = "owner_only"
     CHILD_READ_ONLY = "child_read_only"
     OWNER_ROLE_FIXED = "owner_role_fixed"
+    MONTH_CLOSED = "month_closed"
+    SAME_ACCOUNT = "same_account"
     TRIPS_OVERLAP = "trips_overlap"
     PER_DIEM_TIMES = "per_diem_times"
     PER_DIEM_NO_RATES = "per_diem_no_rates"

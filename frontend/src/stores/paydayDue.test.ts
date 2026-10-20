@@ -40,6 +40,7 @@ describe("paydayDue", () => {
       taxed: false,
       shared: false,
       mine: true,
+      about: false,
       starts_on: "2026-10-01",
     };
     expect(paydayDue("2026-10-20", 10, { ...usualOnly, regular: [salary] })).toBe(false);

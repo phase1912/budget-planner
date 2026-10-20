@@ -165,5 +165,10 @@
     "saved": "Saved.",
     "failed": "The income could not be saved. Try again.",
     "readFailed": "The document could not be read. Try again, or enter the amount yourself."
+  },
+  "accounts": {
+    "loadFailed": "Your accounts could not be loaded",
+    "saved": "Saved.",
+    "failed": "That could not be saved. Try again."
   }
 }

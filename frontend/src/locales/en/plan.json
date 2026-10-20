@@ -79,5 +79,9 @@
     "pacedOver": "{{spent}} of {{target}} {{currency}} · heading for {{projected}}",
     "saving": "{{available}} of {{target}} {{currency}} free to put aside this month",
     "edit": "Change the goal"
+  },
+  "accounts": {
+    "title": "Where the money is",
+    "hint": "Cards, a business account, savings — and the money between them"
   }
 }

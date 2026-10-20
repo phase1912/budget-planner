@@ -1,5 +1,6 @@
 """Money coming in, and the account's appearance and setup (F23.10, F23.1, F23.9, N2)."""
 
+import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -11,7 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token
 from app.db.session import get_db_session
+from app.domain.accounts import AccountKind
 from app.main import create_app
+from app.models.account import Account
 from app.models.receipt import ReceiptStatus
 from app.models.user import User
 from tests.factories.line_item import LineItemFactory
@@ -175,6 +178,7 @@ async def test_the_balance_moves_with_income_and_counted_purchases_since_it_was_
         "taxes_paid": "0",
         "bills": "0",
         "for_taxes": None,
+        "from_accounts": False,
     }
 
 
@@ -472,3 +476,126 @@ async def test_another_users_bill_cannot_be_seen_changed_or_stopped(
     ended = await _call(db_session, "DELETE", url, user=stranger)
 
     assert (listed.json(), changed.status_code, ended.status_code) == ([], 404, 404)
+
+
+@pytest.mark.asyncio
+async def test_income_and_bills_associated_with_account(db_session: AsyncSession) -> None:
+    user = await UserFactory.create_async()
+    account = Account(
+        user_id=user.id,
+        name="Business",
+        kind=AccountKind.BUSINESS,
+        opening=Decimal("1000.00"),
+        opening_on=datetime(2026, 10, 1, tzinfo=UTC).date(),
+        tax_rate=Decimal("10.00"),
+    )
+    db_session.add(account)
+    await db_session.flush()
+
+    reg = await _call(
+        db_session,
+        "POST",
+        "/api/v1/income/regular?today=2026-10-01",
+        user=user,
+        json={"name": "Consulting", "amount": "4000.00", "day": 10, "account_id": str(account.id)},
+    )
+    assert reg.status_code == 201
+    assert reg.json()["account_id"] == str(account.id)
+
+    ch_reg = await _call(
+        db_session,
+        "PUT",
+        f"/api/v1/income/regular/{reg.json()['id']}?today=2026-10-02",
+        user=user,
+        json={
+            "name": "Consulting Plus",
+            "amount": "4500.00",
+            "day": 12,
+            "account_id": str(account.id),
+        },
+    )
+    assert ch_reg.status_code == 200
+
+    bill = await _call(
+        db_session,
+        "POST",
+        "/api/v1/income/bills?today=2026-10-01",
+        user=user,
+        json={"name": "Server", "amount": "100.00", "day": 5, "account_id": str(account.id)},
+    )
+    assert bill.status_code == 201
+    assert bill.json()["account_id"] == str(account.id)
+
+    ch_bill = await _call(
+        db_session,
+        "PUT",
+        f"/api/v1/income/bills/{bill.json()['id']}",
+        user=user,
+        json={
+            "name": "Cloud Server",
+            "amount": "120.00",
+            "day": 5,
+            "account_id": str(account.id),
+        },
+    )
+    assert ch_bill.status_code == 200
+
+    inc = await _call(
+        db_session,
+        "POST",
+        "/api/v1/income",
+        user=user,
+        json={
+            "received_on": "2026-10-05",
+            "amount": "2000.00",
+            "source": "Client A",
+            "account_id": str(account.id),
+        },
+    )
+    assert inc.status_code == 201
+
+    ch_inc = await _call(
+        db_session,
+        "PUT",
+        f"/api/v1/income/{inc.json()['id']}",
+        user=user,
+        json={
+            "received_on": "2026-10-06",
+            "amount": "2500.00",
+            "source": "Client A+",
+            "account_id": str(account.id),
+        },
+    )
+    assert ch_inc.status_code == 200
+
+    tax_res = await _call(
+        db_session,
+        "POST",
+        "/api/v1/income/taxes",
+        user=user,
+        json={"paid_on": "2026-10-07", "amount": "250.00", "account_id": str(account.id)},
+    )
+    assert tax_res.status_code == 201
+
+    bal_res = await _call(db_session, "GET", "/api/v1/income/balance?today=2026-10-15", user=user)
+    assert bal_res.status_code == 200
+    bal_data = bal_res.json()
+    assert bal_data["from_accounts"] is True
+
+    del_inc = await _call(db_session, "DELETE", f"/api/v1/income/{inc.json()['id']}", user=user)
+    assert del_inc.status_code == 204
+
+    missing_id = str(uuid.uuid4())
+    bad_acc = await _call(
+        db_session,
+        "POST",
+        "/api/v1/income",
+        user=user,
+        json={
+            "received_on": "2026-10-05",
+            "amount": "100.00",
+            "source": "X",
+            "account_id": missing_id,
+        },
+    )
+    assert bad_acc.status_code == 404

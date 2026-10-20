@@ -48,6 +48,8 @@ export const IncomeDialog = observer(function IncomeDialog({
     channel: draft ? "document" : undefined,
     taxed: entry?.taxed,
     shared: entry?.shared ?? mayShare,
+    // A correction leaves it on the account it reached (F23.15).
+    account_id: entry?.account_id ?? null,
   });
   // Until the user flips it, a new entry is taxed by its kind, as the server decides (F23.16).
   const taxed = form.taxed ?? (form.kind === "salary" || form.kind === "side");

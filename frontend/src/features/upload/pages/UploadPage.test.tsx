@@ -130,6 +130,7 @@ describe("UploadPage", () => {
           kind: "salary",
           channel: "document",
           shared: false,
+          account_id: null,
         },
       });
     });

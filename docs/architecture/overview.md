@@ -165,6 +165,17 @@ is refused every shared write in one place, `refuse_child` in `app/services/hous
 which `IncomeService` calls when a row is or would become shared, and which the household
 budget and a receipt's privacy call too.
 
+Accounts (F23.15, ADR-0024) live in `app/services/money_accounts.py` behind
+`/api/v1/accounts`. `AccountService._entries` turns every sum that reaches or leaves an
+account the caller sees — income entries, regular incomes, bills and transfers read from
+their rules, moves, tax payments and each member's purchases by day — into one list of
+`Entry` lines (`app/domain/accounts.py`); balances, histories, "To check" and Home's
+balance (`BalanceService`) are all sums over that one list, so they cannot disagree.
+Rules are never posted ahead: a month's occurrence is read from the rule unless an income
+(`source_id`) or a move (`bill_id`, `rule_id`) stands in for it. Shared accounts use the
+household widening above; moves and monthly transfers are visible through the accounts
+they touch (`app/repository/money_accounts.py`).
+
 These rules are held together by one suite, `backend/tests/security/test_cross_household_access.py`
 (F12.6): it builds a household with an owner, a member, a removed member and a stranger
 elsewhere, then walks every read that reaches or adds up another member's receipts and

@@ -2512,6 +2512,287 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Accounts
+         * @description Every account the caller sees — their own and the household's — with balances.
+         */
+        get: operations["list_accounts_api_v1_accounts_get"];
+        put?: never;
+        /**
+         * Open Account
+         * @description Open an account; the first everyday one pays for purchases by itself.
+         */
+        post: operations["open_account_api_v1_accounts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Account
+         * @description Change an account; 404 unless the caller's or their household's (N2).
+         */
+        put: operations["change_account_api_v1_accounts__account_id__put"];
+        post?: never;
+        /**
+         * Delete Account
+         * @description Delete an account and the moves on it; 404 unless the caller sees it (N2).
+         */
+        delete: operations["delete_account_api_v1_accounts__account_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/expected": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Expected Income
+         * @description "About" incomes whose day has come this month, waiting to be confirmed (F_Check).
+         */
+        get: operations["expected_income_api_v1_accounts_expected_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/{account_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Account History
+         * @description One account's history in a month, newest first; earlier months are closed.
+         */
+        get: operations["account_history_api_v1_accounts__account_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/{account_id}/money-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Money In
+         * @description Money reached an account: income from outside — taxed on a business account — or a
+         *     transfer from another own account, which is neither income nor spending.
+         */
+        post: operations["money_in_api_v1_accounts__account_id__money_in_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/moves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move Money
+         * @description Move money between two accounts the caller sees (N2).
+         */
+        post: operations["move_money_api_v1_accounts_moves_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/moves/{move_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Move
+         * @description Correct a move of this month; 409 month_closed for an earlier one.
+         */
+        put: operations["change_move_api_v1_accounts_moves__move_id__put"];
+        post?: never;
+        /**
+         * Delete Move
+         * @description Remove a move of this month; 409 month_closed for an earlier one.
+         */
+        delete: operations["delete_move_api_v1_accounts_moves__move_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/incomes/{income_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Income
+         * @description Correct an income on an account this month; its tax follows the account's rate.
+         */
+        put: operations["change_income_api_v1_accounts_incomes__income_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/{account_id}/adjust": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Adjust Account
+         * @description Bring an account to what the bank says, by a correction of the difference.
+         */
+        post: operations["adjust_account_api_v1_accounts__account_id__adjust_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/occurrences/{rule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Occurrence
+         * @description Change this month's bill or transfer made by a rule; 0 skips it this month.
+         */
+        put: operations["change_occurrence_api_v1_accounts_occurrences__rule_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/expected/{source_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Expected
+         * @description Say what an "about" income really brought this month; a bonus counts once.
+         */
+        post: operations["confirm_expected_api_v1_accounts_expected__source_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Transfer Rules
+         * @description The monthly transfers still running, between accounts the caller sees.
+         */
+        get: operations["transfer_rules_api_v1_accounts_transfers_get"];
+        put?: never;
+        /**
+         * Add Transfer Rule
+         * @description Move money every month by itself; a day already past this month starts next month.
+         */
+        post: operations["add_transfer_rule_api_v1_accounts_transfers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/transfers/{rule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Transfer Rule
+         * @description Change a monthly transfer from now on; 404 unless the caller sees it (N2).
+         */
+        put: operations["change_transfer_rule_api_v1_accounts_transfers__rule_id__put"];
+        post?: never;
+        /**
+         * End Transfer Rule
+         * @description Stop a monthly transfer from next month; past months keep it.
+         */
+        delete: operations["end_transfer_rule_api_v1_accounts_transfers__rule_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2523,6 +2804,94 @@ export interface components {
         AccountDeletionRequest: {
             /** Password */
             password: string;
+        };
+        /**
+         * AccountKind
+         * @description What an account is for: everyday money, a business, or savings kept as an amount.
+         * @enum {string}
+         */
+        AccountKind: "personal" | "business" | "deposit";
+        /**
+         * AccountRead
+         * @description An account and what is on it now.
+         */
+        AccountRead: {
+            /**
+             * Shared
+             * @default false
+             */
+            shared: boolean;
+            /**
+             * Mine
+             * @default true
+             */
+            mine: boolean;
+            /** Added By */
+            added_by?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            kind: components["schemas"]["AccountKind"];
+            /** Opening */
+            opening: string;
+            /**
+             * Opening On
+             * Format: date
+             */
+            opening_on: string;
+            /** Tax Rate */
+            tax_rate: string | null;
+            /** For Purchases */
+            for_purchases: boolean;
+            /** Balance */
+            balance: string;
+            /** Set Aside */
+            set_aside: string;
+        };
+        /**
+         * AccountRequest
+         * @description An account as the user opens or changes it.
+         *
+         *     `opening` is what was on it on `opening_on`; `tax_rate` is kept on a business
+         *     account only; `shared` puts it in the household's money (F12.8).
+         */
+        AccountRequest: {
+            /** Name */
+            name: string;
+            /** @default personal */
+            kind: components["schemas"]["AccountKind"];
+            /** Opening */
+            opening: number | string;
+            /** Opening On */
+            opening_on?: string | null;
+            /** Tax Rate */
+            tax_rate?: number | string | null;
+            /**
+             * Shared
+             * @default false
+             */
+            shared: boolean;
+            /**
+             * For Purchases
+             * @default false
+             */
+            for_purchases: boolean;
+        };
+        /**
+         * AccountsRead
+         * @description Every account the caller sees, and the money on them together.
+         */
+        AccountsRead: {
+            /** Accounts */
+            accounts: components["schemas"]["AccountRead"][];
+            /** Total */
+            total: string;
+            /** Set Aside */
+            set_aside: string;
         };
         /** ActivityRead */
         ActivityRead: {
@@ -2545,6 +2914,14 @@ export interface components {
             extraction_index: number;
             /** Amount */
             amount: number | string;
+        };
+        /**
+         * AdjustRequest
+         * @description What the bank says is on the account now.
+         */
+        AdjustRequest: {
+            /** Balance */
+            balance: number | string;
         };
         /**
          * AdminActionRead
@@ -2742,6 +3119,11 @@ export interface components {
             bills?: string | null;
             /** For Taxes */
             for_taxes?: string | null;
+            /**
+             * From Accounts
+             * @default false
+             */
+            from_accounts: boolean;
         };
         /**
          * BarGroupResponse
@@ -3002,6 +3384,14 @@ export interface components {
             stops_mid_month: boolean;
         };
         /**
+         * ConfirmRequest
+         * @description What an "about" income really brought this month.
+         */
+        ConfirmRequest: {
+            /** Amount */
+            amount: number | string;
+        };
+        /**
          * ContactRequest
          * @description A message to the people running the service; `website` is a trap for bots.
          */
@@ -3141,6 +3531,72 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+        };
+        /**
+         * EntryKind
+         * @description What one line of an account's history is.
+         * @enum {string}
+         */
+        EntryKind: "income" | "expected" | "transfer_in" | "transfer_out" | "bill" | "adjustment" | "purchases" | "tax_paid";
+        /**
+         * EntryRead
+         * @description One line of an account's history.
+         *
+         *     `ref` and `ref_id` say what to change it through ("income", "move", "bill", "rule",
+         *     "source"), null for a day's purchases; `editable` is false in a closed month.
+         */
+        EntryRead: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            kind: components["schemas"]["EntryKind"];
+            /** Name */
+            name: string;
+            /** Amount */
+            amount: string;
+            /** Tax */
+            tax: string;
+            /** By Rule */
+            by_rule: boolean;
+            /** Upcoming */
+            upcoming: boolean;
+            /** Count */
+            count: number;
+            /** Author */
+            author: string | null;
+            /** Ref */
+            ref: string | null;
+            /** Ref Id */
+            ref_id: string | null;
+            /** Editable */
+            editable: boolean;
+        };
+        /**
+         * ExpectedRead
+         * @description An "about" income whose day has come, waiting for what really came.
+         */
+        ExpectedRead: {
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Amount */
+            amount: string;
         };
         /**
          * ExpenseKind
@@ -3441,6 +3897,19 @@ export interface components {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
+         * HistoryRead
+         * @description One account and its history in one month.
+         */
+        HistoryRead: {
+            account: components["schemas"]["AccountRead"];
+            /** Month */
+            month: string;
+            /** Closed */
+            closed: boolean;
+            /** Entries */
+            entries: components["schemas"]["EntryRead"][];
+        };
+        /**
          * HouseholdBudgetRequest
          * @description The household's monthly budget; null removes it (F12.5).
          */
@@ -3666,6 +4135,19 @@ export interface components {
             reason?: string | null;
         };
         /**
+         * IncomeChange
+         * @description A correction to an income on an account this month.
+         */
+        IncomeChange: {
+            /** Amount */
+            amount: number | string;
+            /**
+             * Received On
+             * Format: date
+             */
+            received_on: string;
+        };
+        /**
          * IncomeChannel
          * @description How it reached the service: typed in, or read from a document (F23.11).
          * @enum {string}
@@ -3727,6 +4209,12 @@ export interface components {
              * @default false
              */
             taxed: boolean;
+            /** Account Id */
+            account_id?: string | null;
+            /** Tax */
+            tax?: string | null;
+            /** Source Id */
+            source_id?: string | null;
         };
         /**
          * IncomeRequest
@@ -3753,6 +4241,8 @@ export interface components {
              * @default false
              */
             shared: boolean;
+            /** Account Id */
+            account_id?: string | null;
         };
         /** IncomeSourceRead */
         IncomeSourceRead: {
@@ -3779,6 +4269,13 @@ export interface components {
              * @default false
              */
             taxed: boolean;
+            /** Account Id */
+            account_id?: string | null;
+            /**
+             * About
+             * @default false
+             */
+            about: boolean;
             /**
              * Id
              * Format: uuid
@@ -3813,6 +4310,13 @@ export interface components {
              * @default false
              */
             shared: boolean;
+            /** Account Id */
+            account_id?: string | null;
+            /**
+             * About
+             * @default false
+             */
+            about: boolean;
         };
         /**
          * ItemView
@@ -4085,6 +4589,23 @@ export interface components {
             message: string;
         };
         /**
+         * MoneyInRequest
+         * @description Money that reached an account: from outside (income) or from another own account.
+         */
+        MoneyInRequest: {
+            /** Amount */
+            amount: number | string;
+            /** Source */
+            source: string;
+            /**
+             * Received On
+             * Format: date
+             */
+            received_on: string;
+            /** From Account Id */
+            from_account_id?: string | null;
+        };
+        /**
          * MonthAccuracyResponse
          * @description One month's receipts, by the day they were read, and how many needed correcting.
          */
@@ -4227,6 +4748,57 @@ export interface components {
             limit_percent?: number | null;
             /** Limit Remaining */
             limit_remaining?: string | null;
+        };
+        /**
+         * MoveChange
+         * @description A correction to a move of this month.
+         */
+        MoveChange: {
+            /** Amount */
+            amount: number | string;
+            /**
+             * Moved On
+             * Format: date
+             */
+            moved_on: string;
+        };
+        /**
+         * MoveRequest
+         * @description Money moved between two accounts: neither income nor spending.
+         */
+        MoveRequest: {
+            /**
+             * From Account Id
+             * Format: uuid
+             */
+            from_account_id: string;
+            /**
+             * To Account Id
+             * Format: uuid
+             */
+            to_account_id: string;
+            /** Amount */
+            amount: number | string;
+            /**
+             * Moved On
+             * Format: date
+             */
+            moved_on: string;
+            /** Name */
+            name?: string | null;
+        };
+        /**
+         * OccurrenceRequest
+         * @description This month's bill or transfer made by a rule, as it really went; 0 skips it.
+         */
+        OccurrenceRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "bill" | "transfer";
+            /** Amount */
+            amount: number | string;
         };
         /**
          * PageViewRequest
@@ -4969,6 +5541,8 @@ export interface components {
             amount: string;
             /** Day */
             day?: number | null;
+            /** Account Id */
+            account_id?: string | null;
             /**
              * Id
              * Format: uuid
@@ -4999,6 +5573,8 @@ export interface components {
              * @default false
              */
             shared: boolean;
+            /** Account Id */
+            account_id?: string | null;
         };
         /**
          * RenameProductRequest
@@ -5276,6 +5852,8 @@ export interface components {
             paid_on: string;
             /** Amount */
             amount: string;
+            /** Account Id */
+            account_id?: string | null;
             /**
              * Id
              * Format: uuid
@@ -5284,7 +5862,7 @@ export interface components {
         };
         /**
          * TaxPaymentRequest
-         * @description Taxes paid, by a user who pays their own (F23.16).
+         * @description Taxes paid, by a user who pays their own (F23.16), from an account if they keep any.
          */
         TaxPaymentRequest: {
             /**
@@ -5294,6 +5872,62 @@ export interface components {
             paid_on: string;
             /** Amount */
             amount: number | string;
+            /** Account Id */
+            account_id?: string | null;
+        };
+        /**
+         * TransferRuleRead
+         * @description A monthly transfer and when it started.
+         */
+        TransferRuleRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Amount */
+            amount: string;
+            /** Day */
+            day: number | null;
+            /**
+             * Starts On
+             * Format: date
+             */
+            starts_on: string;
+            /**
+             * From Account Id
+             * Format: uuid
+             */
+            from_account_id: string;
+            /**
+             * To Account Id
+             * Format: uuid
+             */
+            to_account_id: string;
+        };
+        /**
+         * TransferRuleRequest
+         * @description Money moved every month by itself, on `day` (any day: the 1st).
+         */
+        TransferRuleRequest: {
+            /**
+             * From Account Id
+             * Format: uuid
+             */
+            from_account_id: string;
+            /**
+             * To Account Id
+             * Format: uuid
+             */
+            to_account_id: string;
+            /** Amount */
+            amount: number | string;
+            /** Day */
+            day?: number | null;
+            /** Name */
+            name?: string | null;
         };
         /**
          * TripChoice
@@ -10529,6 +11163,651 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["BalanceRead"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_accounts_api_v1_accounts_get: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountsRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_account_api_v1_accounts_post: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_account_api_v1_accounts__account_id__put: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_account_api_v1_accounts__account_id__delete: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    expected_income_api_v1_accounts_expected_get: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpectedRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    account_history_api_v1_accounts__account_id__history_get: {
+        parameters: {
+            query?: {
+                month?: string | null;
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    money_in_api_v1_accounts__account_id__money_in_post: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoneyInRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    move_money_api_v1_accounts_moves_post: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_move_api_v1_accounts_moves__move_id__put: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                move_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_move_api_v1_accounts_moves__move_id__delete: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                move_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_income_api_v1_accounts_incomes__income_id__put: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                income_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncomeChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adjust_account_api_v1_accounts__account_id__adjust_post: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdjustRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_occurrence_api_v1_accounts_occurrences__rule_id__put: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OccurrenceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_expected_api_v1_accounts_expected__source_id__confirm_post: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transfer_rules_api_v1_accounts_transfers_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferRuleRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_transfer_rule_api_v1_accounts_transfers_post: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferRuleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferRuleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_transfer_rule_api_v1_accounts_transfers__rule_id__put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferRuleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferRuleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    end_transfer_rule_api_v1_accounts_transfers__rule_id__delete: {
+        parameters: {
+            query?: {
+                /** @description The caller's own date */
+                today?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

@@ -28,11 +28,13 @@ class RegularExpense(Model):
     household_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("households.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    # The account it reached or leaves (F23.15); None: the author's purchase card, or
+    # nowhere while they have no accounts.
+    account_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     name: Mapped[str] = mapped_column(String(80), nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     day: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     starts_on: Mapped[date] = mapped_column(Date, nullable=False)
     ends_on: Mapped[date | None] = mapped_column(Date, nullable=True)
-    # No longer read: a shared bill is never divided (ADR-0023). Dropped by a later
-    # migration, once no running code maps it (ADR-0014).
-    split: Mapped[str | None] = mapped_column(String(8), nullable=True)

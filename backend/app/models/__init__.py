@@ -5,6 +5,7 @@ Import every model module here so `Base.metadata` is complete before Alembic's
 epic (E1+) adds a concrete entity — F0.3 delivers only the base and conventions.
 """
 
+from app.models.account import Account, AccountMove, RegularTransfer
 from app.models.activity import ActivityEvent, PageViewCount
 from app.models.admin import AdminAction, PlanGrant
 from app.models.base import Base, Model
@@ -33,6 +34,8 @@ from app.models.upload_job import UploadJob
 from app.models.user import User
 
 __all__ = [
+    "Account",
+    "AccountMove",
     "ActivityEvent",
     "AdminAction",
     "Base",
@@ -60,6 +63,7 @@ __all__ = [
     "Recommendation",
     "RefreshToken",
     "RegularExpense",
+    "RegularTransfer",
     "TaxPayment",
     "Trip",
     "UploadJob",

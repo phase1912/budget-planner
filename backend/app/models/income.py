@@ -28,6 +28,17 @@ class Income(Model):
     household_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("households.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    # The account it reached or leaves (F23.15); None: the author's purchase card, or
+    # nowhere while they have no accounts.
+    account_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    # The regular income whose month it confirms (F23.15): it stands in for the rule there.
+    source_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("income_sources.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    # Set aside on a business account when it came in, at the account's rate then.
+    tax: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     received_on: Mapped[date] = mapped_column(Date, nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     source: Mapped[str] = mapped_column(String(80), nullable=False)

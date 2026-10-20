@@ -167,5 +167,10 @@
     "saved": "Zapisano.",
     "failed": "Nie udało się zapisać dochodu. Spróbuj ponownie.",
     "readFailed": "Nie udało się odczytać dokumentu. Spróbuj ponownie albo wpisz kwotę ręcznie."
+  },
+  "accounts": {
+    "loadFailed": "Nie udało się wczytać kont",
+    "saved": "Zapisano.",
+    "failed": "Nie udało się zapisać. Spróbuj ponownie."
   }
 }

@@ -82,20 +82,24 @@ export const RegularIncomes = observer(function RegularIncomes({
     );
   };
   const save = async () => {
+    // A change keeps the account it is on and whether it varies (F23.15).
+    const original = items.find((i) => i.id === editing);
     const base = {
       name: draft.name.trim(),
       amount,
       day: draft.day ? Number(draft.day) : null,
       shared: mayShare && draft.shared,
+      account_id: original?.account_id ?? null,
     };
+    const about = original !== undefined && "about" in original && original.about;
     const today = isoDay(new Date());
     const ok = bill
       ? editing === "new"
         ? await incomeStore.addBill(base, today)
         : await incomeStore.changeBill(editing ?? "", base)
       : editing === "new"
-        ? await incomeStore.addRegular({ ...base, taxed: draft.taxed }, today)
-        : await incomeStore.changeRegular(editing ?? "", { ...base, taxed: draft.taxed });
+        ? await incomeStore.addRegular({ ...base, taxed: draft.taxed, about: false }, today)
+        : await incomeStore.changeRegular(editing ?? "", { ...base, taxed: draft.taxed, about });
     if (!ok) return;
     setEditing(null);
     onChanged?.();
