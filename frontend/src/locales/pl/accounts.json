@@ -91,7 +91,8 @@
     "delete": "Usuń konto",
     "deleteQuestion": "Usunąć „{{name}}” i przelewy na nim? Dochody i opłaty na nim wrócą na kartę do zakupów.",
     "correct": "Popraw saldo",
-    "correctLabel": "Co teraz pokazuje bank, {{currency}}"
+    "correctLabel": "Co teraz pokazuje bank, {{currency}}",
+    "deleteLast": "Usunąć „{{name}}”, twoją ostatnią kartę? Saldo i twoje regularne dochody zatrzymają się od następnego miesiąca; wydatki i budżet zostają bez zmian."
   },
   "in": {
     "title": "Wpłynęły pieniądze",

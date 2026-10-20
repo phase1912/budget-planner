@@ -89,7 +89,8 @@
     "delete": "Delete account",
     "deleteQuestion": "Delete “{{name}}” and the transfers on it? Income and bills on it go back to your purchase card.",
     "correct": "Correct the balance",
-    "correctLabel": "What the bank says now, {{currency}}"
+    "correctLabel": "What the bank says now, {{currency}}",
+    "deleteLast": "Delete “{{name}}”, your last card? The balance and your regular incomes stop from next month; spending and the budget stay as they are."
   },
   "in": {
     "title": "Money came in",

@@ -41,7 +41,7 @@ from app.repository.money_accounts import (
 )
 from app.repository.regular_expense import RegularExpenseRepository
 from app.services.household import refuse_child
-from app.services.income import bill_rule, regular_rule, tax_rule
+from app.services.income import IncomeService, bill_rule, regular_rule, tax_rule
 
 
 @dataclass(frozen=True)
@@ -229,10 +229,29 @@ class AccountService:
             await self._only_purchase_card(account)
         return account
 
-    async def remove(self, account_id: uuid.UUID) -> None:
-        """Delete an account and the moves on it; sums that named it go back to the card."""
+    async def remove(self, account_id: uuid.UUID, today: date) -> None:
+        """Delete an account and the moves on it; sums that named it go back to the card.
+
+        Removing the last card the user sees takes them back to a budget alone (F23.21):
+        the starting balance kept before cards is forgotten, so no balance comes back, and
+        their own regular incomes stop from next month — income is bookkeeping, and with no
+        card it has nowhere to land. Past months keep what they had.
+        """
         account = await self._writable(account_id)
         await self.session.delete(account)
+        await self.session.flush()
+        if not await self.accounts.visible():
+            await self._back_to_budget(today)
+
+    async def _back_to_budget(self, today: date) -> None:
+        user = await self.session.get(User, _me())
+        assert user is not None
+        user.starting_balance = None
+        user.balance_since = None
+        incomes = IncomeService(self.session)
+        for source in await incomes.regular_incomes():
+            if source.user_id == user.id and source.household_id is None:
+                await incomes.end_regular(source.id, today)
         await self.session.flush()
 
     async def money_in(

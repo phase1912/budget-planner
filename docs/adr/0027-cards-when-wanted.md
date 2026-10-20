@@ -34,6 +34,11 @@ person without income set did not count their rent.
   the bill. The ledger already read a sum on no account onto the purchase card. When a card
   stops being the purchase card, what it carried that way is written onto it, so its history
   never moves to the next card.
+- **Removing the last card goes back to a budget alone.** The starting balance kept from
+  before cards (F23.14) is cleared, so no balance comes back from it. The user's own
+  regular incomes stop from next month: income has nowhere to land without a card. Past
+  months keep what they had. Bills, receipts and the budget are not touched. The app says
+  this before the last card is deleted.
 - **Weekly as well as monthly.** A regular bill or income comes monthly on a `day` or weekly
   on a `weekday`. A month counts it as often as that weekday falls in the month, from its
   first day on; this is never an average. A change applies from this month, as any rule

@@ -616,7 +616,9 @@ Rules that must hold at all times. Each is a candidate for a test.
     it now; the first card takes over a starting balance kept before cards (amount and
     day), so no figure moves. A bill or a tax payment named on none needs no card; once
     there is a purchase card it pays it, and a card that stops being the purchase card
-    keeps what it paid that way. A sum stays as shared as the user said; on an account the
+    keeps what it paid that way. Removing the last card the user sees goes back to a budget
+    alone: the starting balance is forgotten and their own regular incomes stop from next
+    month, the past keeping them. A sum stays as shared as the user said; on an account the
     user picked, whose it is follows the account. An account with its own tax rate sets tax aside by it; on any other the
     user's own rule (F23.16) still does, its fixed sum a month included. Money from
     another of one's own accounts is entered as a transfer, never as income — a business

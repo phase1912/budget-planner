@@ -1124,3 +1124,43 @@ async def test_ones_own_tax_rule_holds_on_a_card_without_a_rate(db_session: Asyn
 
     assert Decimal(month["taxes"]) == Decimal("1200.00")
     assert Decimal(balance["for_taxes"]) == Decimal("1200.00")
+
+
+@pytest.mark.asyncio
+async def test_removing_the_last_card_goes_back_to_a_budget_alone(db_session: AsyncSession) -> None:
+    """F23.21: no balance comes back from a start kept before cards, and one's own regular
+    incomes stop from next month; bills, the past and a second card's money are untouched."""
+    me = await UserFactory.create_async(
+        currency="PLN", starting_balance=Decimal("5000.00"), balance_since=date(2026, 10, 1)
+    )
+    today = datetime.now(UTC).date()
+    first = await _open(db_session, me, name="First", for_purchases=True)
+    second = await _open(db_session, me, name="Second")
+    await _call(
+        db_session,
+        me,
+        "POST",
+        f"/api/v1/income/regular{on(1)}",
+        {"name": "Salary", "amount": "9000.00", "day": 28, "account_id": first["id"]},
+    )
+    await _call(
+        db_session,
+        me,
+        "POST",
+        f"/api/v1/income/bills{on(1)}",
+        {"name": "Internet", "amount": "60.00", "day": 28},
+    )
+
+    await _call(db_session, me, "DELETE", f"{URL}/{first['id']}")
+    still = (await _call(db_session, me, "GET", "/api/v1/income/regular")).json()
+    await _call(db_session, me, "DELETE", f"{URL}/{second['id']}")
+    regular = (await _call(db_session, me, "GET", "/api/v1/income/regular")).json()
+    bills = (await _call(db_session, me, "GET", "/api/v1/income/bills")).json()
+    balance = await _call(db_session, me, "GET", f"/api/v1/income/balance?today={today}")
+
+    assert [r["name"] for r in still] == ["Salary"]
+    assert regular == []
+    assert [b["name"] for b in bills] == ["Internet"]
+    assert balance.json() is None or balance.json().get("balance") is None
+    await db_session.refresh(me)
+    assert (me.starting_balance, me.balance_since) == (None, None)

@@ -122,8 +122,9 @@ async def change_account(
 
 @router.delete("/{account_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_account(account_id: uuid.UUID, _user: CurrentUser, session: Session) -> Response:
-    """Delete an account and the moves on it; 404 unless the caller sees it (N2)."""
-    await AccountService(session).remove(account_id)
+    """Delete an account and the moves on it; 404 unless the caller sees it (N2). The last
+    one takes the caller back to a budget alone (F23.21)."""
+    await AccountService(session).remove(account_id, datetime.now(UTC).date())
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
