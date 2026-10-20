@@ -2574,7 +2574,8 @@ export interface paths {
         post?: never;
         /**
          * Delete Account
-         * @description Delete an account and the moves on it; 404 unless the caller sees it (N2).
+         * @description Delete an account and the moves on it; 404 unless the caller sees it (N2). The last
+         *     one takes the caller back to a budget alone (F23.21).
          */
         delete: operations["delete_account_api_v1_accounts__account_id__delete"];
         options?: never;
