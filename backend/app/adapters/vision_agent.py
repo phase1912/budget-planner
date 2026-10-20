@@ -81,8 +81,16 @@ IMPORTANT:
    than repeating the VAT letter.
 3. If quantity or unit price is not explicitly printed for an item, infer them (e.g., quantity "1",
    unit_price same as total_price). DO NOT skip line items just because these details are implicit.
-4. Discount lines ("OPUST", "Rabat", "Upust") are line items of their own with a NEGATIVE
-   total_price, exactly as printed under the product they reduce.
+4. Receipts come from many countries; the rules below hold whatever the language.
+   A discount printed under a product ("OPUST", "Rabat", "Upust", "Знижка", "Скидка",
+   "Discount", "Rabatt", "Sleva") is a line item of its own with a NEGATIVE total_price,
+   exactly as printed under the product it reduces; the product keeps its full price.
+   A footer line that sums those discounts ("Знижка -48.90" above "Сума", "Rabaty
+   razem", "Total savings") repeats them: it is NEVER a line item, or the discount is
+   counted twice. A footer rounding of the amount to pay ("Округлення -0.11",
+   "Zaokrąglenie", "Rounding") IS a line item, with its sign, named as printed. Totals
+   and payments ("Сума", "Разом", "До сплати", "Готівка", "Картка", "Gotówka", "Karta",
+   "Cash", "Change", "Решта") are never line items; receipt_total is what was paid.
 5. Returnable-packaging deposits ("kaucja", "OPAKOWANIA ZWROTNE", e.g. "But Plastik kaucja
    6 x 0,50 = 3,00") are line items too, with a positive total; a deposit handed back
    ("zwrot kaucji") is a line with a negative total. Together with the products they make
@@ -106,7 +114,9 @@ The lines sum to {lines_sum}; the amount to pay you read is {printed_total}; the
 difference is {gap}.
 
 Look at the photos again, line by line, and find what was misread. Common causes:
-- a discount line ("OPUST", "Rabat") missed, or read without its minus sign;
+- a discount line ("OPUST", "Rabat", "Знижка") missed, or read without its minus sign;
+- a footer sum of the discounts listed as a line, counting them twice;
+- a rounding line ("Округлення", "Zaokrąglenie") missed;
 - a line read twice, or one skipped where the photos overlap;
 - a misread digit in a price, or a total that is not quantity x unit price;
 - a deposit ("kaucja", "OPAKOWANIA ZWROTNE") missing from the lines, or the goods \

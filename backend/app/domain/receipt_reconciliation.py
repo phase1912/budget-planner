@@ -25,10 +25,14 @@ class Reconciliation(enum.StrEnum):
     """The total read was the goods subtotal; the bottle deposit paid on top was a line."""
     DISCOUNT_SIGN = "discount_sign"
     """A discount line was read without its minus sign."""
+    DISCOUNT_TOTAL = "discount_total"
+    """The footer's sum of the discounts was listed as a line, counting them twice."""
     REPEATED_LINE = "repeated_line"
     """A deposit or a subtotal was listed again as a line of its own."""
     LINE_ARITHMETIC = "line_arithmetic"
     """One line's total was misread; its quantity times unit price was right."""
+    ROUNDING = "rounding"
+    """The till's rounding of the amount to pay was not read as a line."""
     RECHECKED = "rechecked"
     """A second look at the photos corrected the lines."""
     UNRESOLVED = "unresolved"
@@ -38,11 +42,31 @@ class Reconciliation(enum.StrEnum):
 DEPOSIT_LINE = re.compile(r"kaucj|opakowa\w* zwrotn|\bdeposit\b|\bpfand\b|\bzastaw", re.IGNORECASE)
 """Returnable-packaging deposits: Poland's system kaucyjny since October 2025, and kin."""
 
-DISCOUNT_LINE = re.compile(r"\b(opust|rabat|upust|zni[żz]k|promocj|discount)", re.IGNORECASE)
-"""Names Polish and other receipts give a line that takes money off."""
+DISCOUNT_LINE = re.compile(
+    r"\b(opust|rabat|upust|zni[żz]k|promocj|discount|sleva|remise|sconto|descuento)"
+    r"|(знижк|скидк|акці|акци)",
+    re.IGNORECASE,
+)
+"""Names receipts give a line that takes money off, Polish, Ukrainian and others.
 
-SUMMARY_LINE = re.compile(r"\b(suma|razem|total|ptu|wydania|opakowania zwrotne)\b", re.IGNORECASE)
+Cyrillic has no word boundary in Python's ASCII sense, hence its own alternative."""
+
+SUMMARY_LINE = re.compile(
+    r"\b(suma|razem|total|ptu|wydania|opakowania zwrotne)\b|(сума|разом|всього|до сплати)",
+    re.IGNORECASE,
+)
 """Footer lines that repeat amounts already counted: a section header or subtotal."""
+
+ROUNDING_NAME = re.compile(r"zaokr|rounding|rundung|arrondi|округл", re.IGNORECASE)
+"""A till's rounding of the amount to pay: a negative line, but not a discount."""
+
+ROUNDING_LINE = "Rounding"
+"""The name of a rounding line the reader missed; one it read keeps its printed name."""
+
+MAX_ROUNDING = Decimal("0.50")
+"""The most a till rounds the amount to pay (to the nearest whole unit at most). A gap
+under it with nothing else to explain it is taken as that rounding: a product the
+reader missed would cost more."""
 
 CENT = Decimal("0.01")
 
@@ -124,6 +148,51 @@ def _discount_signs(extraction: dict[str, Any], printed: Decimal) -> dict[str, A
     return None
 
 
+def _discount_total(extraction: dict[str, Any], printed: Decimal) -> dict[str, Any] | None:
+    """A footer "Знижка -48.90" that sums the discounts printed under each product, read
+    as one more discount: the lines fall short by exactly it. Drop that line."""
+    items = _items(extraction)
+    amounts = {
+        i: printed_amount(items[i].get("total_price")) or Decimal(0)
+        for i in _counted(extraction)
+        if not ROUNDING_NAME.search(str(items[i].get("name") or ""))
+    }
+    discounts = [i for i, amount in amounts.items() if amount < 0]
+    for i in reversed(discounts):
+        others = sum((amounts[j] for j in discounts if j != i), Decimal(0))
+        if len(discounts) < 2 or not lines_match_total(amounts[i], others):
+            continue
+        fixed = copy.deepcopy(extraction)
+        del fixed["line_items"][i]
+        fixed["position_matches"] = []
+        if _agrees(fixed, printed):
+            return fixed
+    return None
+
+
+def _rounding(extraction: dict[str, Any], printed: Decimal) -> dict[str, Any] | None:
+    """The till rounded the amount to pay ("Округлення -0.11") and the reader missed the
+    line: a gap under MAX_ROUNDING becomes a rounding line, so the total stays as paid."""
+    total = lines_sum(extraction)
+    if total is None:
+        return None
+    gap = printed - total
+    if not CENT < abs(gap) < MAX_ROUNDING:
+        return None
+    fixed = copy.deepcopy(extraction)
+    last = _items(extraction)[-1] if _items(extraction) else {}
+    fixed["line_items"].append(
+        {
+            "name": ROUNDING_LINE,
+            "quantity": "1",
+            "unit_price": f"{gap:.2f}",
+            "total_price": f"{gap:.2f}",
+            "file_id": last.get("file_id"),
+        }
+    )
+    return fixed
+
+
 def _is_summary(item: dict[str, Any]) -> bool:
     return bool(SUMMARY_LINE.search(str(item.get("name") or "")))
 
@@ -176,8 +245,10 @@ def _line_arithmetic(extraction: dict[str, Any], printed: Decimal) -> dict[str, 
 RULES: tuple[tuple[Reconciliation, Rule], ...] = (
     (Reconciliation.DEPOSIT, _with_deposit),
     (Reconciliation.DISCOUNT_SIGN, _discount_signs),
+    (Reconciliation.DISCOUNT_TOTAL, _discount_total),
     (Reconciliation.REPEATED_LINE, _repeated_line),
     (Reconciliation.LINE_ARITHMETIC, _line_arithmetic),
+    (Reconciliation.ROUNDING, _rounding),
 )
 
 

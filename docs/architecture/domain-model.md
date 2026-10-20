@@ -102,9 +102,11 @@ Rules that must hold at all times. Each is a candidate for a test.
    sum of their lines, since the printed total may be what could not be read. One with
    no readable date is reported in the month it was uploaded, so it always surfaces
    somewhere; a month's receipts list places it the same way, so list and total agree.
-5a. A discount printed under a product ("Rabat", "OPUST" and the like) is read as a line
-   of its own with a negative total, where it was printed, so a receipt's lines add up
-   to what was actually paid. It takes the category of the nearest product above it on
+5a. A discount printed under a product ("Rabat", "OPUST", "Знижка", "Discount" — the rule
+   holds in any language) is read as a line of its own with a negative total, where it
+   was printed, and the product keeps its full price, so a receipt's lines add up to
+   what was actually paid. A till's rounding of the amount to pay ("Округлення",
+   "Zaokrąglenie") is a line too, with its sign. It takes the category of the nearest product above it on
    the same photo (`app/domain/discounts.py`). Otherwise that category would read
    dearer than it was and Other would go below zero. A discount with no product above
    it keeps whatever category it was given. Subtotals, the sum of discounts, VAT tables
@@ -126,8 +128,10 @@ Rules that must hold at all times. Each is a candidate for a test.
    is a negative line. Rules come first, each applied only if it closes the gap exactly:
    the goods subtotal taken instead of the amount paid while the deposit is a line; a
    discount read without its minus; a deposit or footer subtotal listed twice (never two
-   equal products — those are two purchases); one line whose total is not its quantity
-   times its price. Then the model reads the photos again, up to twice, told how far off
+   equal products — those are two purchases); the footer's sum of the discounts listed
+   as one more discount (it equals the other discounts together, and counted them twice);
+   one line whose total is not its quantity times its price; last, a gap under 0.50 left
+   by a rounding line the reader missed becomes a "Rounding" line. Then the model reads the photos again, up to twice, told how far off
    the last reading was; a new reading is kept only if its lines agree with the same
    total, so the model can never "fix" a receipt by rewriting what was paid. Only what
    still disagrees is shown to the user, marked as already tried (`total_reconciled_by`

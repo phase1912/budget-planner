@@ -89,3 +89,47 @@ def test_two_equal_products_are_never_taken_for_a_repeat() -> None:
     reading = _reading("10.00", _line("Woda", "5.00"), _line("Woda", "5.00"), _line("Woda", "5.00"))
 
     assert reconcile_by_rules(reading) is None
+
+
+SUSHI = (
+    _line("Чорний дракон", "235.00"),
+    _line("Знижка", "-11.75"),
+    _line("Бургер з перцем Халапеньйо", "315.00"),
+    _line("Знижка", "-15.75"),
+    _line("Вогняний дракон", "229.00"),
+    _line("Знижка", "-11.45"),
+    _line("Червоний дракон", "199.00"),
+    _line("Знижка", "-9.95"),
+    _line("Соуси, палички, пакет", "23.01"),
+)
+"""The Sushizoom receipt: 1001.01 of food, four discounts of 48.90, rounding -0.11, 952.00."""
+
+
+def test_a_footer_sum_of_the_discounts_read_as_a_line_is_dropped() -> None:
+    reading = _reading("952.00", *SUSHI, _line("Округлення", "-0.11"), _line("Знижка", "-48.90"))
+
+    how, fixed = reconcile_by_rules(reading) or (None, None)
+
+    assert how == Reconciliation.DISCOUNT_TOTAL
+    assert fixed is not None
+    assert [i["total_price"] for i in fixed["line_items"]].count("-48.90") == 0
+    assert len(fixed["line_items"]) == len(SUSHI) + 1
+
+
+def test_a_missed_rounding_of_the_amount_to_pay_becomes_a_line() -> None:
+    how, fixed = reconcile_by_rules(_reading("952.00", *SUSHI)) or (None, None)
+
+    assert how == Reconciliation.ROUNDING
+    assert fixed is not None and fixed["line_items"][-1]["total_price"] == "-0.11"
+
+
+def test_a_gap_bigger_than_any_rounding_is_not_called_one() -> None:
+    assert reconcile_by_rules(_reading("950.00", *SUSHI)) is None
+
+
+def test_a_ukrainian_discount_read_without_its_minus_is_flipped() -> None:
+    reading = _reading("223.25", _line("Чорний дракон", "235.00"), _line("Знижка", "11.75"))
+
+    how, _ = reconcile_by_rules(reading) or (None, None)
+
+    assert how == Reconciliation.DISCOUNT_SIGN
