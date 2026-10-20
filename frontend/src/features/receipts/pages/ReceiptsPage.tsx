@@ -63,6 +63,7 @@ export const ReceiptsPage = observer(() => {
   const requestedStatus = searchParams.get("status");
   const requestedStart = searchParams.get("start");
   const requestedEnd = searchParams.get("end");
+  const requestedSearch = searchParams.get("q");
 
   useEffect(() => {
     // `?status=manual_review` is how the dashboard's "Resolve them" opens this
@@ -71,17 +72,19 @@ export const ReceiptsPage = observer(() => {
       receiptStore.setFilters({ status: requestedStatus });
       return;
     }
-    // `?start=…&end=…` is the dashboard's "All N": every receipt of one month.
+    // `?start=…&end=…` is the dashboard's "All N": every receipt of one month; with `q`,
+    // the assistant's link to the receipts it answered about (F21.4).
     if (requestedStart && requestedEnd && DAY.test(requestedStart) && DAY.test(requestedEnd)) {
       receiptStore.setFilters({
         status: undefined,
         startDate: requestedStart,
         endDate: requestedEnd,
+        searchQuery: requestedSearch ?? undefined,
       });
       return;
     }
     void receiptStore.fetchReceipts(receiptStore.page, receiptStore.size);
-  }, [receiptStore, requestedStatus, requestedStart, requestedEnd]);
+  }, [receiptStore, requestedStatus, requestedStart, requestedEnd, requestedSearch]);
 
   return (
     <div className="flex-grow flex flex-col items-center py-4 md:py-10 md:px-8">

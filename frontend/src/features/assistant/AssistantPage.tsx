@@ -6,12 +6,14 @@ import { List, Plus, SendHorizontal } from "lucide-react";
 import { dateFormat } from "@/i18n/format";
 import { Button } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
+import { AnswerCard } from "./components/AnswerCard";
 import { ApproveCard } from "./components/ApproveCard";
 
 const WHEN = dateFormat({ day: "numeric", month: "short" });
 
 /**
- * The assistant (F21.1, F21.7): ask about the month or say what to record. Messages may be
+ * The assistant (F21.1, F21.7): ask about spending — answered with a chart and a link to
+ * the screen where it fits (F21.4) — or say what to record. Messages may be
  * sent one after another; each is answered in turn. What it proposes comes as cards, saved
  * only when approved. Voice input is hidden until a speech service is good enough
  * (`@/shared/speech` stays for it). Conversations are kept and listed,
@@ -133,7 +135,11 @@ export const AssistantPage = observer(function AssistantPage() {
                 </li>
               )}
               {messages.map((m) =>
-                m.card ? (
+                m.card?.kind === "answer" ? (
+                  <li key={m.id} className="w-full min-w-0 md:max-w-[85%]">
+                    <AnswerCard message={m} />
+                  </li>
+                ) : m.card ? (
                   <li key={m.id} className="max-w-full md:max-w-[85%]">
                     <ApproveCard message={m} today={today} />
                   </li>

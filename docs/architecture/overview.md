@@ -169,7 +169,11 @@ The assistant (F21.1, ADR-0025) lives in `app/services/assistant.py` behind
 `/api/v1/assistant`. An `AssistantPort` (`app/adapters/assistant_agent.py` over the LiteLLM
 agent) answers each message, running read tools at once and returning write tools only as
 proposals. `Toolbox` (`app/services/assistant_tools.py`) turns a proposal into a card and,
-when the user approves it, saves it through the service its screen uses. Conversations and
+when the user approves it, saves it through the service its screen uses. Questions about
+spending (F21.4) are read tools in `app/services/assistant_reads.py` over the screens' own
+queries (`StatisticsService`, `ReceiptRepository`, `ProductService`); each leaves an answer
+card — the Spending chart and a link to the screen with the same filters — shown below the
+answer, never approved and never read back to the model. Conversations and
 their messages are the user's rows, deleted and exported with the account.
 
 What the family buys line by line (F12.11) is `HouseholdSpendRepository.shared_lines`

@@ -3304,14 +3304,15 @@ export interface components {
         };
         /**
          * CardRead
-         * @description A proposed action: what kind of thing it creates or changes, and its fields.
+         * @description A proposed action: what kind of thing it creates or changes, and its fields — or an
+         *     answer card (`answer`, F21.4): a chart and a link to the screen with the same filters.
          */
         CardRead: {
             /**
              * Kind
              * @enum {string}
              */
-            kind: "budget" | "income" | "bill" | "expense";
+            kind: "budget" | "income" | "bill" | "expense" | "answer";
             /** Fields */
             fields: {
                 [key: string]: unknown;
@@ -4823,7 +4824,7 @@ export interface components {
             text: string;
             card?: components["schemas"]["CardRead"] | null;
             /** Card State */
-            card_state?: ("proposed" | "saved" | "dismissed") | null;
+            card_state?: ("proposed" | "saved" | "dismissed" | "shown") | null;
             /** Saved Ref */
             saved_ref?: string | null;
             /**

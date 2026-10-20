@@ -26,6 +26,8 @@ class CardState:
     PROPOSED = "proposed"
     SAVED = "saved"
     DISMISSED = "dismissed"
+    SHOWN = "shown"
+    """An answer card (F21.4): a chart or a link shown with an answer, nothing to approve."""
 
 
 class AssistantService:
@@ -104,6 +106,16 @@ class AssistantService:
         conversation.messages.append(
             ConversationMessage(user_id=user.id, role="assistant", text=reply.text)
         )
+        for answer in toolbox.answers.values():
+            conversation.messages.append(
+                ConversationMessage(
+                    user_id=user.id,
+                    role="assistant",
+                    text="",
+                    card={"kind": answer.kind, "fields": answer.fields},
+                    card_state=CardState.SHOWN,
+                )
+            )
         for proposal in reply.proposals:
             card = await toolbox.propose(proposal)
             if card is not None:
@@ -173,6 +185,9 @@ def _history(messages: Sequence[ConversationMessage]) -> list[Turn]:
     turns: list[Turn] = []
     for m in messages:
         role: Literal["user", "assistant"] = "user" if m.role == "user" else "assistant"
+        if m.card_state == CardState.SHOWN:
+            # The answer beside it already says what the chart or link shows.
+            continue
         if m.card is not None:
             state = CARD_STATES.get(m.card_state or "", "")
             text = f"(A {m.card.get('kind')} card, {state}: {m.card.get('fields')})"

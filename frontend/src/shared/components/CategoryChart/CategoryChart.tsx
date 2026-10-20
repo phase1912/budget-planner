@@ -1,5 +1,5 @@
 import type { components } from "@/api/schema";
-import { Card } from "@/shared/components";
+import { Card } from "../Card/Card";
 import { numberFormat } from "@/i18n/format";
 import i18n from "@/i18n";
 import { categoryName } from "@/shared/categoryName";
@@ -24,6 +24,8 @@ interface CategoryChartProps {
   current: string;
   /** The period compared against, when there is one. */
   previous: string | null;
+  /** Where the categories left out of the chart can be seen; the table below by default. */
+  hiddenNote?: (count: number) => string;
 }
 
 /**
@@ -33,11 +35,11 @@ interface CategoryChartProps {
  * (docs/design/screens/statistics.html); on a phone, where eight pairs of columns
  * cannot fit, each category is a row of horizontal bars.
  *
- * Supplementary to the table below, which carries every value in text for the
- * keyboard and screen readers; each group is also described by its label, and its
- * figures show on hover.
+ * Supplementary to the figures in text beside it — the Spending table, or the assistant's
+ * answer (F21.4) — which carry every value for the keyboard and screen readers; each
+ * group is also described by its label, and its figures show on hover.
  */
-export function CategoryChart({ chart, current, previous }: CategoryChartProps) {
+export function CategoryChart({ chart, current, previous, hiddenNote }: CategoryChartProps) {
   const compared = previous !== null;
   return (
     <Card className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-5.5">
@@ -62,7 +64,9 @@ export function CategoryChart({ chart, current, previous }: CategoryChartProps) 
 
       {chart.hidden > 0 && (
         <p className="m-0 text-base text-muted-foreground">
-          {i18n.t("statistics:chart.hidden", { count: chart.hidden })}
+          {hiddenNote
+            ? hiddenNote(chart.hidden)
+            : i18n.t("statistics:chart.hidden", { count: chart.hidden })}
         </p>
       )}
     </Card>

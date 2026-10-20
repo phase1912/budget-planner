@@ -19,9 +19,7 @@ from pydantic import BaseModel, BeforeValidator, Field, ValidationError
 
 from app.api.errors import DomainError, ProblemCode
 from app.domain.budget import BudgetMonth
-from app.domain.categories import ItemView
 from app.domain.income import IncomeKind
-from app.domain.periods import DateRange
 from app.models.category import Category
 from app.models.user import User
 from app.ports.assistant import ToolCall, ToolSpec
@@ -31,6 +29,13 @@ from app.repository.receipt import ReceiptRepository
 from app.repository.snapshot import MonthlySnapshotRepository
 from app.schemas.income import IncomeRequest, RegularExpenseRequest
 from app.schemas.user import UserUpdateRequest
+from app.services.assistant_reads import (
+    Answer,
+    CategoryArgs,
+    ProductArgs,
+    ReceiptArgs,
+    SpendingReads,
+)
 from app.services.budget import BudgetService
 from app.services.income import IncomeService
 from app.services.manual_expense import ManualExpense, record_expense
@@ -128,7 +133,19 @@ READS: dict[str, tuple[str, type[BaseModel]]] = {
         "What the user spent in a month, against their budget, and their income.",
         MonthArgs,
     ),
-    "spending_by_category": ("What the user spent in a month, by category.", MonthArgs),
+    "spending_by_category": (
+        "What the user spent by category over a month or a run of days; with compare, "
+        "against the period before. Shows the chart.",
+        CategoryArgs,
+    ),
+    "receipts": (
+        "Receipts from a shop or holding an item over a period, and what they came to.",
+        ReceiptArgs,
+    ),
+    "product_prices": (
+        "What a product cost, in which shops, and how its price moved; where it is cheapest.",
+        ProductArgs,
+    ),
 }
 WRITES: dict[str, tuple[str, type[BaseModel]]] = {
     "set_monthly_budget": ("Propose the user's monthly spending budget.", BudgetArgs),
@@ -179,23 +196,39 @@ class Toolbox:
         self.user = user
         self.today = today
         self.rates = rates
+        self.answers: dict[str, Card] = {}
+        """The answer card of each read tool used this turn, the latest kept (F21.4)."""
 
     async def categories(self) -> list[Category]:
         """The categories the user's spending may go to: the shared ones and their own."""
         return list(await CategoryRepository(self.session).list_available(self.user.id))
 
     async def read(self, call: ToolCall) -> str:
-        """Run a read tool; a call the model got wrong is answered as such, not raised."""
+        """Run a read tool; a call the model got wrong is answered as such, not raised.
+
+        A tool that has a card to show (F21.4) leaves it in `answers`.
+        """
         if call.name not in READS:
             return json.dumps({"error": f"no read tool {call.name}"})
         try:
-            args = MonthArgs.model_validate(call.args)
-        except ValidationError as exc:
+            args = READS[call.name][1].model_validate(call.args)
+            answer = await self._answer(call.name, args)
+        except (ValidationError, ValueError) as exc:
             return json.dumps({"error": str(exc)})
-        month = _month(args, self.today)
-        if call.name == "month_summary":
-            return await self._month_summary(month)
-        return await self._by_category(month)
+        if answer.card is not None:
+            self.answers[call.name] = Card("answer", answer.card)
+        return answer.figures
+
+    async def _answer(self, name: str, args: BaseModel) -> Answer:
+        reads = SpendingReads(self.session, self.user, self.today)
+        if isinstance(args, CategoryArgs):
+            return await reads.by_category(args)
+        if isinstance(args, ReceiptArgs):
+            return await reads.receipts(args)
+        if isinstance(args, ProductArgs):
+            return await reads.product(args)
+        assert isinstance(args, MonthArgs)
+        return Answer(await self._month_summary(_month(args, self.today)))
 
     def check(self, call: ToolCall) -> str | None:
         """Why a write call cannot become a card, for the model to fix; None when it can."""
@@ -317,19 +350,5 @@ class Toolbox:
                 "left_of_budget": str(summary.limit.remaining) if summary.limit else None,
                 "income": str(income.income.net) if income.income.net is not None else None,
                 "currency": self.user.currency,
-            }
-        )
-
-    async def _by_category(self, month: BudgetMonth) -> str:
-        rows = await ReceiptRepository(self.session).spend_by_category(
-            ItemView.ALL, period=DateRange.of_month(month)
-        )
-        return json.dumps(
-            {
-                "month": f"{month.year}-{month.month:02d}",
-                "currency": self.user.currency,
-                "categories": [
-                    {"name": r.name or "Uncategorized", "spent": str(r.total)} for r in rows[:10]
-                ],
             }
         )

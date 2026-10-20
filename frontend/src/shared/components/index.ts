@@ -20,6 +20,7 @@ export * from "./Meter";
 export * from "./TotalsGapNote";
 export * from "./DoubtfulLines";
 export * from "./CorrectedName";
+export * from "./CategoryChart";
 export * from "./CategoryIcon";
 export * from "./PublicLinks/PublicLinks";
 export * from "./Switch";

@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import { reaction } from "mobx";
 import { Pencil, Plus, RotateCcw, Search, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 
 import {
   BackLink,
@@ -29,6 +30,7 @@ import { productColour } from "../productColours";
 
 const PERCENT = numberFormat({ maximumFractionDigits: 0 });
 const PRECISE = numberFormat({ maximumFractionDigits: 1, signDisplay: "always" });
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * Exploring several products together (F16.2, explore.html): the saved sets, the products
@@ -50,6 +52,23 @@ export const ExplorePage = observer(function ExplorePage() {
   const openSet = explorationStore.selectionMatching(selected);
   const months = result?.months.length ?? 0;
   const currency = authStore.user?.currency ?? "PLN";
+
+  const [searchParams] = useSearchParams();
+  const linkedProducts = searchParams.get("products");
+  const linkedStart = searchParams.get("start");
+  const linkedEnd = searchParams.get("end");
+
+  // `?products=…[&start=…&end=…]` is the assistant's link to the products it answered
+  // about (F21.4): those products, over that period or all time.
+  useEffect(() => {
+    if (!linkedProducts) return;
+    if (linkedStart && linkedEnd && ISO_DAY.test(linkedStart) && ISO_DAY.test(linkedEnd)) {
+      explorationStore.chooseRange(linkedStart, linkedEnd);
+    } else {
+      explorationStore.choosePreset("all");
+    }
+    productsStore.select(linkedProducts.split(",").filter(Boolean));
+  }, [explorationStore, productsStore, linkedProducts, linkedStart, linkedEnd]);
 
   // Reached from far down the products list: the screen opens at its top.
   useEffect(() => {

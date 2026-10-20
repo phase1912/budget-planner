@@ -38,5 +38,14 @@
     "spent_on": "Data",
     "category": "Kategoria",
     "openReceipts": "Otwórz Wydatki"
+  },
+  "answer": {
+    "spending": "Otwórz w Wydatkach",
+    "receipts": "Otwórz te paragony",
+    "products": "Otwórz ceny",
+    "hidden_one": "Jeszcze {{count}} kategoria jest na ekranie Wydatków.",
+    "hidden_few": "Jeszcze {{count}} kategorie są na ekranie Wydatków.",
+    "hidden_many": "Jeszcze {{count}} kategorii jest na ekranie Wydatków.",
+    "hidden_other": "Jeszcze {{count}} kategorii jest na ekranie Wydatków."
   }
 }
