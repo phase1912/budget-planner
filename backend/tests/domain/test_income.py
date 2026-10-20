@@ -113,3 +113,33 @@ def test_a_taxed_regular_income_is_taxed_every_month_an_untaxed_one_is_not() -> 
 
     assert result.taxes == Decimal("2800.00")
     assert result.net == Decimal("8200.00")
+
+
+def test_a_weekly_bill_counts_as_often_as_its_weekday_falls_in_the_month() -> None:
+    """F23.21: Mondays, never 4.33 of them — October 2026 has four, March 2027 five."""
+    gym = Recurring(Decimal("50.00"), None, date(2026, 9, 1), None, weekday=0)
+
+    assert gym.days_in(date(2026, 10, 1)) == [
+        date(2026, 10, 5),
+        date(2026, 10, 12),
+        date(2026, 10, 19),
+        date(2026, 10, 26),
+    ]
+    assert gym.in_month(date(2026, 10, 1)) == Decimal("200.00")
+    assert gym.in_month(date(2027, 3, 1)) == Decimal("250.00")
+
+
+def test_a_weekly_rule_started_mid_month_counts_only_from_its_first_day() -> None:
+    gym = Recurring(Decimal("50.00"), None, date(2026, 10, 20), None, weekday=0)
+
+    assert gym.days_in(date(2026, 10, 1)) == [date(2026, 10, 26)]
+    assert gym.in_month(date(2026, 9, 1)) == Decimal("0")
+
+
+def test_a_monthly_rule_still_comes_once_and_regular_since_counts_each_weekday() -> None:
+    rent = Recurring(Decimal("1000.00"), 31, date(2026, 1, 1), None)
+    gym = Recurring(Decimal("50.00"), None, date(2026, 1, 1), None, weekday=0)
+
+    assert rent.days_in(date(2026, 2, 1)) == [date(2026, 2, 28)]
+    assert rent.in_month(date(2026, 2, 1)) == Decimal("1000.00")
+    assert regular_since([gym], date(2026, 10, 1), date(2026, 10, 20)) == Decimal("150.00")

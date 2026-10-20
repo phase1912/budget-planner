@@ -36,11 +36,11 @@ async def _post(session: AsyncSession, user: User, url: str, body: dict[str, Any
     return response.json() if response.content else None
 
 
-async def _bought(user: User, amount: str) -> None:
-    """A receipt read today, counted in the month (D1-D3)."""
+async def _bought(user: User, amount: str, on: date = MONTH) -> None:
+    """A receipt bought `on` the day given, the month's first by default (D1-D3)."""
     receipt = await ReceiptFactory.create_async(
         user_id=user.id,
-        transaction_date=datetime.combine(MONTH, datetime.min.time(), UTC),
+        transaction_date=datetime.combine(on, datetime.min.time(), UTC),
         total_amount=Decimal(amount),
         status=ReceiptStatus.PARSED,
         file_ids=[],
@@ -208,13 +208,19 @@ async def test_changing_a_regular_income_never_rewrites_last_month(
 async def test_one_person_without_a_family_or_a_card_gets_one_story(
     db_session: AsyncSession,
 ) -> None:
-    """Alone, with no household and no accounts: income, a bill and purchases agree."""
+    """Alone, with no household: the salary makes the card (F23.21), and income, a bill
+    and purchases then agree."""
     me = await UserFactory.create_async(currency="PLN", language="pl")
     await _post(
         db_session,
         me,
         f"/api/v1/income/regular{Q}",
-        {"name": "Pensja", "amount": "8000.00", "day": TODAY.day},
+        {
+            "name": "Pensja",
+            "amount": "8000.00",
+            "day": TODAY.day,
+            "new_card": {"name": "Moja karta"},
+        },
     )
     await _post(
         db_session,
@@ -222,7 +228,8 @@ async def test_one_person_without_a_family_or_a_card_gets_one_story(
         f"/api/v1/income/bills{Q}",
         {"name": "Internet", "amount": "60.00", "day": TODAY.day},
     )
-    await _bought(me, "140.00")
+    # The card counts from the salary on: what is bought from then comes off it.
+    await _bought(me, "140.00", on=TODAY)
 
     views = await _views(db_session, me)
     card = views["accounts"]["accounts"]

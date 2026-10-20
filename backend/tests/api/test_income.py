@@ -17,6 +17,7 @@ from app.main import create_app
 from app.models.account import Account
 from app.models.receipt import ReceiptStatus
 from app.models.user import User
+from tests.api.income_card import on_a_card
 from tests.factories.line_item import LineItemFactory
 from tests.factories.receipt import ReceiptFactory
 from tests.factories.user import UserFactory
@@ -35,7 +36,7 @@ async def _call(
         base_url="http://test",
         headers={"Authorization": f"Bearer {create_access_token(user.id)}"},
     ) as client:
-        return await client.request(method, url, json=json)
+        return await client.request(method, url, json=on_a_card(method, url, json))
 
 
 @pytest.mark.asyncio

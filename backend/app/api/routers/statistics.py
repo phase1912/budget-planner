@@ -14,6 +14,7 @@ from app.models.user import User
 from app.repository.receipt import ReceiptRepository
 from app.schemas.reading_accuracy import ReadingAccuracyResponse
 from app.schemas.statistics import CategoryStatisticsResponse, DailySpendResponse
+from app.services.income import IncomeService
 from app.services.reading_accuracy import reading_accuracy
 from app.services.statistics import StatisticsService, statistics_response
 
@@ -43,7 +44,8 @@ async def get_category_statistics(
     stats = await StatisticsService(ReceiptRepository(session)).category_statistics(
         period, compare=compare, chart=chart
     )
-    return statistics_response(stats)
+    bills = await IncomeService(session).bills_between(period.start, period.end)
+    return statistics_response(stats).model_copy(update={"bills_total": bills})
 
 
 @router.get("/daily", response_model=DailySpendResponse)

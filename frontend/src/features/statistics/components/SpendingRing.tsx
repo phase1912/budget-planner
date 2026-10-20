@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { House } from "lucide-react";
+
 import { CategoryIcon, Ring } from "@/shared/components";
 import { categoryColor } from "@/shared/categoryColor";
 import { categoryName } from "@/shared/categoryName";
@@ -20,12 +22,15 @@ interface SpendingRingProps {
  * The period's spending as a ring by category (F23.4): tap a category and the ring
  * lights it, its amount and share in the middle; tap again or the ring for the whole.
  * With the comparison on, each row says how it moved against the previous period (E3).
+ * Regular bills are spending too (F23.21): their own segment and row, beside the
+ * categories rather than one of them, and part of the whole.
  */
 export function SpendingRing({ statistics, currency }: SpendingRingProps) {
   const { t } = useTranslation("statistics");
   const [picked, setPicked] = useState<number | null>(null);
   const categories = statistics.categories;
-  const total = Number(statistics.total ?? 0);
+  const bills = Number(statistics.bills_total);
+  const total = Number(statistics.total ?? 0) + bills;
   const chosen = picked === null ? null : categories[picked];
 
   return (
@@ -45,13 +50,22 @@ export function SpendingRing({ statistics, currency }: SpendingRingProps) {
           className="h-52 w-52 md:h-60 md:w-60"
           thickness={0.3}
           label={t("ring.picture", { total: WHOLE.format(total), currency })}
-          segments={categories.map((c, i) => ({
-            value: Number(c.total),
-            color:
-              picked === null || picked === i
-                ? categoryColor(c.name ?? "")
-                : `color-mix(in srgb, ${categoryColor(c.name ?? "")} 25%, transparent)`,
-          }))}
+          segments={[
+            ...categories.map((c, i) => ({
+              value: Number(c.total),
+              color:
+                picked === null || picked === i
+                  ? categoryColor(c.name ?? "")
+                  : `color-mix(in srgb, ${categoryColor(c.name ?? "")} 25%, transparent)`,
+            })),
+            {
+              value: bills,
+              color:
+                picked === null
+                  ? "var(--cat-utilities)"
+                  : "color-mix(in srgb, var(--cat-utilities) 25%, transparent)",
+            },
+          ]}
         >
           <span className="max-w-[8rem] truncate text-base font-semibold text-muted-foreground">
             {chosen ? categoryName(chosen.name) : t("ring.spent")}
@@ -102,6 +116,15 @@ export function SpendingRing({ statistics, currency }: SpendingRingProps) {
             </li>
           );
         })}
+        {bills > 0 && (
+          <li className="flex min-h-13 items-center gap-3 px-2.5 py-1.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-muted text-muted-foreground">
+              <House size={18} aria-hidden="true" />
+            </span>
+            <span className="flex-1 truncate text-lg font-semibold">{t("ring.bills")}</span>
+            <span className="text-lg font-bold tabular-nums">{WHOLE.format(bills)}</span>
+          </li>
+        )}
       </ul>
     </section>
   );

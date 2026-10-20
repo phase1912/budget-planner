@@ -21,7 +21,7 @@ const WHEN = dateFormat({ day: "numeric", month: "short" });
  * button on a phone.
  */
 export const AssistantPage = observer(function AssistantPage() {
-  const { assistantStore, budgetStore, categoriesStore } = useStores();
+  const { assistantStore, budgetStore, categoriesStore, bankAccountsStore } = useStores();
   const { t } = useTranslation("assistant");
   const [text, setText] = useState("");
   const [listing, setListing] = useState(false);
@@ -34,7 +34,9 @@ export const AssistantPage = observer(function AssistantPage() {
     void assistantStore.loadConversations();
     // An expense card picks from the user's categories (F21.3).
     if (categoriesStore.categories.length === 0) void categoriesStore.fetchCategories();
-  }, [assistantStore, categoriesStore]);
+    // An income card says when approving it makes the first card (F23.21).
+    if (!bankAccountsStore.loaded) void bankAccountsStore.load(budgetStore.today);
+  }, [assistantStore, categoriesStore, bankAccountsStore, budgetStore]);
   useEffect(() => {
     // Not every environment scrolls (tests); the newest message is a nicety there.
     if ("scrollIntoView" in (end.current ?? {})) end.current?.scrollIntoView({ block: "end" });

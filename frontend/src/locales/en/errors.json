@@ -65,5 +65,6 @@
   "month_closed": "That month is closed: only this month’s entries can change.",
   "same_account": "Choose two different accounts.",
   "invalid_card": "Check the card’s fields.",
-  "card_done": "This card is already done."
+  "card_done": "This card is already done.",
+  "needs_card": "Income lands on a card: add one with it."
 }

@@ -110,5 +110,18 @@
   "amountDialog": {
     "cancel": "Скасувати",
     "save": "Зберегти"
+  },
+  "repeat": {
+    "label": "Як часто",
+    "monthly": "Щомісяця",
+    "weekly": "Щотижня",
+    "day": "День місяця",
+    "weekday": "День тижня",
+    "anyDay": "Будь-який день",
+    "lastDay": "Останній день",
+    "every": "щотижня: {{weekday}}",
+    "everyMonth": "щомісяця",
+    "onDay": "{{day}} числа",
+    "onLastDay": "в останній день"
   }
 }

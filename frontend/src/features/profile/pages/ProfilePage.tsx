@@ -26,7 +26,15 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import { useStores } from "@/stores/StoreContext";
-import { AmountDialog, Button, PalettePicker, Pill, Select, Switch } from "@/shared/components";
+import {
+  AmountDialog,
+  Button,
+  inMonth,
+  PalettePicker,
+  Pill,
+  Select,
+  Switch,
+} from "@/shared/components";
 import { CurrencySelect } from "@/shared/components/CurrencySelect/CurrencySelect";
 import { numberFormat } from "@/i18n/format";
 import { LANGUAGE_NAMES } from "@/i18n/languages";
@@ -67,6 +75,11 @@ type Sheet =
  * the user's data, help — each opening a small dialog of its own, so nothing is a form
  * wrapped in another.
  */
+/** A regular income's or bill's sum in this month: a weekly one as often as it falls. */
+function monthOf(rule: { amount: string; day?: number | null; weekday?: number | null }): number {
+  return inMonth(rule.amount, { day: rule.day ?? null, weekday: rule.weekday ?? null }, new Date());
+}
+
 export const ProfilePage = observer(function ProfilePage() {
   const { authStore, profileStore, quotaStore, themeStore, languageStore, incomeStore } =
     useStores();
@@ -190,7 +203,7 @@ export const ProfilePage = observer(function ProfilePage() {
               : t("regular.summary", {
                   count: incomeStore.regular.length,
                   amount: amount(
-                    String(incomeStore.regular.reduce((sum, r) => sum + Number(r.amount), 0)),
+                    String(incomeStore.regular.reduce((sum, r) => sum + monthOf(r), 0)),
                   ),
                 })
           }
@@ -207,9 +220,7 @@ export const ProfilePage = observer(function ProfilePage() {
               ? t("bills.none")
               : t("bills.summary", {
                   count: incomeStore.bills.length,
-                  amount: amount(
-                    String(incomeStore.bills.reduce((sum, b) => sum + Number(b.amount), 0)),
-                  ),
+                  amount: amount(String(incomeStore.bills.reduce((sum, b) => sum + monthOf(b), 0))),
                 })
           }
           onClick={() => {

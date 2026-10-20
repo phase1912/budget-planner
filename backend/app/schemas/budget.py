@@ -15,7 +15,7 @@ class MonthSummaryResponse(BaseModel):
     figure is month-to-date and must be labelled so (D4), with `days_elapsed` of
     `days_in_month` behind it. `finalised_at` is when a finished month's
     snapshot was taken; it is null while the month is still running (D5).
-    `limit_*` measure `total` against the user's monthly limit, null when none
+    `limit_*` measure `total` and `bills_total` against the user's monthly limit, null when none
     is set (D7): the percentage is rounded down and may pass 100, and
     `limit_remaining` is negative by the amount over.
     """
@@ -34,6 +34,8 @@ class MonthSummaryResponse(BaseModel):
     budget_limit: Decimal | None = None
     limit_percent: int | None = None
     limit_remaining: Decimal | None = None
+    bills_total: Decimal = Decimal("0.00")
+    """The month's regular bills (F23.21): spending beside `total`, and in the limit."""
 
 
 class MonthDashboardResponse(BaseModel):

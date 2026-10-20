@@ -52,13 +52,12 @@
     "day": "Comes on",
     "anyDay": "Any day",
     "lastDay": "Last day",
-    "monthly": "Every month",
+    "monthly": "Comes regularly",
     "howMuch": "How much",
     "exact": "Always the same",
     "about": "About, it varies",
     "transferHint": "Money between your own accounts is a transfer: neither income nor spending.",
-    "onAccount": "to {{name}}",
-    "cardOpens": "It lands on “My card”: we open it with your first income. Change it under Where the money is."
+    "onAccount": "to {{name}}"
   },
   "budget": {
     "title": "Monthly budget",

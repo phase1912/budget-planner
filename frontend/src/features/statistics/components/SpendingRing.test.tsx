@@ -12,6 +12,7 @@ const STATS = {
   item_count: 9,
   excluded_count: 0,
   excluded_amount: "0",
+  bills_total: "0.00",
   categories: [
     { category_id: "g", name: "Groceries", total: "700.00", share: "70", item_count: 6 },
     {
@@ -37,5 +38,13 @@ describe("SpendingRing (F23.4)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Show every category" }));
     expect(screen.getByText("1,000")).toBeInTheDocument();
+  });
+
+  it("counts regular bills in the whole, as their own row beside the categories (F23.21)", () => {
+    render(<SpendingRing statistics={{ ...STATS, bills_total: "200.00" }} currency="PLN" />);
+
+    expect(screen.getByText("1,200")).toBeInTheDocument();
+    expect(screen.getByText("Regular bills")).toBeInTheDocument();
+    expect(screen.getByText("200")).toBeInTheDocument();
   });
 });

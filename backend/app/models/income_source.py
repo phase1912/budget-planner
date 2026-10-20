@@ -42,6 +42,8 @@ class IncomeSource(Model):
     name: Mapped[str] = mapped_column(String(80), nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     day: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    # Weekly on this weekday (0 Monday … 6 Sunday) instead of monthly on `day` (F23.21).
+    weekday: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     starts_on: Mapped[date] = mapped_column(Date, nullable=False)
     ends_on: Mapped[date | None] = mapped_column(Date, nullable=True)
     # For a user who pays their own taxes (F23.16): the tax is taken from it each month.

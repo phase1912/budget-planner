@@ -72,6 +72,7 @@ class ProblemCode(enum.StrEnum):
     CHILD_READ_ONLY = "child_read_only"
     OWNER_ROLE_FIXED = "owner_role_fixed"
     MONTH_CLOSED = "month_closed"
+    NEEDS_CARD = "needs_card"
     SAME_ACCOUNT = "same_account"
     INVALID_CARD = "invalid_card"
     CARD_DONE = "card_done"

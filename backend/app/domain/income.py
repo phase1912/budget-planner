@@ -109,14 +109,16 @@ def month_income(
 
 @dataclass(frozen=True)
 class Recurring:
-    """A regular income or bill as the rules need it: how much, on which day, over which
-    months (F23.17, F23.18)."""
+    """A regular income or bill as the rules need it: how much, when, over which months
+    (F23.17, F23.18). Monthly on `day`, or weekly on `weekday` (0 Monday … 6 Sunday) when
+    that is set (F23.21)."""
 
     amount: Decimal
     day: int | None
     starts_on: date
     ends_on: date | None
     taxed: bool = False
+    weekday: int | None = None
 
     def runs_in(self, first_day: date) -> bool:
         """Whether it counts in the month starting `first_day`: from its first month to
@@ -125,16 +127,39 @@ class Recurring:
         return start <= first_day and (self.ends_on is None or self.ends_on >= first_day)
 
     def arrives_in(self, first_day: date) -> date:
-        """The day it arrives in that month; a 31st in a shorter month is its last day."""
+        """The first day it comes in that month; a 31st in a shorter month is its last day."""
+        days = self.days_in(first_day)
+        if days:
+            return days[0]
         last = calendar.monthrange(first_day.year, first_day.month)[1]
         return first_day.replace(day=min(self.day or 1, last))
+
+    def days_in(self, first_day: date) -> list[date]:
+        """Every day it comes in the month starting `first_day`; none in a month it does
+        not run. Weekly, it is each `weekday` of the month from its first day on — as many
+        as fall in the month, four or five, never an average."""
+        if not self.runs_in(first_day):
+            return []
+        last = calendar.monthrange(first_day.year, first_day.month)[1]
+        if self.weekday is None:
+            return [first_day.replace(day=min(self.day or 1, last))]
+        return [
+            first_day.replace(day=d)
+            for d in range(1, last + 1)
+            if first_day.replace(day=d).weekday() == self.weekday
+            and first_day.replace(day=d) >= self.starts_on
+        ]
+
+    def in_month(self, first_day: date) -> Decimal:
+        """What it comes to in the month starting `first_day`."""
+        return self.amount * len(self.days_in(first_day))
 
 
 def regular_since(
     incomes: Iterable[Recurring], since: date, today: date, *, taxed_only: bool = False
 ) -> Decimal:
     """What regular incomes brought — or regular bills took — from `since` to `today`,
-    both included: each month's amount once its day has come, so the balance moves on the
+    both included: each amount once its day has come, so the balance moves on the
     day the salary arrives or the rent goes. With `taxed_only`, only those the user's tax
     comes out of — what taxes are owed on."""
     total = Decimal("0")
@@ -142,7 +167,6 @@ def regular_since(
     rules = [i for i in incomes if i.taxed or not taxed_only]
     while month <= today:
         for income in rules:
-            if income.runs_in(month) and since <= income.arrives_in(month) <= today:
-                total += income.amount
+            total += income.amount * sum(1 for d in income.days_in(month) if since <= d <= today)
         month = (month.replace(day=28) + timedelta(days=4)).replace(day=1)
     return total

@@ -4,14 +4,14 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { Check, Landmark, Receipt, ShoppingBag, Target, X } from "lucide-react";
 
-import { Button, Input, Select, Switch } from "@/shared/components";
+import { Button, Input, RepeatField, Select, Switch } from "@/shared/components";
+import { useCardName } from "@/features/money-accounts/components/newCard";
 import { numberFormat } from "@/i18n/format";
 import { categoryName } from "@/shared/categoryName";
 import type { ChatMessage } from "@/stores/AssistantStore";
 import { useStores } from "@/stores/StoreContext";
 
 const WHOLE = numberFormat({ maximumFractionDigits: 2 });
-const DAYS = Array.from({ length: 28 }, (_, i) => i + 1);
 const ICONS = { budget: Target, income: Landmark, bill: Receipt, expense: ShoppingBag } as const;
 
 type Fields = Record<string, unknown>;
@@ -31,7 +31,9 @@ export const ApproveCard = observer(function ApproveCard({
   message: ChatMessage;
   today: string;
 }) {
-  const { assistantStore, authStore, householdStore, categoriesStore } = useStores();
+  const { assistantStore, authStore, householdStore, categoriesStore, bankAccountsStore } =
+    useStores();
+  const cardName = useCardName();
   const { t } = useTranslation("assistant");
   const currency = authStore.user?.currency ?? "PLN";
   const card = message.card;
@@ -149,6 +151,12 @@ export const ApproveCard = observer(function ApproveCard({
               set("source")(e.target.value);
             }}
           />
+          {/* Income lands on a card (F23.21): with none yet, approving makes one. */}
+          {proposed && bankAccountsStore.loaded && bankAccountsStore.accounts.length === 0 && (
+            <p className="m-0 text-md text-muted-foreground md:col-span-2">
+              {t("card.newCard", { name: cardName(fields.shared === true) })}
+            </p>
+          )}
         </div>
       )}
       {card.kind === "bill" && (
@@ -164,22 +172,17 @@ export const ApproveCard = observer(function ApproveCard({
             }}
           />
           {amount}
-          <Select
-            label={t("card.day")}
-            value={text(fields.day)}
-            disabled={!proposed}
-            onChange={(e) => {
-              set("day")(e.target.value === "" ? null : Number(e.target.value));
-            }}
-          >
-            <option value="">{t("card.anyDay")}</option>
-            {DAYS.map((day) => (
-              <option key={day} value={day}>
-                {day}
-              </option>
-            ))}
-            <option value="31">{t("card.lastDay")}</option>
-          </Select>
+          <div className="col-span-2">
+            <RepeatField
+              value={{
+                day: typeof fields.day === "number" ? fields.day : null,
+                weekday: typeof fields.weekday === "number" ? fields.weekday : null,
+              }}
+              onChange={(repeat) => {
+                setFields((f) => ({ ...f, day: repeat.day, weekday: repeat.weekday }));
+              }}
+            />
+          </div>
         </div>
       )}
       {(card.kind === "income" || card.kind === "bill") && householdStore.mayShare && (

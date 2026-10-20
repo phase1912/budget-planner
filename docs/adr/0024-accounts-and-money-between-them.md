@@ -1,7 +1,8 @@
 # ADR 0024: Accounts and the money between them
 
 **Date:** 2026-10-19
-**Status:** Accepted — F23.15; extends ADR-0023
+**Status:** Accepted — F23.15; extends ADR-0023. "Every sum is on an account" superseded by
+ADR-0027: income always is, bills and purchases need no card.
 
 ## Context
 

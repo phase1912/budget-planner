@@ -196,7 +196,10 @@ export const AccountDialog = observer(function AccountDialog({
           )}
           {confirmingDelete && account && (
             <p role="alert" className="m-0 text-md text-foreground">
-              {t("account.deleteQuestion", { name: account.name })}
+              {/* The last card takes the user back to a budget alone (F23.21). */}
+              {bankAccountsStore.accounts.length === 1
+                ? t("account.deleteLast", { name: account.name })
+                : t("account.deleteQuestion", { name: account.name })}
             </p>
           )}
           <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-between">

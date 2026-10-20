@@ -74,9 +74,9 @@ describe("adding income onto an account (F23.15)", () => {
   it("comes every month as a regular income on that account", async () => {
     open();
 
-    fireEvent.click(screen.getByRole("switch", { name: "Every month" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Comes regularly" }));
     fireEvent.change(screen.getByLabelText("Amount"), { target: { value: "9000" } });
-    fireEvent.change(screen.getByLabelText("Comes on"), { target: { value: "10" } });
+    fireEvent.change(screen.getByLabelText("Day of the month"), { target: { value: "10" } });
     fireEvent.click(screen.getByRole("radio", { name: "About, it varies" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 

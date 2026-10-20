@@ -2574,7 +2574,8 @@ export interface paths {
         post?: never;
         /**
          * Delete Account
-         * @description Delete an account and the moves on it; 404 unless the caller sees it (N2).
+         * @description Delete an account and the moves on it; 404 unless the caller sees it (N2). The last
+         *     one takes the caller back to a budget alone (F23.21).
          */
         delete: operations["delete_account_api_v1_accounts__account_id__delete"];
         options?: never;
@@ -3435,6 +3436,11 @@ export interface components {
             excluded_count: number;
             /** Excluded Amount */
             excluded_amount: string;
+            /**
+             * Bills Total
+             * @default 0.00
+             */
+            bills_total: string;
             comparison?: components["schemas"]["ComparisonResponse"] | null;
             chart?: components["schemas"]["ChartResponse"] | null;
         };
@@ -4468,6 +4474,7 @@ export interface components {
             shared: boolean;
             /** Account Id */
             account_id?: string | null;
+            new_card?: components["schemas"]["NewCard"] | null;
         };
         /** IncomeSourceRead */
         IncomeSourceRead: {
@@ -4489,6 +4496,8 @@ export interface components {
             amount: string;
             /** Day */
             day?: number | null;
+            /** Weekday */
+            weekday?: number | null;
             /**
              * Taxed
              * @default false
@@ -4511,6 +4520,8 @@ export interface components {
              * Format: date
              */
             starts_on: string;
+            /** This Month */
+            this_month?: string | null;
         };
         /**
          * IncomeSourceRequest
@@ -4525,6 +4536,8 @@ export interface components {
             amount: number | string;
             /** Day */
             day?: number | null;
+            /** Weekday */
+            weekday?: number | null;
             /**
              * Taxed
              * @default false
@@ -4537,6 +4550,7 @@ export interface components {
             shared: boolean;
             /** Account Id */
             account_id?: string | null;
+            new_card?: components["schemas"]["NewCard"] | null;
             /**
              * About
              * @default false
@@ -4968,7 +4982,7 @@ export interface components {
          *     figure is month-to-date and must be labelled so (D4), with `days_elapsed` of
          *     `days_in_month` behind it. `finalised_at` is when a finished month's
          *     snapshot was taken; it is null while the month is still running (D5).
-         *     `limit_*` measure `total` against the user's monthly limit, null when none
+         *     `limit_*` measure `total` and `bills_total` against the user's monthly limit, null when none
          *     is set (D7): the percentage is rounded down and may pass 100, and
          *     `limit_remaining` is negative by the amount over.
          */
@@ -5001,6 +5015,11 @@ export interface components {
             limit_percent?: number | null;
             /** Limit Remaining */
             limit_remaining?: string | null;
+            /**
+             * Bills Total
+             * @default 0.00
+             */
+            bills_total: string;
         };
         /**
          * MoveChange
@@ -5039,6 +5058,23 @@ export interface components {
             moved_on: string;
             /** Name */
             name?: string | null;
+        };
+        /**
+         * NewCard
+         * @description The card income lands on, made with it when the user has none (F23.21).
+         *
+         *     Income is bookkeeping: it is always on a card, so adding the first income asks where
+         *     the money lands. `opening` is what is on it now; left at zero, the card counts from
+         *     this income on.
+         */
+        NewCard: {
+            /** Name */
+            name: string;
+            /**
+             * Opening
+             * @default 0.00
+             */
+            opening: number | string;
         };
         /**
          * OccurrenceRequest
@@ -5806,6 +5842,8 @@ export interface components {
             amount: string;
             /** Day */
             day?: number | null;
+            /** Weekday */
+            weekday?: number | null;
             /** Account Id */
             account_id?: string | null;
             /**
@@ -5818,6 +5856,8 @@ export interface components {
              * Format: date
              */
             starts_on: string;
+            /** This Month */
+            this_month?: string | null;
         };
         /**
          * RegularExpenseRequest
@@ -5833,6 +5873,8 @@ export interface components {
             amount: number | string;
             /** Day */
             day?: number | null;
+            /** Weekday */
+            weekday?: number | null;
             /**
              * Shared
              * @default false

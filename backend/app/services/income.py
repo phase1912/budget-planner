@@ -37,6 +37,7 @@ from app.repository.tax_payment import TaxPaymentRepository
 from app.schemas.income import (
     IncomeRequest,
     IncomeSourceRequest,
+    NewCard,
     RegularExpenseRequest,
     TaxPaymentRequest,
 )
@@ -45,12 +46,14 @@ from app.services.household import refuse_child
 
 def regular_rule(source: IncomeSource) -> Recurring:
     """A regular income as the domain rules read it."""
-    return Recurring(source.amount, source.day, source.starts_on, source.ends_on, source.taxed)
+    return Recurring(
+        source.amount, source.day, source.starts_on, source.ends_on, source.taxed, source.weekday
+    )
 
 
 def bill_rule(bill: RegularExpense) -> Recurring:
     """A regular bill as the domain rules read it."""
-    return Recurring(bill.amount, bill.day, bill.starts_on, bill.ends_on)
+    return Recurring(bill.amount, bill.day, bill.starts_on, bill.ends_on, weekday=bill.weekday)
 
 
 def tax_rule(user: User) -> TaxRule | None:
@@ -126,7 +129,7 @@ class IncomeService:
             (e.tax or Decimal(0) for e in entries if not by_user(e.account_id)), Decimal(0)
         ) + sum(
             (
-                tax_on(s.amount, rates[s.account_id])
+                tax_on(regular_rule(s).in_month(first_day), rates[s.account_id])
                 for s in regular
                 if s.account_id is not None and not by_user(s.account_id)
             ),
@@ -136,7 +139,10 @@ class IncomeService:
             ((e.amount, e.taxed and by_user(e.account_id)) for e in entries),
             user.usual_income,
             tax_rule(user),
-            recurring=((s.amount, s.taxed and by_user(s.account_id)) for s in regular),
+            recurring=(
+                (regular_rule(s).in_month(first_day), s.taxed and by_user(s.account_id))
+                for s in regular
+            ),
             set_aside=set_aside,
         )
         paid = await self.tax_payments.total(first_day, last_day)
@@ -144,6 +150,26 @@ class IncomeService:
             b for b in await self.bills.running_since(first_day) if bill_rule(b).runs_in(first_day)
         ]
         return MonthIncomeView(first_day, income, entries, paid, regular, bills)
+
+    async def bills_in(self, first_day: date) -> Decimal:
+        """What the month's regular bills come to (F23.21): spending without receipts,
+        part of the month's budget whether or not a card pays them."""
+        return sum(
+            (bill_rule(b).in_month(first_day) for b in await self.bills.running_since(first_day)),
+            Decimal("0.00"),
+        )
+
+    async def bills_between(self, start: date, end: date) -> Decimal:
+        """What regular bills came to from `start` to `end`, both included (F23.21): each
+        on the days it falls, so a run of days counts a weekly bill as often as it came."""
+        total = Decimal("0.00")
+        bills = [bill_rule(b) for b in await self.bills.running_since(start.replace(day=1))]
+        month = start.replace(day=1)
+        while month <= end:
+            for rule in bills:
+                total += rule.amount * sum(1 for d in rule.days_in(month) if start <= d <= end)
+            month = next_month_start(month)
+        return total
 
     async def _scope(self, shared: bool) -> uuid.UUID | None:
         """The household a sum goes to when shared (F12.8), None when it is the caller's.
@@ -165,21 +191,18 @@ class IncomeService:
     async def _place(
         self, shared: bool, account_id: uuid.UUID | None
     ) -> tuple[uuid.UUID | None, Account | None]:
-        """The household and account a sum goes to (F12.8, F23.15).
+        """The household and account a bill or a tax payment goes to (F12.8, F23.15).
 
-        Every sum is on an account: left out, it goes on the caller's purchase card —
-        their own, else the family's — opened for them when there is none, and is shared
-        as `shared` says. On an account the user picked it is shared exactly when the
-        account is. NotFoundError for an account the caller does not see (N2); a child
-        shares nothing and puts nothing on a shared account.
+        Left out, it goes on the caller's purchase card — their own, else the family's —
+        and with none it is on no card: a bill is then plain spending, and no card is
+        opened for it (F23.21). It is shared as `shared` says. On an account the user
+        picked it is shared exactly when the account is. NotFoundError for an account the
+        caller does not see (N2); a child shares nothing and puts nothing on a shared one.
         """
         accounts = AccountRepository(self.session)
         if account_id is None:
-            # Landed on the purchase card, a sum stays as shared as the user said it is.
             household = await self._scope(shared)
-            visible = await accounts.visible()
-            card = purchase_card(visible, _me()) or await self._open_card(shared, first=not visible)
-            return household, card
+            return household, purchase_card(await accounts.visible(), _me())
         account = await accounts.get(account_id)
         if account is None:
             raise NotFoundError("No such account.")
@@ -187,32 +210,50 @@ class IncomeService:
             refuse_child(await HouseholdRepository(self.session).membership_of(_me()))
         return account.household_id, account
 
-    async def _open_card(self, shared: bool, *, first: bool) -> Account:
-        """Open the card a user's money lands on, when they have none (F23.15).
+    async def _land(
+        self,
+        shared: bool,
+        account_id: uuid.UUID | None,
+        new_card: NewCard | None,
+        counts_from: date,
+    ) -> tuple[uuid.UUID | None, Account]:
+        """The card income lands on (F23.21): income is bookkeeping, so it is always on one.
 
-        The first account carries over the balance as the user started it (F23.14), so
-        opening it changes no figure; otherwise it starts at zero on the 1st of this month,
-        so a sum entered for an earlier day of it still counts. A sum meant for the family
-        opens the family's card.
+        The card named, else the purchase card, else `new_card`, made now and counting from
+        `counts_from` — or from today when the user said what is on it already. DomainError
+        (needs_card) when there is none and no new one is asked for.
+        """
+        household, account = await self._place(shared, account_id)
+        if account is not None:
+            return household, account
+        if new_card is None:
+            raise DomainError(
+                "Income lands on a card: add one with it.", code=ProblemCode.NEEDS_CARD
+            )
+        return household, await self._open_card(household, new_card, counts_from)
+
+    async def _open_card(
+        self, household: uuid.UUID | None, new_card: NewCard, counts_from: date
+    ) -> Account:
+        """Make the card income lands on, as the purchase card (F23.21).
+
+        With what is on it now, it counts from today, that sum taken as already holding
+        the income; at zero it counts from the income's own day. A user who started a
+        balance before cards existed (F23.14) carries it over, so no figure changes.
         """
         user = await self.session.get(User, _me())
         assert user is not None
-        household = await self._scope(shared)
-        # The first account takes over the balance as it was started (F23.14): the same
-        # amount on the same day, so the ledger replays exactly what the balance counted.
-        if first and user.starting_balance is not None and user.balance_since is not None:
+        today = datetime.now(UTC).date()
+        opening, opening_on = new_card.opening, today if new_card.opening else counts_from
+        if not opening and user.starting_balance is not None and user.balance_since is not None:
             opening, opening_on = user.starting_balance, user.balance_since
-        else:
-            opening, opening_on = Decimal("0.00"), datetime.now(UTC).date().replace(day=1)
         card = Account(
             user_id=user.id,
             household_id=household,
-            name=CARD_NAMES[bool(household)].get(
-                user.language or "en", CARD_NAMES[bool(household)]["en"]
-            ),
+            name=new_card.name,
             kind=AccountKind.PERSONAL,
             opening=opening,
-            opening_on=opening_on,
+            opening_on=min(opening_on, today),
             for_purchases=True,
         )
         self.session.add(card)
@@ -319,12 +360,15 @@ class IncomeService:
 
     async def add_regular(self, request: IncomeSourceRequest, today: date) -> IncomeSource:
         """Start a regular income: from this month, or the next when its day has passed."""
-        household, account = await self._place(request.shared, request.account_id)
+        starts_on = _starts_on(request.day, today)
+        household, account = await self._land(
+            request.shared, request.account_id, request.new_card, starts_on
+        )
         source = IncomeSource(
-            **request.model_dump(exclude={"shared", "account_id"}),
-            account_id=account.id if account else None,
+            **request.model_dump(exclude={"shared", "account_id", "new_card"}),
+            account_id=account.id,
             household_id=household,
-            starts_on=_starts_on(request.day, today),
+            starts_on=starts_on,
         )
         self.sources.add(source)
         await self.session.flush()
@@ -339,10 +383,12 @@ class IncomeService:
             raise NotFoundError("No such regular income.")
         await self._may_change(source)
         source = await self._from_this_month(source)
-        for field, value in request.model_dump(exclude={"shared"}).items():
+        for field, value in request.model_dump(exclude={"shared", "new_card"}).items():
             setattr(source, field, value)
-        source.household_id, account = await self._place(request.shared, request.account_id)
-        source.account_id = account.id if account else None
+        source.household_id, account = await self._land(
+            request.shared, request.account_id, request.new_card, source.starts_on
+        )
+        source.account_id = account.id
         await self.session.flush()
         return source
 
@@ -369,17 +415,17 @@ class IncomeService:
         and is kept even while the user does not pay their own taxes, so switching that on
         later reads the past right.
         """
-        data = request.model_dump(exclude={"shared"})
+        data = request.model_dump(exclude={"shared", "new_card"})
         if data["taxed"] is None:
             data["taxed"] = taxed_by_default(request.kind)
         # A late document may land in a closed month on its own date: adding is allowed,
         # only changing or removing what a closed month holds is not (F23.15).
-        household, account = await self._place(request.shared, request.account_id)
-        data["account_id"] = account.id if account else None
+        household, account = await self._land(
+            request.shared, request.account_id, request.new_card, request.received_on
+        )
+        data["account_id"] = account.id
         income = Income(
-            **data,
-            household_id=household,
-            tax=tax_on(request.amount, account.tax_rate) or None if account else None,
+            **data, household_id=household, tax=tax_on(request.amount, account.tax_rate) or None
         )
         self.incomes.add(income)
         await self.session.flush()
@@ -394,15 +440,16 @@ class IncomeService:
         if income.account_id is not None:
             _open_month(income.received_on)
         # How an entry came in stays as it was: correcting it does not make it typed.
-        for field, value in request.model_dump(exclude={"channel", "shared"}).items():
+        for field, value in request.model_dump(exclude={"channel", "shared", "new_card"}).items():
             if field == "taxed" and value is None:
                 continue
             setattr(income, field, value)
-        income.household_id, account = await self._place(request.shared, request.account_id)
-        income.account_id = account.id if account else None
-        if account is not None:
-            _open_month(income.received_on)
-        income.tax = tax_on(income.amount, account.tax_rate) or None if account else None
+        income.household_id, account = await self._land(
+            request.shared, request.account_id, request.new_card, income.received_on
+        )
+        income.account_id = account.id
+        _open_month(income.received_on)
+        income.tax = tax_on(income.amount, account.tax_rate) or None
         await self.session.flush()
         return income
 
@@ -466,7 +513,7 @@ CARD_NAMES = {
     False: {"en": "My card", "uk": "Моя картка", "pl": "Moja karta"},
     True: {"en": "Our card", "uk": "Наша картка", "pl": "Nasza karta"},
 }
-"""What a card opened by itself is called, in the user's language."""
+"""What a card made for income is called when the user did not name it (the assistant)."""
 
 
 def _starts_on(day: int | None, today: date) -> date:

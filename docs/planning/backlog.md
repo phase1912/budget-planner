@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-25 epics · 178 features · 346 tasks written so far.
+25 epics · 179 features · 350 tasks written so far.
 
 22 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -32,7 +32,7 @@
 | E20 | Trips | — | 5 | yes | 2 | Diploma |
 | E21 | Voice and Chat Assistant | — | 9 | yes | 2 | Diploma |
 | E22 | Android App | — | 3 | yes | 2 | Diploma |
-| E23 | Improvements | — | 20 | no | 2 | Diploma |
+| E23 | Improvements | — | 21 | no | 2 | Diploma |
 | E24 | Bugfixes | — | 1 | no | 2 | Diploma |
 
 ---
@@ -1992,6 +1992,14 @@ Not decided yet. Spending mixes the receipts list and the categories behind one 
 Purchases come off the purchase card (F23.15): one's own, else the family's shared one. Sometimes a receipt was paid from another — fuel or a cola on the business card. Changing a receipt's card moves its amount to that account's history and balance; the ledger already reads purchases per buyer, so only where one receipt lands changes.
 
 **Demonstrated by:** Open a fuel receipt, choose the business card, and see it leave "Our card" and appear in the business account's history that day.
+
+### F23.21 — Cards when wanted, income on a card, bills weekly too
+
+*Requirements: —* · *Blocked by: F23.15, F23.17, F23.18*
+
+Forcing a card was the biggest step between signing up and using the product: a person who only wants to see whether a month fitted the budget had to keep books. Use now comes in levels set by what the user has made, with no switch: a budget alone — what was spent, bills included, against the monthly budget; a card — balances and what came off them; a business card — taxes and transfers. Income is bookkeeping, so it always lands on a card, and adding it with none offers to make one in the same step. Regular bills are spending with or without a card, shown as their own part of the budget ring. Bills and regular incomes come weekly as well as monthly. Supersedes ADR-0024's "every sum is on an account".
+
+**Demonstrated by:** Sign up, skip the card, set a budget of 2 000 and a monthly internet bill of 60: Home shows the ring with purchases and bills, no balance. Add a salary: the app asks where it lands and makes "My card" in the same dialog; the bill is offered to the card too. Add a weekly gym bill of 50 on Mondays: October counts it four times, 200.
 
 ---
 

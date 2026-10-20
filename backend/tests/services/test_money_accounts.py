@@ -89,7 +89,7 @@ async def test_create_and_change_accounts_and_purchase_card(db_session: AsyncSes
     assert acc2_reloaded is not None and not acc2_reloaded.for_purchases
 
     # Remove account
-    await service.remove(acc2.id)
+    await service.remove(acc2.id, date(2026, 10, 20))
     with pytest.raises(NotFoundError):
         await service.change(
             acc2.id,

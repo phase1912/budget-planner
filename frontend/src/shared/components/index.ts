@@ -24,6 +24,7 @@ export * from "./CategoryChart";
 export * from "./CategoryIcon";
 export * from "./PublicLinks/PublicLinks";
 export * from "./Switch";
+export * from "./RepeatField";
 export * from "./Ring";
 export * from "./AmountDialog";
 export * from "./PalettePicker";

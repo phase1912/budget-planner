@@ -70,7 +70,8 @@
     "label": "Wydatki według kategorii",
     "showAll": "Pokaż wszystkie kategorie",
     "picture": "Wydano {{total}} {{currency}}, według kategorii",
-    "spent": "Wydano"
+    "spent": "Wydano",
+    "bills": "Stałe rachunki"
   },
   "details": "Wykres i tabela",
   "byDay": {
@@ -91,7 +92,7 @@
     "searchReceipts": "Szukaj i filtruj paragony",
     "toFile": "Pozycje bez kategorii",
     "allItems": "Wszystkie pozycje i kategorie",
-    "bills": "Co miesiąc",
-    "billsHint": "Mieszkanie i inne wydatki bez paragonu — liczone w Planie i na stronie Start, ustawiane w Ustawieniach."
+    "bills": "Stałe rachunki",
+    "billsHint": "Mieszkanie, abonamenty i inne rachunki bez paragonu — wliczone w wydatki i budżet, ustawiane w Ustawieniach."
   }
 }

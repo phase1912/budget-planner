@@ -79,12 +79,19 @@ describe("RegularIncomes (F23.17)", () => {
     );
     expect(screen.queryByRole("radio", { name: "By income" })).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("What it is"), { target: { value: "Internet" } });
-    fireEvent.change(screen.getByLabelText("A month, PLN"), { target: { value: "69" } });
+    fireEvent.change(screen.getByLabelText("Each time, PLN"), { target: { value: "69" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => {
       expect(stores.incomeStore.addBill).toHaveBeenCalledWith(
-        { name: "Internet", amount: "69", day: null, shared: true, account_id: null },
+        {
+          name: "Internet",
+          amount: "69",
+          day: null,
+          weekday: null,
+          shared: true,
+          account_id: null,
+        },
         expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       );
     });
@@ -95,8 +102,8 @@ describe("RegularIncomes (F23.17)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Add a regular income" }));
     fireEvent.change(screen.getByLabelText("What it is"), { target: { value: "Salary" } });
-    fireEvent.change(screen.getByLabelText("A month, PLN"), { target: { value: "10 000" } });
-    fireEvent.change(screen.getByLabelText("Comes on"), { target: { value: "10" } });
+    fireEvent.change(screen.getByLabelText("Each time, PLN"), { target: { value: "10 000" } });
+    fireEvent.change(screen.getByLabelText("Day of the month"), { target: { value: "10" } });
     expect(screen.queryByRole("switch")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
@@ -106,12 +113,34 @@ describe("RegularIncomes (F23.17)", () => {
           name: "Salary",
           amount: "10000",
           day: 10,
+          weekday: null,
           taxed: false,
           shared: false,
           account_id: null,
           about: false,
+          // No card yet: income makes the one it lands on (F23.21).
+          new_card: { name: "My card", opening: "0" },
         },
         expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      );
+    });
+  });
+
+  it("adds a bill that comes every week on its weekday, needing no card (F23.21)", async () => {
+    render(<RegularIncomes kind="bill" />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Add .*bill/ }));
+    fireEvent.change(screen.getByLabelText(/What it is|Name/), { target: { value: "Gym" } });
+    fireEvent.change(screen.getByLabelText("Each time, PLN"), { target: { value: "50" } });
+    fireEvent.click(screen.getByRole("button", { name: "Weekly" }));
+    fireEvent.change(screen.getByLabelText("Day of the week"), { target: { value: "0" } });
+    expect(screen.queryByText("Where does the money land?")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => {
+      expect(stores.incomeStore.addBill).toHaveBeenCalledWith(
+        expect.objectContaining({ name: "Gym", day: null, weekday: 0 }),
+        expect.any(String),
       );
     });
   });
@@ -122,7 +151,7 @@ describe("RegularIncomes (F23.17)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Add a regular income" }));
     fireEvent.change(screen.getByLabelText("What it is"), { target: { value: "B2B" } });
-    fireEvent.change(screen.getByLabelText("A month, PLN"), { target: { value: "20000" } });
+    fireEvent.change(screen.getByLabelText("Each time, PLN"), { target: { value: "20000" } });
     fireEvent.click(screen.getByRole("switch", { name: "My tax comes out of it" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
@@ -149,7 +178,7 @@ describe("RegularIncomes (F23.17)", () => {
 
     expect(screen.getByText("on day 10")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Salary/ }));
-    fireEvent.change(screen.getByLabelText("A month, PLN"), { target: { value: "11000" } });
+    fireEvent.change(screen.getByLabelText("Each time, PLN"), { target: { value: "11000" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => {
       expect(stores.incomeStore.changeRegular).toHaveBeenCalledWith(

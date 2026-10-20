@@ -242,6 +242,8 @@ describe("PlanPage (F23.2, F23.10, F23.12)", () => {
         kind: "side",
         shared: false,
         account_id: null,
+        // No card yet: income makes the one it lands on (F23.21).
+        new_card: { name: "My card", opening: "0" },
       });
     });
   });

@@ -52,13 +52,12 @@
     "day": "Wpływa",
     "anyDay": "Dowolny dzień",
     "lastDay": "Ostatni dzień",
-    "monthly": "Co miesiąc",
+    "monthly": "Przychodzi regularnie",
     "howMuch": "Ile",
     "exact": "Zawsze tyle samo",
     "about": "Około, bywa różnie",
     "transferHint": "Pieniądze między Twoimi kontami to przelew: ani dochód, ani wydatek.",
-    "onAccount": "na „{{name}}”",
-    "cardOpens": "Wpływ trafi na „Moja karta”: otworzymy ją z pierwszym dochodem. Zmienisz to w „Gdzie są pieniądze”."
+    "onAccount": "na „{{name}}”"
   },
   "budget": {
     "title": "Budżet miesięczny",

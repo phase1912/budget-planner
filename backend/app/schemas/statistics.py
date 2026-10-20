@@ -65,6 +65,9 @@ class CategoryStatisticsResponse(BaseModel):
     categories: list[CategoryStandingResponse]
     excluded_count: int
     excluded_amount: Decimal
+    bills_total: Decimal = Decimal("0.00")
+    """Regular bills over the period (F23.21): spending without receipts, shown beside the
+    categories rather than as one of them."""
     comparison: ComparisonResponse | None = None
     chart: "ChartResponse | None" = None
 

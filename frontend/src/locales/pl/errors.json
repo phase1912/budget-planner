@@ -65,5 +65,6 @@
   "month_closed": "Ten miesiąc jest zamknięty: zmieniać można tylko wpisy z bieżącego miesiąca.",
   "same_account": "Wybierz dwa różne konta.",
   "invalid_card": "Sprawdź pola karty.",
-  "card_done": "Ta karta jest już zamknięta."
+  "card_done": "Ta karta jest już zamknięta.",
+  "needs_card": "Dochód trafia na kartę: utwórz ją razem z nim."
 }

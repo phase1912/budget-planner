@@ -37,7 +37,8 @@
     "description": "Co to było",
     "spent_on": "Data",
     "category": "Kategoria",
-    "openReceipts": "Otwórz Wydatki"
+    "openReceipts": "Otwórz Wydatki",
+    "newCard": "Zatwierdzenie utworzy kartę „{{name}}”, na którą trafią pieniądze."
   },
   "answer": {
     "spending": "Otwórz w Wydatkach",

@@ -139,6 +139,7 @@ describe("UploadPage", () => {
           channel: "document",
           shared: false,
           account_id: null,
+          new_card: { name: "My card", opening: "0" },
         },
       });
     });

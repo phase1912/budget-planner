@@ -78,6 +78,7 @@ function july(overrides: Partial<CategoryStatistics> = {}): CategoryStatistics {
   return {
     start: "2026-07-01",
     end: "2026-07-27",
+    bills_total: "0.00",
     receipt_count: 20,
     total: "1128.60",
     item_count: 82,
@@ -303,15 +304,16 @@ describe("StatisticsPage", () => {
   });
 
   it("lists the month's bills and the items still to file, each folded", () => {
-    statisticsStore.statistics = july();
+    // The section's sum is what the bills came to over the period on show (F23.21).
+    statisticsStore.statistics = july({ bills_total: "3000.00" });
     incomeStore.bills = [{ id: "b1", name: "Rent", amount: "3000.00" }];
     categoriesStore.reviewCount = 4;
     renderPage();
 
-    expect(screen.getByRole("button", { name: /Every month/ })).toHaveTextContent("3,000 PLN");
+    expect(screen.getByRole("button", { name: /Regular bills/ })).toHaveTextContent("3,000 PLN");
     expect(screen.getByRole("button", { name: /Items without a category/ })).toHaveTextContent("4");
     expect(screen.queryByText("Rent")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /Every month/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Regular bills/ }));
     expect(screen.getByText("Rent")).toBeInTheDocument();
     incomeStore.bills = [];
     categoriesStore.reviewCount = 0;

@@ -41,7 +41,7 @@ from app.repository.money_accounts import (
 )
 from app.repository.regular_expense import RegularExpenseRepository
 from app.services.household import refuse_child
-from app.services.income import tax_rule
+from app.services.income import IncomeService, bill_rule, regular_rule, tax_rule
 
 
 @dataclass(frozen=True)
@@ -216,6 +216,8 @@ class AccountService:
     ) -> Account:
         """Rename an account, correct where it started, its tax rate or whose it is."""
         account = await self._writable(account_id)
+        if account.for_purchases and not for_purchases:
+            await self._pin_unassigned(account)
         account.name = name
         account.opening = opening
         account.opening_on = opening_on
@@ -227,10 +229,29 @@ class AccountService:
             await self._only_purchase_card(account)
         return account
 
-    async def remove(self, account_id: uuid.UUID) -> None:
-        """Delete an account and the moves on it; sums that named it go back to the card."""
+    async def remove(self, account_id: uuid.UUID, today: date) -> None:
+        """Delete an account and the moves on it; sums that named it go back to the card.
+
+        Removing the last card the user sees takes them back to a budget alone (F23.21):
+        the starting balance kept before cards is forgotten, so no balance comes back, and
+        their own regular incomes stop from next month — income is bookkeeping, and with no
+        card it has nowhere to land. Past months keep what they had.
+        """
         account = await self._writable(account_id)
         await self.session.delete(account)
+        await self.session.flush()
+        if not await self.accounts.visible():
+            await self._back_to_budget(today)
+
+    async def _back_to_budget(self, today: date) -> None:
+        user = await self.session.get(User, _me())
+        assert user is not None
+        user.starting_balance = None
+        user.balance_since = None
+        incomes = IncomeService(self.session)
+        for source in await incomes.regular_incomes():
+            if source.user_id == user.id and source.household_id is None:
+                await incomes.end_regular(source.id, today)
         await self.session.flush()
 
     async def money_in(
@@ -361,9 +382,7 @@ class AccountService:
         if kind == "bill":
             existing = await self.moves.for_month(first_day, bill_id=rule_id)
             rule = await self._bill(rule_id)
-            day = Recurring(rule.amount, rule.day, rule.starts_on, rule.ends_on).arrives_in(
-                first_day
-            )
+            day = bill_rule(rule).arrives_in(first_day)
             account_id = rule.account_id
             if account_id is None:
                 raise DomainError("This bill is not on an account.", code=ProblemCode.DOMAIN_ERROR)
@@ -412,9 +431,7 @@ class AccountService:
             raise NotFoundError("No such regular income.")
         account = await self._writable(source.account_id)
         first_day = today.replace(day=1)
-        day = Recurring(source.amount, source.day, source.starts_on, source.ends_on).arrives_in(
-            first_day
-        )
+        day = regular_rule(source).arrives_in(first_day)
         existing = await self.session.scalar(
             select(Income).where(
                 Income.source_id == source.id,
@@ -557,25 +574,27 @@ class AccountService:
             )
             if target not in seen:
                 continue
-            rule = Recurring(source.amount, source.day, source.starts_on, source.ends_on)
+            rule = regular_rule(source)
             for month in months_between(max(start, source.starts_on), today):
-                if not rule.runs_in(month) or (source.id, month) in confirmed:
+                if (source.id, month) in confirmed:
                     continue
-                day = rule.arrives_in(month)
-                add(
-                    target,
-                    day,
-                    kind=EntryKind.EXPECTED if source.about else EntryKind.INCOME,
-                    name=self._name(source.name, source.user_id, source.household_id, family),
-                    amount=source.amount,
-                    tax=tax_on(source.amount, seen[target].tax_rate)
-                    or self._own_tax(
-                        source.amount, source.taxed, source.user_id, target, seen, family
-                    ),
-                    ref=self._ref("source", source.id, source.user_id, source.household_id, family),
-                    by_rule=True,
-                    upcoming=day > today,
-                )
+                for day in rule.days_in(month):
+                    add(
+                        target,
+                        day,
+                        kind=EntryKind.EXPECTED if source.about else EntryKind.INCOME,
+                        name=self._name(source.name, source.user_id, source.household_id, family),
+                        amount=source.amount,
+                        tax=tax_on(source.amount, seen[target].tax_rate)
+                        or self._own_tax(
+                            source.amount, source.taxed, source.user_id, target, seen, family
+                        ),
+                        ref=self._ref(
+                            "source", source.id, source.user_id, source.household_id, family
+                        ),
+                        by_rule=True,
+                        upcoming=day > today,
+                    )
 
         moves = list(await self.moves.until(end))
         changed = {(m.bill_id or m.rule_id, m.moved_on.replace(day=1)) for m in moves}
@@ -583,21 +602,21 @@ class AccountService:
             target = bill.account_id or family.card_of(bill.user_id, bill.household_id is not None)
             if target not in seen:
                 continue
-            rule = Recurring(bill.amount, bill.day, bill.starts_on, bill.ends_on)
+            rule = bill_rule(bill)
             for month in months_between(max(start, bill.starts_on), today):
-                if not rule.runs_in(month) or (bill.id, month) in changed:
+                if (bill.id, month) in changed:
                     continue
-                day = rule.arrives_in(month)
-                add(
-                    target,
-                    day,
-                    kind=EntryKind.BILL,
-                    name=self._name(bill.name, bill.user_id, bill.household_id, family),
-                    amount=-bill.amount,
-                    ref=self._ref("bill", bill.id, bill.user_id, bill.household_id, family),
-                    by_rule=True,
-                    upcoming=day > today,
-                )
+                for day in rule.days_in(month):
+                    add(
+                        target,
+                        day,
+                        kind=EntryKind.BILL,
+                        name=self._name(bill.name, bill.user_id, bill.household_id, family),
+                        amount=-bill.amount,
+                        ref=self._ref("bill", bill.id, bill.user_id, bill.household_id, family),
+                        by_rule=True,
+                        upcoming=day > today,
+                    )
 
         for transfer in await self.transfers.running():
             rule = Recurring(transfer.amount, transfer.day, transfer.starts_on, transfer.ends_on)
@@ -834,8 +853,26 @@ class AccountService:
                 else other.household_id is None and other.user_id == card.user_id
             )
             if other.id != card.id and same_scope and other.for_purchases:
+                await self._pin_unassigned(other)
                 other.for_purchases = False
         await self.session.flush()
+
+    async def _pin_unassigned(self, card: Account) -> None:
+        """Keep on `card` what reached it only for being the purchase card (F23.21).
+
+        Bills, regular incomes and incomes on no card are read onto whichever card is the
+        purchase card. Before it stops being one, they are written onto it, so its history
+        stays as it was and nothing moves to the next card's past.
+        """
+        for model in (RegularExpense, IncomeSource, Income):
+            scope = (
+                model.household_id == card.household_id
+                if card.household_id
+                else and_(model.household_id.is_(None), model.user_id == card.user_id)
+            )
+            await self.session.execute(
+                update(model).where(model.account_id.is_(None), scope).values(account_id=card.id)
+            )
 
     @staticmethod
     def _open_month(day: date, today: date) -> None:

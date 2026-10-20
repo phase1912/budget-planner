@@ -5154,6 +5154,60 @@ epics:
         demo: >
           Open a fuel receipt, choose the business card, and see it leave "Our card" and
           appear in the business account's history that day.
+      - key: F23.21
+        title: Cards when wanted, income on a card, bills weekly too
+        labels: [backend, frontend]
+        requirements: []
+        depends_on: [F23.15, F23.17, F23.18]
+        intent: >
+          Forcing a card was the biggest step between signing up and using the product: a person
+          who only wants to see whether a month fitted the budget had to keep books. Use now
+          comes in levels set by what the user has made, with no switch: a budget alone — what
+          was spent, bills included, against the monthly budget; a card — balances and what
+          came off them; a business card — taxes and transfers. Income is bookkeeping, so it
+          always lands on a card, and adding it with none offers to make one in the same step.
+          Regular bills are spending with or without a card, shown as their own part of the
+          budget ring. Bills and regular incomes come weekly as well as monthly. Supersedes
+          ADR-0024's "every sum is on an account".
+        demo: >
+          Sign up, skip the card, set a budget of 2 000 and a monthly internet bill of 60: Home
+          shows the ring with purchases and bills, no balance. Add a salary: the app asks where
+          it lands and makes "My card" in the same dialog; the bill is offered to the card too.
+          Add a weekly gym bill of 50 on Mondays: October counts it four times, 200.
+        tasks:
+          - key: F23.21.1
+            title: A card only when the user wants one
+            labels: [backend, frontend]
+            detail: >
+              Bills, purchases and tax payments no longer open a card by themselves; onboarding's
+              card step can be skipped. With no card, Home and Plan show the budget ring without a
+              balance, and the Accounts screen invites to add one. Bills count in the month's
+              spending and the budget, as a segment of the ring and a "Bills" row in Spending.
+              When a card becomes the purchase card, bills on no card are offered to it once.
+          - key: F23.21.2
+            title: Income asks where it lands
+            labels: [backend, frontend, ai]
+            detail: >
+              An income, a regular income, a read payslip, an emailed income document and the
+              assistant's income card all need a card: with none, the same dialog asks where the
+              money lands and makes the card (name, optional balance now) with the income. Paying
+              one's own taxes is offered only with a card. The server refuses an income with no
+              card to land on.
+          - key: F23.21.3
+            title: Weekly bills and incomes
+            labels: [backend, frontend, database]
+            detail: >
+              A regular bill or income is monthly on a day or weekly on a weekday. A month counts
+              a weekly one as many times as that weekday falls in it, never times 4.33; with a card
+              it comes off or lands on each of those days. Changing it applies from this month,
+              as any rule change does. Add-only migration.
+          - key: F23.21.4
+            title: Documents for optional cards
+            labels: [docs]
+            detail: >
+              A new ADR superseding ADR-0024's "every sum is on an account", the domain model's
+              invariants on accounts, income, bills and the budget, and the overview's account
+              flow, in the same change.
 
   - key: E24
     title: Bugfixes
