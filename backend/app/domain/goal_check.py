@@ -8,9 +8,10 @@ could come from — the categories most is spent on, each trimmed by a modest sh
 import enum
 import uuid
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import ROUND_HALF_UP, Decimal
 
+from app.domain.family_lines import Swap
 from app.domain.goals import FinancialKind
 
 TRIM = Decimal("0.15")
@@ -69,6 +70,10 @@ class GoalCheck:
     months: int
     sources: list[Source]
     unknown: Unknown | None = None
+    swaps: list[Swap] = field(default_factory=list)
+    """Products to buy where the family has seen them cheaper, and what each saves (F12.11)."""
+    family: bool = False
+    """Whether `swaps` come from the whole family's shared receipts, not the user's alone."""
 
 
 def check_goal_plan(

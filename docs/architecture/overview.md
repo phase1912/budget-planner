@@ -165,6 +165,10 @@ is refused every shared write in one place, `refuse_child` in `app/services/hous
 which `IncomeService` calls when a row is or would become shared, and which the household
 budget and a receipt's privacy call too.
 
+What the family buys line by line (F12.11) is `HouseholdSpendRepository.shared_lines`
+— shared receipts' lines only — read by `app/domain/family_lines.py` into products bought
+twice, who buys what, and the swaps a stretch goal's check names (`GoalCheckService`).
+
 Accounts (F23.15, ADR-0024) live in `app/services/money_accounts.py` behind
 `/api/v1/accounts`. `AccountService._entries` turns every sum that reaches or leaves an
 account the caller sees — income entries, regular incomes, bills and transfers read from

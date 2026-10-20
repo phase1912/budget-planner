@@ -7,9 +7,9 @@
     "body": "Zobacz, co naprawdę kupujesz, co podrożało i ile zostało w tym miesiącu.",
     "start": "Ustaw w minutę",
     "defaults": "Użyj domyślnych i zacznij",
-    "perk1": "Paragony pozycja po pozycji",
-    "perk2": "Zmiany cen",
-    "perk3": "Cele, które się dopasowują"
+    "perk1": "Paragony linijka po linijce",
+    "perk2": "Budżet dla rodziny",
+    "perk3": "Gdzie są pieniądze"
   },
   "money": {
     "title": "Język i pieniądze",
@@ -28,9 +28,7 @@
     "amount": "Zwykły dochód netto",
     "payday": "Dzień wypłaty",
     "none": "Nie ustawiono",
-    "last": "Ostatni dzień",
-    "balance": "Na kontach dzisiaj",
-    "balanceHint": "To nie dochód, tylko ile masz teraz na kartach i kontach. Od dziś zmienia się samo."
+    "last": "Ostatni dzień"
   },
   "security": {
     "title": "Zabezpiecz kodem",
@@ -51,7 +49,43 @@
     "income": "Dochód",
     "twoFactor": "Dwuetapowe",
     "on": "Dalej",
-    "off": "Później"
+    "off": "Później",
+    "accounts": "Konta",
+    "family": "Rodzina",
+    "alone": "Tylko ja"
   },
-  "next": "Dalej"
+  "next": "Dalej",
+  "accounts": {
+    "title": "Gdzie są Twoje pieniądze?",
+    "body": "Zacznij od karty, którą płacisz: zakupy schodzą z niej same.",
+    "cardName": "Nazwa karty",
+    "cardDefault": "Moja karta",
+    "cardDefaultShared": "Nasza karta",
+    "onIt": "Teraz na niej",
+    "cardHint": "Zostaw kwotę pustą, aby pominąć; konta dodasz później w Planie.",
+    "cardHintShared": "Jest wspólna z rodziną i płaci za zakupy wszystkich.",
+    "business": "Mam też konto firmowe",
+    "businessHint": "Od pieniędzy od klientów sam odkłada się podatek, reszta liczy się jako dochód rodziny.",
+    "tax": "Podatek od pieniędzy od klientów",
+    "own": "Własna",
+    "ownRate": "Twoja stawka, %",
+    "later": "Oszczędności, wspólną kartę i comiesięczne przelewy dodasz w każdej chwili.",
+    "businessDefault": "Firma",
+    "familyCard": "Twoja rodzina płaci za zakupy z „{{name}}”: Twoje zakupy też z niej schodzą."
+  },
+  "family": {
+    "title": "Budżet razem?",
+    "body": "Dziel się paragonami, dochodami i opłatami z rodziną. Każdy zachowuje prywatne to, co chce.",
+    "alone": "Na razie tylko ja",
+    "aloneHint": "Rodzinę założysz później w Ustawieniach",
+    "family": "Razem z rodziną",
+    "familyHint": "Zaproś ich linkiem",
+    "name": "Nazwa rodziny",
+    "nameDefault": "Dom",
+    "start": "Załóż rodzinę",
+    "in": "Prowadzisz budżet razem: „{{name}}”.",
+    "invite": "Wyślij ten link osobom, z którymi dzielisz pieniądze:",
+    "copy": "Skopiuj link",
+    "copied": "Skopiowano"
+  }
 }

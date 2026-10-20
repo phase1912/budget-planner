@@ -9,15 +9,23 @@ from decimal import Decimal
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.domain.family_lines import FamilyLine
 from app.domain.periods import DateRange
 from app.domain.trips import TripKind
 from app.models.category import Category
 from app.models.income import Income
 from app.models.income_source import IncomeSource
 from app.models.line_item import LineItem
+from app.models.product import Product
 from app.models.receipt import Receipt, ReceiptStatus
 from app.models.regular_expense import RegularExpense
-from app.repository.receipt import _purchased, _within, counted_in_budget, on_trip
+from app.repository.receipt import (
+    _purchased,
+    _within,
+    counted_in_budget,
+    on_trip,
+    purchase_day,
+)
 
 
 @dataclass(frozen=True)
@@ -224,3 +232,49 @@ class HouseholdSpendRepository:
             list(sources.scalars().all()),
             list(bills.scalars().all()),
         )
+
+    async def shared_lines(
+        self,
+        period: DateRange,
+        member_ids: Collection[uuid.UUID],
+        viewer_id: uuid.UUID | None = None,
+    ) -> list[FamilyLine]:
+        """Every line of the members' shared receipts over `period`, as the month counts
+        them (F12.11). Private receipts are left out entirely: their lines say what and
+        when (ADR-0017) — except the viewer's own, which advice for the viewer may use.
+        A line is named by its owner's product where it has one, so a
+        product printed differently by each shop is one name.
+        """
+        stmt = (
+            select(
+                Receipt.user_id,
+                purchase_day(),
+                func.coalesce(Product.name, LineItem.name),
+                Receipt.merchant_name,
+                LineItem.unit_price,
+                LineItem.quantity,
+                LineItem.paid,
+            )
+            .join(Receipt, LineItem.receipt_id == Receipt.id)
+            .outerjoin(Product, LineItem.product_id == Product.id)
+            .where(
+                Receipt.user_id.in_(member_ids),
+                counted_in_budget(),
+                or_(Receipt.is_private.is_(False), Receipt.user_id == viewer_id),
+                _within(period),
+            )
+        )
+        return [
+            FamilyLine(
+                member_id=user_id,
+                day=day,
+                name=name,
+                shop=shop,
+                unit_price=Decimal(unit_price or 0),
+                quantity=Decimal(quantity or 1),
+                paid=Decimal(paid or 0),
+            )
+            for user_id, day, name, shop, unit_price, quantity, paid in (
+                await self.session.execute(stmt)
+            ).all()
+        ]

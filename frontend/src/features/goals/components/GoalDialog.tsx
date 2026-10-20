@@ -476,6 +476,28 @@ const GoalCheckCard = observer(function GoalCheckCard({
           </p>
         </section>
       )}
+      {check.swaps.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <h3 className="m-0 text-lg font-extrabold">
+            {check.family ? t("check.swapsFamily") : t("check.swaps")}
+          </h3>
+          <ul className="on-surface m-0 flex list-none flex-col divide-y divide-border overflow-hidden rounded-card p-0">
+            {check.swaps.map((swap) => (
+              <li key={swap.name} className="control-fill flex items-center gap-3 px-4 py-3">
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-lg font-bold">{swap.name}</span>
+                  <span className="text-md text-muted-foreground">
+                    {t("check.swapMeta", { shop: swap.shop, instead: swap.instead_of })}
+                  </span>
+                </span>
+                <span className="shrink-0 text-lg font-extrabold text-primary tabular-nums">
+                  {t("check.cut", { amount: money(swap.monthly_saving), currency })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 });

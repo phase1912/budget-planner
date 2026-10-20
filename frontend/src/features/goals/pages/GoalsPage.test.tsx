@@ -144,6 +144,8 @@ const stretch: GoalCheck = {
   months: 3,
   unknown: null,
   sources: [{ category_id: "c1", name: "Groceries", monthly: "1200", cut: "180" }],
+  swaps: [{ name: "Mleko", shop: "Lidl", instead_of: "Zabka", monthly_saving: "12" }],
+  family: true,
 };
 
 describe("GoalsPage", () => {
@@ -241,6 +243,9 @@ describe("GoalsPage", () => {
       screen.getByText("Your months usually come to about 2,800 PLN — 300 PLN over."),
     ).toBeInTheDocument();
     expect(screen.getByText("Groceries, a little less")).toBeInTheDocument();
+    // F12.11: products the family already buys cheaper elsewhere, by name.
+    expect(screen.getByText("Cheaper where your family already shops")).toBeInTheDocument();
+    expect(screen.getByText("At Lidl instead of Zabka · a month")).toBeInTheDocument();
     expect(screen.getByText("−180 PLN")).toBeInTheDocument();
     expect(goalsStore.create).not.toHaveBeenCalled();
   });

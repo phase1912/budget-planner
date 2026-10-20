@@ -2,20 +2,25 @@
 
 import uuid
 from collections.abc import Sequence
-from datetime import date
+from dataclasses import replace
+from datetime import date, timedelta
 from decimal import Decimal
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.domain.budget import BudgetMonth
 from app.domain.categories import ItemView
-from app.domain.goal_check import GoalCheck, MonthlyCategory, check_goal_plan
+from app.domain.family_lines import swaps
+from app.domain.goal_check import GoalCheck, MonthlyCategory, Verdict, check_goal_plan
 from app.domain.goals import FinancialKind
 from app.domain.periods import DateRange
 from app.models.income import Income
 from app.models.regular_expense import RegularExpense
 from app.models.user import User
+from app.repository.household import HouseholdRepository
+from app.repository.household_spend import HouseholdSpendRepository
 from app.repository.income_source import IncomeSourceRepository
 from app.repository.receipt import ReceiptRepository
 from app.repository.regular_expense import RegularExpenseRepository
@@ -26,7 +31,8 @@ MONTHS_BACK = 3
 
 class GoalCheckService:
     """Gathers the last three whole months — spending by category and income — and lets
-    `check_goal_plan` judge a goal against them. Only the caller's own data is read (N2).
+    `check_goal_plan` judge a goal against them. Only the caller's own data is read (N2),
+    except the product swaps of a stretch, which read the family's shared receipts (F12.11).
     """
 
     def __init__(self, session: AsyncSession) -> None:
@@ -56,7 +62,7 @@ class GoalCheckService:
         for month in counted:
             for c in await self.receipts.spend_by_category(ItemView.ALL, period=month):
                 categories.append(MonthlyCategory(c.category_id, c.name, c.total))
-        return check_goal_plan(
+        result = check_goal_plan(
             kind,
             target,
             category_id=category_id,
@@ -68,6 +74,31 @@ class GoalCheckService:
                 await RegularExpenseRepository(self.session).current(),
             ),
         )
+        if result.verdict is not Verdict.STRETCH or not counted:
+            return result
+        return await self._with_swaps(user, result, counted, today)
+
+    async def _with_swaps(
+        self, user: User, result: GoalCheck, months: list[DateRange], today: date
+    ) -> GoalCheck:
+        """A stretch goal with the product swaps that close part of the gap (F12.11).
+
+        In a family they come from every member's shared receipts and the family's own
+        prices; alone, from the user's receipts.
+        """
+        household = await HouseholdRepository(self.session).membership_of(user.id)
+        members = [m.user_id for m in household.household.members] if household else [user.id]
+        period = DateRange(min(m.start for m in months), max(m.end for m in months))
+        lines = await HouseholdSpendRepository(self.session).shared_lines(
+            period, members, viewer_id=user.id
+        )
+        found = swaps(
+            lines,
+            Decimal(len(months)),
+            today,
+            timedelta(days=get_settings().price_freshness_days),
+        )
+        return replace(result, swaps=found, family=len(members) > 1)
 
     async def _monthly_income(self, user: User, months: list[DateRange]) -> Decimal | None:
         """The regular incomes (F23.17), else the usual income, else what was entered over

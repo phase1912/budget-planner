@@ -91,9 +91,17 @@
     "charts": {
       "share": "Share",
       "categories": "Categories",
-      "days": "By day"
+      "days": "By day",
+      "products": "Products"
     },
-    "othersPrivate": "Others’ private receipts count as money only: {{amount}} {{currency}} this month, with no shop or day."
+    "othersPrivate": "Others’ private receipts count as money only: {{amount}} {{currency}} this month, with no shop or day.",
+    "noProducts": "No shared receipts with products this month yet.",
+    "twice": {
+      "title": "Bought twice",
+      "line": "{{who}} · {{days}}",
+      "and": " and ",
+      "hint": "The same product bought by two of you within three days — worth agreeing who buys it."
+    }
   },
   "inMonth": " in {{month}}",
   "recorded": " recorded",

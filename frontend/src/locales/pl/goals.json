@@ -180,7 +180,10 @@
     "basis_few": "Na podstawie {{count}} ostatnich miesięcy",
     "basis_many": "Na podstawie {{count}} ostatnich miesięcy",
     "basis_other": "Na podstawie {{count}} ostatniego miesiąca",
-    "covers": "Razem −{{covered}} z {{gap}} {{currency}} miesięcznie"
+    "covers": "Razem −{{covered}} z {{gap}} {{currency}} miesięcznie",
+    "swaps": "Taniej tam, gdzie już kupujesz",
+    "swapsFamily": "Taniej tam, gdzie Twoja rodzina już kupuje",
+    "swapMeta": "W {{shop}} zamiast {{instead}} · miesięcznie"
   },
   "perMonth": "{{currency}} miesięcznie"
 }

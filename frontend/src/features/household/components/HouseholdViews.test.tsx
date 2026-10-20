@@ -205,6 +205,62 @@ describe("household views (F12.5)", () => {
     expect(screen.queryByRole("button", { name: /Family budget/ })).not.toBeInTheDocument();
   });
 
+  it("shows what two of the family bought twice, and who buys which products (F12.11)", async () => {
+    store.authStore.user = { id: "me" } as typeof store.authStore.user;
+    store.householdStore.household = HOME;
+    const month = {
+      year: 2026,
+      month: 10,
+      total: "10.00",
+      receipt_count: 2,
+      is_complete: false,
+      days_elapsed: 10,
+      days: 31,
+      excluded_count: 0,
+      excluded_amount: "0",
+      limit: null,
+      shared_income: "0",
+      shared_bills: "0",
+      members: [
+        { user_id: "me", first_name: "Bohdan", shared_total: "5", private_total: "0", total: "5" },
+        { user_id: "anna", first_name: "Anna", shared_total: "5", private_total: "0", total: "5" },
+      ],
+    };
+    const lines = {
+      twice: [
+        {
+          name: "Chleb",
+          members: ["me", "anna"],
+          days: ["2026-10-06", "2026-10-07"],
+          paid: "10.00",
+        },
+      ],
+      products: [
+        {
+          name: "Chleb",
+          total: "10.00",
+          members: [
+            { user_id: "me", total: "5.00" },
+            { user_id: "anna", total: "5.00" },
+          ],
+        },
+      ],
+    };
+    api.GET.mockImplementation((path: string) =>
+      Promise.resolve({
+        data: path.includes("months") ? month : path.endsWith("/lines") ? lines : null,
+      }),
+    );
+    renderWith(store, <HouseholdMonthView year={2026} month={10} currency="PLN" />);
+
+    const twice = await screen.findByRole("region", { name: "Bought twice" });
+    expect(twice).toHaveTextContent("Chleb");
+    expect(twice).toHaveTextContent("You and Anna");
+
+    fireEvent.click(screen.getByRole("button", { name: "Products" }));
+    expect(screen.getByText("You 50% · Anna 50%")).toBeInTheDocument();
+  });
+
   it("ranks the household's categories with private spending as one row", async () => {
     api.GET.mockResolvedValue({
       data: {

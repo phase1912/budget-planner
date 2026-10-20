@@ -26,6 +26,7 @@ from app.schemas.household import (
     HouseholdDailyResponse,
     HouseholdDayResponse,
     HouseholdInvite,
+    HouseholdLinesResponse,
     HouseholdMemberDayResponse,
     HouseholdMemberRead,
     HouseholdMonthResponse,
@@ -37,6 +38,8 @@ from app.schemas.household import (
     MemberRoleRequest,
     MemberShareResponse,
     MemberTotalResponse,
+    ProductMembersResponse,
+    TwiceResponse,
 )
 from app.services.household import HouseholdService
 from app.services.household_budget import HouseholdBudgetService
@@ -301,4 +304,34 @@ async def get_household_daily(
             for d in daily.days
         ],
         undated_private=daily.undated_private,
+    )
+
+
+@router.get("/lines", response_model=HouseholdLinesResponse)
+async def get_household_lines(
+    period: Annotated[DateRange, Depends(required_period)],
+    current_user: CurrentUser,
+    budget: Budget,
+) -> HouseholdLinesResponse:
+    """What the family buys, line by line, between two dates (F12.11): products two members
+    bought within three days, and who buys the products most is spent on. Shared receipts
+    only (ADR-0017); 404 outside a household.
+    """
+    twice, products = await budget.lines(current_user, period)
+    return HouseholdLinesResponse(
+        twice=[
+            TwiceResponse(name=t.name, members=list(t.members), days=list(t.days), paid=t.paid)
+            for t in twice
+        ],
+        products=[
+            ProductMembersResponse(
+                name=p.name,
+                total=p.total,
+                members=[
+                    MemberTotalResponse(user_id=member, total=total)
+                    for member, total in p.members.items()
+                ],
+            )
+            for p in products
+        ],
     )

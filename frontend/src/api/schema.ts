@@ -678,6 +678,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/household/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Household Lines
+         * @description What the family buys, line by line, between two dates (F12.11): products two members
+         *     bought within three days, and who buys the products most is spent on. Shared receipts
+         *     only (ADR-0017); 404 outside a household.
+         */
+        get: operations["get_household_lines_api_v1_household_lines_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts/upload": {
         parameters: {
             query?: never;
@@ -3755,6 +3777,16 @@ export interface components {
             /** Sources */
             sources: components["schemas"]["GoalCheckSource"][];
             unknown: components["schemas"]["Unknown"] | null;
+            /**
+             * Swaps
+             * @default []
+             */
+            swaps: components["schemas"]["GoalCheckSwap"][];
+            /**
+             * Family
+             * @default false
+             */
+            family: boolean;
         };
         /**
          * GoalCheckSource
@@ -3769,6 +3801,20 @@ export interface components {
             monthly: string;
             /** Cut */
             cut: string;
+        };
+        /**
+         * GoalCheckSwap
+         * @description A product to buy at `shop` instead of `instead_of`, and what that saves a month.
+         */
+        GoalCheckSwap: {
+            /** Name */
+            name: string;
+            /** Shop */
+            shop: string;
+            /** Instead Of */
+            instead_of: string;
+            /** Monthly Saving */
+            monthly_saving: string;
         };
         /**
          * GoalCreate
@@ -3992,6 +4038,16 @@ export interface components {
             owner_name: string;
             /** Member Count */
             member_count: number;
+        };
+        /**
+         * HouseholdLinesResponse
+         * @description What the family buys, line by line: products bought twice, and who buys what.
+         */
+        HouseholdLinesResponse: {
+            /** Twice */
+            twice: components["schemas"]["TwiceResponse"][];
+            /** Products */
+            products: components["schemas"]["ProductMembersResponse"][];
         };
         /**
          * HouseholdMemberDayResponse
@@ -5083,6 +5139,18 @@ export interface components {
             size_amount: string | null;
             /** Size Unit */
             size_unit: string | null;
+        };
+        /**
+         * ProductMembersResponse
+         * @description What the family paid for one product, and by whom (F12.11).
+         */
+        ProductMembersResponse: {
+            /** Name */
+            name: string;
+            /** Total */
+            total: string;
+            /** Members */
+            members: components["schemas"]["MemberTotalResponse"][];
         };
         /**
          * ProductPurchasesResponse
@@ -6208,6 +6276,20 @@ export interface components {
             receipts: number;
             /** Amount */
             amount: string;
+        };
+        /**
+         * TwiceResponse
+         * @description A product two members bought within three days (F12.11).
+         */
+        TwiceResponse: {
+            /** Name */
+            name: string;
+            /** Members */
+            members: string[];
+            /** Days */
+            days: string[];
+            /** Paid */
+            paid: string;
         };
         /**
          * TwoFactorCodeRequest
@@ -7692,6 +7774,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HouseholdDailyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_household_lines_api_v1_household_lines_get: {
+        parameters: {
+            query: {
+                /** @description First day of the period, included */
+                start: string;
+                /** @description Last day of the period, included */
+                end: string;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdLinesResponse"];
                 };
             };
             /** @description Validation Error */

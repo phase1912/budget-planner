@@ -260,6 +260,13 @@ Rules that must hold at all times. Each is a candidate for a test.
     of theirs becomes shared. Their receipts are never hidden from the family; ones hidden
     before they became a child stay hidden. The owner may keep the household budget to
     themselves; otherwise every adult changes it.
+11n. What the family buys is read line by line from shared receipts only (F12.11): a
+    product is matched across members by its key, each member's own product name first.
+    Two different members buying one product within three days bought it twice; one
+    person buying it again is a habit and never counts. A goal that is a stretch names
+    products to buy where the family has itself seen them cheaper, saving the difference
+    on what it buys a month — from the family's own prices only, never an outside one,
+    and by calculation, not by a model.
 
 11l. Each line keeps the reader's confidence in it. A line below
     `ocr_confidence_threshold` is doubtful: marked "check this" in the wizard and on the
