@@ -118,7 +118,6 @@ export const MoneyInDialog = observer(function MoneyInDialog({
               label={t("in.date")}
               value={day}
               max={today}
-              min={`${today.slice(0, 7)}-01`}
               onChange={(e) => {
                 setDay(e.target.value);
               }}

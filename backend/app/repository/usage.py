@@ -7,6 +7,7 @@ from datetime import datetime
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.conversation import ConversationMessage
 from app.models.receipt import Receipt, ReceiptChannel
 from app.models.upload_job import UploadJob
 from app.models.user import User
@@ -45,6 +46,23 @@ class UsageRepository:
             emails = emails.where(Receipt.user_id.not_in(excluding))
         read = int(await self.session.scalar(uploads) or 0)
         return read + int(await self.session.scalar(emails) or 0)
+
+    async def messages_sent_since(
+        self,
+        since: datetime,
+        *,
+        user_id: uuid.UUID | None = None,
+        excluding: Collection[uuid.UUID] = (),
+    ) -> int:
+        """Messages sent to the assistant since `since` (F21.1): each was a model call."""
+        stmt = select(func.count()).where(
+            ConversationMessage.role == "user", ConversationMessage.created_at >= since
+        )
+        if user_id is not None:
+            stmt = stmt.where(ConversationMessage.user_id == user_id)
+        if excluding:
+            stmt = stmt.where(ConversationMessage.user_id.not_in(excluding))
+        return int(await self.session.scalar(stmt) or 0)
 
     async def admin_ids(self, admin_emails: Collection[str]) -> list[uuid.UUID]:
         """Accounts that are admins: by role, or by an email in `admin_emails`."""

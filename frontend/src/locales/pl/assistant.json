@@ -1,0 +1,37 @@
+{
+  "title": "Asystent",
+  "new": "Nowa rozmowa",
+  "conversations": "Rozmowy",
+  "back": "Wstecz",
+  "empty": {
+    "title": "Zapytaj albo powiedz, co zapisać",
+    "body": "Zapytaj, jak idzie miesiąc, albo powiedz, co zapisać. Pokażę to jako kartę — nic się nie zapisze, dopóki nie zatwierdzisz."
+  },
+  "examples": ["Jak idzie mój miesiąc?", "Wpłynęła pensja: 9 000 od Acme", "Ustaw budżet na 2 500"],
+  "placeholder": "Napisz lub powiedz",
+  "send": "Wyślij",
+  "listen": "Mów",
+  "stop": "Przestań słuchać",
+  "thinking": "Myślę…",
+  "failed": "Nie udało się odpowiedzieć. Spróbuj powiedzieć to inaczej.",
+  "card": {
+    "budget": "Budżet miesięczny",
+    "income": "Dochód",
+    "bill": "Opłata comiesięczna",
+    "amount": "Kwota, {{currency}}",
+    "source": "Od kogo",
+    "received_on": "Data",
+    "name": "Co to jest",
+    "day": "Dzień",
+    "anyDay": "Dowolny dzień",
+    "lastDay": "Ostatni dzień",
+    "shared": "Wspólne z rodziną",
+    "approve": "Zatwierdź",
+    "dismiss": "Anuluj",
+    "saved": "Zapisano",
+    "dismissed": "Anulowano",
+    "sayApprove": "albo powiedz „zatwierdzam”",
+    "openPlan": "Otwórz Plan"
+  },
+  "voiceNote": "Gdy mówisz, mowę na tekst zamienia przeglądarka (w Chrome — Google); do nas trafia tylko tekst."
+}

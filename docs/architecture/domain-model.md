@@ -599,17 +599,28 @@ Rules that must hold at all times. Each is a candidate for a test.
     holds as it was. With them, the balance is the money on every account the user sees —
     their own and their household's shared ones — each carried from its opening amount by
     what reached and left it; a transfer between two accounts is neither income nor
-    spending. Purchases come off the user's own purchase card, else the family's shared
+    spending. Every new income, regular income and bill is on an account: one named on
+    none goes on the purchase card, opened by itself when there is none — the first
+    account taking over the starting balance (amount and day), so no figure moves — and
+    stays as shared as the user said; on an account the user picked, whose it is follows
+    the account. An account with its own tax rate sets tax aside by it; on any other the
+    user's own rule (F23.16) still does, its fixed sum a month included. Money from
+    another of one's own accounts is entered as a transfer, never as income — a business
+    account's income already counts once, when it arrives. Purchases come off the user's own purchase card, else the family's shared
     one; any sum with no account of its own lands the same way (a shared sum on the
     shared card). Income from outside on a business account sets the account's rate aside
     and counts in the month at once, clean of it; a personal account and a transfer are
     never taxed, and fixed sums such as social contributions are the account's bills.
     Rules — regular incomes, bills and transfers — post on their day, read from the rule
     and never stored ahead, and a rule never starts on a day already past this month: it
-    starts next month. An "about" income is expected on its day and counts in the balance
+    starts next month. Changing a rule that began before this month never rewrites the
+    months it already ran: it ends with last month and a new version carries on from this
+    one, taking over this month's confirmations and changed occurrences. An "about" income is expected on its day and counts in the balance
     only once confirmed with what really came, which counts that month only. This
     month's entries can be changed — a rule's occurrence by a change that stands in for
-    it, 0 skipping it — and earlier months are closed. Another member's own money on a
+    it, 0 skipping it — and earlier months are closed: nothing in them changes or goes,
+    but a late entry (a payslip for last month, a transfer booked late) is added on its
+    own date, as a bank books a late payment. Another member's own money on a
     shared card shows only as theirs, and their private purchases as one undated sum a
     month (ADR-0017). A child sees shared accounts and moves nothing on them (11m).
 

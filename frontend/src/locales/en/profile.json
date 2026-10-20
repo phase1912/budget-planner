@@ -216,5 +216,6 @@
     "addedBy": "added by {{name}}",
     "sharedChip": "Shared",
     "mineChip": "Mine"
-  }
+  },
+  "onAccount": "to {{name}}"
 }

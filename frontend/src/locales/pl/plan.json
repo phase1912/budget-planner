@@ -43,7 +43,22 @@
     "billsTitle": "Schodzi co miesiąc",
     "noBills": "Mieszkanie, subskrypcje — dodaj je, a będą liczone same.",
     "shared": "Wspólne z rodziną",
-    "childReadOnly": "To jest wspólne z rodziną. Zmieniają to tylko dorośli."
+    "childReadOnly": "To jest wspólne z rodziną. Zmieniają to tylko dorośli.",
+    "account": "Na które konto",
+    "whereFrom": "Skąd",
+    "fromOutside": "Z zewnątrz",
+    "fromOwn": "Z naszego innego konta",
+    "fromAccount": "Z konta",
+    "day": "Wpływa",
+    "anyDay": "Dowolny dzień",
+    "lastDay": "Ostatni dzień",
+    "monthly": "Co miesiąc",
+    "howMuch": "Ile",
+    "exact": "Zawsze tyle samo",
+    "about": "Około, bywa różnie",
+    "transferHint": "Pieniądze między Twoimi kontami to przelew: ani dochód, ani wydatek.",
+    "onAccount": "na „{{name}}”",
+    "cardOpens": "Wpływ trafi na „Moja karta”: otworzymy ją z pierwszym dochodem. Zmienisz to w „Gdzie są pieniądze”."
   },
   "budget": {
     "title": "Budżet miesięczny",

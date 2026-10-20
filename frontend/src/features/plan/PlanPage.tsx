@@ -22,7 +22,15 @@ const DAY = dateFormat({ day: "numeric", month: "short" });
  * show what happened.
  */
 export const PlanPage = observer(function PlanPage() {
-  const { authStore, incomeStore, budgetStore, tripsStore, goalsStore, profileStore } = useStores();
+  const {
+    authStore,
+    incomeStore,
+    budgetStore,
+    tripsStore,
+    goalsStore,
+    profileStore,
+    bankAccountsStore,
+  } = useStores();
   const { t } = useTranslation("plan");
   const [incomeEntry, setIncomeEntry] = useState<IncomeEntry | null | "new">(null);
   const [editingBudget, setEditingBudget] = useState(false);
@@ -36,13 +44,15 @@ export const PlanPage = observer(function PlanPage() {
     void budgetStore.open();
     void tripsStore.load();
     void goalsStore.load();
-  }, [incomeStore, budgetStore, tripsStore, goalsStore, year, month]);
+    void bankAccountsStore.load(budgetStore.today);
+  }, [incomeStore, budgetStore, tripsStore, goalsStore, bankAccountsStore, year, month]);
 
   const income = incomeStore.month;
   // A regular income or bill changed in place: the month's figures and the balance follow.
   const refresh = () => {
     void incomeStore.load(year, month);
     void incomeStore.loadBalance(budgetStore.today);
+    void bankAccountsStore.load(budgetStore.today);
   };
   const summary = budgetStore.summary;
   const budget = user?.budget_limit == null ? null : Number(user.budget_limit);
@@ -149,7 +159,7 @@ export const PlanPage = observer(function PlanPage() {
               : t("income.usualNone")}
           </p>
         )}
-        <RegularIncomes kind="income" onChanged={refresh} />
+        <RegularIncomes kind="income" onChanged={refresh} hideAdd />
         <span className="text-sm font-bold tracking-[0.06em] text-muted-foreground uppercase">
           {t("income.extra")}
         </span>
@@ -169,6 +179,9 @@ export const PlanPage = observer(function PlanPage() {
                     <span className="text-base text-muted-foreground">
                       {DAY.format(new Date(`${entry.received_on}T00:00:00`))} ·{" "}
                       {t(`income.kinds.${entry.kind}`)}
+                      {entry.account_id && bankAccountsStore.byId(entry.account_id)
+                        ? ` · ${t("income.onAccount", { name: bankAccountsStore.byId(entry.account_id)?.name })}`
+                        : ""}
                       {paysOwnTaxes && entry.taxed && ` · ${t("income.taxedShort")}`}
                     </span>
                   </span>
@@ -336,10 +349,7 @@ export const PlanPage = observer(function PlanPage() {
           onClose={() => {
             setIncomeEntry(null);
           }}
-          onSaved={() => {
-            void incomeStore.load(year, month);
-            void incomeStore.loadBalance(budgetStore.today);
-          }}
+          onSaved={refresh}
         />
       )}
       {payingTaxes && (
@@ -384,7 +394,8 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="on-surface flex flex-col gap-3 rounded-card bg-surface p-4 md:p-5">
+    // min-w-0: a grid item otherwise grows to its longest unbroken line and runs off a phone.
+    <section className="on-surface flex min-w-0 flex-col gap-3 rounded-card bg-surface p-4 md:p-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="m-0 text-lg font-extrabold">{title}</h2>
         {aside}

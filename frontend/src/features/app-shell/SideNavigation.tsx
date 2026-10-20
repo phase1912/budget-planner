@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { Plus, Settings } from "lucide-react";
+import { MessageCircle, Plus, Settings } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -9,7 +9,8 @@ import { TABS, isActive } from "./tabs";
 /**
  * The tablet's and desktop's navigation (F23.2, design v2): the brand, adding a receipt,
  * the same four places as the phone's bar — icons with small names on a tablet, a menu with
- * names on a desktop — and the account at the bottom, opening Settings.
+ * names on a desktop — the assistant (F21.1), and the account at the bottom, opening
+ * Settings.
  */
 export const SideNavigation = observer(function SideNavigation() {
   const { authStore } = useStores();
@@ -61,6 +62,14 @@ export const SideNavigation = observer(function SideNavigation() {
           </Link>
         );
       })}
+      <Link
+        to="/assistant"
+        aria-current={pathname.startsWith("/assistant") ? "page" : undefined}
+        className={item(pathname.startsWith("/assistant"))}
+      >
+        <MessageCircle size={22} aria-hidden="true" />
+        {t("nav.assistant")}
+      </Link>
       <Link
         to="/settings"
         aria-current={pathname.startsWith("/settings") ? "page" : undefined}

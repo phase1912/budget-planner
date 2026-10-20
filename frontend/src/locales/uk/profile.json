@@ -228,5 +228,6 @@
     "addedBy": "додано: {{name}}",
     "sharedChip": "Спільне",
     "mineChip": "Моє"
-  }
+  },
+  "onAccount": "на «{{name}}»"
 }

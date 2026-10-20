@@ -175,10 +175,12 @@ async def test_the_balance_moves_with_income_and_counted_purchases_since_it_was_
         "starting": "5000.00",
         "came_in": "6200.00",
         "spent": "169.00",
-        "taxes_paid": "0",
-        "bills": "0",
-        "for_taxes": None,
-        "from_accounts": False,
+        # The first income opened the purchase card with the balance as it was started
+        # (F23.15): the same figures, now added up from the account.
+        "taxes_paid": "0.00",
+        "bills": "0.00",
+        "for_taxes": "0.00",
+        "from_accounts": True,
     }
 
 

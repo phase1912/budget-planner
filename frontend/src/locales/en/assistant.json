@@ -1,0 +1,37 @@
+{
+  "title": "Assistant",
+  "new": "New conversation",
+  "conversations": "Conversations",
+  "back": "Back",
+  "empty": {
+    "title": "Ask, or tell me what to record",
+    "body": "Ask how your month is going, or say what to write down. I show it as a card — nothing is saved until you approve it."
+  },
+  "examples": ["How is my month going?", "Salary came: 9 000 from Acme", "Set my budget to 2 500"],
+  "placeholder": "Write or speak",
+  "send": "Send",
+  "listen": "Speak",
+  "stop": "Stop listening",
+  "thinking": "Thinking…",
+  "failed": "I couldn't answer that. Try again in other words.",
+  "card": {
+    "budget": "Monthly budget",
+    "income": "Income",
+    "bill": "Monthly bill",
+    "amount": "Amount, {{currency}}",
+    "source": "From whom",
+    "received_on": "Date",
+    "name": "What it is",
+    "day": "Day",
+    "anyDay": "Any day",
+    "lastDay": "Last day",
+    "shared": "Shared with family",
+    "approve": "Approve",
+    "dismiss": "Cancel",
+    "saved": "Saved",
+    "dismissed": "Cancelled",
+    "sayApprove": "or say “approve”",
+    "openPlan": "Open Plan"
+  },
+  "voiceNote": "When you speak, your browser turns speech into text (in Chrome, Google does it); only the text reaches us."
+}

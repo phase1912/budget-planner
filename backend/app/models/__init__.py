@@ -11,6 +11,7 @@ from app.models.admin import AdminAction, PlanGrant
 from app.models.base import Base, Model
 from app.models.category import Category
 from app.models.category_rule import CategoryRule
+from app.models.conversation import Conversation, ConversationMessage
 from app.models.exchange_rate import CachedExchangeRate
 from app.models.export_job import ExportJob
 from app.models.goal import Goal
@@ -42,6 +43,8 @@ __all__ = [
     "CachedExchangeRate",
     "Category",
     "CategoryRule",
+    "Conversation",
+    "ConversationMessage",
     "ExportJob",
     "Goal",
     "Household",

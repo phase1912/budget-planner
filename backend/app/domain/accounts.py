@@ -94,6 +94,8 @@ class EntryKind(StrEnum):
     ADJUSTMENT = "adjustment"
     PURCHASES = "purchases"
     TAX_PAID = "tax_paid"
+    TAX_DUE = "tax_due"
+    """A month's fixed tax of one who pays their own (F23.16): owed, moving no money."""
 
 
 @dataclass(frozen=True)
@@ -146,6 +148,8 @@ def ledger_of(opening: Decimal, entries: list[Entry]) -> "Ledger":
             ledger.purchases -= entry.amount
         elif entry.kind == EntryKind.TAX_PAID:
             ledger.taxes_paid -= entry.amount
+        elif entry.kind == EntryKind.TAX_DUE:
+            ledger.taxes += entry.tax
     return ledger
 
 

@@ -63,5 +63,7 @@
   "child_read_only": "Dziecko w gospodarstwie może tylko przeglądać to, co wspólne.",
   "owner_role_fixed": "Właściciel jest zawsze osobą dorosłą.",
   "month_closed": "Ten miesiąc jest zamknięty: zmieniać można tylko wpisy z bieżącego miesiąca.",
-  "same_account": "Wybierz dwa różne konta."
+  "same_account": "Wybierz dwa różne konta.",
+  "invalid_card": "Sprawdź pola karty.",
+  "card_done": "Ta karta jest już zamknięta."
 }

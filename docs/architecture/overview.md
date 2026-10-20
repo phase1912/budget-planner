@@ -165,6 +165,13 @@ is refused every shared write in one place, `refuse_child` in `app/services/hous
 which `IncomeService` calls when a row is or would become shared, and which the household
 budget and a receipt's privacy call too.
 
+The assistant (F21.1, ADR-0025) lives in `app/services/assistant.py` behind
+`/api/v1/assistant`. An `AssistantPort` (`app/adapters/assistant_agent.py` over the LiteLLM
+agent) answers each message, running read tools at once and returning write tools only as
+proposals. `Toolbox` (`app/services/assistant_tools.py`) turns a proposal into a card and,
+when the user approves it, saves it through the service its screen uses. Conversations and
+their messages are the user's rows, deleted and exported with the account.
+
 What the family buys line by line (F12.11) is `HouseholdSpendRepository.shared_lines`
 — shared receipts' lines only — read by `app/domain/family_lines.py` into products bought
 twice, who buys what, and the swaps a stretch goal's check names (`GoalCheckService`).

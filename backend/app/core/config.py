@@ -193,6 +193,14 @@ class Settings(BaseSettings):
             "receipt counts when it is read, since the model call is the cost."
         ),
     )
+    assistant_messages_per_read: int = Field(
+        default=10,
+        ge=1,
+        description=(
+            "Messages to the assistant that cost as much of the quota as one receipt read "
+            "(F21.1); F21.9 replaces it with credits by the tokens really used."
+        ),
+    )
     daily_receipt_read_ceiling: int = Field(
         default=100,
         ge=0,

@@ -39,7 +39,10 @@ class QuotaService:
     async def quota_for(self, user: User, now: datetime) -> ReceiptQuota:
         """The account's reads this calendar month (UTC) against its plan's limit (F18.4)."""
         today = now.date()
-        used = await self.usage.receipts_read_since(start_of(month_start(today)), user_id=user.id)
+        since = start_of(month_start(today))
+        used = await self.usage.receipts_read_since(since, user_id=user.id) + self._as_reads(
+            await self.usage.messages_sent_since(since, user_id=user.id)
+        )
         plan, terms, ends_on = await self.plans.plan_of(user, now)
         limit = None if is_admin(user, self.settings) else terms.monthly_receipts
         return ReceiptQuota(
@@ -50,6 +53,20 @@ class QuotaService:
             plan_ends_on=ends_on,
             ad_free=terms.ad_free or is_admin(user, self.settings),
         )
+
+    def _as_reads(self, messages: int) -> int:
+        """Messages to the assistant in reads: every started batch of them is one (F21.1)."""
+        per = self.settings.assistant_messages_per_read
+        return -(-messages // per)
+
+    async def ensure_can_talk(self, user: User, now: datetime) -> None:
+        """Refuse a message to the assistant that would start a batch the quota has no read
+        left for (F21.1); the rest of a started batch is already paid for."""
+        sent = await self.usage.messages_sent_since(
+            start_of(month_start(now.date())), user_id=user.id
+        )
+        needed = 1 if sent % self.settings.assistant_messages_per_read == 0 else 0
+        await self.ensure_can_read(user, needed, now)
 
     async def ensure_can_read(self, user: User, receipts: int, now: datetime) -> None:
         """Refuse, before any model call, reads past the account's quota or the service's.
@@ -75,7 +92,11 @@ class QuotaService:
                 },
             )
         admins = await self.usage.admin_ids(self.settings.admin_emails)
-        today = await self.usage.receipts_read_since(start_of(now.date()), excluding=admins)
+        today = await self.usage.receipts_read_since(
+            start_of(now.date()), excluding=admins
+        ) + self._as_reads(
+            await self.usage.messages_sent_since(start_of(now.date()), excluding=admins)
+        )
         if today + receipts > self.settings.daily_receipt_read_ceiling:
             raise ServiceBusyError(
                 "Receipt reading has reached today's limit for the whole service. "

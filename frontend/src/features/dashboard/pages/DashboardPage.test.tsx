@@ -90,6 +90,14 @@ vi.mock("@/stores/StoreContext", () => ({
     budgetStore,
     receiptStore,
     // Not in a household: the pages show only the user's own figures (F12.5).
+    bankAccountsStore: {
+      accounts: [],
+      loaded: true,
+      any: true,
+      load: vi.fn(),
+      byId: () => undefined,
+      saveState: { isLoading: false },
+    },
     householdStore: {
       household: null,
       mayShare: false,

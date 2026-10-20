@@ -17,6 +17,15 @@ export type TransferRuleRequest = components["schemas"]["TransferRuleRequest"];
 export type ExpectedIncome = components["schemas"]["ExpectedRead"];
 
 /**
+ * The card a user's sums land on when no other account is picked (F23.15): their own
+ * purchase card, else the family's shared one — as the server decides it.
+ */
+export function purchaseCardId(accounts: readonly BankAccount[]): string | undefined {
+  const own = accounts.find((a) => a.for_purchases && !a.shared && a.mine);
+  return (own ?? accounts.find((a) => a.for_purchases && a.shared))?.id;
+}
+
+/**
  * Where the money is (F23.15): the accounts the user sees — their own and the family's
  * shared ones — with balances, one account's history month by month, the money moved
  * between them, monthly transfers, and "about" incomes waiting to be confirmed.

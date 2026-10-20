@@ -1,5 +1,6 @@
 import enAccounts from "@/locales/en/accounts.json";
 import enAdmin from "@/locales/en/admin.json";
+import enAssistant from "@/locales/en/assistant.json";
 import enAuth from "@/locales/en/auth.json";
 import enCategories from "@/locales/en/categories.json";
 import enCommon from "@/locales/en/common.json";
@@ -21,6 +22,7 @@ import enOnboarding from "@/locales/en/onboarding.json";
 import enUpload from "@/locales/en/upload.json";
 import plAccounts from "@/locales/pl/accounts.json";
 import plAdmin from "@/locales/pl/admin.json";
+import plAssistant from "@/locales/pl/assistant.json";
 import plAuth from "@/locales/pl/auth.json";
 import plCategories from "@/locales/pl/categories.json";
 import plCommon from "@/locales/pl/common.json";
@@ -42,6 +44,7 @@ import plOnboarding from "@/locales/pl/onboarding.json";
 import plUpload from "@/locales/pl/upload.json";
 import ukAccounts from "@/locales/uk/accounts.json";
 import ukAdmin from "@/locales/uk/admin.json";
+import ukAssistant from "@/locales/uk/assistant.json";
 import ukAuth from "@/locales/uk/auth.json";
 import ukCategories from "@/locales/uk/categories.json";
 import ukCommon from "@/locales/uk/common.json";
@@ -71,6 +74,7 @@ export const en = {
   admin: enAdmin,
   auth: enAuth,
   accounts: enAccounts,
+  assistant: enAssistant,
   categories: enCategories,
   common: enCommon,
   dashboard: enDashboard,
@@ -97,6 +101,7 @@ export const resources = {
     admin: ukAdmin,
     auth: ukAuth,
     accounts: ukAccounts,
+    assistant: ukAssistant,
     categories: ukCategories,
     common: ukCommon,
     dashboard: ukDashboard,
@@ -120,6 +125,7 @@ export const resources = {
     admin: plAdmin,
     auth: plAuth,
     accounts: plAccounts,
+    assistant: plAssistant,
     categories: plCategories,
     common: plCommon,
     dashboard: plDashboard,

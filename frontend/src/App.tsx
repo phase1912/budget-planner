@@ -33,6 +33,7 @@ import { TripPage } from "@/features/trips/pages/TripPage";
 import { TripsPage } from "@/features/trips/pages/TripsPage";
 import { JoinHouseholdPage } from "@/features/household/pages/JoinHouseholdPage";
 import { AccountsPage } from "@/features/money-accounts/pages/AccountsPage";
+import { AssistantPage } from "@/features/assistant/AssistantPage";
 import { AccountPage } from "@/features/money-accounts/pages/AccountPage";
 import { LANGUAGES } from "@/i18n/languages";
 
@@ -91,6 +92,7 @@ export const App = observer(function App() {
           <Route path="/products/explore" element={<ExplorePage />} />
           <Route path="/statistics/products" element={<Navigate to="/products" replace />} />
           <Route path="/plan" element={<PlanPage />} />
+          <Route path="/assistant" element={<AssistantPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/accounts/:id" element={<AccountPage />} />
           <Route path="/trips" element={<TripsPage />} />

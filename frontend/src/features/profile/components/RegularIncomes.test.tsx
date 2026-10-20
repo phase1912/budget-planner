@@ -5,6 +5,14 @@ import { RegularIncomes } from "./RegularIncomes";
 
 const stores = vi.hoisted(() => ({
   authStore: { user: { currency: "PLN", pays_own_taxes: false } },
+  bankAccountsStore: {
+    accounts: [],
+    loaded: true,
+    any: true,
+    load: vi.fn(),
+    byId: () => undefined,
+    saveState: { isLoading: false },
+  },
   householdStore: {
     household: null as { id: string } | null,
     get mayShare() {

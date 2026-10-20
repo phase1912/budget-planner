@@ -14,6 +14,14 @@ const stores = vi.hoisted(() => ({
       pays_own_taxes: false,
     },
   },
+  bankAccountsStore: {
+    accounts: [],
+    loaded: true,
+    any: true,
+    load: vi.fn(),
+    byId: () => undefined,
+    saveState: { isLoading: false },
+  },
   householdStore: { household: null, mayShare: false, loaded: true, load: vi.fn() },
   incomeStore: {
     month: {

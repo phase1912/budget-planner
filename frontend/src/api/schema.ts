@@ -2815,6 +2815,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/assistant/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Conversations
+         * @description The caller's conversations, the latest touched first.
+         */
+        get: operations["list_conversations_api_v1_assistant_conversations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assistant/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Open Conversation
+         * @description One conversation with its messages; 404 for another user's (N2).
+         */
+        get: operations["open_conversation_api_v1_assistant_conversations__conversation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assistant/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Message
+         * @description Say something to the assistant and get its answer, with any cards it proposes.
+         *
+         *     A new conversation when none is named. Counts against the monthly quota (F21.1):
+         *     402 receipt_quota_exceeded when it is spent. Nothing is written but the messages.
+         */
+        post: operations["send_message_api_v1_assistant_messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assistant/cards/{message_id}/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Card
+         * @description Approve a card as the user left it: only now is anything written (ADR-0025).
+         */
+        post: operations["save_card_api_v1_assistant_cards__message_id__save_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assistant/cards/{message_id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dismiss Card
+         * @description Turn a card down; nothing is written.
+         */
+        post: operations["dismiss_card_api_v1_assistant_cards__message_id__dismiss_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3188,6 +3291,33 @@ export interface components {
             owner_only: boolean;
         };
         /**
+         * CardFields
+         * @description A card's fields as the user left them when approving it.
+         */
+        CardFields: {
+            /** Fields */
+            fields: {
+                [key: string]: unknown;
+            };
+            /** Today */
+            today?: string | null;
+        };
+        /**
+         * CardRead
+         * @description A proposed action: what kind of thing it creates or changes, and its fields.
+         */
+        CardRead: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "budget" | "income" | "bill";
+            /** Fields */
+            fields: {
+                [key: string]: unknown;
+            };
+        };
+        /**
          * CategoryCreate
          * @description A new custom category (BRD C6).
          */
@@ -3440,6 +3570,44 @@ export interface components {
          * @enum {string}
          */
         ContactTopic: "question" | "problem" | "idea" | "data";
+        /**
+         * ConversationRead
+         * @description A conversation with its messages, oldest first.
+         */
+        ConversationRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Messages */
+            messages: components["schemas"]["MessageRead"][];
+        };
+        /**
+         * ConversationSummary
+         * @description A conversation in the list: what it was about and when it was last touched.
+         */
+        ConversationSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /**
          * Count
          * @description A name and how many.
@@ -4635,6 +4803,34 @@ export interface components {
         MergeProductsRequest: {
             /** Product Ids */
             product_ids: string[];
+        };
+        /**
+         * MessageRead
+         * @description One message: text, or a card with its state and, once saved, what it created.
+         */
+        MessageRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+            /** Text */
+            text: string;
+            card?: components["schemas"]["CardRead"] | null;
+            /** Card State */
+            card_state?: ("proposed" | "saved" | "dismissed") | null;
+            /** Saved Ref */
+            saved_ref?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /**
          * MessageResponse
@@ -5833,6 +6029,18 @@ export interface components {
             name: string;
             /** Product Ids */
             product_ids: string[];
+        };
+        /**
+         * SendRequest
+         * @description What the user says or types; a new conversation when `conversation_id` is null.
+         */
+        SendRequest: {
+            /** Text */
+            text: string;
+            /** Conversation Id */
+            conversation_id?: string | null;
+            /** Today */
+            today?: string | null;
         };
         /**
          * SettlementResponse
@@ -11925,6 +12133,175 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_conversations_api_v1_assistant_conversations_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_conversation_api_v1_assistant_conversations__conversation_id__get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_message_api_v1_assistant_messages_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_card_api_v1_assistant_cards__message_id__save_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CardFields"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dismiss_card_api_v1_assistant_cards__message_id__dismiss_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageRead"];
+                };
             };
             /** @description Validation Error */
             422: {
