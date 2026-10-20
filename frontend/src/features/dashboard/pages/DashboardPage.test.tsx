@@ -50,7 +50,7 @@ const incomeStore = {
     regular?: unknown[];
     bills_total?: string;
   },
-  balance: null as null | { balance: string | null; since: string | null },
+  balance: null as null | { balance: string | null; since: string | null; from_accounts?: boolean },
   receive: vi.fn().mockResolvedValue(true),
   pending: [] as {
     id: string;
@@ -556,6 +556,23 @@ describe("DashboardPage — what is left (D7, F23.3)", () => {
 
     expect(screen.getByRole("group", { name: "Where does the money land?" })).toBeInTheDocument();
     bankAccountsStore.accounts = cards;
+  });
+
+  it("says when a card is in the red, as a top-up most likely not entered (F23.21)", () => {
+    budgetStore.summary = summary();
+    const cards = bankAccountsStore.accounts;
+    bankAccountsStore.accounts = [{ ...cards[0], balance: "-120.00" }];
+    incomeStore.balance = { balance: "-120.00", since: null, from_accounts: true };
+    renderPage();
+
+    expect(screen.getByText("Looks like you forgot to top up a card")).toBeInTheDocument();
+    expect(screen.getByText(/“My card” is in the red: -120 PLN/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open the accounts" })).toHaveAttribute(
+      "href",
+      "/accounts",
+    );
+    bankAccountsStore.accounts = cards;
+    incomeStore.balance = null;
   });
 
   it("changes the budget in place, an empty one removing it", async () => {

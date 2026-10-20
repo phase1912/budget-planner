@@ -168,7 +168,15 @@
     "addIncome": "Dodaj wpływ",
     "correct": "Popraw saldo",
     "forTaxes": "w tym ~{{amount}} {{currency}} na podatki",
-    "accounts": "Twoje konta"
+    "accounts": "Twoje konta",
+    "overdrawnTitle": "Wygląda na to, że zapomniano zasilić kartę",
+    "overdrawnOne": "„{{name}}” jest na minusie: {{amount}} {{currency}}. Dodaj, co wpłynęło, albo sprawdź kartę.",
+    "overdrawnMany_one": "{{count}} karta jest na minusie. Dodaj, co wpłynęło, albo sprawdź karty.",
+    "overdrawnMany_few": "{{count}} karty są na minusie. Dodaj, co wpłynęło, albo sprawdź karty.",
+    "overdrawnMany_many": "{{count}} kart jest na minusie. Dodaj, co wpłynęło, albo sprawdź karty.",
+    "overdrawnMany_other": "{{count}} karty są na minusie. Dodaj, co wpłynęło, albo sprawdź karty.",
+    "topUp": "Dodaj zasilenie",
+    "openAccounts": "Otwórz konta"
   },
   "insight": {
     "dearer": "{{name}} podrożał o {{percent}}%",

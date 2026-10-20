@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 import { Button } from "@/shared/components";
 import { dateFormat, numberFormat } from "@/i18n/format";
+import type { BankAccount } from "@/stores/BankAccountsStore";
 import type { Balance } from "@/stores/IncomeStore";
 
 const WHOLE = numberFormat({ maximumFractionDigits: 0 });
@@ -11,6 +12,8 @@ const DAY = dateFormat({ day: "numeric", month: "long" });
 
 interface BalanceCardProps {
   balance: Balance | null;
+  /** The user's cards below zero (F23.21): each is named, even when the sum is not. */
+  overdrawn?: BankAccount[];
   currency: string;
   onEdit: () => void;
   onAddIncome: () => void;
@@ -23,12 +26,56 @@ interface BalanceCardProps {
  * for what is missing instead: such a balance almost always means income not entered,
  * not a debt, so it offers to add income or to set the balance again.
  *
- * Once the user keeps accounts (F23.15) it is their sum, and opens them instead: there a
- * negative balance is an overdraft the bank shows, and correcting it is done per account.
+ * Once the user keeps accounts (F23.15) it is their sum, and opens them instead. A card
+ * below zero is said plainly (F23.21) — most likely a top-up was not entered — with a way
+ * to add what came in or to open the accounts; spending and the budget go on regardless.
  */
-export function BalanceCard({ balance, currency, onEdit, onAddIncome }: BalanceCardProps) {
+export function BalanceCard({
+  balance,
+  overdrawn = [],
+  currency,
+  onEdit,
+  onAddIncome,
+}: BalanceCardProps) {
   const { t } = useTranslation("dashboard");
   const known = balance?.balance != null;
+
+  if (known && balance.from_accounts && overdrawn.length > 0) {
+    const first = overdrawn[0];
+    return (
+      <section
+        aria-label={t("balance.title")}
+        className="flex flex-col gap-3 rounded-card bg-tone-warning-bg px-4 py-3.5 text-tone-warning-text"
+      >
+        <span className="flex items-start gap-3">
+          <CircleAlert size={20} aria-hidden="true" className="mt-0.5 shrink-0" />
+          <span className="flex flex-col gap-1">
+            <span className="text-lg font-bold">{t("balance.overdrawnTitle")}</span>
+            <span className="text-md tabular-nums">
+              {overdrawn.length === 1 && first
+                ? t("balance.overdrawnOne", {
+                    name: first.name,
+                    amount: WHOLE.format(Number(first.balance)),
+                    currency,
+                  })
+                : t("balance.overdrawnMany", { count: overdrawn.length })}
+            </span>
+          </span>
+        </span>
+        <span className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          <Button size="sm" className="min-h-11" onClick={onAddIncome}>
+            {t("balance.topUp")}
+          </Button>
+          <Link
+            to="/accounts"
+            className="inline-flex min-h-11 items-center justify-center rounded-control bg-surface px-4 text-md font-bold text-foreground no-underline"
+          >
+            {t("balance.openAccounts")}
+          </Link>
+        </span>
+      </section>
+    );
+  }
 
   if (known && balance.from_accounts) {
     return (

@@ -224,6 +224,7 @@ export const DashboardPage = observer(function DashboardPage() {
                 {incomeStore.balance?.balance != null && (
                   <BalanceCard
                     balance={incomeStore.balance}
+                    overdrawn={bankAccountsStore.accounts.filter((a) => Number(a.balance) < 0)}
                     currency={currency}
                     onEdit={() => {
                       setEditing("balance");

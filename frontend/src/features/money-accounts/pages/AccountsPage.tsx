@@ -144,7 +144,12 @@ export const AccountsPage = observer(function AccountsPage() {
                         </span>
                       </span>
                     </span>
-                    <span className="shrink-0 text-lg font-extrabold tabular-nums">
+                    {/* A card in the red is shown so: most likely a top-up not entered. */}
+                    <span
+                      className={`shrink-0 text-lg font-extrabold tabular-nums ${
+                        Number(account.balance) < 0 ? "text-error" : ""
+                      }`}
+                    >
                       {WHOLE.format(Number(account.balance))} {currency}
                     </span>
                     <ChevronRight
