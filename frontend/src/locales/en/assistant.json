@@ -7,11 +7,13 @@
     "title": "Ask, or tell me what to record",
     "body": "Ask how your month is going, or say what to write down. I show it as a card — nothing is saved until you approve it."
   },
-  "examples": ["How is my month going?", "Salary came: 9 000 from Acme", "Set my budget to 2 500"],
-  "placeholder": "Write or speak",
+  "examples": [
+    "How is my month going?",
+    "Yesterday taxi 45, coffee 12",
+    "Salary came: 9 000 from Acme"
+  ],
+  "placeholder": "Write a message",
   "send": "Send",
-  "listen": "Speak",
-  "stop": "Stop listening",
   "thinking": "Thinking…",
   "failed": "I couldn't answer that. Try again in other words.",
   "card": {
@@ -30,8 +32,11 @@
     "dismiss": "Cancel",
     "saved": "Saved",
     "dismissed": "Cancelled",
-    "sayApprove": "or say “approve”",
-    "openPlan": "Open Plan"
-  },
-  "voiceNote": "When you speak, your browser turns speech into text (in Chrome, Google does it); only the text reaches us."
+    "openPlan": "Open Plan",
+    "expense": "Spent",
+    "description": "What it was",
+    "spent_on": "Date",
+    "category": "Category",
+    "openReceipts": "Open Spending"
+  }
 }

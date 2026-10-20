@@ -25,7 +25,7 @@ class CardFields(BaseModel):
 class CardRead(BaseModel):
     """A proposed action: what kind of thing it creates or changes, and its fields."""
 
-    kind: Literal["budget", "income", "bill"]
+    kind: Literal["budget", "income", "bill", "expense"]
     fields: dict[str, Any]
 
 

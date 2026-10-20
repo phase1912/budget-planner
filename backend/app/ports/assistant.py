@@ -42,6 +42,8 @@ class AssistantContext:
     language: str
     currency: str
     today: str
+    categories: tuple[str, ...] = ()
+    """The names of the categories the user's spending can go to (F21.3)."""
 
 
 @dataclass(frozen=True)
@@ -54,6 +56,10 @@ class AssistantReply:
 
 ReadTool = Callable[[ToolCall], Awaitable[str]]
 """Runs a read tool and returns its result, as text the assistant reads."""
+
+CheckTool = Callable[[ToolCall], str | None]
+"""Why a write tool's arguments cannot become a card, or None when they can; the model
+is told so and gets one more try, rather than the request being dropped in silence."""
 
 
 class AssistantPort(Protocol):
@@ -70,4 +76,5 @@ class AssistantPort(Protocol):
         tools: Sequence[ToolSpec],
         read: ReadTool,
         context: AssistantContext,
+        check: CheckTool | None = None,
     ) -> AssistantReply: ...

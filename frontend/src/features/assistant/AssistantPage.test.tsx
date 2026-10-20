@@ -69,12 +69,12 @@ describe("the assistant (F21.1, F21.7)", () => {
   it("starts with what it can do, and sends an example", async () => {
     renderPage();
 
-    fireEvent.click(await screen.findByRole("button", { name: "Set my budget to 2 500" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Salary came: 9 000 from Acme" }));
 
     await waitFor(() => {
       expect(api.POST).toHaveBeenCalledWith("/api/v1/assistant/messages", {
         body: expect.objectContaining({
-          text: "Set my budget to 2 500",
+          text: "Salary came: 9 000 from Acme",
           conversation_id: null,
         }) as unknown,
       });
@@ -84,7 +84,7 @@ describe("the assistant (F21.1, F21.7)", () => {
 
   it("saves a card only on Approve, with the field as the user changed it", async () => {
     renderPage();
-    fireEvent.change(screen.getByLabelText("Write or speak"), {
+    fireEvent.change(screen.getByLabelText("Write a message"), {
       target: { value: "Raise the budget" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
@@ -106,9 +106,45 @@ describe("the assistant (F21.1, F21.7)", () => {
     expect(await within(card).findByText("Saved")).toBeInTheDocument();
   });
 
+  it("clears the field at once and answers messages sent in a row one after another", async () => {
+    const answers: ((value: unknown) => void)[] = [];
+    api.POST.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          answers.push(resolve);
+        }),
+    );
+    renderPage();
+    const input = screen.getByLabelText("Write a message");
+
+    for (const said of ["Taxi 45", "Coffee 12"]) {
+      fireEvent.change(input, { target: { value: said } });
+      fireEvent.click(screen.getByRole("button", { name: "Send" }));
+      expect(input).toHaveValue("");
+    }
+
+    expect(screen.getByText("Taxi 45")).toBeInTheDocument();
+    expect(screen.getByText("Coffee 12")).toBeInTheDocument();
+    expect(api.POST).toHaveBeenCalledTimes(1);
+    act(() => {
+      answers[0]?.({ data: CONVERSATION });
+    });
+    await waitFor(() => {
+      expect(api.POST).toHaveBeenLastCalledWith("/api/v1/assistant/messages", {
+        body: expect.objectContaining({ text: "Coffee 12", conversation_id: "c1" }) as unknown,
+      });
+    });
+    act(() => {
+      answers[1]?.({ data: CONVERSATION });
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("Thinking…")).not.toBeInTheDocument();
+    });
+  });
+
   it("saves the waiting card when the user says approve", async () => {
     renderPage();
-    fireEvent.change(screen.getByLabelText("Write or speak"), {
+    fireEvent.change(screen.getByLabelText("Write a message"), {
       target: { value: "Raise the budget" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
@@ -123,6 +159,57 @@ describe("the assistant (F21.1, F21.7)", () => {
         "/api/v1/assistant/cards/{message_id}/save",
         expect.anything(),
       );
+    });
+  });
+
+  it("lets the category of a spoken expense be changed before it is approved (F21.3)", async () => {
+    store.categoriesStore.categories = [
+      { id: "transport", name: "Transport" },
+      { id: "dining", name: "Dining" },
+    ] as typeof store.categoriesStore.categories;
+    const expense = {
+      ...CARD,
+      id: "e1",
+      card: {
+        kind: "expense",
+        fields: {
+          description: "Coffee",
+          amount: "12",
+          spent_on: "2026-10-19",
+          category_id: "transport",
+          currency: null,
+        },
+      },
+    };
+    api.POST.mockImplementation((path: string, options) =>
+      Promise.resolve({
+        data: path.endsWith("/save")
+          ? {
+              ...expense,
+              card_state: "saved",
+              saved_ref: "receipt:r1",
+              card: { kind: "expense", fields: (options?.body as { fields: object }).fields },
+            }
+          : { ...CONVERSATION, messages: [CONVERSATION.messages[0], expense] },
+      }),
+    );
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Yesterday taxi 45, coffee 12" }));
+    const card = await screen.findByRole("article", { name: "Spent" });
+
+    fireEvent.change(within(card).getByLabelText("Category"), { target: { value: "dining" } });
+    fireEvent.click(within(card).getByRole("button", { name: "Approve" }));
+
+    await waitFor(() => {
+      expect(api.POST).toHaveBeenCalledWith("/api/v1/assistant/cards/{message_id}/save", {
+        params: { path: { message_id: "e1" } },
+        body: expect.objectContaining({
+          fields: expect.objectContaining({
+            category_id: "dining",
+            spent_on: "2026-10-19",
+          }) as unknown,
+        }) as unknown,
+      });
     });
   });
 

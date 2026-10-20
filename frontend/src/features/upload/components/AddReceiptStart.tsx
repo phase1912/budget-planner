@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
-import { Banknote, Camera, Check, Copy, FileUp, Mail } from "lucide-react";
+import { Banknote, Camera, Check, ChevronRight, Copy, FileUp, Mail, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 const ACCEPT = "image/jpeg, image/png, image/heic, application/pdf";
 
@@ -24,6 +25,8 @@ interface AddReceiptStartProps {
  * browser opens it, no app needed — photos or a PDF from the device, forwarding an
  * e-receipt by email, and on a desktop dropping files on the page. Money that came in
  * starts here too: a payslip or transfer confirmation, read into an entry to confirm.
+ * Without a receipt at all, the assistant takes it in words and proposes cards (F21.1,
+ * F21.3) — next to the camera on a phone, after the other ways on a desktop.
  */
 export function AddReceiptStart({
   onFiles,
@@ -72,6 +75,20 @@ export function AddReceiptStart({
           event.target.value = "";
         }}
       />
+
+      <Link
+        to="/assistant"
+        className={`${tile} min-h-20 border border-tone-primary-border bg-tone-primary-bg text-foreground no-underline md:order-1`}
+      >
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-primary text-primary-foreground">
+          <Sparkles size={24} aria-hidden="true" />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-lg font-bold">{t("start.assistant")}</span>
+          <span className="text-md text-muted-foreground">{t("start.assistantHint")}</span>
+        </span>
+        <ChevronRight size={20} aria-hidden="true" className="shrink-0 text-primary" />
+      </Link>
 
       <button
         type="button"

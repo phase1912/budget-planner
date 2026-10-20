@@ -26,9 +26,7 @@
     "read": "Odczytaj te zdjęcia",
     "noReceipt": "Nie masz paragonu?",
     "moneyIn": "Wpłynęły pieniądze?",
-    "addIncome": "Dodaj wpływ",
-    "orSay": "Albo po prostu powiedz:",
-    "toAssistant": "asystentowi"
+    "addIncome": "Dodaj wpływ"
   },
   "line": {
     "receipt": "Paragon",
@@ -215,6 +213,8 @@
     "body": "Wysłaliśmy link na {{email}}. Otwórz go i wróć tutaj — zdjęcia i przesłane paragony czekają tylko na ten krok."
   },
   "start": {
+    "assistant": "Powiedz asystentowi",
+    "assistantHint": "Bez paragonu? Napisz „taksówka 45, kawa 12” — asystent przygotuje karty do zatwierdzenia",
     "camera": "Zrób zdjęcie",
     "cameraHint": "Otworzy się aparat; długi paragon możesz sfotografować w częściach",
     "files": "Wybierz zdjęcia lub PDF",

@@ -20,8 +20,9 @@ export type ChatCard = components["schemas"]["CardRead"];
 export class AssistantStore {
   conversations: ConversationSummary[] = [];
   open: Conversation | null = null;
-  /** What the user sent, shown at once while the assistant answers. */
-  pending: string | null = null;
+  /** What the user sent and the assistant has not answered yet, oldest first: shown at once,
+   * and sent one after another so each lands in the same conversation. */
+  pending: string[] = [];
   /** Bumped when the user says "approve": the waiting card saves itself as it stands. */
   approveSignal = 0;
   readonly state = new AsyncState();
@@ -81,30 +82,47 @@ export class AssistantStore {
     this.open = null;
   }
 
-  /** Send what the user wrote or said; the answer and its cards replace the open conversation. */
-  async send(text: string, today: string): Promise<boolean> {
+  /** Send what the user wrote or said. It joins the queue at once, so the user may go on
+   * writing; each answer and its cards replace the open conversation. */
+  send(text: string, today: string): boolean {
     const trimmed = text.trim();
-    if (!trimmed || this.sendState.isLoading) return false;
-    this.pending = trimmed;
+    if (!trimmed) return false;
+    this.pending.push(trimmed);
+    if (!this.sendState.isLoading) void this.drain(today);
+    return true;
+  }
+
+  private async drain(today: string): Promise<void> {
     this.sendState.start();
-    const response = await settle(() =>
-      this.api.POST("/api/v1/assistant/messages", {
-        body: { text: trimmed, conversation_id: this.open?.id ?? null, today },
-      }),
-    );
-    return runInAction(() => {
-      this.pending = null;
-      if (response.error !== undefined) {
-        const message = errorMessage(response.error, i18n.t("messages:assistant.sendFailed"));
-        this.sendState.fail(message);
-        this.toastStore.showError(message);
-        return false;
+    for (let text = this.pending.at(0); text !== undefined; text = this.pending.at(0)) {
+      const response = await settle(() =>
+        this.api.POST("/api/v1/assistant/messages", {
+          body: { text, conversation_id: this.open?.id ?? null, today },
+        }),
+      );
+      const ok = runInAction(() => {
+        this.pending.shift();
+        if (response.error !== undefined) {
+          const message = errorMessage(response.error, i18n.t("messages:assistant.sendFailed"));
+          this.sendState.fail(message);
+          this.toastStore.showError(message);
+          return false;
+        }
+        this.open = response.data;
+        return true;
+      });
+      if (!ok) {
+        // What was queued after a failure would land out of order: the user sends it again.
+        runInAction(() => {
+          this.pending = [];
+        });
+        return;
       }
-      this.open = response.data;
+    }
+    runInAction(() => {
       this.sendState.succeed();
-      void this.loadConversations();
-      return true;
     });
+    void this.loadConversations();
   }
 
   /** Approve a card as the user left its fields: only now is anything written. */
@@ -148,7 +166,7 @@ export class AssistantStore {
   reset(): void {
     this.conversations = [];
     this.open = null;
-    this.pending = null;
+    this.pending = [];
   }
 
   private replace(message: ChatMessage): void {
