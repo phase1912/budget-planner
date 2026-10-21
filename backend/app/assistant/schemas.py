@@ -4,7 +4,9 @@ import uuid
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from app.assistant.tools.toolbox import card_form
 
 
 class SendRequest(BaseModel):
@@ -23,11 +25,31 @@ class CardFields(BaseModel):
 
 
 class CardRead(BaseModel):
-    """A proposed action: what kind of thing it creates or changes, and its fields — or an
-    answer card (`answer`, F21.4): a chart and a link to the screen with the same filters."""
+    """A proposed action: what kind of thing it creates, changes or removes, and its fields
+    — or an answer card (`answer`, F21.4): a chart and a link to the screen with the same
+    filters."""
 
-    kind: Literal["budget", "income", "bill", "expense", "answer"]
+    kind: str
+    """What the card does: `budget`, `income`, `bill`, `expense` and `answer` have cards of
+    their own in the app; any other is drawn from `form` (F21.7.1)."""
     fields: dict[str, Any]
+    form: list["FormFieldRead"] | None = None
+
+    @model_validator(mode="after")
+    def _drawn_from_its_tool(self) -> "CardRead":
+        if self.form is None:
+            drawn = card_form(self.kind)
+            self.form = [FormFieldRead(**f) for f in drawn] if drawn else None
+        return self
+
+
+class FormFieldRead(BaseModel):
+    """One field of a card drawn from its form: what it holds and how it is edited."""
+
+    name: str
+    kind: str
+    options: list[str] = []
+    required: bool = True
 
 
 class MessageRead(BaseModel):

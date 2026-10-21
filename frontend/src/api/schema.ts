@@ -3305,19 +3305,19 @@ export interface components {
         };
         /**
          * CardRead
-         * @description A proposed action: what kind of thing it creates or changes, and its fields — or an
-         *     answer card (`answer`, F21.4): a chart and a link to the screen with the same filters.
+         * @description A proposed action: what kind of thing it creates, changes or removes, and its fields
+         *     — or an answer card (`answer`, F21.4): a chart and a link to the screen with the same
+         *     filters.
          */
         CardRead: {
-            /**
-             * Kind
-             * @enum {string}
-             */
-            kind: "budget" | "income" | "bill" | "expense" | "answer";
+            /** Kind */
+            kind: string;
             /** Fields */
             fields: {
                 [key: string]: unknown;
             };
+            /** Form */
+            form?: components["schemas"]["FormFieldRead"][] | null;
         };
         /**
          * CategoryCreate
@@ -3920,6 +3920,26 @@ export interface components {
             email: string;
             /** Language */
             language?: ("en" | "uk" | "pl") | null;
+        };
+        /**
+         * FormFieldRead
+         * @description One field of a card drawn from its form: what it holds and how it is edited.
+         */
+        FormFieldRead: {
+            /** Name */
+            name: string;
+            /** Kind */
+            kind: string;
+            /**
+             * Options
+             * @default []
+             */
+            options: string[];
+            /**
+             * Required
+             * @default true
+             */
+            required: boolean;
         };
         /**
          * GoalCheckRequest

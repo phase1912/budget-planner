@@ -9,9 +9,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import DomainError, NotFoundError
-from app.core.config import get_settings
-from app.models.conversation import ConversationMessage
-from app.ports.assistant import (
+from app.assistant.core.ports import (
     AssistantContext,
     AssistantReply,
     CheckTool,
@@ -20,8 +18,11 @@ from app.ports.assistant import (
     ToolSpec,
     Turn,
 )
-from app.services.assistant import AssistantService, CardState, _history
-from app.services.assistant_tools import BudgetArgs, Toolbox
+from app.assistant.service import AssistantService, CardState, _history
+from app.assistant.tools.budget import BudgetArgs
+from app.assistant.tools.toolbox import Toolbox
+from app.core.config import get_settings
+from app.models.conversation import ConversationMessage
 from app.services.quota import QuotaService
 from tests.factories.user import UserFactory
 
@@ -174,8 +175,9 @@ def test_an_amount_spelled_as_people_write_it_still_makes_a_card(
     assert BudgetArgs.model_validate({"amount": written}).amount == Decimal(amount)
 
 
-def test_a_write_call_that_cannot_be_a_card_says_why() -> None:
+@pytest.mark.asyncio
+async def test_a_write_call_that_cannot_be_a_card_says_why() -> None:
     toolbox = Toolbox(None, None, date(2026, 10, 20))  # type: ignore[arg-type]
-    assert toolbox.check(ToolCall("set_monthly_budget", {"amount": "2 500"})) is None
-    assert "amount" in (toolbox.check(ToolCall("set_monthly_budget", {})) or "")
-    assert toolbox.check(ToolCall("delete_account", {})) == "no write tool delete_account"
+    assert await toolbox.check(ToolCall("set_monthly_budget", {"amount": "2 500"})) is None
+    assert "amount" in (await toolbox.check(ToolCall("set_monthly_budget", {})) or "")
+    assert await toolbox.check(ToolCall("delete_account", {})) == "no write tool delete_account"

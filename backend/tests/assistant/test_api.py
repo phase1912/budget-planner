@@ -14,15 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
 from app.api.errors import DomainError
-from app.api.routers.assistant import get_assistant
-from app.core.config import get_settings
-from app.core.context import current_user_id
-from app.db.session import get_db_session
-from app.main import create_app
-from app.models.category import Category
-from app.models.receipt import ReceiptStatus
-from app.models.user import User
-from app.ports.assistant import (
+from app.assistant.api import get_assistant
+from app.assistant.core.ports import (
     AssistantContext,
     AssistantReply,
     CheckTool,
@@ -31,7 +24,14 @@ from app.ports.assistant import (
     ToolSpec,
     Turn,
 )
-from app.services.assistant_tools import Card, Toolbox
+from app.assistant.tools.toolbox import Card, Toolbox
+from app.core.config import get_settings
+from app.core.context import current_user_id
+from app.db.session import get_db_session
+from app.main import create_app
+from app.models.category import Category
+from app.models.receipt import ReceiptStatus
+from app.models.user import User
 from app.services.quota import QuotaService
 from tests.factories.category import CategoryFactory
 from tests.factories.line_item import LineItemFactory
@@ -162,7 +162,7 @@ async def test_nothing_is_written_until_the_card_is_approved(db_session: AsyncSe
     await db_session.refresh(user)
 
     assert (card["card"], card["card_state"]) == (
-        {"kind": "budget", "fields": {"amount": "2500"}},
+        {"kind": "budget", "fields": {"amount": "2500"}, "form": None},
         "proposed",
     )
     assert unchanged is None

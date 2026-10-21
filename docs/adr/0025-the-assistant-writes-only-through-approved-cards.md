@@ -21,7 +21,9 @@ product's one promise: what it shows is true.
   through the same service the screen calls, so ownership (N2), shared and child rules
   (F12.8, F12.10), closed months (F23.15) and every validation hold exactly as they do on
   the screens.
-- **What has no tool cannot happen.** Settings, the account and deleting have no tool. A
+- **What has no tool cannot happen.** Settings and the account have no tool. (Deleting had
+  none either until F21.7, ADR-0028: removing now goes through an approved card, as
+  adding does.) A
   tool name the model invents is dropped.
 - **Provider-agnostic calling.** Tools are offered by description and called through
   structured output (`AssistantAdapter`), not a provider's own tool-calling, so every model

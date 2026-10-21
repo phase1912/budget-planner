@@ -1,18 +1,26 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { Check, Landmark, Receipt, ShoppingBag, Target, X } from "lucide-react";
+import { Landmark, Receipt, ShoppingBag, Target, type LucideIcon } from "lucide-react";
 
-import { Button, Input, RepeatField, Select, Switch } from "@/shared/components";
+import { Input, RepeatField, Select, Switch } from "@/shared/components";
 import { useCardName } from "@/features/money-accounts/components/newCard";
 import { numberFormat } from "@/i18n/format";
 import { categoryName } from "@/shared/categoryName";
 import type { ChatMessage } from "@/stores/AssistantStore";
 import { useStores } from "@/stores/StoreContext";
+import { CardShell } from "./CardShell";
+import { isOwn, type OwnKind } from "./cardKinds";
+import { useApproval } from "./useApproval";
 
 const WHOLE = numberFormat({ maximumFractionDigits: 2 });
-const ICONS = { budget: Target, income: Landmark, bill: Receipt, expense: ShoppingBag } as const;
+const ICONS: Record<OwnKind, LucideIcon> = {
+  budget: Target,
+  income: Landmark,
+  bill: Receipt,
+  expense: ShoppingBag,
+};
 
 type Fields = Record<string, unknown>;
 
@@ -31,30 +39,17 @@ export const ApproveCard = observer(function ApproveCard({
   message: ChatMessage;
   today: string;
 }) {
-  const { assistantStore, authStore, householdStore, categoriesStore, bankAccountsStore } =
-    useStores();
+  const { authStore, householdStore, categoriesStore, bankAccountsStore } = useStores();
   const cardName = useCardName();
   const { t } = useTranslation("assistant");
   const currency = authStore.user?.currency ?? "PLN";
   const card = message.card;
   const [fields, setFields] = useState<Fields>(card?.fields ?? {});
-  const [busy, setBusy] = useState(false);
-  const approve = () => {
-    setBusy(true);
-    void assistantStore.save(message, fields, today).finally(() => {
-      setBusy(false);
-    });
-  };
-  // Saying "approve" saves the latest waiting card with the fields as the user left them.
-  const heard = useRef(assistantStore.approveSignal);
-  useEffect(() => {
-    if (assistantStore.approveSignal === heard.current) return;
-    heard.current = assistantStore.approveSignal;
-    if (assistantStore.waitingCard?.id === message.id) approve();
-  });
-  // An answer card (F21.4) has nothing to approve; `AnswerCard` shows it.
-  if (!card || card.kind === "answer") return null;
-  const Icon = ICONS[card.kind];
+  const { busy, approve } = useApproval(message, fields, today);
+  // Other kinds are an answer (`AnswerCard`) or drawn from their form (`FormCard`).
+  if (!card || !isOwn(card.kind)) return null;
+  const kind = card.kind;
+  const Icon = ICONS[kind];
   const proposed = message.card_state === "proposed";
   const set = (name: string) => (value: unknown) => {
     setFields((f) => ({ ...f, [name]: value }));
@@ -72,24 +67,31 @@ export const ApproveCard = observer(function ApproveCard({
   );
 
   return (
-    <article
-      aria-label={t(`card.${card.kind}`)}
-      className="on-surface flex flex-col gap-3 rounded-card border-2 border-primary bg-surface p-4"
-    >
-      <span className="flex items-center gap-2.5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-control bg-tone-primary-bg text-primary">
-          <Icon size={18} aria-hidden="true" />
-        </span>
-        <span className="text-lg font-extrabold">{t(`card.${card.kind}`)}</span>
-        {!proposed && (
-          <span className="ml-auto rounded-pill bg-muted px-2 py-0.5 text-xs font-extrabold">
-            {message.card_state === "saved" ? t("card.saved") : t("card.dismissed")}
+    <CardShell
+      message={message}
+      title={t(`card.${kind}`)}
+      icon={Icon}
+      busy={busy}
+      onApprove={approve}
+      done={
+        <span className="flex items-center justify-between gap-3 text-md">
+          <span className="font-bold tabular-nums">
+            {WHOLE.format(Number(fields.amount))} {currency}
           </span>
-        )}
-      </span>
-
-      {card.kind === "budget" && amount}
-      {card.kind === "expense" && (
+          {kind === "expense" ? (
+            <Link to="/receipts" className="font-bold text-primary">
+              {t("card.openReceipts")}
+            </Link>
+          ) : (
+            <Link to="/plan" className="font-bold text-primary">
+              {t("card.openPlan")}
+            </Link>
+          )}
+        </span>
+      }
+    >
+      {kind === "budget" && amount}
+      {kind === "expense" && (
         <div className="grid grid-cols-2 gap-3">
           <Input
             label={t("card.description")}
@@ -129,7 +131,7 @@ export const ApproveCard = observer(function ApproveCard({
           </div>
         </div>
       )}
-      {card.kind === "income" && (
+      {kind === "income" && (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {amount}
           <Input
@@ -159,7 +161,7 @@ export const ApproveCard = observer(function ApproveCard({
           )}
         </div>
       )}
-      {card.kind === "bill" && (
+      {kind === "bill" && (
         <div className="grid grid-cols-2 gap-3">
           <Input
             label={t("card.name")}
@@ -185,7 +187,7 @@ export const ApproveCard = observer(function ApproveCard({
           </div>
         </div>
       )}
-      {(card.kind === "income" || card.kind === "bill") && householdStore.mayShare && (
+      {(kind === "income" || kind === "bill") && householdStore.mayShare && (
         <Switch
           checked={fields.shared === true}
           disabled={!proposed}
@@ -193,43 +195,6 @@ export const ApproveCard = observer(function ApproveCard({
           label={t("card.shared")}
         />
       )}
-
-      {proposed ? (
-        <div className="flex flex-col gap-1.5">
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="secondary"
-              className="min-h-11"
-              disabled={busy}
-              onClick={() => void assistantStore.dismiss(message)}
-            >
-              <X size={16} aria-hidden="true" />
-              {t("card.dismiss")}
-            </Button>
-            <Button className="min-h-11" disabled={busy} onClick={approve}>
-              <Check size={16} aria-hidden="true" />
-              {t("card.approve")}
-            </Button>
-          </div>
-        </div>
-      ) : (
-        message.card_state === "saved" && (
-          <span className="flex items-center justify-between gap-3 text-md">
-            <span className="font-bold tabular-nums">
-              {WHOLE.format(Number(fields.amount))} {currency}
-            </span>
-            {card.kind === "expense" ? (
-              <Link to="/receipts" className="font-bold text-primary">
-                {t("card.openReceipts")}
-              </Link>
-            ) : (
-              <Link to="/plan" className="font-bold text-primary">
-                {t("card.openPlan")}
-              </Link>
-            )}
-          </span>
-        )
-      )}
-    </article>
+    </CardShell>
   );
 });

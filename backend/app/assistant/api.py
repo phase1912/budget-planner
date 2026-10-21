@@ -1,4 +1,4 @@
-"""Talking to the assistant (F21.1, F21.7, ADR-0025)."""
+"""Talking to the assistant over HTTP (F21.1, F21.7, ADR-0025, ADR-0028)."""
 
 import uuid
 from datetime import UTC, date, datetime
@@ -7,23 +7,25 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.adapters.assistant_agent import AssistantAdapter
 from app.agent.factory import agent_from_settings
 from app.api import rate_limit
 from app.api.dependencies import get_current_user, get_exchange_rates, get_quota_service
 from app.api.rate_limit import limiter
-from app.db.session import get_db_session
-from app.models.user import User
-from app.ports.assistant import AssistantPort
-from app.ports.exchange_rates import ExchangeRatePort
-from app.schemas.assistant import (
+from app.api.routers.goals import get_goal_mapper
+from app.assistant.core.graph import AssistantGraph
+from app.assistant.core.ports import AssistantPort
+from app.assistant.schemas import (
     CardFields,
     ConversationRead,
     ConversationSummary,
     MessageRead,
     SendRequest,
 )
-from app.services.assistant import AssistantService
+from app.assistant.service import AssistantService
+from app.db.session import get_db_session
+from app.models.user import User
+from app.ports.exchange_rates import ExchangeRatePort
+from app.ports.goal_mapping import GoalMapperPort
 from app.services.quota import QuotaService
 
 router = APIRouter(prefix="/api/v1/assistant", tags=["assistant"])
@@ -33,7 +35,7 @@ CurrentUser = Annotated[User, Depends(get_current_user)]
 
 def get_assistant() -> AssistantPort:
     """The assistant behind its port; tests put a scripted one in its place."""
-    return AssistantAdapter(agent_from_settings())
+    return AssistantGraph(agent_from_settings())
 
 
 def get_assistant_service(
@@ -41,9 +43,10 @@ def get_assistant_service(
     assistant: Annotated[AssistantPort, Depends(get_assistant)],
     quota: Annotated[QuotaService, Depends(get_quota_service)],
     rates: Annotated[ExchangeRatePort | None, Depends(get_exchange_rates)],
+    goal_mapper: Annotated[GoalMapperPort, Depends(get_goal_mapper)],
 ) -> AssistantService:
     """Conversations and cards, bound to the request's session."""
-    return AssistantService(session, assistant, quota, rates)
+    return AssistantService(session, assistant, quota, rates, goal_mapper)
 
 
 Service = Annotated[AssistantService, Depends(get_assistant_service)]

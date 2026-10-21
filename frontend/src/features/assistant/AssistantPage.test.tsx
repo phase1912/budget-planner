@@ -284,4 +284,58 @@ describe("the assistant (F21.1, F21.7)", () => {
     );
     expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
   });
+
+  it("draws a change of any kind from its form and saves it as edited (F21.7.1)", async () => {
+    const change = {
+      ...CARD,
+      id: "c3",
+      card: {
+        kind: "bill_change",
+        fields: {
+          bill_id: "b1",
+          target: "Gym",
+          name: "Gym",
+          amount: "60",
+          day: null,
+          weekday: 0,
+        },
+        form: [
+          { name: "target", kind: "target", options: [], required: true },
+          { name: "name", kind: "text", options: [], required: true },
+          { name: "amount", kind: "amount", options: [], required: true },
+          { name: "repeat", kind: "repeat", options: [], required: true },
+        ],
+      },
+    };
+    api.POST.mockImplementation((path: string, options) =>
+      Promise.resolve({
+        data: path.endsWith("/save")
+          ? {
+              ...change,
+              card: { ...change.card, fields: (options?.body as { fields: object }).fields },
+              card_state: "saved",
+            }
+          : { ...CONVERSATION, messages: [change] },
+      }),
+    );
+    renderPage();
+    fireEvent.change(screen.getByLabelText("Write a message"), { target: { value: "gym 70" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+
+    const card = await screen.findByRole("article", { name: "Change a bill" });
+    expect(within(card).getByText("Gym", { selector: "p" })).toBeInTheDocument();
+    expect(within(card).getByLabelText("Day of the week")).toHaveValue("0");
+    fireEvent.change(within(card).getByLabelText("Amount, PLN"), { target: { value: "70" } });
+    fireEvent.click(within(card).getByRole("button", { name: "Approve" }));
+
+    await waitFor(() => {
+      expect(api.POST).toHaveBeenCalledWith("/api/v1/assistant/cards/{message_id}/save", {
+        params: { path: { message_id: "c3" } },
+        body: expect.objectContaining({
+          fields: expect.objectContaining({ amount: "70", weekday: 0 }) as unknown,
+        }) as unknown,
+      });
+    });
+    expect(await within(card).findByText("Saved")).toBeInTheDocument();
+  });
 });

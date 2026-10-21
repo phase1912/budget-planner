@@ -34,7 +34,45 @@
     "spent_on": "Дата",
     "category": "Категорія",
     "openReceipts": "Відкрити Витрати",
-    "newCard": "Підтвердження створить картку «{{name}}», на яку надійдуть гроші."
+    "newCard": "Підтвердження створить картку «{{name}}», на яку надійдуть гроші.",
+    "kinds": {
+      "budget_remove": "Без бюджету",
+      "bill_change": "Змінити рахунок",
+      "bill_stop": "Зупинити рахунок",
+      "regular_income": "Регулярний дохід",
+      "regular_income_change": "Змінити регулярний дохід",
+      "regular_income_stop": "Зупинити регулярний дохід",
+      "income_remove": "Видалити надходження",
+      "goal": "Нова ціль",
+      "goal_change": "Змінити ціль",
+      "goal_remove": "Видалити ціль",
+      "account": "Новий рахунок",
+      "account_remove": "Видалити рахунок",
+      "transfer": "Щомісячний переказ",
+      "transfer_stop": "Зупинити переказ"
+    },
+    "fields": {
+      "name": "Назва",
+      "amount": "Сума, {{currency}}",
+      "balance": "Зараз на ньому, {{currency}}",
+      "tax_rate": "Відкладати на податок, %",
+      "shared": "Спільне з родиною",
+      "kind": "Вид",
+      "category_id": "Категорія",
+      "from_account_id": "Звідки",
+      "to_account_id": "Куди",
+      "day": "День місяця"
+    },
+    "options": {
+      "spending_ceiling": "Витрачати не більше за місяць",
+      "savings_target": "Накопичити",
+      "category_reduction": "Менше витрачати на категорію",
+      "lifestyle": "Спосіб життя",
+      "personal": "Картка",
+      "business": "Бізнес-рахунок",
+      "deposit": "Заощадження"
+    },
+    "openScreen": "Відкрити"
   },
   "answer": {
     "spending": "Відкрити у Витратах",
@@ -43,6 +81,7 @@
     "hidden_one": "Ще {{count}} категорія — на екрані Витрат.",
     "hidden_few": "Ще {{count}} категорії — на екрані Витрат.",
     "hidden_many": "Ще {{count}} категорій — на екрані Витрат.",
-    "hidden_other": "Ще {{count}} категорії — на екрані Витрат."
+    "hidden_other": "Ще {{count}} категорії — на екрані Витрат.",
+    "accounts": "Відкрити рахунки"
   }
 }

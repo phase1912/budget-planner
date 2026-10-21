@@ -38,13 +38,52 @@
     "spent_on": "Date",
     "category": "Category",
     "openReceipts": "Open Spending",
-    "newCard": "Approving makes the card “{{name}}” it lands on."
+    "newCard": "Approving makes the card “{{name}}” it lands on.",
+    "kinds": {
+      "budget_remove": "No budget",
+      "bill_change": "Change a bill",
+      "bill_stop": "Stop a bill",
+      "regular_income": "Regular income",
+      "regular_income_change": "Change a regular income",
+      "regular_income_stop": "Stop a regular income",
+      "income_remove": "Remove an income",
+      "goal": "New goal",
+      "goal_change": "Change a goal",
+      "goal_remove": "Remove a goal",
+      "account": "New account",
+      "account_remove": "Remove an account",
+      "transfer": "Monthly transfer",
+      "transfer_stop": "Stop a transfer"
+    },
+    "fields": {
+      "name": "Name",
+      "amount": "Amount, {{currency}}",
+      "balance": "On it now, {{currency}}",
+      "tax_rate": "Tax set aside, %",
+      "shared": "Shared with family",
+      "kind": "Kind",
+      "category_id": "Category",
+      "from_account_id": "From",
+      "to_account_id": "To",
+      "day": "Day of the month"
+    },
+    "options": {
+      "spending_ceiling": "Spend at most a month",
+      "savings_target": "Save up",
+      "category_reduction": "Spend less on a category",
+      "lifestyle": "A way of living",
+      "personal": "Card",
+      "business": "Business account",
+      "deposit": "Savings"
+    },
+    "openScreen": "Open it"
   },
   "answer": {
     "spending": "Open in Spending",
     "receipts": "Open these receipts",
     "products": "Open the prices",
     "hidden_one": "One more category is on the Spending screen.",
-    "hidden_other": "{{count}} more categories are on the Spending screen."
+    "hidden_other": "{{count}} more categories are on the Spending screen.",
+    "accounts": "Open the accounts"
   }
 }

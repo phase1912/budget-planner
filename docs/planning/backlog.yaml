@@ -3404,6 +3404,28 @@ epics:
               configured model and reports lines right, totals that agree and the time and
               tokens spent — run before and after a reading change.
 
+      - key: F15.6
+        title: Lines added and removed, the total follows
+        labels: [backend, frontend]
+        requirements: [A9, A11]
+        depends_on: [F3.9]
+        intent: >
+          A misread receipt is fixed line by line: a line the reader made up is removed, one it
+          missed is added, and the receipt's total follows — removing 5 rolls at 10 takes 50 off
+          it, removing a line read at 0 takes nothing. In the upload wizard and on a stored
+          receipt alike, so what the receipt adds up to is always what its lines say.
+        demo: >
+          Open a stored receipt with a line read twice, remove one: the total drops by its
+          amount; add a missed line: it rises by that.
+        tasks:
+          - key: F15.6.1
+            title: Removing and adding lines with the total following
+            labels: [backend, frontend]
+            detail: >
+              Remove and add a line in the upload wizard and in the stored receipt's edit dialog;
+              the total changes by the line's amount; both through the services that keep a
+              receipt's lines and total in agreement. Checked at 375, 768 and 1280 px.
+
   - key: E16
     title: Personal Price History
     br: []
@@ -4704,10 +4726,22 @@ epics:
             title: Intent routing and write tools for every entity
             labels: [backend, ai]
             detail: >
-              Intent classification routing to read, create, change or remove branches; tools
-              for incomes, bills, the budget, goals, accounts, rules and transfers, each saving
-              only through its service after approval; a test that settings and the account
-              have no tool. Supersedes F21.6.1's "nothing is deleted" for these entities.
+              An agent graph (LangGraph) that first decides what the user wants — to know, to
+              add, to change or to remove — and takes that branch with only its tools. Read,
+              create, change and remove tools for incomes, regular incomes, bills, the budget,
+              goals, accounts and their monthly transfers, each found by name the way the user
+              says it, proposed as a card and saved only through its service after approval.
+              Removing ends a rule from next month as the screens do. A test that settings and
+              the account have no tool. Supersedes F21.6.1's "nothing is deleted" for these
+              entities.
+          - key: F21.7.3
+            title: The assistant as a module of its own
+            labels: [backend]
+            detail: >
+              The assistant moves into app/assistant: a core (graph, intents, state, prompts)
+              that imports neither the database nor FastAPI, tools per entity behind a narrow
+              port, the conversation service and its router. A test holds the boundary; an ADR
+              records why it is a module and why LangGraph.
       - key: F21.8
         title: A receipt told, not photographed
         labels: [backend, frontend, ai]
