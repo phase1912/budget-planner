@@ -145,9 +145,13 @@ class Tool(abc.ABC):
 
 
 class Reader(Tool):
-    """A tool that answers at once, from the user's own data."""
+    """A tool that answers at once, from the user's own data.
 
-    intents = frozenset({Intent.ASK})
+    Offered whatever the message wants (F21.10): a change often needs a look first — the
+    balance a bank figure is compared with, the bill a new amount replaces.
+    """
+
+    intents = frozenset(Intent)
 
     @abc.abstractmethod
     async def read(self, ctx: ToolContext, args: Any) -> Answer:

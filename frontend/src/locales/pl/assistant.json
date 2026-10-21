@@ -53,7 +53,11 @@
       "account": "Nowe konto",
       "account_remove": "Usuń konto",
       "transfer": "Comiesięczny przelew",
-      "transfer_stop": "Zatrzymaj przelew"
+      "transfer_stop": "Zatrzymaj przelew",
+      "balance": "Saldo karty",
+      "money_in": "Wpływ",
+      "money_out": "Obciążenie",
+      "move": "Przelew między kartami"
     },
     "fields": {
       "name": "Nazwa",
@@ -65,7 +69,14 @@
       "category_id": "Kategoria",
       "from_account_id": "Skąd",
       "to_account_id": "Dokąd",
-      "day": "Dzień miesiąca"
+      "day": "Dzień miesiąca",
+      "bank_balance": "Według banku, {{currency}}",
+      "way": "Jak policzyć różnicę",
+      "description": "Na liście paragonów jako",
+      "account_id": "Karta",
+      "source": "Skąd",
+      "received_on": "Data",
+      "moved_on": "Data"
     },
     "options": {
       "spending_ceiling": "Wydawać najwyżej miesięcznie",
@@ -74,7 +85,9 @@
       "lifestyle": "Styl życia",
       "personal": "Karta",
       "business": "Konto firmowe",
-      "deposit": "Oszczędności"
+      "deposit": "Oszczędności",
+      "correct": "Tylko poprawić saldo",
+      "spending": "Niewpisane zakupy, w budżecie"
     },
     "openScreen": "Otwórz"
   },
@@ -86,6 +99,7 @@
     "hidden_few": "Jeszcze {{count}} kategorie są na ekranie Wydatków.",
     "hidden_many": "Jeszcze {{count}} kategorii jest na ekranie Wydatków.",
     "hidden_other": "Jeszcze {{count}} kategorii jest na ekranie Wydatków.",
-    "accounts": "Otwórz konta"
+    "accounts": "Otwórz konta",
+    "home": "Otwórz stronę główną"
   }
 }

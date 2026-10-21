@@ -51,6 +51,28 @@ EXAMPLES = (
             },
         ),
         (
+            "the bank says my Revolut card has 3700",
+            {
+                "say": "",
+                "calls": [
+                    {"tool": "sync_balance", "args": '{"account": "Revolut", "balance": 3700}'}
+                ],
+            },
+        ),
+        (
+            "those were purchases I did not enter",
+            {
+                "say": "Here is the card: 400 of purchases today, Revolut at 3700.",
+                "calls": [
+                    {
+                        "tool": "sync_balance",
+                        "args": '{"account": "Revolut", "balance": 3700, "way": "spending"}',
+                    }
+                ],
+            },
+        ),
+        ("What do you know about me?", {"say": "", "calls": [{"tool": "overview", "args": "{}"}]}),
+        (
             "stop the gym bill and raise rent to 3200",
             {
                 "say": "Two cards: the gym stops, the rent becomes 3200.",
@@ -89,7 +111,8 @@ def system(tools: Sequence[ToolSpec], context: AssistantContext, last: str = "")
         + "Several things in one message become several calls, one card each.\n"
         "You never change anything yourself. To record, change or remove something, call a "
         "tool that proposes a card: the user checks it, may edit it and approves it. Say in "
-        "one sentence what the card is; never claim it is saved. Words alone record nothing: "
+        "one sentence what the card is; never claim it is saved, and never speak of a card "
+        "you do not propose in this answer. Words alone record nothing: "
         "every time the user asks to record, change or remove something, call the tool "
         "again, even if a similar card was proposed before. Only a card the history marks as "
         "saved was saved. Name what to change or remove as the user said it; the tool finds "
@@ -113,11 +136,11 @@ def classify(context: AssistantContext) -> str:
         "(a bare number answers the question just asked), and say what it wants. "
         f"Today is {context.today}. Answer with every intent that applies:\n"
         f"- {Intent.ASK.value}: to know something about their money, receipts, bills, "
-        "incomes, goals or accounts\n"
+        "incomes, goals or accounts, or what the app knows about them\n"
         f"- {Intent.ADD.value}: to record something new — an expense, an income, a bill, a "
-        "goal, a budget, an account, a transfer\n"
+        "goal, a budget, an account, a transfer, money put on, taken off or moved between cards\n"
         f"- {Intent.CHANGE.value}: to change something already there — an amount, a day, a "
-        "name, the budget\n"
+        "name, the budget, a card's balance to what the bank says\n"
         f"- {Intent.REMOVE.value}: to stop, end, cancel or remove something\n"
         "None of them for a greeting, thanks or small talk. "
         'Reply as JSON: {"intents": ["ask", ...]}.'

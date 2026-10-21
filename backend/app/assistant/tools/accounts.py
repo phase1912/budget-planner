@@ -30,7 +30,8 @@ Kind = Literal["personal", "business", "deposit"]
 KINDS: tuple[str, ...] = ("personal", "business", "deposit")
 
 
-async def _find(ctx: ToolContext, said: str) -> tuple[Account | None, str | None]:
+async def find_account(ctx: ToolContext, said: str) -> tuple[Account | None, str | None]:
+    """The account the user meant among those they see (N2), or why there is none."""
     found = find_by_name(
         list(await AccountRepository(ctx.session).visible()), said, lambda a: a.name
     )
@@ -106,10 +107,10 @@ class RemoveAccount(Writer):
     form = (FormField("target", "target"),)
 
     async def check(self, ctx: ToolContext, args: RemoveAccountArgs) -> str | None:
-        return (await _find(ctx, args.name))[1]
+        return (await find_account(ctx, args.name))[1]
 
     async def propose(self, ctx: ToolContext, args: RemoveAccountArgs) -> dict[str, Any]:
-        account, _ = await _find(ctx, args.name)
+        account, _ = await find_account(ctx, args.name)
         assert account is not None
         return {"account_id": str(account.id), "target": account.name}
 
@@ -153,11 +154,13 @@ class AddTransfer(Writer):
     )
 
     async def check(self, ctx: ToolContext, args: TransferArgs) -> str | None:
-        return (await _find(ctx, args.from_account))[1] or (await _find(ctx, args.to_account))[1]
+        return (await find_account(ctx, args.from_account))[1] or (
+            await find_account(ctx, args.to_account)
+        )[1]
 
     async def propose(self, ctx: ToolContext, args: TransferArgs) -> dict[str, Any]:
-        source, _ = await _find(ctx, args.from_account)
-        target, _ = await _find(ctx, args.to_account)
+        source, _ = await find_account(ctx, args.from_account)
+        target, _ = await find_account(ctx, args.to_account)
         assert source is not None and target is not None
         return {
             "from_account_id": str(source.id),

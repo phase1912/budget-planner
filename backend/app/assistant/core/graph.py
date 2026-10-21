@@ -178,11 +178,16 @@ class AssistantGraph(AssistantPort):
                     wrong.append(f"{asked.name}: {error}")
                 else:
                     proposals.append(asked)
-            said = step.say or state.get("said", "")
+            # Words written for a refused call describe a card that will not be: not kept.
+            said = (step.say if not wrong else "") or state.get("said", "")
             if not reads and not wrong:
                 return {"said": said, "proposals": proposals, "more": False}
             results = [f"{c.name}: {await read(c)}" for c in reads]
-            results += [f"{w} — call it again with fixed arguments" for w in wrong]
+            results += [
+                f"{w} — no card was made. If this says to ask the user, ask them in say and "
+                "call nothing; otherwise call it again with fixed arguments"
+                for w in wrong
+            ]
             messages.append(Message(role="assistant", content=step.model_dump_json()))
             messages.append(Message(role="user", content="Tool results:\n" + "\n".join(results)))
             return {
