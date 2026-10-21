@@ -11,7 +11,6 @@ from app.api.auth import router as auth_router
 from app.api.health import router as health_router
 from app.api.routers.admin import router as admin_router
 from app.api.routers.analytics import router as analytics_router
-from app.api.routers.assistant import router as assistant_router
 from app.api.routers.budget import router as budget_router
 from app.api.routers.categories import router as categories_router
 from app.api.routers.contact import router as contact_router
@@ -27,6 +26,7 @@ from app.api.routers.statistics import router as statistics_router
 from app.api.routers.trips import router as trips_router
 from app.api.routers.users import router as users_router
 from app.api.routers.webhooks import router as webhooks_router
+from app.assistant.api import router as assistant_router
 
 ROUTERS: list[APIRouter] = [
     health_router,

@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-25 epics · 179 features · 350 tasks written so far.
+25 epics · 180 features · 352 tasks written so far.
 
 22 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -24,7 +24,7 @@
 | E12 | Household & Shared Budgets | — | 10 | yes | 2 | Diploma |
 | E13 | Aggregated Purchase Analytics | — | 8 | yes | 2 | Diploma |
 | E14 | B2B Export & Accounting Integrations | — | 8 | no | 2 | Out of scope |
-| E15 | Receipt Accuracy & Trust | — | 5 | yes | 2 | Diploma |
+| E15 | Receipt Accuracy & Trust | — | 6 | yes | 2 | Diploma |
 | E16 | Personal Price History | — | 4 | yes | 2 | Diploma |
 | E17 | Landing, Search and Analytics | — | 11 | yes | 2 | Diploma |
 | E18 | Subscriptions and Payments | — | 6 | yes | 2 | Out of scope |
@@ -1302,6 +1302,16 @@ The reader was written for Polish receipts: its rules named OPUST, SUMA PLN and 
 - **F15.5.3** Photos made legible before reading — Turn the photo upright from its EXIF orientation, trim plain margins, make it grey and stretch its contrast for faded thermal paper, and keep it within the size the model reads at full detail. A photo that cannot be processed is sent as it was.
 - **F15.5.4** An evaluation set and score — Receipts with their right lines and totals, from the repository's own fixtures and receipts their owners agreed to share, and a script that reads each with the configured model and reports lines right, totals that agree and the time and tokens spent — run before and after a reading change.
 
+### F15.6 — Lines added and removed, the total follows
+
+*Requirements: A9, A11* · *Blocked by: F3.9*
+
+A misread receipt is fixed line by line: a line the reader made up is removed, one it missed is added, and the receipt's total follows — removing 5 rolls at 10 takes 50 off it, removing a line read at 0 takes nothing. In the upload wizard and on a stored receipt alike, so what the receipt adds up to is always what its lines say.
+
+**Demonstrated by:** Open a stored receipt with a line read twice, remove one: the total drops by its amount; add a missed line: it rises by that.
+
+- **F15.6.1** Removing and adding lines with the total following — Remove and add a line in the upload wizard and in the stored receipt's edit dialog; the total changes by the line's amount; both through the services that keep a receipt's lines and total in agreement. Checked at 375, 768 and 1280 px.
+
 ---
 
 ## E16 — Personal Price History
@@ -1759,7 +1769,8 @@ Anything the user can create or change on a screen can be asked for in the chat 
 **Demonstrated by:** Say "raise the budget to 2 500 and stop the gym bill": two cards, change one amount, say "approve"; Plan shows both.
 
 - **F21.7.1** Reusable approve cards — One card component per entity built from the same pieces as its screen (Plan rows, the account card, the goal card), editable fields, Approve and Cancel, and approval by voice. Checked at 375, 768 and 1280 px.
-- **F21.7.2** Intent routing and write tools for every entity — Intent classification routing to read, create, change or remove branches; tools for incomes, bills, the budget, goals, accounts, rules and transfers, each saving only through its service after approval; a test that settings and the account have no tool. Supersedes F21.6.1's "nothing is deleted" for these entities.
+- **F21.7.2** Intent routing and write tools for every entity — An agent graph (LangGraph) that first decides what the user wants — to know, to add, to change or to remove — and takes that branch with only its tools. Read, create, change and remove tools for incomes, regular incomes, bills, the budget, goals, accounts and their monthly transfers, each found by name the way the user says it, proposed as a card and saved only through its service after approval. Removing ends a rule from next month as the screens do. A test that settings and the account have no tool. Supersedes F21.6.1's "nothing is deleted" for these entities.
+- **F21.7.3** The assistant as a module of its own — The assistant moves into app/assistant: a core (graph, intents, state, prompts) that imports neither the database nor FastAPI, tools per entity behind a narrow port, the conversation service and its router. A test holds the boundary; an ADR records why it is a module and why LangGraph.
 
 ### F21.8 — A receipt told, not photographed
 

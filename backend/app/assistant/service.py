@@ -1,5 +1,5 @@
 """Talking to the assistant: conversations, messages and the cards it proposes
-(F21.1, F21.7, ADR-0025)."""
+(F21.1, F21.7, ADR-0025, ADR-0028)."""
 
 import uuid
 from collections.abc import Sequence
@@ -10,11 +10,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import DomainError, NotFoundError, ProblemCode
+from app.assistant.core.ports import AssistantContext, AssistantPort, Turn
+from app.assistant.tools.toolbox import Card, Toolbox, tool_specs
 from app.models.conversation import Conversation, ConversationMessage
 from app.models.user import User
-from app.ports.assistant import AssistantContext, AssistantPort, Turn
 from app.ports.exchange_rates import ExchangeRatePort
-from app.services.assistant_tools import Card, Toolbox, tool_specs
+from app.ports.goal_mapping import GoalMapperPort
 from app.services.quota import QuotaService
 
 TITLE_LENGTH = 120
@@ -44,11 +45,13 @@ class AssistantService:
         assistant: AssistantPort,
         quota: QuotaService,
         rates: ExchangeRatePort | None = None,
+        goal_mapper: GoalMapperPort | None = None,
     ) -> None:
         self.session = session
         self.assistant = assistant
         self.quota = quota
         self.rates = rates
+        self.goal_mapper = goal_mapper
 
     async def conversations(self, user: User) -> Sequence[Conversation]:
         """The user's conversations, the latest touched first."""
@@ -90,7 +93,7 @@ class AssistantService:
         conversation.messages.append(
             ConversationMessage(user_id=user.id, role="user", text=text.strip())
         )
-        toolbox = Toolbox(self.session, user, today, self.rates)
+        toolbox = self._toolbox(user, today)
         reply = await self.assistant.reply(
             _history(conversation.messages),
             tool_specs(),
@@ -143,11 +146,14 @@ class AssistantService:
         """
         message = await self._card(user, message_id)
         card = Card(str(message.card["kind"]) if message.card else "", fields)
-        message.saved_ref = await Toolbox(self.session, user, today, self.rates).save(card)
+        message.saved_ref = await self._toolbox(user, today).save(card)
         message.card = {"kind": card.kind, "fields": fields}
         message.card_state = CardState.SAVED
         await self.session.flush()
         return message
+
+    def _toolbox(self, user: User, today: date) -> Toolbox:
+        return Toolbox(self.session, user, today, self.rates, self.goal_mapper)
 
     async def dismiss_card(self, user: User, message_id: uuid.UUID) -> ConversationMessage:
         """Turn a proposed card down; nothing is written."""

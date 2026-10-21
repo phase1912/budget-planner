@@ -8,12 +8,14 @@ import { Button } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
 import { AnswerCard } from "./components/AnswerCard";
 import { ApproveCard } from "./components/ApproveCard";
+import { FormCard } from "./components/FormCard";
 
 const WHEN = dateFormat({ day: "numeric", month: "short" });
 
 /**
  * The assistant (F21.1, F21.7): ask about spending — answered with a chart and a link to
- * the screen where it fits (F21.4) — or say what to record. Messages may be
+ * the screen where it fits (F21.4) — or say what to record, change or remove: each comes
+ * as a card, the app's own for the commonest and one drawn from its form for the rest. Messages may be
  * sent one after another; each is answered in turn. What it proposes comes as cards, saved
  * only when approved. Voice input is hidden until a speech service is good enough
  * (`@/shared/speech` stays for it). Conversations are kept and listed,
@@ -140,6 +142,10 @@ export const AssistantPage = observer(function AssistantPage() {
                 m.card?.kind === "answer" ? (
                   <li key={m.id} className="w-full min-w-0 md:max-w-[85%]">
                     <AnswerCard message={m} />
+                  </li>
+                ) : m.card?.form ? (
+                  <li key={m.id} className="max-w-full md:max-w-[85%]">
+                    <FormCard message={m} today={today} />
                   </li>
                 ) : m.card ? (
                   <li key={m.id} className="max-w-full md:max-w-[85%]">

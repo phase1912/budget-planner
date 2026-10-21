@@ -165,16 +165,25 @@ is refused every shared write in one place, `refuse_child` in `app/services/hous
 which `IncomeService` calls when a row is or would become shared, and which the household
 budget and a receipt's privacy call too.
 
-The assistant (F21.1, ADR-0025) lives in `app/services/assistant.py` behind
-`/api/v1/assistant`. An `AssistantPort` (`app/adapters/assistant_agent.py` over the LiteLLM
-agent) answers each message, running read tools at once and returning write tools only as
-proposals. `Toolbox` (`app/services/assistant_tools.py`) turns a proposal into a card and,
-when the user approves it, saves it through the service its screen uses. Questions about
-spending (F21.4) are read tools in `app/services/assistant_reads.py` over the screens' own
-queries (`StatisticsService`, `ReceiptRepository`, `ProductService`); each leaves an answer
-card — the Spending chart and a link to the screen with the same filters — shown below the
-answer, never approved and never read back to the model. Conversations and
-their messages are the user's rows, deleted and exported with the account.
+The assistant (F21, ADR-0025, ADR-0028) is a module of its own, `app/assistant/`, behind
+`/api/v1/assistant`:
+
+- `core/` is the agent: `AssistantGraph` (LangGraph) first classifies what a message wants
+  (ask, add, change, remove), then lets the model read and propose with only the tools that
+  serve those wishes, again while it reads or fixes a refused call, and takes a second look
+  at a wish to write that came back as words only. It speaks to the LiteLLM agent through a
+  structured-output protocol and imports neither the database nor FastAPI; a test holds that.
+- `tools/` has one module per thing the user keeps (spending, budget, expenses, incomes,
+  bills, goals, accounts). A tool is a `Reader`, answering at once, or a `Writer`, proposing
+  a card it saves through the service its screen uses after the user approves it. Defining
+  the class registers it. A writer finds what to change by the name the user said
+  (`find_by_name`), and its card is either one of the app's own (budget, income, bill,
+  expense) or drawn by the client from the `form` the writer declares. `Toolbox` binds them
+  to one request. Read tools for spending (F21.4) leave an answer card, the Spending chart
+  and a link to the screen with the same filters, shown below the answer and never read
+  back to the model.
+- `service.py` keeps conversations, messages and cards, which are the user's rows, deleted
+  and exported with the account. `api.py` is the router.
 
 What the family buys line by line (F12.11) is `HouseholdSpendRepository.shared_lines`
 — shared receipts' lines only — read by `app/domain/family_lines.py` into products bought

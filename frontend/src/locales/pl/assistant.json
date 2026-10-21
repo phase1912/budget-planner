@@ -38,7 +38,45 @@
     "spent_on": "Data",
     "category": "Kategoria",
     "openReceipts": "Otwórz Wydatki",
-    "newCard": "Zatwierdzenie utworzy kartę „{{name}}”, na którą trafią pieniądze."
+    "newCard": "Zatwierdzenie utworzy kartę „{{name}}”, na którą trafią pieniądze.",
+    "kinds": {
+      "budget_remove": "Bez budżetu",
+      "bill_change": "Zmień rachunek",
+      "bill_stop": "Zatrzymaj rachunek",
+      "regular_income": "Stały dochód",
+      "regular_income_change": "Zmień stały dochód",
+      "regular_income_stop": "Zatrzymaj stały dochód",
+      "income_remove": "Usuń wpływ",
+      "goal": "Nowy cel",
+      "goal_change": "Zmień cel",
+      "goal_remove": "Usuń cel",
+      "account": "Nowe konto",
+      "account_remove": "Usuń konto",
+      "transfer": "Comiesięczny przelew",
+      "transfer_stop": "Zatrzymaj przelew"
+    },
+    "fields": {
+      "name": "Nazwa",
+      "amount": "Kwota, {{currency}}",
+      "balance": "Teraz na nim, {{currency}}",
+      "tax_rate": "Odkładać na podatek, %",
+      "shared": "Wspólne z rodziną",
+      "kind": "Rodzaj",
+      "category_id": "Kategoria",
+      "from_account_id": "Skąd",
+      "to_account_id": "Dokąd",
+      "day": "Dzień miesiąca"
+    },
+    "options": {
+      "spending_ceiling": "Wydawać najwyżej miesięcznie",
+      "savings_target": "Odłożyć",
+      "category_reduction": "Wydawać mniej na kategorię",
+      "lifestyle": "Styl życia",
+      "personal": "Karta",
+      "business": "Konto firmowe",
+      "deposit": "Oszczędności"
+    },
+    "openScreen": "Otwórz"
   },
   "answer": {
     "spending": "Otwórz w Wydatkach",
@@ -47,6 +85,7 @@
     "hidden_one": "Jeszcze {{count}} kategoria jest na ekranie Wydatków.",
     "hidden_few": "Jeszcze {{count}} kategorie są na ekranie Wydatków.",
     "hidden_many": "Jeszcze {{count}} kategorii jest na ekranie Wydatków.",
-    "hidden_other": "Jeszcze {{count}} kategorii jest na ekranie Wydatków."
+    "hidden_other": "Jeszcze {{count}} kategorii jest na ekranie Wydatków.",
+    "accounts": "Otwórz konta"
   }
 }
