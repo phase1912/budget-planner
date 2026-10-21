@@ -103,13 +103,15 @@ resource "google_cloud_run_v2_service" "backend" {
         }
       }
 
+      # A start imports the app on one vCPU: 15-50 s seen in production. Two minutes of
+      # probing leaves room for a slow one; 12 tries (a minute) failed two deploys.
       startup_probe {
         http_get {
           path = "/health"
         }
         initial_delay_seconds = 2
         period_seconds        = 5
-        failure_threshold     = 12
+        failure_threshold     = 24
       }
     }
   }
