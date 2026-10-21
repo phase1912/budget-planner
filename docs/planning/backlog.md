@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-25 epics · 180 features · 352 tasks written so far.
+25 epics · 184 features · 364 tasks written so far.
 
 22 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -17,7 +17,7 @@
 | E5 | Spend Categorization | BR-3 | 7 | no | 1 | Diploma |
 | E6 | Monthly Budget Calculation | BR-4 | 7 | no | 1 | Diploma |
 | E7 | Statistics, Comparison & Export | BR-5 | 6 | no | 1 | Diploma |
-| E8 | Goals & AI Optimization Advice | BR-6 | 9 | yes | 1 | Diploma |
+| E8 | Goals & AI Optimization Advice | BR-6 | 10 | yes | 1 | Diploma |
 | E9 | Web Client Foundation | — | 8 | yes | 1 | Diploma |
 | E10 | Security, Privacy & Observability | N1, N2, N3, N5 | 6 | no | 1 | Out of scope |
 | E11 | Alternative Receipt Intake | — | 6 | yes | 2 | Diploma |
@@ -30,7 +30,7 @@
 | E18 | Subscriptions and Payments | — | 6 | yes | 2 | Out of scope |
 | E19 | Advertising | — | 4 | yes | 2 | Diploma |
 | E20 | Trips | — | 5 | yes | 2 | Diploma |
-| E21 | Voice and Chat Assistant | — | 9 | yes | 2 | Diploma |
+| E21 | Voice and Chat Assistant | — | 12 | yes | 2 | Diploma |
 | E22 | Android App | — | 3 | yes | 2 | Diploma |
 | E23 | Improvements | — | 21 | no | 2 | Diploma |
 | E24 | Bugfixes | — | 1 | no | 2 | Diploma |
@@ -734,6 +734,18 @@ Capture "not followed" and "not helpful" feedback and deprioritise similar recom
 - **F8.9.1** Recommendation feedback endpoints — Add endpoints to submit feedback (not helpful, not followed) for a recommendation and save it to the DB.
 - **F8.9.2** Feed feedback into advice context — Include dismissed/unhelpful recommendation history in the prompt context to ensure Claude avoids suggesting similar cuts.
 - **F8.9.3** Feedback UI controls — Add feedback action buttons to advice cards and handle the UI state (e.g. graying out dismissed cards with an undo option).
+
+### F8.11 — Goals that show where they stand
+
+*Requirements: F1, F3, F6* · *Blocked by: F8.9, F23.13, F23.14*
+
+The goals audit of 2026-10-21 found goals that are set and then say little. A savings goal has no date ("3 000 for a holiday by June" loses "by June") and no progress at all; a monthly ceiling or category cut shows its pace only inside the advice block or an at-risk warning; a lifestyle goal shows no progress. Advice often ends in "your receipts show nothing specific to act on": proposals are kept only when their target name matches the evidence exactly, and the model writes them in the user's language, so a translated category or product name drops every one (to be confirmed by the test below). Every goal card leads with where it stands, and advice names what it found.
+
+**Demonstrated by:** A savings goal of 3 000 by June shows 1 200 saved and 600 a month needed; a ceiling shows this month's bar; in Ukrainian, advice on a restaurants goal names the restaurants it found instead of "nothing specific".
+
+- **F8.11.1** A savings goal with a date and money saved — An optional date on a goal (add-only migration, ADR-0014); a savings goal's saved amount from a card the user picks for it (F23.15) or, without cards, an amount they enter and update; the card shows saved of target, the date and what is needed a month to reach it, and says when the date has passed. The goal check (F23.13) judges against the date when there is one. Checked at 375, 768 and 1280 px.
+- **F8.11.2** Progress at the top of every goal card — A ceiling and a category cut show this month's spent, the cap and the projected finish as a bar (from the existing pace), a lifestyle goal its watched lines this month against the average of the last three; on track or at risk said in one line; the advice block below unchanged. One progress endpoint for every kind, which the assistant reads too (F21.5). Checked at 375, 768 and 1280 px.
+- **F8.11.3** Advice that finds what is there — A test reproducing "nothing specific" with advice in Ukrainian and Polish; the evidence given to the model with ids and the model returning the id of what it targets, so the check no longer depends on how a name is written; when nothing is found after all, the answer says what was looked at (categories, products, months). Each ask counts in the AI limit (F21.9).
 
 ---
 
@@ -1695,7 +1707,7 @@ The settlement an employee gives the employer for a business trip: its details, 
 
 **BRD sections:** — · **Phase:** 2 · **Scope:** Diploma
 
-After the Android app (E22) and its ads (E19), before E13. The agent the diploma is about, made something a user talks to: they say or type what they want — "I spent 45 zloty on a taxi yesterday", "how much did I spend on coffee in October?", "I want to save 3 000 for a holiday by June" — and the assistant answers in a chat, showing what it understood as a card. Nothing is written until the user presses Save on the card; a question is answered at once, since it changes nothing. It grows step by step until everything a user can create or look up on the screens can be done by voice — expenses, receipts' trips and categories, goals, questions about spending, products and prices — but never settings, the account or anything that deletes. The assistant acts only through the services the screens use, so ownership (N2), quotas and every rule hold as they do; conversations and their cards are kept like any other user data, exported and deleted with the account.
+After the Android app (E22) and its ads (E19), before E13. The agent the diploma is about, made something a user talks to: they say or type what they want — "I spent 45 zloty on a taxi yesterday", "how much did I spend on coffee in October?", "I want to save 3 000 for a holiday by June" — and the assistant answers in a chat, showing what it understood as a card. Nothing is written until the user presses Save on the card; a question is answered at once, since it changes nothing. It grows step by step until everything a user can create or look up on the screens can be done by voice — expenses, receipts, balances, goals, questions about spending, products and prices, the settings and, for admins, the admin console — like a tool server (MCP) over the whole app: it sees everything the user has and acts through approved cards. Only signing in stays on the screens: password, email, the second factor and deleting the account (ADR-0029). The assistant acts only through the services the screens use, so ownership (N2), quotas and every rule hold as they do; conversations and their cards are kept like any other user data, exported and deleted with the account.
 
 ### F21.1 — Conversations and the chat screen
 
@@ -1742,23 +1754,24 @@ The first thing the assistant does: "I spent 45 zloty on a taxi yesterday" becom
 
 ### F21.5 — Goals by voice
 
-*Requirements: —* · *Blocked by: F21.3*
+*Requirements: —* · *Blocked by: F21.3, F8.11*
 
-"I want to save 3 000 for a holiday by June", "spend less on eating out" — a goal card with its type, target and date, saved through the goals service so its mapping and advice follow as from the goals screen; "how am I doing with my holiday goal?" answered from its progress.
+Adding, changing and removing a goal by chat came with F21.7. What is left is talking about a goal: "how am I doing with my holiday goal?" answered from its progress (F8.11), "I have these goals, what should I do with them?" answered with the advice the goals screen gives, and "tell me about my goal 'lose weight' — which products should I drop?" answered as a table of the bought lines the goal watches, with what each cost a month. Every goal call to the model is counted in the AI budget (F21.9).
 
-**Demonstrated by:** Say "I want to stop spending more than 400 a month on restaurants": a spending-ceiling goal card; Save; it is on the goals screen with its categories mapped.
+**Demonstrated by:** Ask "which products should I drop for my lose-weight goal?": a table of the watched products with a month's cost each and a link to the goal on the Goals screen.
 
-- **F21.5.1** Goal tools and card — A write tool proposing a goal and a read tool for goal progress; the card editable before Save; saving through the goal service (F8.1-F8.2). Checked at 375, 768 and 1280 px.
+- **F21.5.1** Goal progress, advice and the products table in the chat — A read tool for one goal's progress (F8.11) and its current advice, a tool asking for fresh advice through the advice service (counted in the AI budget, F21.9), and a read tool listing the lines a goal watches over the last months with count and a month's cost, drawn as an answer card with a table and a link to /goals; tests that only the caller's goals are read (N2). Checked at 375, 768 and 1280 px.
 
 ### F21.6 — Receipts, trips and products by voice
 
 *Requirements: —* · *Blocked by: F21.4, F21.5*
 
-The rest of what the screens create or change about the user's purchases, never settings, the account or a deletion: put a receipt on a trip or take it off, change a line's category, start a trip, save a selection of products to watch — each as a card saved by the user. The assistant says plainly what it cannot do and where on the screen it is done instead.
+Everything the screens do with the user's purchases: find a receipt and show it, say which receipts wait for review and why (the review statuses of F15), correct a line — name, price, quantity, category — add or remove a line with the total following (F15.6), mark a receipt reviewed, delete a receipt, put it on a trip or take it off, start a trip, save a selection of products to watch. Each change is a card the user approves; the assistant says plainly what it cannot do and where on the screen it is.
 
-**Demonstrated by:** Say "the Żabka receipt from Monday was on the Berlin trip": a card naming the receipt and the trip; Save; the receipt is on the trip.
+**Demonstrated by:** Ask "what is waiting for review?": two receipts and why; say "on the Biedronka one the milk was 4.29": a card with the line; approve; the receipt total follows.
 
-- **F21.6.1** Remaining write tools — Write tools for a receipt's trip, a line's category, a new trip and a product selection, each a card saved through its service; a test that no tool exists for settings, the account or deleting anything. Checked at 375, 768 and 1280 px.
+- **F21.6.1** Remaining write tools — Write tools for a receipt's trip, a line's category, a new trip and a product selection, each a card saved through its service. Checked at 375, 768 and 1280 px.
+- **F21.6.2** Receipts found, reviewed and corrected in the chat — A read tool for one receipt with its lines and status and for the receipts waiting for review with their reasons; write tools to change, add or remove a line (the total follows as on the receipt screen, F15.6), to mark a receipt reviewed and to delete a receipt, each a card saved through the receipt service; the answer card links to the receipt; tests that another user's receipt is never found (N2). Checked at 375, 768 and 1280 px.
 
 ### F21.7 — Everything by voice, approved on a card
 
@@ -1782,15 +1795,50 @@ Anything the user can create or change on a screen can be asked for in the chat 
 
 - **F21.8.1** Told receipts and a photo in the chat — A receipt channel "told" with lines from speech or text, categorised as read ones are; a single photo sent in the chat goes through the upload pipeline and comes back as a card. Checked at 375, 768 and 1280 px.
 
-### F21.9 — One AI budget a month
+### F21.9 — Two AI limits a month — receipts, and the assistant
 
 *Requirements: —* · *Blocked by: F18.2, F21.1*
 
-Reading receipts and talking to the assistant spend one monthly budget, worth the plan's receipts (10 free, 200 paid), charged by the tokens really used; typing by hand stays free. The user sees one meter.
+Two monthly limits, so talking never eats the receipts (decided 2026-10-21): receipt reads as today (10 free, 200 paid), and a separate AI allowance spent by the tokens really used on everything else the user starts — messages to the assistant, a lifestyle goal mapped when it is stated or reworded, advice asked for on a goal, an income read from a document. What runs unasked — proactive advice on goals at risk, categorising a read receipt, matching products — is the service's cost and counts in neither. Typing by hand stays free. The user sees two meters.
 
-**Demonstrated by:** Ask three questions and read one receipt: the meter shows what is left in receipts' worth.
+**Demonstrated by:** Ask three questions and ask for advice on a goal: the AI meter goes down, the receipts meter does not; read one receipt: only the receipts meter moves.
 
-- **F21.9.1** Credits by tokens — The cost of a read measured (F18.2.1), credits charged per call by tokens, a cap per message, the quota (F10.6) moved onto credits and the meter on the ＋ screen and in Settings. Checked at 375, 768 and 1280 px.
+- **F21.9.1** AI calls recorded by tokens, two limits — Every model call the user starts recorded with its purpose (assistant, goal mapping, goal advice, income document) and tokens in and out, through one place in the agent so no new caller can forget it; the AI allowance per plan in settings, in tokens, checked before the call and refused with an RFC 7807 problem naming what is left and the reset date; assistant messages leave the receipt quota (assistant_messages_per_read retired); a cap per message; the service-wide daily ceiling covering both; admins exempt as today. Background calls are recorded too, against no one's allowance, so the bill can be read. ADR-0030 accepted; domain-model updated.
+- **F21.9.2** Two meters and a calm "used up" state — The receipts meter and the AI meter on the ＋ screen, in the assistant and in Settings; when the AI allowance is spent the assistant, goal mapping and advice say when it resets and that typing by hand still works, never a raw error. Checked at 375, 768 and 1280 px.
+
+### F21.10 — The assistant knows what the user has
+
+*Requirements: N2* · *Blocked by: F21.7*
+
+The assistant sees everything about the user the screens show, whatever the message wants: today read tools are offered only for questions, so "my card shows 4 100 but the bank says 3 700" finds no balance to compare (found 2026-10-21). One overview tool answers "what do you know about me?" — budget and the month so far, cards and balances, incomes and bills, goals and their progress, the family, trips, what waits for review, what is left of both AI limits — and the balance of a card can be set right by chat: the assistant asks whether the difference is only corrected, or recorded as purchases never entered, counted in the month's budget. One-off money in, money out and a move between cards by chat too.
+
+**Demonstrated by:** Say "my Revolut card is 3 700, not 4 100": the assistant asks which of the two; choose "purchases I did not enter": a card for 400 of spending today on that card; approve; the balance is 3 700 and the month's spending 400 higher.
+
+- **F21.10.1** Reads for every intent, and the overview — Read tools offered for every intent, not only ask, so a change can look before it proposes; an overview read tool over the services the screens use, its answer card linking to Home; tests that it reads only the caller's data (N2) and that a change message can call a read tool.
+- **F21.10.2** A card's balance by chat — Write tools proposing a balance correction with a choice — set the balance only (the accounts service's adjust), or record the difference as spending today in a category the user can change, counted in the budget — a one-off top-up (money in as income on that card), a one-off withdrawal (the same choice as a correction) and a move between two cards; each a card saved through the accounts service (ADR-0024); a test that a card of another user is never found (N2). Checked at 375, 768 and 1280 px.
+
+### F21.11 — Settings by chat
+
+*Requirements: N2* · *Blocked by: F21.10*
+
+Every setting the user can change on the Settings screen, by chat and through an approved card, except what guards signing in — password, email, the second factor — and deleting the account, which stay on their screens and which the assistant points to (ADR-0029). The card shows the setting as it is and as it will be.
+
+**Demonstrated by:** Say "switch to Polish and the dark palette, payday is the 10th": three cards; approve them; the app is in Polish, dark, and Plan counts from the 10th.
+
+- **F21.11.1** Money settings — Change cards for the currency, the usual income, the payday, the starting balance and paying one's own taxes with its rate and fixed monthly sum (F23.16), each saved through the same service as Settings; read tool for the current settings. Checked at 375, 768 and 1280 px.
+- **F21.11.2** Look, language and the rest — Change cards for the language (the app switches as soon as the card is saved), the palette, dark at night and "I travel for work" (F23.12). Checked at 375, 768 and 1280 px.
+- **F21.11.3** The family by chat — Cards to invite a member by address, change a member's role, remove a member and leave the family, each only where the screen allows it (F12); a read tool for who is in the family. Checked at 375, 768 and 1280 px.
+- **F21.11.4** What stays on the screens — ADR-0029 accepted, replacing ADR-0025's "settings and the account have no tool": password, email, the second factor and deleting the account have none, and the assistant answers a request for them with a link to the screen; a test that no tool touches them; the prompt's rule on settings rewritten.
+
+### F21.12 — Admin by chat
+
+*Requirements: N2* · *Blocked by: F21.10, F18.6*
+
+An admin does in the chat what the admin console does (F18.6) — find a user by address, see their account facts and usage, confirm the address, send the confirmation or a reset link, grant a paid plan for a time or take it back; a super admin also appoints and removes admins. The tools are offered only to an admin session signed in with the second factor, every action is an approved card recorded in the admin log, and no tool ever reads another user's receipts or money (N2).
+
+**Demonstrated by:** As an admin, say "give anna@example.com the paid plan until December": a card; approve; the grant is on her account and in the admin log.
+
+- **F21.12.1** Admin tools behind the admin role — Read and write tools over the admin service, registered only for admins with a second factor (super-admin tools only for super admins); cards for each action, recorded in the admin log as from the console; tests that a user who is not an admin is never offered them and that no admin tool returns receipts, incomes or balances (N2). Checked at 375, 768 and 1280 px.
 
 ---
 

@@ -1939,6 +1939,54 @@ epics:
             detail: >
               Add feedback action buttons to advice cards and handle the UI state (e.g. graying out dismissed cards with an undo option).
 
+      - key: F8.11
+        title: Goals that show where they stand
+        labels: [backend, frontend, database, ai]
+        requirements: [F1, F3, F6]
+        depends_on: [F8.9, F23.13, F23.14]
+        intent: >
+          The goals audit of 2026-10-21 found goals that are set and then say little. A savings
+          goal has no date ("3 000 for a holiday by June" loses "by June") and no progress at
+          all; a monthly ceiling or category cut shows its pace only inside the advice block or
+          an at-risk warning; a lifestyle goal shows no progress. Advice often ends in "your
+          receipts show nothing specific to act on": proposals are kept only when their target
+          name matches the evidence exactly, and the model writes them in the user's language,
+          so a translated category or product name drops every one (to be confirmed by the
+          test below). Every goal card leads with where it stands, and advice names what it
+          found.
+        demo: >
+          A savings goal of 3 000 by June shows 1 200 saved and 600 a month needed; a ceiling
+          shows this month's bar; in Ukrainian, advice on a restaurants goal names the
+          restaurants it found instead of "nothing specific".
+        tasks:
+          - key: F8.11.1
+            title: A savings goal with a date and money saved
+            labels: [backend, frontend, database]
+            detail: >
+              An optional date on a goal (add-only migration, ADR-0014); a savings goal's saved
+              amount from a card the user picks for it (F23.15) or, without cards, an amount
+              they enter and update; the card shows saved of target, the date and what is
+              needed a month to reach it, and says when the date has passed. The goal check
+              (F23.13) judges against the date when there is one. Checked at 375, 768 and 1280 px.
+          - key: F8.11.2
+            title: Progress at the top of every goal card
+            labels: [backend, frontend]
+            detail: >
+              A ceiling and a category cut show this month's spent, the cap and the projected
+              finish as a bar (from the existing pace), a lifestyle goal its watched lines this
+              month against the average of the last three; on track or at risk said in one line;
+              the advice block below unchanged. One progress endpoint for every kind, which the
+              assistant reads too (F21.5). Checked at 375, 768 and 1280 px.
+          - key: F8.11.3
+            title: Advice that finds what is there
+            labels: [backend, ai]
+            detail: >
+              A test reproducing "nothing specific" with advice in Ukrainian and Polish; the
+              evidence given to the model with ids and the model returning the id of what it
+              targets, so the check no longer depends on how a name is written; when nothing is
+              found after all, the answer says what was looked at (categories, products,
+              months). Each ask counts in the AI limit (F21.9).
+
   # F8.10 "Goals and advice interface" was retired here. It was the worst case of the pattern:
   # nine features would have shipped before anything about goals could be seen at all. The
   # screen is now built up by the features it belongs to — F8.1 the goal cards, F8.2 the
@@ -4534,11 +4582,13 @@ epics:
       assistant answers in a chat, showing what it understood as a card. Nothing is written until
       the user presses Save on the card; a question is answered at once, since it changes
       nothing. It grows step by step until everything a user can create or look up on the
-      screens can be done by voice — expenses, receipts' trips and categories, goals, questions
-      about spending, products and prices — but never settings, the account or anything that
-      deletes. The assistant acts only through the services the screens use, so ownership (N2),
-      quotas and every rule hold as they do; conversations and their cards are kept like any
-      other user data, exported and deleted with the account.
+      screens can be done by voice — expenses, receipts, balances, goals, questions about
+      spending, products and prices, the settings and, for admins, the admin console — like a
+      tool server (MCP) over the whole app: it sees everything the user has and acts through
+      approved cards. Only signing in stays on the screens: password, email, the second factor
+      and deleting the account (ADR-0029). The assistant acts only through the services the
+      screens use, so ownership (N2), quotas and every rule hold as they do; conversations and
+      their cards are kept like any other user data, exported and deleted with the account.
     features:
       - key: F21.1
         title: Conversations and the chat screen
@@ -4660,45 +4710,59 @@ epics:
         title: Goals by voice
         labels: [backend, frontend, ai]
         requirements: []
-        depends_on: [F21.3]
+        depends_on: [F21.3, F8.11]
         intent: >
-          "I want to save 3 000 for a holiday by June", "spend less on eating out" — a goal card
-          with its type, target and date, saved through the goals service so its mapping and
-          advice follow as from the goals screen; "how am I doing with my holiday goal?" answered
-          from its progress.
+          Adding, changing and removing a goal by chat came with F21.7. What is left is talking
+          about a goal: "how am I doing with my holiday goal?" answered from its progress (F8.11),
+          "I have these goals, what should I do with them?" answered with the advice the goals
+          screen gives, and "tell me about my goal 'lose weight' — which products should I
+          drop?" answered as a table of the bought lines the goal watches, with what each cost
+          a month. Every goal call to the model is counted in the AI budget (F21.9).
         demo: >
-          Say "I want to stop spending more than 400 a month on restaurants": a spending-ceiling
-          goal card; Save; it is on the goals screen with its categories mapped.
+          Ask "which products should I drop for my lose-weight goal?": a table of the watched
+          products with a month's cost each and a link to the goal on the Goals screen.
         tasks:
           - key: F21.5.1
-            title: Goal tools and card
+            title: Goal progress, advice and the products table in the chat
             labels: [backend, frontend, ai]
             detail: >
-              A write tool proposing a goal and a read tool for goal progress; the card editable
-              before Save; saving through the goal service (F8.1-F8.2). Checked at 375, 768 and
-              1280 px.
+              A read tool for one goal's progress (F8.11) and its current advice, a tool asking
+              for fresh advice through the advice service (counted in the AI budget, F21.9), and
+              a read tool listing the lines a goal watches over the last months with count and
+              a month's cost, drawn as an answer card with a table and a link to /goals; tests
+              that only the caller's goals are read (N2). Checked at 375, 768 and 1280 px.
       - key: F21.6
         title: Receipts, trips and products by voice
         labels: [backend, frontend, ai]
         requirements: []
         depends_on: [F21.4, F21.5]
         intent: >
-          The rest of what the screens create or change about the user's purchases, never
-          settings, the account or a deletion: put a receipt on a trip or take it off, change a
-          line's category, start a trip, save a selection of products to watch — each as a card
-          saved by the user. The assistant says plainly what it cannot do and where on the screen
-          it is done instead.
+          Everything the screens do with the user's purchases: find a receipt and show it, say
+          which receipts wait for review and why (the review statuses of F15), correct a line —
+          name, price, quantity, category — add or remove a line with the total following
+          (F15.6), mark a receipt reviewed, delete a receipt, put it on a trip or take it off,
+          start a trip, save a selection of products to watch. Each change is a card the user
+          approves; the assistant says plainly what it cannot do and where on the screen it is.
         demo: >
-          Say "the Żabka receipt from Monday was on the Berlin trip": a card naming the receipt and
-          the trip; Save; the receipt is on the trip.
+          Ask "what is waiting for review?": two receipts and why; say "on the Biedronka one the
+          milk was 4.29": a card with the line; approve; the receipt total follows.
         tasks:
           - key: F21.6.1
             title: Remaining write tools
             labels: [backend, frontend, ai]
             detail: >
               Write tools for a receipt's trip, a line's category, a new trip and a product
-              selection, each a card saved through its service; a test that no tool exists for
-              settings, the account or deleting anything. Checked at 375, 768 and 1280 px.
+              selection, each a card saved through its service. Checked at 375, 768 and 1280 px.
+          - key: F21.6.2
+            title: Receipts found, reviewed and corrected in the chat
+            labels: [backend, frontend, ai]
+            detail: >
+              A read tool for one receipt with its lines and status and for the receipts waiting
+              for review with their reasons; write tools to change, add or remove a line (the
+              total follows as on the receipt screen, F15.6), to mark a receipt reviewed and to
+              delete a receipt, each a card saved through the receipt service; the answer card
+              links to the receipt; tests that another user's receipt is never found (N2).
+              Checked at 375, 768 and 1280 px.
       - key: F21.7
         title: Everything by voice, approved on a card
         labels: [backend, frontend, ai]
@@ -4763,25 +4827,152 @@ epics:
               are; a single photo sent in the chat goes through the upload pipeline and comes
               back as a card. Checked at 375, 768 and 1280 px.
       - key: F21.9
-        title: One AI budget a month
-        labels: [backend, frontend]
+        title: Two AI limits a month — receipts, and the assistant
+        labels: [backend, frontend, database]
         requirements: []
         depends_on: [F18.2, F21.1]
         intent: >
-          Reading receipts and talking to the assistant spend one monthly budget, worth the
-          plan's receipts (10 free, 200 paid), charged by the tokens really used; typing by hand
-          stays free. The user sees one meter.
+          Two monthly limits, so talking never eats the receipts (decided 2026-10-21): receipt
+          reads as today (10 free, 200 paid), and a separate AI allowance spent by the tokens
+          really used on everything else the user starts — messages to the assistant, a
+          lifestyle goal mapped when it is stated or reworded, advice asked for on a goal, an
+          income read from a document. What runs unasked — proactive advice on goals at risk,
+          categorising a read receipt, matching products — is the service's cost and counts in
+          neither. Typing by hand stays free. The user sees two meters.
         demo: >
-          Ask three questions and read one receipt: the meter shows what is left in receipts'
-          worth.
+          Ask three questions and ask for advice on a goal: the AI meter goes down, the receipts
+          meter does not; read one receipt: only the receipts meter moves.
         tasks:
           - key: F21.9.1
-            title: Credits by tokens
-            labels: [backend, frontend]
+            title: AI calls recorded by tokens, two limits
+            labels: [backend, frontend, database]
             detail: >
-              The cost of a read measured (F18.2.1), credits charged per call by tokens, a cap
-              per message, the quota (F10.6) moved onto credits and the meter on the ＋ screen and
-              in Settings. Checked at 375, 768 and 1280 px.
+              Every model call the user starts recorded with its purpose (assistant, goal
+              mapping, goal advice, income document) and tokens in and out, through one place in
+              the agent so no new caller can forget it; the AI allowance per plan in settings,
+              in tokens, checked before the call and refused with an RFC 7807 problem naming
+              what is left and the reset date; assistant messages leave the receipt quota
+              (assistant_messages_per_read retired); a cap per message; the service-wide daily
+              ceiling covering both; admins exempt as today. Background calls are recorded too,
+              against no one's allowance, so the bill can be read. ADR-0030 accepted;
+              domain-model updated.
+          - key: F21.9.2
+            title: Two meters and a calm "used up" state
+            labels: [frontend]
+            detail: >
+              The receipts meter and the AI meter on the ＋ screen, in the assistant and in
+              Settings; when the AI allowance is spent the assistant, goal mapping and advice say
+              when it resets and that typing by hand still works, never a raw error. Checked at
+              375, 768 and 1280 px.
+
+      - key: F21.10
+        title: The assistant knows what the user has
+        labels: [backend, frontend, ai]
+        requirements: [N2]
+        depends_on: [F21.7]
+        intent: >
+          The assistant sees everything about the user the screens show, whatever the message
+          wants: today read tools are offered only for questions, so "my card shows 4 100 but
+          the bank says 3 700" finds no balance to compare (found 2026-10-21). One overview tool
+          answers "what do you know about me?" — budget and the month so far, cards and balances,
+          incomes and bills, goals and their progress, the family, trips, what waits for review,
+          what is left of both AI limits — and the balance of a card can be set right by chat:
+          the assistant asks whether the difference is only corrected, or recorded as purchases
+          never entered, counted in the month's budget. One-off money in, money out and a move
+          between cards by chat too.
+        demo: >
+          Say "my Revolut card is 3 700, not 4 100": the assistant asks which of the two; choose
+          "purchases I did not enter": a card for 400 of spending today on that card; approve;
+          the balance is 3 700 and the month's spending 400 higher.
+        tasks:
+          - key: F21.10.1
+            title: Reads for every intent, and the overview
+            labels: [backend, ai]
+            detail: >
+              Read tools offered for every intent, not only ask, so a change can look before it
+              proposes; an overview read tool over the services the screens use, its answer card
+              linking to Home; tests that it reads only the caller's data (N2) and that a change
+              message can call a read tool.
+          - key: F21.10.2
+            title: A card's balance by chat
+            labels: [backend, frontend, ai]
+            detail: >
+              Write tools proposing a balance correction with a choice — set the balance only
+              (the accounts service's adjust), or record the difference as spending today in a
+              category the user can change, counted in the budget — a one-off top-up (money in
+              as income on that card), a one-off withdrawal (the same choice as a correction)
+              and a move between two cards; each a card saved through the accounts service
+              (ADR-0024); a test that a card of another user is never found (N2). Checked at 375,
+              768 and 1280 px.
+      - key: F21.11
+        title: Settings by chat
+        labels: [backend, frontend, ai]
+        requirements: [N2]
+        depends_on: [F21.10]
+        intent: >
+          Every setting the user can change on the Settings screen, by chat and through an
+          approved card, except what guards signing in — password, email, the second factor —
+          and deleting the account, which stay on their screens and which the assistant points
+          to (ADR-0029). The card shows the setting as it is and as it will be.
+        demo: >
+          Say "switch to Polish and the dark palette, payday is the 10th": three cards; approve
+          them; the app is in Polish, dark, and Plan counts from the 10th.
+        tasks:
+          - key: F21.11.1
+            title: Money settings
+            labels: [backend, frontend, ai]
+            detail: >
+              Change cards for the currency, the usual income, the payday, the starting balance
+              and paying one's own taxes with its rate and fixed monthly sum (F23.16), each saved
+              through the same service as Settings; read tool for the current settings. Checked
+              at 375, 768 and 1280 px.
+          - key: F21.11.2
+            title: Look, language and the rest
+            labels: [backend, frontend, ai]
+            detail: >
+              Change cards for the language (the app switches as soon as the card is saved),
+              the palette, dark at night and "I travel for work" (F23.12). Checked at 375, 768
+              and 1280 px.
+          - key: F21.11.3
+            title: The family by chat
+            labels: [backend, frontend, ai]
+            detail: >
+              Cards to invite a member by address, change a member's role, remove a member and
+              leave the family, each only where the screen allows it (F12); a read tool for who
+              is in the family. Checked at 375, 768 and 1280 px.
+          - key: F21.11.4
+            title: What stays on the screens
+            labels: [backend, ai]
+            detail: >
+              ADR-0029 accepted, replacing ADR-0025's "settings and the account have no tool": password,
+              email, the second factor and deleting the account have none, and the assistant
+              answers a request for them with a link to the screen; a test that no tool touches
+              them; the prompt's rule on settings rewritten.
+      - key: F21.12
+        title: Admin by chat
+        labels: [backend, frontend, ai, security]
+        requirements: [N2]
+        depends_on: [F21.10, F18.6]
+        intent: >
+          An admin does in the chat what the admin console does (F18.6) — find a user by
+          address, see their account facts and usage, confirm the address, send the
+          confirmation or a reset link, grant a paid plan for a time or take it back; a super
+          admin also appoints and removes admins. The tools are offered only to an admin
+          session signed in with the second factor, every action is an approved card recorded
+          in the admin log, and no tool ever reads another user's receipts or money (N2).
+        demo: >
+          As an admin, say "give anna@example.com the paid plan until December": a card; approve;
+          the grant is on her account and in the admin log.
+        tasks:
+          - key: F21.12.1
+            title: Admin tools behind the admin role
+            labels: [backend, frontend, ai, security]
+            detail: >
+              Read and write tools over the admin service, registered only for admins with a
+              second factor (super-admin tools only for super admins); cards for each action,
+              recorded in the admin log as from the console; tests that a user who is not an
+              admin is never offered them and that no admin tool returns receipts, incomes or
+              balances (N2). Checked at 375, 768 and 1280 px.
 
   - key: E22
     title: Android App

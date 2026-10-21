@@ -53,7 +53,11 @@
       "account": "New account",
       "account_remove": "Remove an account",
       "transfer": "Monthly transfer",
-      "transfer_stop": "Stop a transfer"
+      "transfer_stop": "Stop a transfer",
+      "balance": "Card balance",
+      "money_in": "Money in",
+      "money_out": "Money out",
+      "move": "Move between cards"
     },
     "fields": {
       "name": "Name",
@@ -65,7 +69,14 @@
       "category_id": "Category",
       "from_account_id": "From",
       "to_account_id": "To",
-      "day": "Day of the month"
+      "day": "Day of the month",
+      "bank_balance": "The bank says, {{currency}}",
+      "way": "How to count the difference",
+      "description": "On the receipts list as",
+      "account_id": "Card",
+      "source": "From",
+      "received_on": "Date",
+      "moved_on": "Date"
     },
     "options": {
       "spending_ceiling": "Spend at most a month",
@@ -74,7 +85,9 @@
       "lifestyle": "A way of living",
       "personal": "Card",
       "business": "Business account",
-      "deposit": "Savings"
+      "deposit": "Savings",
+      "correct": "Only correct the balance",
+      "spending": "Purchases not entered, in the budget"
     },
     "openScreen": "Open it"
   },
@@ -84,6 +97,7 @@
     "products": "Open the prices",
     "hidden_one": "One more category is on the Spending screen.",
     "hidden_other": "{{count}} more categories are on the Spending screen.",
-    "accounts": "Open the accounts"
+    "accounts": "Open the accounts",
+    "home": "Open Home"
   }
 }

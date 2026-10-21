@@ -23,8 +23,9 @@ product's one promise: what it shows is true.
   the screens.
 - **What has no tool cannot happen.** Settings and the account have no tool. (Deleting had
   none either until F21.7, ADR-0028: removing now goes through an approved card, as
-  adding does.) A
-  tool name the model invents is dropped.
+  adding does.) A tool name the model invents is dropped. ADR-0029 (proposed, F21.11)
+  narrows this to signing in: password, email, the second factor and deleting the account.
+- **It costs the quota** below is to be replaced by two limits (ADR-0030, F21.9).
 - **Provider-agnostic calling.** Tools are offered by description and called through
   structured output (`AssistantAdapter`), not a provider's own tool-calling, so every model
   the agent can reach — hosted or local — behaves the same.

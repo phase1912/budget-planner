@@ -338,4 +338,51 @@ describe("the assistant (F21.1, F21.7)", () => {
     });
     expect(await within(card).findByText("Saved")).toBeInTheDocument();
   });
+
+  it("asks on a balance card how the difference counts, and asks a category only for purchases (F21.10)", async () => {
+    store.categoriesStore.categories = [
+      { id: "other", name: "Other" },
+    ] as typeof store.categoriesStore.categories;
+    const balance = {
+      ...CARD,
+      id: "b1",
+      card: {
+        kind: "balance",
+        fields: {
+          account_id: "a1",
+          target: "Revolut: 4100.00 → 3700.00 PLN",
+          bank_balance: "3700",
+          way: "correct",
+          category_id: "other",
+          description: "Purchases not entered",
+        },
+        form: [
+          { name: "target", kind: "target", options: [], required: true },
+          { name: "bank_balance", kind: "balance", options: [], required: true },
+          { name: "way", kind: "choice", options: ["correct", "spending"], required: true },
+          { name: "category_id", kind: "category", options: [], required: false },
+          { name: "description", kind: "text", options: [], required: true },
+        ],
+      },
+    };
+    api.POST.mockResolvedValue({ data: { ...CONVERSATION, messages: [balance] } });
+    renderPage();
+    fireEvent.change(screen.getByLabelText("Write a message"), {
+      target: { value: "the bank says 3700" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+
+    const card = await screen.findByRole("article", { name: "Card balance" });
+    expect(within(card).getByText("Revolut: 4100.00 → 3700.00 PLN")).toBeInTheDocument();
+    expect(within(card).queryByLabelText("Category")).not.toBeInTheDocument();
+
+    fireEvent.change(within(card).getByLabelText("How to count the difference"), {
+      target: { value: "spending" },
+    });
+
+    expect(within(card).getByLabelText("Category")).toHaveValue("other");
+    expect(within(card).getByLabelText("On the receipts list as")).toHaveValue(
+      "Purchases not entered",
+    );
+  });
 });

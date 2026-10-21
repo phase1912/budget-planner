@@ -9,7 +9,7 @@ import type { ChatMessage } from "@/stores/AssistantStore";
 
 type Chart = components["schemas"]["ChartResponse"];
 
-const SCREENS = ["spending", "receipts", "products", "accounts"] as const;
+const SCREENS = ["spending", "receipts", "products", "accounts", "home"] as const;
 type Screen = (typeof SCREENS)[number];
 
 const day = (value: unknown): string | null =>

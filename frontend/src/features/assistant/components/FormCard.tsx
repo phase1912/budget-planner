@@ -22,19 +22,23 @@ const text = (value: unknown): string =>
 const number = (value: unknown): number | null => (typeof value === "number" ? value : null);
 const decimal = (typed: string): string => typed.replace(",", ".").replace(/\s/g, "");
 
+/** Kinds about money on a card: a balance set right, money in, out or moved (F21.10). */
+const ON_A_CARD = ["account", "transfer", "balance", "money_", "move"];
+const onACard = (kind: string) => ON_A_CARD.some((prefix) => kind.startsWith(prefix));
+
 /** What a card changes: an icon that says add, change or remove — or the thing itself. */
 function iconOf(kind: string): LucideIcon {
   if (/_(change)$/.test(kind)) return Pencil;
   if (/_(stop|remove)$/.test(kind)) return Trash2;
   if (kind.startsWith("goal")) return Flag;
-  if (kind.startsWith("account") || kind.startsWith("transfer")) return Landmark;
+  if (onACard(kind)) return Landmark;
   return PlusCircle;
 }
 
 /** The screen a saved card's change can be seen on. */
 function screenOf(kind: string): string {
   if (kind.startsWith("goal")) return "/goals";
-  if (kind.startsWith("account") || kind.startsWith("transfer")) return "/accounts";
+  if (onACard(kind)) return "/accounts";
   return "/plan";
 }
 
@@ -68,6 +72,9 @@ export const FormCard = observer(function FormCard({
 
   const control = (field: FormField) => {
     const value = fields[field.name];
+    // A difference only corrected records no purchase, so it needs no category or name.
+    if (fields.way === "correct" && (field.name === "category_id" || field.name === "description"))
+      return null;
     switch (field.kind) {
       case "target":
         return (

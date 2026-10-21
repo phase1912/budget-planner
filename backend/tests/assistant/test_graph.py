@@ -283,3 +283,25 @@ async def test_the_model_is_told_by_name_which_language_to_answer_in() -> None:
     )
 
     assert "The user's last message is in Ukrainian" in prompt(agent)
+
+
+@pytest.mark.asyncio
+async def test_a_call_refused_to_ask_the_user_leaves_the_question_not_a_card() -> None:
+    """F21.10: a balance drop is asked about first; words written for the refused card are
+    never shown, so the user is not told of a card that does not exist."""
+    agent = model(
+        ["change"],
+        Step(say="Here is the card.", calls=[StepCall(tool="set_monthly_budget", args={})]),
+        Step(say="Purchases you did not enter, or only a correction?", calls=[]),
+    )
+
+    async def check(call: ToolCall) -> str | None:
+        return "ask the user how the difference counts"
+
+    reply = await AssistantGraph(agent).reply(
+        [Turn("user", "the bank says 3700")], TOOLS, AsyncMock(), CONTEXT, check
+    )
+
+    assert reply == AssistantReply("Purchases you did not enter, or only a correction?", [])
+    told = agent.run_structured.call_args_list[2].args[0][-1].content
+    assert "no card was made" in told and "ask them" in told

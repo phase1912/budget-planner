@@ -640,6 +640,16 @@ Rules that must hold at all times. Each is a candidate for a test.
     shared card shows only as theirs, and their private purchases as one undated sum a
     month (ADR-0017). A child sees shared accounts and moves nothing on them (11m).
 
+36a. A card's balance set to what the bank says (F21.10) is counted one of two ways, and
+    the user chooses: a correction, which is neither income nor spending and moves only
+    the balance; or purchases never entered, recorded as one manual receipt of the
+    difference on the day, which counts in the month and its budget like any purchase.
+    The second needs the bank to show less, and only the purchase card can take it, since
+    purchases come off that card (36): on any other only a correction is offered. A sum
+    taken off once is the same choice, and keeps the sum rather than the balance it leads
+    to, so money that arrives before it is approved is not lost. Money put on a card once
+    from outside is income on it (36); money moved between two cards is a transfer.
+
 **Goals before they are saved**
 
 32. A money goal is checked against the user's last three whole months that had receipts
