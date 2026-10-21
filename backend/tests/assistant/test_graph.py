@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001 — the conversations here are in Russian and Ukrainian on purpose.
 """The assistant's graph over the model: what a message wants decides the tools; it reads,
 proposes, fixes a wrong call and survives a failed one (F21.1, F21.7)."""
 
@@ -142,7 +143,13 @@ async def test_words_alone_for_a_request_get_a_second_look_that_proposes_its_car
     )
 
     reply = await AssistantGraph(agent).reply(
-        [Turn("user", "Budget 1"), Turn("assistant", "(A card)"), Turn("user", "Budget 2")],
+        [
+            Turn("user", "Hi"),
+            Turn("assistant", "Hello"),
+            Turn("user", "Budget 1"),
+            Turn("assistant", "(A card)"),
+            Turn("user", "Budget 2"),
+        ],
         TOOLS,
         AsyncMock(),
         CONTEXT,
@@ -150,7 +157,7 @@ async def test_words_alone_for_a_request_get_a_second_look_that_proposes_its_car
 
     assert reply == AssistantReply("Here is the card.", [ToolCall("set_monthly_budget", {})])
     second = agent.run_structured.call_args_list[2].args[0]
-    assert [m.content for m in second[1:]] == ["Budget 2"]
+    assert [m.content for m in second[1:]] == ["Budget 1", "(A card)", "Budget 2"]
 
 
 @pytest.mark.asyncio
@@ -170,6 +177,38 @@ async def test_no_second_look_for_a_question_or_when_it_finds_nothing() -> None:
         AssistantReply("Just talking.", []),
     ]
     assert asking.run_structured.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_a_bare_number_is_read_with_the_question_it_answers_and_in_its_language() -> None:
+    """ "2500" alone asks nothing; after "to how much?" it is the budget, in Russian."""
+    agent = model(
+        ["change"],
+        Step(calls=[StepCall(tool="set_monthly_budget", args={"amount": 2500})], say="Вот."),
+    )
+
+    await AssistantGraph(agent).reply(
+        [
+            Turn("user", "можешь поменять бюджет?"),
+            Turn("assistant", "На какую сумму?"),
+            Turn("user", "2500"),
+        ],
+        TOOLS,
+        AsyncMock(),
+        CONTEXT,
+    )
+
+    classified = agent.run_structured.call_args_list[0].args[0]
+    assert [m.content for m in classified[1:]][-2:] == ["На какую сумму?", "2500"]
+    assert "The user's last message is in Russian" in prompt(agent)
+
+
+def test_a_step_names_its_calls_before_it_speaks_and_speaks_briefly() -> None:
+    """Asked to speak first, Gemini talked instead of reading, until the answer was cut."""
+    schema = Step.model_json_schema()
+    assert list(schema["properties"]) == ["calls", "say"]
+    assert "calls" in schema["required"]
+    assert schema["properties"]["say"]["maxLength"] == 600
 
 
 def test_tool_arguments_travel_as_a_json_string_with_no_open_object_in_the_schema() -> None:

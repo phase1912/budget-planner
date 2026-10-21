@@ -95,8 +95,8 @@ def system(tools: Sequence[ToolSpec], context: AssistantContext, last: str = "")
         "saved was saved. Name what to change or remove as the user said it; the tool finds "
         "it, and tells you the names there are when it cannot.\n"
         "To answer about the user's money, call a read tool first and use only its numbers; "
-        "never invent figures. A chart or a link to the screen is shown below your answer by "
-        "itself: do not describe it, say the figures that answer the question.\n"
+        "never invent figures. Say the figures that answer the question in one to three "
+        "short sentences; the app adds any chart or link by itself.\n"
         "Settings and the user's account are done on the screens, not by you: say so if "
         "asked. Amounts are plain numbers like 2500 or 12.50, without spaces or currency.\n"
         + (f"Tools:\n{listed}\n" if tools else "There are no tools for this message.\n")
@@ -109,7 +109,8 @@ def system(tools: Sequence[ToolSpec], context: AssistantContext, last: str = "")
 def classify(context: AssistantContext) -> str:
     """How the model tells what a message wants (F21.7): the graph's first step."""
     return (
-        "Read the user's last message in a family budgeting app and say what it wants. "
+        "Read the user's last message in a family budgeting app, with the turns before it "
+        "(a bare number answers the question just asked), and say what it wants. "
         f"Today is {context.today}. Answer with every intent that applies:\n"
         f"- {Intent.ASK.value}: to know something about their money, receipts, bills, "
         "incomes, goals or accounts\n"
