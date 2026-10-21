@@ -37,18 +37,30 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     While serving, the proactive advice pass (BRD F7) runs on its schedule, and
     stops with the app.
+
+    Only clearing orphaned jobs runs before serving: done later, it could fail an upload
+    begun on this very instance. Loading the model client and pruning go on in the
+    background, so the instance answers its startup probe at once — waited for, they
+    pushed the start past Cloud Run's probe and failed deploys.
     """
-    _warm_model_client()
     session_factory = get_session_factory()
     async with session_factory() as session:
         await fail_orphaned_upload_jobs(session)
-    await _prune_activity()
+    housekeeping = asyncio.create_task(_housekeeping())
     schedule = _start_proactive_advice()
     yield
-    if schedule is not None:
-        schedule.cancel()
-        with suppress(asyncio.CancelledError):
-            await schedule
+    for task in (housekeeping, schedule):
+        if task is not None:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
+
+async def _housekeeping() -> None:
+    """What a start needs done but nobody waits for: the model client loaded off the event
+    loop, and old activity pruned."""
+    await asyncio.to_thread(_warm_model_client)
+    await _prune_activity()
 
 
 def _warm_model_client() -> None:

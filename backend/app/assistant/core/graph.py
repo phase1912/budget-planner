@@ -13,7 +13,6 @@ import logging
 from collections.abc import Sequence
 from typing import Any, Literal, Protocol, TypedDict, TypeVar
 
-from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field, field_validator
 
 from app.agent.core import AgentError
@@ -122,6 +121,10 @@ class AssistantGraph(AssistantPort):
         context: AssistantContext,
         check: CheckTool | None = None,
     ) -> AssistantReply:
+        # Imported on the first message, not at start: every second of an instance's start
+        # counts against Cloud Run's startup probe.
+        from langgraph.graph import END, START, StateGraph
+
         last = next((t.text for t in reversed(history) if t.role == "user"), "")
 
         async def classify(state: State) -> State:
