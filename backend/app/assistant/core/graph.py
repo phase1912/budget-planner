@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field, field_validator
 from app.agent.core import AgentError
 from app.agent.types import Message
 from app.assistant.core import prompts
+from app.assistant.core.language import worded
 from app.assistant.core.ports import (
     AssistantContext,
     AssistantPort,
@@ -36,6 +37,12 @@ MAX_STEPS = 4
 """Rounds of reading before the assistant must answer: a question needs one or two."""
 HISTORY = 20
 """The latest messages the assistant reads back; older ones are not needed to go on."""
+SAY_LIMIT = 600
+"""What one answer may run to: a bound in the schema itself, so a model that loops on its
+own words stops instead of filling the token limit."""
+RECENT = 4
+"""The turns telling what a message wants: "2500" alone says nothing, after "to how much?"
+it is the budget."""
 THINKING_BUDGET = 1024
 """What Gemini may think before each step, added on top of the answer's limit: left
 unbounded, its thoughts filled the limit and the answer came back empty."""
@@ -82,10 +89,17 @@ class StepCall(BaseModel):
 
 
 class Step(BaseModel):
-    """What the model does next: say something, call tools, or both."""
+    """What the model does next: call tools, say something, or both.
 
-    say: str = Field("", description="What to tell the user now")
-    calls: list[StepCall] = Field(default_factory=list)
+    `calls` comes first: a model writes its answer in the schema's order, and asked to
+    speak first Gemini talked about the figures instead of reading them — and on, until
+    the answer was cut off.
+    """
+
+    calls: list[StepCall] = Field(description="The tools to call now; empty for none")
+    say: str = Field(
+        "", max_length=SAY_LIMIT, description="What to tell the user now: one to three sentences"
+    )
 
 
 class Intents(BaseModel):
@@ -125,18 +139,19 @@ class AssistantGraph(AssistantPort):
         # counts against Cloud Run's startup probe.
         from langgraph.graph import END, START, StateGraph
 
-        last = next((t.text for t in reversed(history) if t.role == "user"), "")
+        # The language is the user's last message with words in it, not a bare number.
+        spoken = worded([t.text for t in history if t.role == "user"])
 
         async def classify(state: State) -> State:
-            intents = await self._intents(last, context)
+            intents = await self._intents(history, context)
             # "Spend less on X" is told as a change as often as an addition: the two are
             # offered together, so the right tool is there whichever was named.
             if intents & {Intent.ADD, Intent.CHANGE}:
                 intents = intents | {Intent.ADD, Intent.CHANGE}
             offered = [t for t in tools if t.intents & intents] if intents else []
-            messages = [Message(role="system", content=prompts.system(offered, context, last))] + [
-                Message(role=turn.role, content=turn.text) for turn in history[-HISTORY:]
-            ]
+            messages = [
+                Message(role="system", content=prompts.system(offered, context, spoken))
+            ] + [Message(role=turn.role, content=turn.text) for turn in history[-HISTORY:]]
             return {"intents": intents, "tools": offered, "messages": messages}
 
         async def act(state: State) -> State:
@@ -180,7 +195,7 @@ class AssistantGraph(AssistantPort):
             }
 
         async def second_look(state: State) -> State:
-            said, proposals = await self._second_look(last, state["tools"], context, check)
+            said, proposals = await self._second_look(history, state["tools"], context, check)
             if not proposals:
                 return {}
             return {"said": said or state.get("said", ""), "proposals": proposals}
@@ -204,17 +219,17 @@ class AssistantGraph(AssistantPort):
         final: State = await graph.compile().ainvoke({})  # type: ignore[assignment]
         return AssistantReply(final.get("said", ""), list(final.get("proposals", [])))
 
-    async def _intents(self, last: str, context: AssistantContext) -> frozenset[Intent]:
-        """What the message wants; every intent when the model cannot say, so no tool
-        the user needed is ever withheld for a failed guess."""
-        if not last:
+    async def _intents(
+        self, history: Sequence[Turn], context: AssistantContext
+    ) -> frozenset[Intent]:
+        """What the last message wants, read with the turns just before it; every intent
+        when the model cannot say, so no tool the user needed is ever withheld for a
+        failed guess."""
+        if not history:
             return frozenset()
         try:
             found = await self._model.run_structured(
-                [
-                    Message(role="system", content=prompts.classify(context)),
-                    Message(role="user", content=last),
-                ],
+                [Message(role="system", content=prompts.classify(context)), *_recent(history)],
                 Intents,
                 max_tokens=256,
                 thinking_budget=THINKING_BUDGET,
@@ -226,25 +241,26 @@ class AssistantGraph(AssistantPort):
 
     async def _second_look(
         self,
-        last: str,
+        history: Sequence[Turn],
         tools: Sequence[ToolSpec],
         context: AssistantContext,
         check: CheckTool | None,
     ) -> tuple[str, list[ToolCall]]:
-        """The user's last message alone, when a wish to write came back as words only.
+        """The last few turns alone, when a wish to write came back as words only.
 
         With a long history a small model may answer "it is recorded" instead of proposing a
-        card. Read on its own, the request is told apart reliably: its cards are proposed
-        with what the model says of them, or the first answer stands.
+        card. Read with only the turns that lead to it, the request is told apart reliably:
+        its cards are proposed with what the model says of them, or the first answer stands.
         """
         writes = [t for t in tools if t.writes]
-        if not last or not writes:
+        users = [t.text for t in history if t.role == "user"]
+        if not users or not writes:
             return "", []
         try:
             step = await self._model.run_structured(
                 [
-                    Message(role="system", content=prompts.system(writes, context, last)),
-                    Message(role="user", content=last),
+                    Message(role="system", content=prompts.system(writes, context, worded(users))),
+                    *_recent(history),
                 ],
                 Step,
                 max_tokens=1024,
@@ -255,3 +271,11 @@ class AssistantGraph(AssistantPort):
         known = {t.name for t in writes}
         asked = [ToolCall(c.tool, c.arguments()) for c in step.calls if c.tool in known]
         return step.say, [c for c in asked if not (check and await check(c))]
+
+
+def _recent(history: Sequence[Turn]) -> list[Message]:
+    """The last few turns, as the model reads them, ending with the user's message."""
+    turns = list(history[-RECENT:])
+    while turns and turns[0].role != "user":
+        turns.pop(0)
+    return [Message(role=t.role, content=t.text) for t in turns]

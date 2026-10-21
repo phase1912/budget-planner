@@ -40,3 +40,12 @@ def language_of(text: str, fallback: str) -> str:
     if LATIN.search(text):
         return "English"
     return fallback
+
+
+LETTERS = re.compile(r"[^\W\d_]")
+
+
+def worded(texts: list[str]) -> str:
+    """The latest of `texts` with a word in it: "2500" answering "to how much?" says
+    nothing of the language the conversation is in, the message before it does."""
+    return next((t for t in reversed(texts) if LETTERS.search(t)), texts[-1] if texts else "")
