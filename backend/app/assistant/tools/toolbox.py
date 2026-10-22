@@ -16,6 +16,7 @@ from app.api.errors import DomainError, ProblemCode
 from app.assistant.core.ports import ToolCall, ToolSpec
 from app.assistant.tools import all_tools, card_writers
 from app.assistant.tools.base import Card, FormField, Reader, ToolContext, Writer
+from app.assistant.tools.overview import known
 from app.models.category import Category
 from app.models.user import User
 from app.ports.exchange_rates import ExchangeRatePort
@@ -23,7 +24,7 @@ from app.ports.goal_mapping import GoalMapperPort
 
 
 def tool_specs() -> list[ToolSpec]:
-    """Every tool the assistant is offered, with its arguments' schema and intents."""
+    """Every tool the assistant is offered, with its arguments' schema."""
     return [tool.spec() for tool in all_tools().values()]
 
 
@@ -57,6 +58,10 @@ class Toolbox:
     async def categories(self) -> list[Category]:
         """The categories the user's spending may go to."""
         return await self.ctx.categories()
+
+    async def known(self) -> str:
+        """What the user has, for the model to resolve what they mean (F21.13.2)."""
+        return await known(self.ctx)
 
     async def read(self, call: ToolCall) -> str:
         """Run a read tool; a call the model got wrong is answered as such, not raised.

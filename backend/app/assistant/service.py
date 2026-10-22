@@ -13,6 +13,7 @@ from app.api.errors import DomainError, NotFoundError, ProblemCode
 from app.assistant.core.ports import AssistantContext, AssistantPort, Turn
 from app.assistant.tools.toolbox import Card, Toolbox, tool_specs
 from app.models.conversation import Conversation, ConversationMessage
+from app.models.upload_job import UploadJob
 from app.models.user import User
 from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.goal_mapping import GoalMapperPort
@@ -74,7 +75,12 @@ class AssistantService:
         return found
 
     async def send(
-        self, user: User, conversation_id: uuid.UUID | None, text: str, today: date
+        self,
+        user: User,
+        conversation_id: uuid.UUID | None,
+        text: str,
+        today: date,
+        attachment: tuple[uuid.UUID, int] | None = None,
     ) -> Conversation:
         """Add the user's message and the assistant's answer, with any cards it proposes.
 
@@ -93,6 +99,8 @@ class AssistantService:
         conversation.messages.append(
             ConversationMessage(user_id=user.id, role="user", text=text.strip())
         )
+        if attachment is not None:
+            conversation.messages.append(await self._attachment(user, *attachment))
         toolbox = self._toolbox(user, today)
         reply = await self.assistant.reply(
             _history(conversation.messages),
@@ -103,6 +111,7 @@ class AssistantService:
                 user.currency,
                 today.isoformat(),
                 tuple(c.name for c in await toolbox.categories()),
+                await toolbox.known(),
             ),
             toolbox.check,
         )
@@ -116,6 +125,16 @@ class AssistantService:
                     role="assistant",
                     text="",
                     card={"kind": answer.kind, "fields": answer.fields},
+                    card_state=CardState.SHOWN,
+                )
+            )
+        if reply.choices:
+            conversation.messages.append(
+                ConversationMessage(
+                    user_id=user.id,
+                    role="assistant",
+                    text="",
+                    card={"kind": "choice", "fields": {"options": reply.choices}},
                     card_state=CardState.SHOWN,
                 )
             )
@@ -151,6 +170,22 @@ class AssistantService:
         message.card_state = CardState.SAVED
         await self.session.flush()
         return message
+
+    async def _attachment(self, user: User, job_id: uuid.UUID, count: int) -> ConversationMessage:
+        """The files sent with a message, as a card following their reading (F21.8.2).
+
+        Raises NotFoundError for a reading that is not the user's (N2).
+        """
+        job = await self.session.get(UploadJob, job_id)
+        if job is None or job.user_id != user.id:
+            raise NotFoundError("No such upload.")
+        return ConversationMessage(
+            user_id=user.id,
+            role="user",
+            text="",
+            card={"kind": "attachment", "fields": {"job_id": str(job_id), "count": count}},
+            card_state=CardState.SHOWN,
+        )
 
     def _toolbox(self, user: User, today: date) -> Toolbox:
         return Toolbox(self.session, user, today, self.rates, self.goal_mapper)
@@ -191,10 +226,18 @@ def _history(messages: Sequence[ConversationMessage]) -> list[Turn]:
     turns: list[Turn] = []
     for m in messages:
         role: Literal["user", "assistant"] = "user" if m.role == "user" else "assistant"
-        if m.card_state == CardState.SHOWN:
+        kind = m.card.get("kind") if m.card else None
+        if m.card_state == CardState.SHOWN and m.card and kind == "choice":
+            text = f"(Options offered: {', '.join(m.card['fields'].get('options', []))})"
+        elif m.card_state == CardState.SHOWN and m.card and kind == "attachment":
+            text = (
+                f"(The user attached {m.card['fields'].get('count')} receipt file(s): they are "
+                "being read now, and the user checks and saves them from the card below.)"
+            )
+        elif m.card_state == CardState.SHOWN:
             # The answer beside it already says what the chart or link shows.
             continue
-        if m.card is not None:
+        elif m.card is not None:
             state = CARD_STATES.get(m.card_state or "", "")
             text = f"(A {m.card.get('kind')} card, {state}: {m.card.get('fields')})"
         elif m.text:

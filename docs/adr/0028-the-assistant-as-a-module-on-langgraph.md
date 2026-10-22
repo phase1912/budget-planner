@@ -1,7 +1,8 @@
 # ADR 0028: The assistant as a module of its own, on LangGraph
 
 **Date:** 2026-10-21
-**Status:** Accepted — F21.7; builds on ADR-0025
+**Status:** Accepted — F21.7; builds on ADR-0025. The classify node is superseded by
+ADR-0032: every tool is offered, in a loop of the provider's own tool calling.
 
 ## Context
 

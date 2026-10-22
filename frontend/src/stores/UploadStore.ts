@@ -453,6 +453,19 @@ export class UploadStore {
     }).length;
   }
 
+  /**
+   * Read files attached in the assistant (F21.8.2) as receipts, one each, through the same
+   * upload as the Add screen, which then shows them to check; the reading's id, or null
+   * when the upload was refused.
+   */
+  async readFromChat(files: File[]): Promise<string | null> {
+    this.setFromTrip(null);
+    this.mode = "multiple";
+    this.lines = files.map((file) => [file]);
+    this.currentStep = 1;
+    return (await this.submitUpload()) ? this.jobId : null;
+  }
+
   // Legacy method for existing tests/components
   async uploadFile(file: File): Promise<boolean> {
     this.addFiles([file]);

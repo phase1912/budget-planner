@@ -6,7 +6,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from app.assistant.core.ports import Intent
 from app.assistant.tools.base import Amount, ToolContext, Writer
 from app.services.manual_expense import ManualExpense, record_expense
 
@@ -41,7 +40,6 @@ class AddExpense(Writer):
     name = "add_expense"
     description = "Propose money spent without a receipt — one call per thing bought."
     args = ExpenseArgs
-    intents = frozenset({Intent.ADD})
     card_kind = "expense"
     card = ExpenseCard
 

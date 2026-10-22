@@ -53,7 +53,8 @@
       "balance": "Баланс картки",
       "money_in": "Надходження",
       "money_out": "Списання",
-      "move": "Переказ між картками"
+      "move": "Переказ між картками",
+      "product_group": "Група товарів"
     },
     "fields": {
       "name": "Назва",
@@ -72,7 +73,8 @@
       "account_id": "Картка",
       "source": "Звідки",
       "received_on": "Дата",
-      "moved_on": "Дата"
+      "moved_on": "Дата",
+      "products": "Товари"
     },
     "options": {
       "spending_ceiling": "Витрачати не більше за місяць",
@@ -85,7 +87,8 @@
       "correct": "Лише виправити баланс",
       "spending": "Невнесені покупки, у бюджеті"
     },
-    "openScreen": "Відкрити"
+    "openScreen": "Відкрити",
+    "removeItem": "Прибрати {{name}}"
   },
   "answer": {
     "spending": "Відкрити у Витратах",
@@ -97,5 +100,32 @@
     "hidden_other": "Ще {{count}} категорії — на екрані Витрат.",
     "accounts": "Відкрити рахунки",
     "home": "Відкрити головну"
-  }
+  },
+  "choice": "Оберіть відповідь",
+  "mic": {
+    "start": "Говорити",
+    "stop": "Зупинити й розпізнати",
+    "recognising": "Розпізнаю…",
+    "listening": "Слухаю… торкніться, щоб зупинити"
+  },
+  "attach": {
+    "button": "Додати чеки",
+    "remove": "Прибрати {{name}}",
+    "text": "Додай ці чеки"
+  },
+  "attachment": {
+    "reading_one": "Читаю {{count}} чек…",
+    "reading_few": "Читаю {{count}} чеки…",
+    "reading_many": "Читаю {{count}} чеків…",
+    "reading_other": "Читаю {{count}} чека…",
+    "ready": "Прочитано. Перевірте й збережіть.",
+    "check": "Перевірити й зберегти",
+    "sent_one": "Додано {{count}} чек",
+    "sent_few": "Додано {{count}} чеки",
+    "sent_many": "Додано {{count}} чеків",
+    "sent_other": "Додано {{count}} чека",
+    "open": "Відкрити чеки"
+  },
+  "addByHand": "Додати вручну",
+  "addByHandShort": "Вручну"
 }

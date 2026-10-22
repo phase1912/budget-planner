@@ -18,7 +18,7 @@ from typing import Annotated, Any, ClassVar, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field
 
-from app.assistant.core.ports import Intent, ToolSpec
+from app.assistant.core.ports import ToolSpec
 from app.models.category import Category
 from app.models.user import User
 from app.ports.exchange_rates import ExchangeRatePort
@@ -86,7 +86,7 @@ class Answer:
 
 FieldKind = Literal[
     "target", "text", "amount", "balance", "date", "day", "repeat", "category", "account",
-    "choice", "switch", "percent",
+    "choice", "switch", "percent", "items",
 ]  # fmt: skip
 
 
@@ -96,7 +96,8 @@ class FormField:
 
     `target` names what the card changes or removes and cannot be edited; `day` is a day of
     the month; `repeat` is the pair `day`/`weekday`; `choice` offers `options`, each worded
-    by the app; `category` and `account` pick one of the user's own.
+    by the app; `category` and `account` pick one of the user's own; `items` lists names the
+    user may take out one by one, with the ids beside them (`products` and `product_ids`).
     """
 
     name: str
@@ -125,7 +126,6 @@ class Tool(abc.ABC):
     name: ClassVar[str]
     description: ClassVar[str]
     args: ClassVar[type[BaseModel]]
-    intents: ClassVar[frozenset[Intent]]
     writes: ClassVar[bool] = False
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
@@ -139,19 +139,11 @@ class Tool(abc.ABC):
 
     def spec(self) -> ToolSpec:
         """The tool as the model is offered it."""
-        return ToolSpec(
-            self.name, self.description, self.args.model_json_schema(), self.writes, self.intents
-        )
+        return ToolSpec(self.name, self.description, self.args.model_json_schema(), self.writes)
 
 
 class Reader(Tool):
-    """A tool that answers at once, from the user's own data.
-
-    Offered whatever the message wants (F21.10): a change often needs a look first — the
-    balance a bank figure is compared with, the bill a new amount replaces.
-    """
-
-    intents = frozenset(Intent)
+    """A tool that answers at once, from the user's own data."""
 
     @abc.abstractmethod
     async def read(self, ctx: ToolContext, args: Any) -> Answer:

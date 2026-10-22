@@ -5,12 +5,14 @@ application.  It delegates to litellm, which routes to the correct provider
 based on the model string (e.g. ``gemini/gemini-2.0-flash``,
 ``anthropic/claude-sonnet-4-20250514``).
 
-Two call patterns are supported:
+Three call patterns are supported:
 
 1. **Unstructured** — ``agent.run(messages)`` returns the assistant's text.
 2. **Structured** — ``agent.run_structured(messages, schema=MyModel)`` returns
    a validated Pydantic instance, using the provider's native JSON/tool-use
    mode where available.
+3. **Tools** — ``agent.run_tools(messages, tools)`` offers functions through the
+   provider's own function calling and returns the calls it asks for (F21.13).
 
 Conversation history is the caller's responsibility: the Agent is stateless.
 This keeps the extraction pipeline (one-shot) and the future goal-advice chat
@@ -21,11 +23,12 @@ from __future__ import annotations
 
 import json
 import logging
+import uuid
 from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
-from app.agent.types import Message
+from app.agent.types import Message, ToolTurn, ToolUse
 
 logger = logging.getLogger(__name__)
 
@@ -214,6 +217,60 @@ class Agent:
 
         return self._parse_response(str(raw), schema)
 
+    async def run_tools(
+        self,
+        messages: list[Message],
+        tools: list[dict[str, Any]],
+        *,
+        max_tokens: int = 2048,
+        thinking_budget: int | None = None,
+    ) -> ToolTurn:
+        """Offer `tools` (OpenAI function format) and return what the model does with them.
+
+        The provider's own function calling, which LiteLLM speaks to Gemini and to
+        OpenAI-compatible local models alike (F21.13, ADR-0032). Arguments that are not a
+        JSON object read as none, so one malformed call costs that call only.
+
+        Raises ``AgentError`` when the provider fails.
+        """
+        import litellm
+
+        kwargs: dict[str, Any] = {
+            "model": self.model,
+            "messages": [m.to_dict() for m in messages],
+            "tools": tools,
+            "temperature": self.default_temperature,
+            "max_tokens": max_tokens,
+            "num_retries": 3,
+        }
+        kwargs.update(self._provider_kwargs())
+        if thinking_budget and "gemini" in self.model.lower():
+            kwargs["thinking"] = {"type": "enabled", "budget_tokens": thinking_budget}
+            kwargs["max_tokens"] = max_tokens + thinking_budget
+        try:
+            response = await litellm.acompletion(**kwargs)
+        except Exception as exc:
+            raise AgentError(f"LLM call failed: {exc}") from exc
+        if not response.choices:
+            raise AgentError("LLM returned no choices")
+
+        message = response.choices[0].message
+        raw_calls = [
+            c.model_dump() if hasattr(c, "model_dump") else dict(c)
+            for c in (getattr(message, "tool_calls", None) or [])
+        ]
+        calls = []
+        for c in raw_calls:
+            # A provider may leave the id out; each result must still name its own call.
+            c["id"] = str(c.get("id") or f"call_{uuid.uuid4().hex[:12]}")
+            calls.append(
+                ToolUse(
+                    c["id"], str(c["function"]["name"]), _arguments(c["function"].get("arguments"))
+                )
+            )
+        text = str(message.content or "")
+        return ToolTurn(text, calls, Message(role="assistant", content=text, tool_calls=raw_calls))
+
     @staticmethod
     def _json_only_instruction(schema: type[BaseModel]) -> Message:
         """Ask for bare JSON in words, for providers that cannot enforce a schema.
@@ -281,3 +338,14 @@ class Agent:
             return schema.model_validate(data)
         except Exception as exc:
             raise AgentError(f"LLM response did not match schema {schema.__name__}: {exc}") from exc
+
+
+def _arguments(raw: Any) -> dict[str, Any]:
+    """A function call's arguments as a dict; anything but a JSON object reads as none."""
+    if isinstance(raw, dict):
+        return raw
+    try:
+        parsed = json.loads(raw or "{}")
+    except (json.JSONDecodeError, TypeError):
+        return {}
+    return parsed if isinstance(parsed, dict) else {}

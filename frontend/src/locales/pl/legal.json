@@ -34,7 +34,7 @@
       },
       "ai": {
         "title": "Odczytywanie paragonów przez AI",
-        "body": "Zdjęcia paragonów i nazwy pozycji odczytuje i kategoryzuje model AI; tak samo odczytuje pasek wypłaty lub przelew wysłany jako dochód — sam dokument nie jest przechowywany, tylko potwierdzone kwota, data i płatnik. Zamienia on jedynie to, co wydrukowano, na kwoty, które możesz sprawdzić i poprawić; nie podejmuje wobec Ciebie decyzji wywołujących skutki prawne ani podobnie istotne. Asystent odpowiada tym samym modelem na to, co piszesz lub mówisz; rozmowy są przechowywane, dopóki ich nie usuniesz lub nie usuniesz konta, i niczego nie zmienia, dopóki nie zatwierdzisz karty. Gdy mówisz, mowę na tekst zamienia Twoja przeglądarka — w Chrome robi to Google na warunkach przeglądarki — a do nas trafia tylko tekst."
+        "body": "Zdjęcia paragonów i nazwy pozycji odczytuje i kategoryzuje model AI; tak samo odczytuje pasek wypłaty lub przelew wysłany jako dochód — sam dokument nie jest przechowywany, tylko potwierdzone kwota, data i płatnik. Zamienia on jedynie to, co wydrukowano, na kwoty, które możesz sprawdzić i poprawić; nie podejmuje wobec Ciebie decyzji wywołujących skutki prawne ani podobnie istotne. Asystent odpowiada tym samym modelem na to, co piszesz lub mówisz; rozmowy są przechowywane, dopóki ich nie usuniesz lub nie usuniesz konta, i niczego nie zmienia, dopóki nie zatwierdzisz karty. Gdy mówisz, nagranie trafia do nas i rozpoznaje je Google Cloud w naszym imieniu; ani my, ani Google go nie przechowujemy, a do rozmowy trafiają tylko słowa, które potem wyślesz."
       }
     }
   },

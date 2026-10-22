@@ -7,7 +7,6 @@ from typing import Any
 from pydantic import BaseModel, Field, model_validator
 
 from app.api.errors import NotFoundError
-from app.assistant.core.ports import Intent
 from app.assistant.tools.base import Amount, FormField, ToolContext, Writer, as_id, find_by_name
 from app.models.regular_expense import RegularExpense
 from app.schemas.income import RegularExpenseRequest
@@ -39,7 +38,6 @@ class AddBill(Writer):
     name = "add_bill"
     description = "Propose a bill that goes every month or every week by itself."
     args = BillArgs
-    intents = frozenset({Intent.ADD})
     card_kind = "bill"
     card = BillArgs
 
@@ -92,7 +90,6 @@ class ChangeBill(Writer):
     name = "change_bill"
     description = "Propose changing a regular bill's amount, day or name, found by its name."
     args = ChangeArgs
-    intents = frozenset({Intent.CHANGE})
     card_kind = "bill_change"
     card = BillChange
     form = (
@@ -157,7 +154,6 @@ class StopBill(Writer):
     name = "stop_bill"
     description = "Propose stopping a regular bill from next month, found by its name."
     args = StopArgs
-    intents = frozenset({Intent.REMOVE})
     card_kind = "bill_stop"
     card = BillStop
     form = (FormField("target", "target"),)

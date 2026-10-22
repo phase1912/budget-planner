@@ -22,6 +22,7 @@ from app.assistant.service import AssistantService, CardState, _history
 from app.assistant.tools.budget import BudgetArgs
 from app.assistant.tools.toolbox import Toolbox
 from app.core.config import get_settings
+from app.core.context import current_user_id
 from app.models.conversation import ConversationMessage
 from app.services.quota import QuotaService
 from tests.factories.user import UserFactory
@@ -48,6 +49,7 @@ class StubAssistant:
 @pytest.mark.asyncio
 async def test_assistant_service_send_and_retrieve_conversation(db_session: AsyncSession) -> None:
     user = await UserFactory.create_async()
+    current_user_id.set(user.id)  # as signing in sets it for a request
     quota = QuotaService(db_session, get_settings())
     stub = StubAssistant(
         reply_text="Budget proposed",
@@ -92,6 +94,7 @@ async def test_assistant_service_send_and_retrieve_conversation(db_session: Asyn
 @pytest.mark.asyncio
 async def test_assistant_service_card_lifecycle(db_session: AsyncSession) -> None:
     user = await UserFactory.create_async()
+    current_user_id.set(user.id)
     quota = QuotaService(db_session, get_settings())
     stub = StubAssistant(
         reply_text="Here is your budget card",

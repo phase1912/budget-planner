@@ -165,28 +165,38 @@ is refused every shared write in one place, `refuse_child` in `app/services/hous
 which `IncomeService` calls when a row is or would become shared, and which the household
 budget and a receipt's privacy call too.
 
-The assistant (F21, ADR-0025, ADR-0028) is a module of its own, `app/assistant/`, behind
-`/api/v1/assistant`:
+The assistant (F21, ADR-0025, ADR-0028, ADR-0031, ADR-0032) is a module of its own,
+`app/assistant/`, behind `/api/v1/assistant`:
 
-- `core/` is the agent: `AssistantGraph` (LangGraph) first classifies what a message wants
-  (ask, add, change, remove), then lets the model read and propose with only the tools that
-  serve those wishes, again while it reads or fixes a refused call, and takes a second look
-  at a wish to write that came back as words only. It speaks to the LiteLLM agent through a
-  structured-output protocol and imports neither the database nor FastAPI; a test holds that.
+- `core/` is the agent: `AssistantGraph`, two LangGraph nodes in a loop. `think` offers the
+  model every tool as a function in the provider's own tool calling (`Agent.run_tools`,
+  through LiteLLM, for Gemini and OpenAI-compatible local models alike); `use` runs what it
+  asked for — a read answers at once, a write is checked and kept as a proposed card, and
+  `ask_user` ends the turn with options to tap — and hands each result back, up to eight
+  rounds. The system prompt carries what the user has (`AssistantContext.known`): every
+  card numbered as the Accounts screen lists it, with the one paying for purchases marked,
+  the bills, incomes, goals, product groups, trips and the family, so the model resolves
+  "the card for expenses" or "the first one" itself and passes real names. The core
+  imports neither the database nor FastAPI; a test holds that.
 - `tools/` has one module per thing the user keeps (spending, budget, expenses, incomes,
-  bills, goals, accounts, balances, overview). A tool is a `Reader`, answering at once, or a `Writer`, proposing
-  a card it saves through the service its screen uses after the user approves it. Defining
-  the class registers it. A writer finds what to change by the name the user said
-  (`find_by_name`), and its card is either one of the app's own (budget, income, bill,
-  expense) or drawn by the client from the `form` the writer declares. `Toolbox` binds them
-  to one request. Read tools are offered whatever a message wants, so a change can look
-  first (F21.10); `overview` answers "what do you know about me" from the other readers and
-  the services their screens use. Read tools for spending (F21.4) leave an answer card, the
-  Spending chart and a link to the screen with the same filters, shown below the answer and
-  never read back to the model. A writer's `check` can stop a call to have the model ask
-  the user first — how a card's balance difference counts (`balances.py`) — before any card.
+  bills, goals, accounts, balances, products, family, overview). A tool is a `Reader`,
+  answering at once, or a `Writer`, proposing a card it saves through the service its
+  screen uses after the user approves it. Defining the class registers it. A writer finds
+  what to change by the name the model passes (`find_by_name`; a card also by its number
+  or as the purchase card), refusing with the names there are, and its card is either one
+  of the app's own (budget, income, bill, expense) or drawn by the client from the `form`
+  the writer declares. `Toolbox` binds them to one request; `overview.known` builds the
+  summary above from the same services. Read tools leave an answer card — a chart, a link
+  to the screen with the same filters — shown below the answer and never read back.
 - `service.py` keeps conversations, messages and cards, which are the user's rows, deleted
-  and exported with the account. `api.py` is the router.
+  and exported with the account: proposed cards, answer cards, the options of a question
+  (`choice`) and files attached (`attachment`), which the client sends through the receipt
+  upload first and names here by their reading (F21.8.2). `api.py` is the router, with
+  `POST /speech` turning a recording into words through `SpeechPort` — Speech-to-Text
+  with Chirp, or the Gemini model hearing it, as `SPEECH_ENGINE` says — keeping nothing
+  of the sound (F21.2.2).
+- `scripts/evaluate_assistant.py` scores the assistant on committed dialogs against the
+  configured model (F21.13.4), as `evaluate_reading.py` does for receipts.
 
 What the family buys line by line (F12.11) is `HouseholdSpendRepository.shared_lines`
 — shared receipts' lines only — read by `app/domain/family_lines.py` into products bought

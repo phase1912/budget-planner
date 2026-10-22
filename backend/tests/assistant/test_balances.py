@@ -9,9 +9,7 @@ from typing import Any
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.assistant.core.ports import Intent, ToolCall
-from app.assistant.tools import all_tools
-from app.assistant.tools.base import Reader
+from app.assistant.core.ports import ToolCall
 from app.models.user import User
 from tests.assistant.test_api import ScriptedAssistant, _say
 from tests.assistant.test_tools import _approve, _get, _propose
@@ -148,13 +146,6 @@ async def test_another_users_card_is_never_found(db_session: AsyncSession) -> No
 
     assert cards == []
     assert await _balances(db_session, other) == {"Theirs": Decimal("900.00")}
-
-
-def test_every_read_tool_is_offered_whatever_the_message_wants() -> None:
-    readers = [t for t in all_tools().values() if isinstance(t, Reader)]
-
-    assert readers
-    assert all(t.spec().intents == frozenset(Intent) for t in readers)
 
 
 @pytest.mark.asyncio

@@ -334,3 +334,44 @@ async def test_an_answer_cut_off_at_the_token_limit_says_so(mock_acompletion: Ma
         await Agent(model="test-model").run_structured(
             [Message(role="user", content="Extract this")], schema=MockSchema
         )
+
+
+@pytest.mark.asyncio
+@patch("litellm.acompletion")
+async def test_tools_come_back_as_calls_with_the_providers_own_turn_kept(
+    mock_acompletion: MagicMock,
+) -> None:
+    """F21.13.1: the model's turn is sent back as it came — Gemini refuses a function call
+    whose thought signature was lost — and arguments that are not a JSON object read as
+    none, so one malformed call costs only that call."""
+    agent = Agent(model="vertex_ai/gemini-2.5-flash")
+    call = MagicMock()
+    call.model_dump.return_value = {
+        "id": "call_1",
+        "type": "function",
+        "function": {"name": "accounts", "arguments": "{}"},
+        "provider_specific_fields": {"thought_signature": "sig"},
+    }
+    broken = MagicMock()
+    broken.model_dump.return_value = {
+        "id": None,
+        "type": "function",
+        "function": {"name": "add_bill", "arguments": "not json"},
+    }
+    response = MagicMock()
+    response.choices = [MagicMock()]
+    response.choices[0].message.content = None
+    response.choices[0].message.tool_calls = [call, broken]
+    mock_acompletion.return_value = response
+    tools = [{"type": "function", "function": {"name": "accounts", "parameters": {}}}]
+
+    turn = await agent.run_tools([Message(role="user", content="hi")], tools, thinking_budget=64)
+
+    assert [(c.name, c.arguments) for c in turn.calls] == [("accounts", {}), ("add_bill", {})]
+    assert turn.calls[0].id == "call_1" and turn.calls[1].id not in ("", "call_1")
+    assert [c["id"] for c in turn.message.tool_calls] == [c.id for c in turn.calls]
+    assert turn.text == ""
+    assert turn.message.tool_calls[0]["provider_specific_fields"] == {"thought_signature": "sig"}
+    kwargs = mock_acompletion.call_args.kwargs
+    assert kwargs["tools"] == tools
+    assert kwargs["thinking"] == {"type": "enabled", "budget_tokens": 64}

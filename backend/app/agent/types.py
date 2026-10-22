@@ -56,3 +56,26 @@ class Message:
         if self.tool_calls:
             msg["tool_calls"] = self.tool_calls
         return msg
+
+
+@dataclass(frozen=True)
+class ToolUse:
+    """One function the model asked to call, with its arguments parsed."""
+
+    id: str
+    name: str
+    arguments: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class ToolTurn:
+    """What the model did with the tools it was offered: words, calls, or both.
+
+    `message` is the model's turn as it must be sent back on the next call, with the
+    provider's own fields kept — Gemini refuses a call whose earlier function calls lost
+    their thought signatures.
+    """
+
+    text: str
+    calls: list[ToolUse]
+    message: Message

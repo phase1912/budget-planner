@@ -11,7 +11,6 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 from app.api.errors import DomainError, ProblemCode
-from app.assistant.core.ports import Intent
 from app.assistant.tools.accounts import find_account
 from app.assistant.tools.base import Amount, Balance, FormField, ToolContext, Writer, as_id
 from app.assistant.tools.expenses import FALLBACK_CATEGORIES
@@ -85,7 +84,6 @@ class SyncBalance(Writer):
         "or just a correction, ask them, then call with way."
     )
     args = SyncArgs
-    intents = frozenset({Intent.ADD, Intent.CHANGE})
     card_kind = "balance"
     card = BalanceCard
     form = (
@@ -155,7 +153,6 @@ class TakeMoney(Writer):
         "spent, counted in the budget, or only leaves the card, ask them, then call with way."
     )
     args = TakeArgs
-    intents = frozenset({Intent.ADD, Intent.CHANGE, Intent.REMOVE})
     card_kind = "money_out"
     card = TakeCard
     form = (
@@ -276,7 +273,6 @@ class AddMoney(Writer):
     name = "add_money"
     description = "Propose money put on a card once from outside: a gift, a refund, a top-up."
     args = MoneyInArgs
-    intents = frozenset({Intent.ADD})
     card_kind = "money_in"
     card = MoneyInCard
     form = (
@@ -334,7 +330,6 @@ class MoveMoney(Writer):
     name = "move_money"
     description = "Propose moving a sum once from one of the user's cards to another."
     args = MoveArgs
-    intents = frozenset({Intent.ADD})
     card_kind = "move"
     card = MoveCard
     form = (

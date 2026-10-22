@@ -16,6 +16,8 @@ locals {
     LLM_MODEL                  = var.llm_model
     VERTEX_PROJECT             = var.project_id
     VERTEX_LOCATION            = var.region
+    SPEECH_ENGINE              = var.speech_engine
+    SPEECH_LOCATION            = "eu" # Chirp 3 runs in the eu and us multi-regions
     INBOUND_EMAIL_DOMAIN       = "${var.project_id}.appspotmail.com"
     CORS_ORIGINS               = jsonencode(local.frontend_origins)
     ADMIN_EMAILS               = jsonencode(var.admin_emails)
@@ -40,6 +42,13 @@ resource "google_service_account" "backend" {
 resource "google_project_iam_member" "backend_vertex" {
   project = var.project_id
   role    = "roles/aiplatform.user"
+  member  = "serviceAccount:${google_service_account.backend.email}"
+}
+
+# The assistant's microphone (F21.2.2, ADR-0031): Speech-to-Text's Chirp model.
+resource "google_project_iam_member" "backend_speech" {
+  project = var.project_id
+  role    = "roles/speech.client"
   member  = "serviceAccount:${google_service_account.backend.email}"
 }
 

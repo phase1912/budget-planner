@@ -84,3 +84,90 @@ class Overview(Reader):
             },
         }
         return Answer(json.dumps(figures, default=str), {"screen": "home", "to": "/"})
+
+
+WEEKDAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+
+
+def _when(day: int | None, weekday: int | None) -> str:
+    if weekday is not None:
+        return f"every {WEEKDAYS[weekday]}"
+    return f"on day {day}" if day else "monthly"
+
+
+async def known(ctx: ToolContext) -> str:
+    """What the user has, in a few lines for the model to resolve what they mean (F21.13.2).
+
+    Cards in the order the Accounts screen lists them, numbered, with the one that pays
+    for purchases marked; the budget, regular bills and incomes, goals, saved product
+    groups, recent trips and the family. Names only and the figures a reference needs —
+    the read tools hold the rest. Only the caller's own things, and what their family
+    shares with them (N2).
+    """
+    from app.repository.goal import GoalRepository
+    from app.repository.product import ProductRepository
+    from app.services.income import IncomeService
+    from app.services.money_accounts import AccountService
+
+    user, currency = ctx.user, ctx.user.currency
+    lines: list[str] = []
+    cards = (await AccountService(ctx.session).overview(ctx.today)).accounts
+    if cards:
+        lines.append("Cards and accounts (as numbered on the Accounts screen):")
+        for n, view in enumerate(cards, 1):
+            a = view.account
+            role = ", pays for purchases" if a.for_purchases else ""
+            kind = {"deposit": "savings", "business": "business account"}.get(str(a.kind), "card")
+            lines.append(f"  {n}. {a.name} — {kind}{role}, {view.ledger.balance} {currency}")
+    else:
+        lines.append("No cards: the user keeps a budget only.")
+    lines.append(
+        f"Monthly budget: {user.budget_limit} {currency}"
+        if user.budget_limit
+        else "No monthly budget set."
+    )
+    incomes = IncomeService(ctx.session)
+    bills = await incomes.regular_bills()
+    if bills:
+        lines.append(
+            "Regular bills: "
+            + "; ".join(f"{b.name} {b.amount} {_when(b.day, b.weekday)}" for b in bills)
+        )
+    sources = await incomes.regular_incomes()
+    if sources:
+        lines.append(
+            "Regular incomes: "
+            + "; ".join(f"{s.name} {s.amount} {_when(s.day, s.weekday)}" for s in sources)
+        )
+    goals = await GoalRepository(ctx.session).list_mine()
+    if goals:
+        lines.append(
+            "Goals: "
+            + "; ".join(
+                f"{g.name} ({g.financial_kind.value if g.financial_kind else 'lifestyle'}"
+                + (f", {g.target_amount}" if g.target_amount else "")
+                + ")"
+                for g in goals
+            )
+        )
+    groups = await ProductRepository(ctx.session).selections(user.id)
+    if groups:
+        lines.append("Saved product groups: " + "; ".join(g.name for g in groups))
+    trips = sorted(
+        await TripService(ctx.session).list_trips(user.id),
+        key=lambda t: t.trip.start_date,
+        reverse=True,
+    )[:TRIPS_LISTED]
+    if trips:
+        lines.append(
+            "Trips: "
+            + "; ".join(f"{t.trip.name} {t.trip.start_date} to {t.trip.end_date}" for t in trips)
+        )
+    membership = await HouseholdRepository(ctx.session).membership_of(user.id)
+    if membership:
+        people = [
+            f"{m.user.first_name} ({m.role}{', the user' if m.user_id == user.id else ''})"
+            for m in membership.household.members
+        ]
+        lines.append(f"Family '{membership.household.name}': " + ", ".join(people))
+    return "\n".join(lines)

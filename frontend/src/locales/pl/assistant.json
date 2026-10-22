@@ -57,7 +57,8 @@
       "balance": "Saldo karty",
       "money_in": "Wpływ",
       "money_out": "Obciążenie",
-      "move": "Przelew między kartami"
+      "move": "Przelew między kartami",
+      "product_group": "Grupa produktów"
     },
     "fields": {
       "name": "Nazwa",
@@ -76,7 +77,8 @@
       "account_id": "Karta",
       "source": "Skąd",
       "received_on": "Data",
-      "moved_on": "Data"
+      "moved_on": "Data",
+      "products": "Produkty"
     },
     "options": {
       "spending_ceiling": "Wydawać najwyżej miesięcznie",
@@ -89,7 +91,8 @@
       "correct": "Tylko poprawić saldo",
       "spending": "Niewpisane zakupy, w budżecie"
     },
-    "openScreen": "Otwórz"
+    "openScreen": "Otwórz",
+    "removeItem": "Usuń {{name}}"
   },
   "answer": {
     "spending": "Otwórz w Wydatkach",
@@ -101,5 +104,32 @@
     "hidden_other": "Jeszcze {{count}} kategorii jest na ekranie Wydatków.",
     "accounts": "Otwórz konta",
     "home": "Otwórz stronę główną"
-  }
+  },
+  "choice": "Wybierz odpowiedź",
+  "mic": {
+    "start": "Mów",
+    "stop": "Zatrzymaj i rozpoznaj",
+    "recognising": "Rozpoznaję…",
+    "listening": "Słucham… dotknij, aby zatrzymać"
+  },
+  "attach": {
+    "button": "Dodaj paragony",
+    "remove": "Usuń {{name}}",
+    "text": "Dodaj te paragony"
+  },
+  "attachment": {
+    "reading_one": "Czytam {{count}} paragon…",
+    "reading_few": "Czytam {{count}} paragony…",
+    "reading_many": "Czytam {{count}} paragonów…",
+    "reading_other": "Czytam {{count}} paragonu…",
+    "ready": "Przeczytane. Sprawdź i zapisz.",
+    "check": "Sprawdź i zapisz",
+    "sent_one": "Dodano {{count}} paragon",
+    "sent_few": "Dodano {{count}} paragony",
+    "sent_many": "Dodano {{count}} paragonów",
+    "sent_other": "Dodano {{count}} paragonu",
+    "open": "Otwórz paragony"
+  },
+  "addByHand": "Dodaj ręcznie",
+  "addByHandShort": "Ręcznie"
 }

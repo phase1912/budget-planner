@@ -5,23 +5,9 @@ by name — and what it gives back. Nothing here knows the database or HTTP: the
 the tools to a request, the graph only calls them.
 """
 
-import enum
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
-
-
-class Intent(enum.StrEnum):
-    """What a message wants, deciding which tools the agent may use for it (F21.7)."""
-
-    ASK = "ask"
-    """To know something: only read tools."""
-    ADD = "add"
-    """To record something new."""
-    CHANGE = "change"
-    """To change something already there."""
-    REMOVE = "remove"
-    """To stop or remove something."""
 
 
 @dataclass(frozen=True)
@@ -29,15 +15,13 @@ class ToolSpec:
     """One thing the assistant may do: read something at once, or propose a write.
 
     `parameters` is the JSON schema of its arguments. A write tool never writes: the
-    service turns its call into a card, saved only when the user approves it. `intents`
-    are the wishes it serves; the graph offers it only for those.
+    service turns its call into a card, saved only when the user approves it.
     """
 
     name: str
     description: str
     parameters: dict[str, Any]
     writes: bool
-    intents: frozenset[Intent] = frozenset(Intent)
 
 
 @dataclass(frozen=True)
@@ -65,14 +49,19 @@ class AssistantContext:
     today: str
     categories: tuple[str, ...] = ()
     """The names of the categories the user's spending can go to (F21.3)."""
+    known: str = ""
+    """What the user has, in a few lines — cards with their roles, bills, incomes, goals,
+    trips, the family — so the model names things by their real names (F21.13.2)."""
 
 
 @dataclass(frozen=True)
 class AssistantReply:
-    """What the assistant says back, and the writes it proposes as cards."""
+    """What the assistant says back, the writes it proposes as cards, and — when it asks
+    the user to choose — the options to tap (F21.13.3)."""
 
     text: str
     proposals: list[ToolCall] = field(default_factory=list)
+    choices: list[str] = field(default_factory=list)
 
 
 ReadTool = Callable[[ToolCall], Awaitable[str]]

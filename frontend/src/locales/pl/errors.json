@@ -66,5 +66,7 @@
   "same_account": "Wybierz dwa różne konta.",
   "invalid_card": "Sprawdź pola karty.",
   "card_done": "Ta karta jest już zamknięta.",
-  "needs_card": "Dochód trafia na kartę: utwórz ją razem z nim."
+  "needs_card": "Dochód trafia na kartę: utwórz ją razem z nim.",
+  "speech_unavailable": "Nie udało się teraz rozpoznać wypowiedzi. Spróbuj ponownie albo napisz.",
+  "speech_too_long": "Nagranie może trwać najwyżej minutę."
 }

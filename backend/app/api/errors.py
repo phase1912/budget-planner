@@ -56,6 +56,8 @@ class ProblemCode(enum.StrEnum):
     MESSAGE_TOO_LARGE = "message_too_large"
     CATEGORISER_UNAVAILABLE = "categoriser_unavailable"
     ADVICE_UNAVAILABLE = "advice_unavailable"
+    SPEECH_UNAVAILABLE = "speech_unavailable"
+    SPEECH_TOO_LONG = "speech_too_long"
     CURRENCY_LOCKED = "currency_locked"
     CATEGORY_EXISTS = "category_exists"
     CATEGORY_MOVE_TARGET = "category_move_target"
@@ -315,6 +317,22 @@ class AdviceUnavailableError(AppError):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     code = ProblemCode.ADVICE_UNAVAILABLE
     title = "Advice Unavailable"
+
+
+class SpeechUnavailableError(AppError):
+    """The recogniser gave no answer (F21.2.2): the user can say it again, or type it."""
+
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = ProblemCode.SPEECH_UNAVAILABLE
+    title = "Speech Unavailable"
+
+
+class SpeechTooLongError(AppError):
+    """A recording longer than the microphone allows (F21.2.2)."""
+
+    status_code = status.HTTP_413_CONTENT_TOO_LARGE
+    code = ProblemCode.SPEECH_TOO_LONG
+    title = "Recording Too Long"
 
 
 _HTTP_STATUS_PROBLEMS: dict[int, tuple[ProblemCode, str]] = {

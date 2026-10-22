@@ -109,6 +109,18 @@ class Settings(BaseSettings):
     vertex_location: str | None = Field(
         default=None, description="Vertex AI region for `vertex_ai/` models, e.g. us-central1."
     )
+    speech_engine: Literal["speech_to_text", "model"] = Field(
+        default="model",
+        description=(
+            "What turns the assistant's recordings into words (F21.2.2, ADR-0031): "
+            "`speech_to_text` is Google Cloud Speech-to-Text v2 with Chirp, which needs its "
+            "API enabled; `model` is the configured Gemini model hearing the recording."
+        ),
+    )
+    speech_location: str = Field(
+        default="eu",
+        description="Where Speech-to-Text's Chirp 3 model runs: `eu` or `us`, multi-regions.",
+    )
     llm_disable_json_schema: bool = Field(
         default=False,
         description=(

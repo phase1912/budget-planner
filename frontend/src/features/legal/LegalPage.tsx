@@ -4,7 +4,7 @@ import { dateFormat } from "@/i18n/format";
 import { PublicLinks } from "@/shared/components";
 
 /** The day the current terms and privacy policy took effect; backend `app/domain/terms.py`. */
-export const TERMS_VERSION = "2026-10-17";
+export const TERMS_VERSION = "2026-10-22";
 
 const SECTIONS = {
   privacy: ["who", "data", "why", "ai", "where", "keep", "storage", "rights"],
