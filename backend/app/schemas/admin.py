@@ -61,8 +61,8 @@ class AdminUserCard(BaseModel):
     two_factor_enabled: bool
     plan: str
     plan_ends_on: date | None
-    receipts_limit: int | None
-    receipts_used: int
+    credits_limit: int | None
+    credits_used: int
     last_active_at: datetime | None
     grants: list[PlanGrantRead]
     activity: list[ActivityRead]

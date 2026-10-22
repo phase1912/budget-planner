@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field
 
 from app.core.config import get_settings
 from app.domain.email_intake import forwarding_address
+from app.domain.quota import CreditWallet
 
 Language = Literal["en", "uk", "pl"]
 """The languages the product is written in (F9.9)."""
@@ -132,10 +133,12 @@ class TwoFactorOffRequest(BaseModel):
 
 
 class ReceiptQuotaRead(BaseModel):
-    """The account's receipt reads this month against its limit (F10.6).
+    """The account's AI credits this month (F21.9, ADR-0030; was the receipt quota, F10.6).
 
-    `limit` and `remaining` are null for an account without a limit (an admin). `plan`
-    says where the limit comes from and `plan_ends_on` when a granted plan ends (F18.4).
+    `limit`, `used` and `remaining` are credits, whole ones; the user is shown
+    `receipts_left` and `messages_left` instead — about how many of either the rest would
+    pay for. Null for an account without a limit (an admin). `plan` says where the limit
+    comes from and `plan_ends_on` when a granted plan ends (F18.4).
     """
 
     limit: int | None
@@ -146,5 +149,21 @@ class ReceiptQuotaRead(BaseModel):
     plan: str
     plan_ends_on: date | None
     ad_free: bool
+    receipts_left: int | None
+    messages_left: int | None
 
-    model_config = ConfigDict(from_attributes=True)
+    @classmethod
+    def of(cls, wallet: CreditWallet) -> "ReceiptQuotaRead":
+        """The wallet as the client reads it."""
+        return cls(
+            limit=wallet.limit,
+            used=round(wallet.used),
+            remaining=None if wallet.remaining is None else int(wallet.remaining),
+            unlimited=wallet.unlimited,
+            resets_on=wallet.resets_on,
+            plan=wallet.plan,
+            plan_ends_on=wallet.plan_ends_on,
+            ad_free=wallet.ad_free,
+            receipts_left=wallet.receipts_left,
+            messages_left=wallet.messages_left,
+        )

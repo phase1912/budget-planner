@@ -31,10 +31,10 @@ describe("errorMessage", () => {
     const refused = {
       code: "quota_exceeded",
       detail: "…",
-      params: { limit: 30, left: 0, needed: 1, resets_on: "2026-11-01" },
+      params: { receipts_left: 0, messages_left: 0, resets_on: "2026-11-01" },
     };
 
-    expect(errorMessage(refused, "fallback")).toContain("odnowi się 1 listopada 2026");
+    expect(errorMessage(refused, "fallback")).toContain("Odnowią się 1 listopada 2026");
   });
 
   it("falls back to the server's detail for a code it has no words for", async () => {

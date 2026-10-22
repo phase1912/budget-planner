@@ -275,14 +275,14 @@ async def test_a_regenerated_address_stops_the_old_one_working(db_session: Async
 
 
 @pytest.mark.asyncio
-async def test_mail_past_the_monthly_receipt_quota_is_dropped_unread(
+async def test_mail_past_the_months_credits_is_dropped_unread(
     db_session: AsyncSession,
 ) -> None:
-    """F10.6: a forwarded receipt is a read like an upload, and counts the same."""
+    """F10.6, F21.9: a forwarded receipt is read like an upload, paid from the same credits."""
     owner = await UserFactory.create_async(email="shopper@example.com", role="user")
     parser = StubParser()
 
-    with patch.object(get_settings(), "monthly_receipt_quota", 0):
+    with patch.object(get_settings(), "free_monthly_credits", 0):
         response = await _deliver(
             db_session,
             _address(owner),

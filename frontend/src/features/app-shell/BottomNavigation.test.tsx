@@ -13,13 +13,13 @@ function renderAt(path: string) {
 }
 
 describe("BottomNavigation (F23.2)", () => {
-  it("offers the four places and the assistant as the centre button (F21.13.5)", () => {
+  it("offers the four places and adding a receipt as the centre button", () => {
     renderAt("/");
     expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
     for (const [name, href] of [
       ["Spending", "/spending"],
-      ["Assistant", "/assistant"],
+      ["Add a receipt", "/upload"],
       ["Products", "/products"],
       ["Plan", "/plan"],
     ]) {
@@ -31,11 +31,6 @@ describe("BottomNavigation (F23.2)", () => {
     renderAt("/categories/manage");
     expect(screen.getByRole("link", { name: "Spending" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Home" })).not.toHaveAttribute("aria-current");
-  });
-
-  it("lights the centre button in the assistant", () => {
-    renderAt("/assistant");
-    expect(screen.getByRole("link", { name: "Assistant" })).toHaveAttribute("aria-current", "page");
   });
 
   it("lights Plan on goals and trips", () => {

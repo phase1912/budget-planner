@@ -7,10 +7,10 @@ import { useStores } from "@/stores/StoreContext";
 import { TABS, isActive } from "./tabs";
 
 /**
- * The tablet's and desktop's navigation (F23.2, design v2): the brand, the assistant as
- * the main button (F21.13.5), the same four places as the phone's bar — icons with small
- * names on a tablet, a menu with names on a desktop — adding a receipt by hand, and the
- * account at the bottom, opening Settings.
+ * The tablet's and desktop's navigation (F23.2, design v2): the brand with the assistant
+ * beside it (F21.13.5), adding a receipt as the main button, the same four places as the
+ * phone's bar — icons with small names on a tablet, a menu with names on a desktop — and
+ * the account at the bottom, opening Settings.
  */
 export const SideNavigation = observer(function SideNavigation() {
   const { authStore } = useStores();
@@ -31,21 +31,36 @@ export const SideNavigation = observer(function SideNavigation() {
       aria-label={t("nav.main")}
       className="sticky top-0 hidden h-screen shrink-0 flex-col gap-1 bg-surface px-2 py-5 md:flex md:w-24 lg:w-60 lg:px-4"
     >
+      <div className="mb-5 flex flex-col items-center gap-2 lg:flex-row lg:justify-between lg:px-3">
+        <Link
+          to="/"
+          className="text-center text-lg font-extrabold text-primary lg:text-left lg:text-xl"
+        >
+          <span className="lg:hidden">BA</span>
+          <span className="hidden lg:inline">{t("appName")}</span>
+        </Link>
+        <Link
+          to="/assistant"
+          aria-label={t("nav.assistant")}
+          title={t("nav.assistant")}
+          aria-current={pathname.startsWith("/assistant") ? "page" : undefined}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-pill transition-colors ${
+            pathname.startsWith("/assistant")
+              ? "bg-primary text-primary-foreground"
+              : "bg-tone-primary-bg text-primary hover:bg-primary hover:text-primary-foreground"
+          }`}
+        >
+          <Sparkles size={20} aria-hidden="true" />
+        </Link>
+      </div>
       <Link
-        to="/"
-        className="mb-5 px-1 text-center text-lg font-extrabold text-primary lg:px-3 lg:text-left lg:text-xl"
-      >
-        <span className="lg:hidden">BA</span>
-        <span className="hidden lg:inline">{t("appName")}</span>
-      </Link>
-      <Link
-        to="/assistant"
-        aria-label={t("nav.assistant")}
-        aria-current={pathname.startsWith("/assistant") ? "page" : undefined}
+        to="/upload"
+        aria-label={t("nav.add")}
         className="mb-4 flex min-h-13 flex-col items-center justify-center gap-1 rounded-[18px] bg-primary px-2 text-xs font-extrabold text-primary-foreground shadow-primary lg:flex-row lg:gap-2 lg:text-lg"
       >
-        <Sparkles size={22} aria-hidden="true" />
-        {t("nav.assistant")}
+        <Plus size={22} aria-hidden="true" />
+        <span className="lg:hidden">{t("nav.addShort")}</span>
+        <span className="hidden lg:inline">{t("nav.add")}</span>
       </Link>
       {TABS.map((tab) => {
         const active = isActive(tab, pathname);
@@ -62,16 +77,6 @@ export const SideNavigation = observer(function SideNavigation() {
           </Link>
         );
       })}
-      <Link
-        to="/upload"
-        aria-label={t("nav.add")}
-        aria-current={pathname.startsWith("/upload") ? "page" : undefined}
-        className={item(pathname.startsWith("/upload"))}
-      >
-        <Plus size={22} aria-hidden="true" />
-        <span className="lg:hidden">{t("nav.addShort")}</span>
-        <span className="hidden lg:inline">{t("nav.add")}</span>
-      </Link>
       <Link
         to="/settings"
         aria-current={pathname.startsWith("/settings") ? "page" : undefined}

@@ -62,13 +62,13 @@
     "new": "Uzyskaj nowy adres"
   },
   "usage": {
-    "title": "Paragony w tym miesiącu",
-    "unlimited": "To konto nie ma limitu. W tym miesiącu odczytano: {{used}}.",
-    "used": "Odczytano {{used}} z {{limit}}",
-    "note": "Liczy się każdy paragon odczytany ze zdjęcia lub e-maila. Licznik zacznie się od nowa {{date}}.",
+    "title": "AI w tym miesiącu",
+    "unlimited": "To konto nie ma limitu AI.",
+    "note": "Odczyt paragonów, rozmowy i głos z asystentem oraz porady do celów zużywają te same miesięczne kredyty AI — tyle, ile każda czynność naprawdę kosztuje. Odnowią się {{date}}.",
     "planFree": "Plan darmowy",
     "planPaid": "Plan płatny",
-    "planEnds": "do {{date}}"
+    "planEnds": "do {{date}}",
+    "left": "Zostało około: paragony — {{receipts}}, wiadomości — {{messages}}"
   },
   "install": {
     "title": "Aplikacja",

@@ -78,9 +78,8 @@ async def get_my_quota(
     current_user: Annotated[User, Depends(get_current_user)],
     quotas: Annotated[QuotaService, Depends(get_quota_service)],
 ) -> ReceiptQuotaRead:
-    """How many receipts the user may still have read this month (F10.6.1)."""
-    quota = await quotas.quota_for(current_user, datetime.now(UTC))
-    return ReceiptQuotaRead.model_validate(quota)
+    """What is left of the user's AI credits this month, as receipts and messages (F21.9)."""
+    return ReceiptQuotaRead.of(await quotas.quota_for(current_user, datetime.now(UTC)))
 
 
 @router.post(

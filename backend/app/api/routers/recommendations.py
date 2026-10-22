@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.advice_generation_agent import AdviceGenerationAdapter
 from app.agent.factory import agent_from_settings
 from app.api import rate_limit
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, get_quota_service
 from app.api.rate_limit import limiter
 from app.core.config import get_settings
 from app.db.session import get_db_session
@@ -23,6 +23,7 @@ from app.schemas.recommendation import (
     RecommendationRead,
 )
 from app.services.advice import AdviceService, build_advice_service
+from app.services.quota import QuotaService
 
 router = APIRouter(prefix="/api/v1", tags=["advice"])
 
@@ -114,15 +115,21 @@ async def dismiss_warning(goal_id: uuid.UUID, current_user: CurrentUser, service
 )
 @limiter.limit(rate_limit.ADVICE)
 async def advise_on_goal(
-    request: Request, goal_id: uuid.UUID, current_user: CurrentUser, service: Service
+    request: Request,
+    goal_id: uuid.UUID,
+    current_user: CurrentUser,
+    service: Service,
+    quota: Annotated[QuotaService, Depends(get_quota_service)],
 ) -> Sequence[Recommendation]:
     """Fresh advice on one goal, replacing its earlier advice (BRD F2, F3).
 
-    Each ask is a model call, so it is limited per client IP (F10.6.3).
+    Each ask is a model call, so it is limited per client IP (F10.6.3) and paid from the
+    AI credits (F21.9): 429 quota_exceeded when they are spent.
 
     Another user's goal is not found (N2); too little history is 422 with the code
     `insufficient_data` (F5); a model that gives no answer is 503.
     """
+    await quota.ensure_can_talk(current_user, datetime.now(UTC))
     return await service.advise(
         goal_id,
         as_of=datetime.now(UTC).date(),

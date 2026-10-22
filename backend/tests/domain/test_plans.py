@@ -32,7 +32,7 @@ def test_of_overlapping_grants_the_one_ending_last_decides() -> None:
 
 
 def test_the_paid_plan_reads_more_and_shows_no_ads() -> None:
-    assert plan_terms(Plan.PAID, 10, 200).monthly_receipts == 200
+    assert plan_terms(Plan.PAID, 150, 2500).monthly_credits == 2500
     assert plan_terms(Plan.PAID, 10, 200).ad_free
     assert not plan_terms(Plan.FREE, 10, 200).ad_free
 

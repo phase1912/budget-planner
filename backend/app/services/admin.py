@@ -18,7 +18,7 @@ from app.core.config import Settings
 from app.domain.activity import ActivityKind
 from app.domain.admin import AdminActionKind, grant_period
 from app.domain.plans import GrantedPeriod, Plan, current_plan
-from app.domain.quota import ReceiptQuota
+from app.domain.quota import CreditWallet
 from app.models.activity import ActivityEvent
 from app.models.admin import AdminAction, PlanGrant
 from app.models.user import User
@@ -44,7 +44,7 @@ class UserRow:
 @dataclass(frozen=True)
 class UserCard:
     user: User
-    quota: ReceiptQuota
+    quota: CreditWallet
     last_active_at: datetime | None
     grants: Sequence[tuple[PlanGrant, str | None]]
     activity: Sequence[ActivityEvent]

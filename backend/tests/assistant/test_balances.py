@@ -163,7 +163,7 @@ async def test_the_overview_tells_the_user_everything_of_theirs_and_nothing_of_a
     figures = json.loads(assistant.read_results[0])
     assert figures["settings"]["monthly_budget"] == "2500.00"
     assert [a["name"] for a in figures["accounts"]["accounts"]] == ["Mine"]
-    assert figures["receipt_reads"]["limit"] == 10
+    assert figures["ai_credits_left"]["about_receipts"] == 15
     assert "Theirs" not in assistant.read_results[0]
     [answer] = [m for m in conversation["messages"] if m["card"] and m["card"]["kind"] == "answer"]
     assert answer["card"]["fields"]["screen"] == "home"

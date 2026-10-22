@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from pydantic import BaseModel, ConfigDict
 
 from app.agent.core import Agent
+from app.agent.metering import Purpose
 from app.agent.types import Message
 from app.models.category import Category
 from app.ports.categorisation import ItemCategoriserPort
@@ -88,7 +89,11 @@ class ItemCategoriserAdapter(ItemCategoriserPort):
             # Sorting names into given categories is lookup, not reasoning: a Gemini that
             # thinks first only adds seconds to every upload.
             parsed = await self._agent.run_structured(
-                messages, schema=CategorisationResponse, temperature=0.0, reasoning=False
+                messages,
+                schema=CategorisationResponse,
+                temperature=0.0,
+                reasoning=False,
+                purpose=Purpose.CATEGORIES,
             )
         except Exception:
             logger.exception("Categorisation failed; leaving items uncategorised")

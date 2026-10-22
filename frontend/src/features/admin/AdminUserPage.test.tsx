@@ -20,8 +20,8 @@ const CARD: AdminUserCard = {
   two_factor_enabled: false,
   plan: "paid",
   plan_ends_on: "2026-11-16",
-  receipts_limit: 200,
-  receipts_used: 12,
+  credits_limit: 2500,
+  credits_used: 12,
   last_active_at: null,
   grants: [
     {
@@ -78,7 +78,7 @@ describe("AdminUserPage (F18.6.2-3)", () => {
 
     expect(stores.adminStore.loadCard).toHaveBeenCalledWith("u1");
     expect(screen.getByRole("heading", { name: "ann@example.com" })).toBeInTheDocument();
-    expect(screen.getByText("12 of 200")).toBeInTheDocument();
+    expect(screen.getByText("12 of 2500")).toBeInTheDocument();
     expect(screen.getByText(/Beta tester/)).toBeInTheDocument();
     expect(screen.getByText("Signed in")).toBeInTheDocument();
 

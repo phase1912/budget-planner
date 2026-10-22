@@ -124,6 +124,5 @@
     "sent_other": "{{count}} receipts attached",
     "open": "Open receipts"
   },
-  "addByHand": "Add by hand",
-  "addByHandShort": "By hand"
+  "creditsLeft": "AI this month: about {{receipts}} receipts or {{messages}} messages left"
 }

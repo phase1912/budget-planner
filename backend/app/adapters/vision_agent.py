@@ -17,6 +17,7 @@ import logging
 from decimal import Decimal
 
 from app.agent.core import Agent
+from app.agent.metering import Purpose
 from app.agent.types import ImageContent, Message
 from app.domain.receipt_conventions import prompt_notes
 from app.schemas.extraction import ExtractedReceipt
@@ -188,6 +189,7 @@ class VisionAgentAdapter:
             schema=ExtractedReceipt,
             max_tokens=EXTRACTION_MAX_TOKENS,
             thinking_budget=READING_THINKING_BUDGET,
+            purpose=Purpose.RECEIPT,
         )
 
 

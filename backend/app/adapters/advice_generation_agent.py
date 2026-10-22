@@ -4,6 +4,7 @@ import logging
 from pydantic import BaseModel, Field
 
 from app.agent.core import Agent
+from app.agent.metering import Purpose
 from app.agent.types import Message
 from app.domain.advice import Advice, AdviceTarget
 from app.domain.goal_analysis import GoalAnalysis, render_advice_context
@@ -86,7 +87,7 @@ class AdviceGenerationAdapter(AdviceGeneratorPort):
         try:
             async with asyncio.timeout(self._timeout_seconds):
                 answer = await self._agent.run_structured(
-                    messages, schema=_AdviceResponse, temperature=0.0
+                    messages, schema=_AdviceResponse, temperature=0.0, purpose=Purpose.ADVICE
                 )
         except Exception as error:
             logger.exception("Advice generation failed")

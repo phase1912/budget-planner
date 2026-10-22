@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.adapters.vision_agent import content_part, readable_input
 from app.agent.core import Agent
+from app.agent.metering import Purpose
 from app.agent.types import Message
 from app.domain.income import IncomeKind
 from app.ports.income_reading import IncomeReaderPort, IncomeReading
@@ -56,7 +57,11 @@ class IncomeDocumentAdapter(IncomeReaderPort):
             )
         ]
         answer = await self._agent.run_structured(
-            messages, schema=IncomeDocumentResponse, max_tokens=2048, reasoning=False
+            messages,
+            schema=IncomeDocumentResponse,
+            max_tokens=2048,
+            reasoning=False,
+            purpose=Purpose.INCOME_DOCUMENT,
         )
         if not answer.is_income:
             return IncomeReading(False, None, None, None, IncomeKind.OTHER)

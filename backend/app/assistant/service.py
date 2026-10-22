@@ -107,11 +107,14 @@ class AssistantService:
             tool_specs(),
             toolbox.read,
             AssistantContext(
-                user.language or "en",
-                user.currency,
-                today.isoformat(),
-                tuple(c.name for c in await toolbox.categories()),
-                await toolbox.known(),
+                language=user.language or "en",
+                currency=user.currency,
+                today=today.isoformat(),
+                categories=tuple(c.name for c in await toolbox.categories()),
+                known=await toolbox.known(),
+                max_rounds=self.quota.settings.free_assistant_rounds
+                if await self.quota.is_free(user, datetime.now(UTC))
+                else AssistantContext.max_rounds,
             ),
             toolbox.check,
         )

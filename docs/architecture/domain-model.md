@@ -528,17 +528,26 @@ Rules that must hold at all times. Each is a candidate for a test.
 
 **Limits**
 
-21a. Every receipt read costs a model call, so reads, not stored receipts, are limited
-    (F10.6, `app/services/quota.py`). An account may have its plan's receipts read per
-    calendar month in UTC — `monthly_receipt_quota` on the free plan (10 by default),
-    `paid_monthly_receipt_quota` on the paid one (200), which is also ad-free (F18.4): each
-    receipt in an upload counts when the upload is accepted, stored later or not, and so
-    does each e-receipt that arrives by email. An upload that would go past it is refused
-    before anything is read, saying the limit and the date it resets; an e-receipt past
-    it is dropped. All non-admin accounts together may have at most
-    `daily_receipt_read_ceiling` receipts read per UTC day (100 by default), whatever
-    their own quotas say. An admin — role `admin`, or an email in `admin_emails` — has
-    neither limit and no wider access to data (N2, G8).
+21a. Every model call costs money, so what is spent is limited, not what is stored (F21.9,
+    ADR-0030, `app/services/quota.py`). Each call is recorded with what it cost at the
+    model's own price (Speech-to-Text by the second), one credit to 0.001 USD, and charged
+    to the user it was for — a receipt read with its categories, a message to the
+    assistant, a recording, a lifestyle goal mapped, advice asked for, an income document.
+    Work nobody asked for (proactive advice, matching products) is recorded, charged to no
+    one. An account may spend its plan's credits per calendar month in UTC —
+    `free_monthly_credits` (150 by default), `paid_monthly_credits` on the paid plan
+    (2 500), which is also ad-free (F18.4) — receipts still being read counting at what a
+    receipt costs. Every action is checked before its model call against what such an
+    action has cost across the service over 30 days (configured figures until 20 were
+    recorded) and refused past the month, saying about how many receipts or messages are
+    left and when they renew; an e-receipt past it is dropped. The user is shown what is
+    left as about so many receipts or messages, never as credits. A receipt or expense
+    typed by hand asks no model and is free, with or without credits left. One free request is
+    bounded: an upload holds `free_receipts_per_upload` receipts (5), a message takes
+    `free_assistant_rounds` rounds of tools (4), a recording a minute by its own length.
+    All non-admin accounts together may spend `daily_credit_ceiling` credits a UTC day
+    (3 000). An admin — role `admin`, or an email in `admin_emails` — has neither limit
+    and no wider access to data (N2, G8).
 21b. Registration, upload, asking for advice and export are also limited per client IP,
     as login already was; a limit hit is a 429 that says when to try again.
 

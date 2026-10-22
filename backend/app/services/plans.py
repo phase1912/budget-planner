@@ -26,8 +26,8 @@ class PlanService:
         plan, ends_at = current_plan(grants, now)
         terms = plan_terms(
             plan,
-            self.settings.monthly_receipt_quota,
-            self.settings.paid_monthly_receipt_quota,
+            self.settings.free_monthly_credits,
+            self.settings.paid_monthly_credits,
         )
         last_day = (ends_at - timedelta(microseconds=1)).date() if ends_at else None
         return plan, terms, last_day

@@ -10,20 +10,21 @@ locals {
 
   # Settings every backend process gets, service and migrations job alike.
   backend_env = {
-    ENVIRONMENT                = "production"
-    STORAGE_BACKEND            = "gcs"
-    S3_BUCKET_NAME             = google_storage_bucket.receipts.name
-    LLM_MODEL                  = var.llm_model
-    VERTEX_PROJECT             = var.project_id
-    VERTEX_LOCATION            = var.region
-    SPEECH_ENGINE              = var.speech_engine
-    SPEECH_LOCATION            = "eu" # Chirp 3 runs in the eu and us multi-regions
-    INBOUND_EMAIL_DOMAIN       = "${var.project_id}.appspotmail.com"
-    CORS_ORIGINS               = jsonencode(local.frontend_origins)
-    ADMIN_EMAILS               = jsonencode(var.admin_emails)
-    SUPPORT_EMAIL              = var.support_email
-    MONTHLY_RECEIPT_QUOTA      = tostring(var.monthly_receipt_quota)
-    DAILY_RECEIPT_READ_CEILING = tostring(var.daily_receipt_read_ceiling)
+    ENVIRONMENT          = "production"
+    STORAGE_BACKEND      = "gcs"
+    S3_BUCKET_NAME       = google_storage_bucket.receipts.name
+    LLM_MODEL            = var.llm_model
+    VERTEX_PROJECT       = var.project_id
+    VERTEX_LOCATION      = var.region
+    SPEECH_ENGINE        = var.speech_engine
+    SPEECH_LOCATION      = "eu" # Chirp 3 runs in the eu and us multi-regions
+    INBOUND_EMAIL_DOMAIN = "${var.project_id}.appspotmail.com"
+    CORS_ORIGINS         = jsonencode(local.frontend_origins)
+    ADMIN_EMAILS         = jsonencode(var.admin_emails)
+    SUPPORT_EMAIL        = var.support_email
+    FREE_MONTHLY_CREDITS = tostring(var.free_monthly_credits)
+    PAID_MONTHLY_CREDITS = tostring(var.paid_monthly_credits)
+    DAILY_CREDIT_CEILING = tostring(var.daily_credit_ceiling)
   }
 
   backend_secrets = {

@@ -15,6 +15,7 @@ from datetime import UTC, date, datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.agent.metering import unasked
 from app.core.context import current_user_id
 from app.models.user import User
 from app.ports.advice_generation import AdviceGeneratorPort
@@ -50,9 +51,11 @@ async def prepare_advice_for_everyone(
                     required_receipts=required_receipts,
                     required_days=required_days,
                 )
-                prepared += await service.prepare_for_goals_at_risk(
-                    as_of, currency, language=language or "en"
-                )
+                # Nobody asked for this advice: the service pays, not the user (F21.9).
+                with unasked():
+                    prepared += await service.prepare_for_goals_at_risk(
+                        as_of, currency, language=language or "en"
+                    )
                 await session.commit()
         except Exception:
             logger.exception("Preparing advice for user %s failed", user_id)

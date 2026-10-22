@@ -11,7 +11,11 @@ from app.adapters.speech import ChirpSpeechAdapter, ModelSpeechAdapter
 from app.agent.factory import agent_from_settings
 from app.api import rate_limit
 from app.api.dependencies import get_current_user, get_exchange_rates, get_quota_service
-from app.api.errors import SpeechTooLongError, SpeechUnavailableError
+from app.api.errors import (
+    SpeechTooLongError,
+    SpeechUnavailableError,
+    UnsupportedFileFormatError,
+)
 from app.api.rate_limit import limiter
 from app.api.routers.goals import get_goal_mapper
 from app.assistant.core.graph import AssistantGraph
@@ -27,10 +31,12 @@ from app.assistant.schemas import (
 from app.assistant.service import AssistantService
 from app.core.config import get_settings
 from app.db.session import get_db_session
+from app.domain.speech import MAX_SECONDS, NotWav, wav_seconds
 from app.models.user import User
 from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.goal_mapping import GoalMapperPort
 from app.ports.speech import SpeechPort, SpeechUnavailable
+from app.services.ai_usage import record_usage
 from app.services.quota import QuotaService
 
 router = APIRouter(prefix="/api/v1/assistant", tags=["assistant"])
@@ -51,7 +57,9 @@ def get_speech() -> SpeechPort:
     """The recogniser the deployment chose (ADR-0031); tests put a stub in its place."""
     settings = get_settings()
     if settings.speech_engine == "speech_to_text" and settings.vertex_project:
-        return ChirpSpeechAdapter(settings.vertex_project, settings.speech_location)
+        return ChirpSpeechAdapter(
+            settings.vertex_project, settings.speech_location, recorder=record_usage
+        )
     return ModelSpeechAdapter(agent_from_settings())
 
 
@@ -116,19 +124,26 @@ async def recognise_speech(
     audio: UploadFile,
     user: CurrentUser,
     speech: Annotated[SpeechPort, Depends(get_speech)],
+    quota: Annotated[QuotaService, Depends(get_quota_service)],
 ) -> SpeechRead:
     """The words said in a recording from the microphone (F21.2.2), for the user to send.
 
-    Recognised by Google Cloud and dropped: nothing of the sound is stored. 413
-    speech_too_long past a minute; 503 speech_unavailable when the recogniser fails.
+    Only the WAV the microphone makes, a minute at most by its own length (F21.9.4):
+    415 for anything else, 413 speech_too_long past the minute — whatever the file's
+    size. Paid from the AI credits by its seconds (429 quota_exceeded when spent).
+    Recognised by Google Cloud and dropped: nothing of the sound is stored; 503
+    speech_unavailable when the recogniser fails.
     """
     sound = await audio.read(SPEECH_BYTES + 1)
-    if len(sound) > SPEECH_BYTES:
-        raise SpeechTooLongError("A recording can be a minute long at most.")
     try:
-        text = await speech.recognise(
-            sound, audio.content_type or "audio/wav", user.language or "en"
-        )
+        seconds = wav_seconds(sound)
+    except NotWav as exc:
+        raise UnsupportedFileFormatError("Send the recording as a WAV.") from exc
+    if len(sound) > SPEECH_BYTES or seconds > MAX_SECONDS:
+        raise SpeechTooLongError("A recording can be a minute long at most.")
+    await quota.ensure_can_speak(user, seconds, datetime.now(UTC))
+    try:
+        text = await speech.recognise(sound, "audio/wav", user.language or "en")
     except SpeechUnavailable as exc:
         raise SpeechUnavailableError("The speech could not be recognised just now.") from exc
     return SpeechRead(text=text)

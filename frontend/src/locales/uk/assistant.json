@@ -126,6 +126,5 @@
     "sent_other": "Додано {{count}} чека",
     "open": "Відкрити чеки"
   },
-  "addByHand": "Додати вручну",
-  "addByHandShort": "Вручну"
+  "creditsLeft": "ШІ цього місяця: приблизно чеків — {{receipts}}, повідомлень — {{messages}}"
 }

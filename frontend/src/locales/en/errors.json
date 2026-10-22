@@ -20,8 +20,8 @@
   "upload_limit_exceeded": "The upload is over the allowed limit.",
   "too_many_photos": "You can upload at most {{max}} photos per receipt.",
   "photos_too_large": "The photos on this line add up to more than {{max_mb}} MB.",
-  "quota_exceeded": "Your account can have {{limit}} receipts read a month and has {{left}} left; this would need {{needed}}. It resets on {{resets_on}}.",
-  "service_busy": "Receipt reading has reached today's limit for the whole service. Try again tomorrow.",
+  "quota_exceeded": "This month's AI credits are spent: left for about {{receipts_left}} receipts or {{messages_left}} messages. They renew on {{resets_on}}; typing by hand still works.",
+  "service_busy": "The service has reached today's limit for reading and answering. Try again tomorrow.",
   "message_too_large": "The message is larger than receipt intake accepts.",
   "categoriser_unavailable": "The categoriser gave no answer. Nothing was changed; try again later.",
   "advice_unavailable": "Advice could not be worked out just now. Try again in a moment.",
@@ -68,5 +68,6 @@
   "card_done": "This card is already done.",
   "needs_card": "Income lands on a card: add one with it.",
   "speech_unavailable": "What you said could not be recognised just now. Try again or type it.",
-  "speech_too_long": "A recording can be a minute long at most."
+  "speech_too_long": "A recording can be a minute long at most.",
+  "too_many_receipts": "On the free plan one upload can hold {{max}} receipts. Send the rest separately."
 }

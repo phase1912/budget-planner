@@ -86,14 +86,20 @@ variable "support_email" {
   default     = "bohdan.razhyk.support@gmail.com"
 }
 
-variable "monthly_receipt_quota" {
-  description = "Receipts an ordinary account may have read per calendar month (F10.6.1)."
+variable "free_monthly_credits" {
+  description = "AI credits (0.001 USD each) the free plan may spend a calendar month (F21.9)."
   type        = number
-  default     = 10
+  default     = 150
 }
 
-variable "daily_receipt_read_ceiling" {
-  description = "Receipts read per UTC day across every non-admin account (F10.6.4)."
+variable "paid_monthly_credits" {
+  description = "AI credits the paid plan may spend a calendar month (F21.9)."
   type        = number
-  default     = 100
+  default     = 2500
+}
+
+variable "daily_credit_ceiling" {
+  description = "AI credits charged per UTC day across every non-admin account (F21.9)."
+  type        = number
+  default     = 3000
 }

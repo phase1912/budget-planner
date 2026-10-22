@@ -56,9 +56,9 @@
     "save": "Zapisz sumę"
   },
   "quota": {
-    "unlimited": "To konto nie ma limitu paragonów.",
-    "left": "W tym miesiącu zostało {{left}} z {{limit}} paragonów.",
-    "used": "W tym miesiącu wykorzystano wszystkie {{limit}} paragonów. Kolejne można odczytać od {{resets}}.",
+    "unlimited": "To konto nie ma limitu AI.",
+    "left": "AI w tym miesiącu: zostało około na paragony — {{receipts}}, wiadomości — {{messages}}.",
+    "used": "Kredyty AI na ten miesiąc są wykorzystane. Kolejne od {{resets}}; ręcznie nadal możesz dodawać paragony.",
     "short_one": "W tym miesiącu został tylko {{count}} paragon, a tu jest {{needed}}. Usuń {{extra}}, by odczytać resztę, albo poczekaj do {{resets}}.",
     "short_few": "W tym miesiącu zostały tylko {{count}} paragony, a tu jest {{needed}}. Usuń {{extra}}, by odczytać resztę, albo poczekaj do {{resets}}.",
     "short_many": "W tym miesiącu zostało tylko {{count}} paragonów, a tu jest {{needed}}. Usuń {{extra}}, by odczytać resztę, albo poczekaj do {{resets}}.",

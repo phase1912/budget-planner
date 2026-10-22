@@ -1,15 +1,17 @@
-"""Counting receipt reads, for quotas (F10.6)."""
+"""Counting what accounts spend on models — credits, receipt reads, messages (F10.6, F21.9)."""
 
 import uuid
 from collections.abc import Collection
 from datetime import datetime
+from decimal import Decimal
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.ai_usage import AiUsage
 from app.models.conversation import ConversationMessage
 from app.models.receipt import Receipt, ReceiptChannel
-from app.models.upload_job import UploadJob
+from app.models.upload_job import JobStatus, UploadJob
 from app.models.user import User
 
 
@@ -63,6 +65,53 @@ class UsageRepository:
         if excluding:
             stmt = stmt.where(ConversationMessage.user_id.not_in(excluding))
         return int(await self.session.scalar(stmt) or 0)
+
+    async def credits_spent_since(
+        self,
+        since: datetime,
+        *,
+        user_id: uuid.UUID | None = None,
+        excluding: Collection[uuid.UUID] = (),
+    ) -> Decimal:
+        """Credits charged since `since` (F21.9.1), to one account or all but `excluding`."""
+        stmt = select(func.coalesce(func.sum(AiUsage.credits), 0)).where(
+            AiUsage.charged.is_(True), AiUsage.created_at >= since
+        )
+        if user_id is not None:
+            stmt = stmt.where(AiUsage.user_id == user_id)
+        if excluding:
+            stmt = stmt.where(AiUsage.user_id.not_in(excluding))
+        return Decimal(await self.session.scalar(stmt) or 0)
+
+    async def receipts_being_read(self, user_id: uuid.UUID) -> int:
+        """Receipts of the account's uploads still being read: spent, not yet recorded."""
+        stmt = select(
+            func.coalesce(func.sum(UploadJob.total_items - UploadJob.processed_items), 0)
+        ).where(
+            UploadJob.user_id == user_id,
+            UploadJob.status.in_([JobStatus.PENDING, JobStatus.PROCESSING]),
+        )
+        return int(await self.session.scalar(stmt) or 0)
+
+    async def credits_for(self, purposes: Collection[str], since: datetime) -> Decimal:
+        """Credits every call for `purposes` cost since `since`, charged or not: what such
+        work costs, across the service."""
+        stmt = select(func.coalesce(func.sum(AiUsage.credits), 0)).where(
+            AiUsage.purpose.in_(list(purposes)), AiUsage.created_at >= since
+        )
+        return Decimal(await self.session.scalar(stmt) or 0)
+
+    async def calls_for(self, purpose: str, since: datetime) -> int:
+        """How many calls for `purpose` were recorded since `since`, across the service."""
+        stmt = select(func.count()).where(AiUsage.purpose == purpose, AiUsage.created_at >= since)
+        return int(await self.session.scalar(stmt) or 0)
+
+    async def first_call(self, purpose: str) -> datetime | None:
+        """When a call for `purpose` was first recorded: before it, nothing was."""
+        first: datetime | None = await self.session.scalar(
+            select(func.min(AiUsage.created_at)).where(AiUsage.purpose == purpose)
+        )
+        return first
 
     async def admin_ids(self, admin_emails: Collection[str]) -> list[uuid.UUID]:
         """Accounts that are admins: by role, or by an email in `admin_emails`."""

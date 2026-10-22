@@ -34,8 +34,8 @@ class Overview(Reader):
     description = (
         "Everything the app knows about the user at once: settings, this month against the "
         "budget, cards and balances, regular incomes and bills, goals, family, trips, what "
-        "waits for review, receipt reads left. For 'what do you know about me' or a wide "
-        "question."
+        "waits for review, AI credits left as receipts and messages. For 'what do you know "
+        "about me' or a wide question."
     )
     args = NoArgs
 
@@ -76,10 +76,10 @@ class Overview(Reader):
                 for t in sorted(trips, key=lambda t: t.trip.start_date, reverse=True)[:TRIPS_LISTED]
             ],
             "lines_waiting_for_review": await ReceiptRepository(ctx.session).count_needs_review(),
-            "receipt_reads": {
-                "used": quota.used,
-                "limit": quota.limit,
-                "resets_on": str(quota.resets_on),
+            "ai_credits_left": {
+                "about_receipts": quota.receipts_left,
+                "about_messages": quota.messages_left,
+                "renews_on": str(quota.resets_on),
                 "plan": quota.plan,
             },
         }

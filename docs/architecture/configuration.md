@@ -45,11 +45,15 @@ A field with no default (`database_url`, `anthropic_api_key`) makes `Settings()`
 | `price_freshness_days` | `PRICE_FRESHNESS_DAYS` | No | `90` | How recent a shop's price must be to say another shop is cheaper (F16.3); older prices may no longer hold. At least 1. |
 | `storage_backend` | `STORAGE_BACKEND` | No | `s3` | `s3` for an S3-compatible store (MinIO locally), `gcs` for Cloud Storage as the runtime's service account, keyless (ADR-0014). `S3_BUCKET_NAME` names the bucket either way. |
 | `exchange_rate_source` | `EXCHANGE_RATE_SOURCE` | No | `nbp` | `nbp` converts foreign receipts at the National Bank of Poland's rates, the ECB's as fallback (ADR-0016); `off` stores them unconverted. The test suite runs with `off`, so it never reaches the network. |
-| `monthly_receipt_quota` | `MONTHLY_RECEIPT_QUOTA` | No | `10` | Receipts an account on the free plan may have read per calendar month (F10.6, F18.4). Set from Terraform's `monthly_receipt_quota`. |
-| `paid_monthly_receipt_quota` | `PAID_MONTHLY_RECEIPT_QUOTA` | No | `200` | Receipts an account on the paid plan may have read per calendar month (F18.4). |
+| `free_monthly_credits` | `FREE_MONTHLY_CREDITS` | No | `150` | AI credits (one is 0.001 USD of model cost) the free plan may spend per calendar month (F21.9, ADR-0030). Set from Terraform's `free_monthly_credits`. |
+| `paid_monthly_credits` | `PAID_MONTHLY_CREDITS` | No | `2500` | AI credits the paid plan may spend per calendar month (F18.4, F21.9). |
+| `credits_per_receipt` | `CREDITS_PER_RECEIPT` | No | `10` | What a receipt read is taken to cost until 20 reads in 30 days were recorded; then the measured average (F21.9.3). |
+| `credits_per_message` | `CREDITS_PER_MESSAGE` | No | `4` | What a message to the assistant is taken to cost until measured the same way. |
+| `free_receipts_per_upload` | `FREE_RECEIPTS_PER_UPLOAD` | No | `5` | Receipts one upload may hold on the free plan, so one request cannot spend the month. |
+| `free_assistant_rounds` | `FREE_ASSISTANT_ROUNDS` | No | `4` | Rounds of tool use one message to the assistant may take on the free plan. |
 | `admin_second_factor_required` | `ADMIN_SECOND_FACTOR_REQUIRED` | No | unset | Whether admin pages need a session opened with two-factor sign-in (F18.6.1); unset means yes everywhere but `local`. |
-| `daily_receipt_read_ceiling` | `DAILY_RECEIPT_READ_CEILING` | No | `100` | Receipts read per UTC day across every non-admin account (F10.6). |
-| `admin_emails` | `ADMIN_EMAILS` | No | `[]` | JSON list of the super admins' emails (ADR-0021): admins with no receipt limits who alone appoint admins (accounts with role `admin`) and read the admin log. Set from `terraform.tfvars`, which is kept out of git. |
+| `daily_credit_ceiling` | `DAILY_CREDIT_CEILING` | No | `3000` | AI credits charged per UTC day across every non-admin account (F21.9): bounds the bill. Set from Terraform's `daily_credit_ceiling`. |
+| `admin_emails` | `ADMIN_EMAILS` | No | `[]` | JSON list of the super admins' emails (ADR-0021): admins with no AI credit limits who alone appoint admins (accounts with role `admin`) and read the admin log. Set from `terraform.tfvars`, which is kept out of git. |
 | `build_sha` | `BUILD_SHA` | No | `dev` | Set by CI/CD at deploy time; stays `dev` outside a built image. Surfaced for support/debugging, not read by any business logic. |
 
 ## Where each environment's values actually come from

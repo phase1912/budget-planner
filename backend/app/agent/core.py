@@ -28,6 +28,7 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
+from app.agent.metering import Recorder, spend
 from app.agent.types import Message, ToolTurn, ToolUse
 
 logger = logging.getLogger(__name__)
@@ -72,6 +73,7 @@ class Agent:
         disable_json_schema: bool = False,
         vertex_project: str | None = None,
         vertex_location: str | None = None,
+        recorder: Recorder | None = None,
     ) -> None:
         self.model = model
         self.vertex_project = vertex_project
@@ -81,6 +83,7 @@ class Agent:
         self.default_temperature = default_temperature
         self.disable_reasoning = disable_reasoning
         self.disable_json_schema = disable_json_schema
+        self.recorder = recorder
 
     def _provider_kwargs(self) -> dict[str, Any]:
         """Build the credential and provider-tuning kwargs shared by both call paths.
@@ -108,6 +111,7 @@ class Agent:
         *,
         temperature: float | None = None,
         max_tokens: int = 32768,
+        purpose: str = "other",
     ) -> str:
         """Send messages to the LLM and return the assistant's text reply.
 
@@ -131,6 +135,7 @@ class Agent:
             response = await litellm.acompletion(**kwargs)
         except Exception as exc:
             raise AgentError(f"LLM call failed: {exc}") from exc
+        await self._record(response, purpose)
 
         message = response.choices[0].message
         content = message.content
@@ -147,6 +152,7 @@ class Agent:
         max_tokens: int = 32768,
         reasoning: bool = True,
         thinking_budget: int | None = None,
+        purpose: str = "other",
     ) -> T:
         """Send messages and parse the response into a Pydantic model.
 
@@ -196,6 +202,7 @@ class Agent:
             response = await litellm.acompletion(**kwargs)
         except Exception as exc:
             raise AgentError(f"LLM call failed: {exc}") from exc
+        await self._record(response, purpose)
 
         choice = response.choices[0]
         message = choice.message
@@ -224,6 +231,7 @@ class Agent:
         *,
         max_tokens: int = 2048,
         thinking_budget: int | None = None,
+        purpose: str = "other",
     ) -> ToolTurn:
         """Offer `tools` (OpenAI function format) and return what the model does with them.
 
@@ -251,6 +259,7 @@ class Agent:
             response = await litellm.acompletion(**kwargs)
         except Exception as exc:
             raise AgentError(f"LLM call failed: {exc}") from exc
+        await self._record(response, purpose)
         if not response.choices:
             raise AgentError("LLM returned no choices")
 
@@ -270,6 +279,30 @@ class Agent:
             )
         text = str(message.content or "")
         return ToolTurn(text, calls, Message(role="assistant", content=text, tool_calls=raw_calls))
+
+    async def _record(self, response: Any, purpose: str) -> None:
+        """Hand what the call cost to the recorder (F21.9.1): LiteLLM's own price for the
+        model, thinking included; a model it has no price for — a local one — costs 0."""
+        if self.recorder is None:
+            return
+        import litellm
+
+        cost = (getattr(response, "_hidden_params", None) or {}).get("response_cost")
+        if cost is None:
+            try:
+                cost = litellm.completion_cost(completion_response=response)
+            except Exception:
+                cost = 0
+        usage = getattr(response, "usage", None)
+        await self.recorder(
+            spend(
+                purpose,
+                self.model,
+                float(cost or 0),
+                input_tokens=int(getattr(usage, "prompt_tokens", 0) or 0),
+                output_tokens=int(getattr(usage, "completion_tokens", 0) or 0),
+            )
+        )
 
     @staticmethod
     def _json_only_instruction(schema: type[BaseModel]) -> Message:

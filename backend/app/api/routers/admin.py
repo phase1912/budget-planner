@@ -103,8 +103,8 @@ async def user_card(user_id: uuid.UUID, _admin: Admin, session: Session) -> Admi
         two_factor_enabled=user.two_factor_enabled,
         plan=card.quota.plan,
         plan_ends_on=card.quota.plan_ends_on,
-        receipts_limit=card.quota.limit,
-        receipts_used=card.quota.used,
+        credits_limit=card.quota.limit,
+        credits_used=round(card.quota.used),
         last_active_at=card.last_active_at,
         grants=[
             PlanGrantRead(

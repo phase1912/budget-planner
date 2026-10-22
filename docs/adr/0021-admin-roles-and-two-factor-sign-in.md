@@ -59,5 +59,5 @@ side gone.
 - Rotating `JWT_SECRET_KEY` now also resets every two-factor setup; the runbook says so.
 - A new admin action is added to `AdminActionKind` and written to the log, or it is not
   done through the console.
-- The plan, not one setting, sets the receipt limit: `monthly_receipt_quota` (free) and
-  `paid_monthly_receipt_quota` (paid), until F18.2.1 sets prices and limits by measured cost.
+- The plan, not one setting, sets the limit: since F21.9 (ADR-0030) a monthly wallet of AI
+  credits, `free_monthly_credits` (free) and `paid_monthly_credits` (paid).
