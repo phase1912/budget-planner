@@ -23,3 +23,7 @@ class GoalFactory(ModelFactory[Goal]):
     mapped_item_names = Use(lambda: list[str]())
     mapping_set_by_user = False
     warning_dismissed_for = None
+    # A savings goal says these itself; a random card would not exist (F8.11.1).
+    target_date = None
+    saved_account_id = None
+    saved_amount = None

@@ -247,22 +247,27 @@ class Accounts(Reader):
 
     async def read(self, ctx: ToolContext, args: NoArgs) -> Answer:
         overview = await AccountService(ctx.session).overview(ctx.today)
-        return Answer(
-            json.dumps(
-                {
-                    "currency": ctx.user.currency,
-                    "total": str(overview.total),
-                    "accounts": [
-                        {
-                            "number": n,
-                            "name": a.account.name,
-                            "kind": str(a.account.kind),
-                            "pays_for_purchases": a.account.for_purchases,
-                            "balance": str(a.ledger.balance),
-                        }
-                        for n, a in enumerate(overview.accounts, 1)
-                    ],
-                }
-            ),
-            {"screen": "accounts", "to": "/accounts"} if overview.accounts else None,
-        )
+        accounts = [
+            {
+                "number": n,
+                "name": a.account.name,
+                "kind": str(a.account.kind),
+                "pays_for_purchases": a.account.for_purchases,
+                "balance": str(a.ledger.balance),
+            }
+            for n, a in enumerate(overview.accounts, 1)
+        ]
+        figures = {
+            "currency": ctx.user.currency,
+            "total": str(overview.total),
+            "accounts": accounts,
+        }
+        # The answer shows the cards as the Accounts screen draws them (F21.14).
+        card = {
+            "screen": "accounts",
+            "to": "/accounts",
+            "currency": ctx.user.currency,
+            "total": str(overview.total),
+            "accounts": accounts,
+        }
+        return Answer(json.dumps(figures, ensure_ascii=False), card if accounts else None)

@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-25 epics · 185 features · 373 tasks written so far.
+25 epics · 186 features · 374 tasks written so far.
 
 22 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -30,7 +30,7 @@
 | E18 | Subscriptions and Payments | — | 6 | yes | 2 | Out of scope |
 | E19 | Advertising | — | 4 | yes | 2 | Diploma |
 | E20 | Trips | — | 5 | yes | 2 | Diploma |
-| E21 | Voice and Chat Assistant | — | 13 | yes | 2 | Diploma |
+| E21 | Voice and Chat Assistant | — | 14 | yes | 2 | Diploma |
 | E22 | Android App | — | 3 | yes | 2 | Diploma |
 | E23 | Improvements | — | 21 | no | 2 | Diploma |
 | E24 | Bugfixes | — | 1 | no | 2 | Diploma |
@@ -1857,6 +1857,16 @@ Measured on 2026-10-22 against the real model and tools: "update the balance on 
 - **F21.13.3** A question with options to tap — An `ask` tool: when more than one thing fits or something is missing, the assistant asks with a card of options; tapping one sends it as the user's answer and the conversation goes on. A refused write lists the candidates for it. Checked at 375, 768 and 1280 px.
 - **F21.13.4** The assistant measured — scripts/evaluate_assistant.py: a seeded user and about thirty dialogs in Ukrainian, Polish, English and Russian — balances, cards by role and by place, bills, budget, goals, questions — each with the tool and arguments expected or a question with options; run against the configured model, scored per dialog and overall with time and tokens, the baseline and the result written in the ADR.
 - **F21.13.5** The assistant behind the middle button — The phone's middle button and the side menu's main button open the assistant, with an icon that says it is one; adding a receipt by hand stays one tap away — a button in the assistant's header, the paperclip, and a plain item in the side menu — and the Add screen keeps everything it has. Checked at 375, 768 and 1280 px.
+
+### F21.14 — Answers drawn like the screens
+
+*Requirements: N2* · *Blocked by: F21.10, F8.11*
+
+An answer about money shows the thing itself, drawn the way its screen draws it, beside the words: the cards and their balances as the Accounts screen shows them, the purchase card marked; the month as Home's ring — spent, bills, what is left of the budget; each goal with its progress bar; products as a table to pick from. Charts for spending by category already come with their answers (F21.4). Each drawing links to its screen, and is built from what the read tool found, never from the model's words.
+
+**Demonstrated by:** Ask "what's on my cards?": the two cards with their balances; "how is my month?": the ring; "how are my goals?": the goals with their bars; "which snacks did I buy?": a table of them.
+
+- **F21.14.1** Cards, month, goals and products as answer cards — The accounts, overview/month, goals and products read tools leave an answer card with what they found — screen "accounts", "month", "goals", "products" — drawn by the client from shared pieces of the screens (the account card, the month ring, the goal meter, a product row), each linking to its screen; three languages; tests that a card carries only the caller's data (N2). Checked at 375, 768 and 1280 px.
 
 ---
 

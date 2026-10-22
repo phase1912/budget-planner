@@ -273,6 +273,7 @@ async def test_a_fresh_account_is_told_more_history_is_needed_and_no_model_is_as
         "history_days": 0,
         "required_days": 30,
         "progress": 0,
+        "analysis_months": 3,
     }
 
 
@@ -339,11 +340,11 @@ async def test_a_ceiling_on_track_gets_nothing_to_cut_and_no_model_is_asked(
     progress = (await _call(db_session, owner, "GET", "/goals/progress")).json()
 
     assert (advised.status_code, advised.json(), generator.asked) == (201, [], [])
-    [row] = progress
+    [row] = [r for r in progress if r["kind"] == "month"]
     assert (row["goal_id"], row["on_track"]) == (str(goal.id), True)
     assert Decimal(row["spent"]) == Decimal("13.60")
     assert Decimal(row["projected"]) == _expected_projection(Decimal("13.60"))
-    assert str(cookies_goal.id) not in {r["goal_id"] for r in progress}
+    assert {r["goal_id"]: r["kind"] for r in progress}[str(cookies_goal.id)] == "lifestyle"
 
 
 @pytest.mark.asyncio
@@ -369,7 +370,7 @@ async def test_a_ceiling_heading_over_gets_advice_and_says_so(db_session: AsyncS
     generator = StubAdviceGenerator([COOKIES])
 
     advised = await _call(db_session, owner, "POST", f"/goals/{goal.id}/recommendations", generator)
-    [row] = (await _call(db_session, owner, "GET", "/goals/progress")).json()
+    [row] = _month_rows((await _call(db_session, owner, "GET", "/goals/progress")).json())
 
     assert (advised.status_code, len(generator.asked)) == (201, 1)
     assert (row["on_track"], Decimal(row["margin"]) < 0) == (False, True)
@@ -395,7 +396,7 @@ async def test_a_category_cut_is_paced_on_its_category_alone(db_session: AsyncSe
         target_amount=Decimal("100"),
     )
 
-    [row] = (await _call(db_session, owner, "GET", "/goals/progress")).json()
+    [row] = _month_rows((await _call(db_session, owner, "GET", "/goals/progress")).json())
 
     assert Decimal(row["spent"]) == Decimal("4.00")
 
@@ -419,7 +420,7 @@ async def test_a_warning_set_aside_stays_aside_for_the_month(db_session: AsyncSe
     goal = await _ceiling(owner, "1")
 
     dismissed = await _call(db_session, owner, "POST", f"/goals/{goal.id}/warning/dismiss")
-    [row] = (await _call(db_session, owner, "GET", "/goals/progress")).json()
+    [row] = _month_rows((await _call(db_session, owner, "GET", "/goals/progress")).json())
 
     assert dismissed.status_code == 204
     assert (row["goal_name"], row["warning_dismissed"]) == ("Stay under", True)
@@ -509,3 +510,8 @@ async def test_another_users_advice_cannot_be_marked(db_session: AsyncSession) -
     current_user_id.set(owner.id)
     feed = await _call(db_session, owner, "GET", "/recommendations")
     assert feed.json()[0]["feedback"] is None
+
+
+def _month_rows(progress: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The monthly caps among every goal's standing (F8.11.2)."""
+    return [r for r in progress if r["kind"] == "month"]

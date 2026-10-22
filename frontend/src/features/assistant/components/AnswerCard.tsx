@@ -6,10 +6,11 @@ import type { components } from "@/api/schema";
 import { CategoryChart } from "@/shared/components";
 import { periodLabel } from "@/features/statistics/periodLabel";
 import type { ChatMessage } from "@/stores/AssistantStore";
+import { AccountsDrawing, GoalsDrawing, MonthDrawing, ProductsDrawing } from "./AnswerDrawings";
 
 type Chart = components["schemas"]["ChartResponse"];
 
-const SCREENS = ["spending", "receipts", "products", "accounts", "home"] as const;
+const SCREENS = ["spending", "receipts", "products", "accounts", "home", "month", "goals"] as const;
 type Screen = (typeof SCREENS)[number];
 
 const day = (value: unknown): string | null =>
@@ -24,9 +25,10 @@ function isScreen(value: unknown): value is Screen {
 }
 
 /**
- * What an answer about spending came with (F21.4): the chart the Spending screen would draw
- * for that period, and a link to the screen holding the full figures with the same
- * filters — Spending, Receipts or a product's prices. Nothing to approve: it only shows.
+ * What an answer came with, drawn the way its screen draws it (F21.4, F21.14): the chart of
+ * spending by category, the cards with their balances, the month as Home's ring, each goal
+ * with its bar, products as rows — and a link to the screen holding the full figures with
+ * the same filters. Nothing to approve: it only shows what the read found.
  */
 export function AnswerCard({ message }: { message: ChatMessage }) {
   const { t } = useTranslation("assistant");
@@ -46,6 +48,10 @@ export function AnswerCard({ message }: { message: ChatMessage }) {
           hiddenNote={(count) => t("answer.hidden", { count })}
         />
       )}
+      {fields.screen === "accounts" && <AccountsDrawing fields={fields} />}
+      {fields.screen === "month" && <MonthDrawing fields={fields} />}
+      {fields.screen === "goals" && <GoalsDrawing fields={fields} />}
+      {fields.screen === "products" && <ProductsDrawing fields={fields} />}
       {to && isScreen(fields.screen) && (
         <Link
           to={to}

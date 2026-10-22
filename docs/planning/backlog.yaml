@@ -5091,6 +5091,35 @@ epics:
               menu — and the Add screen keeps everything it has. Checked at 375, 768 and 1280
               px.
 
+      - key: F21.14
+        title: Answers drawn like the screens
+        labels: [backend, frontend]
+        requirements: [N2]
+        depends_on: [F21.10, F8.11]
+        intent: >
+          An answer about money shows the thing itself, drawn the way its screen draws it,
+          beside the words: the cards and their balances as the Accounts screen shows them,
+          the purchase card marked; the month as Home's ring — spent, bills, what is left of
+          the budget; each goal with its progress bar; products as a table to pick from.
+          Charts for spending by category already come with their answers (F21.4). Each
+          drawing links to its screen, and is built from what the read tool found, never
+          from the model's words.
+        demo: >
+          Ask "what's on my cards?": the two cards with their balances; "how is my month?":
+          the ring; "how are my goals?": the goals with their bars; "which snacks did I
+          buy?": a table of them.
+        tasks:
+          - key: F21.14.1
+            title: Cards, month, goals and products as answer cards
+            labels: [backend, frontend]
+            detail: >
+              The accounts, overview/month, goals and products read tools leave an answer
+              card with what they found — screen "accounts", "month", "goals", "products" —
+              drawn by the client from shared pieces of the screens (the account card, the
+              month ring, the goal meter, a product row), each linking to its screen; three
+              languages; tests that a card carries only the caller's data (N2). Checked at
+              375, 768 and 1280 px.
+
   - key: E22
     title: Android App
     br: []
@@ -5550,6 +5579,40 @@ epics:
               A new ADR superseding ADR-0024's "every sum is on an account", the domain model's
               invariants on accounts, income, bills and the budget, and the overview's account
               flow, in the same change.
+
+      - key: F23.22
+        title: A day's receipts from the chart, and the chart drawn three ways
+        labels: [frontend]
+        requirements: []
+        depends_on: [F23.4]
+        intent: >
+          Tapping a day on Spending's day-by-day chart only named its sum, so the obvious next
+          question — what was bought that day — needed a trip to Receipts and a date filter.
+          The tap now lists that day's receipts under the chart. People also read a month
+          differently: some want columns, some a list of days, some a calendar, so the chart
+          can be drawn each way and remembers the choice.
+        demo: >
+          On Spending, tap 14 October: its three receipts appear under the chart, each opening
+          its details. Switch the chart to Days: the same month as rows, a bar per day; to
+          Calendar: the month as weeks, darker for bigger days. Reload: it stays on Calendar.
+        tasks:
+          - key: F23.22.1
+            title: The receipts of the day tapped
+            labels: [frontend]
+            detail: >
+              Tapping a day with spending lists that day's receipts under the chart (shop, total,
+              opening the receipt's details), read from the receipts list for that one day; a day
+              with none says so. The day opened at first shows none until tapped. Checked at
+              375, 768 and 1280 px.
+          - key: F23.22.2
+            title: Columns, days or a calendar
+            labels: [frontend]
+            detail: >
+              A switch above the chart: Columns (today's bars), Days (a row a day, the bar across,
+              the sum at its end) and Calendar (the period's weeks, Monday first, each day shaded
+              by its share of the biggest). Every view taps to the same day and its receipts. The
+              choice is kept in this browser only, as a convenience the privacy check knows of.
+              Checked at 375, 768 and 1280 px.
 
   - key: E24
     title: Bugfixes

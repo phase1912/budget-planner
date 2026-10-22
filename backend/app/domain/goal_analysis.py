@@ -155,6 +155,36 @@ class GoalAnalysis:
     price_signals: list[PriceSignal] = field(default_factory=list)
 
 
+def evidence_refs(analysis: GoalAnalysis) -> dict[str, tuple[str, str]]:
+    """A short reference for every target the evidence names — `c1` for a category, `i1`
+    for a recurring purchase, `p1` for a product with a price — and its kind and name.
+
+    The model names its target by the reference, never by spelling: asked for advice in
+    Ukrainian it translated "Dining" and every proposal was dropped as naming nothing the
+    evidence found (F8.11.3). Same analysis, same references.
+    """
+    refs: dict[str, tuple[str, str]] = {}
+    seen: set[tuple[str, str]] = set()
+
+    def add(prefix: str, kind: str, name: str | None) -> None:
+        if not name or (kind, name.casefold()) in seen:
+            return
+        seen.add((kind, name.casefold()))
+        refs[f"{prefix}{sum(1 for r in refs if r.startswith(prefix)) + 1}"] = (kind, name)
+
+    for c in [
+        *analysis.highest_spend,
+        *(change.standing for change in analysis.largest_increases),
+        *analysis.goal_categories,
+    ]:
+        add("c", "category", c.name)
+    for item in analysis.recurring_items:
+        add("i", "item", item.name)
+    for signal in analysis.price_signals:
+        add("p", "product", signal.product)
+    return refs
+
+
 def render_advice_context(analysis: GoalAnalysis, currency: str) -> str:
     """The analysis as the advice model reads it: the goal, then the evidence (F8.3.2).
 
@@ -162,13 +192,18 @@ def render_advice_context(analysis: GoalAnalysis, currency: str) -> str:
     left to fill a gap from general knowledge (BRD F3, constraint 11.3).
     """
     goal = analysis.goal
+    ref = {(kind, name.casefold()): r for r, (kind, name) in evidence_refs(analysis).items()}
 
     def money(amount: Decimal) -> str:
         return f"{amount:.2f} {currency}"
 
+    def tag(kind: str, name: str | None) -> str:
+        found = ref.get((kind, name.casefold())) if name else None
+        return f"[{found}] " if found else ""
+
     def standing(c: CategoryStanding) -> str:
         return (
-            f"- {c.name or 'Uncategorized'}: {money(c.total)}, "
+            f"- {tag('category', c.name)}{c.name or 'Uncategorized'}: {money(c.total)}, "
             f"{c.share}% of spending, {c.item_count} items"
         )
 
@@ -191,7 +226,8 @@ def render_advice_context(analysis: GoalAnalysis, currency: str) -> str:
         f"to {_day(analysis.compared_with.end)}",
     ]
     lines += [
-        f"- {c.standing.name or 'Uncategorized'}: +{money(c.change)} "
+        f"- {tag('category', c.standing.name)}{c.standing.name or 'Uncategorized'}: "
+        f"+{money(c.change)} "
         + (f"(+{c.change_percent}%)" if c.change_percent is not None else "(new this period)")
         for c in analysis.largest_increases
     ] or ["- no category grew"]
@@ -208,14 +244,16 @@ def render_advice_context(analysis: GoalAnalysis, currency: str) -> str:
         if analysis.scope.whole_spend
         else "## Recurring purchases related to this goal",
     ]
-    lines += [_recurring(item, money) for item in analysis.recurring_items] or [
-        "- no purchase recurs in this period"
-    ]
+    lines += [
+        _recurring(item, money).replace("- ", f"- {tag('item', item.name)}", 1)
+        for item in analysis.recurring_items
+    ] or ["- no purchase recurs in this period"]
 
     lines += ["", "## Prices of what the user buys"]
-    lines += [_price(signal, money) for signal in analysis.price_signals] or [
-        "- no cheaper shop or price rise found"
-    ]
+    lines += [
+        _price(signal, money).replace("- ", f"- {tag('product', signal.product)}", 1)
+        for signal in analysis.price_signals
+    ] or ["- no cheaper shop or price rise found"]
 
     if analysis.dismissed_recommendations:
         lines += [

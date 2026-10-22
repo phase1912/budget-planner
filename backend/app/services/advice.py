@@ -13,11 +13,8 @@ from app.domain.advice import (
     keep_specific,
     project_impact,
 )
-from app.domain.categories import ItemView
 from app.domain.goal_analysis import DismissedRecommendation, FeedbackState
-from app.domain.goal_pace import PACED_KINDS, GoalPace, pace
-from app.domain.goals import FinancialKind
-from app.domain.periods import DateRange
+from app.domain.goal_pace import GoalPace
 from app.models.goal import Goal
 from app.models.recommendation import Recommendation
 from app.ports.advice_generation import AdviceGeneratorPort, AdviceUnavailable
@@ -26,6 +23,7 @@ from app.repository.goal import GoalRepository
 from app.repository.receipt import ReceiptRepository
 from app.repository.recommendation import RecommendationRepository
 from app.services.goal_analysis import GoalAnalysisService
+from app.services.goal_progress import month_pace
 from app.services.statistics import StatisticsService
 
 logger = logging.getLogger(__name__)
@@ -69,24 +67,9 @@ class AdviceService:
         return await self.recommendations.list_mine()
 
     async def pace(self, goal: Goal, as_of: date) -> GoalPace | None:
-        """Where a monthly money goal's month is heading, or None for any other goal (F6).
-
-        Counts this month's spend up to `as_of` the way the month view does: parsed
-        receipts only (D1, D3), on everything for a ceiling and on the one category
-        for a category reduction.
-        """
-        if goal.financial_kind not in PACED_KINDS or goal.target_amount is None:
-            return None
-        month = DateRange(as_of.replace(day=1), as_of)
-        if goal.financial_kind is FinancialKind.CATEGORY_REDUCTION:
-            spent = (
-                await self.receipts.item_spend(
-                    ItemView.ALL, period=month, category_id=goal.category_id
-                )
-            ).total
-        else:
-            spent, _ = await self.receipts.month_total(month)
-        return pace(spent, goal.target_amount, as_of)
+        """Where a monthly money goal's month is heading, or None for any other goal (F6);
+        see `goal_progress.month_pace`."""
+        return await month_pace(self.receipts, goal, as_of)
 
     async def progress(self, as_of: date) -> list[tuple[Goal, GoalPace]]:
         """Every monthly money goal of the user's with its pace this month (F6)."""

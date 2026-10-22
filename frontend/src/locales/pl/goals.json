@@ -87,7 +87,11 @@
     "remove": "Usuń cel",
     "saving": "Zapisujemy…",
     "save": "Zapisz zmiany",
-    "add": "Dodaj cel"
+    "add": "Dodaj cel",
+    "by": "Do dnia",
+    "savedOn": "Gdzie są pieniądze",
+    "savedByHand": "Wpisuję ręcznie",
+    "savedAmount": "Już odłożone, {{currency}}"
   },
   "advice": {
     "section": "Porady dla „{{name}}”",
@@ -100,7 +104,15 @@
     "buttonLabel": "{{verb}}: „{{name}}”",
     "working": "Opracowujemy…",
     "updated": "Zaktualizowano {{ago}}",
-    "justNow": "przed chwilą"
+    "justNow": "przed chwilą",
+    "lookedAt_one": "Przejrzano {{lines}} z ostatniego {{count}} miesiąca: na razie nic konkretnego do zmiany.",
+    "lookedAt_few": "Przejrzano {{lines}} z ostatnich {{count}} miesięcy: na razie nic konkretnego do zmiany.",
+    "lookedAt_many": "Przejrzano {{lines}} z ostatnich {{count}} miesięcy: na razie nic konkretnego do zmiany.",
+    "lookedAt_other": "Przejrzano {{lines}} z ostatnich {{count}} miesiąca: na razie nic konkretnego do zmiany.",
+    "lookedAtAll_one": "Przejrzano wszystkie kategorie i produkty z ostatniego {{count}} miesiąca: na razie nic konkretnego do zmiany.",
+    "lookedAtAll_few": "Przejrzano wszystkie kategorie i produkty z ostatnich {{count}} miesięcy: na razie nic konkretnego do zmiany.",
+    "lookedAtAll_many": "Przejrzano wszystkie kategorie i produkty z ostatnich {{count}} miesięcy: na razie nic konkretnego do zmiany.",
+    "lookedAtAll_other": "Przejrzano wszystkie kategorie i produkty z ostatnich {{count}} miesiąca: na razie nic konkretnego do zmiany."
   },
   "feedback": {
     "not_followed": "Nie zastosujesz tego",
@@ -185,5 +197,19 @@
     "swapsFamily": "Taniej tam, gdzie Twoja rodzina już kupuje",
     "swapMeta": "W {{shop}} zamiast {{instead}} · miesięcznie"
   },
-  "perMonth": "{{currency}} miesięcznie"
+  "perMonth": "{{currency}} miesięcznie",
+  "standing": {
+    "month": "{{spent}} z {{target}} w tym miesiącu",
+    "onTrack": "W normie: miesiąc zmierza do {{projected}}.",
+    "over": "Miesiąc zmierza do {{projected}} — ponad limit.",
+    "saved": "Odłożone {{saved}} z {{target}} · {{percent}}%",
+    "needed": "{{amount}} miesięcznie, by zdążyć do {{date}}.",
+    "overdue": "{{date}} minęło: zostało do odłożenia {{left}}.",
+    "reached": "Osiągnięte — wszystko odłożone.",
+    "noDate": "Dodaj datę, by widzieć, ile trzeba miesięcznie.",
+    "lifestyle": "{{amount}} w tym miesiącu na to, co cel obserwuje",
+    "more": "O {{percent}}% więcej niż zwykle ({{usual}} miesięcznie).",
+    "less": "O {{percent}}% mniej niż zwykle ({{usual}} miesięcznie).",
+    "noBefore": "Nie ma jeszcze wcześniejszych miesięcy do porównania."
+  }
 }

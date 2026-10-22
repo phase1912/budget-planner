@@ -2,8 +2,11 @@ import type { ReactNode } from "react";
 import { Heart, Pencil, Plus, Target } from "lucide-react";
 
 import { Card, IconButton, IconTile, Pill } from "@/shared/components";
+import type { GoalProgress } from "@/stores/AdviceStore";
 import type { Goal } from "@/stores/GoalsStore";
+import { GoalStanding } from "./GoalStanding";
 import { metaOf } from "../goalKinds";
+import { watchedLines } from "../watchedLines";
 import { numberFormat, dateFormat } from "@/i18n/format";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
@@ -20,6 +23,8 @@ interface GoalCardProps {
   /** A category's name by id, when known: the one a reduction cuts, the ones a goal watches. */
   categoryName: (id: string | null | undefined) => string | null;
   onEdit: () => void;
+  /** Where the goal stands, shown first (F8.11.2). */
+  standing?: GoalProgress;
   /** What follows the goal itself at the foot of the card: its advice (F8.4). */
   children?: ReactNode;
 }
@@ -44,17 +49,21 @@ function target(goal: Goal, currency: string, categoryName: string | null): stri
  * One goal as docs/design/screens/goals.html shows it (BRD F1 — F8.1): what it is,
  * when it was set, and what it asks for. A lifestyle goal is read through the
  * things bought, so it lists the categories and items it watches (F8.2), with a
- * way to adjust them. Its advice (F8.4) sits at the foot of the card, where it is
- * asked for; progress arrives with later E8 features.
+ * way to adjust them. Where it stands leads, under its name (F8.11.2); its advice (F8.4)
+ * sits at the foot of the card, where it is asked for.
  */
-export function GoalCard({ goal, currency, categoryName, onEdit, children }: GoalCardProps) {
+export function GoalCard({
+  goal,
+  currency,
+  categoryName,
+  onEdit,
+  standing,
+  children,
+}: GoalCardProps) {
   const { t } = useTranslation("goals");
   const lifestyle = goal.type === "lifestyle";
   const Icon = lifestyle ? Heart : Target;
-  const watched = [
-    ...goal.mapped_category_ids.map((id) => categoryName(id)).filter((n): n is string => !!n),
-    ...goal.mapped_item_names,
-  ];
+  const watched = watchedLines(goal, categoryName);
   return (
     <Card className="flex flex-col gap-4 px-4 py-4 md:px-5.5 md:py-5">
       <div className="flex items-start justify-between gap-3">
@@ -80,6 +89,8 @@ export function GoalCard({ goal, currency, categoryName, onEdit, children }: Goa
           <Pencil size={16} />
         </IconButton>
       </div>
+
+      <GoalStanding standing={standing} currency={currency} />
 
       {lifestyle ? (
         <div className="flex flex-col gap-2.5">

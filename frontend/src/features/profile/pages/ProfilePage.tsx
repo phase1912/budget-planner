@@ -49,6 +49,7 @@ import { ReadingAccuracyCard } from "../components/ReadingAccuracyCard";
 import { ReceiptUsageCard } from "../components/ReceiptUsageCard";
 import { SecurityCard } from "../components/SecurityCard";
 import { SettingsGroup, SettingsRow, SettingsSheet } from "../components/SettingsRows";
+import { isDarkPalette } from "@/stores/ThemeStore";
 
 const WHOLE = numberFormat({ maximumFractionDigits: 0 });
 
@@ -158,19 +159,22 @@ export const ProfilePage = observer(function ProfilePage() {
               void profileStore.choosePalette(palette);
             }}
           />
-          <div className="flex items-center gap-3 pt-1">
-            <Moon size={18} className="shrink-0 text-muted-foreground" aria-hidden="true" />
-            <div className="flex-1">
-              <Switch
-                checked={themeStore.darkAtNight}
-                onChange={(on) => {
-                  void profileStore.chooseDarkAtNight(on);
-                }}
-                label={t("appearance.darkAtNight")}
-                hint={t("appearance.darkAtNightHint")}
-              />
+          {/* A dark palette is dark already: the switch would change nothing. */}
+          {!isDarkPalette(themeStore.palette) && (
+            <div className="flex items-center gap-3 pt-1">
+              <Moon size={18} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+              <div className="flex-1">
+                <Switch
+                  checked={themeStore.darkAtNight}
+                  onChange={(on) => {
+                    void profileStore.chooseDarkAtNight(on);
+                  }}
+                  label={t("appearance.darkAtNight")}
+                  hint={t("appearance.darkAtNightHint")}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 

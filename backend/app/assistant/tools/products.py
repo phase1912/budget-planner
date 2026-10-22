@@ -64,6 +64,10 @@ class FindProducts(Reader):
             {
                 "screen": "products",
                 "to": "/products/explore?products=" + ",".join(str(p.id) for p in found),
+                "currency": ctx.user.currency,
+                "products": [
+                    {"name": p.name, "receipts": p.purchases, "spent": str(p.spent)} for p in found
+                ],
             }
             if found
             else None

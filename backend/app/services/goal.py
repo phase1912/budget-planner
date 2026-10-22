@@ -7,6 +7,7 @@ from app.models.goal import Goal
 from app.ports.goal_mapping import GoalMapperPort
 from app.repository.category import CategoryRepository
 from app.repository.goal import GoalRepository
+from app.repository.money_accounts import AccountRepository
 from app.schemas.goal import GoalCreate, GoalUpdate
 
 _NOT_CLEARABLE = {
@@ -17,7 +18,8 @@ _NOT_CLEARABLE = {
 
 
 class GoalService:
-    """The user's goals: stating, changing and dropping them (BRD F1, F9 — F8.1, F8.2).
+    """The user's goals: stating, changing and dropping them (BRD F1, F9 — F8.1, F8.2,
+    F8.11.1).
 
     A lifestyle goal is handed to the mapper when it is stated, and again when its
     wording changes, to choose the spending lines it watches — until the user
@@ -114,6 +116,10 @@ class GoalService:
                     goal.target_amount,
                     goal.category_id,
                     watches_spending=bool(watched_categories or goal.mapped_item_names),
+                    tracks_savings=bool(
+                        goal.target_date or goal.saved_account_id or goal.saved_amount is not None
+                    ),
+                    saved_amount=goal.saved_amount,
                 )
             )
         except InvalidGoal as error:
@@ -123,6 +129,11 @@ class GoalService:
             raise InvalidGoalError(
                 "That category is not one of yours.", code=ProblemCode.CATEGORY_NOT_YOURS
             )
+        # Money saved on someone else's card is not this user's to count (N2).
+        if goal.saved_account_id and goal.saved_account_id not in {
+            a.id for a in await AccountRepository(self.goals.session).visible()
+        }:
+            raise InvalidGoalError("That card is not one of yours.")
         if watched_categories:
             available = {c.id for c in await self.categories.list_available(user_id)}
             if not set(watched_categories) <= available:

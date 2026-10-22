@@ -105,20 +105,18 @@ class MonthSummary(Reader):
             bills=await incomes.bills_in(first_day),
         )
         income = await incomes.month(ctx.user, first_day)
-        return Answer(
-            json.dumps(
-                {
-                    "month": f"{month.year}-{month.month:02d}",
-                    "spent": str(summary.total),
-                    "bills": str(summary.bills),
-                    "receipts": summary.receipt_count,
-                    "budget": str(summary.limit.limit) if summary.limit else None,
-                    "left_of_budget": str(summary.limit.remaining) if summary.limit else None,
-                    "income": str(income.income.net) if income.income.net is not None else None,
-                    "currency": ctx.user.currency,
-                }
-            )
-        )
+        figures = {
+            "month": f"{month.year}-{month.month:02d}",
+            "spent": str(summary.total),
+            "bills": str(summary.bills),
+            "receipts": summary.receipt_count,
+            "budget": str(summary.limit.limit) if summary.limit else None,
+            "left_of_budget": str(summary.limit.remaining) if summary.limit else None,
+            "income": str(income.income.net) if income.income.net is not None else None,
+            "currency": ctx.user.currency,
+        }
+        # The answer shows the month as Home's ring does: spent, bills, what is left (F21.14).
+        return Answer(json.dumps(figures), {"screen": "month", "to": "/", **figures})
 
 
 class SpendingByCategory(Reader):

@@ -102,6 +102,7 @@ export const GoalsPage = observer(function GoalsPage() {
                   onEdit={() => {
                     setEditing(goal);
                   }}
+                  standing={adviceStore.progress.get(goal.id)}
                 >
                   <GoalAdvice goal={goal} />
                 </GoalCard>

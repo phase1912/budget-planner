@@ -121,12 +121,21 @@ const categoriesStore = {
   ensureCategories: vi.fn(),
 };
 
+// A savings goal's money may sit on a card (F8.11.1).
+const bankAccountsStore = observable({
+  loaded: true,
+  load: vi.fn(),
+  accounts: [{ id: "piggy", name: "Piggy bank" }],
+});
+
 vi.mock("@/stores/StoreContext", () => ({
   useStores: () => ({
     goalsStore,
     adviceStore,
     categoriesStore,
     authStore: { user: { currency: "PLN" } },
+    budgetStore: { today: "2026-10-22" },
+    bankAccountsStore,
   }),
 }));
 
@@ -237,6 +246,7 @@ describe("GoalsPage", () => {
       financial_kind: "spending_ceiling",
       target_amount: "2500",
       category_id: null,
+      target_date: null,
     });
     expect(await screen.findByText("A stretch")).toBeInTheDocument();
     expect(
@@ -266,6 +276,9 @@ describe("GoalsPage", () => {
         financial_kind: "spending_ceiling",
         target_amount: "2500.50",
         category_id: null,
+        target_date: null,
+        saved_account_id: null,
+        saved_amount: null,
       });
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -446,6 +459,29 @@ describe("GoalsPage", () => {
     expect(ceilingAdvice.queryByText("Advice could not be worked out just now.")).toBeNull();
   });
 
+  it("says what it looked at when an ask finds nothing specific", () => {
+    runInAction(() => {
+      goalsStore.goals = [eatBetter];
+      adviceStore.readiness = {
+        ready: true,
+        receipts: 9,
+        required_receipts: 4,
+        history_days: 60,
+        required_days: 30,
+        progress: 100,
+        analysis_months: 3,
+      };
+      adviceStore.outcomes.set("g2", { kind: "nothing_specific", message: "Nothing." });
+    });
+    render(<GoalsPage />, { wrapper: MemoryRouter });
+    const eating = within(screen.getByRole("region", { name: "Advice on Eat better" }));
+    expect(
+      eating.getByText(
+        "Looked at Groceries, sweets over the last 3 months: nothing specific to act on yet.",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("says how far there is to go instead of offering advice on too little history", () => {
     runInAction(() => {
       goalsStore.goals = [eatBetter];
@@ -456,6 +492,7 @@ describe("GoalsPage", () => {
         history_days: 12,
         required_days: 30,
         progress: 40,
+        analysis_months: 3,
       };
     });
     render(<GoalsPage />, { wrapper: MemoryRouter });
@@ -472,6 +509,7 @@ describe("GoalsPage", () => {
       adviceStore.progress.set("g1", {
         goal_id: "g1",
         goal_name: "Monthly ceiling",
+        kind: "month",
         at_risk: false,
         warning_dismissed: false,
         spent: "1800.00",
@@ -500,6 +538,7 @@ describe("GoalsPage", () => {
       adviceStore.progress.set("g1", {
         goal_id: "g1",
         goal_name: "Monthly ceiling",
+        kind: "month",
         spent: "2400.00",
         projected: "3100.00",
         target: "3000.00",
@@ -529,6 +568,7 @@ describe("GoalsPage", () => {
       adviceStore.progress.set("g1", {
         goal_id: "g1",
         goal_name: "Monthly ceiling",
+        kind: "month",
         spent: "2400.00",
         projected: "3100.00",
         target: "3000.00",

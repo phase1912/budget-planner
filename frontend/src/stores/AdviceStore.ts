@@ -8,6 +8,32 @@ import i18n from "@/i18n";
 export type Recommendation = components["schemas"]["RecommendationRead"];
 export type AdviceReadiness = components["schemas"]["AdviceReadinessRead"];
 export type GoalProgress = components["schemas"]["GoalProgressRead"];
+
+/** A monthly cap's standing: a ceiling or a category cut, with its pace (F6, F7). */
+export type MonthPace = GoalProgress & {
+  kind: "month";
+  spent: string;
+  projected: string;
+  target: string;
+  margin: string;
+  on_track: boolean;
+  day: number;
+  days_in_month: number;
+};
+
+/** Whether a goal's standing is a monthly cap's pace, every figure of it there. */
+export function isMonthPace(progress: GoalProgress | undefined): progress is MonthPace {
+  return (
+    progress?.kind === "month" &&
+    progress.spent != null &&
+    progress.projected != null &&
+    progress.target != null &&
+    progress.margin != null &&
+    progress.on_track != null &&
+    progress.day != null &&
+    progress.days_in_month != null
+  );
+}
 export type Feedback = NonNullable<Recommendation["feedback"]>;
 
 /** Why the last ask for advice on a goal produced none. */
@@ -47,8 +73,10 @@ export class AdviceStore {
   }
 
   /** Goals heading over their cap this month that the user has not set aside (BRD F7). */
-  get warnings(): GoalProgress[] {
-    return [...this.progress.values()].filter((p) => p.at_risk && !p.warning_dismissed);
+  get warnings(): MonthPace[] {
+    return [...this.progress.values()]
+      .filter(isMonthPace)
+      .filter((p) => p.at_risk && !p.warning_dismissed);
   }
 
   /** One goal's current advice, newest first. */

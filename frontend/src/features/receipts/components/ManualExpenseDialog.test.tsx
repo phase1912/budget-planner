@@ -50,6 +50,8 @@ describe("ManualExpenseDialog (F20.5)", () => {
   it("records an expense with no receipt, in the account's currency, under Other", () => {
     render(<ManualExpenseDialog onClose={vi.fn()} />);
     fill("2026-10-03");
+
+    expect(screen.queryByLabelText("On a trip, it was")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Add expense" }));
 
     expect(stores.receiptStore.addManualExpense).toHaveBeenCalledWith({
@@ -72,10 +74,25 @@ describe("ManualExpenseDialog (F20.5)", () => {
     expect(screen.getByRole("button", { name: "Add expense" })).toBeDisabled();
 
     fireEvent.click(screen.getByRole("button", { name: "No, my own" }));
+    expect(screen.queryByLabelText("On a trip, it was")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Add expense" }));
 
     expect(stores.receiptStore.addManualExpense).toHaveBeenCalledWith(
       expect.objectContaining({ trip_chosen: true, trip_id: null }),
+    );
+  });
+
+  it("asks what part of the trip it was only once the expense goes into the trip", () => {
+    render(<ManualExpenseDialog onClose={vi.fn()} />);
+    fill("2026-10-14");
+    fireEvent.click(screen.getByRole("button", { name: "Yes, the company pays" }));
+    fireEvent.change(screen.getByLabelText("On a trip, it was"), {
+      target: { value: "transport" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add expense" }));
+
+    expect(stores.receiptStore.addManualExpense).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "transport", trip_chosen: true, trip_id: "t1" }),
     );
   });
 

@@ -69,7 +69,16 @@
   "byDay": {
     "title": "By day",
     "average": "{{amount}} {{currency}} a day on average",
-    "bar": "{{date}}, {{amount}} {{currency}}"
+    "bar": "{{date}}, {{amount}} {{currency}}",
+    "view": "Draw the chart as",
+    "views": {
+      "columns": "Columns",
+      "days": "Days",
+      "calendar": "Calendar"
+    },
+    "receiptsOf": "Receipts of {{date}}",
+    "noReceipts": "No receipts that day.",
+    "nothingYet": "Nothing bought yet in this period."
   },
   "sections": {
     "receipts": "Receipts",

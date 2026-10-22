@@ -397,6 +397,29 @@ class ReceiptRepository(BaseRepository[Receipt]):
             for key, name, count, total in (await self.session.execute(stmt)).all()
         ]
 
+    async def scope_spend(
+        self,
+        period: DateRange,
+        *,
+        category_ids: Sequence[uuid.UUID] = (),
+        keywords: Sequence[str] = (),
+    ) -> Decimal:
+        """What items in any of `category_ids`, or named with any of `keywords`, cost in
+        `period` (F8.11.2): a lifestyle goal's watched lines. Counted like the month's
+        total — parsed receipts, what was paid — and 0 when nothing is watched."""
+        if not category_ids and not keywords:
+            return Decimal(0)
+        narrowed = [LineItem.category_id.in_(category_ids)] if category_ids else []
+        narrowed += [
+            LineItem.name.ilike(f"%{_escape_like(keyword)}%", escape="\\") for keyword in keywords
+        ]
+        stmt = (
+            self._filtered_items(ItemView.ALL, search=None, period=period, category_id=None)
+            .where(counted_in_budget(), or_(*narrowed))
+            .with_only_columns(func.coalesce(func.sum(LineItem.paid), 0))
+        )
+        return Decimal(await self.session.scalar(stmt) or 0)
+
     async def purchase_merchants(
         self, period: DateRange, keys: Sequence[str]
     ) -> list[tuple[str, str, int]]:

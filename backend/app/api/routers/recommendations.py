@@ -13,6 +13,7 @@ from app.api.dependencies import get_current_user, get_quota_service
 from app.api.rate_limit import limiter
 from app.core.config import get_settings
 from app.db.session import get_db_session
+from app.domain.goal_analysis import ANALYSIS_MONTHS
 from app.models.recommendation import Recommendation
 from app.models.user import User
 from app.ports.advice_generation import AdviceGeneratorPort
@@ -23,6 +24,7 @@ from app.schemas.recommendation import (
     RecommendationRead,
 )
 from app.services.advice import AdviceService, build_advice_service
+from app.services.goal_progress import GoalProgressService
 from app.services.quota import QuotaService
 
 router = APIRouter(prefix="/api/v1", tags=["advice"])
@@ -70,32 +72,25 @@ async def advice_readiness(current_user: CurrentUser, service: Service) -> Advic
         history_days=readiness.history_days,
         required_days=readiness.required_days,
         progress=readiness.progress,
+        analysis_months=ANALYSIS_MONTHS,
     )
 
 
 @router.get("/goals/progress", response_model=list[GoalProgressRead])
-async def goal_progress(current_user: CurrentUser, service: Service) -> list[GoalProgressRead]:
-    """Where each of the caller's monthly money goals is heading this month (BRD F6, F7).
+async def goal_progress(
+    current_user: CurrentUser,
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> list[GoalProgressRead]:
+    """Where each of the caller's goals stands (BRD F6, F7 — F8.11.2): a monthly cap's
+    pace, a savings goal's money against its date, a lifestyle goal's month.
 
-    This is also how an at-risk warning reaches the user: worked out on every
-    look, so it is never stale, and waiting for them without their asking.
+    This is also how an at-risk warning reaches the user: worked out on every look, so it
+    is never stale, and waiting for them without their asking. Only the caller's own (N2).
     """
     today = datetime.now(UTC).date()
     return [
-        GoalProgressRead(
-            goal_id=goal.id,
-            goal_name=goal.name,
-            spent=goal_pace.spent,
-            projected=goal_pace.projected,
-            target=goal_pace.target,
-            margin=goal_pace.margin,
-            on_track=goal_pace.on_track,
-            at_risk=goal_pace.at_risk,
-            warning_dismissed=goal.warning_dismissed_for == today.replace(day=1),
-            day=goal_pace.day,
-            days_in_month=goal_pace.days_in_month,
-        )
-        for goal, goal_pace in await service.progress(today)
+        GoalProgressRead.of(standing, today)
+        for standing in await GoalProgressService(session).standings(today)
     ]
 
 

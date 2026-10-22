@@ -11,6 +11,7 @@ import {
   ModalFooter,
   ModalHeader,
   Note,
+  Select,
 } from "@/shared/components";
 import { numberFormat } from "@/i18n/format";
 import { useStores } from "@/stores/StoreContext";
@@ -22,6 +23,13 @@ import { useTranslation } from "react-i18next";
 import { categoryName } from "@/shared/categoryName";
 
 const WHOLE = numberFormat({ maximumFractionDigits: 0 });
+
+/** Where a new savings goal's date starts: half a year on, the last day of that month. */
+function halfAYearOn(today: string): string {
+  const [year, month] = today.split("-").map(Number) as [number, number];
+  const last = new Date(Date.UTC(year, month + 6, 0));
+  return last.toISOString().slice(0, 10);
+}
 
 /** The four large choices a new goal starts from, in the order v2 draws them. */
 const PICKS: { choice: GoalChoice; icon: LucideIcon }[] = [
@@ -56,7 +64,8 @@ interface GoalDialogProps {
  * (F8.2). Removing a goal asks once more before it goes.
  */
 export const GoalDialog = observer(function GoalDialog({ goal, onClose }: GoalDialogProps) {
-  const { goalsStore, categoriesStore, authStore } = useStores();
+  const { goalsStore, categoriesStore, authStore, bankAccountsStore, budgetStore, adviceStore } =
+    useStores();
   const { t } = useTranslation(["goals", "common"]);
   const titleId = useId();
   const currency = authStore.user?.currency ?? "PLN";
@@ -67,10 +76,17 @@ export const GoalDialog = observer(function GoalDialog({ goal, onClose }: GoalDi
   const [description, setDescription] = useState(goal?.description ?? "");
   const [watchedCategoryIds, setWatchedCategoryIds] = useState(goal?.mapped_category_ids ?? []);
   const [watchedItems, setWatchedItems] = useState(goal?.mapped_item_names ?? []);
+  // A savings goal is a sum to reach by a date, its money on a card or kept by hand (F8.11.1).
+  const [targetDate, setTargetDate] = useState(
+    goal ? (goal.target_date ?? "") : halfAYearOn(budgetStore.today),
+  );
+  const [savedAccountId, setSavedAccountId] = useState(goal?.saved_account_id ?? "");
+  const [savedAmount, setSavedAmount] = useState(goal?.saved_amount ?? "");
   const [confirmingRemoval, setConfirmingRemoval] = useState(false);
   const [step, setStep] = useState<Step>(goal ? "details" : "pick");
 
   const lifestyle = choice === "lifestyle";
+  const saving = choice === "savings_target";
   const choices = goal
     ? goalChoices().filter((c) => (goal.type === "lifestyle") === (c.value === "lifestyle"))
     : goalChoices();
@@ -85,7 +101,8 @@ export const GoalDialog = observer(function GoalDialog({ goal, onClose }: GoalDi
 
   useEffect(() => {
     categoriesStore.ensureCategories();
-  }, [categoriesStore]);
+    if (!bankAccountsStore.loaded) void bankAccountsStore.load(budgetStore.today);
+  }, [categoriesStore, bankAccountsStore, budgetStore]);
 
   const close = () => {
     goalsStore.clearSaveError();
@@ -101,6 +118,7 @@ export const GoalDialog = observer(function GoalDialog({ goal, onClose }: GoalDi
       financial_kind,
       target_amount: amount.trim(),
       category_id: choice === "category_reduction" ? categoryId || null : null,
+      target_date: saving ? targetDate || null : null,
     });
   };
 
@@ -112,9 +130,15 @@ export const GoalDialog = observer(function GoalDialog({ goal, onClose }: GoalDi
       financial_kind,
       target_amount: lifestyle ? null : amount.trim() || null,
       category_id: choice === "category_reduction" ? categoryId || null : null,
+      target_date: saving ? targetDate || null : null,
+      saved_account_id: saving ? savedAccountId || null : null,
+      saved_amount: saving && !savedAccountId ? savedAmount.trim() || null : null,
     };
     if (!goal) {
-      if (await goalsStore.create({ type, ...fields })) close();
+      if (await goalsStore.create({ type, ...fields })) {
+        void adviceStore.loadProgress();
+        close();
+      }
       return;
     }
     const changes: GoalUpdate = { ...fields };
@@ -127,7 +151,10 @@ export const GoalDialog = observer(function GoalDialog({ goal, onClose }: GoalDi
       changes.mapped_category_ids = watchedCategoryIds;
       changes.mapped_item_names = watchedItems;
     }
-    if (await goalsStore.update(goal.id, changes)) close();
+    if (await goalsStore.update(goal.id, changes)) {
+      void adviceStore.loadProgress();
+      close();
+    }
   };
 
   const remove = async () => {
@@ -251,8 +278,46 @@ export const GoalDialog = observer(function GoalDialog({ goal, onClose }: GoalDi
                     }}
                   />
                   <span className="pointer-events-none absolute right-4 bottom-4 text-md font-bold text-muted-foreground">
-                    {t("perMonth", { currency })}
+                    {saving ? currency : t("perMonth", { currency })}
                   </span>
+                </div>
+              )}
+              {saving && (
+                <div className="flex flex-col gap-3 md:flex-row md:items-end">
+                  <Input
+                    type="date"
+                    label={t("dialog.by")}
+                    value={targetDate}
+                    min={budgetStore.today}
+                    onChange={(e) => {
+                      setTargetDate(e.target.value);
+                    }}
+                  />
+                  <Select
+                    label={t("dialog.savedOn")}
+                    value={savedAccountId}
+                    onChange={(e) => {
+                      setSavedAccountId(e.target.value);
+                    }}
+                  >
+                    <option value="">{t("dialog.savedByHand")}</option>
+                    {bankAccountsStore.accounts.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </Select>
+                  {!savedAccountId && (
+                    <Input
+                      label={t("dialog.savedAmount", { currency })}
+                      value={savedAmount}
+                      inputMode="decimal"
+                      placeholder="0"
+                      onChange={(e) => {
+                        setSavedAmount(e.target.value.replace(",", "."));
+                      }}
+                    />
+                  )}
                 </div>
               )}
               {choice === "category_reduction" && (

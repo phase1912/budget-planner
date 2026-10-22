@@ -30,7 +30,7 @@
       },
       "storage": {
         "title": "Cookies and what is kept on your device",
-        "body": "Budget Agent sets no cookies and loads nothing from other websites: no trackers, no advertising, no third-party fonts or widgets.\n\nYour browser keeps only what the service needs to work, or what you chose: your sign-in session and account details (so a reload does not sign you out), the theme and language you picked, the period and order you set for the receipts list, hints you closed, and the app's own files so it opens quickly and offline. Because each is strictly needed or set by you, no consent is asked for them. Signing out removes the session; clearing the site's data in your browser removes all of it.\n\nIf we ever add something that needs your consent, we will ask before it runs."
+        "body": "Budget Agent sets no cookies and loads nothing from other websites: no trackers, no advertising, no third-party fonts or widgets.\n\nYour browser keeps only what the service needs to work, or what you chose: your sign-in session and account details (so a reload does not sign you out), the theme and language you picked, the period and order you set for the receipts list, how you chose to draw the spending chart, hints you closed, and the app's own files so it opens quickly and offline. Because each is strictly needed or set by you, no consent is asked for them. Signing out removes the session; clearing the site's data in your browser removes all of it.\n\nIf we ever add something that needs your consent, we will ask before it runs."
       },
       "ai": {
         "title": "Reading receipts with AI",

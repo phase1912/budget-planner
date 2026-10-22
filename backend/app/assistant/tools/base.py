@@ -21,6 +21,7 @@ from pydantic import BaseModel, BeforeValidator, Field
 from app.assistant.core.ports import ToolSpec
 from app.models.category import Category
 from app.models.user import User
+from app.ports.advice_generation import AdviceGeneratorPort
 from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.goal_mapping import GoalMapperPort
 from app.repository.category import CategoryRepository
@@ -62,6 +63,7 @@ class ToolContext:
     today: date
     rates: ExchangeRatePort | None = None
     goal_mapper: GoalMapperPort | None = None
+    advice: AdviceGeneratorPort | None = None
 
     async def categories(self) -> list[Category]:
         """The categories the user's spending may go to: the shared ones and their own."""

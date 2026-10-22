@@ -36,6 +36,9 @@ class GoalCreate(BaseModel):
     financial_kind: FinancialKind | None = None
     target_amount: Amount | None = None
     category_id: uuid.UUID | None = None
+    target_date: date | None = None
+    saved_account_id: uuid.UUID | None = None
+    saved_amount: Amount | None = None
 
 
 class GoalUpdate(BaseModel):
@@ -44,7 +47,9 @@ class GoalUpdate(BaseModel):
     `name` cannot be cleared. `description`, `target_amount` and `category_id` can
     be sent as null to clear them; the result must still be a well formed goal. A
     goal's type is fixed once made. Sending `mapped_*` is the user correcting what
-    a lifestyle goal watches (F8.2); an empty list clears it, null is refused.
+    a lifestyle goal watches (F8.2); an empty list clears it, null is refused. A savings
+    goal's `target_date`, `saved_account_id` and `saved_amount` can be set or cleared
+    (F8.11.1).
     """
 
     name: Name | None = None
@@ -52,12 +57,16 @@ class GoalUpdate(BaseModel):
     financial_kind: FinancialKind | None = None
     target_amount: Amount | None = None
     category_id: uuid.UUID | None = None
+    target_date: date | None = None
+    saved_account_id: uuid.UUID | None = None
+    saved_amount: Amount | None = None
     mapped_category_ids: WatchedCategories | None = None
     mapped_item_names: WatchedItems | None = None
 
 
 class GoalRead(BaseModel):
-    """A goal as the Goals screen shows it; `mapped_*` are filled by F8.2 (F9)."""
+    """A goal as the Goals screen shows it; `mapped_*` are filled by F8.2 (F9); a savings
+    goal's date and where its money is come with it (F8.11.1)."""
 
     id: uuid.UUID
     type: GoalType
@@ -68,6 +77,9 @@ class GoalRead(BaseModel):
     category_id: uuid.UUID | None
     mapped_category_ids: list[uuid.UUID]
     mapped_item_names: list[str]
+    target_date: date | None = None
+    saved_account_id: uuid.UUID | None = None
+    saved_amount: Decimal | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -81,6 +93,8 @@ class GoalCheckRequest(BaseModel):
     target_amount: Annotated[Amount, Field(gt=0)]
     category_id: uuid.UUID | None = None
     today: date | None = None
+    target_date: date | None = None
+    """A savings goal's date: it is checked as what must be put aside a month to reach it."""
 
 
 class GoalCheckSource(BaseModel):
