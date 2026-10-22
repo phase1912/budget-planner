@@ -33,7 +33,8 @@ function today(): string {
  * It is stored like a receipt, so it counts everywhere one does. Opened from a trip's
  * page it goes into that trip; otherwise a date within a trip asks the same question
  * as the upload wizard — a tick for a personal trip, "the company's or mine?" for a
- * business one, which must be answered. Calls `onAdded` once it is stored.
+ * business one, which must be answered. What part of the trip it was is asked only of
+ * an expense that goes into one. Calls `onAdded` once it is stored.
  */
 export const ManualExpenseDialog = observer(function ManualExpenseDialog({
   fromTrip,
@@ -70,6 +71,8 @@ export const ManualExpenseDialog = observer(function ManualExpenseDialog({
   const answer = trip
     ? (answers[trip.id] ?? (trip.kind === "personal" ? true : undefined))
     : undefined;
+  // What part of a trip it was only means something for an expense that lands in one.
+  const intoTrip = fromTrip !== undefined || (trip !== null && answer === true);
   const amountInvalid =
     amount.trim() !== "" && !(/^\d+(\.\d{1,2})?$/.test(amount.trim()) && Number(amount) > 0);
   const ready =
@@ -94,7 +97,7 @@ export const ManualExpenseDialog = observer(function ManualExpenseDialog({
       amount: amount.trim(),
       currency: currency === accountCurrency ? null : currency,
       category_id: chosenCategory,
-      kind: kind || null,
+      kind: intoTrip ? kind || null : null,
       ...placement,
     });
     setSaving(false);
@@ -163,20 +166,33 @@ export const ManualExpenseDialog = observer(function ManualExpenseDialog({
               ))}
             </Select>
           </div>
-          <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
-            <Select
-              label={t("manual.category")}
-              value={chosenCategory}
-              onChange={(e) => {
-                setCategoryId(e.target.value);
+          <Select
+            label={t("manual.category")}
+            value={chosenCategory}
+            onChange={(e) => {
+              setCategoryId(e.target.value);
+            }}
+          >
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {categoryName(category.name)}
+              </option>
+            ))}
+          </Select>
+          {fromTrip && (
+            <p className="m-0 text-md">{t("trips:question.fromTrip", { name: fromTrip.name })}</p>
+          )}
+          {trip && (
+            <TripChoiceField
+              trip={trip}
+              answer={answer}
+              onAnswer={(intoTrip) => {
+                setAnswers({ ...answers, [trip.id]: intoTrip });
               }}
-            >
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {categoryName(category.name)}
-                </option>
-              ))}
-            </Select>
+              className="rounded-control border border-border px-3 py-3"
+            />
+          )}
+          {intoTrip && (
             <Select
               label={t("manual.kind")}
               value={kind}
@@ -191,19 +207,6 @@ export const ManualExpenseDialog = observer(function ManualExpenseDialog({
                 </option>
               ))}
             </Select>
-          </div>
-          {fromTrip && (
-            <p className="m-0 text-md">{t("trips:question.fromTrip", { name: fromTrip.name })}</p>
-          )}
-          {trip && (
-            <TripChoiceField
-              trip={trip}
-              answer={answer}
-              onAnswer={(intoTrip) => {
-                setAnswers({ ...answers, [trip.id]: intoTrip });
-              }}
-              className="rounded-control border border-border px-3 py-3"
-            />
           )}
         </ModalBody>
         <ModalFooter>

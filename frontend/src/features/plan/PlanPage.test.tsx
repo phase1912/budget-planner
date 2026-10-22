@@ -105,7 +105,19 @@ const stores = vi.hoisted(() => ({
   },
   adviceStore: {
     progress: new Map([
-      ["g1", { spent: "1800.00", projected: "2900.00", target: "3000.00", on_track: true }],
+      [
+        "g1",
+        {
+          kind: "month",
+          spent: "1800.00",
+          projected: "2900.00",
+          target: "3000.00",
+          margin: "100.00",
+          on_track: true,
+          day: 20,
+          days_in_month: 31,
+        },
+      ],
     ]),
     load: vi.fn(),
     loadProgress: vi.fn(),

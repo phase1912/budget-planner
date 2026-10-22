@@ -77,7 +77,16 @@
   "byDay": {
     "title": "По днях",
     "average": "У середньому {{amount}} {{currency}} на день",
-    "bar": "{{date}}, {{amount}} {{currency}}"
+    "bar": "{{date}}, {{amount}} {{currency}}",
+    "view": "Вигляд графіка",
+    "views": {
+      "columns": "Стовпці",
+      "days": "Дні",
+      "calendar": "Календар"
+    },
+    "receiptsOf": "Чеки за {{date}}",
+    "noReceipts": "Цього дня чеків немає.",
+    "nothingYet": "За цей період ще нічого не куплено."
   },
   "sections": {
     "receipts": "Чеки",

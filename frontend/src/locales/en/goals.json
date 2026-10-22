@@ -85,7 +85,11 @@
     "remove": "Remove goal",
     "saving": "Saving…",
     "save": "Save changes",
-    "add": "Add goal"
+    "add": "Add goal",
+    "by": "By",
+    "savedOn": "Where the money is",
+    "savedByHand": "I enter it myself",
+    "savedAmount": "Saved so far, {{currency}}"
   },
   "advice": {
     "section": "Advice on {{name}}",
@@ -98,7 +102,11 @@
     "buttonLabel": "{{verb}} on {{name}}",
     "working": "Working it out…",
     "updated": "Updated {{ago}}",
-    "justNow": "just now"
+    "justNow": "just now",
+    "lookedAt_one": "Looked at {{lines}} over the last {{count}} month: nothing specific to act on yet.",
+    "lookedAt_other": "Looked at {{lines}} over the last {{count}} months: nothing specific to act on yet.",
+    "lookedAtAll_one": "Looked at every category and product over the last {{count}} month: nothing specific to act on yet.",
+    "lookedAtAll_other": "Looked at every category and product over the last {{count}} months: nothing specific to act on yet."
   },
   "feedback": {
     "not_followed": "You won't follow this",
@@ -177,5 +185,19 @@
     "swapsFamily": "Cheaper where your family already shops",
     "swapMeta": "At {{shop}} instead of {{instead}} · a month"
   },
-  "perMonth": "{{currency}} a month"
+  "perMonth": "{{currency}} a month",
+  "standing": {
+    "month": "{{spent}} of {{target}} this month",
+    "onTrack": "On track: heading for {{projected}}.",
+    "over": "Heading for {{projected}}, over the cap.",
+    "saved": "{{saved}} of {{target}} saved · {{percent}}%",
+    "needed": "{{amount}} a month to make it by {{date}}.",
+    "overdue": "{{date}} has passed: {{left}} still to save.",
+    "reached": "Reached — all of it is saved.",
+    "noDate": "Give it a date to see what is needed a month.",
+    "lifestyle": "{{amount}} this month on what it watches",
+    "more": "{{percent}}% more than usual ({{usual}} a month).",
+    "less": "{{percent}}% less than usual ({{usual}} a month).",
+    "noBefore": "Nothing from the months before to compare yet."
+  }
 }

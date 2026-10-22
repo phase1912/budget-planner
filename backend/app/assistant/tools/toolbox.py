@@ -19,6 +19,7 @@ from app.assistant.tools.base import Card, FormField, Reader, ToolContext, Write
 from app.assistant.tools.overview import known
 from app.models.category import Category
 from app.models.user import User
+from app.ports.advice_generation import AdviceGeneratorPort
 from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.goal_mapping import GoalMapperPort
 
@@ -50,8 +51,9 @@ class Toolbox:
         today: date,
         rates: ExchangeRatePort | None = None,
         goal_mapper: GoalMapperPort | None = None,
+        advice: AdviceGeneratorPort | None = None,
     ) -> None:
-        self.ctx = ToolContext(session, user, today, rates, goal_mapper)
+        self.ctx = ToolContext(session, user, today, rates, goal_mapper, advice)
         self.answers: dict[str, Card] = {}
         """The answer card of each read tool used this turn, the latest kept (F21.4)."""
 

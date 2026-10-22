@@ -101,7 +101,22 @@
     "hidden_one": "One more category is on the Spending screen.",
     "hidden_other": "{{count}} more categories are on the Spending screen.",
     "accounts": "Open the accounts",
-    "home": "Open Home"
+    "home": "Open Home",
+    "month": "Open Home",
+    "goals": "Open Goals",
+    "paysForPurchases": "pays for purchases",
+    "total": "All together: {{amount}}",
+    "ring": "Spent {{spent}}, bills {{bills}}",
+    "spent": "Spent",
+    "bills": "Bills",
+    "leftOfBudget": "Left of the budget",
+    "overBudget": "Over the budget",
+    "goalSaved": "{{saved}} of {{target}} saved",
+    "goalMonth": "{{spent}} of {{target}} this month",
+    "goalLifestyle": "{{amount}} this month, usually {{usual}}",
+    "receipts_one": "on {{count}} receipt",
+    "receipts_other": "on {{count}} receipts",
+    "aMonth": "{{amount}} a month"
   },
   "choice": "Choose an answer",
   "mic": {

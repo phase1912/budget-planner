@@ -82,6 +82,17 @@ describe("ProfilePage", () => {
     expect(choose).toHaveBeenCalledWith("rose");
   });
 
+  it("offers dark at night only with a light palette, which it can darken", () => {
+    rootStore.themeStore.setPalette("midnight");
+    const { unmount } = renderPage();
+    expect(screen.queryByRole("switch", { name: /Dark at night/ })).not.toBeInTheDocument();
+    unmount();
+
+    rootStore.themeStore.setPalette("daylight");
+    renderPage();
+    expect(screen.getByRole("switch", { name: /Dark at night/ })).toBeInTheDocument();
+  });
+
   it("shows business trips only to someone who travels for work (F23.12)", () => {
     const save = vi.spyOn(rootStore.profileStore, "saveQuietly").mockResolvedValue(true);
     renderPage();

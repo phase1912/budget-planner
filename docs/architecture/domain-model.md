@@ -426,6 +426,11 @@ Rules that must hold at all times. Each is a candidate for a test.
     is dropped, so a goal may end up with no advice rather than generic advice. A
     model that gives no answer leaves the goal's earlier advice in place and is
     reported as unavailable, never as "no advice".
+    The model names its target by the reference the evidence gives it (`[c1]` a category,
+    `[i1]` a purchase, `[p1]` a priced product; `evidence_refs`), never by name, so advice
+    written in Ukrainian or Polish keeps a target spelt as the receipts spell it (F8.11.3).
+    An ask that keeps nothing says what it looked at: the goal's watched lines, or every
+    category and product, over the analysis months.
 16. Every recommendation quantifies its projected impact, computed from real history
     rather than asserted by the model (F4). The model only says what share of the
     spending on its target the action removes (100% to stop, 50% to halve). The
@@ -668,12 +673,24 @@ Rules that must hold at all times. Each is a candidate for a test.
     quota and checked there (F21.8.2). A recording from the microphone is recognised and
     dropped; only the words the user sends are kept (F21.2.2, ADR-0031).
 
+**Where a goal stands**
+
+38. Every goal says where it stands, worked out live and never stored (F8.11,
+    `app/domain/goal_progress.py`, `app/services/goal_progress.py`). A ceiling or category
+    cut: this month's spend against its cap and the projected finish (the same pace the at-risk
+    warnings use). A savings goal: saved of target, from the balance of the card the user picked
+    for it (F23.15) or else the amount they entered; what is needed a month to the date,
+    counting this month; overdue once the date has passed unmet. Only a savings goal has a
+    date and money saved, and money saved is never negative. A lifestyle goal: its watched
+    lines this month against the average of the three whole months before.
+
 **Goals before they are saved**
 
 32. A money goal is checked against the user's last three whole months that had receipts
     (F23.13, `app/domain/goal_check.py`): a ceiling against the monthly spend, a category
-    cut against that category's, a savings target — a sum put aside each month —
-    against what is usually left (income minus spending). Within it: doable. Beyond it:
+    cut against that category's, a savings target — a total by a date, worth
+    that total over the months left counting this one, or over twelve months without a
+    date (F8.11.1) — against what is usually left (income minus spending). Within it: doable. Beyond it:
     a stretch by the difference, with up to three categories it could come from, each
     trimmed by 15 % of its monthly spend, and the total those trims make even when it
     falls short. No months with receipts, or a savings target without any income: not

@@ -14,6 +14,7 @@ from app.domain.budget import BudgetMonth
 from app.domain.categories import ItemView
 from app.domain.family_lines import swaps
 from app.domain.goal_check import GoalCheck, MonthlyCategory, Verdict, check_goal_plan
+from app.domain.goal_progress import months_left
 from app.domain.goals import FinancialKind
 from app.domain.periods import DateRange
 from app.models.income import Income
@@ -46,9 +47,18 @@ class GoalCheckService:
         target: Decimal,
         category_id: uuid.UUID | None,
         today: date,
+        target_date: date | None = None,
     ) -> GoalCheck:
         """The verdict for a goal not yet saved; months without receipts are not counted,
-        so a new account is judged on what it has rather than on empty months."""
+        so a new account is judged on what it has rather than on empty months.
+
+        A savings goal is a sum to reach by `target_date` (F8.11.1): it is judged as what
+        must be put aside each month until then — a year from now when it has no date.
+        """
+        if kind is FinancialKind.SAVINGS_TARGET:
+            # Twelve months, this one counted, when no date says otherwise.
+            by = target_date or date(today.year + 1, today.month, 1) - timedelta(days=1)
+            target = (target / max(months_left(today, by), 1)).quantize(Decimal("0.01"))
         months = [_month_before(today, n) for n in range(1, MONTHS_BACK + 1)]
         counted: list[DateRange] = []
         spend = Decimal(0)

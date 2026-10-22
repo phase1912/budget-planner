@@ -15,6 +15,7 @@ from app.assistant.tools.toolbox import Card, Toolbox, tool_specs
 from app.models.conversation import Conversation, ConversationMessage
 from app.models.upload_job import UploadJob
 from app.models.user import User
+from app.ports.advice_generation import AdviceGeneratorPort
 from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.goal_mapping import GoalMapperPort
 from app.services.quota import QuotaService
@@ -47,12 +48,14 @@ class AssistantService:
         quota: QuotaService,
         rates: ExchangeRatePort | None = None,
         goal_mapper: GoalMapperPort | None = None,
+        advice: AdviceGeneratorPort | None = None,
     ) -> None:
         self.session = session
         self.assistant = assistant
         self.quota = quota
         self.rates = rates
         self.goal_mapper = goal_mapper
+        self.advice = advice
 
     async def conversations(self, user: User) -> Sequence[Conversation]:
         """The user's conversations, the latest touched first."""
@@ -191,7 +194,7 @@ class AssistantService:
         )
 
     def _toolbox(self, user: User, today: date) -> Toolbox:
-        return Toolbox(self.session, user, today, self.rates, self.goal_mapper)
+        return Toolbox(self.session, user, today, self.rates, self.goal_mapper, self.advice)
 
     async def dismiss_card(self, user: User, message_id: uuid.UUID) -> ConversationMessage:
         """Turn a proposed card down; nothing is written."""

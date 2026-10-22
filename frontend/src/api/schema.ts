@@ -1884,10 +1884,11 @@ export interface paths {
         };
         /**
          * Goal Progress
-         * @description Where each of the caller's monthly money goals is heading this month (BRD F6, F7).
+         * @description Where each of the caller's goals stands (BRD F6, F7 — F8.11.2): a monthly cap's
+         *     pace, a savings goal's money against its date, a lifestyle goal's month.
          *
-         *     This is also how an at-risk warning reaches the user: worked out on every
-         *     look, so it is never stale, and waiting for them without their asking.
+         *     This is also how an at-risk warning reaches the user: worked out on every look, so it
+         *     is never stale, and waiting for them without their asking. Only the caller's own (N2).
          */
         get: operations["goal_progress_api_v1_goals_progress_get"];
         put?: never;
@@ -3210,7 +3211,9 @@ export interface components {
          * AdviceReadinessRead
          * @description Whether advice can be asked for yet, and how far the history has to go (BRD F5).
          *
-         *     `progress` is a whole percentage of the slower of the two minimums, for a meter.
+         *     `progress` is a whole percentage of the slower of the two minimums, for a meter;
+         *     `analysis_months` how far back advice reads, so an ask that finds nothing can say so
+         *     (F8.11.3).
          */
         AdviceReadinessRead: {
             /** Ready */
@@ -3225,6 +3228,8 @@ export interface components {
             required_days: number;
             /** Progress */
             progress: number;
+            /** Analysis Months */
+            analysis_months: number;
         };
         /**
          * AdviceTarget
@@ -3993,6 +3998,8 @@ export interface components {
             category_id?: string | null;
             /** Today */
             today?: string | null;
+            /** Target Date */
+            target_date?: string | null;
         };
         /**
          * GoalCheckResponse
@@ -4069,16 +4076,29 @@ export interface components {
             target_amount?: number | string | null;
             /** Category Id */
             category_id?: string | null;
+            /** Target Date */
+            target_date?: string | null;
+            /** Saved Account Id */
+            saved_account_id?: string | null;
+            /** Saved Amount */
+            saved_amount?: number | string | null;
         };
         /**
          * GoalProgressRead
-         * @description Where a monthly money goal's month is heading, worked out live (BRD F6).
+         * @description Where a goal stands, worked out live (BRD F6, F7 — F8.11.2); `kind` says which part
+         *     is filled.
          *
-         *     `spent` so far this month, `projected` to the month's end at the same daily
-         *     rate, against the monthly `target`; `margin` is how far under it the month is
-         *     heading, negative when over. `day` of `days_in_month` is what the projection rests on.
-         *     `at_risk` means heading over the cap past the first week (F7); `warning_dismissed`
-         *     means the user set this month's warning aside.
+         *     `month` — a ceiling or a category cut: `spent` so far this month, `projected` to the
+         *     month's end at the same daily rate, against the monthly `target`; `margin` how far
+         *     under it the month is heading, negative when over; `day` of `days_in_month` what the
+         *     projection rests on; `at_risk` heading over the cap past the first week (F7);
+         *     `warning_dismissed` the user set this month's warning aside.
+         *
+         *     `savings` — `saved` of `target`, `percent` of it, by `target_date`;
+         *     `needed_per_month` to get there in time; `reached`, or `overdue` past its date.
+         *
+         *     `lifestyle` — `this_month` on the watched lines against `monthly_average` over the
+         *     three months before, `change_percent` the difference.
          */
         GoalProgressRead: {
             /**
@@ -4088,28 +4108,58 @@ export interface components {
             goal_id: string;
             /** Goal Name */
             goal_name: string;
-            /** Spent */
-            spent: string;
-            /** Projected */
-            projected: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "month" | "savings" | "lifestyle";
             /** Target */
-            target: string;
+            target?: string | null;
+            /** Spent */
+            spent?: string | null;
+            /** Projected */
+            projected?: string | null;
             /** Margin */
-            margin: string;
+            margin?: string | null;
             /** On Track */
-            on_track: boolean;
-            /** At Risk */
+            on_track?: boolean | null;
+            /**
+             * At Risk
+             * @default false
+             */
             at_risk: boolean;
-            /** Warning Dismissed */
+            /**
+             * Warning Dismissed
+             * @default false
+             */
             warning_dismissed: boolean;
             /** Day */
-            day: number;
+            day?: number | null;
             /** Days In Month */
-            days_in_month: number;
+            days_in_month?: number | null;
+            /** Saved */
+            saved?: string | null;
+            /** Percent */
+            percent?: number | null;
+            /** Target Date */
+            target_date?: string | null;
+            /** Needed Per Month */
+            needed_per_month?: string | null;
+            /** Reached */
+            reached?: boolean | null;
+            /** Overdue */
+            overdue?: boolean | null;
+            /** This Month */
+            this_month?: string | null;
+            /** Monthly Average */
+            monthly_average?: string | null;
+            /** Change Percent */
+            change_percent?: number | null;
         };
         /**
          * GoalRead
-         * @description A goal as the Goals screen shows it; `mapped_*` are filled by F8.2 (F9).
+         * @description A goal as the Goals screen shows it; `mapped_*` are filled by F8.2 (F9); a savings
+         *     goal's date and where its money is come with it (F8.11.1).
          */
         GoalRead: {
             /**
@@ -4131,6 +4181,12 @@ export interface components {
             mapped_category_ids: string[];
             /** Mapped Item Names */
             mapped_item_names: string[];
+            /** Target Date */
+            target_date?: string | null;
+            /** Saved Account Id */
+            saved_account_id?: string | null;
+            /** Saved Amount */
+            saved_amount?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -4155,7 +4211,9 @@ export interface components {
          *     `name` cannot be cleared. `description`, `target_amount` and `category_id` can
          *     be sent as null to clear them; the result must still be a well formed goal. A
          *     goal's type is fixed once made. Sending `mapped_*` is the user correcting what
-         *     a lifestyle goal watches (F8.2); an empty list clears it, null is refused.
+         *     a lifestyle goal watches (F8.2); an empty list clears it, null is refused. A savings
+         *     goal's `target_date`, `saved_account_id` and `saved_amount` can be set or cleared
+         *     (F8.11.1).
          */
         GoalUpdate: {
             /** Name */
@@ -4167,6 +4225,12 @@ export interface components {
             target_amount?: number | string | null;
             /** Category Id */
             category_id?: string | null;
+            /** Target Date */
+            target_date?: string | null;
+            /** Saved Account Id */
+            saved_account_id?: string | null;
+            /** Saved Amount */
+            saved_amount?: number | string | null;
             /** Mapped Category Ids */
             mapped_category_ids?: string[] | null;
             /** Mapped Item Names */

@@ -77,7 +77,16 @@
   "byDay": {
     "title": "Dzień po dniu",
     "average": "Średnio {{amount}} {{currency}} dziennie",
-    "bar": "{{date}}, {{amount}} {{currency}}"
+    "bar": "{{date}}, {{amount}} {{currency}}",
+    "view": "Wygląd wykresu",
+    "views": {
+      "columns": "Słupki",
+      "days": "Dni",
+      "calendar": "Kalendarz"
+    },
+    "receiptsOf": "Paragony z {{date}}",
+    "noReceipts": "Tego dnia nie ma paragonów.",
+    "nothingYet": "W tym okresie nic jeszcze nie kupiono."
   },
   "sections": {
     "receipts": "Paragony",

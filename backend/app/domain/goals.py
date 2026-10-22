@@ -50,6 +50,8 @@ class GoalShape:
     target_amount: Decimal | None
     category_id: uuid.UUID | None
     watches_spending: bool = False
+    tracks_savings: bool = False
+    saved_amount: Decimal | None = None
 
 
 def check_goal(goal: GoalShape) -> None:
@@ -59,9 +61,15 @@ def check_goal(goal: GoalShape) -> None:
     when it cuts one. A lifestyle goal has none of these: it is read through the
     things bought, not a sum, and keeping the two apart is what F9 relies on. Only
     a lifestyle goal watches spending lines; a money goal already knows what it limits.
+    Only a savings goal has a date and what is saved so far (F8.11.1), never below zero.
 
     Raises InvalidGoal with a message fit to show.
     """
+    saving = goal.financial_kind is FinancialKind.SAVINGS_TARGET
+    if goal.tracks_savings and not saving:
+        raise InvalidGoal("Only a savings goal has a date and money saved.")
+    if goal.saved_amount is not None and goal.saved_amount < 0:
+        raise InvalidGoal("Money saved cannot be below zero.")
     if goal.type is GoalType.LIFESTYLE:
         if goal.financial_kind or goal.target_amount is not None or goal.category_id:
             raise InvalidGoal("A lifestyle goal has no amount, kind or category.")

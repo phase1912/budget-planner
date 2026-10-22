@@ -19,6 +19,7 @@ export const DEVICE_STORAGE = {
   "budget-planner.dark-at-night": "whether the user wants the dark look at night",
   budget_language: "the language the user chose",
   budget_receipts_view: "the receipts list's period and order the user chose",
+  budget_chart_view: "how the user chose to draw the spending chart",
   budget_install_hint_dismissed: "that the user closed the install hint",
   budget_trip_suggestions_dismissed: "trip suggestions the user dismissed",
 };

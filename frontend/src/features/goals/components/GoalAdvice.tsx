@@ -2,13 +2,28 @@ import { ChevronDown, Lightbulb, Loader2, RefreshCw, Undo2 } from "lucide-react"
 import { observer } from "mobx-react-lite";
 
 import { Button, IconTile, Meter, Note, Pill } from "@/shared/components";
-import type { AdviceReadiness, GoalProgress, Recommendation } from "@/stores/AdviceStore";
+import {
+  isMonthPace,
+  type AdviceReadiness,
+  type MonthPace,
+  type Recommendation,
+} from "@/stores/AdviceStore";
 import type { Goal } from "@/stores/GoalsStore";
 import { useStores } from "@/stores/StoreContext";
 import { impactOf } from "../adviceImpact";
 import { timeAgo } from "../timeAgo";
+import { watchedLines } from "../watchedLines";
+import { categoryName } from "@/shared/categoryName";
 import { numberFormat, dateFormat } from "@/i18n/format";
 import { useTranslation, Trans } from "react-i18next";
+import type { TFunction } from "i18next";
+
+/** What an ask that found nothing read, so "nothing" is checkable (F8.11.3). */
+function lookedAt(t: TFunction<"goals">, watched: string[], months: number): string {
+  return watched.length > 0
+    ? t("advice.lookedAt", { lines: watched.join(", "), count: months })
+    : t("advice.lookedAtAll", { count: months });
+}
 
 /**
  * The advice on one goal, inside the goal's card (BRD F3, F4 — F8.4, F8.5).
@@ -22,7 +37,7 @@ import { useTranslation, Trans } from "react-i18next";
  * piece of advice can be marked won't-follow or not helpful (F8.9).
  */
 export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal }) {
-  const { adviceStore, authStore } = useStores();
+  const { adviceStore, authStore, categoriesStore } = useStores();
   const { t } = useTranslation("goals");
   const currency = authStore.user?.currency ?? "PLN";
   const advice = adviceStore.forGoal(goal.id);
@@ -30,7 +45,8 @@ export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal })
   const advising = adviceStore.advisingGoalId === goal.id;
   const readiness = adviceStore.readiness;
   const waiting = readiness !== null && !readiness.ready && advice.length === 0;
-  const pace = adviceStore.progress.get(goal.id);
+  const standing = adviceStore.progress.get(goal.id);
+  const pace = isMonthPace(standing) ? standing : undefined;
   const verb = advice.length > 0 ? t("advice.refresh") : t("advice.get");
   const latest = advice.find((item) => !item.feedback) ?? advice[0];
 
@@ -60,7 +76,18 @@ export const GoalAdvice = observer(function GoalAdvice({ goal }: { goal: Goal })
               </p>
             )}
             {!advising && outcome && (
-              <Note tone={outcome.kind === "failed" ? "error" : "info"}>{outcome.message}</Note>
+              <Note tone={outcome.kind === "failed" ? "error" : "info"}>
+                {outcome.kind === "nothing_specific" && readiness
+                  ? lookedAt(
+                      t,
+                      watchedLines(goal, (id) => {
+                        const name = categoriesStore.categories.find((c) => c.id === id)?.name;
+                        return name ? categoryName(name) : null;
+                      }),
+                      readiness.analysis_months,
+                    )
+                  : outcome.message}
+              </Note>
             )}
             {advice.length > 0 ? (
               <ol className="m-0 flex list-none flex-col gap-2 p-0">
@@ -225,7 +252,7 @@ const EARLY_DAYS = 7;
  * The figures are worked out live from this month's receipts, so the card never
  * says "on track" after the month has turned.
  */
-function NothingToCut({ pace, currency }: { pace: GoalProgress; currency: string }) {
+function NothingToCut({ pace, currency }: { pace: MonthPace; currency: string }) {
   const { t } = useTranslation("goals");
   const month = MONTH.format(new Date());
   const money = (amount: number | string) => `${MONEY.format(Number(amount))} ${currency}`;

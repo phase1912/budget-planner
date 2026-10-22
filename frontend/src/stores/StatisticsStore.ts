@@ -13,6 +13,20 @@ type Receipt = components["schemas"]["ReceiptResponse"];
 export type Preset =
   "this_month" | "last_month" | "last_3_months" | "last_6_months" | "this_year" | "custom";
 
+/** How the day-by-day chart is drawn (F23.22.2). */
+export type ChartView = "columns" | "days" | "calendar";
+const CHART_VIEWS: ChartView[] = ["columns", "days", "calendar"];
+const CHART_VIEW_KEY = "budget_chart_view";
+
+/** The view this browser last chose; private windows and blocked storage get columns. */
+function storedChartView(): ChartView {
+  try {
+    return CHART_VIEWS.find((v) => v === localStorage.getItem(CHART_VIEW_KEY)) ?? "columns";
+  } catch {
+    return "columns";
+  }
+}
+
 const pad = (n: number) => String(n).padStart(2, "0");
 /** A local day as YYYY-MM-DD, the form the API's periods take. */
 export const isoDay = (d: Date) =>
@@ -41,6 +55,11 @@ export class StatisticsStore {
   receiptCount = 0;
   isLoadingReceipts = false;
   private receiptsWanted = false;
+  chartView: ChartView = storedChartView();
+  /** The day tapped on the chart and its receipts (F23.22.1); null until a tap. */
+  day: string | null = null;
+  dayReceipts: Receipt[] = [];
+  isLoadingDay = false;
   isLoading = false;
   error: string | null = null;
 
@@ -90,9 +109,41 @@ export class StatisticsStore {
     return this.chooseRange(start, end);
   }
 
+  /** Draw the chart another way, and keep the choice in this browser. */
+  setChartView(view: ChartView): void {
+    this.chartView = view;
+    try {
+      localStorage.setItem(CHART_VIEW_KEY, view);
+    } catch {
+      // Storage refused: the choice lasts until the page is closed.
+    }
+  }
+
+  /** The receipts of one day tapped on the chart; a later tap's answer wins. */
+  async openDay(day: string): Promise<void> {
+    this.day = day;
+    this.isLoadingDay = true;
+    try {
+      const response = await apiClient.GET("/receipts", {
+        params: { query: { page: 1, size: 50, start: day, end: day } },
+      });
+      runInAction(() => {
+        if (this.day !== day) return;
+        this.dayReceipts = response.data?.items ?? [];
+        this.isLoadingDay = false;
+      });
+    } catch {
+      runInAction(() => {
+        if (this.day === day) this.isLoadingDay = false;
+      });
+    }
+  }
+
   /** Forget the figures: a different user is signing in. */
   reset(): void {
     this.request++;
+    this.day = null;
+    this.dayReceipts = [];
     this.statistics = null;
     this.daily = null;
     this.receipts = [];
@@ -106,6 +157,9 @@ export class StatisticsStore {
     const request = ++this.request;
     this.isLoading = true;
     this.error = null;
+    // A day from the last period is not one of this one's.
+    this.day = null;
+    this.dayReceipts = [];
     void this.loadDaily(request);
     // A list already open follows the period.
     if (this.receiptsWanted) void this.loadReceipts();

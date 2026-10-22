@@ -126,7 +126,7 @@ def test_the_context_cites_a_recurring_purchase_by_its_shop() -> None:
     context = render_advice_context(_analysis(_goal(), recurring_items=[item]), "PLN")
 
     assert (
-        "- Milka chocolate: on 9 receipts, 45.00 PLN in all; "
+        "- [i1] Milka chocolate: on 9 receipts, 45.00 PLN in all; "
         "on 9 of the 14 receipts from Fresh Market" in context
     )
     assert "## Recurring purchases related to this goal" in context

@@ -30,7 +30,7 @@
       },
       "storage": {
         "title": "Cookies i co jest przechowywane na Twoim urządzeniu",
-        "body": "Budget Agent nie ustawia plików cookie i niczego nie ładuje z innych stron: żadnych trackerów, reklam, cudzych czcionek ani widżetów.\n\nTwoja przeglądarka przechowuje tylko to, bez czego usługa nie działa, albo co sam wybrałeś: sesję logowania i dane konta (aby odświeżenie strony nie wylogowywało), wybrany motyw i język, okres i kolejność listy paragonów, zamknięte podpowiedzi oraz własne pliki aplikacji, aby otwierała się szybko i działała offline. Ponieważ każda z tych rzeczy jest niezbędna albo ustawiona przez Ciebie, nie prosimy o zgodę. Wylogowanie usuwa sesję; wyczyszczenie danych strony w przeglądarce usuwa wszystko.\n\nJeśli kiedyś dodamy coś, co wymaga Twojej zgody, zapytamy, zanim to zadziała."
+        "body": "Budget Agent nie ustawia plików cookie i niczego nie ładuje z innych stron: żadnych trackerów, reklam, cudzych czcionek ani widżetów.\n\nTwoja przeglądarka przechowuje tylko to, bez czego usługa nie działa, albo to, co zostało przez Ciebie wybrane: sesję logowania i dane konta (aby odświeżenie strony nie wylogowywało), wybrany motyw i język, okres i kolejność listy paragonów, wybrany wygląd wykresu wydatków, zamknięte podpowiedzi oraz własne pliki aplikacji, aby otwierała się szybko i działała offline. Ponieważ każda z tych rzeczy jest niezbędna albo ustawiona przez Ciebie, nie prosimy o zgodę. Wylogowanie usuwa sesję; wyczyszczenie danych strony w przeglądarce usuwa wszystko.\n\nJeśli kiedyś dodamy coś, co wymaga Twojej zgody, zapytamy, zanim to zadziała."
       },
       "ai": {
         "title": "Odczytywanie paragonów przez AI",

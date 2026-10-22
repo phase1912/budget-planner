@@ -399,6 +399,9 @@ session and ownership context, a monthly money goal heading over its cap with no
 from this month gets some through the same `AdviceService.advise` a request uses. The
 warning itself is not stored: `GET /api/v1/goals/progress` works it out from the month's
 pace on every look, and only the user's "not now" is kept, on the goal, for the month.
+The same endpoint returns where every goal stands, whatever its kind (`kind`: month,
+savings or lifestyle, `GoalProgressService`), for the Goals screen and the assistant's
+goal tools alike (F8.11.2, F21.5.1).
 There is no endpoint that triggers the pass; nothing outside the process can.
 
 ## Export

@@ -15,7 +15,16 @@ const goal = (overrides: Partial<Goal>): Goal =>
   }) as Goal;
 
 const pace = (spent: string, onTrack: boolean): GoalProgress =>
-  ({ spent, projected: spent, target: "3000.00", on_track: onTrack }) as GoalProgress;
+  ({
+    kind: "month",
+    spent,
+    projected: spent,
+    target: "3000.00",
+    margin: "0.00",
+    on_track: onTrack,
+    day: 10,
+    days_in_month: 31,
+  }) as GoalProgress;
 
 describe("goalMeter", () => {
   it("fills a cap as it is spent, warning when the month heads over", () => {

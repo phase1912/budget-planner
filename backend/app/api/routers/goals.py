@@ -87,6 +87,7 @@ async def check_goal(
         request.target_amount,
         request.category_id,
         request.today or datetime.now(UTC).date(),
+        request.target_date,
     )
     return GoalCheckResponse.model_validate(asdict(result))
 

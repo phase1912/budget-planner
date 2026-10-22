@@ -6,17 +6,52 @@ import { useTranslation } from "react-i18next";
 import { Collapsible, useRepeatLabel } from "@/shared/components";
 import { InlineCategoryPicker } from "@/features/categories/components/InlineCategoryPicker";
 import { dateFormat, formatAmount, numberFormat } from "@/i18n/format";
+import type { components } from "@/api/schema";
 import { useStores } from "@/stores/StoreContext";
 
 const DAY = dateFormat({ day: "numeric", month: "short" });
 const WHOLE = numberFormat({ maximumFractionDigits: 0 });
+
+type Receipt = components["schemas"]["ReceiptResponse"];
+
+/** Receipts as rows to tap open: shop, day, total; used by the period's list and a day's. */
+export const ReceiptRows = observer(function ReceiptRows({ receipts }: { receipts: Receipt[] }) {
+  const { receiptStore } = useStores();
+  const { t } = useTranslation("statistics");
+  return (
+    <ul className="m-0 flex list-none flex-col divide-y divide-border overflow-hidden rounded-control control-fill p-0">
+      {receipts.map((receipt) => (
+        <li key={receipt.id}>
+          <button
+            type="button"
+            onClick={() => void receiptStore.fetchReceiptDetail(receipt.id)}
+            className="flex min-h-14 w-full items-center gap-3 px-3.5 py-2 text-left"
+          >
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-lg font-semibold">
+                {receipt.merchant_name ?? t("sections.unknownShop")}
+              </span>
+              <span className="text-md text-muted-foreground">
+                {DAY.format(new Date(receipt.transaction_date ?? receipt.created_at))}
+                {receipt.status !== "parsed" && ` · ${t("sections.toCheck")}`}
+              </span>
+            </span>
+            <span className="text-lg font-bold tabular-nums">
+              {receipt.total_amount ? formatAmount(receipt.total_amount) : "—"}
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+});
 
 /**
  * The period's receipts, opened in place on Spending (F23.4): newest first, a tap opens
  * one; the Receipts page stays one link away for search and filters.
  */
 export const PeriodReceipts = observer(function PeriodReceipts() {
-  const { statisticsStore, receiptStore } = useStores();
+  const { statisticsStore } = useStores();
   const { t } = useTranslation("statistics");
   const { start, end, statistics, receipts, receiptCount, isLoadingReceipts } = statisticsStore;
   return (
@@ -32,30 +67,7 @@ export const PeriodReceipts = observer(function PeriodReceipts() {
       ) : receipts.length === 0 ? (
         <p className="m-0 text-md text-muted-foreground">{t("sections.noReceipts")}</p>
       ) : (
-        <ul className="m-0 flex list-none flex-col divide-y divide-border overflow-hidden rounded-control control-fill p-0">
-          {receipts.map((receipt) => (
-            <li key={receipt.id}>
-              <button
-                type="button"
-                onClick={() => void receiptStore.fetchReceiptDetail(receipt.id)}
-                className="flex min-h-14 w-full items-center gap-3 px-3.5 py-2 text-left"
-              >
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-lg font-semibold">
-                    {receipt.merchant_name ?? t("sections.unknownShop")}
-                  </span>
-                  <span className="text-md text-muted-foreground">
-                    {DAY.format(new Date(receipt.transaction_date ?? receipt.created_at))}
-                    {receipt.status !== "parsed" && ` · ${t("sections.toCheck")}`}
-                  </span>
-                </span>
-                <span className="text-lg font-bold tabular-nums">
-                  {receipt.total_amount ? formatAmount(receipt.total_amount) : "—"}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <ReceiptRows receipts={receipts} />
       )}
       <Link
         to={`/receipts?start=${start}&end=${end}`}

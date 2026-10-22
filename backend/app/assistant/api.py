@@ -18,6 +18,7 @@ from app.api.errors import (
 )
 from app.api.rate_limit import limiter
 from app.api.routers.goals import get_goal_mapper
+from app.api.routers.recommendations import get_advice_generator
 from app.assistant.core.graph import AssistantGraph
 from app.assistant.core.ports import AssistantPort
 from app.assistant.schemas import (
@@ -33,6 +34,7 @@ from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.domain.speech import MAX_SECONDS, NotWav, wav_seconds
 from app.models.user import User
+from app.ports.advice_generation import AdviceGeneratorPort
 from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.goal_mapping import GoalMapperPort
 from app.ports.speech import SpeechPort, SpeechUnavailable
@@ -69,9 +71,10 @@ def get_assistant_service(
     quota: Annotated[QuotaService, Depends(get_quota_service)],
     rates: Annotated[ExchangeRatePort | None, Depends(get_exchange_rates)],
     goal_mapper: Annotated[GoalMapperPort, Depends(get_goal_mapper)],
+    advice: Annotated[AdviceGeneratorPort, Depends(get_advice_generator)],
 ) -> AssistantService:
     """Conversations and cards, bound to the request's session."""
-    return AssistantService(session, assistant, quota, rates, goal_mapper)
+    return AssistantService(session, assistant, quota, rates, goal_mapper, advice)
 
 
 Service = Annotated[AssistantService, Depends(get_assistant_service)]

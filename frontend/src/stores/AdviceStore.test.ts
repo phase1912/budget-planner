@@ -111,6 +111,7 @@ describe("AdviceStore", () => {
       history_days: 0,
       required_days: 30,
       progress: 0,
+      analysis_months: 3,
     };
     vi.mocked(apiClient.POST).mockResolvedValue({
       error: { code: "insufficient_data", detail: "Advice needs about a month" },
@@ -134,6 +135,7 @@ describe("AdviceStore", () => {
       history_days: 40,
       required_days: 30,
       progress: 100,
+      analysis_months: 3,
     };
     store.reset();
     expect(store.readiness).toBeNull();
@@ -145,6 +147,7 @@ describe("AdviceStore", () => {
         {
           goal_id: "g1",
           goal_name: "Stay under",
+          kind: "month",
           at_risk: false,
           warning_dismissed: false,
           spent: "100.00",
@@ -170,6 +173,7 @@ describe("AdviceStore", () => {
     const row = (goalId: string, atRisk: boolean) => ({
       goal_id: goalId,
       goal_name: goalId,
+      kind: "month" as const,
       spent: "900.00",
       projected: "1200.00",
       target: "1000.00",

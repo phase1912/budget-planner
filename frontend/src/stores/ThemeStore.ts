@@ -23,7 +23,7 @@ export function isPalette(value: unknown): value is Palette {
   return PALETTES.some((p) => p.id === value);
 }
 
-function isDarkPalette(palette: Palette): boolean {
+export function isDarkPalette(palette: Palette): boolean {
   return PALETTES.find((p) => p.id === palette)?.dark ?? false;
 }
 

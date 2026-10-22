@@ -30,8 +30,10 @@ class Goal(Model):
     `category_id` when it cuts one category; a lifestyle goal has neither, only its
     words, which F8.2 translates into the spending lines it watches
     (`mapped_category_ids`, `mapped_item_names`, F9). Once the user corrects that
-    list, `mapping_set_by_user` keeps later automatic passes off it. The rules that
-    keep these consistent live in `app.domain.goals`.
+    list, `mapping_set_by_user` keeps later automatic passes off it. A savings goal may
+    have a `target_date` and what is saved so far — a card's balance (`saved_account_id`)
+    or an amount kept by hand (`saved_amount`). The rules that keep these consistent live
+    in `app.domain.goals`.
     """
 
     __tablename__ = "goals"
@@ -61,3 +63,11 @@ class Goal(Model):
     )
     # The 1st of the month the user dismissed this goal's at-risk warning for (F8.8).
     warning_dismissed_for: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # A savings goal's date (F8.11.1): what is needed a month is worked out to it.
+    target_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # Where a savings goal's money is: a card's balance, else an amount the user keeps
+    # up to date. A card removed leaves the amount, if any, to stand in (F8.11.1).
+    saved_account_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True
+    )
+    saved_amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
