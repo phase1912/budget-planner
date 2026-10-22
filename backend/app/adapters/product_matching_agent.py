@@ -5,6 +5,7 @@ import logging
 from pydantic import BaseModel, Field
 
 from app.agent.core import Agent
+from app.agent.metering import Purpose
 from app.agent.types import Message
 from app.ports.product_matching import MatchQuestion, ProductMatcherPort
 
@@ -64,6 +65,7 @@ class ProductMatchingAdapter(ProductMatcherPort):
                     [Message(role="user", content=[{"type": "text", "text": text}])],
                     schema=_Answers,
                     temperature=0.0,
+                    purpose=Purpose.PRODUCTS,
                 )
         except Exception:
             logger.exception("Product matching failed; every name stays its own product")

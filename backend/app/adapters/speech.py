@@ -12,7 +12,10 @@ import logging
 from typing import Any
 
 from app.agent.core import Agent, AgentError
+from app.agent.metering import Purpose, Recorder, spend
 from app.agent.types import Message
+from app.domain.quota import SPEECH_USD_PER_MINUTE
+from app.domain.speech import wav_seconds
 from app.ports.speech import SpeechUnavailable
 
 logger = logging.getLogger(__name__)
@@ -29,10 +32,17 @@ class ChirpSpeechAdapter:
     about a second from the European endpoint.
     """
 
-    def __init__(self, project: str, location: str, model: str = "chirp_3") -> None:
+    def __init__(
+        self,
+        project: str,
+        location: str,
+        model: str = "chirp_3",
+        recorder: Recorder | None = None,
+    ) -> None:
         self.project = project
         self.location = location
         self.model = model
+        self.recorder = recorder
 
     async def recognise(self, audio: bytes, mime_type: str, language: str) -> str:
         import google.auth
@@ -63,6 +73,16 @@ class ChirpSpeechAdapter:
         if response.status_code != 200:
             logger.warning("Speech-to-Text answered %s: %s", response.status_code, response.text)
             raise SpeechUnavailable(f"Speech-to-Text answered {response.status_code}")
+        if self.recorder is not None:
+            seconds = wav_seconds(audio)
+            await self.recorder(
+                spend(
+                    Purpose.SPEECH,
+                    self.model,
+                    seconds * SPEECH_USD_PER_MINUTE / 60,
+                    audio_seconds=seconds,
+                )
+            )
         return _words(response.json())
 
 
@@ -110,6 +130,7 @@ class ModelSpeechAdapter:
                     )
                 ],
                 max_tokens=500,
+                purpose=Purpose.SPEECH,
             )
         except AgentError as exc:
             if "empty content" in str(exc):

@@ -9,8 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.goal_mapping_agent import GoalMappingAdapter
 from app.agent.factory import agent_from_settings
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, get_quota_service
 from app.db.session import get_db_session
+from app.domain.goals import GoalType
 from app.models.goal import Goal
 from app.models.user import User
 from app.ports.goal_mapping import GoalMapperPort
@@ -25,6 +26,7 @@ from app.schemas.goal import (
 )
 from app.services.goal import GoalService
 from app.services.goal_check import GoalCheckService
+from app.services.quota import QuotaService
 
 router = APIRouter(prefix="/api/v1/goals", tags=["goals"])
 
@@ -44,6 +46,7 @@ def get_goal_service(
 
 Service = Annotated[GoalService, Depends(get_goal_service)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
+Quota = Annotated[QuotaService, Depends(get_quota_service)]
 
 
 @router.get("", response_model=list[GoalRead])
@@ -53,8 +56,16 @@ async def list_goals(current_user: CurrentUser, service: Service) -> Sequence[Go
 
 
 @router.post("", response_model=GoalRead, status_code=status.HTTP_201_CREATED)
-async def create_goal(request: GoalCreate, current_user: CurrentUser, service: Service) -> Goal:
-    """State a goal (BRD F1); a malformed one is refused with 422 and the reason."""
+async def create_goal(
+    request: GoalCreate, current_user: CurrentUser, service: Service, quota: Quota
+) -> Goal:
+    """State a goal (BRD F1); a malformed one is refused with 422 and the reason.
+
+    A lifestyle goal is mapped by a model, paid from the AI credits (F21.9): 429
+    quota_exceeded when they are spent.
+    """
+    if request.type == GoalType.LIFESTYLE:
+        await quota.ensure_can_talk(current_user, datetime.now(UTC))
     return await service.create(current_user.id, request)
 
 
@@ -82,9 +93,18 @@ async def check_goal(
 
 @router.patch("/{goal_id}", response_model=GoalRead)
 async def update_goal(
-    goal_id: uuid.UUID, request: GoalUpdate, current_user: CurrentUser, service: Service
+    goal_id: uuid.UUID,
+    request: GoalUpdate,
+    current_user: CurrentUser,
+    service: Service,
+    quota: Quota,
 ) -> Goal:
-    """Change a goal; another user's is not found (N2), a broken result is 422."""
+    """Change a goal; another user's is not found (N2), a broken result is 422.
+
+    New words may map a lifestyle goal again, paid from the AI credits (F21.9).
+    """
+    if request.model_fields_set & {"name", "description"}:
+        await quota.ensure_can_talk(current_user, datetime.now(UTC))
     return await service.update(current_user.id, goal_id, request)
 
 

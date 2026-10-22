@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.adapters.photo_ingestion import PhotoIngestionAdapter
+from app.agent.metering import charge_to
 from app.core.config import get_settings
 from app.db.session import get_session_factory
 from app.domain.activity import ActivityKind
@@ -220,95 +221,98 @@ class ReceiptService:
         Extraction is bounded by ``job_timeout_seconds``; on timeout the job is
         marked failed rather than left in PROCESSING for a client to poll forever.
         """
-        session_factory = get_session_factory()
-        async with session_factory() as session:
-            stmt = select(UploadJob).where(UploadJob.id == job_id)
-            job = (await session.execute(stmt)).scalar_one_or_none()
-            if not job:
-                return
+        # Its model calls are this user's, run after the request that knew them (F21.9).
+        with charge_to(user.id):
+            session_factory = get_session_factory()
+            async with session_factory() as session:
+                stmt = select(UploadJob).where(UploadJob.id == job_id)
+                job = (await session.execute(stmt)).scalar_one_or_none()
+                if not job:
+                    return
 
-            job.status = JobStatus.PROCESSING
-            job.total_items = len(receipts_data)
-            job.processed_items = 0
-            await session.commit()
-
-            try:
-                all_file_ids: list[str] = []
-                all_extractions: list[dict[str, object]] = []
-
-                category_repository = CategoryRepository(session)
-                categories = await category_repository.list_available(user.id)
-                rules = await category_repository.list_rules(user.id)
-                corrections = await NameCorrectionRepository(session).list_for(user.id)
-
-                if self.storage_port is None:
-                    raise RuntimeError("Storage port not configured.")
-                photos = PhotoIngestionAdapter(self.storage_port, self.parser_port)
-
-                async def process_single_receipt(
-                    files_data: list[dict[str, str | bytes]],
-                ) -> dict[str, object]:
-                    uploads = cast(list[UploadedFile], files_data)
-                    extraction = (await photos.ingest(user, uploads, compress=False)).extraction
-                    extraction = await self._reconcile_total(user, extraction)
-                    # Read and re-read at full quality; only the copy kept is made smaller.
-                    await photos.compress_stored(
-                        user, cast(list[str], extraction.get("file_ids") or [])
-                    )
-                    extraction = _dated(extraction, datetime.now(UTC).date())
-                    apply_corrections(extraction, corrections)
-                    if self.parser_port:
-                        await self._categorise_extraction(extraction, categories, rules)
-                        self._file_discount_lines(extraction)
-                    return extraction
-
-                semaphore = asyncio.Semaphore(self.max_concurrency)
-
-                async def bound_process(fd: list[dict[str, str | bytes]]) -> dict[str, object]:
-                    async with semaphore:
-                        return await process_single_receipt(fd)
-
-                tasks = [
-                    asyncio.create_task(bound_process(files_data)) for files_data in receipts_data
-                ]
+                job.status = JobStatus.PROCESSING
+                job.total_items = len(receipts_data)
+                job.processed_items = 0
+                await session.commit()
 
                 try:
-                    async with asyncio.timeout(self.job_timeout_seconds):
-                        for completed_task in asyncio.as_completed(tasks):
-                            await completed_task
-                            job.processed_items += 1
-                            await session.commit()
-                except BaseException:
-                    # Without this the survivors keep uploading and calling the LLM
-                    # long after the job has been marked failed.
-                    for task in tasks:
-                        task.cancel()
-                    await asyncio.gather(*tasks, return_exceptions=True)
-                    raise
+                    all_file_ids: list[str] = []
+                    all_extractions: list[dict[str, object]] = []
 
-                for extraction in (task.result() for task in tasks):
-                    file_ids = cast(list[str], extraction.get("file_ids", []))
-                    all_file_ids.extend(file_ids)
+                    category_repository = CategoryRepository(session)
+                    categories = await category_repository.list_available(user.id)
+                    rules = await category_repository.list_rules(user.id)
+                    corrections = await NameCorrectionRepository(session).list_for(user.id)
 
+                    if self.storage_port is None:
+                        raise RuntimeError("Storage port not configured.")
+                    photos = PhotoIngestionAdapter(self.storage_port, self.parser_port)
+
+                    async def process_single_receipt(
+                        files_data: list[dict[str, str | bytes]],
+                    ) -> dict[str, object]:
+                        uploads = cast(list[UploadedFile], files_data)
+                        extraction = (await photos.ingest(user, uploads, compress=False)).extraction
+                        extraction = await self._reconcile_total(user, extraction)
+                        # Read and re-read at full quality; only the copy kept is made smaller.
+                        await photos.compress_stored(
+                            user, cast(list[str], extraction.get("file_ids") or [])
+                        )
+                        extraction = _dated(extraction, datetime.now(UTC).date())
+                        apply_corrections(extraction, corrections)
+                        if self.parser_port:
+                            await self._categorise_extraction(extraction, categories, rules)
+                            self._file_discount_lines(extraction)
+                        return extraction
+
+                    semaphore = asyncio.Semaphore(self.max_concurrency)
+
+                    async def bound_process(fd: list[dict[str, str | bytes]]) -> dict[str, object]:
+                        async with semaphore:
+                            return await process_single_receipt(fd)
+
+                    tasks = [
+                        asyncio.create_task(bound_process(files_data))
+                        for files_data in receipts_data
+                    ]
+
+                    try:
+                        async with asyncio.timeout(self.job_timeout_seconds):
+                            for completed_task in asyncio.as_completed(tasks):
+                                await completed_task
+                                job.processed_items += 1
+                                await session.commit()
+                    except BaseException:
+                        # Without this the survivors keep uploading and calling the LLM
+                        # long after the job has been marked failed.
+                        for task in tasks:
+                            task.cancel()
+                        await asyncio.gather(*tasks, return_exceptions=True)
+                        raise
+
+                    for extraction in (task.result() for task in tasks):
+                        file_ids = cast(list[str], extraction.get("file_ids", []))
+                        all_file_ids.extend(file_ids)
+
+                        if self.parser_port and self.storage_port:
+                            repo = ReceiptRepository(session).bypass_ownership()
+                            await self.preview_conversion(session, extraction, user.currency)
+                            await _mark_duplicates(repo, user.id, extraction)
+                            all_extractions.append(extraction)
+
+                    job.file_ids = all_file_ids
                     if self.parser_port and self.storage_port:
-                        repo = ReceiptRepository(session).bypass_ownership()
-                        await self.preview_conversion(session, extraction, user.currency)
-                        await _mark_duplicates(repo, user.id, extraction)
-                        all_extractions.append(extraction)
+                        job.result_data = {"extractions": all_extractions}
 
-                job.file_ids = all_file_ids
-                if self.parser_port and self.storage_port:
-                    job.result_data = {"extractions": all_extractions}
-
-                job.status = JobStatus.COMPLETED
-                await session.commit()
-            except Exception as e:
-                logger.exception("Background task failed")
-                await session.rollback()
-                job.status = JobStatus.FAILED
-                session.add(job)
-                await session.commit()
-                raise e
+                    job.status = JobStatus.COMPLETED
+                    await session.commit()
+                except Exception as e:
+                    logger.exception("Background task failed")
+                    await session.rollback()
+                    job.status = JobStatus.FAILED
+                    session.add(job)
+                    await session.commit()
+                    raise e
 
     async def store_from_channel[PayloadT](
         self,
@@ -326,48 +330,52 @@ class ReceiptService:
         message delivered twice is one receipt. A message that was money received rather
         than a receipt waits as pending income for the user to confirm (F23.11).
         """
-        session_factory = get_session_factory()
-        async with session_factory() as session:
-            receipts = ReceiptRepository(session).bypass_ownership()
-            if source_reference and await receipts.has_source_reference(
-                user.id, ingestion.channel, source_reference
-            ):
-                return
-            result = await ingestion.ingest(user, payload)
-            if result.income is not None:
-                await _keep_pending_income(session, user, result.income, source_reference)
-                return
-            extraction = await self._reconcile_total(user, result.extraction)
-            extraction = _dated(extraction, datetime.now(UTC).date())
-            apply_corrections(extraction, await NameCorrectionRepository(session).list_for(user.id))
-            identity = fiscal_identity(extraction)
-            if identity and await receipts.find_by_fiscal_identity(user.id, identity):
-                logger.info("Email receipt for user %s dropped: already stored", user.id)
-                return
-            extraction = await self.convert_for_account(session, extraction, user.currency)
-            likely = None
-            if "error" in extraction:
-                extraction["requires_manual_review"] = True
-            else:
-                category_repository = CategoryRepository(session)
-                await self._categorise_extraction(
-                    extraction,
-                    await category_repository.list_available(user.id),
-                    await category_repository.list_rules(user.id),
+        # Its model calls are this user's, run after the request that knew them (F21.9).
+        with charge_to(user.id):
+            session_factory = get_session_factory()
+            async with session_factory() as session:
+                receipts = ReceiptRepository(session).bypass_ownership()
+                if source_reference and await receipts.has_source_reference(
+                    user.id, ingestion.channel, source_reference
+                ):
+                    return
+                result = await ingestion.ingest(user, payload)
+                if result.income is not None:
+                    await _keep_pending_income(session, user, result.income, source_reference)
+                    return
+                extraction = await self._reconcile_total(user, result.extraction)
+                extraction = _dated(extraction, datetime.now(UTC).date())
+                apply_corrections(
+                    extraction, await NameCorrectionRepository(session).list_for(user.id)
                 )
-                self._file_discount_lines(extraction)
-                likely = await _likely_duplicate(receipts, user.id, extraction, identity)
-            receipts.create_from_extraction(
-                user_id=user.id,
-                file_ids=result.file_ids,
-                extraction=extraction,
-                parser_version=CURRENT_PARSER_VERSION,
-                channel=ingestion.channel,
-                source_reference=source_reference,
-                possible_duplicate_of_id=likely.id if likely else None,
-            )
-            ActivityService(session).record(user.id, ActivityKind.RECEIPT_STORED)
-            await session.commit()
+                identity = fiscal_identity(extraction)
+                if identity and await receipts.find_by_fiscal_identity(user.id, identity):
+                    logger.info("Email receipt for user %s dropped: already stored", user.id)
+                    return
+                extraction = await self.convert_for_account(session, extraction, user.currency)
+                likely = None
+                if "error" in extraction:
+                    extraction["requires_manual_review"] = True
+                else:
+                    category_repository = CategoryRepository(session)
+                    await self._categorise_extraction(
+                        extraction,
+                        await category_repository.list_available(user.id),
+                        await category_repository.list_rules(user.id),
+                    )
+                    self._file_discount_lines(extraction)
+                    likely = await _likely_duplicate(receipts, user.id, extraction, identity)
+                receipts.create_from_extraction(
+                    user_id=user.id,
+                    file_ids=result.file_ids,
+                    extraction=extraction,
+                    parser_version=CURRENT_PARSER_VERSION,
+                    channel=ingestion.channel,
+                    source_reference=source_reference,
+                    possible_duplicate_of_id=likely.id if likely else None,
+                )
+                ActivityService(session).record(user.id, ActivityKind.RECEIPT_STORED)
+                await session.commit()
 
     async def preview_conversion(
         self, session: AsyncSession, extraction: dict[str, Any], account_currency: str

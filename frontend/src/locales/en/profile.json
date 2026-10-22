@@ -62,13 +62,13 @@
     "new": "Get a new address"
   },
   "usage": {
-    "title": "Receipts this month",
-    "unlimited": "No limit on this account. {{used}} read so far this month.",
-    "used": "{{used}} of {{limit}} read",
-    "note": "Each receipt read by photo or by email counts. The count starts again on {{date}}.",
+    "title": "AI this month",
+    "unlimited": "No AI limit on this account.",
+    "note": "Reading receipts, talking and speaking to the assistant and goal advice all spend the same monthly AI credits, by what each really costs. They renew on {{date}}.",
     "planFree": "Free plan",
     "planPaid": "Paid plan",
-    "planEnds": "until {{date}}"
+    "planEnds": "until {{date}}",
+    "left": "About {{receipts}} receipts or {{messages}} messages left"
   },
   "install": {
     "title": "App",

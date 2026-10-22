@@ -185,11 +185,6 @@ class Settings(BaseSettings):
             "cap (BRD F7); 0 turns it off."
         ),
     )
-    paid_monthly_receipt_quota: int = Field(
-        default=200,
-        ge=0,
-        description="Receipts the paid plan may have read per calendar month (F18.2.2).",
-    )
     admin_second_factor_required: bool | None = Field(
         default=None,
         description=(
@@ -197,29 +192,47 @@ class Settings(BaseSettings):
             "everywhere but local work."
         ),
     )
-    monthly_receipt_quota: int = Field(
-        default=10,
+    free_monthly_credits: int = Field(
+        default=150,
         ge=0,
         description=(
-            "Receipts the free plan may have read per calendar month (F10.6, F18.2.2). A "
-            "receipt counts when it is read, since the model call is the cost."
+            "AI credits the free plan may spend a calendar month (F21.9, ADR-0030): one "
+            "credit is 0.001 USD of what the model calls cost."
         ),
     )
-    assistant_messages_per_read: int = Field(
-        default=10,
+    paid_monthly_credits: int = Field(
+        default=2500, ge=0, description="AI credits the paid plan may spend a month (F21.9)."
+    )
+    daily_credit_ceiling: int = Field(
+        default=3000,
+        ge=0,
+        description=(
+            "Credits charged per UTC day across every non-admin account: bounds the bill "
+            "whatever happens to each wallet."
+        ),
+    )
+    credits_per_receipt: float = Field(
+        default=10.0,
+        gt=0,
+        description=(
+            "What a receipt read is taken to cost until enough reads were recorded to tell "
+            "(F21.9.3); the measured average replaces it."
+        ),
+    )
+    credits_per_message: float = Field(
+        default=4.0,
+        gt=0,
+        description="What a message to the assistant is taken to cost until measured.",
+    )
+    free_receipts_per_upload: int = Field(
+        default=5,
         ge=1,
-        description=(
-            "Messages to the assistant that cost as much of the quota as one receipt read "
-            "(F21.1); F21.9 replaces it with credits by the tokens really used."
-        ),
+        description="Receipts one upload may hold on the free plan, so one cannot spend the month.",
     )
-    daily_receipt_read_ceiling: int = Field(
-        default=100,
-        ge=0,
-        description=(
-            "Receipts read per UTC day across every non-admin account (F10.6): bounds the "
-            "bill whatever happens to the per-account quota."
-        ),
+    free_assistant_rounds: int = Field(
+        default=4,
+        ge=1,
+        description="Rounds of tool use one message may take on the free plan (F21.9.2).",
     )
     admin_emails: list[str] = Field(
         default_factory=list,

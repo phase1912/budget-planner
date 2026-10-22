@@ -49,6 +49,9 @@ class AssistantContext:
     today: str
     categories: tuple[str, ...] = ()
     """The names of the categories the user's spending can go to (F21.3)."""
+    max_rounds: int = 8
+    """Rounds of tool use this user's message may take: fewer on the free plan, so one
+    message cannot spend the month (F21.9.2)."""
     known: str = ""
     """What the user has, in a few lines — cards with their roles, bills, incomes, goals,
     trips, the family — so the model names things by their real names (F21.13.2)."""

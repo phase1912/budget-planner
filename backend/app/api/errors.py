@@ -50,6 +50,7 @@ class ProblemCode(enum.StrEnum):
     UNSUPPORTED_MEDIA_TYPE = "unsupported_media_type"
     UPLOAD_LIMIT_EXCEEDED = "upload_limit_exceeded"
     TOO_MANY_PHOTOS = "too_many_photos"
+    TOO_MANY_RECEIPTS = "too_many_receipts"
     PHOTOS_TOO_LARGE = "photos_too_large"
     QUOTA_EXCEEDED = "quota_exceeded"
     SERVICE_BUSY = "service_busy"
@@ -248,11 +249,11 @@ class UploadLimitExceededError(AppError):
 
 
 class ReceiptQuotaExceededError(AppError):
-    """Raised when an account has used its receipt reads for the month (F10.6)."""
+    """Raised when an account has spent its AI credits for the month (F10.6, F21.9)."""
 
     status_code = status.HTTP_429_TOO_MANY_REQUESTS
     code = ProblemCode.QUOTA_EXCEEDED
-    title = "Monthly Receipt Limit Reached"
+    title = "Monthly AI Credits Spent"
 
 
 class EmailNotConfirmedError(AppError):

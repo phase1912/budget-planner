@@ -7,10 +7,10 @@ import { settle } from "@/api/errors";
 export type ReceiptQuota = components["schemas"]["ReceiptQuotaRead"];
 
 /**
- * How many receipts the account may still have read this month (BRD F10 — F10.6).
- * Shared by the upload screen, which stops offering an upload past the limit, and the
- * profile, which shows the month's usage. Unknown stays null: the server enforces the
- * limit either way, so failing to load it only loses the hint.
+ * What is left of the account's AI credits this month, told as receipts and messages
+ * (F21.9; was the receipt quota, F10.6). Shared by the Add screen, which stops offering an
+ * upload past it, the assistant and Settings. Unknown stays null: the server enforces the
+ * wallet either way, so failing to load it only loses the hint.
  */
 export class QuotaStore {
   quota: ReceiptQuota | null = null;
@@ -19,11 +19,11 @@ export class QuotaStore {
     makeAutoObservable(this, {}, { autoBind: true });
   }
 
-  /** Whether `receipts` more can be read this month; true while the quota is unknown. */
+  /** Whether `receipts` more can be read this month; true while the wallet is unknown. */
   allows(receipts: number): boolean {
     const quota = this.quota;
-    if (!quota || quota.unlimited || quota.remaining === null) return true;
-    return receipts <= quota.remaining;
+    if (!quota || quota.unlimited || quota.receipts_left === null) return true;
+    return receipts <= quota.receipts_left;
   }
 
   /** Ask the server for this month's usage. */

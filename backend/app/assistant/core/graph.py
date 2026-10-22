@@ -12,6 +12,7 @@ from collections.abc import Sequence
 from typing import Any, Protocol, TypedDict
 
 from app.agent.core import AgentError
+from app.agent.metering import Purpose
 from app.agent.types import Message, ToolTurn, ToolUse
 from app.assistant.core import prompts
 from app.assistant.core.language import worded
@@ -73,6 +74,7 @@ class ToolModel(Protocol):
         *,
         max_tokens: int = ...,
         thinking_budget: int | None = ...,
+        purpose: str = ...,
     ) -> ToolTurn: ...
 
 
@@ -128,7 +130,11 @@ class AssistantGraph(AssistantPort):
             messages = state["messages"]
             try:
                 turn = await self._model.run_tools(
-                    messages, functions, max_tokens=2048, thinking_budget=THINKING_BUDGET
+                    messages,
+                    functions,
+                    max_tokens=2048,
+                    thinking_budget=THINKING_BUDGET,
+                    purpose=Purpose.ASSISTANT,
                 )
             except AgentError:
                 logger.exception("The assistant's model call failed")
@@ -161,7 +167,7 @@ class AssistantGraph(AssistantPort):
                 "choices": choices,
                 "said": said,
                 "rounds": rounds,
-                "done": bool(choices) or rounds >= MAX_ROUNDS,
+                "done": bool(choices) or rounds >= min(MAX_ROUNDS, context.max_rounds),
             }
 
         graph = StateGraph(State)

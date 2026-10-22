@@ -102,7 +102,7 @@
     "planFree": "Free",
     "planPaid": "Paid",
     "planUntil": "until {{date}}",
-    "reads": "Receipts read this month",
+    "reads": "AI credits spent this month",
     "readsOf": "{{used}} of {{limit}}",
     "readsUnlimited": "{{used}}, no limit",
     "grantTitle": "Give the paid plan",

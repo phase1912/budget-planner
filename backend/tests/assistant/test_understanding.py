@@ -4,6 +4,7 @@ with options to tap, finds products and the family's spending, and starts nothin
 not."""
 
 import json
+import struct
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -32,6 +33,7 @@ from app.services.household import HouseholdService
 from app.services.manual_expense import ManualExpense, record_expense
 from tests.assistant.test_api import URL, ScriptedAssistant, _call, _say
 from tests.assistant.test_tools import _approve, _propose
+from tests.factories.ai_usage import AiUsageFactory
 from tests.factories.upload_job import UploadJobFactory
 from tests.factories.user import UserFactory
 
@@ -208,21 +210,62 @@ async def _speak(session: AsyncSession, user: User, audio: bytes, speech: Hearin
         )
 
 
+def wav(seconds: float) -> bytes:
+    """Silence as the microphone records it: 16 kHz mono 16-bit WAV."""
+    data = bytes(int(seconds * 16000) * 2)
+    header = (
+        b"RIFF" + struct.pack("<I", 36 + len(data)) + b"WAVEfmt "
+        + struct.pack("<IHHIIHH", 16, 1, 1, 16000, 32000, 2, 16)
+        + b"data" + struct.pack("<I", len(data))
+    )  # fmt: skip
+    return header + data
+
+
 @pytest.mark.asyncio
 async def test_a_recording_comes_back_as_words_in_the_users_language_and_nothing_is_kept(
     db_session: AsyncSession,
 ) -> None:
     me = await UserFactory.create_async(language="uk")
     hearing = Hearing("таксі 45")
+    sound = wav(3)
 
-    answered = await _speak(db_session, me, b"RIFF....WAVE", hearing)
-    too_long = await _speak(db_session, me, b"0" * 2_000_001, Hearing())
-    failed = await _speak(db_session, me, b"RIFF", Hearing(fails=True))
+    answered = await _speak(db_session, me, sound, hearing)
+    failed = await _speak(db_session, me, wav(1), Hearing(fails=True))
 
     assert (answered.status_code, answered.json()) == (200, {"text": "таксі 45"})
-    assert hearing.heard == [(b"RIFF....WAVE", "audio/wav", "uk")]
-    assert (too_long.status_code, too_long.json()["code"]) == (413, "speech_too_long")
+    assert hearing.heard == [(sound, "audio/wav", "uk")]
     assert (failed.status_code, failed.json()["code"]) == (503, "speech_unavailable")
+
+
+@pytest.mark.asyncio
+async def test_a_recording_is_a_minute_at_most_by_its_own_length_and_only_wav(
+    db_session: AsyncSession,
+) -> None:
+    """F21.9.4: 61 seconds fit in the size allowed, and are still refused."""
+    me = await UserFactory.create_async()
+    hearing = Hearing()
+
+    too_long = await _speak(db_session, me, wav(61), hearing)
+    compressed = await _speak(db_session, me, b"ID3\x04" + b"\x00" * 4000, hearing)
+
+    assert len(wav(61)) < 2_000_000
+    assert (too_long.status_code, too_long.json()["code"]) == (413, "speech_too_long")
+    assert (compressed.status_code, compressed.json()["code"]) == (415, "unsupported_media_type")
+    assert hearing.heard == []
+
+
+@pytest.mark.asyncio
+async def test_a_recording_is_paid_from_the_ai_credits(db_session: AsyncSession) -> None:
+    me = await UserFactory.create_async()
+    await AiUsageFactory.create_async(
+        user_id=me.id, credits=Decimal(149), created_at=datetime.now(UTC)
+    )
+    hearing = Hearing()
+
+    refused = await _speak(db_session, me, wav(30), hearing)
+
+    assert (refused.status_code, refused.json()["code"]) == (429, "quota_exceeded")
+    assert hearing.heard == []
 
 
 @pytest.mark.asyncio

@@ -175,7 +175,7 @@ async def get_storage_service() -> AsyncGenerator[StoragePort, None]:
 def get_quota_service(
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> QuotaService:
-    """The receipt quota (F10.6); tests override it where they have no real database."""
+    """The AI credit wallet (F10.6, F21.9); tests override it where they have no database."""
     return QuotaService(session, get_settings())
 
 

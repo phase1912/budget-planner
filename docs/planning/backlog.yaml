@@ -4852,43 +4852,62 @@ epics:
               one could not be read. The assistant is told what was attached so it can answer
               about it. Cross-user test (N2). Checked at 375, 768 and 1280 px.
       - key: F21.9
-        title: Two AI limits a month — receipts, and the assistant
+        title: One AI credit wallet a month
         labels: [backend, frontend, database]
         requirements: []
         depends_on: [F18.2, F21.1]
         intent: >
-          Two monthly limits, so talking never eats the receipts (decided 2026-10-21): receipt
-          reads as today (10 free, 200 paid), and a separate AI allowance spent by the tokens
-          really used on everything else the user starts — messages to the assistant, a
-          lifestyle goal mapped when it is stated or reworded, advice asked for on a goal, an
-          income read from a document. What runs unasked — proactive advice on goals at risk,
-          categorising a read receipt, matching products — is the service's cost and counts in
-          neither. Typing by hand stays free. The user sees two meters.
+          Everything the user asks of a model spends one monthly wallet of credits — reading a
+          receipt (with its categories), a message to the assistant, a recording, a goal
+          mapped, advice asked for, an income read from a document — each charged what it
+          really cost, one credit for every 0.001 USD (decided 2026-10-22, ADR-0030). The free
+          plan has 150 credits a month, the paid plan 2 500. The user never sees credits: the
+          meter says what is left as receipts and as messages, about each. What runs unasked —
+          proactive advice, matching products in the background — is recorded and charged to
+          no one. One request of a free user is bounded, so the month cannot go in one go; a
+          recording is a minute at most, timed on the screen.
         demo: >
-          Ask three questions and ask for advice on a goal: the AI meter goes down, the receipts
-          meter does not; read one receipt: only the receipts meter moves.
+          On the free plan, ask three questions and read one receipt: "about 12 receipts or
+          about 40 messages left" goes down by both; record for a minute and watch the timer
+          stop it.
         tasks:
           - key: F21.9.1
-            title: AI calls recorded by tokens, two limits
-            labels: [backend, frontend, database]
+            title: Every model call recorded with what it cost
+            labels: [backend, database]
             detail: >
-              Every model call the user starts recorded with its purpose (assistant, goal
-              mapping, goal advice, income document) and tokens in and out, through one place in
-              the agent so no new caller can forget it; the AI allowance per plan in settings,
-              in tokens, checked before the call and refused with an RFC 7807 problem naming
-              what is left and the reset date; assistant messages leave the receipt quota
-              (assistant_messages_per_read retired); a cap per message; the service-wide daily
-              ceiling covering both; admins exempt as today. Background calls are recorded too,
-              against no one's allowance, so the bill can be read. ADR-0030 accepted;
-              domain-model updated.
+              One place in the agent records each call — who, what for (receipt, categories,
+              assistant, speech, goal mapping, advice, income document, background), the
+              model, tokens in and out, seconds of sound — and its cost in credits from the
+              model's own prices (LiteLLM's price table; Speech-to-Text by the minute), so no
+              caller can forget it. An add-only migration for the table; admins and calls
+              nobody asked for are recorded, charged to no one. Cross-user test (N2).
           - key: F21.9.2
-            title: Two meters and a calm "used up" state
-            labels: [frontend]
+            title: The wallet, checked before every call
+            labels: [backend]
             detail: >
-              The receipts meter and the AI meter on the ＋ screen, in the assistant and in
-              Settings; when the AI allowance is spent the assistant, goal mapping and advice say
-              when it resets and that typing by hand still works, never a raw error. Checked at
-              375, 768 and 1280 px.
+              Credits a month per plan in settings (150 free, 2 500 paid; admins none), spent
+              this month from the records; every action checked before its model call against
+              what it usually costs and refused with an RFC 7807 problem saying what is left
+              and when it renews; the receipt quota (F10.6) and assistant_messages_per_read
+              retired into it, the service-wide daily ceiling counted in credits. A free
+              user's one request is bounded: a few receipts an upload, fewer rounds of the
+              assistant. ADR-0030 rewritten; domain-model updated.
+          - key: F21.9.3
+            title: What is left, in receipts and messages
+            labels: [frontend, backend]
+            detail: >
+              The meter on the Add screen, in the assistant and in Settings says what is left
+              as about so many receipts or so many messages — worked out from what each
+              really cost lately — and when it renews; when the month is spent the assistant,
+              the microphone and reading say so calmly, and typing by hand still works. Three
+              languages. Checked at 375, 768 and 1280 px.
+          - key: F21.9.4
+            title: A recording a minute at most, timed
+            labels: [frontend, backend]
+            detail: >
+              The service takes only WAV and refuses past a minute by the length its header
+              gives, whatever the file's size; the microphone shows the time going, 0:42 / 1:00,
+              and stops itself at the minute. Checked at 375, 768 and 1280 px.
 
       - key: F21.10
         title: The assistant knows what the user has

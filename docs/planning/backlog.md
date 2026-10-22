@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-25 epics · 185 features · 371 tasks written so far.
+25 epics · 185 features · 373 tasks written so far.
 
 22 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -1797,16 +1797,18 @@ Anything the user can create or change on a screen can be asked for in the chat 
 - **F21.8.1** Told receipts — A receipt channel "told" with lines from speech or text, categorised as read ones are, proposed as a card with its lines and saved on approval. Checked at 375, 768 and 1280 px.
 - **F21.8.2** Files attached in the chat — A paperclip beside the text field takes photos and PDFs (the same types and limits as the ＋ screen, several at once); they are sent through the upload pipeline as receipts, counted in the receipt quota, and the conversation shows a card for the reading that turns into a link to each receipt read, or says why one could not be read. The assistant is told what was attached so it can answer about it. Cross-user test (N2). Checked at 375, 768 and 1280 px.
 
-### F21.9 — Two AI limits a month — receipts, and the assistant
+### F21.9 — One AI credit wallet a month
 
 *Requirements: —* · *Blocked by: F18.2, F21.1*
 
-Two monthly limits, so talking never eats the receipts (decided 2026-10-21): receipt reads as today (10 free, 200 paid), and a separate AI allowance spent by the tokens really used on everything else the user starts — messages to the assistant, a lifestyle goal mapped when it is stated or reworded, advice asked for on a goal, an income read from a document. What runs unasked — proactive advice on goals at risk, categorising a read receipt, matching products — is the service's cost and counts in neither. Typing by hand stays free. The user sees two meters.
+Everything the user asks of a model spends one monthly wallet of credits — reading a receipt (with its categories), a message to the assistant, a recording, a goal mapped, advice asked for, an income read from a document — each charged what it really cost, one credit for every 0.001 USD (decided 2026-10-22, ADR-0030). The free plan has 150 credits a month, the paid plan 2 500. The user never sees credits: the meter says what is left as receipts and as messages, about each. What runs unasked — proactive advice, matching products in the background — is recorded and charged to no one. One request of a free user is bounded, so the month cannot go in one go; a recording is a minute at most, timed on the screen.
 
-**Demonstrated by:** Ask three questions and ask for advice on a goal: the AI meter goes down, the receipts meter does not; read one receipt: only the receipts meter moves.
+**Demonstrated by:** On the free plan, ask three questions and read one receipt: "about 12 receipts or about 40 messages left" goes down by both; record for a minute and watch the timer stop it.
 
-- **F21.9.1** AI calls recorded by tokens, two limits — Every model call the user starts recorded with its purpose (assistant, goal mapping, goal advice, income document) and tokens in and out, through one place in the agent so no new caller can forget it; the AI allowance per plan in settings, in tokens, checked before the call and refused with an RFC 7807 problem naming what is left and the reset date; assistant messages leave the receipt quota (assistant_messages_per_read retired); a cap per message; the service-wide daily ceiling covering both; admins exempt as today. Background calls are recorded too, against no one's allowance, so the bill can be read. ADR-0030 accepted; domain-model updated.
-- **F21.9.2** Two meters and a calm "used up" state — The receipts meter and the AI meter on the ＋ screen, in the assistant and in Settings; when the AI allowance is spent the assistant, goal mapping and advice say when it resets and that typing by hand still works, never a raw error. Checked at 375, 768 and 1280 px.
+- **F21.9.1** Every model call recorded with what it cost — One place in the agent records each call — who, what for (receipt, categories, assistant, speech, goal mapping, advice, income document, background), the model, tokens in and out, seconds of sound — and its cost in credits from the model's own prices (LiteLLM's price table; Speech-to-Text by the minute), so no caller can forget it. An add-only migration for the table; admins and calls nobody asked for are recorded, charged to no one. Cross-user test (N2).
+- **F21.9.2** The wallet, checked before every call — Credits a month per plan in settings (150 free, 2 500 paid; admins none), spent this month from the records; every action checked before its model call against what it usually costs and refused with an RFC 7807 problem saying what is left and when it renews; the receipt quota (F10.6) and assistant_messages_per_read retired into it, the service-wide daily ceiling counted in credits. A free user's one request is bounded: a few receipts an upload, fewer rounds of the assistant. ADR-0030 rewritten; domain-model updated.
+- **F21.9.3** What is left, in receipts and messages — The meter on the Add screen, in the assistant and in Settings says what is left as about so many receipts or so many messages — worked out from what each really cost lately — and when it renews; when the month is spent the assistant, the microphone and reading say so calmly, and typing by hand still works. Three languages. Checked at 375, 768 and 1280 px.
+- **F21.9.4** A recording a minute at most, timed — The service takes only WAV and refuses past a minute by the length its header gives, whatever the file's size; the microphone shows the time going, 0:42 / 1:00, and stops itself at the minute. Checked at 375, 768 and 1280 px.
 
 ### F21.10 — The assistant knows what the user has
 

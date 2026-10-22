@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
 import { List, Loader2, Mic, Paperclip, Plus, SendHorizontal, Square, X } from "lucide-react";
 
 import { dateFormat } from "@/i18n/format";
@@ -12,6 +11,8 @@ import { AnswerCard } from "./components/AnswerCard";
 import { AttachmentCard } from "./components/AttachmentCard";
 import { ApproveCard } from "./components/ApproveCard";
 import { ChoiceCard } from "./components/ChoiceCard";
+import { RecordingTimer } from "./components/RecordingTimer";
+import { Thinking } from "./components/Thinking";
 import { FormCard } from "./components/FormCard";
 
 const WHEN = dateFormat({ day: "numeric", month: "short" });
@@ -29,8 +30,14 @@ const WHEN = dateFormat({ day: "numeric", month: "short" });
  * button on a phone.
  */
 export const AssistantPage = observer(function AssistantPage() {
-  const { assistantStore, budgetStore, categoriesStore, bankAccountsStore, uploadStore } =
-    useStores();
+  const {
+    assistantStore,
+    budgetStore,
+    categoriesStore,
+    bankAccountsStore,
+    uploadStore,
+    quotaStore,
+  } = useStores();
   const { t } = useTranslation("assistant");
   const [text, setText] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -48,6 +55,10 @@ export const AssistantPage = observer(function AssistantPage() {
     // An income card says when approving it makes the first card (F23.21).
     if (!bankAccountsStore.loaded) void bankAccountsStore.load(budgetStore.today);
   }, [assistantStore, categoriesStore, bankAccountsStore, budgetStore]);
+  useEffect(() => {
+    // Every answer spends AI credits (F21.9): what is left follows the conversation.
+    void quotaStore.load();
+  }, [quotaStore, messages.length]);
   useEffect(() => {
     // Not every environment scrolls (tests); the newest message is a nicety there.
     if ("scrollIntoView" in (end.current ?? {})) end.current?.scrollIntoView({ block: "end" });
@@ -129,16 +140,6 @@ export const AssistantPage = observer(function AssistantPage() {
           >
             {t("title")}
           </h1>
-          {/* The middle button leads here now (F21.13.5): adding by hand stays a tap away. */}
-          <Link
-            to="/upload"
-            aria-label={t("addByHand")}
-            className="control-fill flex min-h-11 shrink-0 items-center gap-2 rounded-pill px-3.5 text-md font-bold whitespace-nowrap no-underline"
-          >
-            <Plus size={18} aria-hidden="true" />
-            <span className="md:hidden">{t("addByHandShort")}</span>
-            <span className="hidden md:inline">{t("addByHand")}</span>
-          </Link>
           <button
             type="button"
             aria-label={t("conversations")}
@@ -227,7 +228,7 @@ export const AssistantPage = observer(function AssistantPage() {
               ))}
               {assistantStore.pending.length > 0 && (
                 <li className="self-start rounded-card bg-surface px-4 py-2.5 text-lg text-muted-foreground">
-                  {t("thinking")}
+                  <Thinking />
                 </li>
               )}
             </ol>
@@ -279,6 +280,9 @@ export const AssistantPage = observer(function AssistantPage() {
                   {assistantStore.dictation === "listening"
                     ? t("mic.listening")
                     : t("mic.recognising")}
+                  {assistantStore.listeningSince !== null && (
+                    <RecordingTimer since={assistantStore.listeningSince} />
+                  )}
                 </p>
               )}
               <div className="flex items-end gap-2">
@@ -356,6 +360,14 @@ export const AssistantPage = observer(function AssistantPage() {
                   </button>
                 )}
               </div>
+              {quotaStore.quota && !quotaStore.quota.unlimited && (
+                <p className="m-0 px-1 text-sm text-muted-foreground tabular-nums">
+                  {t("creditsLeft", {
+                    receipts: quotaStore.quota.receipts_left ?? 0,
+                    messages: quotaStore.quota.messages_left ?? 0,
+                  })}
+                </p>
+              )}
             </form>
           </>
         )}

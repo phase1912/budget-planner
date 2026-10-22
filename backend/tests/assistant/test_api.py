@@ -32,11 +32,10 @@ from app.main import create_app
 from app.models.category import Category
 from app.models.receipt import ReceiptStatus
 from app.models.user import User
-from app.services.quota import QuotaService
+from tests.factories.ai_usage import AiUsageFactory
 from tests.factories.category import CategoryFactory
 from tests.factories.line_item import LineItemFactory
 from tests.factories.receipt import ReceiptFactory
-from tests.factories.upload_job import UploadJobFactory
 from tests.factories.user import UserFactory
 
 URL = "/api/v1/assistant"
@@ -270,19 +269,19 @@ async def test_another_users_conversation_and_cards_are_not_found(
 
 
 @pytest.mark.asyncio
-async def test_talking_counts_against_the_months_quota(db_session: AsyncSession) -> None:
-    """F21.1: every started batch of messages costs one read; none left, no model call."""
+async def test_talking_is_paid_from_the_ai_credits(db_session: AsyncSession) -> None:
+    """F21.9: a message costs what a message lately cost; none left, no model call."""
     user = await UserFactory.create_async()
-    await UploadJobFactory.create_async(
+    await AiUsageFactory.create_async(
         user_id=user.id,
-        total_items=get_settings().monthly_receipt_quota,
+        credits=Decimal(get_settings().free_monthly_credits),
         created_at=datetime.now(UTC),
     )
     assistant = ScriptedAssistant()
 
     response = await _call(db_session, user, "POST", f"{URL}/messages", {"text": "hi"}, assistant)
 
-    assert response.status_code == 429
+    assert (response.status_code, response.json()["code"]) == (429, "quota_exceeded")
     assert assistant.seen == []
 
 
@@ -377,16 +376,25 @@ async def test_toolbox_save_unknown_card_kind_raises_domain_error(db_session: As
 
 
 @pytest.mark.asyncio
-async def test_quota_service_counts_assistant_messages(db_session: AsyncSession) -> None:
-    user = await UserFactory.create_async()
-    quota_svc = QuotaService(db_session, get_settings())
-    before = await quota_svc.quota_for(user, datetime.now(UTC))
-    assert before.used == 0
+async def test_a_free_message_may_take_fewer_rounds_than_a_paid_one(
+    db_session: AsyncSession,
+) -> None:
+    """F21.9.2: one free message cannot spend the month in a long run of tool calls."""
+    free = await UserFactory.create_async()
+    admin = await UserFactory.create_async(role="admin")
+    told: list[int] = []
 
-    await _say(db_session, user, "Hello assistant")
-    after = await quota_svc.quota_for(user, datetime.now(UTC))
-    # 1 message sent -> 1 read used (since 1 message // per_read rounded up is 1 read)
-    assert after.used == 1
+    class Counting(ScriptedAssistant):
+        async def reply(
+            self, history: Any, tools: Any, read: Any, context: Any, check: Any = None
+        ) -> Any:
+            told.append(context.max_rounds)
+            return await super().reply(history, tools, read, context, check)
+
+    await _say(db_session, free, "hi", Counting())
+    await _say(db_session, admin, "hi", Counting())
+
+    assert told == [get_settings().free_assistant_rounds, AssistantContext.max_rounds]
 
 
 @pytest.mark.asyncio

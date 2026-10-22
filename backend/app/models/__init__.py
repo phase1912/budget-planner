@@ -8,6 +8,7 @@ epic (E1+) adds a concrete entity — F0.3 delivers only the base and convention
 from app.models.account import Account, AccountMove, RegularTransfer
 from app.models.activity import ActivityEvent, PageViewCount
 from app.models.admin import AdminAction, PlanGrant
+from app.models.ai_usage import AiUsage
 from app.models.base import Base, Model
 from app.models.category import Category
 from app.models.category_rule import CategoryRule
@@ -39,6 +40,7 @@ __all__ = [
     "AccountMove",
     "ActivityEvent",
     "AdminAction",
+    "AiUsage",
     "Base",
     "CachedExchangeRate",
     "Category",

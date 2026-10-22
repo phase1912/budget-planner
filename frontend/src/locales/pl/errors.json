@@ -20,8 +20,8 @@
   "upload_limit_exceeded": "Przesyłane pliki przekraczają dozwolony limit.",
   "too_many_photos": "Na jeden paragon możesz przesłać najwyżej {{max}} zdjęć.",
   "photos_too_large": "Zdjęcia w tym wierszu zajmują razem ponad {{max_mb}} MB.",
-  "quota_exceeded": "Twoje konto może odczytać {{limit}} paragonów miesięcznie, zostało {{left}}, a potrzeba {{needed}}. Limit odnowi się {{resets_on}}.",
-  "service_busy": "Serwis osiągnął dziś limit odczytu paragonów. Spróbuj jutro.",
+  "quota_exceeded": "Kredyty AI na ten miesiąc są wykorzystane: zostało około na paragony — {{receipts_left}}, wiadomości — {{messages_left}}. Odnowią się {{resets_on}}; ręczne dodawanie nadal działa.",
+  "service_busy": "Serwis osiągnął dziś limit odczytu i odpowiedzi. Spróbuj jutro.",
   "message_too_large": "Wiadomość jest za duża, by przyjąć paragon.",
   "categoriser_unavailable": "Kategoryzator nie odpowiedział. Nic nie zmieniono; spróbuj później.",
   "advice_unavailable": "Nie udało się teraz przygotować porad. Spróbuj za chwilę.",
@@ -68,5 +68,6 @@
   "card_done": "Ta karta jest już zamknięta.",
   "needs_card": "Dochód trafia na kartę: utwórz ją razem z nim.",
   "speech_unavailable": "Nie udało się teraz rozpoznać wypowiedzi. Spróbuj ponownie albo napisz.",
-  "speech_too_long": "Nagranie może trwać najwyżej minutę."
+  "speech_too_long": "Nagranie może trwać najwyżej minutę.",
+  "too_many_receipts": "W darmowym planie jedno przesłanie może zawierać paragonów: {{max}}. Resztę wyślij osobno."
 }

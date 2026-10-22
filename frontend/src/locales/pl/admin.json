@@ -102,7 +102,7 @@
     "planFree": "Darmowy",
     "planPaid": "Płatny",
     "planUntil": "do {{date}}",
-    "reads": "Paragony odczytane w tym miesiącu",
+    "reads": "Wydane kredyty AI w tym miesiącu",
     "readsOf": "{{used}} z {{limit}}",
     "readsUnlimited": "{{used}}, bez limitu",
     "grantTitle": "Przyznaj plan płatny",

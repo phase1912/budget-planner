@@ -369,15 +369,59 @@ def sync_milestones(repo: str, epics: list[dict], dry_run: bool) -> dict[str, in
     return numbers
 
 
+ISSUES_QUERY = """query($o: String!, $n: String!, $c: String) {
+  repository(owner: $o, name: $n) {
+    issues(first: 100, after: $c, orderBy: {field: CREATED_AT, direction: ASC}) {
+      totalCount
+      pageInfo { hasNextPage endCursor }
+      nodes { id number state body labels(first: 30) { nodes { name } } }
+    }
+  }
+}"""
+
+
+def all_issues(repo: str) -> list[dict]:
+    """Every issue of the repository, open and closed, in the shape the REST API gives.
+
+    Read through GraphQL: the REST listing paginated by gh came back short of the whole —
+    199, then 808 of 1 022 issues on 2026-10-22 — and a key missing from it was taken for
+    a new one, creating 72 issues again. Refuses when even this comes back short.
+    """
+    owner, name = repo.split("/")
+    issues: list[dict] = []
+    cursor: str | None = None
+    while True:
+        args = ["api", "graphql", "-f", f"query={ISSUES_QUERY}", "-F", f"o={owner}",
+                "-F", f"n={name}"]
+        if cursor:
+            args += ["-f", f"c={cursor}"]
+        page = gh(*args)["data"]["repository"]["issues"]
+        for node in page["nodes"]:
+            issues.append({
+                "number": node["number"],
+                "node_id": node["id"],
+                "state": node["state"].lower(),
+                "body": node["body"],
+                "labels": node["labels"]["nodes"],
+            })
+        if not page["pageInfo"]["hasNextPage"]:
+            break
+        cursor = page["pageInfo"]["endCursor"]
+    if len(issues) < page["totalCount"]:
+        raise RuntimeError(
+            f"GitHub listed {len(issues)} of {page['totalCount']} issues; nothing was "
+            "changed. Run again in a moment."
+        )
+    return issues
+
+
 def existing_issues(repo: str) -> dict[str, dict]:
-    issues = gh_paginate(f"repos/{repo}/issues?state=all&per_page=100")
+    """Every backlog issue by its key, the oldest kept where a key has several."""
     index: dict[str, dict] = {}
-    for issue in issues:
-        if "pull_request" in issue:
-            continue
+    for issue in all_issues(repo):
         match = MARKER.search(issue.get("body") or "")
         if match:
-            index[match.group("key")] = issue
+            index.setdefault(match.group("key"), issue)
     return index
 
 
@@ -549,8 +593,7 @@ def project(data: dict) -> None:
 
     ensure_board_layout(board["id"])
     ensure_status_columns(board["id"])
-    issues = [i for i in gh_paginate(f"repos/{repo}/issues?state=all&per_page=100")
-              if "pull_request" not in i and MARKER.search(i.get("body") or "")]
+    issues = [i for i in all_issues(repo) if MARKER.search(i.get("body") or "")]
     scope_field = ensure_scope_field(board["id"])
     print(f"Adding {len(issues)} issues to the board, each with its {SCOPE_FIELD}...")
     for issue in issues:

@@ -195,6 +195,11 @@ The assistant (F21, ADR-0025, ADR-0028, ADR-0031, ADR-0032) is a module of its o
   `POST /speech` turning a recording into words through `SpeechPort` — Speech-to-Text
   with Chirp, or the Gemini model hearing it, as `SPEECH_ENGINE` says — keeping nothing
   of the sound (F21.2.2).
+- Every model call in the app is recorded where it is made (F21.9, ADR-0030): `Agent` and
+  the Speech-to-Text adapter hand a `Spend` (`app/agent/metering.py`) to
+  `app/services/ai_usage.record_usage`, which writes an `ai_usage` row in a session of its
+  own; `QuotaService` sums them into each account's monthly wallet of credits and checks
+  it before an upload, a message, a recording, a goal mapped or advice asked for.
 - `scripts/evaluate_assistant.py` scores the assistant on committed dialogs against the
   configured model (F21.13.4), as `evaluate_reading.py` does for receipts.
 

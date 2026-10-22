@@ -15,17 +15,17 @@ class Plan(StrEnum):
 
 @dataclass(frozen=True)
 class PlanTerms:
-    """What a plan gives: receipts read a month, and whether ads may show (E19)."""
+    """What a plan gives: AI credits a month (F21.9), and whether ads may show (E19)."""
 
-    monthly_receipts: int
+    monthly_credits: int
     ad_free: bool
 
 
-def plan_terms(plan: Plan, free_receipts: int, paid_receipts: int) -> PlanTerms:
-    """The terms of `plan`, with the limits the deployment configures (F18.2.2)."""
+def plan_terms(plan: Plan, free_credits: int, paid_credits: int) -> PlanTerms:
+    """The terms of `plan`, with the limits the deployment configures (F18.2.2, F21.9)."""
     if plan is Plan.PAID:
-        return PlanTerms(monthly_receipts=paid_receipts, ad_free=True)
-    return PlanTerms(monthly_receipts=free_receipts, ad_free=False)
+        return PlanTerms(monthly_credits=paid_credits, ad_free=True)
+    return PlanTerms(monthly_credits=free_credits, ad_free=False)
 
 
 @dataclass(frozen=True)

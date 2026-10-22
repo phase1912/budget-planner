@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.agent.core import Agent
+from app.agent.metering import Purpose
 from app.agent.types import Message
 from app.domain.goals import WATCHED_LINES_MAX, clean_item_names
 from app.models.category import Category
@@ -86,7 +87,10 @@ class GoalMappingAdapter(GoalMapperPort):
         try:
             async with asyncio.timeout(self._timeout_seconds):
                 parsed = await self._agent.run_structured(
-                    messages, schema=GoalMappingResponse, temperature=0.0
+                    messages,
+                    schema=GoalMappingResponse,
+                    temperature=0.0,
+                    purpose=Purpose.GOAL_MAPPING,
                 )
         except Exception:
             logger.exception("Goal mapping failed; returning empty mapping")

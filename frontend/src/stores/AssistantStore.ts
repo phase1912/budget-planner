@@ -39,6 +39,8 @@ export class AssistantStore {
   pending: Waiting[] = [];
   /** Where dictation is: off, listening to the microphone, or waiting for the words. */
   dictation: "idle" | "listening" | "recognising" = "idle";
+  /** When listening began, for the timer beside the microphone (F21.9.4). */
+  listeningSince: number | null = null;
   private recording: Recording | null = null;
   /** Bumped when the user says "approve": the waiting card saves itself as it stands. */
   approveSignal = 0;
@@ -159,6 +161,7 @@ export class AssistantStore {
       runInAction(() => {
         this.recording = recording;
         this.dictation = "listening";
+        this.listeningSince = Date.now();
       });
       return true;
     } catch {
@@ -177,6 +180,7 @@ export class AssistantStore {
     if (!recording || this.dictation !== "listening") return null;
     this.recording = null;
     this.dictation = "recognising";
+    this.listeningSince = null;
     const sound = await recording.stop();
     const form = new FormData();
     form.append("audio", sound, "speech.wav");
@@ -208,6 +212,7 @@ export class AssistantStore {
     this.recording?.cancel();
     this.recording = null;
     this.dictation = "idle";
+    this.listeningSince = null;
   }
 
   /** Approve a card as the user left its fields: only now is anything written. */

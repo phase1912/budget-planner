@@ -102,7 +102,7 @@
     "planFree": "Безкоштовний",
     "planPaid": "Платний",
     "planUntil": "до {{date}}",
-    "reads": "Прочитано чеків цього місяця",
+    "reads": "Витрачено ШІ-кредитів цього місяця",
     "readsOf": "{{used}} з {{limit}}",
     "readsUnlimited": "{{used}}, без обмежень",
     "grantTitle": "Надати платний план",

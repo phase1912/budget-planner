@@ -301,7 +301,7 @@ export interface paths {
         };
         /**
          * Get My Quota
-         * @description How many receipts the user may still have read this month (F10.6.1).
+         * @description What is left of the user's AI credits this month, as receipts and messages (F21.9).
          */
         get: operations["get_my_quota_users_me_quota_get"];
         put?: never;
@@ -1774,6 +1774,9 @@ export interface paths {
         /**
          * Create Goal
          * @description State a goal (BRD F1); a malformed one is refused with 422 and the reason.
+         *
+         *     A lifestyle goal is mapped by a model, paid from the AI credits (F21.9): 429
+         *     quota_exceeded when they are spent.
          */
         post: operations["create_goal_api_v1_goals_post"];
         delete?: never;
@@ -1826,6 +1829,8 @@ export interface paths {
         /**
          * Update Goal
          * @description Change a goal; another user's is not found (N2), a broken result is 422.
+         *
+         *     New words may map a lifestyle goal again, paid from the AI credits (F21.9).
          */
         patch: operations["update_goal_api_v1_goals__goal_id__patch"];
         trace?: never;
@@ -1928,7 +1933,8 @@ export interface paths {
          * Advise On Goal
          * @description Fresh advice on one goal, replacing its earlier advice (BRD F2, F3).
          *
-         *     Each ask is a model call, so it is limited per client IP (F10.6.3).
+         *     Each ask is a model call, so it is limited per client IP (F10.6.3) and paid from the
+         *     AI credits (F21.9): 429 quota_exceeded when they are spent.
          *
          *     Another user's goal is not found (N2); too little history is 422 with the code
          *     `insufficient_data` (F5); a model that gives no answer is 503.
@@ -2894,8 +2900,11 @@ export interface paths {
          * Recognise Speech
          * @description The words said in a recording from the microphone (F21.2.2), for the user to send.
          *
-         *     Recognised by Google Cloud and dropped: nothing of the sound is stored. 413
-         *     speech_too_long past a minute; 503 speech_unavailable when the recogniser fails.
+         *     Only the WAV the microphone makes, a minute at most by its own length (F21.9.4):
+         *     415 for anything else, 413 speech_too_long past the minute — whatever the file's
+         *     size. Paid from the AI credits by its seconds (429 quota_exceeded when spent).
+         *     Recognised by Google Cloud and dropped: nothing of the sound is stored; 503
+         *     speech_unavailable when the recogniser fails.
          */
         post: operations["recognise_speech_api_v1_assistant_speech_post"];
         delete?: never;
@@ -3149,10 +3158,10 @@ export interface components {
             plan: string;
             /** Plan Ends On */
             plan_ends_on: string | null;
-            /** Receipts Limit */
-            receipts_limit: number | null;
-            /** Receipts Used */
-            receipts_used: number;
+            /** Credits Limit */
+            credits_limit: number | null;
+            /** Credits Used */
+            credits_used: number;
             /** Last Active At */
             last_active_at: string | null;
             /** Grants */
@@ -5667,10 +5676,12 @@ export interface components {
         };
         /**
          * ReceiptQuotaRead
-         * @description The account's receipt reads this month against its limit (F10.6).
+         * @description The account's AI credits this month (F21.9, ADR-0030; was the receipt quota, F10.6).
          *
-         *     `limit` and `remaining` are null for an account without a limit (an admin). `plan`
-         *     says where the limit comes from and `plan_ends_on` when a granted plan ends (F18.4).
+         *     `limit`, `used` and `remaining` are credits, whole ones; the user is shown
+         *     `receipts_left` and `messages_left` instead — about how many of either the rest would
+         *     pay for. Null for an account without a limit (an admin). `plan` says where the limit
+         *     comes from and `plan_ends_on` when a granted plan ends (F18.4).
          */
         ReceiptQuotaRead: {
             /** Limit */
@@ -5692,6 +5703,10 @@ export interface components {
             plan_ends_on: string | null;
             /** Ad Free */
             ad_free: boolean;
+            /** Receipts Left */
+            receipts_left: number | null;
+            /** Messages Left */
+            messages_left: number | null;
         };
         /**
          * ReceiptResponse

@@ -131,7 +131,7 @@ async def test_a_granted_plan_raises_the_limit_extends_and_can_be_taken_back(
     assert first.status_code == 201
     quota = (await _call(db_session, "GET", "/users/me/quota", user=user)).json()
     assert quota["plan"] == "paid"
-    assert quota["limit"] == get_settings().paid_monthly_receipt_quota
+    assert quota["limit"] == get_settings().paid_monthly_credits
     assert quota["ad_free"] is True
 
     second = await _call(
@@ -150,7 +150,7 @@ async def test_a_granted_plan_raises_the_limit_extends_and_can_be_taken_back(
         assert revoked.status_code == 204
     quota = (await _call(db_session, "GET", "/users/me/quota", user=user)).json()
     assert quota["plan"] == "free"
-    assert quota["limit"] == get_settings().monthly_receipt_quota
+    assert quota["limit"] == get_settings().free_monthly_credits
 
 
 @pytest.mark.asyncio

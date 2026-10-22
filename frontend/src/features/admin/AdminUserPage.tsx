@@ -207,9 +207,9 @@ const PlanSection = observer(function PlanSection({ card }: { card: AdminUserCar
       <p className="m-0 text-md">
         <span className="text-muted-foreground">{t("user.reads")}: </span>
         <span className="tabular-nums">
-          {card.receipts_limit === null
-            ? t("user.readsUnlimited", { used: card.receipts_used })
-            : t("user.readsOf", { used: card.receipts_used, limit: card.receipts_limit })}
+          {card.credits_limit === null
+            ? t("user.readsUnlimited", { used: card.credits_used })
+            : t("user.readsOf", { used: card.credits_used, limit: card.credits_limit })}
         </span>
       </p>
 

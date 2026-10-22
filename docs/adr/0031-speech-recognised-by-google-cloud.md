@@ -29,8 +29,8 @@ recogniser that works the same everywhere and understands the product's language
 - **Nothing of the sound is kept.** The recording is read in memory, recognised and
   dropped. Only the words the user then sends become part of the conversation. The
   privacy policy says the recording goes to Google Cloud for recognition.
-- **Bounded.** Recognition is rate-limited per client like a message. It joins the AI
-  allowance when the two limits arrive (F21.9, ADR-0030).
+- **Bounded.** Recognition is rate-limited per client like a message, and paid from the
+  wallet of AI credits by its seconds (F21.9, ADR-0030).
 
 ## Consequences
 

@@ -25,14 +25,16 @@ const TRIPS = { trips: [], load: () => Promise.resolve() };
 const INCOME = { readingDocument: false, readError: null, draft: null };
 
 const QUOTA: ReceiptQuota = {
-  limit: 10,
-  used: 3,
-  remaining: 7,
+  limit: 150,
+  used: 80,
+  remaining: 70,
   unlimited: false,
   resets_on: "2026-11-01",
   plan: "free",
   plan_ends_on: null,
   ad_free: false,
+  receipts_left: 7,
+  messages_left: 17,
 };
 
 describe("UploadPage", () => {
@@ -195,26 +197,35 @@ describe("UploadPage", () => {
     );
   }
 
-  it("says how many receipts are left this month", () => {
+  it("says about how many receipts and messages the AI credits leave (F21.9)", () => {
     renderWith(QUOTA);
-    expect(screen.getByText("7 of 10 receipts left this month.")).toBeInTheDocument();
+    expect(
+      screen.getByText("AI this month: about 7 receipts or 17 messages left."),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Read these photos/ })).toBeEnabled();
   });
 
-  it("past the limit says when it resets and holds the upload", () => {
-    renderWith({ ...QUOTA, used: 10, remaining: 0 });
-    expect(screen.getByText(/used all 10 receipts this month.*1 November/)).toBeInTheDocument();
+  it("past the credits says when they renew and holds the upload", () => {
+    renderWith({ ...QUOTA, used: 150, remaining: 0, receipts_left: 0, messages_left: 0 });
+    expect(screen.getByText(/AI credits are spent. More from 1 November/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Read these photos/ })).toBeDisabled();
   });
 
   it("says how many to remove when a batch needs more than are left", () => {
-    renderWith({ ...QUOTA, used: 8, remaining: 2 }, 3);
+    renderWith({ ...QUOTA, used: 130, remaining: 20, receipts_left: 2 }, 3);
     expect(screen.getByText(/Only 2 receipts left.*Remove 1/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Read these photos/ })).toBeDisabled();
   });
 
   it("tells an admin there is no limit", () => {
-    renderWith({ ...QUOTA, limit: null, remaining: null, unlimited: true });
-    expect(screen.getByText("No receipt limit on this account.")).toBeInTheDocument();
+    renderWith({
+      ...QUOTA,
+      limit: null,
+      remaining: null,
+      unlimited: true,
+      receipts_left: null,
+      messages_left: null,
+    });
+    expect(screen.getByText("No AI limit on this account.")).toBeInTheDocument();
   });
 });
