@@ -57,7 +57,8 @@
       "balance": "Card balance",
       "money_in": "Money in",
       "money_out": "Money out",
-      "move": "Move between cards"
+      "move": "Move between cards",
+      "product_group": "Product group"
     },
     "fields": {
       "name": "Name",
@@ -76,7 +77,8 @@
       "account_id": "Card",
       "source": "From",
       "received_on": "Date",
-      "moved_on": "Date"
+      "moved_on": "Date",
+      "products": "Products"
     },
     "options": {
       "spending_ceiling": "Spend at most a month",
@@ -89,7 +91,8 @@
       "correct": "Only correct the balance",
       "spending": "Purchases not entered, in the budget"
     },
-    "openScreen": "Open it"
+    "openScreen": "Open it",
+    "removeItem": "Take {{name}} out"
   },
   "answer": {
     "spending": "Open in Spending",
@@ -99,5 +102,28 @@
     "hidden_other": "{{count}} more categories are on the Spending screen.",
     "accounts": "Open the accounts",
     "home": "Open Home"
-  }
+  },
+  "choice": "Choose an answer",
+  "mic": {
+    "start": "Speak",
+    "stop": "Stop and recognise",
+    "recognising": "Recognising…",
+    "listening": "Listening… tap to stop"
+  },
+  "attach": {
+    "button": "Attach receipts",
+    "remove": "Remove {{name}}",
+    "text": "Add these receipts"
+  },
+  "attachment": {
+    "reading_one": "Reading {{count}} receipt…",
+    "reading_other": "Reading {{count}} receipts…",
+    "ready": "Read. Check and save them.",
+    "check": "Check and save",
+    "sent_one": "{{count}} receipt attached",
+    "sent_other": "{{count}} receipts attached",
+    "open": "Open receipts"
+  },
+  "addByHand": "Add by hand",
+  "addByHandShort": "By hand"
 }

@@ -1,0 +1,549 @@
+[
+  {
+    "id": "uk-balance-purchase-card-correct",
+    "turns": [
+      "онови мені баланс на картці для витрат, в банку зараз 3500, це просто корекція"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "balance",
+          "fields": {
+            "account_id": "Моя картка",
+            "bank_balance": "3500",
+            "way": "correct"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "uk-balance-purchase-card-asks-how",
+    "turns": [
+      "онови баланс на картці для витрат, в банку 3500"
+    ],
+    "expect": {
+      "ask": []
+    }
+  },
+  {
+    "id": "uk-balance-first-card",
+    "turns": [
+      "на першій картці зараз 3500, просто виправ баланс"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "balance",
+          "fields": {
+            "account_id": "Моя картка",
+            "bank_balance": "3500",
+            "way": "correct"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "uk-balance-which-card",
+    "turns": [
+      "онови баланс на картці"
+    ],
+    "expect": {
+      "ask": [
+        "Моя картка",
+        "Revolut"
+      ]
+    }
+  },
+  {
+    "id": "uk-balance-by-role-over-turns",
+    "turns": [
+      "онови баланс на картці",
+      "на тій, з якої я плачу за покупки",
+      "3500, це покупки, які я не вніс"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "balance",
+          "fields": {
+            "account_id": "Моя картка",
+            "bank_balance": "3500",
+            "way": "spending"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "ru-balance-main-card-spending",
+    "turns": [
+      "на основной карте сейчас 3900, разница это покупки, которые я не внес"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "balance",
+          "fields": {
+            "account_id": "Моя картка",
+            "bank_balance": "3900",
+            "way": "spending"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "pl-move-purchase-card-to-savings",
+    "turns": [
+      "przelej 500 z karty na zakupy na skarbonkę"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "move",
+          "fields": {
+            "from_account_id": "Моя картка",
+            "to_account_id": "Скарбничка",
+            "amount": "500"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "en-move-revolut-to-savings",
+    "turns": [
+      "move 200 from Revolut to my savings"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "move",
+          "fields": {
+            "from_account_id": "Revolut",
+            "to_account_id": "Скарбничка",
+            "amount": "200"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "ru-money-in-revolut",
+    "turns": [
+      "закинь 1000 на револют, это подарок"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "money_in",
+          "fields": {
+            "account_id": "Revolut",
+            "amount": "1000"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "uk-money-out-second-card",
+    "turns": [
+      "зніми з другої картки 300, просто поправ баланс"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "money_out",
+          "fields": {
+            "account_id": "Revolut",
+            "amount": "300",
+            "way": "correct"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "uk-move-asks-where",
+    "turns": [
+      "переклади 500"
+    ],
+    "expect": {
+      "ask": []
+    }
+  },
+  {
+    "id": "en-cards-and-purchase-card",
+    "turns": [
+      "what's on my cards and which one do I pay for shopping with?"
+    ],
+    "expect": {
+      "says": [
+        "Моя картка",
+        "4035.73"
+      ]
+    }
+  },
+  {
+    "id": "uk-which-card-for-purchases",
+    "turns": [
+      "яка картка в мене для покупок?"
+    ],
+    "expect": {
+      "says": [
+        "Моя картка"
+      ]
+    }
+  },
+  {
+    "id": "uk-savings-balance",
+    "turns": [
+      "скільки в мене на скарбничці?"
+    ],
+    "expect": {
+      "says": [
+        "12000"
+      ]
+    }
+  },
+  {
+    "id": "pl-total-on-cards",
+    "turns": [
+      "ile mam pieniędzy łącznie na wszystkich kontach?"
+    ],
+    "expect": {
+      "says": [
+        "16835.73"
+      ]
+    }
+  },
+  {
+    "id": "uk-raise-rent",
+    "turns": [
+      "підніми оренду до 3000"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "bill_change",
+          "fields": {
+            "bill_id": "Оренда",
+            "amount": "3000"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "pl-stop-gym",
+    "turns": [
+      "zatrzymaj siłownię"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "bill_stop",
+          "fields": {
+            "bill_id": "Спортзал"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "en-add-bill",
+    "turns": [
+      "add a bill: internet 60 on the 15th"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "bill",
+          "fields": {
+            "amount": "60",
+            "day": 15
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "en-change-which-bill",
+    "turns": [
+      "change the bill"
+    ],
+    "expect": {
+      "ask": [
+        "Оренда",
+        "Спортзал"
+      ]
+    }
+  },
+  {
+    "id": "ru-set-budget",
+    "turns": [
+      "поставь бюджет на месяц 2500"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "budget",
+          "fields": {
+            "amount": "2500"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "en-budget-over-turns",
+    "turns": [
+      "set my monthly budget",
+      "2800"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "budget",
+          "fields": {
+            "amount": "2800"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "uk-stop-gym-and-budget",
+    "turns": [
+      "зупини спортзал і підніми бюджет до 3500"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "bill_stop",
+          "fields": {
+            "bill_id": "Спортзал"
+          }
+        },
+        {
+          "kind": "budget",
+          "fields": {
+            "amount": "3500"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "uk-new-goal",
+    "turns": [
+      "хочу накопичити 5000 на машину"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "goal",
+          "fields": {
+            "amount": "5000",
+            "kind": "savings_target"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "en-raise-holiday-goal",
+    "turns": [
+      "raise my holiday goal to 6000"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "goal_change",
+          "fields": {
+            "goal_id": "Відпустка",
+            "amount": "6000"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "pl-remove-holiday-goal",
+    "turns": [
+      "usuń cel na wakacje"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "goal_remove",
+          "fields": {
+            "goal_id": "Відпустка"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "uk-salary-change",
+    "turns": [
+      "зарплата тепер 9500"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "regular_income_change",
+          "fields": {
+            "source_id": "Зарплата",
+            "amount": "9500"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "uk-two-expenses",
+    "turns": [
+      "вчора таксі 45 і кава 12"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "expense",
+          "fields": {
+            "amount": "45"
+          }
+        },
+        {
+          "kind": "expense",
+          "fields": {
+            "amount": "12"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "ru-one-expense",
+    "turns": [
+      "потратил 80 на продукты"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "expense",
+          "fields": {
+            "amount": "80"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "en-what-do-you-know",
+    "turns": [
+      "what do you know about me?"
+    ],
+    "expect": {
+      "says": [
+        "Revolut"
+      ]
+    }
+  },
+  {
+    "id": "uk-budget-left",
+    "turns": [
+      "який у мене бюджет на місяць?"
+    ],
+    "expect": {
+      "says": [
+        "3000"
+      ]
+    }
+  },
+  {
+    "id": "uk-wife-spending",
+    "turns": [
+      "як там моя дружина витрачає гроші цього місяця?"
+    ],
+    "expect": {
+      "says": [
+        "Олена"
+      ]
+    }
+  },
+  {
+    "id": "en-family-total",
+    "turns": [
+      "how much did the family spend this month and who spent most?"
+    ],
+    "expect": {
+      "says": [
+        "Олена"
+      ]
+    }
+  },
+  {
+    "id": "ru-wife-on-dining",
+    "turns": [
+      "сколько жена потратила на кафе?"
+    ],
+    "expect": {
+      "says": [
+        "136"
+      ]
+    }
+  },
+  {
+    "id": "uk-show-milk",
+    "turns": [
+      "покажи, що я купував з молока"
+    ],
+    "expect": {
+      "says": [
+        "Mleko"
+      ]
+    }
+  },
+  {
+    "id": "en-group-snacks",
+    "turns": [
+      "put chips and coca-cola into a group called Snacks"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "product_group",
+          "fields": {
+            "name": "Snacks"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "pl-three-products",
+    "turns": [
+      "daj mi mleko, chleb i chipsy"
+    ],
+    "expect": {
+      "says": [
+        "Mleko",
+        "Chleb",
+        "Chipsy"
+      ]
+    }
+  },
+  {
+    "id": "uk-attached-receipts",
+    "turns": [
+      "додай, будь ласка, ці чеки"
+    ],
+    "attached": 2,
+    "expect": {
+      "says": []
+    }
+  }
+]

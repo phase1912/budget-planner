@@ -11,6 +11,16 @@ import { AssistantPage } from "./AssistantPage";
 vi.mock("@/api/client", () => ({
   apiClient: { GET: vi.fn(), POST: vi.fn(), PUT: vi.fn(), DELETE: vi.fn(), use: vi.fn() },
 }));
+vi.mock("@/shared/speech", async (actual) => ({
+  ...(await actual<typeof import("@/shared/speech")>()),
+  canRecord: () => true,
+  record: vi.fn(() =>
+    Promise.resolve({
+      stop: () => Promise.resolve(new Blob(["RIFF"], { type: "audio/wav" })),
+      cancel: vi.fn(),
+    }),
+  ),
+}));
 
 type Call = (path: string, options?: { body?: unknown }) => Promise<unknown>;
 const api = apiClient as unknown as Record<"GET" | "POST", ReturnType<typeof vi.fn<Call>>>;
@@ -384,5 +394,77 @@ describe("the assistant (F21.1, F21.7)", () => {
     expect(within(card).getByLabelText("On the receipts list as")).toHaveValue(
       "Purchases not entered",
     );
+  });
+
+  it("asks with options to tap, and a tap answers with that option (F21.13.3)", async () => {
+    const choice = {
+      ...CARD,
+      id: "q1",
+      card: { kind: "choice", fields: { options: ["Main card", "Revolut"] } },
+      card_state: "shown",
+    };
+    api.POST.mockResolvedValue({
+      data: {
+        ...CONVERSATION,
+        messages: [
+          { ...CARD, id: "a1", text: "Which card?", card: null, card_state: null },
+          choice,
+        ],
+      },
+    });
+    renderPage();
+    fireEvent.change(screen.getByLabelText("Write a message"), {
+      target: { value: "update the balance" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Revolut" }));
+
+    await waitFor(() => {
+      expect(api.POST).toHaveBeenLastCalledWith("/api/v1/assistant/messages", {
+        body: expect.objectContaining({ text: "Revolut", conversation_id: "c1" }) as unknown,
+      });
+    });
+  });
+
+  it("puts what was said into the field, to send or correct (F21.2.2)", async () => {
+    api.POST.mockImplementation((path: string) =>
+      Promise.resolve({ data: path.endsWith("/speech") ? { text: "taxi 45" } : CONVERSATION }),
+    );
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "Speak" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Stop and recognise" }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Write a message")).toHaveValue("taxi 45");
+    });
+    expect(api.POST).toHaveBeenCalledWith("/api/v1/assistant/speech", {
+      body: expect.any(FormData) as unknown,
+    });
+    expect(api.POST).not.toHaveBeenCalledWith("/api/v1/assistant/messages", expect.anything());
+  });
+
+  it("reads attached receipts as the Add screen does and tells the assistant (F21.8.2)", async () => {
+    const reading = vi.spyOn(store.uploadStore, "readFromChat").mockResolvedValue("job1");
+    renderPage();
+    const photos = [new File(["a"], "a.jpg", { type: "image/jpeg" }), new File(["b"], "b.jpg")];
+
+    const picker = document.querySelector('input[type="file"]');
+    if (!(picker instanceof HTMLInputElement)) throw new Error("no file picker");
+    fireEvent.change(picker, { target: { files: photos } });
+    expect(screen.getByText("a.jpg")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+
+    await waitFor(() => {
+      expect(api.POST).toHaveBeenCalledWith("/api/v1/assistant/messages", {
+        body: expect.objectContaining({
+          text: "Add these receipts",
+          upload_job_id: "job1",
+          attached: 2,
+        }) as unknown,
+      });
+    });
+    expect(reading).toHaveBeenCalledWith(photos);
   });
 });

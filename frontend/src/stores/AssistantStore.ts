@@ -4,6 +4,7 @@ import type { ApiClient } from "@/api/client";
 import type { components } from "@/api/schema";
 import { errorMessage, settle } from "@/api/errors";
 import i18n from "@/i18n";
+import { isApproval, record, type Recording } from "@/shared/speech";
 import { AsyncState } from "@/stores/AsyncState";
 import type { ToastStore } from "@/stores/ToastStore";
 
@@ -12,17 +13,33 @@ export type ConversationSummary = components["schemas"]["ConversationSummary"];
 export type ChatMessage = components["schemas"]["MessageRead"];
 export type ChatCard = components["schemas"]["CardRead"];
 
+/** Receipt files sent with a message: the reading the upload started, and how many. */
+export interface Attached {
+  jobId: string;
+  count: number;
+}
+
+/** A message the assistant has not answered yet. */
+export interface Waiting {
+  text: string;
+  attached: Attached | null;
+}
+
 /**
  * The conversations with the assistant (F21.1): the list, the one open, sending to it, and
  * the cards it proposes — saved only when the user approves them, as they left the fields
- * (F21.7, ADR-0025).
+ * (F21.7, ADR-0025). The microphone is recorded and recognised by the service (F21.2.2):
+ * the words land in the field to send or correct, and "approve" saves the waiting card.
  */
 export class AssistantStore {
   conversations: ConversationSummary[] = [];
   open: Conversation | null = null;
   /** What the user sent and the assistant has not answered yet, oldest first: shown at once,
    * and sent one after another so each lands in the same conversation. */
-  pending: string[] = [];
+  pending: Waiting[] = [];
+  /** Where dictation is: off, listening to the microphone, or waiting for the words. */
+  dictation: "idle" | "listening" | "recognising" = "idle";
+  private recording: Recording | null = null;
   /** Bumped when the user says "approve": the waiting card saves itself as it stands. */
   approveSignal = 0;
   readonly state = new AsyncState();
@@ -35,9 +52,9 @@ export class AssistantStore {
     this.api = api;
     this.toastStore = toastStore;
     this.onSaved = onSaved;
-    makeAutoObservable<this, "api" | "toastStore" | "onSaved">(
+    makeAutoObservable<this, "api" | "toastStore" | "onSaved" | "recording">(
       this,
-      { api: false, toastStore: false, onSaved: false },
+      { api: false, toastStore: false, onSaved: false, recording: false },
       { autoBind: true },
     );
   }
@@ -84,20 +101,27 @@ export class AssistantStore {
 
   /** Send what the user wrote or said. It joins the queue at once, so the user may go on
    * writing; each answer and its cards replace the open conversation. */
-  send(text: string, today: string): boolean {
+  send(text: string, today: string, attached: Attached | null = null): boolean {
     const trimmed = text.trim();
     if (!trimmed) return false;
-    this.pending.push(trimmed);
+    this.pending.push({ text: trimmed, attached });
     if (!this.sendState.isLoading) void this.drain(today);
     return true;
   }
 
   private async drain(today: string): Promise<void> {
     this.sendState.start();
-    for (let text = this.pending.at(0); text !== undefined; text = this.pending.at(0)) {
+    for (let next = this.pending.at(0); next !== undefined; next = this.pending.at(0)) {
+      const { text, attached } = next;
       const response = await settle(() =>
         this.api.POST("/api/v1/assistant/messages", {
-          body: { text, conversation_id: this.open?.id ?? null, today },
+          body: {
+            text,
+            conversation_id: this.open?.id ?? null,
+            today,
+            upload_job_id: attached?.jobId ?? null,
+            attached: attached?.count ?? 0,
+          },
         }),
       );
       const ok = runInAction(() => {
@@ -123,6 +147,67 @@ export class AssistantStore {
       this.sendState.succeed();
     });
     void this.loadConversations();
+  }
+
+  /** Start listening to the microphone; false when the browser or the user refuses it. */
+  async startDictation(): Promise<boolean> {
+    if (this.dictation !== "idle") return false;
+    try {
+      const recording = await record(() => {
+        void this.finishDictation();
+      });
+      runInAction(() => {
+        this.recording = recording;
+        this.dictation = "listening";
+      });
+      return true;
+    } catch {
+      this.toastStore.showError(i18n.t("messages:assistant.microphoneRefused"));
+      return false;
+    }
+  }
+
+  /**
+   * Stop listening and have what was said recognised: the words, for the field — or null
+   * when there were none, they could not be had, or they were "approve", which saves the
+   * waiting card instead (F21.7).
+   */
+  async finishDictation(): Promise<string | null> {
+    const recording = this.recording;
+    if (!recording || this.dictation !== "listening") return null;
+    this.recording = null;
+    this.dictation = "recognising";
+    const sound = await recording.stop();
+    const form = new FormData();
+    form.append("audio", sound, "speech.wav");
+    const response = await settle(() =>
+      this.api.POST("/api/v1/assistant/speech", {
+        // @ts-expect-error openapi-fetch types do not correctly handle FormData
+        body: form,
+      }),
+    );
+    return runInAction(() => {
+      this.dictation = "idle";
+      if (response.error !== undefined) {
+        this.toastStore.showError(
+          errorMessage(response.error, i18n.t("messages:assistant.speechFailed")),
+        );
+        return null;
+      }
+      const said = response.data.text.trim();
+      if (isApproval(said) && this.waitingCard) {
+        this.approveByVoice();
+        return null;
+      }
+      return said || null;
+    });
+  }
+
+  /** Drop the recording without recognising it. */
+  cancelDictation(): void {
+    this.recording?.cancel();
+    this.recording = null;
+    this.dictation = "idle";
   }
 
   /** Approve a card as the user left its fields: only now is anything written. */

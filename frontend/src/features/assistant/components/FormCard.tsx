@@ -2,7 +2,16 @@ import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { Flag, Landmark, Pencil, PlusCircle, Trash2, type LucideIcon } from "lucide-react";
+import {
+  Flag,
+  Landmark,
+  Pencil,
+  PlusCircle,
+  ShoppingBasket,
+  Trash2,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 
 import type { components } from "@/api/schema";
 import { Input, RepeatField, Select, Switch } from "@/shared/components";
@@ -17,6 +26,8 @@ type Fields = Record<string, unknown>;
 
 const DAYS = Array.from({ length: 30 }, (_, i) => i + 1);
 
+const list = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
 const text = (value: unknown): string =>
   typeof value === "string" || typeof value === "number" ? String(value) : "";
 const number = (value: unknown): number | null => (typeof value === "number" ? value : null);
@@ -32,6 +43,7 @@ function iconOf(kind: string): LucideIcon {
   if (/_(stop|remove)$/.test(kind)) return Trash2;
   if (kind.startsWith("goal")) return Flag;
   if (onACard(kind)) return Landmark;
+  if (kind.startsWith("product")) return ShoppingBasket;
   return PlusCircle;
 }
 
@@ -39,6 +51,7 @@ function iconOf(kind: string): LucideIcon {
 function screenOf(kind: string): string {
   if (kind.startsWith("goal")) return "/goals";
   if (onACard(kind)) return "/accounts";
+  if (kind.startsWith("product")) return "/products";
   return "/plan";
 }
 
@@ -133,6 +146,43 @@ export const FormCard = observer(function FormCard({
             <option value="31">{t("card.lastDay")}</option>
           </Select>
         );
+      case "items": {
+        // The names shown and the ids saved go side by side: "products" with "product_ids".
+        const ids = field.name.replace(/s$/, "_ids");
+        const names = list(value);
+        return (
+          <ul
+            key={field.name}
+            aria-label={label(field.name)}
+            className="m-0 flex list-none flex-wrap gap-2 p-0"
+          >
+            {names.map((name, i) => (
+              <li
+                key={`${String(i)}-${name}`}
+                className="flex min-h-11 max-w-full items-center gap-1 rounded-pill bg-muted pr-1 pl-3 text-md"
+              >
+                <span className="min-w-0 break-words">{name}</span>
+                {proposed && names.length > 1 && (
+                  <button
+                    type="button"
+                    aria-label={t("card.removeItem", { name })}
+                    onClick={() => {
+                      setFields((f) => ({
+                        ...f,
+                        [field.name]: names.filter((_, j) => j !== i),
+                        [ids]: list(f[ids]).filter((_, j) => j !== i),
+                      }));
+                    }}
+                    className="flex h-11 w-11 items-center justify-center rounded-pill"
+                  >
+                    <X size={16} aria-hidden="true" />
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        );
+      }
       case "repeat":
         return (
           <RepeatField

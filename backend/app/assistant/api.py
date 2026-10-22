@@ -4,12 +4,14 @@ import uuid
 from datetime import UTC, date, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.adapters.speech import ChirpSpeechAdapter, ModelSpeechAdapter
 from app.agent.factory import agent_from_settings
 from app.api import rate_limit
 from app.api.dependencies import get_current_user, get_exchange_rates, get_quota_service
+from app.api.errors import SpeechTooLongError, SpeechUnavailableError
 from app.api.rate_limit import limiter
 from app.api.routers.goals import get_goal_mapper
 from app.assistant.core.graph import AssistantGraph
@@ -20,12 +22,15 @@ from app.assistant.schemas import (
     ConversationSummary,
     MessageRead,
     SendRequest,
+    SpeechRead,
 )
 from app.assistant.service import AssistantService
+from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.models.user import User
 from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.goal_mapping import GoalMapperPort
+from app.ports.speech import SpeechPort, SpeechUnavailable
 from app.services.quota import QuotaService
 
 router = APIRouter(prefix="/api/v1/assistant", tags=["assistant"])
@@ -33,9 +38,21 @@ router = APIRouter(prefix="/api/v1/assistant", tags=["assistant"])
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
+SPEECH_BYTES = 2_000_000
+"""A minute of the 16 kHz mono WAV the microphone records, and a little over."""
+
+
 def get_assistant() -> AssistantPort:
     """The assistant behind its port; tests put a scripted one in its place."""
     return AssistantGraph(agent_from_settings())
+
+
+def get_speech() -> SpeechPort:
+    """The recogniser the deployment chose (ADR-0031); tests put a stub in its place."""
+    settings = get_settings()
+    if settings.speech_engine == "speech_to_text" and settings.vertex_project:
+        return ChirpSpeechAdapter(settings.vertex_project, settings.speech_location)
+    return ModelSpeechAdapter(agent_from_settings())
 
 
 def get_assistant_service(
@@ -78,10 +95,43 @@ async def send_message(
     """Say something to the assistant and get its answer, with any cards it proposes.
 
     A new conversation when none is named. Counts against the monthly quota (F21.1):
-    402 receipt_quota_exceeded when it is spent. Nothing is written but the messages.
+    402 receipt_quota_exceeded when it is spent. Nothing is written but the messages. Files
+    sent with it were uploaded first, as from the Add screen; their reading is named here and
+    must be the user's own (404 otherwise, N2).
     """
-    conversation = await service.send(user, body.conversation_id, body.text, _today(body.today))
+    conversation = await service.send(
+        user,
+        body.conversation_id,
+        body.text,
+        _today(body.today),
+        attachment=(body.upload_job_id, body.attached) if body.upload_job_id else None,
+    )
     return ConversationRead.model_validate(conversation)
+
+
+@router.post("/speech", response_model=SpeechRead)
+@limiter.limit(rate_limit.SPEECH)
+async def recognise_speech(
+    request: Request,
+    audio: UploadFile,
+    user: CurrentUser,
+    speech: Annotated[SpeechPort, Depends(get_speech)],
+) -> SpeechRead:
+    """The words said in a recording from the microphone (F21.2.2), for the user to send.
+
+    Recognised by Google Cloud and dropped: nothing of the sound is stored. 413
+    speech_too_long past a minute; 503 speech_unavailable when the recogniser fails.
+    """
+    sound = await audio.read(SPEECH_BYTES + 1)
+    if len(sound) > SPEECH_BYTES:
+        raise SpeechTooLongError("A recording can be a minute long at most.")
+    try:
+        text = await speech.recognise(
+            sound, audio.content_type or "audio/wav", user.language or "en"
+        )
+    except SpeechUnavailable as exc:
+        raise SpeechUnavailableError("The speech could not be recognised just now.") from exc
+    return SpeechRead(text=text)
 
 
 @router.post("/cards/{message_id}/save", response_model=MessageRead)

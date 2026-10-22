@@ -29,6 +29,8 @@ product's one promise: what it shows is true.
 - **Provider-agnostic calling.** Tools are offered by description and called through
   structured output (`AssistantAdapter`), not a provider's own tool-calling, so every model
   the agent can reach — hosted or local — behaves the same.
+  *Superseded by ADR-0032: tools are now the provider's own functions, which every model
+  the agent reaches takes.*
 - **It costs the quota.** Each message is a model call. Until credits by tokens arrive
   (F21.9), every started batch of `assistant_messages_per_read` messages (10) costs one
   receipt read.
@@ -36,6 +38,7 @@ product's one promise: what it shows is true.
   (free); no recording reaches this service, only the text. The browser's recogniser may
   run on its maker's servers — Chrome sends the sound to Google — which the privacy policy
   says before the microphone is first used.
+  *Superseded by ADR-0031: the recording is recognised by Google Cloud.*
 
 ## Consequences
 

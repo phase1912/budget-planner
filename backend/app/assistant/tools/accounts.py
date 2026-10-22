@@ -9,7 +9,6 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from app.assistant.core.ports import Intent
 from app.assistant.tools.base import (
     Amount,
     Answer,
@@ -23,19 +22,35 @@ from app.assistant.tools.base import (
 )
 from app.domain.accounts import AccountKind
 from app.models.account import Account, RegularTransfer
-from app.repository.money_accounts import AccountRepository
 from app.services.money_accounts import AccountService
 
 Kind = Literal["personal", "business", "deposit"]
 KINDS: tuple[str, ...] = ("personal", "business", "deposit")
 
 
+PURCHASE_CARD = {"purchase card", "purchases", "card for purchases", "card for expenses"}
+"""How the model may name the card that pays for purchases when it passes a role."""
+
+
 async def find_account(ctx: ToolContext, said: str) -> tuple[Account | None, str | None]:
-    """The account the user meant among those they see (N2), or why there is none."""
-    found = find_by_name(
-        list(await AccountRepository(ctx.session).visible()), said, lambda a: a.name
-    )
-    return found.item, (f"account: {found.error}" if found.error else None)
+    """The account the user meant among those they see (N2), or why there is none.
+
+    By name as `find_by_name` finds it; failing that, by its number on the Accounts
+    screen ("2") or as the card that pays for purchases — the model is told to pass real
+    names (F21.13.2), and this catches it when it passes the role or the place instead.
+    """
+    accounts = [v.account for v in (await AccountService(ctx.session).overview(ctx.today)).accounts]
+    found = find_by_name(accounts, said, lambda a: a.name)
+    if found.item is not None:
+        return found.item, None
+    wanted = said.strip().lower().lstrip("#")
+    if wanted.isdigit() and 0 < int(wanted) <= len(accounts):
+        return accounts[int(wanted) - 1], None
+    if wanted in PURCHASE_CARD:
+        paying = [a for a in accounts if a.for_purchases]
+        if len(paying) == 1:
+            return paying[0], None
+    return None, f"account: {found.error}"
 
 
 class AccountArgs(BaseModel):
@@ -54,7 +69,6 @@ class AddAccount(Writer):
     name = "add_account"
     description = "Propose a new card, business account or deposit."
     args = AccountArgs
-    intents = frozenset({Intent.ADD})
     card_kind = "account"
     card = AccountArgs
     form = (
@@ -101,7 +115,6 @@ class RemoveAccount(Writer):
     name = "remove_account"
     description = "Propose removing a card or account, found by its name."
     args = RemoveAccountArgs
-    intents = frozenset({Intent.REMOVE})
     card_kind = "account_remove"
     card = AccountRemoval
     form = (FormField("target", "target"),)
@@ -143,7 +156,6 @@ class AddTransfer(Writer):
     name = "add_transfer"
     description = "Propose moving money every month from one of the user's accounts to another."
     args = TransferArgs
-    intents = frozenset({Intent.ADD})
     card_kind = "transfer"
     card = TransferCard
     form = (
@@ -205,7 +217,6 @@ class StopTransfer(Writer):
     name = "stop_transfer"
     description = "Propose stopping a monthly transfer from next month, found by its name."
     args = StopTransferArgs
-    intents = frozenset({Intent.REMOVE})
     card_kind = "transfer_stop"
     card = TransferStop
     form = (FormField("target", "target"),)
@@ -243,11 +254,13 @@ class Accounts(Reader):
                     "total": str(overview.total),
                     "accounts": [
                         {
+                            "number": n,
                             "name": a.account.name,
                             "kind": str(a.account.kind),
+                            "pays_for_purchases": a.account.for_purchases,
                             "balance": str(a.ledger.balance),
                         }
-                        for a in overview.accounts
+                        for n, a in enumerate(overview.accounts, 1)
                     ],
                 }
             ),

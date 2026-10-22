@@ -4,7 +4,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from app.assistant.core.ports import Intent
 from app.assistant.tools.base import Amount, FormField, ToolContext, Writer
 from app.schemas.user import UserUpdateRequest
 from app.services.user import UserService
@@ -25,7 +24,6 @@ class SetMonthlyBudget(Writer):
         "one category: that is a goal (add_goal, category_reduction)."
     )
     args = BudgetArgs
-    intents = frozenset({Intent.ADD, Intent.CHANGE})
     card_kind = "budget"
     card = BudgetArgs
 
@@ -49,7 +47,6 @@ class RemoveBudget(Writer):
     name = "remove_budget"
     description = "Propose having no monthly budget any more."
     args = NoArgs
-    intents = frozenset({Intent.REMOVE})
     card_kind = "budget_remove"
     card = NoArgs
     form = (FormField("budget", "target"),)

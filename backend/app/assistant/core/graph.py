@@ -1,22 +1,18 @@
-"""The assistant as an agent graph (F21.1, F21.7, ADR-0025, ADR-0028).
+"""The assistant as an agent graph (F21.1, F21.13, ADR-0025, ADR-0028, ADR-0032).
 
-Three steps, as LangGraph nodes: `classify` decides what the message wants, `act` lets
-the model read and propose with only the tools that serve it — again, while it reads or
-fixes a call — and `second_look` reads the request alone when a wish to write came back
-as words only. Tools are offered by description and called through structured output, not
-a provider's own tool-calling: every model the agent can reach — a hosted one or a small
-local one — answers the same JSON.
+Two LangGraph nodes in a loop: `think` offers the model every tool as a function, in the
+provider's own tool calling, and `use` runs what it asked for — a read answers at once, a
+write is checked and kept as a proposed card, `ask_user` ends the turn with options to
+tap — and hands each result back, until the model answers in words.
 """
 
 import json
 import logging
 from collections.abc import Sequence
-from typing import Any, Literal, Protocol, TypedDict, TypeVar
-
-from pydantic import BaseModel, Field, field_validator
+from typing import Any, Protocol, TypedDict
 
 from app.agent.core import AgentError
-from app.agent.types import Message
+from app.agent.types import Message, ToolTurn, ToolUse
 from app.assistant.core import prompts
 from app.assistant.core.language import worded
 from app.assistant.core.ports import (
@@ -24,7 +20,6 @@ from app.assistant.core.ports import (
     AssistantPort,
     AssistantReply,
     CheckTool,
-    Intent,
     ReadTool,
     ToolCall,
     ToolSpec,
@@ -33,98 +28,83 @@ from app.assistant.core.ports import (
 
 logger = logging.getLogger(__name__)
 
-MAX_STEPS = 4
-"""Rounds of reading before the assistant must answer: a question needs one or two."""
+MAX_ROUNDS = 8
+"""Rounds of tool use before the assistant must answer: a hard request needs three or four
+— look, look again, propose — and a loop that goes on is cut off, not paid for."""
 HISTORY = 20
 """The latest messages the assistant reads back; older ones are not needed to go on."""
-SAY_LIMIT = 600
-"""What one answer may run to: a bound in the schema itself, so a model that loops on its
-own words stops instead of filling the token limit."""
-RECENT = 4
-"""The turns telling what a message wants: "2500" alone says nothing, after "to how much?"
-it is the budget."""
 THINKING_BUDGET = 1024
-"""What Gemini may think before each step, added on top of the answer's limit: left
+"""What Gemini may think before each round, added on top of the answer's limit: left
 unbounded, its thoughts filled the limit and the answer came back empty."""
-WRITES = frozenset({Intent.ADD, Intent.CHANGE, Intent.REMOVE})
+MAX_OPTIONS = 8
 
-T = TypeVar("T", bound=BaseModel)
+ASK_TOOL = {
+    "type": "function",
+    "function": {
+        "name": prompts.ASK,
+        "description": (
+            "Ask the user to choose: when more than one thing fits what they said, or a "
+            "detail you need is missing. The options are what they can tap — exact names "
+            "from what they have, or short answers."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "question": {"type": "string", "description": "One short question"},
+                "options": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Two to eight options to tap",
+                },
+            },
+            "required": ["question", "options"],
+        },
+    },
+}
 
 
-class StructuredModel(Protocol):
-    """The model the graph asks: messages in, an instance of `schema` out (ADR-0006)."""
+class ToolModel(Protocol):
+    """The model the graph asks: messages and functions in, words and calls out (ADR-0032)."""
 
-    async def run_structured(
+    async def run_tools(
         self,
         messages: list[Message],
-        schema: type[T],
+        tools: list[dict[str, Any]],
         *,
         max_tokens: int = ...,
         thinking_budget: int | None = ...,
-    ) -> T: ...
-
-
-class StepCall(BaseModel):
-    """One tool the model asks for.
-
-    Its arguments travel as a JSON string, not an open object: Gemini's structured output
-    refuses a schema with free-form properties, and the whole answer was lost with it.
-    """
-
-    tool: str
-    args: str = Field("{}", description="The tool's arguments as a JSON object")
-
-    @field_validator("args", mode="before")
-    @classmethod
-    def _as_json(cls, value: Any) -> Any:
-        return json.dumps(value) if isinstance(value, dict) else value
-
-    def arguments(self) -> dict[str, Any]:
-        """The arguments as a dict; anything that is not a JSON object reads as none."""
-        try:
-            parsed = json.loads(self.args or "{}")
-        except json.JSONDecodeError:
-            return {}
-        return parsed if isinstance(parsed, dict) else {}
-
-
-class Step(BaseModel):
-    """What the model does next: call tools, say something, or both.
-
-    `calls` comes first: a model writes its answer in the schema's order, and asked to
-    speak first Gemini talked about the figures instead of reading them — and on, until
-    the answer was cut off.
-    """
-
-    calls: list[StepCall] = Field(description="The tools to call now; empty for none")
-    say: str = Field(
-        "", max_length=SAY_LIMIT, description="What to tell the user now: one to three sentences"
-    )
-
-
-class Intents(BaseModel):
-    """What the user's message wants; none for small talk."""
-
-    intents: list[Literal["ask", "add", "change", "remove"]] = Field(default_factory=list)
+    ) -> ToolTurn: ...
 
 
 class State(TypedDict, total=False):
-    """What the graph carries from one node to the next."""
+    """What the graph carries from one round to the next."""
 
-    intents: frozenset[Intent]
-    tools: list[ToolSpec]
     messages: list[Message]
+    pending: list[ToolUse]
     proposals: list[ToolCall]
+    choices: list[str]
     said: str
-    read_any: bool
-    steps: int
-    more: bool
+    rounds: int
+    done: bool
+
+
+def function(spec: ToolSpec) -> dict[str, Any]:
+    """A tool as the provider's function calling takes it."""
+    kind = "Proposes a card the user approves." if spec.writes else "Reads, changes nothing."
+    return {
+        "type": "function",
+        "function": {
+            "name": spec.name,
+            "description": f"{spec.description} {kind}",
+            "parameters": spec.parameters,
+        },
+    }
 
 
 class AssistantGraph(AssistantPort):
-    """Answers through the model, choosing tools by what the message wants."""
+    """Answers through the model, which uses the tools as it sees fit until it is done."""
 
-    def __init__(self, model: StructuredModel) -> None:
+    def __init__(self, model: ToolModel) -> None:
         self._model = model
 
     async def reply(
@@ -139,148 +119,95 @@ class AssistantGraph(AssistantPort):
         # counts against Cloud Run's startup probe.
         from langgraph.graph import END, START, StateGraph
 
+        specs = {t.name: t for t in tools}
+        functions = [function(t) for t in tools] + [ASK_TOOL]
         # The language is the user's last message with words in it, not a bare number.
         spoken = worded([t.text for t in history if t.role == "user"])
 
-        async def classify(state: State) -> State:
-            intents = await self._intents(history, context)
-            # "Spend less on X" is told as a change as often as an addition: the two are
-            # offered together, so the right tool is there whichever was named.
-            if intents & {Intent.ADD, Intent.CHANGE}:
-                intents = intents | {Intent.ADD, Intent.CHANGE}
-            offered = [t for t in tools if t.intents & intents] if intents else []
-            messages = [
-                Message(role="system", content=prompts.system(offered, context, spoken))
-            ] + [Message(role=turn.role, content=turn.text) for turn in history[-HISTORY:]]
-            return {"intents": intents, "tools": offered, "messages": messages}
-
-        async def act(state: State) -> State:
-            known = {t.name: t for t in state["tools"]}
-            messages = list(state["messages"])
-            proposals = list(state.get("proposals", []))
+        async def think(state: State) -> State:
+            messages = state["messages"]
             try:
-                step = await self._model.run_structured(
-                    messages, Step, max_tokens=2048, thinking_budget=THINKING_BUDGET
+                turn = await self._model.run_tools(
+                    messages, functions, max_tokens=2048, thinking_budget=THINKING_BUDGET
                 )
             except AgentError:
                 logger.exception("The assistant's model call failed")
-                return {"more": False}
-            reads: list[ToolCall] = []
-            wrong: list[str] = []
-            for call in step.calls:
-                spec = known.get(call.tool)
-                if spec is None:
-                    continue
-                asked = ToolCall(call.tool, call.arguments())
-                if not spec.writes:
-                    reads.append(asked)
-                elif error := (await check(asked) if check else None):
-                    wrong.append(f"{asked.name}: {error}")
-                else:
-                    proposals.append(asked)
-            # Words written for a refused call describe a card that will not be: not kept.
-            said = (step.say if not wrong else "") or state.get("said", "")
-            if not reads and not wrong:
-                return {"said": said, "proposals": proposals, "more": False}
-            results = [f"{c.name}: {await read(c)}" for c in reads]
-            results += [
-                f"{w} — no card was made. If this says to ask the user, ask them in say and "
-                "call nothing; otherwise call it again with fixed arguments"
-                for w in wrong
-            ]
-            messages.append(Message(role="assistant", content=step.model_dump_json()))
-            messages.append(Message(role="user", content="Tool results:\n" + "\n".join(results)))
+                return {"done": True}
+            said = turn.text.strip() or state.get("said", "")
+            if not turn.calls:
+                return {"said": said, "done": True}
+            return {"messages": [*messages, turn.message], "said": said, "pending": turn.calls}
+
+        async def use(state: State) -> State:
+            calls = state.get("pending", [])
+            messages = list(state["messages"])
+            proposals = list(state.get("proposals", []))
+            choices: list[str] = []
+            said = state.get("said", "")
+            for call in calls:
+                result, asked, refused = await self._use(call, specs, read, check, proposals)
+                if asked is not None:
+                    said, choices = asked
+                elif refused:
+                    # Words written beside a refused call describe a card that will not be.
+                    said = ""
+                messages.append(
+                    Message(role="tool", content=result, tool_call_id=call.id, name=call.name)
+                )
+            rounds = state.get("rounds", 0) + 1
             return {
-                "said": said,
-                "proposals": proposals,
                 "messages": messages,
-                "read_any": True,
-                "steps": state.get("steps", 0) + 1,
-                "more": state.get("steps", 0) + 1 < MAX_STEPS,
+                "proposals": proposals,
+                "choices": choices,
+                "said": said,
+                "rounds": rounds,
+                "done": bool(choices) or rounds >= MAX_ROUNDS,
             }
 
-        async def second_look(state: State) -> State:
-            said, proposals = await self._second_look(history, state["tools"], context, check)
-            if not proposals:
-                return {}
-            return {"said": said or state.get("said", ""), "proposals": proposals}
-
-        def after_act(state: State) -> str:
-            if state.get("more"):
-                return "act"
-            wanted_writes = bool(state.get("intents", frozenset()) & WRITES)
-            if wanted_writes and not state.get("proposals") and not state.get("read_any"):
-                return "second_look"
-            return END
-
         graph = StateGraph(State)
-        graph.add_node("classify", classify)
-        graph.add_node("act", act)
-        graph.add_node("second_look", second_look)
-        graph.add_edge(START, "classify")
-        graph.add_edge("classify", "act")
-        graph.add_conditional_edges("act", after_act, ["act", "second_look", END])
-        graph.add_edge("second_look", END)
-        final: State = await graph.compile().ainvoke({})  # type: ignore[assignment]
-        return AssistantReply(final.get("said", ""), list(final.get("proposals", [])))
+        graph.add_node("think", think)
+        graph.add_node("use", use)
+        graph.add_edge(START, "think")
+        graph.add_conditional_edges("think", lambda s: END if s.get("done") else "use")
+        graph.add_conditional_edges("use", lambda s: END if s.get("done") else "think")
+        start: State = {
+            "messages": [
+                Message(role="system", content=prompts.system(context, spoken)),
+                *(Message(role=t.role, content=t.text) for t in history[-HISTORY:]),
+            ]
+        }
+        final: State = await graph.compile().ainvoke(start)  # type: ignore[assignment]
+        return AssistantReply(
+            final.get("said", ""),
+            list(final.get("proposals", [])),
+            list(final.get("choices", [])),
+        )
 
-    async def _intents(
-        self, history: Sequence[Turn], context: AssistantContext
-    ) -> frozenset[Intent]:
-        """What the last message wants, read with the turns just before it; every intent
-        when the model cannot say, so no tool the user needed is ever withheld for a
-        failed guess."""
-        if not history:
-            return frozenset()
-        try:
-            found = await self._model.run_structured(
-                [Message(role="system", content=prompts.classify(context)), *_recent(history)],
-                Intents,
-                max_tokens=256,
-                thinking_budget=THINKING_BUDGET,
-            )
-        except AgentError:
-            logger.warning("Classifying a message failed; every tool is offered")
-            return frozenset(Intent)
-        return frozenset(Intent(i) for i in found.intents)
-
-    async def _second_look(
-        self,
-        history: Sequence[Turn],
-        tools: Sequence[ToolSpec],
-        context: AssistantContext,
+    @staticmethod
+    async def _use(
+        call: ToolUse,
+        specs: dict[str, ToolSpec],
+        read: ReadTool,
         check: CheckTool | None,
-    ) -> tuple[str, list[ToolCall]]:
-        """The last few turns alone, when a wish to write came back as words only.
-
-        With a long history a small model may answer "it is recorded" instead of proposing a
-        card. Read with only the turns that lead to it, the request is told apart reliably:
-        its cards are proposed with what the model says of them, or the first answer stands.
-        """
-        writes = [t for t in tools if t.writes]
-        users = [t.text for t in history if t.role == "user"]
-        if not users or not writes:
-            return "", []
-        try:
-            step = await self._model.run_structured(
-                [
-                    Message(role="system", content=prompts.system(writes, context, worded(users))),
-                    *_recent(history),
-                ],
-                Step,
-                max_tokens=1024,
-                thinking_budget=THINKING_BUDGET,
-            )
-        except AgentError:
-            return "", []
-        known = {t.name for t in writes}
-        asked = [ToolCall(c.tool, c.arguments()) for c in step.calls if c.tool in known]
-        return step.say, [c for c in asked if not (check and await check(c))]
-
-
-def _recent(history: Sequence[Turn]) -> list[Message]:
-    """The last few turns, as the model reads them, ending with the user's message."""
-    turns = list(history[-RECENT:])
-    while turns and turns[0].role != "user":
-        turns.pop(0)
-    return [Message(role=t.role, content=t.text) for t in turns]
+        proposals: list[ToolCall],
+    ) -> tuple[str, tuple[str, list[str]] | None, bool]:
+        """Run one call: what to tell the model, the question and options if it asked, and
+        whether a write was refused."""
+        if call.name == prompts.ASK:
+            options = [str(o).strip() for o in call.arguments.get("options", []) if str(o).strip()]
+            question = str(call.arguments.get("question", "")).strip()
+            if not options or not question:
+                return "Ask with a question and at least one option.", None, False
+            asked = (question, options[:MAX_OPTIONS])
+            return "Shown to the user; wait for their answer.", asked, False
+        spec = specs.get(call.name)
+        if spec is None:
+            return json.dumps({"error": f"there is no tool {call.name}"}), None, False
+        wanted = ToolCall(call.name, call.arguments)
+        if not spec.writes:
+            return await read(wanted), None, False
+        if check and (why := await check(wanted)):
+            refusal = {"refused": why, "no card was made": True}
+            return json.dumps(refusal, ensure_ascii=False), None, True
+        proposals.append(wanted)
+        return "Proposed to the user as a card; not saved until they approve it.", None, False

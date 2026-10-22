@@ -175,6 +175,8 @@
     "loadFailed": "Your conversations could not be loaded",
     "sendFailed": "The message could not be sent. Try again.",
     "saveFailed": "The card could not be saved",
-    "saved": "Saved."
+    "saved": "Saved.",
+    "microphoneRefused": "The microphone is not allowed. Allow it in the browser to speak.",
+    "speechFailed": "What you said could not be recognised. Try again or type it."
   }
 }

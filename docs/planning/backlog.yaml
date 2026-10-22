@@ -4632,18 +4632,17 @@ epics:
               list, a store owning it all; three languages. Checked at 375, 768 and 1280 px.
       - key: F21.2
         title: Speaking to the assistant
-        labels: [frontend]
+        labels: [frontend, backend, ai]
         requirements: []
         depends_on: [F21.1]
         intent: >
-          A microphone button beside the text field: the user speaks in Polish, Ukrainian or
-          English and the browser's own recognition turns it into text — free, and no sound
-          ever reaches the service (ADR-0025, decided over sending audio to the model, which
-          would cost each message). The words appear as the user's message before the
-          answer; saying "approve" saves the card waiting for it. Where a browser cannot
-          recognise speech, no microphone is shown. Hidden for now (2026-10-20): the
-          browser's recognition proved too poor in use; the code stays in `@/shared/speech`
-          and the microphone returns once a free recogniser is good enough.
+          A microphone button beside the text field: the user speaks in Ukrainian, Polish,
+          English or Russian and the words appear as their message before the answer; saying
+          "approve" saves the card waiting for it. The browser's own recognition (F21.2.1)
+          proved too poor in use and was hidden on 2026-10-20; the speech is now recognised
+          by Google Cloud Speech-to-Text (Chirp) behind our own port (F21.2.2, ADR-0031): the
+          recording goes to the service, is recognised and is not kept. It costs about 0.016
+          USD a minute after the free minutes, bounded per user.
         demo: >
           Tap the microphone and say "wczoraj taxi 45 złotych": the message appears, then the
           assistant's card.
@@ -4656,6 +4655,21 @@ epics:
               sent when the phrase ends, "approve" in three languages saving the waiting card,
               the microphone hidden where unsupported, and the privacy policy saying the
               browser's maker may recognise the sound. Checked at 375, 768 and 1280 px.
+          - key: F21.2.2
+            title: Speech recognised by Google Cloud
+            labels: [frontend, backend, ai]
+            detail: >
+              The microphone records in the browser (MediaRecorder, at most 60 seconds, a
+              second tap or silence ends it) and sends the sound to
+              POST /api/v1/assistant/speech; a SpeechPort with a Speech-to-Text v2 adapter
+              (Chirp 3, the language told by the sound) returns the
+              text, which is put in the field to send or correct. Nothing of the sound is
+              stored; seconds recognised per user per day bounded (rate limit), counted in the
+              AI allowance once F21.9 lands. A stub port for tests and local work without
+              Google credentials. Terraform enables the API and grants the runtime account
+              the right to use it. The privacy policy says the recording goes to Google Cloud
+              for recognition and is not kept; ADR-0031 replaces ADR-0025's speech bullet.
+              Checked at 375, 768 and 1280 px.
       - key: F21.3
         title: Expenses by voice
         labels: [backend, frontend, ai]
@@ -4814,18 +4828,29 @@ epics:
         intent: >
           "I was at Biedronka today: milk 4, bread 5, apples 7.50" becomes a receipt card with
           its lines and categories; Approve stores it as a receipt of that shop with our own
-          id, no photo, marked as told. One photo receipt can also be sent into the chat.
+          id, no photo, marked as told. Photos and PDFs can also be attached in the chat
+          (F21.8.2): receipts are read as from the ＋ screen and come back in the conversation.
         demo: >
           Dictate a shopping trip, fix one price on the card, approve: it is in Spending and its
           products in Products like any receipt.
         tasks:
           - key: F21.8.1
-            title: Told receipts and a photo in the chat
+            title: Told receipts
             labels: [backend, frontend, ai]
             detail: >
               A receipt channel "told" with lines from speech or text, categorised as read ones
-              are; a single photo sent in the chat goes through the upload pipeline and comes
-              back as a card. Checked at 375, 768 and 1280 px.
+              are, proposed as a card with its lines and saved on approval. Checked at 375,
+              768 and 1280 px.
+          - key: F21.8.2
+            title: Files attached in the chat
+            labels: [backend, frontend]
+            detail: >
+              A paperclip beside the text field takes photos and PDFs (the same types and
+              limits as the ＋ screen, several at once); they are sent through the upload
+              pipeline as receipts, counted in the receipt quota, and the conversation shows a
+              card for the reading that turns into a link to each receipt read, or says why
+              one could not be read. The assistant is told what was attached so it can answer
+              about it. Cross-user test (N2). Checked at 375, 768 and 1280 px.
       - key: F21.9
         title: Two AI limits a month — receipts, and the assistant
         labels: [backend, frontend, database]
@@ -4973,6 +4998,79 @@ epics:
               recorded in the admin log as from the console; tests that a user who is not an
               admin is never offered them and that no admin tool returns receipts, incomes or
               balances (N2). Checked at 375, 768 and 1280 px.
+
+      - key: F21.13
+        title: An assistant that finds what the user means
+        labels: [backend, frontend, ai]
+        requirements: [N2]
+        depends_on: [F21.10]
+        intent: >
+          Measured on 2026-10-22 against the real model and tools: "update the balance on my
+          card for expenses", "on the first card", "the one I pay for shopping with" all
+          ended in "name the card", turn after turn. The model was given cards without the
+          role that tells which one pays for purchases, was told to pass the user's own
+          words to the tools, and the tools matched names only; it read through a JSON
+          protocol of our own instead of the provider's function calling, behind a
+          classifier that could withhold tools. Now the assistant knows what the user has
+          before it answers — every card with its role, kind, balance and place in the list,
+          the bills, incomes, goals, trips and categories — calls the provider's own tools in
+          a loop until it has what it needs, names things by their real names, and when more
+          than one thing fits asks with a card of options to tap rather than a question to
+          type. How well it does is measured, not felt: a set of dialogs scored before and
+          after.
+        demo: >
+          Say "update the balance on my card for expenses, the bank says 3 500": the card
+          for the purchase card appears at once; say "update the balance on a card": a card
+          with the three cards to tap.
+        tasks:
+          - key: F21.13.1
+            title: The provider's own tool calling, in a loop
+            labels: [backend, ai]
+            detail: >
+              The graph calls the model with every tool as a function (LiteLLM tools, which
+              Gemini and OpenAI-compatible local models both take), runs the reads, checks
+              each write and records it as a proposed card, answers the model with each
+              result, and loops until it answers in words, at most eight rounds; the intent
+              classifier and the second look go. A refused write is answered with why and
+              what there is, never dropped. ADR-0032 supersedes ADR-0025's structured-output
+              calling and ADR-0028's classify node; domain-model and overview updated.
+          - key: F21.13.2
+            title: What the user has, in every turn
+            labels: [backend, ai]
+            detail: >
+              A compact summary of the user's things in the system prompt — cards with kind,
+              balance, which pays for purchases and their order as the Accounts screen lists
+              them; regular incomes, bills, goals, trips and categories by name — so the model
+              resolves "the card for expenses", "the first one", "my savings" itself and
+              passes real names; finding by name also understands the purchase card and a
+              card's place in the list, as a safety net. Tests that only the caller's things
+              appear (N2).
+          - key: F21.13.3
+            title: A question with options to tap
+            labels: [backend, frontend, ai]
+            detail: >
+              An `ask` tool: when more than one thing fits or something is missing, the
+              assistant asks with a card of options; tapping one sends it as the user's answer
+              and the conversation goes on. A refused write lists the candidates for it.
+              Checked at 375, 768 and 1280 px.
+          - key: F21.13.4
+            title: The assistant measured
+            labels: [backend, ai]
+            detail: >
+              scripts/evaluate_assistant.py: a seeded user and about thirty dialogs in
+              Ukrainian, Polish, English and Russian — balances, cards by role and by place,
+              bills, budget, goals, questions — each with the tool and arguments expected or a
+              question with options; run against the configured model, scored per dialog and
+              overall with time and tokens, the baseline and the result written in the ADR.
+          - key: F21.13.5
+            title: The assistant behind the middle button
+            labels: [frontend]
+            detail: >
+              The phone's middle button and the side menu's main button open the assistant,
+              with an icon that says it is one; adding a receipt by hand stays one tap away —
+              a button in the assistant's header, the paperclip, and a plain item in the side
+              menu — and the Add screen keeps everything it has. Checked at 375, 768 and 1280
+              px.
 
   - key: E22
     title: Android App

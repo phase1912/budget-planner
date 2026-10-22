@@ -10,11 +10,23 @@ from app.assistant.tools.toolbox import card_form
 
 
 class SendRequest(BaseModel):
-    """What the user says or types; a new conversation when `conversation_id` is null."""
+    """What the user says or types; a new conversation when `conversation_id` is null.
+
+    `upload_job_id` names the reading the files attached with the message started, through
+    the same upload as the Add screen (F21.8.2), and `attached` how many receipts it reads.
+    """
 
     text: str = Field(min_length=1, max_length=2000)
     conversation_id: uuid.UUID | None = None
     today: str | None = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    upload_job_id: uuid.UUID | None = None
+    attached: int = Field(0, ge=0, le=50)
+
+
+class SpeechRead(BaseModel):
+    """What was said in a recording, for the user to send or correct (F21.2.2)."""
+
+    text: str
 
 
 class CardFields(BaseModel):
@@ -27,7 +39,8 @@ class CardFields(BaseModel):
 class CardRead(BaseModel):
     """A proposed action: what kind of thing it creates, changes or removes, and its fields
     — or an answer card (`answer`, F21.4): a chart and a link to the screen with the same
-    filters."""
+    filters; options to tap (`choice`, F21.13.3); files attached and being read
+    (`attachment`, F21.8.2)."""
 
     kind: str
     """What the card does: `budget`, `income`, `bill`, `expense` and `answer` have cards of

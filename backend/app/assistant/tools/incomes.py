@@ -10,7 +10,6 @@ from typing import Any
 from pydantic import BaseModel, Field, model_validator
 
 from app.api.errors import NotFoundError
-from app.assistant.core.ports import Intent
 from app.assistant.tools.base import (
     Amount,
     Answer,
@@ -52,7 +51,6 @@ class AddIncome(Writer):
     name = "add_income"
     description = "Propose recording money that came in once."
     args = IncomeArgs
-    intents = frozenset({Intent.ADD})
     card_kind = "income"
     card = IncomeArgs
 
@@ -95,7 +93,6 @@ class RemoveIncome(Writer):
     name = "remove_income"
     description = "Propose removing a sum that came in this month, found by who paid it."
     args = RemoveIncomeArgs
-    intents = frozenset({Intent.REMOVE})
     card_kind = "income_remove"
     card = IncomeRemoval
     form = (FormField("target", "target"),)
@@ -143,7 +140,6 @@ class AddRegularIncome(Writer):
     name = "add_regular_income"
     description = "Propose an income that comes every month or every week by itself."
     args = RegularArgs
-    intents = frozenset({Intent.ADD})
     card_kind = "regular_income"
     card = RegularArgs
     form = (
@@ -203,7 +199,6 @@ class ChangeRegularIncome(Writer):
     name = "change_regular_income"
     description = "Propose changing a regular income's amount, day or name, found by its name."
     args = ChangeRegularArgs
-    intents = frozenset({Intent.CHANGE})
     card_kind = "regular_income_change"
     card = RegularChange
     form = (
@@ -271,7 +266,6 @@ class StopRegularIncome(Writer):
     name = "stop_regular_income"
     description = "Propose stopping a regular income from next month, found by its name."
     args = StopRegularArgs
-    intents = frozenset({Intent.REMOVE})
     card_kind = "regular_income_stop"
     card = RegularStop
     form = (FormField("target", "target"),)

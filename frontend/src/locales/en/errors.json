@@ -66,5 +66,7 @@
   "same_account": "Choose two different accounts.",
   "invalid_card": "Check the card’s fields.",
   "card_done": "This card is already done.",
-  "needs_card": "Income lands on a card: add one with it."
+  "needs_card": "Income lands on a card: add one with it.",
+  "speech_unavailable": "What you said could not be recognised just now. Try again or type it.",
+  "speech_too_long": "A recording can be a minute long at most."
 }

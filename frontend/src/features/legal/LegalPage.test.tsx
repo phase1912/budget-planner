@@ -17,7 +17,7 @@ describe("LegalPage (F17.9.4)", () => {
       screen.getByRole("heading", { name: "Where, and who processes it" }),
     ).toBeInTheDocument();
     expect(screen.getByText(/Receipt photos and forwarded files: 90 days/)).toBeInTheDocument();
-    expect(screen.getByText("Version of 17 October 2026")).toBeInTheDocument();
+    expect(screen.getByText("Version of 22 October 2026")).toBeInTheDocument();
     expect(screen.getByText(/sets no cookies and loads nothing from other websites/)).toBeVisible();
     expect(screen.getByRole("link", { name: "Help" })).toHaveAttribute("href", "/help");
   });

@@ -7,7 +7,6 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from app.assistant.core.ports import Intent
 from app.assistant.tools.base import (
     Amount,
     Answer,
@@ -85,7 +84,6 @@ class AddGoal(Writer):
         "Propose a goal: a spending ceiling, a sum to save, a category to cut, or a way of living."
     )
     args = GoalArgs
-    intents = frozenset({Intent.ADD})
     card_kind = "goal"
     card = GoalCard
     form = (
@@ -138,7 +136,6 @@ class ChangeGoal(Writer):
     name = "change_goal"
     description = "Propose changing a goal's name or amount, found by its name."
     args = ChangeGoalArgs
-    intents = frozenset({Intent.CHANGE})
     card_kind = "goal_change"
     card = GoalChange
     form = (
@@ -190,7 +187,6 @@ class RemoveGoal(Writer):
     name = "remove_goal"
     description = "Propose removing a goal, found by its name."
     args = DropGoalArgs
-    intents = frozenset({Intent.REMOVE})
     card_kind = "goal_remove"
     card = GoalDrop
     form = (FormField("target", "target"),)

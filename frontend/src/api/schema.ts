@@ -2870,9 +2870,34 @@ export interface paths {
          * @description Say something to the assistant and get its answer, with any cards it proposes.
          *
          *     A new conversation when none is named. Counts against the monthly quota (F21.1):
-         *     402 receipt_quota_exceeded when it is spent. Nothing is written but the messages.
+         *     402 receipt_quota_exceeded when it is spent. Nothing is written but the messages. Files
+         *     sent with it were uploaded first, as from the Add screen; their reading is named here and
+         *     must be the user's own (404 otherwise, N2).
          */
         post: operations["send_message_api_v1_assistant_messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assistant/speech": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recognise Speech
+         * @description The words said in a recording from the microphone (F21.2.2), for the user to send.
+         *
+         *     Recognised by Google Cloud and dropped: nothing of the sound is stored. 413
+         *     speech_too_long past a minute; 503 speech_unavailable when the recogniser fails.
+         */
+        post: operations["recognise_speech_api_v1_assistant_speech_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3278,6 +3303,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_recognise_speech_api_v1_assistant_speech_post */
+        Body_recognise_speech_api_v1_assistant_speech_post: {
+            /** Audio */
+            audio: string;
+        };
         /** Body_upload_receipt_receipts_upload_post */
         Body_upload_receipt_receipts_upload_post: {
             /** Files */
@@ -3307,7 +3337,8 @@ export interface components {
          * CardRead
          * @description A proposed action: what kind of thing it creates, changes or removes, and its fields
          *     — or an answer card (`answer`, F21.4): a chart and a link to the screen with the same
-         *     filters.
+         *     filters; options to tap (`choice`, F21.13.3); files attached and being read
+         *     (`attachment`, F21.8.2).
          */
         CardRead: {
             /** Kind */
@@ -6096,6 +6127,9 @@ export interface components {
         /**
          * SendRequest
          * @description What the user says or types; a new conversation when `conversation_id` is null.
+         *
+         *     `upload_job_id` names the reading the files attached with the message started, through
+         *     the same upload as the Add screen (F21.8.2), and `attached` how many receipts it reads.
          */
         SendRequest: {
             /** Text */
@@ -6104,6 +6138,13 @@ export interface components {
             conversation_id?: string | null;
             /** Today */
             today?: string | null;
+            /** Upload Job Id */
+            upload_job_id?: string | null;
+            /**
+             * Attached
+             * @default 0
+             */
+            attached: number;
         };
         /**
          * SettlementResponse
@@ -6170,6 +6211,14 @@ export interface components {
             cheapest_for: number;
             /** Paid Above */
             paid_above: string;
+        };
+        /**
+         * SpeechRead
+         * @description What was said in a recording, for the user to send or correct (F21.2.2).
+         */
+        SpeechRead: {
+            /** Text */
+            text: string;
         };
         /**
          * SplitProductRequest
@@ -12294,6 +12343,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConversationRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recognise_speech_api_v1_assistant_speech_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_recognise_speech_api_v1_assistant_speech_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpeechRead"];
                 };
             };
             /** @description Validation Error */

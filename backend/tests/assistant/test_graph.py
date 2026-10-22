@@ -1,6 +1,7 @@
 # ruff: noqa: RUF001 — the conversations here are in Russian and Ukrainian on purpose.
-"""The assistant's graph over the model: what a message wants decides the tools; it reads,
-proposes, fixes a wrong call and survives a failed one (F21.1, F21.7)."""
+"""The assistant's graph over the model (F21.1, F21.13, ADR-0032): every tool is offered as
+a function; reads answer at once, writes come back as checked proposals, `ask_user` ends
+the turn with options, and a failed model call ends it without raising."""
 
 from typing import Any
 from unittest.mock import AsyncMock
@@ -8,184 +9,158 @@ from unittest.mock import AsyncMock
 import pytest
 
 from app.agent.core import AgentError
-from app.assistant.core.graph import THINKING_BUDGET, AssistantGraph, Intents, Step, StepCall
+from app.agent.types import Message, ToolTurn, ToolUse
+from app.assistant.core.graph import MAX_ROUNDS, THINKING_BUDGET, AssistantGraph
 from app.assistant.core.language import language_of
-from app.assistant.core.ports import (
-    AssistantContext,
-    AssistantReply,
-    Intent,
-    ToolCall,
-    ToolSpec,
-    Turn,
-)
+from app.assistant.core.ports import AssistantContext, AssistantReply, ToolCall, ToolSpec, Turn
 
 TOOLS = [
-    ToolSpec(
-        "month_summary", "Spent this month.", {"properties": {}}, False, frozenset({Intent.ASK})
-    ),
-    ToolSpec(
-        "set_monthly_budget",
-        "Propose a budget.",
-        {"properties": {}},
-        True,
-        frozenset({Intent.ADD, Intent.CHANGE}),
-    ),
-    ToolSpec("stop_bill", "Stop a bill.", {"properties": {}}, True, frozenset({Intent.REMOVE})),
+    ToolSpec("month_summary", "Spent this month.", {"type": "object", "properties": {}}, False),
+    ToolSpec("set_monthly_budget", "Propose a budget.", {"type": "object", "properties": {}}, True),
+    ToolSpec("stop_bill", "Stop a bill.", {"type": "object", "properties": {}}, True),
 ]
-CONTEXT = AssistantContext(language="pl", currency="PLN", today="2026-10-20")
+CONTEXT = AssistantContext(
+    language="pl", currency="PLN", today="2026-10-20", known="Cards:\n  1. Main — card"
+)
 
 
-def model(intents: list[str], *steps: Any) -> AsyncMock:
-    """A model that names `intents` for the message, then answers with `steps` in turn."""
+def turn(text: str = "", *calls: tuple[str, dict[str, Any]]) -> ToolTurn:
+    """What the model does in one round: says `text` and calls `calls`."""
+    uses = [ToolUse(f"c{i}", name, args) for i, (name, args) in enumerate(calls)]
+    return ToolTurn(text, uses, Message(role="assistant", content=text))
+
+
+def model(*turns: Any) -> AsyncMock:
+    """A model that answers with `turns` in order."""
     agent = AsyncMock()
-    agent.run_structured.side_effect = [Intents(intents=intents), *steps]
+    agent.run_tools.side_effect = list(turns)
     return agent
 
 
-def prompt(agent: AsyncMock, call: int = 1) -> str:
-    """The system prompt of the model's `call`-th request."""
-    return str(agent.run_structured.call_args_list[call].args[0][0].content)
+def sent(agent: AsyncMock, call: int = 0) -> list[Message]:
+    """The messages of the model's `call`-th request."""
+    return list(agent.run_tools.call_args_list[call].args[0])
 
 
-def offered(agent: AsyncMock, call: int = 1) -> str:
-    """The tools listed in that prompt, without the examples after them."""
-    text = prompt(agent, call)
-    return text.split("Reply as JSON")[0].split("Tools:")[-1]
+async def reply(agent: AsyncMock, said: str = "hi", **kwargs: Any) -> AssistantReply:
+    return await AssistantGraph(agent).reply(
+        [Turn("user", said)],
+        TOOLS,
+        kwargs.get("read", AsyncMock(return_value='{"spent": "725.00"}')),
+        CONTEXT,
+        kwargs.get("check"),
+    )
 
 
 @pytest.mark.asyncio
 async def test_it_reads_first_and_answers_with_what_it_read() -> None:
-    agent = model(
-        ["ask"],
-        Step(say="", calls=[StepCall(tool="month_summary", args={})]),
-        Step(say="Wydano 725 PLN.", calls=[]),
-    )
+    agent = model(turn("", ("month_summary", {})), turn("Wydano 725 PLN."))
     read = AsyncMock(return_value='{"spent": "725.00"}')
 
-    reply = await AssistantGraph(agent).reply([Turn("user", "Ile wydałem?")], TOOLS, read, CONTEXT)
+    answer = await reply(agent, "Ile wydałem?", read=read)
 
-    assert reply == AssistantReply("Wydano 725 PLN.", [])
+    assert answer == AssistantReply("Wydano 725 PLN.", [])
     read.assert_awaited_once_with(ToolCall("month_summary", {}))
-    assert "725.00" in agent.run_structured.call_args_list[2].args[0][-1].content
-    assert "Polish" in prompt(agent)
-
-
-@pytest.mark.asyncio
-async def test_a_question_is_offered_read_tools_only_and_a_removal_its_own() -> None:
-    asking = model(["ask"], Step(say="ok", calls=[]))
-    removing = model(["remove"], Step(say="", calls=[StepCall(tool="stop_bill", args={})]))
-
-    await AssistantGraph(asking).reply([Turn("user", "how much?")], TOOLS, AsyncMock(), CONTEXT)
-    reply = await AssistantGraph(removing).reply(
-        [Turn("user", "stop the gym")], TOOLS, AsyncMock(), CONTEXT
+    result = sent(agent, 1)[-1]
+    assert (result.role, result.tool_call_id, result.content) == (
+        "tool",
+        "c0",
+        '{"spent": "725.00"}',
     )
 
-    assert "month_summary" in offered(asking)
-    assert "set_monthly_budget" not in offered(asking)
-    assert "stop_bill" in offered(removing) and "month_summary" not in offered(removing)
-    assert reply.proposals == [ToolCall("stop_bill", {})]
+
+@pytest.mark.asyncio
+async def test_every_tool_is_offered_as_a_function_with_ask_user_and_what_the_user_has() -> None:
+    agent = model(turn("Cześć!"))
+
+    await reply(agent, "hej")
+
+    functions = agent.run_tools.call_args_list[0].args[1]
+    assert [f["function"]["name"] for f in functions] == [
+        "month_summary", "set_monthly_budget", "stop_bill", "ask_user",
+    ]  # fmt: skip
+    assert "Proposes a card" in functions[1]["function"]["description"]
+    assert "1. Main — card" in str(sent(agent)[0].content)
 
 
 @pytest.mark.asyncio
-async def test_small_talk_is_offered_no_tool_and_a_failed_guess_every_tool() -> None:
-    talking = model([], Step(say="Cześć!", calls=[]))
-    unsure = AsyncMock()
-    unsure.run_structured.side_effect = [
-        AgentError("down"),
-        Step(say="ok", calls=[]),
-        Step(say="ok", calls=[]),
-    ]
-
-    reply = await AssistantGraph(talking).reply([Turn("user", "hej")], TOOLS, AsyncMock(), CONTEXT)
-    await AssistantGraph(unsure).reply([Turn("user", "hm")], TOOLS, AsyncMock(), CONTEXT)
-
-    assert reply.text == "Cześć!"
-    assert "There are no tools" in prompt(talking)
-    assert all(name in offered(unsure) for name in ("month_summary", "stop_bill"))
-
-
-@pytest.mark.asyncio
-async def test_a_write_only_comes_back_as_a_proposal_and_unknown_tools_are_dropped() -> None:
+async def test_a_write_comes_back_as_a_proposal_and_the_model_is_told_it_is_not_saved() -> None:
     agent = model(
-        ["change"],
-        Step(
-            say="Here is the budget card.",
-            calls=[
-                StepCall(tool="set_monthly_budget", args={"amount": "2500"}),
-                StepCall(tool="delete_account", args={}),
-            ],
-        ),
+        turn("", ("set_monthly_budget", {"amount": "2500"}), ("delete_account", {})),
+        turn("Here is the budget card."),
     )
     read = AsyncMock()
 
-    reply = await AssistantGraph(agent).reply([Turn("user", "Budget 2500")], TOOLS, read, CONTEXT)
+    answer = await reply(agent, "Budget 2500", read=read)
 
-    assert reply.proposals == [ToolCall("set_monthly_budget", {"amount": "2500"})]
+    assert answer == AssistantReply(
+        "Here is the budget card.", [ToolCall("set_monthly_budget", {"amount": "2500"})]
+    )
     read.assert_not_awaited()
+    told = [m.content for m in sent(agent, 1)[-2:]]
+    assert "not saved until they approve" in told[0] and "no tool delete_account" in told[1]
+
+
+@pytest.mark.asyncio
+async def test_asking_the_user_ends_the_turn_with_the_question_and_its_options() -> None:
+    agent = model(
+        turn("", ("ask_user", {"question": "Which card?", "options": ["Main", "Revolut"]}))
+    )
+
+    answer = await reply(agent, "update the balance")
+
+    assert answer == AssistantReply("Which card?", [], ["Main", "Revolut"])
+    assert agent.run_tools.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_a_refused_write_goes_back_with_why_and_its_words_are_not_shown() -> None:
+    agent = model(
+        turn("Here is the card.", ("set_monthly_budget", {"amount": "lots"})),
+        turn("", ("set_monthly_budget", {"amount": 2500})),
+        turn(""),
+    )
+
+    async def check(call: ToolCall) -> str | None:
+        return None if isinstance(call.args.get("amount"), int) else "amount: not a number"
+
+    answer = await reply(agent, "Budżet 2500", check=check)
+
+    assert answer == AssistantReply("", [ToolCall("set_monthly_budget", {"amount": 2500})])
+    assert "amount: not a number" in str(sent(agent, 1)[-1].content)
 
 
 @pytest.mark.asyncio
 async def test_a_failed_model_call_ends_the_turn_without_raising() -> None:
-    agent = model(["ask"], AgentError("down"))
+    answer = await reply(model(AgentError("down")))
 
-    reply = await AssistantGraph(agent).reply([Turn("user", "hi")], TOOLS, AsyncMock(), CONTEXT)
-
-    assert (reply.text, reply.proposals) == ("", [])
+    assert answer == AssistantReply("", [])
 
 
 @pytest.mark.asyncio
-async def test_words_alone_for_a_request_get_a_second_look_that_proposes_its_card() -> None:
-    """A small model may say "it is recorded" instead of proposing: nothing would be."""
-    agent = model(
-        ["change"],
-        Step(say="It is recorded.", calls=[]),
-        Step(say="Here is the card.", calls=[StepCall(tool="set_monthly_budget", args={})]),
-    )
+async def test_a_model_that_keeps_calling_is_stopped_after_the_last_round() -> None:
+    agent = model(*[turn("looking", ("month_summary", {}))] * (MAX_ROUNDS + 2))
 
-    reply = await AssistantGraph(agent).reply(
-        [
-            Turn("user", "Hi"),
-            Turn("assistant", "Hello"),
-            Turn("user", "Budget 1"),
-            Turn("assistant", "(A card)"),
-            Turn("user", "Budget 2"),
-        ],
-        TOOLS,
-        AsyncMock(),
-        CONTEXT,
-    )
+    answer = await reply(agent)
 
-    assert reply == AssistantReply("Here is the card.", [ToolCall("set_monthly_budget", {})])
-    second = agent.run_structured.call_args_list[2].args[0]
-    assert [m.content for m in second[1:]] == ["Budget 1", "(A card)", "Budget 2"]
+    assert agent.run_tools.await_count == MAX_ROUNDS
+    assert answer.text == "looking"
 
 
 @pytest.mark.asyncio
-async def test_no_second_look_for_a_question_or_when_it_finds_nothing() -> None:
-    asking = model(["ask"], Step(say="I see.", calls=[]))
-    failing = model(["add"], Step(say="I see.", calls=[]), AgentError("timeout"))
-    empty = model(["add"], Step(say="Just talking.", calls=[]), Step(say="Still.", calls=[]))
+async def test_every_round_gives_the_model_a_bounded_time_to_think() -> None:
+    agent = model(turn("", ("month_summary", {})), turn("ok"))
 
-    replies = [
-        await AssistantGraph(m).reply([Turn("user", "Hello")], TOOLS, AsyncMock(), CONTEXT)
-        for m in (asking, failing, empty)
-    ]
+    await reply(agent)
 
-    assert replies == [
-        AssistantReply("I see.", []),
-        AssistantReply("I see.", []),
-        AssistantReply("Just talking.", []),
-    ]
-    assert asking.run_structured.await_count == 2
+    budgets = [c.kwargs["thinking_budget"] for c in agent.run_tools.call_args_list]
+    assert budgets == [THINKING_BUDGET] * 2
 
 
 @pytest.mark.asyncio
-async def test_a_bare_number_is_read_with_the_question_it_answers_and_in_its_language() -> None:
+async def test_the_conversation_so_far_is_read_back_and_the_answer_is_in_its_language() -> None:
     """ "2500" alone asks nothing; after "to how much?" it is the budget, in Russian."""
-    agent = model(
-        ["change"],
-        Step(calls=[StepCall(tool="set_monthly_budget", args={"amount": 2500})], say="Вот."),
-    )
+    agent = model(turn("Вот.", ("set_monthly_budget", {"amount": 2500})), turn("Вот."))
 
     await AssistantGraph(agent).reply(
         [
@@ -198,62 +173,13 @@ async def test_a_bare_number_is_read_with_the_question_it_answers_and_in_its_lan
         CONTEXT,
     )
 
-    classified = agent.run_structured.call_args_list[0].args[0]
-    assert [m.content for m in classified[1:]][-2:] == ["На какую сумму?", "2500"]
-    assert "The user's last message is in Russian" in prompt(agent)
-
-
-def test_a_step_names_its_calls_before_it_speaks_and_speaks_briefly() -> None:
-    """Asked to speak first, Gemini talked instead of reading, until the answer was cut."""
-    schema = Step.model_json_schema()
-    assert list(schema["properties"]) == ["calls", "say"]
-    assert "calls" in schema["required"]
-    assert schema["properties"]["say"]["maxLength"] == 600
-
-
-def test_tool_arguments_travel_as_a_json_string_with_no_open_object_in_the_schema() -> None:
-    schema = Step.model_json_schema()
-    assert schema["$defs"]["StepCall"]["properties"]["args"]["type"] == "string"
-    assert StepCall(tool="t", args='{"amount": 2500}').arguments() == {"amount": 2500}
-    assert StepCall(tool="t", args="not json").arguments() == {}
-
-
-@pytest.mark.asyncio
-async def test_a_write_with_wrong_arguments_goes_back_to_the_model_to_be_fixed() -> None:
-    agent = model(
-        ["change"],
-        Step(say="", calls=[StepCall(tool="set_monthly_budget", args={"amount": "lots"})]),
-        Step(say="Budżet.", calls=[StepCall(tool="set_monthly_budget", args={"amount": 2500})]),
-    )
-
-    async def check(call: ToolCall) -> str | None:
-        return None if isinstance(call.args.get("amount"), int) else "amount: not a number"
-
-    reply = await AssistantGraph(agent).reply(
-        [Turn("user", "Budżet 2500")], TOOLS, AsyncMock(), CONTEXT, check
-    )
-
-    assert reply.proposals == [ToolCall("set_monthly_budget", {"amount": 2500})]
-    assert "amount: not a number" in agent.run_structured.call_args_list[2].args[0][-1].content
-
-
-@pytest.mark.asyncio
-async def test_it_is_told_to_answer_in_the_language_the_user_wrote_in() -> None:
-    agent = model(["ask"], Step(say="Привет", calls=[]))
-
-    await AssistantGraph(agent).reply([Turn("user", "привет")], TOOLS, AsyncMock(), CONTEXT)
-
-    assert "language of the user's last message" in prompt(agent)
-
-
-@pytest.mark.asyncio
-async def test_every_step_gives_the_model_a_bounded_time_to_think() -> None:
-    agent = model(["add"], Step(say="Hi", calls=[]), Step(say="", calls=[]))
-
-    await AssistantGraph(agent).reply([Turn("user", "hi")], TOOLS, AsyncMock(), CONTEXT)
-
-    budgets = [c.kwargs["thinking_budget"] for c in agent.run_structured.call_args_list]
-    assert budgets == [THINKING_BUDGET] * 3
+    messages = sent(agent)
+    assert [m.content for m in messages[1:]] == [
+        "можешь поменять бюджет?",
+        "На какую сумму?",
+        "2500",
+    ]
+    assert "The user's last message is in Russian" in str(messages[0].content)
 
 
 @pytest.mark.parametrize(
@@ -272,36 +198,3 @@ async def test_every_step_gives_the_model_a_bounded_time_to_think() -> None:
 )
 def test_the_language_of_a_message_is_told_by_its_letters(text: str, language: str) -> None:
     assert language_of(text, "Polish") == language
-
-
-@pytest.mark.asyncio
-async def test_the_model_is_told_by_name_which_language_to_answer_in() -> None:
-    agent = model([], Step(say="ok", calls=[]))
-
-    await AssistantGraph(agent).reply(
-        [Turn("user", "хочу накопичити 5000")], TOOLS, AsyncMock(), CONTEXT
-    )
-
-    assert "The user's last message is in Ukrainian" in prompt(agent)
-
-
-@pytest.mark.asyncio
-async def test_a_call_refused_to_ask_the_user_leaves_the_question_not_a_card() -> None:
-    """F21.10: a balance drop is asked about first; words written for the refused card are
-    never shown, so the user is not told of a card that does not exist."""
-    agent = model(
-        ["change"],
-        Step(say="Here is the card.", calls=[StepCall(tool="set_monthly_budget", args={})]),
-        Step(say="Purchases you did not enter, or only a correction?", calls=[]),
-    )
-
-    async def check(call: ToolCall) -> str | None:
-        return "ask the user how the difference counts"
-
-    reply = await AssistantGraph(agent).reply(
-        [Turn("user", "the bank says 3700")], TOOLS, AsyncMock(), CONTEXT, check
-    )
-
-    assert reply == AssistantReply("Purchases you did not enter, or only a correction?", [])
-    told = agent.run_structured.call_args_list[2].args[0][-1].content
-    assert "no card was made" in told and "ask them" in told

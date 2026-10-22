@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { MessageCircle, Plus, Settings } from "lucide-react";
+import { Plus, Settings, Sparkles } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -7,10 +7,10 @@ import { useStores } from "@/stores/StoreContext";
 import { TABS, isActive } from "./tabs";
 
 /**
- * The tablet's and desktop's navigation (F23.2, design v2): the brand, adding a receipt,
- * the same four places as the phone's bar — icons with small names on a tablet, a menu with
- * names on a desktop — the assistant (F21.1), and the account at the bottom, opening
- * Settings.
+ * The tablet's and desktop's navigation (F23.2, design v2): the brand, the assistant as
+ * the main button (F21.13.5), the same four places as the phone's bar — icons with small
+ * names on a tablet, a menu with names on a desktop — adding a receipt by hand, and the
+ * account at the bottom, opening Settings.
  */
 export const SideNavigation = observer(function SideNavigation() {
   const { authStore } = useStores();
@@ -39,13 +39,13 @@ export const SideNavigation = observer(function SideNavigation() {
         <span className="hidden lg:inline">{t("appName")}</span>
       </Link>
       <Link
-        to="/upload"
-        aria-label={t("nav.add")}
+        to="/assistant"
+        aria-label={t("nav.assistant")}
+        aria-current={pathname.startsWith("/assistant") ? "page" : undefined}
         className="mb-4 flex min-h-13 flex-col items-center justify-center gap-1 rounded-[18px] bg-primary px-2 text-xs font-extrabold text-primary-foreground shadow-primary lg:flex-row lg:gap-2 lg:text-lg"
       >
-        <Plus size={22} aria-hidden="true" />
-        <span className="lg:hidden">{t("nav.addShort")}</span>
-        <span className="hidden lg:inline">{t("nav.add")}</span>
+        <Sparkles size={22} aria-hidden="true" />
+        {t("nav.assistant")}
       </Link>
       {TABS.map((tab) => {
         const active = isActive(tab, pathname);
@@ -63,12 +63,14 @@ export const SideNavigation = observer(function SideNavigation() {
         );
       })}
       <Link
-        to="/assistant"
-        aria-current={pathname.startsWith("/assistant") ? "page" : undefined}
-        className={item(pathname.startsWith("/assistant"))}
+        to="/upload"
+        aria-label={t("nav.add")}
+        aria-current={pathname.startsWith("/upload") ? "page" : undefined}
+        className={item(pathname.startsWith("/upload"))}
       >
-        <MessageCircle size={22} aria-hidden="true" />
-        {t("nav.assistant")}
+        <Plus size={22} aria-hidden="true" />
+        <span className="lg:hidden">{t("nav.addShort")}</span>
+        <span className="hidden lg:inline">{t("nav.add")}</span>
       </Link>
       <Link
         to="/settings"

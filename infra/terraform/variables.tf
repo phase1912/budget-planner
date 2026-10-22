@@ -62,6 +62,12 @@ variable "llm_model" {
   default     = "vertex_ai/gemini-2.5-flash"
 }
 
+variable "speech_engine" {
+  description = "What recognises the assistant's microphone: speech_to_text (Chirp) or model (ADR-0031)."
+  type        = string
+  default     = "speech_to_text"
+}
+
 variable "budget_amount" {
   description = "Monthly budget in the billing account's own currency; alerts fire at 25%, 50% and 100%."
   type        = number

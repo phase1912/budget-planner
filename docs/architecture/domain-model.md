@@ -650,6 +650,15 @@ Rules that must hold at all times. Each is a candidate for a test.
     to, so money that arrives before it is approved is not lost. Money put on a card once
     from outside is income on it (36); money moved between two cards is a transfer.
 
+37. The assistant (F21, ADR-0025) writes nothing itself: every change is a card the user
+    approves, saved through the screen's own service, so every rule above holds. It reads
+    only what the user may see — their own things and what their family shares, a member's
+    private receipts only as one sum (ADR-0017). When more than one thing fits what was
+    said, it asks with the options to tap rather than guessing (F21.13). Files attached in
+    the chat are receipts read by the same upload as the Add screen, counted in the same
+    quota and checked there (F21.8.2). A recording from the microphone is recognised and
+    dropped; only the words the user sends are kept (F21.2.2, ADR-0031).
+
 **Goals before they are saved**
 
 32. A money goal is checked against the user's last three whole months that had receipts

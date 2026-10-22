@@ -1,147 +1,63 @@
-"""What the assistant's model is told (F21.1, F21.7): the rules, the tools, a few examples."""
+"""What the assistant's model is told (F21.1, F21.7, F21.13): the rules and what the user has.
 
-import json
-from collections.abc import Sequence
+The tools themselves travel as functions in the provider's own tool calling (ADR-0032), so
+the prompt says how to use them, not what they are.
+"""
 
 from app.assistant.core.language import language_of
-from app.assistant.core.ports import AssistantContext, Intent, ToolSpec
+from app.assistant.core.ports import AssistantContext
 
-LANGUAGE_NAMES = {"en": "English", "uk": "Ukrainian", "pl": "Polish"}
+LANGUAGE_NAMES = {"en": "English", "uk": "Ukrainian", "pl": "Polish", "ru": "Russian"}
 
-EXAMPLES = (
-    "Examples, in English to show the shape of an answer only — reply in the user's "
-    "language, as said above:\n"
-) + "\n".join(
-    f"{user!r} -> {json.dumps(answer, ensure_ascii=False)}"
-    for user, answer in (
-        (
-            "can you change my monthly spending budget to 2500",
-            {
-                "say": "Here is the card: a monthly budget of 2500.",
-                "calls": [{"tool": "set_monthly_budget", "args": '{"amount": 2500}'}],
-            },
-        ),
-        ("change my monthly budget", {"say": "To how much?", "calls": []}),
-        (
-            "How much did I spend this month?",
-            {"say": "", "calls": [{"tool": "month_summary", "args": "{}"}]},
-        ),
-        (
-            "How much did I spend on groceries this month compared to last?",
-            {
-                "say": "",
-                "calls": [{"tool": "spending_by_category", "args": '{"compare": true}'}],
-            },
-        ),
-        (
-            "Where is milk cheapest?",
-            {"say": "", "calls": [{"tool": "product_prices", "args": '{"name": "milk"}'}]},
-        ),
-        (
-            "I want to spend less on restaurants, at most 400 a month",
-            {
-                "say": "A goal: at most 400 a month on restaurants.",
-                "calls": [
-                    {
-                        "tool": "add_goal",
-                        "args": '{"name": "Restaurants", "kind": "category_reduction", '
-                        '"amount": 400, "category": "Dining"}',
-                    }
-                ],
-            },
-        ),
-        (
-            "the bank says my Revolut card has 3700",
-            {
-                "say": "",
-                "calls": [
-                    {"tool": "sync_balance", "args": '{"account": "Revolut", "balance": 3700}'}
-                ],
-            },
-        ),
-        (
-            "those were purchases I did not enter",
-            {
-                "say": "Here is the card: 400 of purchases today, Revolut at 3700.",
-                "calls": [
-                    {
-                        "tool": "sync_balance",
-                        "args": '{"account": "Revolut", "balance": 3700, "way": "spending"}',
-                    }
-                ],
-            },
-        ),
-        ("What do you know about me?", {"say": "", "calls": [{"tool": "overview", "args": "{}"}]}),
-        (
-            "stop the gym bill and raise rent to 3200",
-            {
-                "say": "Two cards: the gym stops, the rent becomes 3200.",
-                "calls": [
-                    {"tool": "stop_bill", "args": '{"name": "gym"}'},
-                    {"tool": "change_bill", "args": '{"name": "rent", "amount": 3200}'},
-                ],
-            },
-        ),
-    )
-)
-"""A few answers shown whole: a small model follows an example better than a rule."""
+ASK = "ask_user"
+"""The tool the model asks the user with, offering options to tap (F21.13.3)."""
 
 
-def system(tools: Sequence[ToolSpec], context: AssistantContext, last: str = "") -> str:
-    """The rules of the conversation and the tools offered for this message; `last` is the
-    user's message, whose language the answer is in."""
-    listed = "\n".join(
-        f"- {t.name} ({'proposes a card' if t.writes else 'reads data'}): {t.description} "
-        f"Arguments: {json.dumps(t.parameters.get('properties', {}), ensure_ascii=False)}"
-        for t in tools
-    )
+def system(context: AssistantContext, last: str = "") -> str:
+    """The rules of the conversation; `last` is the user's message, whose language the
+    answer is in."""
     language = language_of(last, LANGUAGE_NAMES.get(context.language, "English"))
     return (
-        "You are the assistant of a family budgeting app built on receipts read line by line. "
-        f"The user's last message is in {language}: answer in {language}, and name what you "
-        f"propose in {language} too — always in the language of the user's last message. "
-        f"Be brief and warm, in plain words. Today is {context.today}; "
-        f"money is in {context.currency}. Resolve days like 'yesterday' from today.\n"
+        "You are the assistant of a family budgeting app built on receipts read line by "
+        "line. You can do everything the app's screens do through your tools: read any of "
+        "the user's figures, and propose any change as a card.\n"
+        f"The user's last message is in {language}: answer in {language}, always in the "
+        f"language of the user's last message. Be brief and warm. Today is "
+        f"{context.today}; money is in {context.currency}. Resolve days like 'yesterday' "
+        "from today.\n\n"
+        "How to work:\n"
+        "- Work out what the user means and get it done. Call as many tools as you need, "
+        "one after another: read first when you need a figure or a name, then propose.\n"
+        "- Below is what the user has. They rarely say an exact name: 'the card for "
+        "expenses' is the card that pays for purchases, 'the first card' is number 1 in "
+        "the list, 'my savings' is the savings account, and a word in one language means "
+        "the thing named in another (for example 'gym' is a bill named 'Спортзал', "
+        "'wakacje' a goal named 'Відпустка'). Resolve it yourself and always pass the exact "
+        "name from the list to a tool.\n"
+        f"- Only when more than one thing fits, or something you need is missing, call "
+        f"{ASK} with the question and the options to tap — the exact names, or short "
+        f"answers. Every question to the user goes through {ASK}: never end with a "
+        "question in plain words. Never ask what you can find out with a read tool, nor "
+        'what the user already said ("just fix the balance" is a correction).\n'
+        "- You never change anything yourself. Every record, change or removal is a tool "
+        "that proposes a card; the user checks it, may edit it and approves it. Several "
+        "things in one message are several calls, all made before you answer. A card "
+        "exists only when you called its tool: writing about a card makes none. After "
+        "proposing, say in one sentence what the cards are; never claim anything is saved. "
+        "Only a card the history marks as saved was saved.\n"
+        "- A tool may refuse a card and say why, with what there is: fix the call, or ask "
+        f"with {ASK} when the user has to choose.\n"
+        "- For any figure, call a read tool and use only its numbers; never invent them. "
+        "Answer in one to three short sentences; the app adds charts and links by itself.\n"
+        "- Files the user attached are already being read as receipts: say so in one "
+        "sentence and that they check and save them from the card; do not record them "
+        "yourself.\n"
+        "- Password, email, two-factor sign-in and deleting the account are only on their "
+        "screens: say so if asked. Amounts are plain numbers like 2500 or 12.50.\n"
         + (
-            f"The user's spending categories: {', '.join(context.categories)}. Pick the "
-            "closest for each expense.\n"
+            f"\nThe user's spending categories: {', '.join(context.categories)}.\n"
             if context.categories
             else ""
         )
-        + "Several things in one message become several calls, one card each.\n"
-        "You never change anything yourself. To record, change or remove something, call a "
-        "tool that proposes a card: the user checks it, may edit it and approves it. Say in "
-        "one sentence what the card is; never claim it is saved, and never speak of a card "
-        "you do not propose in this answer. Words alone record nothing: "
-        "every time the user asks to record, change or remove something, call the tool "
-        "again, even if a similar card was proposed before. Only a card the history marks as "
-        "saved was saved. Name what to change or remove as the user said it; the tool finds "
-        "it, and tells you the names there are when it cannot.\n"
-        "To answer about the user's money, call a read tool first and use only its numbers; "
-        "never invent figures. Say the figures that answer the question in one to three "
-        "short sentences; the app adds any chart or link by itself.\n"
-        "Settings and the user's account are done on the screens, not by you: say so if "
-        "asked. Amounts are plain numbers like 2500 or 12.50, without spaces or currency.\n"
-        + (f"Tools:\n{listed}\n" if tools else "There are no tools for this message.\n")
-        + 'Reply as JSON: {"say": "...", "calls": [{"tool": "name", "args": "{...}"}]}, with '
-        "args the tool's arguments as a JSON string. Leave calls empty when only answering.\n"
-        + EXAMPLES
-    )
-
-
-def classify(context: AssistantContext) -> str:
-    """How the model tells what a message wants (F21.7): the graph's first step."""
-    return (
-        "Read the user's last message in a family budgeting app, with the turns before it "
-        "(a bare number answers the question just asked), and say what it wants. "
-        f"Today is {context.today}. Answer with every intent that applies:\n"
-        f"- {Intent.ASK.value}: to know something about their money, receipts, bills, "
-        "incomes, goals or accounts, or what the app knows about them\n"
-        f"- {Intent.ADD.value}: to record something new — an expense, an income, a bill, a "
-        "goal, a budget, an account, a transfer, money put on, taken off or moved between cards\n"
-        f"- {Intent.CHANGE.value}: to change something already there — an amount, a day, a "
-        "name, the budget, a card's balance to what the bank says\n"
-        f"- {Intent.REMOVE.value}: to stop, end, cancel or remove something\n"
-        "None of them for a greeting, thanks or small talk. "
-        'Reply as JSON: {"intents": ["ask", ...]}.'
+        + (f"\nWhat the user has now:\n{context.known}\n" if context.known else "")
     )

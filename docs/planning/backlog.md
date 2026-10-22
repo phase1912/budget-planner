@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-25 epics · 184 features · 364 tasks written so far.
+25 epics · 185 features · 371 tasks written so far.
 
 22 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -30,7 +30,7 @@
 | E18 | Subscriptions and Payments | — | 6 | yes | 2 | Out of scope |
 | E19 | Advertising | — | 4 | yes | 2 | Diploma |
 | E20 | Trips | — | 5 | yes | 2 | Diploma |
-| E21 | Voice and Chat Assistant | — | 12 | yes | 2 | Diploma |
+| E21 | Voice and Chat Assistant | — | 13 | yes | 2 | Diploma |
 | E22 | Android App | — | 3 | yes | 2 | Diploma |
 | E23 | Improvements | — | 21 | no | 2 | Diploma |
 | E24 | Bugfixes | — | 1 | no | 2 | Diploma |
@@ -1725,11 +1725,12 @@ A chat screen, reachable from the navigation on every screen, where the user wri
 
 *Requirements: —* · *Blocked by: F21.1*
 
-A microphone button beside the text field: the user speaks in Polish, Ukrainian or English and the browser's own recognition turns it into text — free, and no sound ever reaches the service (ADR-0025, decided over sending audio to the model, which would cost each message). The words appear as the user's message before the answer; saying "approve" saves the card waiting for it. Where a browser cannot recognise speech, no microphone is shown. Hidden for now (2026-10-20): the browser's recognition proved too poor in use; the code stays in `@/shared/speech` and the microphone returns once a free recogniser is good enough.
+A microphone button beside the text field: the user speaks in Ukrainian, Polish, English or Russian and the words appear as their message before the answer; saying "approve" saves the card waiting for it. The browser's own recognition (F21.2.1) proved too poor in use and was hidden on 2026-10-20; the speech is now recognised by Google Cloud Speech-to-Text (Chirp) behind our own port (F21.2.2, ADR-0031): the recording goes to the service, is recognised and is not kept. It costs about 0.016 USD a minute after the free minutes, bounded per user.
 
 **Demonstrated by:** Tap the microphone and say "wczoraj taxi 45 złotych": the message appears, then the assistant's card.
 
 - **F21.2.1** Speech to text in the browser — The Web Speech API in the user's language, words shown as they are heard and sent when the phrase ends, "approve" in three languages saving the waiting card, the microphone hidden where unsupported, and the privacy policy saying the browser's maker may recognise the sound. Checked at 375, 768 and 1280 px.
+- **F21.2.2** Speech recognised by Google Cloud — The microphone records in the browser (MediaRecorder, at most 60 seconds, a second tap or silence ends it) and sends the sound to POST /api/v1/assistant/speech; a SpeechPort with a Speech-to-Text v2 adapter (Chirp 3, the language told by the sound) returns the text, which is put in the field to send or correct. Nothing of the sound is stored; seconds recognised per user per day bounded (rate limit), counted in the AI allowance once F21.9 lands. A stub port for tests and local work without Google credentials. Terraform enables the API and grants the runtime account the right to use it. The privacy policy says the recording goes to Google Cloud for recognition and is not kept; ADR-0031 replaces ADR-0025's speech bullet. Checked at 375, 768 and 1280 px.
 
 ### F21.3 — Expenses by voice
 
@@ -1789,11 +1790,12 @@ Anything the user can create or change on a screen can be asked for in the chat 
 
 *Requirements: —* · *Blocked by: F21.2, F21.7*
 
-"I was at Biedronka today: milk 4, bread 5, apples 7.50" becomes a receipt card with its lines and categories; Approve stores it as a receipt of that shop with our own id, no photo, marked as told. One photo receipt can also be sent into the chat.
+"I was at Biedronka today: milk 4, bread 5, apples 7.50" becomes a receipt card with its lines and categories; Approve stores it as a receipt of that shop with our own id, no photo, marked as told. Photos and PDFs can also be attached in the chat (F21.8.2): receipts are read as from the ＋ screen and come back in the conversation.
 
 **Demonstrated by:** Dictate a shopping trip, fix one price on the card, approve: it is in Spending and its products in Products like any receipt.
 
-- **F21.8.1** Told receipts and a photo in the chat — A receipt channel "told" with lines from speech or text, categorised as read ones are; a single photo sent in the chat goes through the upload pipeline and comes back as a card. Checked at 375, 768 and 1280 px.
+- **F21.8.1** Told receipts — A receipt channel "told" with lines from speech or text, categorised as read ones are, proposed as a card with its lines and saved on approval. Checked at 375, 768 and 1280 px.
+- **F21.8.2** Files attached in the chat — A paperclip beside the text field takes photos and PDFs (the same types and limits as the ＋ screen, several at once); they are sent through the upload pipeline as receipts, counted in the receipt quota, and the conversation shows a card for the reading that turns into a link to each receipt read, or says why one could not be read. The assistant is told what was attached so it can answer about it. Cross-user test (N2). Checked at 375, 768 and 1280 px.
 
 ### F21.9 — Two AI limits a month — receipts, and the assistant
 
@@ -1839,6 +1841,20 @@ An admin does in the chat what the admin console does (F18.6) — find a user by
 **Demonstrated by:** As an admin, say "give anna@example.com the paid plan until December": a card; approve; the grant is on her account and in the admin log.
 
 - **F21.12.1** Admin tools behind the admin role — Read and write tools over the admin service, registered only for admins with a second factor (super-admin tools only for super admins); cards for each action, recorded in the admin log as from the console; tests that a user who is not an admin is never offered them and that no admin tool returns receipts, incomes or balances (N2). Checked at 375, 768 and 1280 px.
+
+### F21.13 — An assistant that finds what the user means
+
+*Requirements: N2* · *Blocked by: F21.10*
+
+Measured on 2026-10-22 against the real model and tools: "update the balance on my card for expenses", "on the first card", "the one I pay for shopping with" all ended in "name the card", turn after turn. The model was given cards without the role that tells which one pays for purchases, was told to pass the user's own words to the tools, and the tools matched names only; it read through a JSON protocol of our own instead of the provider's function calling, behind a classifier that could withhold tools. Now the assistant knows what the user has before it answers — every card with its role, kind, balance and place in the list, the bills, incomes, goals, trips and categories — calls the provider's own tools in a loop until it has what it needs, names things by their real names, and when more than one thing fits asks with a card of options to tap rather than a question to type. How well it does is measured, not felt: a set of dialogs scored before and after.
+
+**Demonstrated by:** Say "update the balance on my card for expenses, the bank says 3 500": the card for the purchase card appears at once; say "update the balance on a card": a card with the three cards to tap.
+
+- **F21.13.1** The provider's own tool calling, in a loop — The graph calls the model with every tool as a function (LiteLLM tools, which Gemini and OpenAI-compatible local models both take), runs the reads, checks each write and records it as a proposed card, answers the model with each result, and loops until it answers in words, at most eight rounds; the intent classifier and the second look go. A refused write is answered with why and what there is, never dropped. ADR-0032 supersedes ADR-0025's structured-output calling and ADR-0028's classify node; domain-model and overview updated.
+- **F21.13.2** What the user has, in every turn — A compact summary of the user's things in the system prompt — cards with kind, balance, which pays for purchases and their order as the Accounts screen lists them; regular incomes, bills, goals, trips and categories by name — so the model resolves "the card for expenses", "the first one", "my savings" itself and passes real names; finding by name also understands the purchase card and a card's place in the list, as a safety net. Tests that only the caller's things appear (N2).
+- **F21.13.3** A question with options to tap — An `ask` tool: when more than one thing fits or something is missing, the assistant asks with a card of options; tapping one sends it as the user's answer and the conversation goes on. A refused write lists the candidates for it. Checked at 375, 768 and 1280 px.
+- **F21.13.4** The assistant measured — scripts/evaluate_assistant.py: a seeded user and about thirty dialogs in Ukrainian, Polish, English and Russian — balances, cards by role and by place, bills, budget, goals, questions — each with the tool and arguments expected or a question with options; run against the configured model, scored per dialog and overall with time and tokens, the baseline and the result written in the ADR.
+- **F21.13.5** The assistant behind the middle button — The phone's middle button and the side menu's main button open the assistant, with an icon that says it is one; adding a receipt by hand stays one tap away — a button in the assistant's header, the paperclip, and a plain item in the side menu — and the Add screen keeps everything it has. Checked at 375, 768 and 1280 px.
 
 ---
 

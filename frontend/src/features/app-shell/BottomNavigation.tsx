@@ -1,17 +1,18 @@
-import { Plus } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import { TABS, isActive, type Tab } from "./tabs";
 
 /**
- * The phone's navigation, a bar along the bottom (F23.2): Home and Spending, the ＋ that
- * adds a receipt or an income in the middle, Products and Plan. Tablets and desktops have
- * the same places in the side menu instead.
+ * The phone's navigation, a bar along the bottom (F23.2): Home and Spending, the assistant
+ * in the middle (F21.13.5) — where a receipt is said, photographed or added by hand —
+ * Products and Plan. Tablets and desktops have the same places in the side menu instead.
  */
 export function BottomNavigation() {
   const { pathname } = useLocation();
   const { t } = useTranslation();
+  const talking = pathname.startsWith("/assistant");
   const tab = (item: Tab) => {
     const active = isActive(item, pathname);
     const Icon = item.icon;
@@ -37,11 +38,12 @@ export function BottomNavigation() {
       <div className="flex items-center gap-1 px-2 pt-2 pb-3.5">
         {TABS.slice(0, 2).map(tab)}
         <Link
-          to="/upload"
-          aria-label={t("nav.add")}
+          to="/assistant"
+          aria-label={t("nav.assistant")}
+          aria-current={talking ? "page" : undefined}
           className="-mt-7 flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] bg-primary text-primary-foreground shadow-primary"
         >
-          <Plus size={26} aria-hidden="true" />
+          <Sparkles size={26} aria-hidden="true" />
         </Link>
         {TABS.slice(2).map(tab)}
       </div>
