@@ -32,14 +32,13 @@ describe("DailyBars", () => {
   beforeEach(() => {
     localStorage.clear();
     rootStore = new RootStore();
-    vi.spyOn(apiClient, "GET").mockImplementation((
-      _path: string,
-      init: { params: { query: { start: string } } },
-    ) =>
-      Promise.resolve({
-        data: { items: init.params.query.start === "2026-10-01" ? [lidl] : [] },
-        response: new Response(),
-      }));
+    vi.spyOn(apiClient, "GET").mockImplementation(
+      (_path: string, init: { params: { query: { start: string } } }) =>
+        Promise.resolve({
+          data: { items: init.params.query.start === "2026-10-01" ? [lidl] : [] },
+          response: new Response(),
+        }),
+    );
   });
 
   const renderChart = () =>
