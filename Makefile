@@ -8,7 +8,7 @@
 # backend/.env.example. That means it works whether the stack was started
 # with `make up` or the app processes are running on the host instead.
 #
-# `seed` recreates the demo account (demo@budget-agent.local / demo-budget-agent)
+# `seed` recreates the demo account (demo@example.com / demo-budget-agent)
 # from real receipts in backend/scripts/seed_data/, dated so the newest falls in
 # the current month (F5.8). Run `migrate` first. `seed-export EMAIL=...`
 # rewrites that data from an account's stored receipts.

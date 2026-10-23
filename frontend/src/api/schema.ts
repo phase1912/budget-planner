@@ -678,6 +678,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/household/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Household Receipts
+         * @description The family's receipts between two dates, both included, newest first (F23.22.3).
+         *
+         *     Every member's shared receipts and the caller's own private ones; another member's
+         *     private receipt is never listed (ADR-0017). 404 outside a household.
+         */
+        get: operations["get_household_receipts_api_v1_household_receipts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/household/lines": {
         parameters: {
             query?: never;
@@ -4460,6 +4483,31 @@ export interface components {
             invite_code?: string | null;
         };
         /**
+         * HouseholdReceiptResponse
+         * @description A receipt on the family's chart, with whose it is (F23.22.3, ADR-0017).
+         */
+        HouseholdReceiptResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Merchant Name */
+            merchant_name: string | null;
+            /** Total */
+            total: string;
+            /**
+             * Purchased At
+             * Format: date-time
+             */
+            purchased_at: string;
+        };
+        /**
          * HouseholdStatisticsResponse
          * @description The household's spend by category for a period, private spend as one figure.
          */
@@ -8173,6 +8221,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HouseholdDailyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_household_receipts_api_v1_household_receipts_get: {
+        parameters: {
+            query: {
+                /** @description First day of the period, included */
+                start: string;
+                /** @description Last day of the period, included */
+                end: string;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdReceiptResponse"][];
                 };
             };
             /** @description Validation Error */

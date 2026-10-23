@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -68,20 +68,23 @@ export const HomeHeader = observer(function HomeHeader({ isComplete }: { isCompl
           </span>
         </nav>
       </div>
-      <Link
-        to="/assistant"
-        aria-label={common("nav.assistant")}
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-pill control-fill text-primary md:hidden"
-      >
-        <MessageCircle size={20} aria-hidden="true" />
-      </Link>
-      <Link
-        to="/settings"
-        aria-label={t("hero.settings")}
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-pill bg-tone-primary-bg text-md font-extrabold text-primary md:hidden"
-      >
-        {initials}
-      </Link>
+      {/* The assistant sits by the avatar, as it sits by the brand in the side menu. */}
+      <div className="flex shrink-0 items-center gap-2 md:hidden">
+        <Link
+          to="/assistant"
+          aria-label={common("nav.assistant")}
+          className="flex h-11 w-11 items-center justify-center rounded-pill bg-tone-primary-bg text-primary"
+        >
+          <Sparkles size={20} aria-hidden="true" />
+        </Link>
+        <Link
+          to="/settings"
+          aria-label={t("hero.settings")}
+          className="flex h-11 w-11 items-center justify-center rounded-pill bg-tone-primary-bg text-md font-extrabold text-primary"
+        >
+          {initials}
+        </Link>
+      </div>
     </header>
   );
 });

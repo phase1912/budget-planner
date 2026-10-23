@@ -58,7 +58,9 @@
       "money_in": "Wpływ",
       "money_out": "Obciążenie",
       "move": "Przelew między kartami",
-      "product_group": "Grupa produktów"
+      "product_group": "Grupa produktów",
+      "category": "Nowa kategoria",
+      "category_move": "Przenieś do kategorii"
     },
     "fields": {
       "name": "Nazwa",
@@ -78,7 +80,8 @@
       "source": "Skąd",
       "received_on": "Data",
       "moved_on": "Data",
-      "products": "Produkty"
+      "products": "Produkty",
+      "category": "Kategoria"
     },
     "options": {
       "spending_ceiling": "Wydawać najwyżej miesięcznie",

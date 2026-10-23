@@ -288,6 +288,41 @@ async def test_the_daily_view_is_not_found_outside_a_household(db_session: Async
     assert response.status_code == 404
 
 
+RECEIPTS = "/api/v1/household/receipts?start=2026-10-02&end=2026-10-02"
+
+
+@pytest.mark.asyncio
+async def test_a_day_lists_the_familys_receipts_with_whose_each_is(
+    db_session: AsyncSession,
+) -> None:
+    """F23.22.3: the day tapped on the family's chart lists both members' receipts."""
+    me, anna = await _couple()
+    await _spent(me, "30.00", day=2)
+    await _spent(anna, "12.50", day=2)
+    await _spent(anna, "8.00", day=5)
+
+    body = (await _call(db_session, me, "GET", RECEIPTS)).json()
+
+    assert sorted((r["user_id"], Decimal(r["total"])) for r in body) == sorted(
+        [(str(me.id), Decimal("30.00")), (str(anna.id), Decimal("12.50"))]
+    )
+
+
+@pytest.mark.asyncio
+async def test_another_members_private_receipt_is_never_listed(db_session: AsyncSession) -> None:
+    """ADR-0017, N2: only the owner sees a private receipt; a stranger sees nothing."""
+    me, anna = await _couple()
+    await _spent(me, "15.00", day=2, private=True)
+    await _spent(anna, "40.00", day=2, private=True)
+    stranger = await UserFactory.create_async()
+
+    mine = (await _call(db_session, me, "GET", RECEIPTS)).json()
+    outside = await _call(db_session, stranger, "GET", RECEIPTS)
+
+    assert [(r["user_id"], Decimal(r["total"])) for r in mine] == [(str(me.id), Decimal("15.00"))]
+    assert outside.status_code == 404
+
+
 # --- the family's month on Home (F12.9) -------------------------------------------
 
 

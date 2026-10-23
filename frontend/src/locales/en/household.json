@@ -71,6 +71,10 @@
     "title": "By day",
     "you": "You",
     "bar": "{{date}}: {{amounts}} {{currency}}",
-    "undatedPrivate": "Others' private receipts, {{amount}} {{currency}}, count in the total but are not shown by day."
+    "undatedPrivate": "Others' private receipts, {{amount}} {{currency}}, count in the total but are not shown by day.",
+    "receiptsOf": "Receipts of {{date}}",
+    "loading": "Loading…",
+    "noReceipts": "No receipts that day.",
+    "unknownShop": "Unknown shop"
   }
 }

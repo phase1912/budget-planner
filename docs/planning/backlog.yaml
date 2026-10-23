@@ -1231,6 +1231,29 @@ epics:
             unplanned, added at the owner's request - toasts get an opaque background (the
             header showed through) and the success toast its missing colours.
 
+      - key: F5.9
+        title: A new category from where one is chosen
+        groomed: true
+        labels: [frontend]
+        requirements: [C6]
+        depends_on: [F5.6]
+        intent: >
+          Adding an expense with no fitting category meant leaving the form for Categories and
+          starting again. Where a category is chosen, the last choice adds one: its name is asked
+          in place, the category is made as on the Categories screen and is chosen at once.
+        demo: >
+          Add an expense "YouTube" by hand, pick "＋ New category", type "Subscriptions": the
+          expense is saved under it, and Categories lists it.
+        tasks:
+          - key: F5.9.1
+            title: A "＋ New category" in the category choice
+            labels: [frontend]
+            detail: >
+              The manual expense, the receipt edit and the line item's category picker end their
+              list with "＋ New category", which asks the name in place (the same rules and errors
+              as the Categories screen — a name already used says so) and selects the new one.
+              Three languages; checked at 375, 768 and 1280 px.
+
   # F5.7 "Categorization review interface" was retired here. The review queue now lands with
   # F5.3, which is the feature that flags items into it, and inline editing with F5.4, which
   # is the feature that changes them. Neither is worth building without the other half.
@@ -5120,6 +5143,46 @@ epics:
               languages; tests that a card carries only the caller's data (N2). Checked at
               375, 768 and 1280 px.
 
+      - key: F21.15
+        title: Receipts and categories by chat
+        labels: [backend, frontend, ai]
+        requirements: [C4, C6, N2]
+        depends_on: [F21.13, F5.6]
+        intent: >
+          "Show my last receipt", then "what category is it?", then "make a Subscriptions
+          category and put it there" broke at the second step: the receipts tool gave no
+          categories and nothing could change one. The assistant reads a receipt with its lines
+          and their categories, refers back to "that receipt" from earlier in the conversation,
+          and proposes a new category and moving a receipt or a line into one — each on a card
+          the user approves, as every change is (ADR-0025).
+        demo: >
+          Ask "my last receipt": YouTube, 60. "Which category?": Other. "Create Subscriptions
+          and move it there": two cards, the category and the move; approve both: Spending
+          shows 60 under Subscriptions.
+        tasks:
+          - key: F21.15.1
+            title: A receipt with its lines and categories
+            labels: [backend, ai]
+            detail: >
+              The receipts tool gives each receipt a reference the next turn can use, and a
+              receipt tool gives one receipt's lines with their categories; a categories tool
+              lists the user's categories. Only the caller's own and their family's shared
+              receipts (N2).
+          - key: F21.15.2
+            title: A new category and moving into one, on cards
+            labels: [backend, frontend, ai]
+            detail: >
+              Cards to add a category (the Categories screen's rules) and to move a whole receipt,
+              or one of its lines, into a category — new or existing — as a correction the
+              categoriser learns from (C4). A move into a category proposed in the same turn
+              waits for that card. Three languages; checked at 375, 768 and 1280 px.
+          - key: F21.15.3
+            title: The conversation that broke, kept as a test
+            labels: [backend, ai]
+            detail: >
+              The three-step conversation above, and a few like it, added to the assistant's
+              evaluation dialogs; they pass on the production model before this ships.
+
   - key: E22
     title: Android App
     br: []
@@ -5582,7 +5645,8 @@ epics:
 
       - key: F23.22
         title: A day's receipts from the chart, and the chart drawn three ways
-        labels: [frontend]
+        groomed: true
+        labels: [backend, frontend]
         requirements: []
         depends_on: [F23.4]
         intent: >
@@ -5613,6 +5677,15 @@ epics:
               by its share of the biggest). Every view taps to the same day and its receipts. The
               choice is kept in this browser only, as a convenience the privacy check knows of.
               Checked at 375, 768 and 1280 px.
+          - key: F23.22.3
+            title: The family's chart the same way
+            labels: [backend, frontend]
+            detail: >
+              The family's day-by-day chart (F12.5) gets the same three views and tap: the
+              tapped day lists the family's receipts of that day, each saying whose it is
+              (the viewer's, or the member's first name), from the shared receipts only — a
+              member's private spending stays a sum without a day (ADR-0017). A test that a
+              private receipt never appears there (N2). Checked at 375, 768 and 1280 px.
 
   - key: E24
     title: Bugfixes
@@ -5633,5 +5706,17 @@ epics:
           Product search and selection, product names carrying a date, a saved selection
           offering Save again, the receipts page's default period and order, and endless
           loading on a phone after the server's cold start (PR #519).
+        demo: >
+          No screen of its own — each fix is seen where the bug was.
+
+      - key: F24.2
+        title: Fixes of 23 October 2026
+        labels: [frontend]
+        requirements: []
+        depends_on: []
+        intent: >
+          On a phone the bottom bar drifted with the scroll after typing in a field: Safari
+          zooms into any field under 16px and stays zoomed. Home's chat button sat alone in the
+          middle of the header instead of beside the avatar.
         demo: >
           No screen of its own — each fix is seen where the bug was.

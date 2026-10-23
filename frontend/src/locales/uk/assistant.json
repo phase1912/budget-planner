@@ -54,7 +54,9 @@
       "money_in": "Надходження",
       "money_out": "Списання",
       "move": "Переказ між картками",
-      "product_group": "Група товарів"
+      "product_group": "Група товарів",
+      "category": "Нова категорія",
+      "category_move": "Перенести в категорію"
     },
     "fields": {
       "name": "Назва",
@@ -74,7 +76,8 @@
       "source": "Звідки",
       "received_on": "Дата",
       "moved_on": "Дата",
-      "products": "Товари"
+      "products": "Товари",
+      "category": "Категорія"
     },
     "options": {
       "spending_ceiling": "Витрачати не більше за місяць",

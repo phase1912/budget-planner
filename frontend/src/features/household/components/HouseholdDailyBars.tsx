@@ -2,20 +2,26 @@ import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
-import { dateFormat, numberFormat } from "@/i18n/format";
+import { dateFormat, formatAmount, numberFormat } from "@/i18n/format";
 import { useStores } from "@/stores/StoreContext";
+import { asDate } from "@/features/statistics/chartDay";
+import {
+  Calendar,
+  ChartViewSwitch,
+  DayRows,
+  type DayProps,
+} from "@/features/statistics/components/DayChartViews";
 import { memberColours } from "../memberColours";
 
 const WHOLE = numberFormat({ maximumFractionDigits: 0 });
 const DAY = dateFormat({ day: "numeric", month: "short" });
 const LONG_DAY = dateFormat({ day: "numeric", month: "long" });
 
-const asDate = (day: string) => new Date(`${day}T00:00:00`);
-
 /**
  * The household's spending day by day (F12.5, F23.4): a bar a day, stacked by member,
- * the viewer at the bottom in the primary colour. Tapping a bar names each member's share
- * of that day. The other members' private spending has no day (ADR-0017), so it is
+ * the viewer at the bottom in the primary colour, or the personal chart's rows or calendar
+ * (F23.22.3). Tapping a day names each member's share and lists the family's receipts of
+ * it, whose each is. The other members' private spending has no day (ADR-0017), so it is
  * named beneath as one sum rather than left out silently.
  */
 export const HouseholdDailyBars = observer(function HouseholdDailyBars({
@@ -28,7 +34,7 @@ export const HouseholdDailyBars = observer(function HouseholdDailyBars({
   /** Inside another card (the family Home): no card or title of its own. */
   bare?: boolean;
 }) {
-  const { householdStore, authStore } = useStores();
+  const { householdStore, authStore, statisticsStore, receiptStore } = useStores();
   const { t } = useTranslation("household");
   const [chosen, setChosen] = useState<string | null>(null);
   const daily = householdStore.daily;
@@ -64,6 +70,32 @@ export const HouseholdDailyBars = observer(function HouseholdDailyBars({
       total: Number(d.members.find((x) => x.user_id === m.user_id)?.total ?? 0),
     }));
 
+  const label = (d: (typeof daily.days)[number]) =>
+    t("daily.bar", {
+      date: LONG_DAY.format(asDate(d.day)),
+      amounts: ordered(d)
+        .map((m) => `${nameOf(m.id)} ${WHOLE.format(m.total)}`)
+        .join(", "),
+      currency,
+    });
+  const choose = (day: string) => {
+    setChosen(day);
+    void householdStore.openDay(day);
+  };
+  const totals = daily.days.map((d) => ({ day: d.day, total: String(dayTotal(d)) }));
+  const dayProps = (d: { day: string; total: string }): DayProps => {
+    const full = daily.days.find((x) => x.day === d.day) ?? daily.days[0];
+    return {
+      day: d,
+      share: peak > 0 ? Number(d.total) / peak : 0,
+      isSelected: d.day === selected?.day,
+      label: full ? label(full) : d.day,
+      onChoose: choose,
+    };
+  };
+  const view = statisticsStore.chartView;
+  const tapped = householdStore.day;
+
   return (
     <section
       aria-label={t("daily.title")}
@@ -84,49 +116,54 @@ export const HouseholdDailyBars = observer(function HouseholdDailyBars({
           </span>
         )}
       </div>
-      <div className="flex h-30 items-end gap-0.5 md:gap-1">
-        {daily.days.map((d) => {
-          const total = dayTotal(d);
-          const isSelected = d.day === selected?.day;
-          return (
-            <button
-              key={d.day}
-              type="button"
-              aria-pressed={isSelected}
-              aria-label={t("daily.bar", {
-                date: LONG_DAY.format(asDate(d.day)),
-                amounts: ordered(d)
-                  .map((m) => `${nameOf(m.id)} ${WHOLE.format(m.total)}`)
-                  .join(", "),
-                currency,
-              })}
-              onClick={() => {
-                setChosen(d.day);
-              }}
-              className="flex h-full min-w-0 flex-1 items-end"
-            >
-              <span
-                className={`flex w-full flex-col-reverse overflow-hidden rounded-t-[5px] rounded-b-[2px] ${
-                  total === 0 ? "bg-tone-primary-bg" : ""
-                } ${isSelected || chosen === null ? "" : "opacity-60"}`}
-                style={{ height: `${String(Math.max(4, peak > 0 ? (total / peak) * 100 : 0))}%` }}
+      <ChartViewSwitch />
+      {view === "columns" && (
+        <div className="flex h-30 items-end gap-0.5 md:gap-1">
+          {daily.days.map((d) => {
+            const total = dayTotal(d);
+            const isSelected = d.day === selected?.day;
+            return (
+              <button
+                key={d.day}
+                type="button"
+                aria-pressed={isSelected}
+                aria-label={label(d)}
+                onClick={() => {
+                  choose(d.day);
+                }}
+                className="flex h-full min-w-0 flex-1 items-end"
               >
-                {total > 0 &&
-                  ordered(d).map((m) => (
-                    <span
-                      key={m.id}
-                      className="block w-full"
-                      style={{
-                        height: `${String((m.total / total) * 100)}%`,
-                        background: colourOf.get(m.id),
-                      }}
-                    />
-                  ))}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                <span
+                  className={`flex w-full flex-col-reverse overflow-hidden rounded-t-[5px] rounded-b-[2px] ${
+                    total === 0 ? "bg-tone-primary-bg" : ""
+                  } ${isSelected || chosen === null ? "" : "opacity-60"}`}
+                  style={{ height: `${String(Math.max(4, peak > 0 ? (total / peak) * 100 : 0))}%` }}
+                >
+                  {total > 0 &&
+                    ordered(d).map((m) => (
+                      <span
+                        key={m.id}
+                        className="block w-full"
+                        style={{
+                          height: `${String((m.total / total) * 100)}%`,
+                          background: colourOf.get(m.id),
+                        }}
+                      />
+                    ))}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {view === "days" && (
+        <DayRows
+          days={totals.filter((d) => d.day <= today)}
+          currency={currency}
+          dayProps={dayProps}
+        />
+      )}
+      {view === "calendar" && <Calendar days={totals} dayProps={dayProps} />}
       <ul className="m-0 flex list-none flex-wrap gap-x-4 gap-y-1.5 p-0">
         {members.map((m) => (
           <li key={m.user_id} className="flex items-center gap-2 text-md">
@@ -142,6 +179,50 @@ export const HouseholdDailyBars = observer(function HouseholdDailyBars({
           </li>
         ))}
       </ul>
+      {tapped && (
+        <div className="flex flex-col gap-2" aria-live="polite">
+          <h3 className="m-0 text-lg font-bold">
+            {t("daily.receiptsOf", { date: LONG_DAY.format(asDate(tapped)) })}
+          </h3>
+          {householdStore.isLoadingDay && householdStore.dayReceipts.length === 0 ? (
+            <p className="m-0 text-md text-muted-foreground">{t("daily.loading")}</p>
+          ) : householdStore.dayReceipts.length === 0 ? (
+            <p className="m-0 text-md text-muted-foreground">{t("daily.noReceipts")}</p>
+          ) : (
+            <ul className="m-0 flex list-none flex-col divide-y divide-border overflow-hidden rounded-control control-fill p-0">
+              {householdStore.dayReceipts.map((r) => {
+                const row = (
+                  <>
+                    <span
+                      aria-hidden="true"
+                      className="h-2.5 w-2.5 shrink-0 rounded-pill"
+                      style={{ background: colourOf.get(r.user_id) }}
+                    />
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-lg font-semibold">
+                        {r.merchant_name ?? t("daily.unknownShop")}
+                      </span>
+                      <span className="text-md text-muted-foreground">{nameOf(r.user_id)}</span>
+                    </span>
+                    <span className="text-lg font-bold tabular-nums">{formatAmount(r.total)}</span>
+                  </>
+                );
+                return (
+                  <li key={r.id}>
+                    <button
+                      type="button"
+                      onClick={() => void receiptStore.fetchReceiptDetail(r.id)}
+                      className="flex min-h-14 w-full items-center gap-3 px-3.5 py-2 text-left"
+                    >
+                      {row}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
       {Number(daily.undated_private) > 0 && (
         <p className="m-0 text-md text-muted-foreground tabular-nums">
           {t("daily.undatedPrivate", {

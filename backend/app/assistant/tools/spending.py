@@ -177,6 +177,10 @@ class SpendingByCategory(Reader):
         return Answer(json.dumps(figures), card)
 
 
+REFERRED = 5
+"""How many of the receipts shown the conversation keeps by id for the next turn."""
+
+
 class Receipts(Reader):
     """Receipts from a shop or holding an item over the period, and what they came to.
 
@@ -185,7 +189,10 @@ class Receipts(Reader):
     """
 
     name = "receipts"
-    description = "Receipts from a shop or holding an item over a period, and what they came to."
+    description = (
+        "The user's latest receipts, newest first — or those from a shop or holding an item — "
+        "over a period, what they came to, and each one's `id` for the other receipt tools."
+    )
     args = ReceiptArgs
 
     async def read(self, ctx: ToolContext, args: ReceiptArgs) -> Answer:
@@ -202,6 +209,7 @@ class Receipts(Reader):
             "receipts": count,
             "latest": [
                 {
+                    "id": str(r.id),
                     "date": r.transaction_date.date().isoformat() if r.transaction_date else None,
                     "shop": r.merchant_name,
                     "total": str(r.total_amount) if r.total_amount is not None else None,
@@ -219,6 +227,11 @@ class Receipts(Reader):
             "to": _link(
                 "/receipts", start=period.start.isoformat(), end=period.end.isoformat(), q=search
             ),
+            # Kept in the conversation, so "that receipt" is found on the next turn (F21.15).
+            "refs": [
+                {"id": r["id"], "shop": r["shop"], "date": r["date"], "total": r["total"]}
+                for r in figures["latest"][:REFERRED]
+            ],
         }
         return Answer(json.dumps(figures), card)
 

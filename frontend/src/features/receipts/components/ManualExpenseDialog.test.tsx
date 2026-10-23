@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Trip } from "@/stores/TripsStore";
@@ -27,6 +27,7 @@ const stores = vi.hoisted(() => ({
     ],
     customCategories: [],
     ensureCategories: vi.fn(),
+    addCategory: vi.fn(),
   },
   tripsStore: { trips: [] as unknown[], load: vi.fn() },
   authStore: { user: { currency: "PLN" } },
@@ -105,6 +106,30 @@ describe("ManualExpenseDialog (F20.5)", () => {
 
     expect(stores.receiptStore.addManualExpense).toHaveBeenCalledWith(
       expect.objectContaining({ trip_chosen: true, trip_id: "t1" }),
+    );
+  });
+
+  it("makes a new category where it is chosen, and files the expense under it (F5.9)", async () => {
+    stores.categoriesStore.addCategory.mockResolvedValue({ id: "c-subs" });
+    render(<ManualExpenseDialog onClose={vi.fn()} />);
+    fill("2026-10-03");
+
+    fireEvent.change(screen.getByLabelText("Category"), {
+      target: { value: "__new_category__" },
+    });
+    expect(screen.getByRole("button", { name: "Add expense" })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("New category"), {
+      target: { value: "Subscriptions" },
+    });
+    fireEvent.keyDown(screen.getByLabelText("New category"), { key: "Enter" });
+    await waitFor(() => {
+      expect(screen.queryByLabelText("New category")).not.toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add expense" }));
+
+    expect(stores.categoriesStore.addCategory).toHaveBeenCalledWith("Subscriptions");
+    expect(stores.receiptStore.addManualExpense).toHaveBeenCalledWith(
+      expect.objectContaining({ category_id: "c-subs" }),
     );
   });
 });

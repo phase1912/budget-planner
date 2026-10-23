@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Seed a demo user with real, categorised receipts (F5.8).
 
-`load` (the default) recreates `demo@budget-agent.local` from the fixture in
+`load` (the default) recreates `demo@example.com` from the fixture in
 `scripts/seed_data/demo_receipts.json`, so the monthly-budget and statistics
 epics (E6, E7) can be exercised without photographing or parsing anything.
 `export` writes that fixture from a real account's stored receipts, which is
@@ -41,7 +41,8 @@ from app.models.upload_job import UploadJob
 from app.models.user import User
 
 FIXTURE = Path(__file__).resolve().parent / "seed_data" / "demo_receipts.json"
-DEMO_EMAIL = "demo@budget-agent.local"
+# Signing in refuses special-use domains such as .local, so the demo could never sign in.
+DEMO_EMAIL = "demo@example.com"
 DEMO_PASSWORD = "demo-budget-agent"
 """Local development only: the account exists solely where someone ran `make seed`."""
 

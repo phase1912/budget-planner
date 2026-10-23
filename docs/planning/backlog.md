@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-25 epics · 186 features · 374 tasks written so far.
+25 epics · 190 features · 381 tasks written so far.
 
 22 epics are in the diploma project's scope; 3 are planned but out of it.
 
@@ -14,7 +14,7 @@
 | E2 | Receipt Ingestion & Storage | BR-1 | 5 | yes | 1 | Diploma |
 | E3 | Receipt Parsing & Extraction | BR-1 | 8 | no | 1 | Diploma |
 | E4 | Multi-Photo Position Matching | BR-2 | 8 | yes | 1 | Diploma |
-| E5 | Spend Categorization | BR-3 | 7 | no | 1 | Diploma |
+| E5 | Spend Categorization | BR-3 | 8 | no | 1 | Diploma |
 | E6 | Monthly Budget Calculation | BR-4 | 7 | no | 1 | Diploma |
 | E7 | Statistics, Comparison & Export | BR-5 | 6 | no | 1 | Diploma |
 | E8 | Goals & AI Optimization Advice | BR-6 | 10 | yes | 1 | Diploma |
@@ -30,10 +30,10 @@
 | E18 | Subscriptions and Payments | — | 6 | yes | 2 | Out of scope |
 | E19 | Advertising | — | 4 | yes | 2 | Diploma |
 | E20 | Trips | — | 5 | yes | 2 | Diploma |
-| E21 | Voice and Chat Assistant | — | 14 | yes | 2 | Diploma |
+| E21 | Voice and Chat Assistant | — | 15 | yes | 2 | Diploma |
 | E22 | Android App | — | 3 | yes | 2 | Diploma |
-| E23 | Improvements | — | 21 | no | 2 | Diploma |
-| E24 | Bugfixes | — | 1 | no | 2 | Diploma |
+| E23 | Improvements | — | 22 | no | 2 | Diploma |
+| E24 | Bugfixes | — | 2 | no | 2 | Diploma |
 
 ---
 
@@ -502,6 +502,16 @@ Users can create their own categories, immediately available for both manual and
 A demo user with a handful of categorised receipts spanning two months, plus the `seed` task-runner target that invokes it — enough to exercise the monthly-budget and statistics epics without uploading photos. Lands here, at the end of E5, because this is the first point where every entity it writes exists: User (F1.1), receipt and line items (F3.5) and categories (F5.1). It was originally planned in E0's local development environment, where none of those had been built yet.
 
 **Demonstrated by:** Run `seed`, sign in as the demo user, and find two months of categorised receipts already there — which is what makes E6 and E7 workable without photographing anything.
+
+### F5.9 — A new category from where one is chosen
+
+*Requirements: C6* · *Blocked by: F5.6*
+
+Adding an expense with no fitting category meant leaving the form for Categories and starting again. Where a category is chosen, the last choice adds one: its name is asked in place, the category is made as on the Categories screen and is chosen at once.
+
+**Demonstrated by:** Add an expense "YouTube" by hand, pick "＋ New category", type "Subscriptions": the expense is saved under it, and Categories lists it.
+
+- **F5.9.1** A "＋ New category" in the category choice — The manual expense, the receipt edit and the line item's category picker end their list with "＋ New category", which asks the name in place (the same rules and errors as the Categories screen — a name already used says so) and selects the new one. Three languages; checked at 375, 768 and 1280 px.
 
 ---
 
@@ -1868,6 +1878,18 @@ An answer about money shows the thing itself, drawn the way its screen draws it,
 
 - **F21.14.1** Cards, month, goals and products as answer cards — The accounts, overview/month, goals and products read tools leave an answer card with what they found — screen "accounts", "month", "goals", "products" — drawn by the client from shared pieces of the screens (the account card, the month ring, the goal meter, a product row), each linking to its screen; three languages; tests that a card carries only the caller's data (N2). Checked at 375, 768 and 1280 px.
 
+### F21.15 — Receipts and categories by chat
+
+*Requirements: C4, C6, N2* · *Blocked by: F21.13, F5.6*
+
+"Show my last receipt", then "what category is it?", then "make a Subscriptions category and put it there" broke at the second step: the receipts tool gave no categories and nothing could change one. The assistant reads a receipt with its lines and their categories, refers back to "that receipt" from earlier in the conversation, and proposes a new category and moving a receipt or a line into one — each on a card the user approves, as every change is (ADR-0025).
+
+**Demonstrated by:** Ask "my last receipt": YouTube, 60. "Which category?": Other. "Create Subscriptions and move it there": two cards, the category and the move; approve both: Spending shows 60 under Subscriptions.
+
+- **F21.15.1** A receipt with its lines and categories — The receipts tool gives each receipt a reference the next turn can use, and a receipt tool gives one receipt's lines with their categories; a categories tool lists the user's categories. Only the caller's own and their family's shared receipts (N2).
+- **F21.15.2** A new category and moving into one, on cards — Cards to add a category (the Categories screen's rules) and to move a whole receipt, or one of its lines, into a category — new or existing — as a correction the categoriser learns from (C4). A move into a category proposed in the same turn waits for that card. Three languages; checked at 375, 768 and 1280 px.
+- **F21.15.3** The conversation that broke, kept as a test — The three-step conversation above, and a few like it, added to the assistant's evaluation dialogs; they pass on the production model before this ships.
+
 ---
 
 ## E22 — Android App
@@ -2088,6 +2110,18 @@ Forcing a card was the biggest step between signing up and using the product: a 
 
 **Demonstrated by:** Sign up, skip the card, set a budget of 2 000 and a monthly internet bill of 60: Home shows the ring with purchases and bills, no balance. Add a salary: the app asks where it lands and makes "My card" in the same dialog; the bill is offered to the card too. Add a weekly gym bill of 50 on Mondays: October counts it four times, 200.
 
+### F23.22 — A day's receipts from the chart, and the chart drawn three ways
+
+*Requirements: —* · *Blocked by: F23.4*
+
+Tapping a day on Spending's day-by-day chart only named its sum, so the obvious next question — what was bought that day — needed a trip to Receipts and a date filter. The tap now lists that day's receipts under the chart. People also read a month differently: some want columns, some a list of days, some a calendar, so the chart can be drawn each way and remembers the choice.
+
+**Demonstrated by:** On Spending, tap 14 October: its three receipts appear under the chart, each opening its details. Switch the chart to Days: the same month as rows, a bar per day; to Calendar: the month as weeks, darker for bigger days. Reload: it stays on Calendar.
+
+- **F23.22.1** The receipts of the day tapped — Tapping a day with spending lists that day's receipts under the chart (shop, total, opening the receipt's details), read from the receipts list for that one day; a day with none says so. The day opened at first shows none until tapped. Checked at 375, 768 and 1280 px.
+- **F23.22.2** Columns, days or a calendar — A switch above the chart: Columns (today's bars), Days (a row a day, the bar across, the sum at its end) and Calendar (the period's weeks, Monday first, each day shaded by its share of the biggest). Every view taps to the same day and its receipts. The choice is kept in this browser only, as a convenience the privacy check knows of. Checked at 375, 768 and 1280 px.
+- **F23.22.3** The family's chart the same way — The family's day-by-day chart (F12.5) gets the same three views and tap: the tapped day lists the family's receipts of that day, each saying whose it is (the viewer's, or the member's first name), from the shared receipts only — a member's private spending stays a sum without a day (ADR-0017). A test that a private receipt never appears there (N2). Checked at 375, 768 and 1280 px.
+
 ---
 
 ## E24 — Bugfixes
@@ -2101,6 +2135,14 @@ Bugs found while using the product, fixed on a bugfix branch without an issue ea
 *Requirements: —*
 
 Product search and selection, product names carrying a date, a saved selection offering Save again, the receipts page's default period and order, and endless loading on a phone after the server's cold start (PR #519).
+
+**Demonstrated by:** No screen of its own — each fix is seen where the bug was.
+
+### F24.2 — Fixes of 23 October 2026
+
+*Requirements: —*
+
+On a phone the bottom bar drifted with the scroll after typing in a field: Safari zooms into any field under 16px and stays zoomed. Home's chat button sat alone in the middle of the header instead of beside the avatar.
 
 **Demonstrated by:** No screen of its own — each fix is seen where the bug was.
 
