@@ -16,4 +16,6 @@ export interface Device {
   onBack(goBack: () => void): () => void;
   /** Light or dark status and navigation bars, following the palette's ground. */
   setDarkBars(dark: boolean): Promise<void>;
+  /** A short vibration for something done: a receipt read, a receipt saved. */
+  feel(moment: "read" | "saved"): Promise<void>;
 }

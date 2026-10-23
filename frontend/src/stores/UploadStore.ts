@@ -4,6 +4,7 @@ import { errorMessage } from "../api/errors";
 import type { ApiClient } from "@/api/client";
 import { AsyncState } from "@/stores/AsyncState";
 import i18n from "@/i18n";
+import { device } from "@/platform";
 import type { Trip } from "@/stores/TripsStore";
 import { tripOnDay } from "@/stores/tripOnDay";
 import { shrinkPhoto } from "@/stores/shrinkPhoto";
@@ -367,6 +368,7 @@ export class UploadStore {
             this.processedItems = res.data.processed_items;
 
             if (res.data.status === "completed") {
+              void device.feel("read");
               this.isProcessing = false;
               this.uploadState.succeed();
               this.fileIds = res.data.file_ids;
@@ -710,6 +712,7 @@ export class UploadStore {
         this.startOver();
       });
       this.toastStore?.showSuccess(i18n.t("messages:upload.stored", { count: stored }));
+      void device.feel("saved");
       this.onReceiptsStored();
       return true;
     } catch (err) {

@@ -1,5 +1,6 @@
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
+import { Haptics, ImpactStyle, NotificationType } from "@capacitor/haptics";
 import { SplashScreen } from "@capacitor/splash-screen";
 import { StatusBar, Style } from "@capacitor/status-bar";
 
@@ -24,5 +25,10 @@ export function nativeDevice(): Device {
     },
     // Style.Dark is light text, for a dark ground.
     setDarkBars: (dark) => StatusBar.setStyle({ style: dark ? Style.Dark : Style.Light }),
+    // Saved is the end of a task, the system's success; read is a lighter tap on the way.
+    feel: (moment) =>
+      moment === "saved"
+        ? Haptics.notification({ type: NotificationType.Success })
+        : Haptics.impact({ style: ImpactStyle.Light }),
   };
 }

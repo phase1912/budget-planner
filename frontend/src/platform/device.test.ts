@@ -5,6 +5,8 @@ const plugins = vi.hoisted(() => ({
   exitApp: vi.fn(),
   hide: vi.fn(() => Promise.resolve()),
   setStyle: vi.fn(() => Promise.resolve()),
+  notification: vi.fn(() => Promise.resolve()),
+  impact: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock("@capacitor/core", () => ({ Capacitor: { getPlatform: () => "ios" } }));
@@ -16,6 +18,11 @@ vi.mock("@capacitor/app", () => ({
     },
     exitApp: plugins.exitApp,
   },
+}));
+vi.mock("@capacitor/haptics", () => ({
+  Haptics: { notification: plugins.notification, impact: plugins.impact },
+  ImpactStyle: { Light: "LIGHT" },
+  NotificationType: { Success: "SUCCESS" },
 }));
 vi.mock("@capacitor/splash-screen", () => ({ SplashScreen: { hide: plugins.hide } }));
 vi.mock("@capacitor/status-bar", () => ({
@@ -63,5 +70,17 @@ describe("the device the client runs on (F22.2.1, F25.2.1)", () => {
 
     expect(plugins.hide).toHaveBeenCalled();
     expect(plugins.setStyle.mock.calls).toEqual([[{ style: "DARK" }], [{ style: "LIGHT" }]]);
+  });
+
+  it("in a store app, taps lightly when a receipt is read and confirms when it is saved", async () => {
+    const device = nativeDevice();
+
+    await device.feel("read");
+    await device.feel("saved");
+    await webDevice.feel("saved");
+
+    expect(plugins.impact).toHaveBeenCalledWith({ style: "LIGHT" });
+    expect(plugins.notification).toHaveBeenCalledWith({ type: "SUCCESS" });
+    expect(plugins.notification).toHaveBeenCalledTimes(1);
   });
 });

@@ -7,4 +7,5 @@ export const webDevice: Device = {
   ready: () => Promise.resolve(),
   onBack: () => () => undefined,
   setDarkBars: () => Promise.resolve(),
+  feel: () => Promise.resolve(),
 };
