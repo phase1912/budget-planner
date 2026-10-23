@@ -107,7 +107,7 @@ def _name(receipt: Receipt, words: dict[str, str], today: date | None = None) ->
     the settlement still counts it, and says why no page shows it.
     """
     name = receipt.merchant_name or words["unknown"]
-    if receipt.channel is ReceiptChannel.MANUAL:
+    if receipt.channel in (ReceiptChannel.MANUAL, ReceiptChannel.TOLD):
         return f"{name} ({words['no_receipt']})"
     if _photos_gone(receipt, today or datetime.now(UTC).date()):
         return f"{name} ({words['photo_removed']})"

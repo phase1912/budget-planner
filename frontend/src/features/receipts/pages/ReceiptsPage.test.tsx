@@ -122,6 +122,16 @@ describe("ReceiptsPage", () => {
     expect(mockFetchReceipts).not.toHaveBeenCalled();
   });
 
+  it("opens the receipt the assistant linked to (F21.6)", () => {
+    render(
+      <MemoryRouter initialEntries={["/receipts?receipt=r7"]}>
+        <ReceiptsPage />
+      </MemoryRouter>,
+    );
+
+    expect(mockFetchReceiptDetail).toHaveBeenCalledWith("r7");
+  });
+
   it("ignores a status it does not know", () => {
     render(
       <MemoryRouter initialEntries={["/receipts?status=bogus"]}>

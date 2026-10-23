@@ -4,7 +4,8 @@
     "qr": "Added from a QR code",
     "photos_one": "Added from {{count}} photo",
     "photos_other": "Added from {{count}} photos",
-    "manual": "Typed in, no receipt"
+    "manual": "Typed in, no receipt",
+    "told": "Told in the chat"
   },
   "filter": {
     "status": "Status",
@@ -15,7 +16,8 @@
     "anySource": "Any source",
     "photo": "From a photo",
     "email": "From email",
-    "manual": "Typed in, no receipt"
+    "manual": "Typed in, no receipt",
+    "told": "Told in the chat"
   },
   "delete": {
     "title": "Delete “{{name}}”?",
@@ -64,7 +66,8 @@
     "byPurchase": "By purchase date",
     "byPurchaseShort": "Bought",
     "recent": "Recently added",
-    "recentShort": "Added"
+    "recentShort": "Added",
+    "told": "Told in the chat"
   },
   "status": {
     "inTotal": "In the total",

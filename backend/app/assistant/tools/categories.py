@@ -8,9 +8,9 @@ from pydantic import BaseModel, Field
 
 from app.api.errors import NotFoundError
 from app.assistant.tools.base import Answer, FormField, Reader, ToolContext, Writer, as_id
+from app.assistant.tools.receipts import lines_named, own_receipt, receipt_label
 from app.domain.categories import UNCATEGORIZED
 from app.models.category import Category
-from app.models.receipt import Receipt
 from app.repository.category import CategoryRepository
 from app.repository.receipt import ReceiptRepository
 from app.services.categorisation import CategorisationService
@@ -19,33 +19,6 @@ from app.services.taxonomy import TaxonomyService
 
 class NoArgs(BaseModel):
     """Nothing to say: the tool reads the user's whole list."""
-
-
-class ReceiptRef(BaseModel):
-    """One of the user's receipts, by the id the receipts tool gave it."""
-
-    receipt_id: str = Field(description="The `id` the receipts tool gave the receipt")
-
-
-def _receipt_id(said: str) -> uuid.UUID | None:
-    try:
-        return uuid.UUID(said.strip())
-    except ValueError:
-        return None
-
-
-async def _own_receipt(ctx: ToolContext, said: str) -> Receipt | None:
-    """The user's own receipt with its lines; another member's is not theirs to refile (N2)."""
-    receipt_id = _receipt_id(said)
-    if receipt_id is None:
-        return None
-    return await ReceiptRepository(ctx.session).get_with_items(receipt_id)
-
-
-def _label(receipt: Receipt) -> str:
-    day = receipt.transaction_date.date().isoformat() if receipt.transaction_date else ""
-    total = str(receipt.total_amount) if receipt.total_amount is not None else ""
-    return " · ".join(p for p in (receipt.merchant_name or "", day, total) if p)
 
 
 class Categories(Reader):
@@ -65,37 +38,6 @@ class Categories(Reader):
                         for c in categories
                         if c.name != UNCATEGORIZED
                     ]
-                }
-            )
-        )
-
-
-class ReceiptLines(Reader):
-    """One receipt's lines, each with its category, for "which category was it?" (C3)."""
-
-    name = "receipt_lines"
-    description = "One of the user's receipts, line by line, with the category of each line."
-    args = ReceiptRef
-
-    async def read(self, ctx: ToolContext, args: ReceiptRef) -> Answer:
-        receipt = await _own_receipt(ctx, args.receipt_id)
-        if receipt is None:
-            return Answer(json.dumps({"error": "no receipt of the user's with that id"}))
-        return Answer(
-            json.dumps(
-                {
-                    "id": str(receipt.id),
-                    "shop": receipt.merchant_name,
-                    "total": str(receipt.total_amount) if receipt.total_amount else None,
-                    "currency": ctx.user.currency,
-                    "lines": [
-                        {
-                            "name": line.name,
-                            "total": str(line.total_price),
-                            "category": line.category.name if line.category else UNCATEGORIZED,
-                        }
-                        for line in sorted(receipt.line_items, key=lambda i: i.position)
-                    ],
                 }
             )
         )
@@ -185,24 +127,24 @@ class MoveToCategory(Writer):
     form = (FormField("target", "target"), FormField("category", "text"))
 
     async def check(self, ctx: ToolContext, args: MoveArgs) -> str | None:
-        receipt = await _own_receipt(ctx, args.receipt_id)
+        receipt = await own_receipt(ctx, args.receipt_id)
         if receipt is None:
             return (
                 "no receipt of the user's own with that id; another family member's receipt "
                 "is theirs to refile"
             )
-        if args.line and not _lines(receipt, args.line):
+        if args.line and not lines_named(receipt, args.line):
             names = ", ".join(i.name for i in receipt.line_items)
             return f"no line named {args.line!r} on that receipt; it has: {names}"
         return None
 
     async def propose(self, ctx: ToolContext, args: MoveArgs) -> dict[str, Any]:
-        receipt = await _own_receipt(ctx, args.receipt_id)
+        receipt = await own_receipt(ctx, args.receipt_id)
         if receipt is None:
             raise NotFoundError("No such receipt.")
-        lines = _lines(receipt, args.line) if args.line else list(receipt.line_items)
+        lines = lines_named(receipt, args.line) if args.line else list(receipt.line_items)
         own = _named(await ctx.categories(), args.category)
-        target = _label(receipt)
+        target = receipt_label(receipt)
         if args.line:
             target = f"{', '.join(i.name for i in lines)} — {target}"
         return {
@@ -221,9 +163,3 @@ class MoveToCategory(Writer):
         for line_id in fields.line_ids:
             await service.reassign(as_id(line_id), category.id, ctx.user.id, apply_to_future=True)
         return f"receipt:{fields.receipt_id}"
-
-
-def _lines(receipt: Receipt, said: str) -> list[Any]:
-    wanted = said.strip().lower()
-    exact = [i for i in receipt.line_items if i.name.lower() == wanted]
-    return exact or [i for i in receipt.line_items if wanted in i.name.lower()]

@@ -78,6 +78,26 @@ class ToolModel(Protocol):
     ) -> ToolTurn: ...
 
 
+ASK_WITH_OPTIONS = f"(Ask that through {prompts.ASK} with the options to tap, not in words.)"
+"""The reminder for a model that ends with a question in plain words."""
+CALL_THE_TOOL = (
+    "(If the user asked for a change, call its tool now: words make no card. If they only "
+    "asked something, answer again in one sentence.)"
+)
+"""The reminder for a model that answers at once, having read and proposed nothing."""
+
+
+def reminder(said: str, state: "State") -> str | None:
+    """What to remind a model of before its words end the turn, once per turn (F21.13.3):
+    a question asked in words, or a first answer that read and proposed nothing — where a
+    model most often describes a card it never proposed. None when the words stand."""
+    if not said or state.get("proposals") or state.get("nudged", False):
+        return None
+    if said.rstrip().endswith("?"):
+        return ASK_WITH_OPTIONS
+    return CALL_THE_TOOL if state.get("rounds", 0) == 0 else None
+
+
 class State(TypedDict, total=False):
     """What the graph carries from one round to the next."""
 
@@ -88,6 +108,7 @@ class State(TypedDict, total=False):
     said: str
     rounds: int
     done: bool
+    nudged: bool
 
 
 def function(spec: ToolSpec) -> dict[str, Any]:
@@ -140,6 +161,19 @@ class AssistantGraph(AssistantPort):
                 logger.exception("The assistant's model call failed")
                 return {"done": True}
             said = turn.text.strip() or state.get("said", "")
+            remind = None if turn.calls else reminder(said, state)
+            if remind is not None:
+                # Reminded once: the model's next answer stands whatever it is.
+                return {
+                    "messages": [
+                        *messages,
+                        Message(role="assistant", content=said),
+                        Message(role="user", content=remind),
+                    ],
+                    "pending": [],
+                    "said": "",
+                    "nudged": True,
+                }
             if not turn.calls:
                 return {"said": said, "done": True}
             return {"messages": [*messages, turn.message], "said": said, "pending": turn.calls}

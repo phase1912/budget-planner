@@ -11,13 +11,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import DomainError, NotFoundError, ProblemCode
 from app.assistant.core.ports import AssistantContext, AssistantPort, Turn
+from app.assistant.tools.base import Access
 from app.assistant.tools.toolbox import Card, Toolbox, tool_specs
 from app.models.conversation import Conversation, ConversationMessage
 from app.models.upload_job import UploadJob
 from app.models.user import User
 from app.ports.advice_generation import AdviceGeneratorPort
+from app.ports.categorisation import ItemCategoriserPort
 from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.goal_mapping import GoalMapperPort
+from app.ports.storage import StoragePort
+from app.services.mailer import Mailer
 from app.services.quota import QuotaService
 
 TITLE_LENGTH = 120
@@ -49,8 +53,16 @@ class AssistantService:
         rates: ExchangeRatePort | None = None,
         goal_mapper: GoalMapperPort | None = None,
         advice: AdviceGeneratorPort | None = None,
+        storage: StoragePort | None = None,
+        categoriser: ItemCategoriserPort | None = None,
+        access: Access = "user",
+        mailer: Mailer | None = None,
     ) -> None:
         self.session = session
+        self.storage = storage
+        self.categoriser = categoriser
+        self.access = access
+        self.mailer = mailer
         self.assistant = assistant
         self.quota = quota
         self.rates = rates
@@ -107,7 +119,7 @@ class AssistantService:
         toolbox = self._toolbox(user, today)
         reply = await self.assistant.reply(
             _history(conversation.messages),
-            tool_specs(),
+            tool_specs(self.access),
             toolbox.read,
             AssistantContext(
                 language=user.language or "en",
@@ -194,7 +206,18 @@ class AssistantService:
         )
 
     def _toolbox(self, user: User, today: date) -> Toolbox:
-        return Toolbox(self.session, user, today, self.rates, self.goal_mapper, self.advice)
+        return Toolbox(
+            self.session,
+            user,
+            today,
+            self.rates,
+            self.goal_mapper,
+            self.advice,
+            self.storage,
+            self.categoriser,
+            self.access,
+            self.mailer,
+        )
 
     async def dismiss_card(self, user: User, message_id: uuid.UUID) -> ConversationMessage:
         """Turn a proposed card down; nothing is written."""

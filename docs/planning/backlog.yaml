@@ -631,6 +631,55 @@ epics:
               Displays and edits currency and monthly budget limit, backed by a MobX store
               following the conventions set in epic E9.
 
+      - key: F1.6
+        title: Signing in with Google and Apple
+        labels: [backend, frontend, security]
+        requirements: [N2]
+        depends_on: [F1.2, F22.2]
+        intent: >
+          A password and a confirmation letter are the slowest way into the service on a phone.
+          Google and Apple sign the user in through OpenID Connect: the server checks the
+          provider's ID token (issuer, audience, signature from its published keys, nonce,
+          expiry) and signs in, or creates, the account of that verified address; an existing
+          account with the same address links the provider after signing in once with its
+          password, never silently. Wherever Google is offered in the iOS app, Apple is offered
+          too (App Review 4.8). Built for whichever store goes first (E22 or E25), on the web as
+          well.
+        demo: >
+          On a phone, tap "Continue with Google", pick the account and land on Home with no
+          password and no letter; in Settings see Google linked, add a password, unlink it.
+        tasks:
+          - key: F1.6.1
+            title: OpenID Connect sign-in on the server
+            labels: [backend, security]
+            detail: >
+              POST /api/v1/auth/oidc/{provider} taking an ID token (and the nonce it was asked
+              with) for Google or Apple, verified against the provider's keys and our client
+              ids; a linked-identities table (provider, subject, user) by add-only migration; a
+              new account from a verified address, confirmed by the provider; an address that
+              already has an account asks for its password before linking; Apple's private relay
+              addresses kept as given. The same tokens and refresh as a password sign-in; an ADR
+              for providers, linking and what is stored. Tests with a stubbed key set, including
+              a forged token, a wrong audience and another user's subject (N2).
+          - key: F1.6.2
+            title: The buttons, on the web and in the apps
+            labels: [frontend]
+            detail: >
+              "Continue with Google" and "Continue with Apple" on sign-in and sign-up, following
+              each provider's button rules; on the web through their JavaScript sign-in, in the
+              apps through the native sign-in (Credential Manager on Android, AuthenticationServices
+              on iOS) behind the platform module; Settings lists linked providers, links and
+              unlinks one while a password or another provider remains. Three languages; checked
+              at 375, 768 and 1280 px.
+          - key: F1.6.3
+            title: Apple's rules for its sign-in
+            labels: [backend, security]
+            detail: >
+              Deleting an account revokes its Apple tokens through Apple's REST API (App Review
+              5.1.1), the server-to-server notifications for consent revoked or an email changed
+              are handled, and the client secret is a signed JWT from a key in Secret Manager,
+              rotated before it expires; Terraform and the deployment documentation updated.
+
   # F1.5 "Authentication flows and protected routing" was retired here. Collecting this
   # epic's whole UI into one trailing feature was the same layering mistake that put
   # authentication's screens in E9 to begin with — it just moved the seam. Its work now
@@ -4678,6 +4727,8 @@ epics:
               sent when the phrase ends, "approve" in three languages saving the waiting card,
               the microphone hidden where unsupported, and the privacy policy saying the
               browser's maker may recognise the sound. Checked at 375, 768 and 1280 px.
+              Built, then hidden on 2026-10-20 and superseded by F21.2.2: the browser's
+              recognition proved too poor; closed with F21.2.2's recogniser in place.
           - key: F21.2.2
             title: Speech recognised by Google Cloud
             labels: [frontend, backend, ai]
@@ -5294,6 +5345,80 @@ epics:
               from the run number), uploading it to the internal track on merge to main and to
               production on a manual run; the release documentation updated.
 
+      - key: F22.4
+        title: Passing Google Play's review
+        labels: [frontend, infra, docs]
+        requirements: []
+        depends_on: [F22.2]
+        intent: >
+          A rejection costs days, so every Play policy the app touches is met and written down
+          before the first upload: the target API level Play requires for new apps, permissions
+          kept to the camera (gallery photos through the system photo picker, no storage or media
+          permission), the Data safety form, account deletion both in the app and at a web
+          address, the Financial features declaration, the content rating, and the generative AI
+          rules — the assistant's replies can be reported from the app. The app does more than
+          the website (camera, sharing in, haptics, offline), so it is not a wrapped page under
+          the minimum-functionality policy.
+        demo: >
+          Open docs/mobile/play-review.md: each policy, what the app does about it and where;
+          the pre-launch report of the internal build shows no policy or accessibility warnings.
+        tasks:
+          - key: F22.4.1
+            title: Play policy checklist
+            labels: [docs]
+            detail: >
+              docs/mobile/play-review.md: target API level, permissions declared and why, Data
+              safety answers (from ADR-0020), account deletion (in app: Settings; on the web:
+              its address), Financial features declaration, content rating answers, ads and
+              families policy (not for children), the store listing's metadata rules — each
+              checked against the current policy page with its date, and the app's answer.
+          - key: F22.4.2
+            title: Reporting an assistant reply
+            labels: [backend, frontend, ai]
+            detail: >
+              Every assistant reply can be reported from the chat (offensive, wrong, other); the
+              report keeps the reply and the reason for the admins, never the conversation around
+              it, and the admin console lists reports. Required for generative AI apps by Play
+              and asked for by App Review. Three languages; checked at 375, 768 and 1280 px.
+          - key: F22.4.3
+            title: Permissions and the photo picker
+            labels: [frontend]
+            detail: >
+              Gallery images come through Android's photo picker, so the manifest asks for the
+              camera alone; a denied camera falls back to the picker with a line saying so. The
+              pre-launch report of the internal track run and its findings fixed.
+      - key: F22.5
+        title: An app that feels like Android
+        labels: [frontend]
+        requirements: []
+        depends_on: [F22.2]
+        intent: >
+          The same screens, behaving the way Android apps do rather than like a page: edge to
+          edge under the status and navigation bars (Android 15 enforces it), the predictive back
+          gesture, the keyboard pushing the form up instead of covering it, no text selection or
+          long-press callouts on buttons, no rubber-band overscroll or page zoom, the system font
+          size respected, haptics on the moments that matter, and the native date and share
+          sheets. Everything through the platform module, the web build unchanged.
+        demo: >
+          On a phone: swipe back from a receipt with the predictive preview, type in the expense
+          form with the keyboard open and the Save button visible, raise the system font size and
+          find nothing cut off.
+        tasks:
+          - key: F22.5.1
+            title: Edge to edge, back gesture and the keyboard
+            labels: [frontend]
+            detail: >
+              Safe-area insets from the device applied by the shell, the predictive back gesture
+              wired to the router, the keyboard resizing the content, status bar colours following
+              the palette. Checked on a phone and a tablet, light and dark.
+          - key: F22.5.2
+            title: Native touches
+            labels: [frontend]
+            detail: >
+              No selection or callouts on controls, no overscroll or zoom, the native date
+              picker, haptics on save and on a receipt read, the system share sheet for exports;
+              a test of the platform module for each, web and native.
+
   - key: E23
     title: Improvements
     br: []
@@ -5686,6 +5811,147 @@ epics:
               (the viewer's, or the member's first name), from the shared receipts only — a
               member's private spending stays a sum without a day (ADR-0017). A test that a
               private receipt never appears there (N2). Checked at 375, 768 and 1280 px.
+
+  - key: E25
+    title: iOS App
+    br: []
+    phase: 2
+    scope: diploma
+    groomed: true
+    summary: >
+      The service in Apple's App Store from the same Capacitor build as Android (E22), through
+      the same platform module, so a screen never asks which phone it is on. Taken first if
+      Google's organisation account stays blocked on the D-U-N-S address. App Review rejects
+      wrapped websites, purchases outside Apple's payments and data sent to an AI without the
+      user's consent, so each guideline the app touches is met before the first submission.
+      A native rewrite of either app is E26, planned only once the stores accept these.
+    features:
+      - key: F25.1
+        title: Apple developer account and the App Store listing
+        labels: [docs]
+        requirements: []
+        depends_on: [F17.7, F17.9]
+        intent: >
+          An Apple Developer Program membership — as an organisation it needs a D-U-N-S number
+          too, so the decision between that and an individual membership under the author's name
+          is recorded — and the App Store Connect listing: name, subtitle, descriptions and
+          screenshots in three languages, the privacy policy and support addresses, the age
+          rating, the App Privacy answers, and a reviewer account with a month of receipts.
+        demo: >
+          The listing in App Store Connect in three languages, its App Privacy section matching
+          docs/mobile/app-store-review.md, and the reviewer account signing in to real data.
+        tasks:
+          - key: F25.1.1
+            title: Membership, listing and App Privacy
+            labels: [docs]
+            detail: >
+              An ADR for organisation or individual membership; the listing texts in the
+              repository; App Privacy answers from ADR-0020; screenshots for the phone and iPad
+              sizes App Store Connect asks for; the reviewer account seeded like the demo one and
+              its sign-in given in the review notes.
+      - key: F25.2
+        title: The app on the iPhone
+        labels: [frontend, infra]
+        requirements: []
+        depends_on: [F22.2]
+        intent: >
+          The iOS project from the same build and platform module as Android: safe areas around
+          the notch and the home indicator, the swipe-back gesture between screens, the status
+          bar and launch screen in the service's colours, the native camera, haptics, a Share
+          Extension so "Share → Budget Agent" from Photos or Files opens the upload, Universal
+          Links (apple-app-site-association on Firebase Hosting) for the letters' links, and the
+          keyboard behaving as in native forms.
+        demo: >
+          On an iPhone: share a photo from Photos into the app and see it read; open the
+          confirmation link from Mail and land in the app; swipe back through three screens.
+        tasks:
+          - key: F25.2.1
+            title: The iOS project in the platform module
+            labels: [frontend, infra]
+            detail: >
+              The Xcode project from the existing build, the platform module's iOS answers, safe
+              areas, swipe back, status bar, launch screen, keyboard and Universal Links; the
+              architecture overview updated. Checked on an iPhone with a notch, a small iPhone
+              and an iPad.
+          - key: F25.2.2
+            title: Camera, haptics and the Share Extension
+            labels: [frontend]
+            detail: >
+              The native camera, haptics on save and on a receipt read, and a Share Extension for
+              images and PDFs handing them to the upload flow — each behind the platform module,
+              the web and Android builds unchanged.
+      - key: F25.3
+        title: Passing App Review
+        labels: [frontend, backend, docs]
+        requirements: []
+        depends_on: [F25.2]
+        intent: >
+          Every guideline the app touches met and written down before the first submission:
+          minimum functionality (4.2 — the app does what the site cannot: camera, sharing in,
+          haptics, offline); account deletion inside the app (5.1.1); no buying, prices or links
+          to buy the paid plan anywhere in the app (3.1.1, 3.1.3) while payments are outside the
+          stores; asking before personal data goes to a third-party AI (5.1.2), naming the
+          provider; the privacy manifest declaring the APIs the app and its plugins use; export
+          compliance (standard HTTPS only); no tracking, so no tracking prompt until ads come.
+        demo: >
+          Open docs/mobile/app-store-review.md: each guideline, what the app does about it and
+          where; the first TestFlight build passes Apple's automated checks with no warnings.
+        tasks:
+          - key: F25.3.1
+            title: App Review checklist and privacy manifest
+            labels: [docs, frontend]
+            detail: >
+              docs/mobile/app-store-review.md for guidelines 2.1, 2.3, 3.1, 4.2, 5.1.1, 5.1.2 and
+              export compliance, each checked against the current guidelines with its date;
+              PrivacyInfo.xcprivacy with the required-reason APIs of the app and its plugins;
+              ITSAppUsesNonExemptEncryption set to false.
+          - key: F25.3.2
+            title: Asking before receipts go to the AI
+            labels: [backend, frontend, ai]
+            detail: >
+              Before the first receipt, voice message or chat goes to the model, the app says
+              what is sent, to whom (Google's Gemini on Vertex AI) and why, and asks; the answer
+              is kept on the account with its date and can be withdrawn in Settings, which stops
+              every AI feature until it is given again. Applies on the web too, so the rule is
+              one. ADR and the privacy policy updated; three languages; checked at 375, 768 and
+              1280 px.
+          - key: F25.3.3
+            title: No paid plan offered inside the app
+            labels: [frontend]
+            detail: >
+              Inside the store apps, nothing names a price, a purchase or a way to buy the paid
+              plan, and no link leads to one; what is left of the AI credits is still shown. The
+              platform module says when the client is a store app; a test that no such text or
+              link renders there.
+
+  - key: E26
+    title: Native Apps
+    br: []
+    phase: 3
+    scope: out-of-scope
+    groomed: false
+    summary: >
+      Once the Capacitor apps are accepted and used, each moves to its own platform's toolkit —
+      Kotlin with Jetpack Compose on Android, Swift with SwiftUI on iOS — screen by screen,
+      against the same API and its generated schema, keeping the platform module's contract as
+      the list of what each must do. Planned after E22 and E25, not before: the stores' review
+      and real use decide which screens are worth rewriting first.
+    features:
+      - key: F26.1
+        title: Android in Kotlin and Compose
+        labels: [frontend]
+        requirements: []
+        depends_on: [F22.5]
+        intent: >
+          The Android app rewritten natively, screen by screen, starting with those real use
+          shows to matter most; the Capacitor build stays until the native one covers it.
+      - key: F26.2
+        title: iOS in Swift and SwiftUI
+        labels: [frontend]
+        requirements: []
+        depends_on: [F25.3]
+        intent: >
+          The iOS app rewritten natively, screen by screen, the same way as Android.
 
   - key: E24
     title: Bugfixes

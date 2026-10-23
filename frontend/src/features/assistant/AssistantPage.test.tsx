@@ -349,6 +349,63 @@ describe("the assistant (F21.1, F21.7)", () => {
     expect(await within(card).findByText("Saved")).toBeInTheDocument();
   });
 
+  it("lets the lines of a told receipt be corrected or taken out before it is approved (F21.8.1)", async () => {
+    const told = {
+      ...CARD,
+      id: "c5",
+      card: {
+        kind: "told_receipt",
+        fields: {
+          shop: "Biedronka",
+          spent_on: "2026-10-23",
+          currency: null,
+          lines: [
+            { name: "Mleko", quantity: "1", amount: "4" },
+            { name: "Chleb", quantity: "1", amount: "5" },
+          ],
+        },
+        form: [
+          { name: "shop", kind: "text", options: [], required: true },
+          { name: "spent_on", kind: "date", options: [], required: true },
+          { name: "lines", kind: "lines", options: [], required: true },
+        ],
+      },
+    };
+    api.POST.mockImplementation((path: string, options) =>
+      Promise.resolve({
+        data: path.endsWith("/save")
+          ? {
+              ...told,
+              card: { ...told.card, fields: (options?.body as { fields: object }).fields },
+              card_state: "saved",
+            }
+          : { ...CONVERSATION, messages: [told] },
+      }),
+    );
+    renderPage();
+    fireEvent.change(screen.getByLabelText("Write a message"), {
+      target: { value: "Biedronka: milk 4, bread 5" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+
+    const card = await screen.findByRole("article", { name: "Told receipt" });
+    fireEvent.change(within(card).getByLabelText("Line 1, amount"), { target: { value: "4,29" } });
+    fireEvent.click(within(card).getByRole("button", { name: "Take Chleb out" }));
+    expect(within(card).getByText("Total 4.29 PLN")).toBeInTheDocument();
+    fireEvent.click(within(card).getByRole("button", { name: "Approve" }));
+
+    await waitFor(() => {
+      expect(api.POST).toHaveBeenCalledWith("/api/v1/assistant/cards/{message_id}/save", {
+        params: { path: { message_id: "c5" } },
+        body: expect.objectContaining({
+          fields: expect.objectContaining({
+            lines: [{ name: "Mleko", quantity: "1", amount: "4.29" }],
+          }) as unknown,
+        }) as unknown,
+      });
+    });
+  });
+
   it("asks on a balance card how the difference counts, and asks a category only for purchases (F21.10)", async () => {
     store.categoriesStore.categories = [
       { id: "other", name: "Other" },
@@ -362,7 +419,7 @@ describe("the assistant (F21.1, F21.7)", () => {
           account_id: "a1",
           target: "Revolut: 4100.00 → 3700.00 PLN",
           bank_balance: "3700",
-          way: "correct",
+          way: null,
           category_id: "other",
           description: "Purchases not entered",
         },
@@ -384,7 +441,15 @@ describe("the assistant (F21.1, F21.7)", () => {
 
     const card = await screen.findByRole("article", { name: "Card balance" });
     expect(within(card).getByText("Revolut: 4100.00 → 3700.00 PLN")).toBeInTheDocument();
+    // Nothing is chosen for the user: Approve waits for how the difference counts.
+    expect(within(card).getByLabelText("How to count the difference")).toHaveValue("");
+    expect(within(card).getByRole("button", { name: "Approve" })).toBeDisabled();
+
+    fireEvent.change(within(card).getByLabelText("How to count the difference"), {
+      target: { value: "correct" },
+    });
     expect(within(card).queryByLabelText("Category")).not.toBeInTheDocument();
+    expect(within(card).getByRole("button", { name: "Approve" })).toBeEnabled();
 
     fireEvent.change(within(card).getByLabelText("How to count the difference"), {
       target: { value: "spending" },

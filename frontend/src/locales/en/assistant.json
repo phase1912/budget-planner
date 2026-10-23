@@ -60,7 +60,23 @@
       "move": "Move between cards",
       "product_group": "Product group",
       "category": "New category",
-      "category_move": "Move to a category"
+      "category_move": "Move to a category",
+      "line": "Correct a line",
+      "line_remove": "Take a line off",
+      "receipt_confirm": "Receipt checked",
+      "receipt_delete": "Delete a receipt",
+      "receipt_trip": "Receipt's trip",
+      "trip": "New trip",
+      "told_receipt": "Told receipt",
+      "setting": "Change a setting",
+      "family_role": "A family member's role",
+      "family_remove": "Take out of the family",
+      "family_leave": "Leave the family",
+      "admin_confirm_email": "Confirm the address",
+      "admin_letter": "Send a letter",
+      "admin_grant": "Give the paid plan",
+      "admin_revoke": "Take the paid plan back",
+      "admin_role": "Admin role"
     },
     "fields": {
       "name": "Name",
@@ -81,7 +97,20 @@
       "received_on": "Date",
       "moved_on": "Date",
       "products": "Products",
-      "category": "Category"
+      "category": "Category",
+      "trip": "Trip",
+      "start_date": "From",
+      "end_date": "To",
+      "budget": "Budget, {{currency}}",
+      "shop": "Shop",
+      "spent_on": "Date",
+      "lines": "What was bought",
+      "value": "New value",
+      "role": "Role",
+      "letter": "Letter",
+      "until": "Until",
+      "reason": "Why",
+      "admin": "Admin"
     },
     "options": {
       "spending_ceiling": "Spend at most a month",
@@ -92,10 +121,33 @@
       "business": "Business account",
       "deposit": "Savings",
       "correct": "Only correct the balance",
-      "spending": "Purchases not entered, in the budget"
+      "spending": "Purchases not entered, in the budget",
+      "holiday": "Holiday",
+      "work": "Business trip",
+      "adult": "Adult",
+      "child": "Child",
+      "confirmation": "A fresh confirmation link",
+      "password_reset": "A password reset link"
     },
     "openScreen": "Open it",
-    "removeItem": "Take {{name}} out"
+    "removeItem": "Take {{name}} out",
+    "lineName": "Line {{number}}",
+    "lineAmount": "Line {{number}}, amount",
+    "linesTotal": "Total {{amount}} {{currency}}",
+    "settings": {
+      "currency": "Currency",
+      "usual_income": "Usual income",
+      "payday": "Payday",
+      "starting_balance": "Starting balance",
+      "pays_own_taxes": "I pay my own taxes",
+      "tax_rate": "Tax rate, %",
+      "tax_fixed_monthly": "Fixed tax a month",
+      "language": "Language",
+      "palette": "Palette",
+      "dark_at_night": "Dark at night",
+      "travels_for_work": "I travel for work"
+    },
+    "choose": "Choose…"
   },
   "answer": {
     "spending": "Open in Spending",
@@ -119,7 +171,8 @@
     "goalLifestyle": "{{amount}} this month, usually {{usual}}",
     "receipts_one": "on {{count}} receipt",
     "receipts_other": "on {{count}} receipts",
-    "aMonth": "{{amount}} a month"
+    "aMonth": "{{amount}} a month",
+    "settings": "Open Settings"
   },
   "choice": "Choose an answer",
   "mic": {

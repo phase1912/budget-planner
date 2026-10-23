@@ -22,9 +22,12 @@ from app.assistant.core.ports import ToolSpec
 from app.models.category import Category
 from app.models.user import User
 from app.ports.advice_generation import AdviceGeneratorPort
+from app.ports.categorisation import ItemCategoriserPort
 from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.goal_mapping import GoalMapperPort
+from app.ports.storage import StoragePort
 from app.repository.category import CategoryRepository
+from app.services.mailer import Mailer
 
 
 def _plain_number(value: Any) -> Any:
@@ -54,6 +57,10 @@ Balance = Annotated[Decimal, BeforeValidator(_plain_number), Field(max_digits=12
 """What is on an account: may be zero or below."""
 
 
+Access = Literal["user", "admin", "super_admin"]
+RANK: dict[str, int] = {"user": 0, "admin": 1, "super_admin": 2}
+
+
 @dataclass
 class ToolContext:
     """What a tool runs with for one request: the signed-in user and their session."""
@@ -64,6 +71,12 @@ class ToolContext:
     rates: ExchangeRatePort | None = None
     goal_mapper: GoalMapperPort | None = None
     advice: AdviceGeneratorPort | None = None
+    storage: StoragePort | None = None
+    categoriser: ItemCategoriserPort | None = None
+    access: Access = "user"
+    """Who the session is: admin tools are offered and saved only for an admin signed in
+    with a second factor, super-admin ones only for a super admin (F21.12)."""
+    mailer: Mailer | None = None
 
     async def categories(self) -> list[Category]:
         """The categories the user's spending may go to: the shared ones and their own."""
@@ -88,7 +101,7 @@ class Answer:
 
 FieldKind = Literal[
     "target", "text", "amount", "balance", "date", "day", "repeat", "category", "account",
-    "choice", "switch", "percent", "items",
+    "choice", "switch", "percent", "items", "lines",
 ]  # fmt: skip
 
 
@@ -99,7 +112,9 @@ class FormField:
     `target` names what the card changes or removes and cannot be edited; `day` is a day of
     the month; `repeat` is the pair `day`/`weekday`; `choice` offers `options`, each worded
     by the app; `category` and `account` pick one of the user's own; `items` lists names the
-    user may take out one by one, with the ids beside them (`products` and `product_ids`).
+    user may take out one by one, with the ids beside them (`products` and `product_ids`);
+    `lines` is a receipt's lines, each a name, a quantity and an amount, edited and removed
+    one by one.
     """
 
     name: str
@@ -129,6 +144,12 @@ class Tool(abc.ABC):
     description: ClassVar[str]
     args: ClassVar[type[BaseModel]]
     writes: ClassVar[bool] = False
+    needs: ClassVar[Access] = "user"
+    """Who may be offered the tool: everyone, an admin, or a super admin (F21.12)."""
+
+    def allowed(self, ctx: "ToolContext") -> bool:
+        """Whether the session in `ctx` may see and use this tool."""
+        return RANK[ctx.access] >= RANK[self.needs]
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)

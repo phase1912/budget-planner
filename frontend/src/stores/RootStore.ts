@@ -88,9 +88,11 @@ export class RootStore {
     this.twoFactorStore = new TwoFactorStore(apiClient, this.authStore, this.toastStore);
     this.incomeStore = new IncomeStore(apiClient, this.toastStore);
     this.bankAccountsStore = new BankAccountsStore(apiClient, this.toastStore);
-    // A card the assistant saved changed the month: Home and Plan read it again.
+    // A card the assistant saved changed the month, or a setting: Home and Plan read it
+    // again, and the profile too, so a new language or palette shows at once (F21.11).
     this.assistantStore = new AssistantStore(apiClient, this.toastStore, () => {
       void this.budgetStore.refresh();
+      void this.profileStore.loadProfile();
     });
     this.budgetStore = new BudgetStore();
     // Any receipt change may have recalculated the month on screen (BRD D6, F6.5).

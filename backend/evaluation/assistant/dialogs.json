@@ -23,7 +23,15 @@
       "онови баланс на картці для витрат, в банку 3500"
     ],
     "expect": {
-      "ask": []
+      "cards": [
+        {
+          "kind": "balance",
+          "fields": {
+            "account_id": "Моя картка",
+            "bank_balance": "3500"
+          }
+        }
+      ]
     }
   },
   {
@@ -481,7 +489,7 @@
     ],
     "expect": {
       "says": [
-        "Олена"
+        "292"
       ]
     }
   },
@@ -597,6 +605,76 @@
           "kind": "category",
           "fields": {
             "name": "Subskrypcje"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "pl-told-receipt",
+    "turns": [
+      "byłem dziś w Biedronce: mleko 4,29, chleb 6,50 i jabłka 7,50"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "told_receipt",
+          "fields": {
+            "shop": "Biedronka"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "uk-language-and-payday",
+    "turns": [
+      "зміни мову на польську і день зарплати на 10"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "setting",
+          "fields": {
+            "setting": "language",
+            "value": "pl"
+          }
+        }
+      ],
+      "may": [
+        "setting",
+        "regular_income_change"
+      ]
+    }
+  },
+  {
+    "id": "en-new-trip",
+    "turns": [
+      "add a trip to Kraków from 2 to 4 November"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "trip",
+          "fields": {
+            "start_date": "2026-11-02",
+            "end_date": "2026-11-04"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "uk-fix-price-on-last-receipt",
+    "turns": [
+      "в останньому чеку YouTube насправді було 59.99"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "line",
+          "fields": {
+            "amount": "59.99"
           }
         }
       ]

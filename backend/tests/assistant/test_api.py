@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
 from app.api.errors import DomainError
+from app.api.routers.receipts import get_item_categoriser
 from app.assistant.api import get_assistant
 from app.assistant.core.ports import (
     AssistantContext,
@@ -32,6 +33,7 @@ from app.main import create_app
 from app.models.category import Category
 from app.models.receipt import ReceiptStatus
 from app.models.user import User
+from app.schemas.extraction import ExtractedLineItem
 from tests.factories.ai_usage import AiUsageFactory
 from tests.factories.category import CategoryFactory
 from tests.factories.line_item import LineItemFactory
@@ -39,6 +41,21 @@ from tests.factories.receipt import ReceiptFactory
 from tests.factories.user import UserFactory
 
 URL = "/api/v1/assistant"
+
+
+class GroceriesCategoriser:
+    """Files every line under Groceries, so a told receipt is categorised without a model."""
+
+    async def categorise_items(
+        self, items: list[ExtractedLineItem], categories: Sequence[Category]
+    ) -> list[ExtractedLineItem]:
+        groceries = next((c for c in categories if c.name == "Groceries"), None)
+        for item in items:
+            if groceries is not None:
+                item.category_id = groceries.id
+                item.category_name = groceries.name
+                item.category_confidence = 100
+        return items
 
 
 class ScriptedAssistant:
@@ -78,6 +95,7 @@ async def _call(
     app.dependency_overrides[get_current_user] = lambda: user
     app.dependency_overrides[get_db_session] = override_get_db
     app.dependency_overrides[get_assistant] = lambda: assistant or ScriptedAssistant()
+    app.dependency_overrides[get_item_categoriser] = GroceriesCategoriser
     token = jwt.encode(
         {"sub": str(user.id)}, get_settings().jwt_secret_key.get_secret_value(), algorithm="HS256"
     )

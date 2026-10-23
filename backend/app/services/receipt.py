@@ -261,7 +261,7 @@ class ReceiptService:
                         extraction = _dated(extraction, datetime.now(UTC).date())
                         apply_corrections(extraction, corrections)
                         if self.parser_port:
-                            await self._categorise_extraction(extraction, categories, rules)
+                            await self.categorise_extraction(extraction, categories, rules)
                             self._file_discount_lines(extraction)
                         return extraction
 
@@ -358,7 +358,7 @@ class ReceiptService:
                     extraction["requires_manual_review"] = True
                 else:
                     category_repository = CategoryRepository(session)
-                    await self._categorise_extraction(
+                    await self.categorise_extraction(
                         extraction,
                         await category_repository.list_available(user.id),
                         await category_repository.list_rules(user.id),
@@ -488,7 +488,7 @@ class ReceiptService:
         if isinstance(items, list):
             extraction["line_items"] = file_discounts_with_products(items)
 
-    async def _categorise_extraction(
+    async def categorise_extraction(
         self,
         extraction: dict[str, object],
         categories: Sequence[Category],

@@ -56,7 +56,23 @@
       "move": "Переказ між картками",
       "product_group": "Група товарів",
       "category": "Нова категорія",
-      "category_move": "Перенести в категорію"
+      "category_move": "Перенести в категорію",
+      "line": "Виправити рядок",
+      "line_remove": "Прибрати рядок",
+      "receipt_confirm": "Чек перевірено",
+      "receipt_delete": "Видалити чек",
+      "receipt_trip": "Поїздка чека",
+      "trip": "Нова поїздка",
+      "told_receipt": "Розказаний чек",
+      "setting": "Змінити налаштування",
+      "family_role": "Роль у родині",
+      "family_remove": "Прибрати з родини",
+      "family_leave": "Вийти з родини",
+      "admin_confirm_email": "Підтвердити адресу",
+      "admin_letter": "Надіслати лист",
+      "admin_grant": "Дати платний план",
+      "admin_revoke": "Забрати платний план",
+      "admin_role": "Роль адміністратора"
     },
     "fields": {
       "name": "Назва",
@@ -77,7 +93,20 @@
       "received_on": "Дата",
       "moved_on": "Дата",
       "products": "Товари",
-      "category": "Категорія"
+      "category": "Категорія",
+      "trip": "Поїздка",
+      "start_date": "З",
+      "end_date": "По",
+      "budget": "Бюджет, {{currency}}",
+      "shop": "Магазин",
+      "spent_on": "Дата",
+      "lines": "Що купили",
+      "value": "Нове значення",
+      "role": "Роль",
+      "letter": "Лист",
+      "until": "До",
+      "reason": "Чому",
+      "admin": "Адміністратор"
     },
     "options": {
       "spending_ceiling": "Витрачати не більше за місяць",
@@ -88,10 +117,33 @@
       "business": "Бізнес-рахунок",
       "deposit": "Заощадження",
       "correct": "Лише виправити баланс",
-      "spending": "Невнесені покупки, у бюджеті"
+      "spending": "Невнесені покупки, у бюджеті",
+      "holiday": "Відпочинок",
+      "work": "Відрядження",
+      "adult": "Доросла людина",
+      "child": "Дитина",
+      "confirmation": "Нове посилання для підтвердження",
+      "password_reset": "Посилання для зміни пароля"
     },
     "openScreen": "Відкрити",
-    "removeItem": "Прибрати {{name}}"
+    "removeItem": "Прибрати {{name}}",
+    "lineName": "Рядок {{number}}",
+    "lineAmount": "Рядок {{number}}, сума",
+    "linesTotal": "Разом {{amount}} {{currency}}",
+    "settings": {
+      "currency": "Валюта",
+      "usual_income": "Звичний дохід",
+      "payday": "День зарплати",
+      "starting_balance": "Початковий баланс",
+      "pays_own_taxes": "Сплачую податки самостійно",
+      "tax_rate": "Ставка податку, %",
+      "tax_fixed_monthly": "Фіксований податок на місяць",
+      "language": "Мова",
+      "palette": "Палітра",
+      "dark_at_night": "Темна вночі",
+      "travels_for_work": "Їжджу у відрядження"
+    },
+    "choose": "Оберіть…"
   },
   "answer": {
     "spending": "Відкрити у Витратах",
@@ -119,7 +171,8 @@
     "receipts_few": "у {{count}} чеках",
     "receipts_many": "у {{count}} чеках",
     "receipts_other": "у {{count}} чеках",
-    "aMonth": "{{amount}} на місяць"
+    "aMonth": "{{amount}} на місяць",
+    "settings": "Відкрити налаштування"
   },
   "choice": "Оберіть відповідь",
   "mic": {

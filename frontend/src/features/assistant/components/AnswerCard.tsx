@@ -10,7 +10,16 @@ import { AccountsDrawing, GoalsDrawing, MonthDrawing, ProductsDrawing } from "./
 
 type Chart = components["schemas"]["ChartResponse"];
 
-const SCREENS = ["spending", "receipts", "products", "accounts", "home", "month", "goals"] as const;
+const SCREENS = [
+  "spending",
+  "receipts",
+  "products",
+  "accounts",
+  "home",
+  "month",
+  "goals",
+  "settings",
+] as const;
 type Screen = (typeof SCREENS)[number];
 
 const day = (value: unknown): string | null =>

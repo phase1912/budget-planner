@@ -1,7 +1,7 @@
 # ADR 0029: The assistant reaches everything but signing in
 
 **Date:** 2026-10-21
-**Status:** Proposed — F21.10, F21.11, F21.12; amends ADR-0025
+**Status:** Accepted 2026-10-24 — F21.10, F21.11, F21.12; amends ADR-0025
 
 ## Context
 
@@ -43,3 +43,20 @@ ask for.
   card words, or the assistant says it cannot.
 - Losing access to an open session lets an intruder change settings through cards, as
   they could on the Settings screen. It never lets them lock the owner out.
+
+## As built
+
+- Each tool says who may have it (`Tool.needs`: user, admin, super admin). The session's
+  level is worked out per request as the admin pages do it (`session_access`), the model is
+  offered only the tools of that level (`tool_specs`), and saving a card asks again, since
+  a card outlives the session that proposed it.
+- Settings are one card per setting, showing it as it is and as it will be, saved through
+  `UserService.update_profile` — the same checks as the screen, a currency change refused
+  once receipts exist included. The client re-reads the profile after any saved card, so a
+  new language or palette shows at once.
+- The family is changed by its screen's service: roles, removing a member, leaving. There is
+  no invitation by address in the product, so the assistant points to the invite link in
+  Settings instead of sending one.
+- Admin tools address accounts by email and send confirmation or reset links; none sets a
+  password or an address.
+

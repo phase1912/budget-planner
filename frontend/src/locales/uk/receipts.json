@@ -6,7 +6,8 @@
     "photos_few": "Додано з {{count}} фото",
     "photos_many": "Додано з {{count}} фото",
     "photos_other": "Додано з {{count}} фото",
-    "manual": "Введено вручну, без чека"
+    "manual": "Введено вручну, без чека",
+    "told": "Розказано в чаті"
   },
   "filter": {
     "status": "Статус",
@@ -17,7 +18,8 @@
     "anySource": "Будь-яке джерело",
     "photo": "З фото",
     "email": "З пошти",
-    "manual": "Введено вручну"
+    "manual": "Введено вручну",
+    "told": "Розказано в чаті"
   },
   "delete": {
     "title": "Видалити «{{name}}»?",
@@ -72,7 +74,8 @@
     "byPurchase": "За датою покупки",
     "byPurchaseShort": "Куплені",
     "recent": "Нещодавно додані",
-    "recentShort": "Додані"
+    "recentShort": "Додані",
+    "told": "Розказано в чаті"
   },
   "status": {
     "inTotal": "У підсумку",

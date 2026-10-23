@@ -10,7 +10,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.speech import ChirpSpeechAdapter, ModelSpeechAdapter
 from app.agent.factory import agent_from_settings
 from app.api import rate_limit
-from app.api.dependencies import get_current_user, get_exchange_rates, get_quota_service
+from app.api.dependencies import (
+    get_current_user,
+    get_exchange_rates,
+    get_mailer,
+    get_quota_service,
+    get_session_second_factor,
+    get_storage_service,
+)
 from app.api.errors import (
     SpeechTooLongError,
     SpeechUnavailableError,
@@ -18,6 +25,7 @@ from app.api.errors import (
 )
 from app.api.rate_limit import limiter
 from app.api.routers.goals import get_goal_mapper
+from app.api.routers.receipts import get_item_categoriser
 from app.api.routers.recommendations import get_advice_generator
 from app.assistant.core.graph import AssistantGraph
 from app.assistant.core.ports import AssistantPort
@@ -30,16 +38,20 @@ from app.assistant.schemas import (
     SpeechRead,
 )
 from app.assistant.service import AssistantService
+from app.assistant.tools.base import Access
 from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.domain.speech import MAX_SECONDS, NotWav, wav_seconds
 from app.models.user import User
 from app.ports.advice_generation import AdviceGeneratorPort
+from app.ports.categorisation import ItemCategoriserPort
 from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.goal_mapping import GoalMapperPort
 from app.ports.speech import SpeechPort, SpeechUnavailable
+from app.ports.storage import StoragePort
 from app.services.ai_usage import record_usage
-from app.services.quota import QuotaService
+from app.services.mailer import Mailer
+from app.services.quota import QuotaService, is_admin, is_super_admin
 
 router = APIRouter(prefix="/api/v1/assistant", tags=["assistant"])
 
@@ -72,9 +84,36 @@ def get_assistant_service(
     rates: Annotated[ExchangeRatePort | None, Depends(get_exchange_rates)],
     goal_mapper: Annotated[GoalMapperPort, Depends(get_goal_mapper)],
     advice: Annotated[AdviceGeneratorPort, Depends(get_advice_generator)],
+    storage: Annotated[StoragePort, Depends(get_storage_service)],
+    categoriser: Annotated[ItemCategoriserPort, Depends(get_item_categoriser)],
+    user: Annotated[User, Depends(get_current_user)],
+    second_factor: Annotated[bool, Depends(get_session_second_factor)],
+    mailer: Annotated[Mailer, Depends(get_mailer)],
 ) -> AssistantService:
-    """Conversations and cards, bound to the request's session."""
-    return AssistantService(session, assistant, quota, rates, goal_mapper, advice)
+    """Conversations and cards, bound to the request's session; an admin's tools only for
+    an admin whose session was opened with a second factor (F21.12, F18.6.1)."""
+    return AssistantService(
+        session,
+        assistant,
+        quota,
+        rates,
+        goal_mapper,
+        advice,
+        storage,
+        categoriser,
+        session_access(user, second_factor),
+        mailer,
+    )
+
+
+def session_access(user: User, second_factor: bool) -> Access:
+    """Who the session is to the assistant's tools: as the admin pages decide (F18.6.1)."""
+    settings = get_settings()
+    if not is_admin(user, settings) or (
+        settings.requires_admin_second_factor and not second_factor
+    ):
+        return "user"
+    return "super_admin" if is_super_admin(user, settings) else "admin"
 
 
 Service = Annotated[AssistantService, Depends(get_assistant_service)]

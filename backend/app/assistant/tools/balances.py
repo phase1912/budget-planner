@@ -79,9 +79,9 @@ class SyncBalance(Writer):
 
     name = "sync_balance"
     description = (
-        "Propose setting a card's balance to what the bank says. Read accounts first and say "
-        "the difference. If the user has not said whether it is purchases they did not enter "
-        "or just a correction, ask them, then call with way."
+        "Propose setting a card's balance to what the bank says. Pass way only when the user "
+        "said it — 'just fix it' is correct, 'purchases I did not enter' is spending; "
+        "otherwise leave it out and the card asks them."
     )
     args = SyncArgs
     card_kind = "balance"
@@ -111,7 +111,9 @@ class SyncBalance(Writer):
             "account_id": str(account.id),
             "target": f"{account.name}: {now:.2f} → {args.balance:.2f} {ctx.user.currency}",
             "bank_balance": str(args.balance),
-            **await _how(ctx, args.way, args.category),
+            **await _how(
+                ctx, args.way, args.category, ask=_asks(account, now, args.balance, args.way)
+            ),
         }
 
     async def save(self, ctx: ToolContext, fields: BalanceCard) -> str:
@@ -149,8 +151,8 @@ class TakeMoney(Writer):
 
     name = "take_money"
     description = (
-        "Propose taking a sum off a card once. If the user has not said whether it was "
-        "spent, counted in the budget, or only leaves the card, ask them, then call with way."
+        "Propose taking a sum off a card once. Pass way only when the user said whether it "
+        "was spent or only leaves the card; otherwise leave it out and the card asks them."
     )
     args = TakeArgs
     card_kind = "money_out"
@@ -173,10 +175,13 @@ class TakeMoney(Writer):
     async def propose(self, ctx: ToolContext, args: TakeArgs) -> dict[str, Any]:
         account, _ = await find_account(ctx, args.account)
         assert account is not None
+        now = await _balance(ctx, account)
         return {
             "account_id": str(account.id),
             "amount": str(args.amount),
-            **await _how(ctx, args.way, args.category),
+            **await _how(
+                ctx, args.way, args.category, ask=_asks(account, now, now - args.amount, args.way)
+            ),
         }
 
     async def save(self, ctx: ToolContext, fields: TakeCard) -> str:
@@ -184,27 +189,30 @@ class TakeMoney(Writer):
 
 
 def _why_not_yet(account: Account, now: Decimal, balance: Decimal, way: Way | None) -> str | None:
-    """Why the call cannot become a card yet: the user has to say how a drop on the purchase
-    card is counted, which the model asks them; or the way they chose does not hold."""
-    if way is None and balance < now and account.for_purchases:
-        return (
-            f"{account.name} would go from {now} to {balance}: ask the user whether the "
-            f"{now - balance} was purchases they did not enter, counted in the budget, or "
-            "only a correction; then call again with way"
-        )
+    """Why the call cannot become a card: purchases the account cannot take. A way not said
+    is no reason — the card then asks the user how it counts (F21.10.2)."""
     return _why_not_spending(account, now, balance) if way == "spending" else None
 
 
-async def _how(ctx: ToolContext, way: Way | None, category: str | None) -> dict[str, Any]:
-    """The card's choice: the way, and for purchases the category — the one named, else the
-    catch-all — and what the receipts list calls them."""
+def _asks(account: Account, now: Decimal, balance: Decimal, way: Way | None) -> bool:
+    """Whether the card leaves the way for the user to choose: a drop on the card paid from,
+    where it may be purchases never entered, and the user did not say which."""
+    return way is None and balance < now and account.for_purchases
+
+
+async def _how(
+    ctx: ToolContext, way: Way | None, category: str | None, *, ask: bool = False
+) -> dict[str, Any]:
+    """The card's choice: the way — left empty for the user to choose when `ask` — and for
+    purchases the category — the one named, else the catch-all — and what the receipts list
+    calls them."""
     categories = await ctx.categories()
     wanted = (category or "").strip().lower()
     chosen = next((c for c in categories if c.name.lower() == wanted), None) or next(
         (c for c in categories if c.name in FALLBACK_CATEGORIES), None
     )
     return {
-        "way": way or "correct",
+        "way": None if ask else way or "correct",
         "category_id": str(chosen.id) if chosen else None,
         "description": UNENTERED.get(ctx.user.language or "en", "Purchases not entered"),
     }

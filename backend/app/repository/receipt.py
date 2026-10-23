@@ -904,7 +904,8 @@ class ReceiptRepository(BaseRepository[Receipt]):
             .where(
                 Receipt.user_id == user_id,
                 Receipt.created_at >= since,
-                Receipt.channel != ReceiptChannel.MANUAL,
+                # Typed in or told: nothing was read, so nothing to measure (F20.5, F21.8.1).
+                Receipt.channel.not_in((ReceiptChannel.MANUAL, ReceiptChannel.TOLD)),
             )
             .group_by(Receipt.id)
         )

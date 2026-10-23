@@ -181,8 +181,14 @@ The assistant (F21, ADR-0025, ADR-0028, ADR-0031, ADR-0032) is a module of its o
   the bills, incomes, goals, product groups, trips and the family, so the model resolves
   "the card for expenses" or "the first one" itself and passes real names. The core
   imports neither the database nor FastAPI; a test holds that.
-- `tools/` has one module per thing the user keeps (spending, budget, expenses, incomes,
-  bills, goals, accounts, balances, products, family, overview). A tool is a `Reader`,
+- `tools/` has one module per thing the user keeps (spending, budget, expenses — told
+  receipts among them —, incomes, bills, goals, accounts, balances, products, receipts and
+  trips, categories, settings and the family, family spending, overview, and the admin
+  console's actions). Each tool says who may have it (`needs`); `api.session_access` works
+  out the session's level as the admin pages do, the model is offered only that level's
+  tools, and saving a card asks again (ADR-0029). Ports a tool needs — storage for deleting
+  a receipt, the categoriser for a told one, the mailer for an admin's letters — come in
+  `ToolContext`, injected by the router like any other. A tool is a `Reader`,
   answering at once, or a `Writer`, proposing a card it saves through the service its
   screen uses after the user approves it. Defining the class registers it. A writer finds
   what to change by the name the model passes (`find_by_name`; a card also by its number
