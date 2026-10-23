@@ -7,6 +7,7 @@ import { Select } from "@/shared/components";
 import { useTranslation } from "react-i18next";
 import { categoryName } from "@/shared/categoryName";
 import { CategoryIcon } from "@/shared/components";
+import { NEW_CATEGORY, NewCategoryField, NewCategoryOption } from "./NewCategoryField";
 
 interface InlineCategoryPickerProps {
   itemId: string;
@@ -38,6 +39,7 @@ export const InlineCategoryPicker = observer(function InlineCategoryPicker({
   const { categoriesStore, toastStore } = useStores();
   const { t } = useTranslation("categories");
   const [isUpdating, setIsUpdating] = useState(false);
+  const [adding, setAdding] = useState(false);
   // Ticked by default, as in docs/design/screens/categorisation.html: a correction
   // is normally meant for next time too (BRD C5).
   const [applyToFuture, setApplyToFuture] = useState(true);
@@ -72,9 +74,10 @@ export const InlineCategoryPicker = observer(function InlineCategoryPicker({
         </span>
         <Select
           aria-label={t("picker.label", { item: itemName })}
-          value={undecided ? "" : (currentCategoryId ?? "")}
+          value={adding ? NEW_CATEGORY : undecided ? "" : (currentCategoryId ?? "")}
           onChange={(e) => {
-            void handleChange(e.target.value);
+            if (e.target.value === NEW_CATEGORY) setAdding(true);
+            else void handleChange(e.target.value);
           }}
           disabled={isUpdating || categoriesStore.isLoading}
           tone={needsAttention ? "warning" : "default"}
@@ -97,6 +100,7 @@ export const InlineCategoryPicker = observer(function InlineCategoryPicker({
               ))}
             </optgroup>
           )}
+          <NewCategoryOption />
         </Select>
         <ChevronDown
           size={15}
@@ -104,6 +108,17 @@ export const InlineCategoryPicker = observer(function InlineCategoryPicker({
           className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
         />
       </div>
+      {adding && (
+        <NewCategoryField
+          onCreated={(id) => {
+            setAdding(false);
+            void handleChange(id);
+          }}
+          onCancel={() => {
+            setAdding(false);
+          }}
+        />
+      )}
       <label
         className="flex items-center gap-2 pl-1 text-sm text-muted-foreground"
         title={

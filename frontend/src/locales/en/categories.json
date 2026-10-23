@@ -108,5 +108,11 @@
     "finalised": "Finalised months keep the totals they were closed with. Only the category breakdown is rewritten.",
     "keep": "Keep it",
     "confirm": "Delete and move"
+  },
+  "inline": {
+    "option": "＋ New category",
+    "name": "New category",
+    "placeholder": "e.g. Subscriptions",
+    "create": "Create"
   }
 }

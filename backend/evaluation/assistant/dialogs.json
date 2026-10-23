@@ -182,7 +182,7 @@
     "expect": {
       "says": [
         "Моя картка",
-        "4035.73"
+        "3975.73"
       ]
     }
   },
@@ -215,7 +215,7 @@
     ],
     "expect": {
       "says": [
-        "16835.73"
+        "16775.73"
       ]
     }
   },
@@ -544,6 +544,62 @@
     "attached": 2,
     "expect": {
       "says": []
+    }
+  },
+  {
+    "id": "uk-last-receipt-into-new-category-over-turns",
+    "turns": [
+      "покажи мій останній чек",
+      "якої він категорії?",
+      "створи категорію Підписки і перенеси його туди"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "category_move",
+          "fields": {
+            "category": "Підписки"
+          }
+        }
+      ],
+      "may": [
+        "category"
+      ]
+    }
+  },
+  {
+    "id": "en-last-receipt-into-new-category",
+    "turns": [
+      "put my last receipt under a new category, Subscriptions"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "category_move",
+          "fields": {
+            "category": "Subscriptions"
+          }
+        }
+      ],
+      "may": [
+        "category"
+      ]
+    }
+  },
+  {
+    "id": "pl-new-category",
+    "turns": [
+      "utwórz kategorię Subskrypcje"
+    ],
+    "expect": {
+      "cards": [
+        {
+          "kind": "category",
+          "fields": {
+            "name": "Subskrypcje"
+          }
+        }
+      ]
     }
   }
 ]

@@ -191,6 +191,16 @@ class HouseholdLinesResponse(BaseModel):
     products: list[ProductMembersResponse]
 
 
+class HouseholdReceiptResponse(BaseModel):
+    """A receipt on the family's chart, with whose it is (F23.22.3, ADR-0017)."""
+
+    id: uuid.UUID
+    user_id: uuid.UUID
+    merchant_name: str | None
+    total: Decimal
+    purchased_at: datetime
+
+
 class HouseholdDailyResponse(BaseModel):
     """The household's spending day by day, per member (F12.5, F23.4).
 

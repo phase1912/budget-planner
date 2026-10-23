@@ -2,6 +2,11 @@ import { useEffect, useId, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
+import {
+  NEW_CATEGORY,
+  NewCategoryField,
+  NewCategoryOption,
+} from "@/features/categories/components/NewCategoryField";
 import { TripChoiceField } from "@/features/trips/components/TripChoiceField";
 import { paidCurrencyOptions } from "@/features/trips/tripFormat";
 import { categoryName } from "@/shared/categoryName";
@@ -54,6 +59,7 @@ export const ManualExpenseDialog = observer(function ManualExpenseDialog({
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState(accountCurrency);
   const [categoryId, setCategoryId] = useState("");
+  const [addingCategory, setAddingCategory] = useState(false);
   const [kind, setKind] = useState<ExpenseKind | "">("");
   const [answers, setAnswers] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
@@ -81,6 +87,7 @@ export const ManualExpenseDialog = observer(function ManualExpenseDialog({
     amount.trim() !== "" &&
     !amountInvalid &&
     chosenCategory !== "" &&
+    !addingCategory &&
     !(trip?.kind === "business" && answer === undefined);
 
   const save = async () => {
@@ -168,9 +175,10 @@ export const ManualExpenseDialog = observer(function ManualExpenseDialog({
           </div>
           <Select
             label={t("manual.category")}
-            value={chosenCategory}
+            value={addingCategory ? NEW_CATEGORY : chosenCategory}
             onChange={(e) => {
-              setCategoryId(e.target.value);
+              if (e.target.value === NEW_CATEGORY) setAddingCategory(true);
+              else setCategoryId(e.target.value);
             }}
           >
             {categories.map((category) => (
@@ -178,7 +186,19 @@ export const ManualExpenseDialog = observer(function ManualExpenseDialog({
                 {categoryName(category.name)}
               </option>
             ))}
+            <NewCategoryOption />
           </Select>
+          {addingCategory && (
+            <NewCategoryField
+              onCreated={(id) => {
+                setCategoryId(id);
+                setAddingCategory(false);
+              }}
+              onCancel={() => {
+                setAddingCategory(false);
+              }}
+            />
+          )}
           {fromTrip && (
             <p className="m-0 text-md">{t("trips:question.fromTrip", { name: fromTrip.name })}</p>
           )}

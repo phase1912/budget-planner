@@ -240,6 +240,9 @@ def _history(messages: Sequence[ConversationMessage]) -> list[Turn]:
                 f"(The user attached {m.card['fields'].get('count')} receipt file(s): they are "
                 "being read now, and the user checks and saves them from the card below.)"
             )
+        elif m.card_state == CardState.SHOWN and m.card and m.card["fields"].get("refs"):
+            # What a read tool showed, by id, so the next turn can point at it (F21.15).
+            text = f"(Shown with their ids: {m.card['fields']['refs']})"
         elif m.card_state == CardState.SHOWN:
             # The answer beside it already says what the chart or link shows.
             continue

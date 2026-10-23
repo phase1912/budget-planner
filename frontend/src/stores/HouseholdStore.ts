@@ -14,6 +14,7 @@ export type HouseholdMonth = components["schemas"]["HouseholdMonthResponse"];
 export type HouseholdStatistics = components["schemas"]["HouseholdStatisticsResponse"];
 export type HouseholdDaily = components["schemas"]["HouseholdDailyResponse"];
 export type HouseholdLines = components["schemas"]["HouseholdLinesResponse"];
+export type HouseholdReceipt = components["schemas"]["HouseholdReceiptResponse"];
 export type HouseholdView = "mine" | "household";
 export type MemberRole = components["schemas"]["MemberRoleRequest"]["role"];
 
@@ -39,6 +40,10 @@ export class HouseholdStore {
   readonly statisticsState = new AsyncState();
   /** Each member's spending day by day over the statistics' period. */
   daily: HouseholdDaily | null = null;
+  /** The day tapped on the family's chart and its receipts, with whose each is (F23.22.3). */
+  day: string | null = null;
+  dayReceipts: HouseholdReceipt[] = [];
+  isLoadingDay = false;
   /** What the family buys line by line over the statistics' period (F12.11). */
   lines: HouseholdLines | null = null;
   // Only the latest request may land: switching month or period quickly must not let
@@ -138,12 +143,29 @@ export class HouseholdStore {
    */
   async loadDaily(start: string, end: string): Promise<void> {
     const request = ++this.dailyRequest;
+    // A day from another period is not one of this one's.
+    this.day = null;
+    this.dayReceipts = [];
     const response = await settle(() =>
       apiClient.GET("/api/v1/household/daily", { params: { query: { start, end } } }),
     );
     runInAction(() => {
       if (request !== this.dailyRequest) return;
       this.daily = response.error ? null : response.data;
+    });
+  }
+
+  /** The family's receipts of one day tapped on its chart; a later tap's answer wins. */
+  async openDay(day: string): Promise<void> {
+    this.day = day;
+    this.isLoadingDay = true;
+    const response = await settle(() =>
+      apiClient.GET("/api/v1/household/receipts", { params: { query: { start: day, end: day } } }),
+    );
+    runInAction(() => {
+      if (this.day !== day) return;
+      this.dayReceipts = response.data ?? [];
+      this.isLoadingDay = false;
     });
   }
 
@@ -298,6 +320,8 @@ export class HouseholdStore {
     this.month = null;
     this.statistics = null;
     this.daily = null;
+    this.day = null;
+    this.dayReceipts = [];
     this.lines = null;
   }
 

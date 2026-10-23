@@ -3,7 +3,7 @@
 import uuid
 from collections.abc import Collection
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import func, or_, select
@@ -37,6 +37,17 @@ class MemberSpend:
     shared_count: int
     private_total: Decimal
     private_count: int
+
+
+@dataclass(frozen=True)
+class FamilyReceipt:
+    """One receipt as the family's chart lists it: whose, where, and what it counted."""
+
+    receipt_id: uuid.UUID
+    user_id: uuid.UUID
+    merchant_name: str | None
+    total: Decimal
+    purchased: datetime
 
 
 @dataclass(frozen=True)
@@ -175,6 +186,42 @@ class HouseholdSpendRepository:
             (spent_on, user_id): Decimal(total)
             for spent_on, user_id, total in (await self.session.execute(stmt)).all()
         }
+
+    async def receipts(
+        self, period: DateRange, member_ids: Collection[uuid.UUID], viewer_id: uuid.UUID
+    ) -> list[FamilyReceipt]:
+        """The receipts behind `daily_by_member` over `period`, newest first (F23.22.3).
+
+        The same rule as the daily figures: every member's shared receipts, and the
+        viewer's own private ones; another member's private receipt is never listed
+        (ADR-0017). A receipt's total is what it counts in the budget.
+        """
+        purchased = _purchased()
+        stmt = (
+            select(
+                Receipt.id,
+                Receipt.user_id,
+                Receipt.merchant_name,
+                func.coalesce(func.sum(LineItem.paid), 0),
+                purchased,
+            )
+            .select_from(LineItem)
+            .join(Receipt, LineItem.receipt_id == Receipt.id)
+            .where(
+                Receipt.user_id.in_(member_ids),
+                counted_in_budget(),
+                _within(period),
+                or_(Receipt.is_private.is_(False), Receipt.user_id == viewer_id),
+            )
+            .group_by(Receipt.id, Receipt.user_id, Receipt.merchant_name, purchased)
+            .order_by(purchased.desc())
+        )
+        return [
+            FamilyReceipt(receipt_id, user_id, merchant, Decimal(total), bought)
+            for receipt_id, user_id, merchant, total, bought in (
+                await self.session.execute(stmt)
+            ).all()
+        ]
 
     async def category_members(
         self, period: DateRange, member_ids: Collection[uuid.UUID]

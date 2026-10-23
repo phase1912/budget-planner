@@ -73,6 +73,10 @@
     "title": "Dzień po dniu",
     "you": "Ty",
     "bar": "{{date}}: {{amounts}} {{currency}}",
-    "undatedPrivate": "Prywatne paragony innych, {{amount}} {{currency}}, liczą się do sumy, ale nie są pokazywane według dni."
+    "undatedPrivate": "Prywatne paragony innych, {{amount}} {{currency}}, liczą się do sumy, ale nie są pokazywane według dni.",
+    "receiptsOf": "Paragony z {{date}}",
+    "loading": "Wczytujemy…",
+    "noReceipts": "Tego dnia nie ma paragonów.",
+    "unknownShop": "Nieznany sklep"
   }
 }

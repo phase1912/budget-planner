@@ -274,16 +274,29 @@ export class CategoriesStore {
     void this.fetchReviewQueue();
   }
 
-  /** Create a new custom category (BRD C6). */
+  /** Create a new custom category (BRD C6); the error to show, or null. */
   async createCategory(name: string): Promise<string | null> {
+    const made = await this.addCategory(name);
+    return "error" in made ? made.error : null;
+  }
+
+  /**
+   * Create a custom category where one is being chosen (BRD C6 — F5.9): the new one's id,
+   * listed at once so it can be selected, or the error to show.
+   */
+  async addCategory(name: string): Promise<{ id: string } | { error: string }> {
     const response = await apiClient.POST("/api/v1/categories", {
       body: { name },
     });
     if (response.error) {
-      return errorMessage(response.error, i18n.t("messages:categories.createFailed"));
+      return { error: errorMessage(response.error, i18n.t("messages:categories.createFailed")) };
     }
+    const made = response.data;
+    runInAction(() => {
+      if (!this.categories.some((c) => c.id === made.id)) this.categories.push(made);
+    });
     void this.fetchCategories();
-    return null;
+    return { id: made.id };
   }
 
   /** Rename a custom category. */

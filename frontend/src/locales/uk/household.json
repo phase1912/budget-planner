@@ -73,6 +73,10 @@
     "title": "По днях",
     "you": "Ви",
     "bar": "{{date}}: {{amounts}} {{currency}}",
-    "undatedPrivate": "Приватні чеки інших, {{amount}} {{currency}}, входять у загальну суму, але по днях не показуються."
+    "undatedPrivate": "Приватні чеки інших, {{amount}} {{currency}}, входять у загальну суму, але по днях не показуються.",
+    "receiptsOf": "Чеки за {{date}}",
+    "loading": "Завантажуємо…",
+    "noReceipts": "Цього дня чеків немає.",
+    "unknownShop": "Невідомий магазин"
   }
 }

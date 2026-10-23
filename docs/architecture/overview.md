@@ -151,7 +151,10 @@ a private receipt's photo, or a stranger's, is never found.
 The household's month and statistics (F12.5) come from `HouseholdBudgetService`
 (`app/services/household_budget.py`) over `HouseholdSpendRepository`, which returns sums
 only: per member, shared and private apart, and per category over shared receipts. No
-query in it returns a private receipt's merchant, items, category or date.
+query in it returns a private receipt's merchant, items, category or date. Its one list,
+`GET /api/v1/household/receipts` for the day tapped on the family's chart (F23.22.3),
+names shared receipts by shop, total and owner, and the caller's own private ones; each
+opens through `HouseholdReaders` as any household receipt does.
 
 Money a household shares (F12.8, ADR-0023) — incomes, regular incomes and regular bills —
 is read and changed through `SharedWithHousehold` (`app/repository/shared.py`), the one

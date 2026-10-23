@@ -58,7 +58,9 @@
       "money_in": "Money in",
       "money_out": "Money out",
       "move": "Move between cards",
-      "product_group": "Product group"
+      "product_group": "Product group",
+      "category": "New category",
+      "category_move": "Move to a category"
     },
     "fields": {
       "name": "Name",
@@ -78,7 +80,8 @@
       "source": "From",
       "received_on": "Date",
       "moved_on": "Date",
-      "products": "Products"
+      "products": "Products",
+      "category": "Category"
     },
     "options": {
       "spending_ceiling": "Spend at most a month",

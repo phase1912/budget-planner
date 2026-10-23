@@ -9,6 +9,7 @@ through the real conversation service, graph and tools against the configured mo
     {"cards": [{"kind": "balance", "fields": {"account_id": "Моя картка", "way": "correct"}}]}
     {"ask": ["Моя картка", "Revolut"]}   a question offering at least these, and no card
     {"says": ["16900"]}                   an answer holding these, and no card
+    {"cards": [...], "may": ["category"]}  those cards, and these kinds besides if proposed
 
 Ids on a card are read back as the names of what they point at, amounts as numbers. Every
 dialog runs in a transaction rolled back at its end, so nothing it writes is kept.
@@ -79,6 +80,8 @@ def score(expect: dict[str, Any], reply: str, cards: list[dict[str, Any]]) -> tu
             if match is None:
                 return False, f"no {want['kind']} card like {want.get('fields')}"
             left.remove(match)
+        # A card the dialog allows besides — a new category beside the move into it.
+        left = [c for c in left if c.get("kind") not in expect.get("may", [])]
         return (not left, f"extra cards {[c['kind'] for c in left]}" if left else "")
     if writes:
         return False, f"proposed {[c['kind'] for c in writes]} instead"
@@ -152,7 +155,7 @@ async def _seed(session: Any, mapper: Any) -> tuple[Any, dict[str, str]]:
 async def _family_and_shopping(session: Any, user: Any, today: Any) -> None:
     """Some shopping of the user's, read into products, and a wife in the family with
     shopping of her own."""
-    from datetime import UTC, datetime
+    from datetime import UTC, datetime, timedelta
     from decimal import Decimal
 
     from app.core.context import current_user_id
@@ -181,6 +184,16 @@ async def _family_and_shopping(session: Any, user: Any, today: Any) -> None:
         ("Pizza Margherita", "39.00", "Dining"),
     ):
         await spend(user, what, amount, category)
+    # The latest, filed under Other: the receipt "put it under Subscriptions" is about (F21.15).
+    # One transaction gives every receipt the same arrival time: this one arrives last.
+    youtube = await record_expense(
+        session,
+        user,
+        ManualExpense("YouTube Premium", today, Decimal("60.00"), None, categories["Other"]),
+        None,
+    )
+    youtube.created_at = datetime.now(UTC) + timedelta(minutes=1)
+    await session.flush()
     await ProductService(session).link_unmatched(user.id)
 
     wife = User(
@@ -319,6 +332,8 @@ async def main(path: Path, model: str | None, location: str | None, verbose: boo
         if model
         else agent_from_settings()
     )
+    # The evaluation user is never committed, so its calls have no one to be charged to.
+    agent.recorder = None
     results = []
     for dialog in json.loads(path.read_text()):
         try:

@@ -247,6 +247,9 @@ Rules that must hold at all times. Each is a candidate for a test.
     only one sum per member per month, never its merchant, items, category or date (N2).
     The household's day-by-day chart therefore places a private receipt on its day only
     for its owner; for the others the period's private spending is one undated sum.
+    A day tapped on that chart lists the same receipts — every member's shared ones with
+    whose each is, and the viewer's own private ones — never another member's private one
+    (F23.22.3).
 11i. A user belongs to at most one household, and its members share one account currency,
     in which its totals are (D1).
 11j. A household's month is the sum of its members' months, counted by the same rules (D1-D3),
@@ -672,6 +675,11 @@ Rules that must hold at all times. Each is a candidate for a test.
     the chat are receipts read by the same upload as the Add screen, counted in the same
     quota and checked there (F21.8.2). A recording from the microphone is recognised and
     dropped; only the words the user sends are kept (F21.2.2, ADR-0031).
+    It refiles only the user's own receipts: moving a receipt or a line into a category is
+    the owner's correction, as on the screen (C4), and a move into a category the user does
+    not have makes it when approved; approving the new category's own card after that
+    changes nothing. Receipts it showed stay in the conversation by id, so "that receipt"
+    on the next turn is the same one (F21.15).
 
 **Where a goal stands**
 

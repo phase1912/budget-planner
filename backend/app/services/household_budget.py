@@ -11,7 +11,11 @@ from app.domain.family_lines import ProductByMember, Twice, bought_twice, who_bu
 from app.domain.periods import DateRange
 from app.models.household import Household
 from app.models.user import User
-from app.repository.household_spend import HouseholdSpendRepository, SharedCategorySpend
+from app.repository.household_spend import (
+    FamilyReceipt,
+    HouseholdSpendRepository,
+    SharedCategorySpend,
+)
 from app.services.household import HouseholdService
 from app.services.income import bill_rule, regular_rule
 
@@ -194,6 +198,12 @@ class HouseholdBudgetService:
             for spent_on in (period.start + timedelta(days=n) for n in range(period.days))
         ]
         return HouseholdDaily(members=members, days=days, undated_private=undated)
+
+    async def receipts(self, user: User, period: DateRange) -> list[FamilyReceipt]:
+        """The family's receipts over `period` the viewer may see, for a day tapped on the
+        chart (F23.22.3). Raises NotFoundError outside a household."""
+        household = await self._household(user)
+        return await self.spend.receipts(period, [m.user_id for m in household.members], user.id)
 
     async def lines(
         self, user: User, period: DateRange

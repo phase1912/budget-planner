@@ -32,6 +32,7 @@ from app.schemas.household import (
     HouseholdMonthResponse,
     HouseholdName,
     HouseholdRead,
+    HouseholdReceiptResponse,
     HouseholdStatisticsResponse,
     JoinRequest,
     LimitUsageResponse,
@@ -305,6 +306,29 @@ async def get_household_daily(
         ],
         undated_private=daily.undated_private,
     )
+
+
+@router.get("/receipts", response_model=list[HouseholdReceiptResponse])
+async def get_household_receipts(
+    period: Annotated[DateRange, Depends(required_period)],
+    current_user: CurrentUser,
+    budget: Budget,
+) -> list[HouseholdReceiptResponse]:
+    """The family's receipts between two dates, both included, newest first (F23.22.3).
+
+    Every member's shared receipts and the caller's own private ones; another member's
+    private receipt is never listed (ADR-0017). 404 outside a household.
+    """
+    return [
+        HouseholdReceiptResponse(
+            id=r.receipt_id,
+            user_id=r.user_id,
+            merchant_name=r.merchant_name,
+            total=r.total,
+            purchased_at=r.purchased,
+        )
+        for r in await budget.receipts(current_user, period)
+    ]
 
 
 @router.get("/lines", response_model=HouseholdLinesResponse)

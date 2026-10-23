@@ -112,5 +112,11 @@
     "finalised": "Zamknięte miesiące zachowują swoje sumy. Zmienia się tylko podział na kategorie.",
     "keep": "Zostaw",
     "confirm": "Usuń i przenieś"
+  },
+  "inline": {
+    "option": "＋ Nowa kategoria",
+    "name": "Nowa kategoria",
+    "placeholder": "np. Subskrypcje",
+    "create": "Utwórz"
   }
 }
