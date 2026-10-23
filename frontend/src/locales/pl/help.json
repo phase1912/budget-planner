@@ -143,7 +143,7 @@
         },
         "taxes": {
           "q": "Podatki płacę sam(a)",
-          "a": "Włącz „Sam płacę podatki” w Ustawienia › Pieniądze: stawka od każdego opodatkowanego dochodu i stała kwota miesięcznie, jeśli jest. Start pokaże, co jest Twoje po podatkach.",
+          "a": "Włącz „Samodzielnie płacę podatki” w Ustawienia › Pieniądze: stawka od każdego opodatkowanego dochodu i stała kwota miesięcznie, jeśli jest. Start pokaże, co jest Twoje po podatkach.",
           "where": "Ustawienia › Pieniądze"
         },
         "bills": {

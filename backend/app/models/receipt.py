@@ -43,13 +43,15 @@ class ReceiptChannel(enum.StrEnum):
     Kept on every receipt because a question about a wrong figure starts with
     where the data came from. MANUAL is an expense the user typed in because there
     was no receipt — cash for a tour, a tip (F20.5): nothing was read, so it never
-    counts in the reading-accuracy report.
+    counts in the reading-accuracy report. TOLD is a receipt the user said or typed in the
+    chat, line by line (F21.8.1): nothing was read either.
     """
 
     PHOTO = "photo"
     EMAIL = "email"
     QR = "qr"
     MANUAL = "manual"
+    TOLD = "told"
 
 
 class Receipt(Model):

@@ -7,6 +7,7 @@ import {
   Landmark,
   Pencil,
   PlusCircle,
+  ReceiptText,
   ShoppingBasket,
   Trash2,
   X,
@@ -37,10 +38,15 @@ const decimal = (typed: string): string => typed.replace(",", ".").replace(/\s/g
 const ON_A_CARD = ["account", "transfer", "balance", "money_", "move"];
 const onACard = (kind: string) => ON_A_CARD.some((prefix) => kind.startsWith(prefix));
 
+/** Kinds about one receipt: a line corrected, the receipt checked, deleted or told (F21.6). */
+const ON_A_RECEIPT = ["line", "receipt_", "told_receipt", "category_move"];
+const onAReceipt = (kind: string) => ON_A_RECEIPT.some((prefix) => kind.startsWith(prefix));
+
 /** What a card changes: an icon that says add, change or remove — or the thing itself. */
 function iconOf(kind: string): LucideIcon {
-  if (/_(change)$/.test(kind)) return Pencil;
-  if (/_(stop|remove)$/.test(kind)) return Trash2;
+  if (/_(change)$/.test(kind) || kind === "line") return Pencil;
+  if (/_(stop|remove|delete)$/.test(kind)) return Trash2;
+  if (onAReceipt(kind)) return ReceiptText;
   if (kind.startsWith("goal")) return Flag;
   if (onACard(kind)) return Landmark;
   if (kind.startsWith("product")) return ShoppingBasket;
@@ -50,6 +56,11 @@ function iconOf(kind: string): LucideIcon {
 /** The screen a saved card's change can be seen on. */
 function screenOf(kind: string): string {
   if (kind.startsWith("goal")) return "/goals";
+  if (kind === "trip") return "/trips";
+  if (kind.startsWith("admin")) return "/admin";
+  if (kind === "setting" || kind.startsWith("family")) return "/settings";
+  if (kind === "category") return "/categories";
+  if (onAReceipt(kind)) return "/receipts";
   if (onACard(kind)) return "/accounts";
   if (kind.startsWith("product")) return "/products";
   return "/plan";
@@ -95,7 +106,10 @@ export const FormCard = observer(function FormCard({
             key={field.name}
             className="m-0 rounded-control bg-muted px-3 py-2.5 text-lg font-bold"
           >
-            {text(value)}
+            {/* A setting is named by the server's key: the user reads its name (F21.11). */}
+            {card.kind === "setting"
+              ? text(value).replace(/^[a-z_]+:/, `${say(`card.settings.${text(fields.setting)}`)}:`)
+              : text(value)}
           </p>
         );
       case "amount":
@@ -183,6 +197,62 @@ export const FormCard = observer(function FormCard({
           </ul>
         );
       }
+      case "lines": {
+        const lines = Array.isArray(value)
+          ? value.filter((l): l is Fields => typeof l === "object" && l !== null)
+          : [];
+        const setLine = (i: number, change: Fields) => {
+          set(field.name)(lines.map((l, j) => (j === i ? { ...l, ...change } : l)));
+        };
+        const sum = lines.reduce((s, l) => s + (Number(text(l.amount)) || 0), 0);
+        return (
+          <div key={field.name} className="flex flex-col gap-2">
+            <span aria-hidden="true" className="text-base font-medium text-muted-foreground">
+              {label(field.name)}
+            </span>
+            <ul aria-label={label(field.name)} className="m-0 flex list-none flex-col gap-2 p-0">
+              {lines.map((line, i) => (
+                <li key={i} className="flex items-end gap-2">
+                  <Input
+                    containerClassName="min-w-0 flex-1"
+                    aria-label={t("card.lineName", { number: i + 1 })}
+                    value={text(line.name)}
+                    disabled={!proposed}
+                    onChange={(e) => {
+                      setLine(i, { name: e.target.value });
+                    }}
+                  />
+                  <Input
+                    containerClassName="w-24 shrink-0"
+                    aria-label={t("card.lineAmount", { number: i + 1 })}
+                    inputMode="decimal"
+                    value={text(line.amount)}
+                    disabled={!proposed}
+                    onChange={(e) => {
+                      setLine(i, { amount: decimal(e.target.value) });
+                    }}
+                  />
+                  {proposed && lines.length > 1 && (
+                    <button
+                      type="button"
+                      aria-label={t("card.removeItem", { name: text(line.name) })}
+                      onClick={() => {
+                        set(field.name)(lines.filter((_, j) => j !== i));
+                      }}
+                      className="flex h-12 w-11 shrink-0 items-center justify-center rounded-control"
+                    >
+                      <X size={16} aria-hidden="true" />
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <p className="m-0 text-right text-md font-bold tabular-nums">
+              {t("card.linesTotal", { amount: sum.toFixed(2), currency })}
+            </p>
+          </div>
+        );
+      }
       case "repeat":
         return (
           <RepeatField
@@ -241,6 +311,12 @@ export const FormCard = observer(function FormCard({
               set(field.name)(e.target.value);
             }}
           >
+            {/* Left for the user to choose (F21.10.2): nothing is picked for them. */}
+            {text(value) === "" && (
+              <option value="" disabled>
+                {t("card.choose")}
+              </option>
+            )}
             {field.options.map((option) => (
               <option key={option} value={option}>
                 {say(`card.options.${option}`)}
@@ -283,6 +359,9 @@ export const FormCard = observer(function FormCard({
       icon={iconOf(card.kind)}
       busy={busy}
       onApprove={approve}
+      blocked={card.form.some(
+        (f) => f.kind === "choice" && f.required && text(fields[f.name]) === "",
+      )}
       done={
         <Link to={screenOf(card.kind)} className="self-end text-md font-bold text-primary">
           {t("card.openScreen")}

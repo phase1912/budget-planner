@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Mail, PenLine } from "lucide-react";
+import { Mail, MessageSquare, PenLine } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import type { components } from "@/api/schema";
 import { observer } from "mobx-react-lite";
@@ -64,6 +64,12 @@ export const ReceiptsPage = observer(() => {
   const requestedStart = searchParams.get("start");
   const requestedEnd = searchParams.get("end");
   const requestedSearch = searchParams.get("q");
+  const requestedReceipt = searchParams.get("receipt");
+
+  // `?receipt=…` is the assistant's link to the one receipt it answered about (F21.6).
+  useEffect(() => {
+    if (requestedReceipt) void receiptStore.fetchReceiptDetail(requestedReceipt);
+  }, [receiptStore, requestedReceipt]);
 
   useEffect(() => {
     // `?status=manual_review` is how the dashboard's "Resolve them" opens this
@@ -256,6 +262,8 @@ export const ReceiptsPage = observer(() => {
                         <Mail size={15} role="img" aria-label={t("list.fromEmail")} />
                       ) : receipt.channel === "manual" ? (
                         <PenLine size={15} role="img" aria-label={t("list.manual")} />
+                      ) : receipt.channel === "told" ? (
+                        <MessageSquare size={15} role="img" aria-label={t("list.told")} />
                       ) : (
                         <svg
                           width="15"
@@ -304,8 +312,8 @@ export const ReceiptsPage = observer(() => {
                           day: "numeric",
                           month: "short",
                         }) +
-                        // An expense typed in has a day, never a time (F20.5).
-                        (receipt.channel === "manual"
+                        // An expense typed in or told has a day, never a time (F20.5).
+                        (receipt.channel === "manual" || receipt.channel === "told"
                           ? ""
                           : ", " +
                             formatPurchase(receipt.transaction_date, {

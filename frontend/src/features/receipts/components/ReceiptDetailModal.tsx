@@ -110,8 +110,8 @@ export const ReceiptDetailModal = observer(() => {
                     month: "long",
                     year: "numeric",
                   }) +
-                  // An expense typed in has a day, never a time (F20.5).
-                  (receipt.channel === "manual"
+                  // An expense typed in or told has a day, never a time (F20.5).
+                  (receipt.channel === "manual" || receipt.channel === "told"
                     ? ""
                     : " · " +
                       formatPurchase(receipt.transaction_date, {

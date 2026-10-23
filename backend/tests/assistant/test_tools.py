@@ -200,9 +200,11 @@ def test_a_name_is_found_the_way_people_say_it_and_never_guessed_between_two() -
     assert ambiguous.item is None and "Gym A, Gym B" in (ambiguous.error or "")
 
 
-def test_settings_and_the_account_have_no_tool_and_every_writer_draws_or_owns_a_card() -> None:
-    names = set(all_tools())
-    for forbidden in ("password", "email", "delete_user", "language", "currency", "settings"):
+def test_signing_in_has_no_tool_and_every_writer_draws_or_owns_a_card() -> None:
+    """ADR-0029 replaced ADR-0025's "settings have no tool": only what guards signing in
+    and deleting the account stays without one."""
+    names = {name for name, tool in all_tools().items() if tool.needs == "user"}
+    for forbidden in ("password", "email", "delete_user", "two_factor"):
         assert not any(forbidden in name for name in names)
     own_cards = {"budget", "income", "bill", "expense"}
     for kind, writer in card_writers().items():

@@ -18,9 +18,11 @@ export function receiptSource(receipt: Receipt): { label: string; reference: str
       ? i18n.t("receipts:source.email")
       : receipt.channel === "manual"
         ? i18n.t("receipts:source.manual")
-        : receipt.channel === "qr"
-          ? i18n.t("receipts:source.qr")
-          : i18n.t("receipts:source.photos", { count: photos });
+        : receipt.channel === "told"
+          ? i18n.t("receipts:source.told")
+          : receipt.channel === "qr"
+            ? i18n.t("receipts:source.qr")
+            : i18n.t("receipts:source.photos", { count: photos });
   const reference = receipt.source_reference?.replace(/^<|>$/g, "").trim() ?? "";
   return { label, reference: reference === "" ? null : reference };
 }

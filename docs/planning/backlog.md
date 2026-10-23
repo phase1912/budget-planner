@@ -3,14 +3,14 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-25 epics · 190 features · 381 tasks written so far.
+27 epics · 198 features · 395 tasks written so far.
 
-22 epics are in the diploma project's scope; 3 are planned but out of it.
+23 epics are in the diploma project's scope; 4 are planned but out of it.
 
 | Epic | Title | BRD | Features | Groomed | Phase | Scope |
 |---|---|---|---|---|---|---|
 | E0 | Foundation & Delivery Platform | — | 10 | yes | 1 | Diploma |
-| E1 | Identity & Account | BR-7, N2 | 4 | yes | 1 | Diploma |
+| E1 | Identity & Account | BR-7, N2 | 5 | yes | 1 | Diploma |
 | E2 | Receipt Ingestion & Storage | BR-1 | 5 | yes | 1 | Diploma |
 | E3 | Receipt Parsing & Extraction | BR-1 | 8 | no | 1 | Diploma |
 | E4 | Multi-Photo Position Matching | BR-2 | 8 | yes | 1 | Diploma |
@@ -31,8 +31,10 @@
 | E19 | Advertising | — | 4 | yes | 2 | Diploma |
 | E20 | Trips | — | 5 | yes | 2 | Diploma |
 | E21 | Voice and Chat Assistant | — | 15 | yes | 2 | Diploma |
-| E22 | Android App | — | 3 | yes | 2 | Diploma |
+| E22 | Android App | — | 5 | yes | 2 | Diploma |
 | E23 | Improvements | — | 22 | no | 2 | Diploma |
+| E25 | iOS App | — | 3 | yes | 2 | Diploma |
+| E26 | Native Apps | — | 2 | no | 3 | Out of scope |
 | E24 | Bugfixes | — | 2 | no | 2 | Diploma |
 
 ---
@@ -212,6 +214,18 @@ A user can set the account currency and an optional monthly budget limit, which 
 - **F1.4.1** GET and PATCH /me endpoints — Read and partially update the profile. Changing budget_limit must not retroactively rewrite finalised monthly snapshots — it affects presentation only.
 - **F1.4.2** Currency validation and the single-currency assumption — ISO 4217 validation, and an explicit guard rejecting a currency change once receipts exist, since BRD section 4.2 puts conversion out of scope.
 - **F1.4.3** Profile screen — Displays and edits currency and monthly budget limit, backed by a MobX store following the conventions set in epic E9.
+
+### F1.6 — Signing in with Google and Apple
+
+*Requirements: N2* · *Blocked by: F1.2, F22.2*
+
+A password and a confirmation letter are the slowest way into the service on a phone. Google and Apple sign the user in through OpenID Connect: the server checks the provider's ID token (issuer, audience, signature from its published keys, nonce, expiry) and signs in, or creates, the account of that verified address; an existing account with the same address links the provider after signing in once with its password, never silently. Wherever Google is offered in the iOS app, Apple is offered too (App Review 4.8). Built for whichever store goes first (E22 or E25), on the web as well.
+
+**Demonstrated by:** On a phone, tap "Continue with Google", pick the account and land on Home with no password and no letter; in Settings see Google linked, add a password, unlink it.
+
+- **F1.6.1** OpenID Connect sign-in on the server — POST /api/v1/auth/oidc/{provider} taking an ID token (and the nonce it was asked with) for Google or Apple, verified against the provider's keys and our client ids; a linked-identities table (provider, subject, user) by add-only migration; a new account from a verified address, confirmed by the provider; an address that already has an account asks for its password before linking; Apple's private relay addresses kept as given. The same tokens and refresh as a password sign-in; an ADR for providers, linking and what is stored. Tests with a stubbed key set, including a forged token, a wrong audience and another user's subject (N2).
+- **F1.6.2** The buttons, on the web and in the apps — "Continue with Google" and "Continue with Apple" on sign-in and sign-up, following each provider's button rules; on the web through their JavaScript sign-in, in the apps through the native sign-in (Credential Manager on Android, AuthenticationServices on iOS) behind the platform module; Settings lists linked providers, links and unlinks one while a password or another provider remains. Three languages; checked at 375, 768 and 1280 px.
+- **F1.6.3** Apple's rules for its sign-in — Deleting an account revokes its Apple tokens through Apple's REST API (App Review 5.1.1), the server-to-server notifications for consent revoked or an email changed are handled, and the client secret is a signed JWT from a key in Secret Manager, rotated before it expires; Terraform and the deployment documentation updated.
 
 ---
 
@@ -1739,7 +1753,7 @@ A microphone button beside the text field: the user speaks in Ukrainian, Polish,
 
 **Demonstrated by:** Tap the microphone and say "wczoraj taxi 45 złotych": the message appears, then the assistant's card.
 
-- **F21.2.1** Speech to text in the browser — The Web Speech API in the user's language, words shown as they are heard and sent when the phrase ends, "approve" in three languages saving the waiting card, the microphone hidden where unsupported, and the privacy policy saying the browser's maker may recognise the sound. Checked at 375, 768 and 1280 px.
+- **F21.2.1** Speech to text in the browser — The Web Speech API in the user's language, words shown as they are heard and sent when the phrase ends, "approve" in three languages saving the waiting card, the microphone hidden where unsupported, and the privacy policy saying the browser's maker may recognise the sound. Checked at 375, 768 and 1280 px. Built, then hidden on 2026-10-20 and superseded by F21.2.2: the browser's recognition proved too poor; closed with F21.2.2's recogniser in place.
 - **F21.2.2** Speech recognised by Google Cloud — The microphone records in the browser (MediaRecorder, at most 60 seconds, a second tap or silence ends it) and sends the sound to POST /api/v1/assistant/speech; a SpeechPort with a Speech-to-Text v2 adapter (Chirp 3, the language told by the sound) returns the text, which is put in the field to send or correct. Nothing of the sound is stored; seconds recognised per user per day bounded (rate limit), counted in the AI allowance once F21.9 lands. A stub port for tests and local work without Google credentials. Terraform enables the API and grants the runtime account the right to use it. The privacy policy says the recording goes to Google Cloud for recognition and is not kept; ADR-0031 replaces ADR-0025's speech bullet. Checked at 375, 768 and 1280 px.
 
 ### F21.3 — Expenses by voice
@@ -1931,6 +1945,29 @@ After the first upload by hand, every merge to main builds a signed app bundle a
 - **F22.3.1** Release identity in Terraform — The publishing service account and its Workload Identity binding for the repository, in infra/terraform; the steps to add it to the Play Console and to store the upload key in GitHub documented.
 - **F22.3.2** Build and release workflow — A GitHub Actions workflow building the web client and the signed AAB (versionCode from the run number), uploading it to the internal track on merge to main and to production on a manual run; the release documentation updated.
 
+### F22.4 — Passing Google Play's review
+
+*Requirements: —* · *Blocked by: F22.2*
+
+A rejection costs days, so every Play policy the app touches is met and written down before the first upload: the target API level Play requires for new apps, permissions kept to the camera (gallery photos through the system photo picker, no storage or media permission), the Data safety form, account deletion both in the app and at a web address, the Financial features declaration, the content rating, and the generative AI rules — the assistant's replies can be reported from the app. The app does more than the website (camera, sharing in, haptics, offline), so it is not a wrapped page under the minimum-functionality policy.
+
+**Demonstrated by:** Open docs/mobile/play-review.md: each policy, what the app does about it and where; the pre-launch report of the internal build shows no policy or accessibility warnings.
+
+- **F22.4.1** Play policy checklist — docs/mobile/play-review.md: target API level, permissions declared and why, Data safety answers (from ADR-0020), account deletion (in app: Settings; on the web: its address), Financial features declaration, content rating answers, ads and families policy (not for children), the store listing's metadata rules — each checked against the current policy page with its date, and the app's answer.
+- **F22.4.2** Reporting an assistant reply — Every assistant reply can be reported from the chat (offensive, wrong, other); the report keeps the reply and the reason for the admins, never the conversation around it, and the admin console lists reports. Required for generative AI apps by Play and asked for by App Review. Three languages; checked at 375, 768 and 1280 px.
+- **F22.4.3** Permissions and the photo picker — Gallery images come through Android's photo picker, so the manifest asks for the camera alone; a denied camera falls back to the picker with a line saying so. The pre-launch report of the internal track run and its findings fixed.
+
+### F22.5 — An app that feels like Android
+
+*Requirements: —* · *Blocked by: F22.2*
+
+The same screens, behaving the way Android apps do rather than like a page: edge to edge under the status and navigation bars (Android 15 enforces it), the predictive back gesture, the keyboard pushing the form up instead of covering it, no text selection or long-press callouts on buttons, no rubber-band overscroll or page zoom, the system font size respected, haptics on the moments that matter, and the native date and share sheets. Everything through the platform module, the web build unchanged.
+
+**Demonstrated by:** On a phone: swipe back from a receipt with the predictive preview, type in the expense form with the keyboard open and the Save button visible, raise the system font size and find nothing cut off.
+
+- **F22.5.1** Edge to edge, back gesture and the keyboard — Safe-area insets from the device applied by the shell, the predictive back gesture wired to the router, the keyboard resizing the content, status bar colours following the palette. Checked on a phone and a tablet, light and dark.
+- **F22.5.2** Native touches — No selection or callouts on controls, no overscroll or zoom, the native date picker, haptics on save and on a receipt read, the system share sheet for exports; a test of the platform module for each, web and native.
+
 ---
 
 ## E23 — Improvements
@@ -2121,6 +2158,67 @@ Tapping a day on Spending's day-by-day chart only named its sum, so the obvious 
 - **F23.22.1** The receipts of the day tapped — Tapping a day with spending lists that day's receipts under the chart (shop, total, opening the receipt's details), read from the receipts list for that one day; a day with none says so. The day opened at first shows none until tapped. Checked at 375, 768 and 1280 px.
 - **F23.22.2** Columns, days or a calendar — A switch above the chart: Columns (today's bars), Days (a row a day, the bar across, the sum at its end) and Calendar (the period's weeks, Monday first, each day shaded by its share of the biggest). Every view taps to the same day and its receipts. The choice is kept in this browser only, as a convenience the privacy check knows of. Checked at 375, 768 and 1280 px.
 - **F23.22.3** The family's chart the same way — The family's day-by-day chart (F12.5) gets the same three views and tap: the tapped day lists the family's receipts of that day, each saying whose it is (the viewer's, or the member's first name), from the shared receipts only — a member's private spending stays a sum without a day (ADR-0017). A test that a private receipt never appears there (N2). Checked at 375, 768 and 1280 px.
+
+---
+
+## E25 — iOS App
+
+**BRD sections:** — · **Phase:** 2 · **Scope:** Diploma
+
+The service in Apple's App Store from the same Capacitor build as Android (E22), through the same platform module, so a screen never asks which phone it is on. Taken first if Google's organisation account stays blocked on the D-U-N-S address. App Review rejects wrapped websites, purchases outside Apple's payments and data sent to an AI without the user's consent, so each guideline the app touches is met before the first submission. A native rewrite of either app is E26, planned only once the stores accept these.
+
+### F25.1 — Apple developer account and the App Store listing
+
+*Requirements: —* · *Blocked by: F17.7, F17.9*
+
+An Apple Developer Program membership — as an organisation it needs a D-U-N-S number too, so the decision between that and an individual membership under the author's name is recorded — and the App Store Connect listing: name, subtitle, descriptions and screenshots in three languages, the privacy policy and support addresses, the age rating, the App Privacy answers, and a reviewer account with a month of receipts.
+
+**Demonstrated by:** The listing in App Store Connect in three languages, its App Privacy section matching docs/mobile/app-store-review.md, and the reviewer account signing in to real data.
+
+- **F25.1.1** Membership, listing and App Privacy — An ADR for organisation or individual membership; the listing texts in the repository; App Privacy answers from ADR-0020; screenshots for the phone and iPad sizes App Store Connect asks for; the reviewer account seeded like the demo one and its sign-in given in the review notes.
+
+### F25.2 — The app on the iPhone
+
+*Requirements: —* · *Blocked by: F22.2*
+
+The iOS project from the same build and platform module as Android: safe areas around the notch and the home indicator, the swipe-back gesture between screens, the status bar and launch screen in the service's colours, the native camera, haptics, a Share Extension so "Share → Budget Agent" from Photos or Files opens the upload, Universal Links (apple-app-site-association on Firebase Hosting) for the letters' links, and the keyboard behaving as in native forms.
+
+**Demonstrated by:** On an iPhone: share a photo from Photos into the app and see it read; open the confirmation link from Mail and land in the app; swipe back through three screens.
+
+- **F25.2.1** The iOS project in the platform module — The Xcode project from the existing build, the platform module's iOS answers, safe areas, swipe back, status bar, launch screen, keyboard and Universal Links; the architecture overview updated. Checked on an iPhone with a notch, a small iPhone and an iPad.
+- **F25.2.2** Camera, haptics and the Share Extension — The native camera, haptics on save and on a receipt read, and a Share Extension for images and PDFs handing them to the upload flow — each behind the platform module, the web and Android builds unchanged.
+
+### F25.3 — Passing App Review
+
+*Requirements: —* · *Blocked by: F25.2*
+
+Every guideline the app touches met and written down before the first submission: minimum functionality (4.2 — the app does what the site cannot: camera, sharing in, haptics, offline); account deletion inside the app (5.1.1); no buying, prices or links to buy the paid plan anywhere in the app (3.1.1, 3.1.3) while payments are outside the stores; asking before personal data goes to a third-party AI (5.1.2), naming the provider; the privacy manifest declaring the APIs the app and its plugins use; export compliance (standard HTTPS only); no tracking, so no tracking prompt until ads come.
+
+**Demonstrated by:** Open docs/mobile/app-store-review.md: each guideline, what the app does about it and where; the first TestFlight build passes Apple's automated checks with no warnings.
+
+- **F25.3.1** App Review checklist and privacy manifest — docs/mobile/app-store-review.md for guidelines 2.1, 2.3, 3.1, 4.2, 5.1.1, 5.1.2 and export compliance, each checked against the current guidelines with its date; PrivacyInfo.xcprivacy with the required-reason APIs of the app and its plugins; ITSAppUsesNonExemptEncryption set to false.
+- **F25.3.2** Asking before receipts go to the AI — Before the first receipt, voice message or chat goes to the model, the app says what is sent, to whom (Google's Gemini on Vertex AI) and why, and asks; the answer is kept on the account with its date and can be withdrawn in Settings, which stops every AI feature until it is given again. Applies on the web too, so the rule is one. ADR and the privacy policy updated; three languages; checked at 375, 768 and 1280 px.
+- **F25.3.3** No paid plan offered inside the app — Inside the store apps, nothing names a price, a purchase or a way to buy the paid plan, and no link leads to one; what is left of the AI credits is still shown. The platform module says when the client is a store app; a test that no such text or link renders there.
+
+---
+
+## E26 — Native Apps
+
+**BRD sections:** — · **Phase:** 3 · **Scope:** Out of scope
+
+Once the Capacitor apps are accepted and used, each moves to its own platform's toolkit — Kotlin with Jetpack Compose on Android, Swift with SwiftUI on iOS — screen by screen, against the same API and its generated schema, keeping the platform module's contract as the list of what each must do. Planned after E22 and E25, not before: the stores' review and real use decide which screens are worth rewriting first.
+
+### F26.1 — Android in Kotlin and Compose
+
+*Requirements: —* · *Blocked by: F22.5*
+
+The Android app rewritten natively, screen by screen, starting with those real use shows to matter most; the Capacitor build stays until the native one covers it.
+
+### F26.2 — iOS in Swift and SwiftUI
+
+*Requirements: —* · *Blocked by: F25.3*
+
+The iOS app rewritten natively, screen by screen, the same way as Android.
 
 ---
 

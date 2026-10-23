@@ -680,6 +680,13 @@ Rules that must hold at all times. Each is a candidate for a test.
     not have makes it when approved; approving the new category's own card after that
     changes nothing. Receipts it showed stay in the conversation by id, so "that receipt"
     on the next turn is the same one (F21.15).
+    The same holds for every screen (ADR-0029): a receipt's lines corrected, added or
+    removed with its total moving by what the line's did, a receipt confirmed, deleted or
+    put on a trip, a trip started (F21.6); a shopping trip told in words stored as one
+    receipt of the `told` channel, categorised as a read one (F21.8.1); one setting per card
+    and the family's roles and members (F21.11); for an admin signed in with a second factor,
+    the console's actions, logged as from it (F21.12). Signing in — the password, the address,
+    the second factor — and deleting the account have no tool.
 
 **Where a goal stands**
 

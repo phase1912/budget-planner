@@ -60,7 +60,23 @@
       "move": "Przelew między kartami",
       "product_group": "Grupa produktów",
       "category": "Nowa kategoria",
-      "category_move": "Przenieś do kategorii"
+      "category_move": "Przenieś do kategorii",
+      "line": "Popraw pozycję",
+      "line_remove": "Usuń pozycję",
+      "receipt_confirm": "Paragon sprawdzony",
+      "receipt_delete": "Usuń paragon",
+      "receipt_trip": "Podróż paragonu",
+      "trip": "Nowa podróż",
+      "told_receipt": "Opowiedziany paragon",
+      "setting": "Zmień ustawienie",
+      "family_role": "Rola w rodzinie",
+      "family_remove": "Usuń z rodziny",
+      "family_leave": "Opuść rodzinę",
+      "admin_confirm_email": "Potwierdź adres",
+      "admin_letter": "Wyślij list",
+      "admin_grant": "Daj płatny plan",
+      "admin_revoke": "Odbierz płatny plan",
+      "admin_role": "Rola administratora"
     },
     "fields": {
       "name": "Nazwa",
@@ -81,7 +97,20 @@
       "received_on": "Data",
       "moved_on": "Data",
       "products": "Produkty",
-      "category": "Kategoria"
+      "category": "Kategoria",
+      "trip": "Podróż",
+      "start_date": "Od",
+      "end_date": "Do",
+      "budget": "Budżet, {{currency}}",
+      "shop": "Sklep",
+      "spent_on": "Data",
+      "lines": "Co kupiono",
+      "value": "Nowa wartość",
+      "role": "Rola",
+      "letter": "List",
+      "until": "Do",
+      "reason": "Dlaczego",
+      "admin": "Administrator"
     },
     "options": {
       "spending_ceiling": "Wydawać najwyżej miesięcznie",
@@ -92,10 +121,33 @@
       "business": "Konto firmowe",
       "deposit": "Oszczędności",
       "correct": "Tylko poprawić saldo",
-      "spending": "Niewpisane zakupy, w budżecie"
+      "spending": "Niewpisane zakupy, w budżecie",
+      "holiday": "Wypoczynek",
+      "work": "Delegacja",
+      "adult": "Osoba dorosła",
+      "child": "Dziecko",
+      "confirmation": "Nowy link potwierdzający",
+      "password_reset": "Link do zmiany hasła"
     },
     "openScreen": "Otwórz",
-    "removeItem": "Usuń {{name}}"
+    "removeItem": "Usuń {{name}}",
+    "lineName": "Pozycja {{number}}",
+    "lineAmount": "Pozycja {{number}}, kwota",
+    "linesTotal": "Razem {{amount}} {{currency}}",
+    "settings": {
+      "currency": "Waluta",
+      "usual_income": "Zwykły dochód",
+      "payday": "Dzień wypłaty",
+      "starting_balance": "Saldo początkowe",
+      "pays_own_taxes": "Samodzielnie płacę podatki",
+      "tax_rate": "Stawka podatku, %",
+      "tax_fixed_monthly": "Stały podatek miesięcznie",
+      "language": "Język",
+      "palette": "Paleta",
+      "dark_at_night": "Ciemny w nocy",
+      "travels_for_work": "Jeżdżę w delegacje"
+    },
+    "choose": "Wybierz…"
   },
   "answer": {
     "spending": "Otwórz w Wydatkach",
@@ -123,7 +175,8 @@
     "receipts_few": "na {{count}} paragonach",
     "receipts_many": "na {{count}} paragonach",
     "receipts_other": "na {{count}} paragonu",
-    "aMonth": "{{amount}} miesięcznie"
+    "aMonth": "{{amount}} miesięcznie",
+    "settings": "Otwórz ustawienia"
   },
   "choice": "Wybierz odpowiedź",
   "mic": {

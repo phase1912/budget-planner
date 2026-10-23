@@ -1,7 +1,7 @@
 # ADR 0025: The assistant writes only through approved cards
 
 **Date:** 2026-10-20
-**Status:** Accepted — F21.1, F21.7
+**Status:** Accepted — F21.1, F21.7; its "settings and the account have no tool" is replaced by ADR-0029
 
 ## Context
 

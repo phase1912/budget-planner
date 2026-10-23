@@ -29,17 +29,19 @@ async def _balances(session: AsyncSession, user: User) -> dict[str, Decimal]:
 
 
 @pytest.mark.asyncio
-async def test_a_lower_bank_balance_is_asked_about_before_any_card(
+async def test_a_lower_bank_balance_leaves_the_card_asking_how_it_counts(
     db_session: AsyncSession,
 ) -> None:
+    """F21.10.2: unsaid, the way is the user's to choose on the card, not the model's to
+    guess or to ask in words."""
     me = await UserFactory.create_async(currency="PLN")
     await _open(db_session, me, "Revolut", "4100")
 
-    cards = await _propose(
+    [card] = await _propose(
         db_session, me, ToolCall("sync_balance", {"account": "revolut", "balance": "3700"})
     )
 
-    assert cards == []
+    assert card["card"]["fields"]["way"] is None
 
 
 @pytest.mark.asyncio

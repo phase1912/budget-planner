@@ -71,7 +71,7 @@ async def test_it_reads_first_and_answers_with_what_it_read() -> None:
 
 @pytest.mark.asyncio
 async def test_every_tool_is_offered_as_a_function_with_ask_user_and_what_the_user_has() -> None:
-    agent = model(turn("Cześć!"))
+    agent = model(turn("Cześć!"), turn("Cześć!"))
 
     await reply(agent, "hej")
 
@@ -111,6 +111,41 @@ async def test_asking_the_user_ends_the_turn_with_the_question_and_its_options()
 
     assert answer == AssistantReply("Which card?", [], ["Main", "Revolut"])
     assert agent.run_tools.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_a_question_in_plain_words_is_asked_again_with_options_once() -> None:
+    """A model ending with "Which card?" in words is reminded once to ask with options; a
+    second plain question stands, so the user is never left without an answer."""
+    agent = model(
+        turn("Which card?"),
+        turn("", ("ask_user", {"question": "Which card?", "options": ["Main", "Revolut"]})),
+    )
+
+    answer = await reply(agent, "update the balance")
+
+    assert answer == AssistantReply("Which card?", [], ["Main", "Revolut"])
+    assert "ask_user" in str(sent(agent, 1)[-1].content)
+
+    stubborn = model(turn("Which card?"), turn("Which card, then?"))
+    assert (await reply(stubborn, "update the balance")).text == "Which card, then?"
+    assert stubborn.run_tools.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_a_change_only_described_in_words_is_reminded_to_become_a_card() -> None:
+    """Asked to stop the gym, a model sometimes answers "I'll stop the gym" and calls
+    nothing: reminded once that words make no card, it proposes the card."""
+    agent = model(
+        turn("Zaproponuję wstrzymanie rachunku za Gym."),
+        turn("", ("stop_bill", {"name": "Gym"})),
+        turn("Here is the card to stop the gym."),
+    )
+
+    answer = await reply(agent, "przestań płacić za siłownię")
+
+    assert [p.name for p in answer.proposals] == ["stop_bill"]
+    assert "words make no card" in str(sent(agent, 1)[-1].content)
 
 
 @pytest.mark.asyncio

@@ -6,7 +6,8 @@
     "photos_few": "Dodano z {{count}} zdjęć",
     "photos_many": "Dodano z {{count}} zdjęć",
     "photos_other": "Dodano z {{count}} zdjęcia",
-    "manual": "Wpisano ręcznie, bez paragonu"
+    "manual": "Wpisano ręcznie, bez paragonu",
+    "told": "Opowiedziane w czacie"
   },
   "filter": {
     "status": "Status",
@@ -17,7 +18,8 @@
     "anySource": "Dowolne źródło",
     "photo": "Ze zdjęcia",
     "email": "Z e-maila",
-    "manual": "Wpisane ręcznie"
+    "manual": "Wpisane ręcznie",
+    "told": "Opowiedziane w czacie"
   },
   "delete": {
     "title": "Usunąć „{{name}}”?",
@@ -72,7 +74,8 @@
     "byPurchase": "Według daty zakupu",
     "byPurchaseShort": "Kupione",
     "recent": "Ostatnio dodane",
-    "recentShort": "Dodane"
+    "recentShort": "Dodane",
+    "told": "Opowiedziane w czacie"
   },
   "status": {
     "inTotal": "W sumie",

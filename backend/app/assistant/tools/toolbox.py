@@ -15,18 +15,31 @@ from pydantic import ValidationError
 from app.api.errors import DomainError, ProblemCode
 from app.assistant.core.ports import ToolCall, ToolSpec
 from app.assistant.tools import all_tools, card_writers
-from app.assistant.tools.base import Card, FormField, Reader, ToolContext, Writer
+from app.assistant.tools.base import (
+    Access,
+    Card,
+    FormField,
+    Reader,
+    Tool,
+    ToolContext,
+    Writer,
+)
 from app.assistant.tools.overview import known
 from app.models.category import Category
 from app.models.user import User
 from app.ports.advice_generation import AdviceGeneratorPort
+from app.ports.categorisation import ItemCategoriserPort
 from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.goal_mapping import GoalMapperPort
+from app.ports.storage import StoragePort
+from app.services.mailer import Mailer
 
 
-def tool_specs() -> list[ToolSpec]:
-    """Every tool the assistant is offered, with its arguments' schema."""
-    return [tool.spec() for tool in all_tools().values()]
+def tool_specs(access: Access = "user") -> list[ToolSpec]:
+    """Every tool the assistant is offered to a session of `access`, with its arguments'
+    schema: admin tools only to an admin with a second factor (F21.12)."""
+    probe = ToolContext(None, None, None, access=access)  # type: ignore[arg-type]
+    return [tool.spec() for tool in all_tools().values() if tool.allowed(probe)]
 
 
 def card_form(kind: str) -> list[dict[str, Any]] | None:
@@ -52,10 +65,30 @@ class Toolbox:
         rates: ExchangeRatePort | None = None,
         goal_mapper: GoalMapperPort | None = None,
         advice: AdviceGeneratorPort | None = None,
+        storage: StoragePort | None = None,
+        categoriser: ItemCategoriserPort | None = None,
+        access: Access = "user",
+        mailer: Mailer | None = None,
     ) -> None:
-        self.ctx = ToolContext(session, user, today, rates, goal_mapper, advice)
+        self.ctx = ToolContext(
+            session,
+            user,
+            today,
+            rates,
+            goal_mapper,
+            advice,
+            storage,
+            categoriser,
+            access,
+            mailer,
+        )
         self.answers: dict[str, Card] = {}
         """The answer card of each read tool used this turn, the latest kept (F21.4)."""
+
+    def _tool(self, name: str) -> Tool | None:
+        """The tool by name, if this session may use it."""
+        tool = all_tools().get(name)
+        return tool if tool is not None and tool.allowed(self.ctx) else None
 
     async def categories(self) -> list[Category]:
         """The categories the user's spending may go to."""
@@ -70,7 +103,7 @@ class Toolbox:
 
         A tool that has a card to show (F21.4) leaves it in `answers`.
         """
-        tool = all_tools().get(call.name)
+        tool = self._tool(call.name)
         if not isinstance(tool, Reader):
             return json.dumps({"error": f"no read tool {call.name}"})
         try:
@@ -83,7 +116,7 @@ class Toolbox:
 
     async def check(self, call: ToolCall) -> str | None:
         """Why a write call cannot become a card, for the model to fix; None when it can."""
-        tool = all_tools().get(call.name)
+        tool = self._tool(call.name)
         if not isinstance(tool, Writer):
             return f"no write tool {call.name}"
         try:
@@ -94,7 +127,7 @@ class Toolbox:
 
     async def propose(self, call: ToolCall) -> Card | None:
         """The card a write tool proposes, or None for a call that cannot become one."""
-        tool = all_tools().get(call.name)
+        tool = self._tool(call.name)
         if not isinstance(tool, Writer):
             return None
         try:
@@ -112,7 +145,8 @@ class Toolbox:
         service raises — the same refusals the screen would show.
         """
         writer = card_writers().get(card.kind)
-        if writer is None:
+        # Rights are asked again on saving: a card outlives the session that proposed it.
+        if writer is None or not writer.allowed(self.ctx):
             raise DomainError("This card cannot be saved.", code=ProblemCode.INVALID_CARD)
         try:
             fields = writer.card.model_validate(card.fields)

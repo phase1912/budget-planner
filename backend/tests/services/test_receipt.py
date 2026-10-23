@@ -611,7 +611,7 @@ async def test_below_threshold_guess_is_filed_as_uncategorized_not_guessed() -> 
     )
     extraction: dict[str, object] = {"line_items": [_line("Bananas"), _line("XJ-42")]}
 
-    await service._categorise_extraction(extraction, [groceries, uncategorized])
+    await service.categorise_extraction(extraction, [groceries, uncategorized])
 
     confident, weak = cast(list[dict[str, Any]], extraction["line_items"])
     assert confident["category_id"] == str(groceries.id)
@@ -628,7 +628,7 @@ async def test_items_the_categoriser_declines_or_cannot_read_fall_back_to_uncate
     unreadable = {"name": "???", "quantity": "1", "unit_price": "x", "total_price": "x"}
     extraction: dict[str, object] = {"line_items": [_line("Mystery"), unreadable]}
 
-    await service._categorise_extraction(extraction, [uncategorized])
+    await service.categorise_extraction(extraction, [uncategorized])
 
     for item in cast(list[dict[str, Any]], extraction["line_items"]):
         assert item["category_id"] == str(uncategorized.id)
@@ -651,7 +651,7 @@ async def test_correction_rules_file_items_even_without_a_categoriser() -> None:
         "line_items": [_line("Protein Bar XL"), _line("Bananas")],
     }
 
-    await ReceiptService()._categorise_extraction(extraction, [health], [rule])
+    await ReceiptService().categorise_extraction(extraction, [health], [rule])
 
     ruled, other = cast(list[dict[str, Any]], extraction["line_items"])
     assert ruled["category_id"] == str(health.id)
@@ -676,7 +676,7 @@ async def test_a_rule_for_a_category_no_longer_offered_is_ignored() -> None:
         "line_items": [_line("Bananas")],
     }
 
-    await service._categorise_extraction(extraction, [groceries], [rule])
+    await service.categorise_extraction(extraction, [groceries], [rule])
 
     [item] = cast(list[dict[str, Any]], extraction["line_items"])
     assert item["category_id"] == str(groceries.id)

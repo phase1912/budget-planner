@@ -18,7 +18,7 @@
     "balance": "Na kontach",
     "balanceLabel": "Ile masz dzisiaj",
     "balanceHint": "To nie dochód, tylko pieniądze na Twoich kartach i kontach w tej chwili. Od dziś rośnie z wpływami i maleje z każdym zakupem.",
-    "taxes": "Sam płacę podatki",
+    "taxes": "Samodzielnie płacę podatki",
     "taxesHint": "Dochód wpływa przed podatkiem, a płacisz go sam — JDG, B2B, umowa.",
     "taxRate": "Podatek od dochodu",
     "taxRateHint": "Twoja stawka od każdego opodatkowanego dochodu: PIT, ryczałt, składka zdrowotna razem. Prezenty i sprzedane rzeczy nie są opodatkowane, chyba że zaznaczysz.",

@@ -123,7 +123,7 @@ def confidence_below_threshold(
         ]
     )
     service = ReceiptService(categoriser_port=context["categoriser"])
-    asyncio.run(service._categorise_extraction(context["extraction"], taxonomy))
+    asyncio.run(service.categorise_extraction(context["extraction"], taxonomy))
     context["item"] = context["extraction"]["line_items"][0]
 
 
@@ -260,7 +260,7 @@ def future_receipts_categorized_as_health(
         ],
     }
 
-    asyncio.run(service._categorise_extraction(extraction, taxonomy, rules))
+    asyncio.run(service.categorise_extraction(extraction, taxonomy, rules))
 
     assert extraction["line_items"][0]["category_name"] == "Health"
 

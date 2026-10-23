@@ -17,6 +17,7 @@ export const CardShell = observer(function CardShell({
   icon: Icon,
   busy,
   onApprove,
+  blocked = false,
   done,
   children,
 }: {
@@ -25,6 +26,8 @@ export const CardShell = observer(function CardShell({
   icon: LucideIcon;
   busy: boolean;
   onApprove: () => void;
+  /** A choice the user still has to make: Approve waits for it. */
+  blocked?: boolean;
   /** What a saved card says under its fields: the sum, a way to the screen. */
   done?: ReactNode;
   children: ReactNode;
@@ -60,7 +63,7 @@ export const CardShell = observer(function CardShell({
             <X size={16} aria-hidden="true" />
             {t("card.dismiss")}
           </Button>
-          <Button className="min-h-11" disabled={busy} onClick={onApprove}>
+          <Button className="min-h-11" disabled={busy || blocked} onClick={onApprove}>
             <Check size={16} aria-hidden="true" />
             {t("card.approve")}
           </Button>
