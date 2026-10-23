@@ -16,6 +16,17 @@ body {
   margin: 0;
 }
 
+/* Safari on a phone zooms in on any field typed into under 16px and stays zoomed, so the
+   bottom bar and every fixed sheet drift with the scroll. Unlayered, this outranks the
+   size utilities on purpose. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
 /* Design v2 (docs/design/v2.md, "Surfaces"): a control is filled with the colour of what
    it is not on — the card colour on the page's ground, the ground inside a card, sheet
    or dialog — so it reads without a border either way. A utility on the element wins. */
