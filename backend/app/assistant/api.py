@@ -4,7 +4,7 @@ import uuid
 from datetime import UTC, date, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, UploadFile
+from fastapi import APIRouter, Depends, Request, Response, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.speech import ChirpSpeechAdapter, ModelSpeechAdapter
@@ -34,6 +34,7 @@ from app.assistant.schemas import (
     ConversationRead,
     ConversationSummary,
     MessageRead,
+    ReportRequest,
     SendRequest,
     SpeechRead,
 )
@@ -199,6 +200,15 @@ async def save_card(
     return MessageRead.model_validate(
         await service.save_card(user, message_id, body.fields, _today(body.today))
     )
+
+
+@router.post("/messages/{message_id}/report", status_code=204)
+async def report_reply(
+    message_id: uuid.UUID, body: ReportRequest, user: CurrentUser, service: Service
+) -> Response:
+    """Report an assistant reply as offensive, wrong or otherwise (F22.4.2)."""
+    await service.report(user, message_id, body.reason)
+    return Response(status_code=204)
 
 
 @router.post("/cards/{message_id}/dismiss", response_model=MessageRead)

@@ -272,6 +272,27 @@ export interface paths {
         patch: operations["update_me_users_me_patch"];
         trace?: never;
     };
+    "/users/me/ai-consent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Ai Consent
+         * @description Allow the AI to read the caller's receipts, words and recordings, or withdraw it
+         *     (F25.3.2); withdrawn, every AI feature waits until it is allowed again.
+         */
+        put: operations["set_ai_consent_users_me_ai_consent_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/me/forwarding-address/regenerate": {
         parameters: {
             query?: never;
@@ -2267,6 +2288,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reply Reports
+         * @description Assistant replies users reported, newest first (F22.4.2).
+         */
+        get: operations["reply_reports_api_v1_admin_reports_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/log": {
         parameters: {
             query?: never;
@@ -2957,6 +2998,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/assistant/messages/{message_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Report Reply
+         * @description Report an assistant reply as offensive, wrong or otherwise (F22.4.2).
+         */
+        post: operations["report_reply_api_v1_assistant_messages__message_id__report_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/assistant/cards/{message_id}/dismiss": {
         parameters: {
             query?: never;
@@ -3261,6 +3322,14 @@ export interface components {
          * @enum {string}
          */
         AdviceTarget: "category" | "item" | "product";
+        /**
+         * AiConsentRequest
+         * @description Allowing the AI to read the account's data (F25.3.2), or withdrawing that.
+         */
+        AiConsentRequest: {
+            /** Given */
+            given: boolean;
+        };
         /**
          * AmountsResponse
          * @description How much was bought: times, money, and quantity by kind — `pc`, `g` or `ml` (F16.2).
@@ -6071,6 +6140,39 @@ export interface components {
             name: string;
         };
         /**
+         * ReplyReportRead
+         * @description An assistant reply a user reported (F22.4.2): its words, why, by whom and when.
+         */
+        ReplyReportRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Reason */
+            reason: string;
+            /** Reply Text */
+            reply_text: string;
+            /** Reporter */
+            reporter: string | null;
+        };
+        /**
+         * ReportRequest
+         * @description Why the user reports an assistant reply (F22.4.2).
+         */
+        ReportRequest: {
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "offensive" | "wrong" | "other";
+        };
+        /**
          * ResetPasswordRequest
          * @description Payload for setting a new password from a reset link (F17.8.3).
          */
@@ -6978,6 +7080,8 @@ export interface components {
              * @default false
              */
             two_factor_enabled: boolean;
+            /** Ai Consent At */
+            ai_consent_at?: string | null;
             /** Palette */
             palette?: ("midnight" | "daylight" | "rose" | "lavender" | "sage" | "ocean") | null;
             /**
@@ -7511,6 +7615,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UserUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_ai_consent_users_me_ai_consent_put: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiConsentRequest"];
             };
         };
         responses: {
@@ -11067,6 +11206,38 @@ export interface operations {
             };
         };
     };
+    reply_reports_api_v1_admin_reports_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReplyReportRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     admin_log_api_v1_admin_log_get: {
         parameters: {
             query?: {
@@ -12579,6 +12750,41 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MessageRead"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_reply_api_v1_assistant_messages__message_id__report_post: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

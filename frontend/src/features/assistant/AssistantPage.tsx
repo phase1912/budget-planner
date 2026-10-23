@@ -10,6 +10,7 @@ import { useStores } from "@/stores/StoreContext";
 import { AnswerCard } from "./components/AnswerCard";
 import { AttachmentCard } from "./components/AttachmentCard";
 import { ApproveCard } from "./components/ApproveCard";
+import { ReportReply } from "./components/ReportReply";
 import { ChoiceCard } from "./components/ChoiceCard";
 import { RecordingTimer } from "./components/RecordingTimer";
 import { Thinking } from "./components/Thinking";
@@ -204,6 +205,13 @@ export const AssistantPage = observer(function AssistantPage() {
                 ) : m.card ? (
                   <li key={m.id} className="max-w-full md:max-w-[85%]">
                     <ApproveCard message={m} today={today} />
+                  </li>
+                ) : m.role === "assistant" && m.text ? (
+                  <li key={m.id} className="flex max-w-[85%] flex-col gap-0.5 self-start">
+                    <span className="rounded-card bg-surface px-4 py-2.5 text-lg leading-relaxed whitespace-pre-wrap">
+                      {m.text}
+                    </span>
+                    <ReportReply message={m} />
                   </li>
                 ) : (
                   <li

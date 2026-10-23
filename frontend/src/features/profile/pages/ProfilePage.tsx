@@ -18,6 +18,7 @@ import {
   Percent,
   Plane,
   ReceiptText,
+  Sparkles,
   Target,
   Users,
   Wallet,
@@ -408,6 +409,24 @@ export const ProfilePage = observer(function ProfilePage() {
       </SettingsGroup>
 
       <SettingsGroup label={t("data.title")}>
+        <SettingsRow
+          icon={Sparkles}
+          color="var(--cat-entertainment)"
+          label={t("aiConsent.setting")}
+          hint={t("aiConsent.settingHint")}
+          aside={
+            <span className="w-14 shrink-0">
+              <Switch
+                checked={Boolean(user?.ai_consent_at)}
+                onChange={(value) => {
+                  void profileStore.setAiConsent(value);
+                }}
+                label=""
+                ariaLabel={t("aiConsent.setting")}
+              />
+            </span>
+          }
+        />
         <DataCard />
       </SettingsGroup>
 

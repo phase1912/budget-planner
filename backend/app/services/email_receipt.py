@@ -7,7 +7,7 @@ from datetime import UTC, datetime, time
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.errors import ReceiptQuotaExceededError, ServiceBusyError
+from app.api.errors import AiConsentRequiredError, ReceiptQuotaExceededError, ServiceBusyError
 from app.domain.email_intake import InboundEmail, parse_message, token_from_address
 from app.models.receipt import ReceiptChannel
 from app.models.user import User
@@ -26,6 +26,7 @@ class Refusal(enum.StrEnum):
     DAILY_LIMIT = "daily_limit"
     OVER_QUOTA = "over_quota"
     UNCONFIRMED = "unconfirmed"
+    AI_NOT_ALLOWED = "ai_not_allowed"
 
 
 @dataclass(frozen=True)
@@ -88,6 +89,11 @@ class InboundEmailService:
         if self.quota is not None:
             try:
                 await self.quota.ensure_can_read(user, 1, now)
+            except AiConsentRequiredError:
+                # The owner has not let the AI read their data: a forwarded receipt waits
+                # for that like an uploaded one (F25.3.2).
+                logger.info("Inbound email for user %s dropped: AI not allowed", user.id)
+                return Refusal.AI_NOT_ALLOWED
             except (ReceiptQuotaExceededError, ServiceBusyError):
                 logger.info("Inbound email for user %s dropped: over the receipt quota", user.id)
                 return Refusal.OVER_QUOTA

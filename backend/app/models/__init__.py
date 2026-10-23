@@ -12,7 +12,7 @@ from app.models.ai_usage import AiUsage
 from app.models.base import Base, Model
 from app.models.category import Category
 from app.models.category_rule import CategoryRule
-from app.models.conversation import Conversation, ConversationMessage
+from app.models.conversation import Conversation, ConversationMessage, ReplyReport
 from app.models.exchange_rate import CachedExchangeRate
 from app.models.export_job import ExportJob
 from app.models.goal import Goal
@@ -69,6 +69,7 @@ __all__ = [
     "RefreshToken",
     "RegularExpense",
     "RegularTransfer",
+    "ReplyReport",
     "TaxPayment",
     "Trip",
     "UploadJob",

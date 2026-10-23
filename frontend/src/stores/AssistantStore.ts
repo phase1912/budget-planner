@@ -241,6 +241,24 @@ export class AssistantStore {
     });
   }
 
+  /** Report an assistant reply as offensive, wrong or otherwise, for the admins (F22.4.2). */
+  async report(message: ChatMessage, reason: "offensive" | "wrong" | "other"): Promise<boolean> {
+    const response = await settle(() =>
+      this.api.POST("/api/v1/assistant/messages/{message_id}/report", {
+        params: { path: { message_id: message.id } },
+        body: { reason },
+      }),
+    );
+    if (response.error !== undefined) {
+      this.toastStore.showError(
+        errorMessage(response.error, i18n.t("messages:assistant.reportFailed")),
+      );
+      return false;
+    }
+    this.toastStore.showSuccess(i18n.t("messages:assistant.reported"));
+    return true;
+  }
+
   /** Turn a card down; nothing is written. */
   async dismiss(message: ChatMessage): Promise<void> {
     const response = await settle(() =>

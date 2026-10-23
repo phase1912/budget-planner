@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.metering import Purpose
 from app.api.errors import (
+    AiConsentRequiredError,
     ProblemCode,
     ReceiptQuotaExceededError,
     ServiceBusyError,
@@ -134,10 +135,17 @@ class QuotaService:
     async def ensure_can_spend(self, user: User, credits: Decimal, now: datetime) -> None:
         """Refuse what would cost `credits` past the account's month or the service's day.
 
-        Raises ReceiptQuotaExceededError (quota_exceeded) saying what is left, in receipts
-        and messages, and when the month renews; ServiceBusyError when every non-admin
-        account together has spent today's ceiling. Admins are subject to neither.
+        Raises AiConsentRequiredError (ai_consent_required) for an account that has not
+        allowed the AI to read its data, admins included; ReceiptQuotaExceededError
+        (quota_exceeded) saying what is left, in receipts and messages, and when the month
+        renews; ServiceBusyError when every non-admin account together has spent today's
+        ceiling. Admins are subject to neither of the last two.
         """
+        # Asked of everyone, admins too: it is the owner's data that would leave (F25.3.2).
+        if user.ai_consent_at is None:
+            raise AiConsentRequiredError(
+                "Allow the AI to read your receipts and messages first; it is in Settings."
+            )
         if is_admin(user, self.settings):
             return
         wallet = await self.quota_for(user, now)

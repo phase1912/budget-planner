@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import DomainError, NotFoundError, ProblemCode
@@ -21,6 +22,7 @@ from app.domain.plans import GrantedPeriod, Plan, current_plan
 from app.domain.quota import CreditWallet
 from app.models.activity import ActivityEvent
 from app.models.admin import AdminAction, PlanGrant
+from app.models.conversation import ReplyReport
 from app.models.user import User
 from app.ports.email import Letter
 from app.repository.activity import ActivityRepository
@@ -216,6 +218,18 @@ class AdminService:
             self._log(super_admin, user, kind)
         await self.session.flush()
         return user
+
+    async def reply_reports(self, limit: int) -> list[tuple[ReplyReport, str | None]]:
+        """Reported assistant replies, newest first, with the reporter's address (F22.4.2)."""
+        rows = (
+            await self.session.execute(
+                select(ReplyReport, User.email)
+                .join(User, User.id == ReplyReport.user_id, isouter=True)
+                .order_by(ReplyReport.created_at.desc())
+                .limit(limit)
+            )
+        ).all()
+        return [(report, email) for report, email in rows]
 
     async def log(self, limit: int, offset: int) -> list[LogEntry]:
         """The admin log, newest first, with both sides' addresses where they still exist."""

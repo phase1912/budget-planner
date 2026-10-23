@@ -59,12 +59,21 @@ Import path alias: `@/` resolves to `src/` (configured in both `tsconfig.app.jso
 
 ## The store apps (Capacitor)
 
-The Android and iOS apps are this build served from the device (ADR-0033). After a change:
+The Android and iOS apps are this build served from the device (ADR-0033).
 
-```bash
-npm run build && npx cap sync
-```
+**iOS, from Xcode.** Open `ios/App/App.xcodeproj`, pick a scheme and press Run — the client
+is built as a step of the app's own build, so the app never carries a stale one:
 
-then open `ios/App/App.xcodeproj` in Xcode, or `android/` in Android Studio, and run on a
-simulator or emulator. A local build calls `http://localhost:8000`, which the iOS
-simulator reaches as the Mac itself; the local API allows the apps' origins already.
+- **App (Local)** builds against the API on this Mac (`http://localhost:8000`): for
+  backend changes not yet deployed, on the simulator, which reaches the Mac as `localhost`.
+- **App (Production)** builds against the production API: for a phone, and for trying the
+  app as a user would. Archives for the App Store use it too.
+
+A failed client build fails the app's. The step (`ios/App/build-web.sh`) finds Node through
+nvm or Homebrew, as the terminal does.
+
+**From the terminal** (in `frontend/`), for Android or without Xcode: `npm run app:prod` or
+`npm run app:local` builds the client and copies it into both native projects; then open
+`android/` in Android Studio. Both APIs allow the apps' origins. The production address is
+the Cloud Run service's own; if the service is ever recreated under another one, change it in
+`package.json`.

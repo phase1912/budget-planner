@@ -25,6 +25,7 @@ from app.schemas.admin import (
     AdminUsersPage,
     PlanGrantRead,
     PlanGrantRequest,
+    ReplyReportRead,
 )
 from app.services.admin import AdminService
 from app.services.mailer import Mailer
@@ -201,6 +202,23 @@ async def set_role(
     """Appoint or remove an admin: super admins only (F18.6.1)."""
     await _service(session).set_admin(super_admin, user_id, admin=body.admin)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/reports", response_model=list[ReplyReportRead])
+async def reply_reports(
+    _admin: Admin, session: Session, limit: Annotated[int, Query(ge=1, le=200)] = 100
+) -> list[ReplyReportRead]:
+    """Assistant replies users reported, newest first (F22.4.2)."""
+    return [
+        ReplyReportRead(
+            id=r.id,
+            created_at=r.created_at,
+            reason=r.reason,
+            reply_text=r.reply_text,
+            reporter=email,
+        )
+        for r, email in await _service(session).reply_reports(limit)
+    ]
 
 
 @router.get("/log", response_model=AdminLogPage)

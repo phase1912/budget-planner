@@ -53,6 +53,7 @@ class ProblemCode(enum.StrEnum):
     TOO_MANY_RECEIPTS = "too_many_receipts"
     PHOTOS_TOO_LARGE = "photos_too_large"
     QUOTA_EXCEEDED = "quota_exceeded"
+    AI_CONSENT_REQUIRED = "ai_consent_required"
     SERVICE_BUSY = "service_busy"
     MESSAGE_TOO_LARGE = "message_too_large"
     CATEGORISER_UNAVAILABLE = "categoriser_unavailable"
@@ -254,6 +255,15 @@ class ReceiptQuotaExceededError(AppError):
     status_code = status.HTTP_429_TOO_MANY_REQUESTS
     code = ProblemCode.QUOTA_EXCEEDED
     title = "Monthly AI Credits Spent"
+
+
+class AiConsentRequiredError(AppError):
+    """Raised before any model call for an account that has not allowed its data to go to the
+    AI provider, or withdrew that (F25.3.2, App Review 5.1.2)."""
+
+    status_code = status.HTTP_403_FORBIDDEN
+    code = ProblemCode.AI_CONSENT_REQUIRED
+    title = "AI Not Allowed Yet"
 
 
 class EmailNotConfirmedError(AppError):

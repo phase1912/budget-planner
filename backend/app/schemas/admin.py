@@ -92,3 +92,13 @@ class AdminActionRead(BaseModel):
 
 class AdminLogPage(BaseModel):
     items: list[AdminActionRead]
+
+
+class ReplyReportRead(BaseModel):
+    """An assistant reply a user reported (F22.4.2): its words, why, by whom and when."""
+
+    id: uuid.UUID
+    created_at: datetime
+    reason: str
+    reply_text: str
+    reporter: str | None

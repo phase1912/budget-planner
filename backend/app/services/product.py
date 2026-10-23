@@ -23,6 +23,7 @@ from app.domain.purchases import (
 )
 from app.models.product import Product, ProductAlias
 from app.models.selection import ProductSelection
+from app.models.user import User
 from app.ports.product_matching import MatchQuestion, ProductMatcherPort
 from app.repository.product import ProductRepository
 
@@ -75,6 +76,9 @@ class ProductService:
         lines = await self.products.unmatched_lines(user_id)
         if not lines:
             return 0
+        # Without the owner's leave, product names never reach the model (F25.3.2).
+        owner_row = await self.session.get(User, user_id)
+        matcher = self.matcher if owner_row and owner_row.ai_consent_at else None
         by_key: dict[str, list[uuid.UUID]] = defaultdict(list)
         printed: dict[str, Counter[str]] = defaultdict(Counter)
         keys: dict[str, ProductKey] = {}
@@ -95,7 +99,7 @@ class ProductService:
         for text in sorted(by_key, key=lambda t: -len(by_key[t])):
             key, name = keys[text], printed[text].most_common(1)[0][0]
             product_id = owner.get(text) or next((p for k, p in known if abbreviates(key, k)), None)
-            if product_id is None and self.matcher is not None:
+            if product_id is None and matcher is not None:
                 offered = candidates(key, known)
                 if offered:
                     questions.append((text, offered))
@@ -105,7 +109,7 @@ class ProductService:
             await self._remember(user_id, product_id, text, name, owner, known, key)
             await self.products.link(by_key[text], product_id)
 
-        if questions and self.matcher is not None:
+        if questions and matcher is not None:
             await self._ask(user_id, questions, by_key, printed, keys, owner, known)
         await self.session.flush()
         return sum(len(ids) for text, ids in by_key.items() if text in owner)

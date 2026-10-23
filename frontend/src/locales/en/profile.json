@@ -217,5 +217,17 @@
     "sharedChip": "Shared",
     "mineChip": "Mine"
   },
-  "onAccount": "to {{name}}"
+  "onAccount": "to {{name}}",
+  "aiConsent": {
+    "title": "Let the AI read your receipts?",
+    "lead": "Reading receipts, sorting purchases, the assistant and goal advice all work through an AI model. Nothing is sent to it until you allow it.",
+    "what": "What is sent: receipt photos and files, the lines and shops read from them, what you write or say to the assistant, and your goals.",
+    "who": "Who reads it: Google's Gemini models on Vertex AI, and Google Speech-to-Text for recordings, in the EU or USA, under Google's terms for business customers.",
+    "why": "Why: only to read, sort and answer for you. Recordings are not kept.",
+    "withdraw": "You can withdraw this any time in Settings › Data; typing receipts and expenses by hand works either way.",
+    "allow": "Allow",
+    "later": "Not now",
+    "setting": "AI reads my receipts and messages",
+    "settingHint": "Sent to Google's Gemini to read, sort and answer. Off: AI features wait."
+  }
 }

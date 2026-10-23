@@ -688,6 +688,19 @@ Rules that must hold at all times. Each is a candidate for a test.
     the console's actions, logged as from it (F21.12). Signing in — the password, the address,
     the second factor — and deleting the account have no tool.
 
+**Asking before the AI reads**
+
+39. Nothing of an account goes to an AI provider until its owner allowed it (F25.3.2,
+    ADR-0034): `ai_consent_at` holds when, and withdrawing clears it. Every model call a user
+    asks for — reading, the assistant, speech, goal mapping, advice — is refused before it is
+    made without it, admins included; the scheduled advice pass and product matching leave
+    such an account to their rules alone. Typing by hand never needs it.
+
+40. A user may report any of the assistant's replies as offensive, wrong or otherwise
+    (F22.4.2): the reply's words and the reason are kept for the admins, never the rest of
+    the conversation, and only one's own replies can be reported (N2). A report outlives the
+    conversation it came from, not the account.
+
 **Where a goal stands**
 
 38. Every goal says where it stands, worked out live and never stored (F8.11,

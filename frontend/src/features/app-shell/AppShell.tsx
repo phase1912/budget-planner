@@ -8,6 +8,7 @@ import { SideNavigation } from "./SideNavigation";
 import { Header } from "./Header";
 import { ServerWakingNotice } from "./ServerWakingNotice";
 import { ConfirmEmailBanner } from "./ConfirmEmailBanner";
+import { AiConsentDialog } from "@/features/ai-consent/AiConsentDialog";
 import { ToastContainer } from "@/shared/components/Toast/Toast";
 import { device } from "@/platform";
 
@@ -62,6 +63,8 @@ export const AppShell = observer(() => {
         >
           <Container className="flex-grow flex flex-col">
             <ConfirmEmailBanner />
+            {/* Asked once signed in, before any AI feature is used (F25.3.2). */}
+            {signedIn && !welcome && <AiConsentDialog />}
             <Outlet />
           </Container>
         </main>

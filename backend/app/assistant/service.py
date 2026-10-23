@@ -13,7 +13,7 @@ from app.api.errors import DomainError, NotFoundError, ProblemCode
 from app.assistant.core.ports import AssistantContext, AssistantPort, Turn
 from app.assistant.tools.base import Access
 from app.assistant.tools.toolbox import Card, Toolbox, tool_specs
-from app.models.conversation import Conversation, ConversationMessage
+from app.models.conversation import Conversation, ConversationMessage, ReplyReport
 from app.models.upload_job import UploadJob
 from app.models.user import User
 from app.ports.advice_generation import AdviceGeneratorPort
@@ -225,6 +225,26 @@ class AssistantService:
         message.card_state = CardState.DISMISSED
         await self.session.flush()
         return message
+
+    async def report(self, user: User, message_id: uuid.UUID, reason: str) -> None:
+        """Keep a reply the user reports, with why, for the admins (F22.4.2) — its words
+        only, never the conversation around it. Raises NotFoundError for a message that is
+        not one of the user's assistant replies (N2)."""
+        message = await self.session.scalar(
+            select(ConversationMessage).where(
+                ConversationMessage.id == message_id,
+                ConversationMessage.user_id == user.id,
+                ConversationMessage.role == "assistant",
+            )
+        )
+        if message is None or not message.text.strip():
+            raise NotFoundError("No such reply.")
+        self.session.add(
+            ReplyReport(
+                user_id=user.id, message_id=message.id, reason=reason, reply_text=message.text
+            )
+        )
+        await self.session.flush()
 
     async def _card(self, user: User, message_id: uuid.UUID) -> ConversationMessage:
         message = await self.session.scalar(

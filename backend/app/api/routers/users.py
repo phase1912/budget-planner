@@ -21,6 +21,7 @@ from app.models.user import User
 from app.schemas.auth import MessageResponse
 from app.schemas.user import (
     AccountDeletionRequest,
+    AiConsentRequest,
     EmailChangeRequest,
     ReceiptQuotaRead,
     TwoFactorCodeRequest,
@@ -60,6 +61,18 @@ async def update_me(
 ) -> UserResponse:
     """Partially update user profile (F1.4.1)."""
     updated_user = await service.update_profile(current_user, request)
+    return updated_user  # type: ignore[return-value]
+
+
+@router.put("/me/ai-consent", response_model=UserResponse)
+async def set_ai_consent(
+    request: AiConsentRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    service: Annotated[UserService, Depends(get_user_service)],
+) -> UserResponse:
+    """Allow the AI to read the caller's receipts, words and recordings, or withdraw it
+    (F25.3.2); withdrawn, every AI feature waits until it is allowed again."""
+    updated_user = await service.set_ai_consent(current_user, given=request.given)
     return updated_user  # type: ignore[return-value]
 
 

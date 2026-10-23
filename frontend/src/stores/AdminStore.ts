@@ -10,6 +10,7 @@ import type { ToastStore } from "@/stores/ToastStore";
 export type AdminUserRow = components["schemas"]["AdminUserRow"];
 export type AdminUserCard = components["schemas"]["AdminUserCard"];
 export type AdminLogEntry = components["schemas"]["AdminActionRead"];
+export type ReplyReport = components["schemas"]["ReplyReportRead"];
 export type UserFilter = "all" | "unconfirmed" | "paid" | "active";
 /** Whether the console opens: checked once per visit, before any admin page loads. */
 export type AdminAccess = "unknown" | "open" | "second_factor" | "denied";
@@ -41,6 +42,9 @@ export class AdminStore {
   filter: UserFilter = "all";
   card: AdminUserCard | null = null;
   log: AdminLogEntry[] = [];
+  /** Assistant replies users reported, newest first (F22.4.2). */
+  reports: ReplyReport[] = [];
+  readonly reportsState = new AsyncState();
   private readonly api: ApiClient;
   private readonly toastStore: ToastStore;
 
@@ -219,6 +223,20 @@ export class AdminStore {
       }
       this.log = response.data.items;
       this.logState.succeed();
+    });
+  }
+
+  /** The assistant replies users reported, for an admin to read (F22.4.2). */
+  async loadReports(): Promise<void> {
+    this.reportsState.start();
+    const response = await settle(() => this.api.GET("/api/v1/admin/reports", {}));
+    runInAction(() => {
+      if (response.error !== undefined) {
+        this.reportsState.fail(errorMessage(response.error, i18n.t("messages:admin.failed")));
+        return;
+      }
+      this.reports = response.data;
+      this.reportsState.succeed();
     });
   }
 
