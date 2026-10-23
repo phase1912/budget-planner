@@ -41,6 +41,14 @@ describe("ProfilePage", () => {
       </StoreProvider>,
     );
 
+  it("names the plan but never offers to sell one, as a store app may not (F25.3.3)", () => {
+    renderPage();
+
+    expect(document.body.textContent).not.toMatch(
+      /\b(buy|upgrade|subscribe|pricing|per month)\b|zł|€|\$/i,
+    );
+  });
+
   it("shows the account's settings as rows, money among them", () => {
     renderPage();
 

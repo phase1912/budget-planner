@@ -57,3 +57,23 @@ class ConversationMessage(Model):
     saved_ref: Mapped[str | None] = mapped_column(String(80), nullable=True)
 
     conversation: Mapped[Conversation] = relationship("Conversation", back_populates="messages")
+
+
+class ReplyReport(Model):
+    """An assistant reply its user reported as offensive, wrong or otherwise (F22.4.2).
+
+    Keeps the reply's words and the reason for the admins, never the conversation around
+    it; the reply's message may be deleted with its conversation, the report stays until the
+    account goes.
+    """
+
+    __tablename__ = "reply_reports"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    message_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("conversation_messages.id", ondelete="SET NULL"), nullable=True
+    )
+    reason: Mapped[str] = mapped_column(String(20), nullable=False)
+    reply_text: Mapped[str] = mapped_column(Text, nullable=False)

@@ -42,7 +42,8 @@
     "label": "Admin sections",
     "dashboard": "Dashboard",
     "users": "Users",
-    "log": "Log"
+    "log": "Log",
+    "reports": "Reports"
   },
   "checking": "Checking access…",
   "deniedBody": "The admin pages could not be opened. Reload the page or sign in again.",
@@ -162,6 +163,15 @@
       "admin_appointed": "Appointed an admin",
       "admin_removed": "Removed an admin",
       "onboarding_restarted": "Showed the setup again"
+    }
+  },
+  "reports": {
+    "loading": "Loading reports…",
+    "empty": "No replies reported.",
+    "reasons": {
+      "offensive": "Offensive or harmful",
+      "wrong": "Wrong or misleading",
+      "other": "Something else"
     }
   }
 }

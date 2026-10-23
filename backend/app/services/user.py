@@ -20,6 +20,18 @@ class UserService:
         self.repository = UserRepository(session)
         self.receipt_repository = ReceiptRepository(session)
 
+    async def set_ai_consent(self, user: User, *, given: bool) -> User:
+        """Record that the owner allowed the AI provider to read their data, with when, or
+        that they withdrew it (F25.3.2, App Review 5.1.2). Allowing again keeps the first
+        date: it is when they first agreed."""
+        if not given:
+            user.ai_consent_at = None
+        elif user.ai_consent_at is None:
+            user.ai_consent_at = datetime.now(UTC)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
     async def update_profile(self, user: User, request: UserUpdateRequest) -> User:
         """Update user preferences (F1.4.1)."""
         data = request.model_dump(exclude_unset=True)

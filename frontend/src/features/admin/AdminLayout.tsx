@@ -30,6 +30,7 @@ export const AdminLayout = observer(function AdminLayout() {
   const tabs: [string, string][] = [
     ["/admin", t("nav.dashboard")],
     ["/admin/users", t("nav.users")],
+    ["/admin/reports", t("nav.reports")],
     ...(user.is_super_admin ? ([["/admin/log", t("nav.log")]] as [string, string][]) : []),
   ];
 

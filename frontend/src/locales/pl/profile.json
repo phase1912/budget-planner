@@ -229,5 +229,17 @@
     "sharedChip": "Wspólne",
     "mineChip": "Moje"
   },
-  "onAccount": "na „{{name}}”"
+  "onAccount": "na „{{name}}”",
+  "aiConsent": {
+    "title": "Pozwolić AI czytać Twoje paragony?",
+    "lead": "Odczytywanie paragonów, sortowanie zakupów, asystent i porady do celów działają przez model AI. Nic nie jest do niego wysyłane, dopóki na to nie pozwolisz.",
+    "what": "Co jest wysyłane: zdjęcia i pliki paragonów, odczytane z nich pozycje i sklepy, to, co piszesz lub mówisz asystentowi, oraz Twoje cele.",
+    "who": "Kto to czyta: modele Gemini od Google w Vertex AI oraz Google Speech-to-Text dla nagrań, w UE lub USA, na warunkach Google dla klientów biznesowych.",
+    "why": "Po co: tylko po to, by odczytać, posortować i odpowiedzieć. Nagrania nie są przechowywane.",
+    "withdraw": "Zgodę można wycofać w każdej chwili w Ustawieniach › Dane; wpisywanie paragonów i wydatków ręcznie działa niezależnie od tego.",
+    "allow": "Pozwól",
+    "later": "Nie teraz",
+    "setting": "AI czyta moje paragony i wiadomości",
+    "settingHint": "Wysyłane do Gemini od Google, by odczytać, posortować i odpowiedzieć. Wyłączone: funkcje AI czekają."
+  }
 }

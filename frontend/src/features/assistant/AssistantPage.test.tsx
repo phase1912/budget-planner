@@ -92,6 +92,25 @@ describe("the assistant (F21.1, F21.7)", () => {
     expect(await screen.findByText("Here is the budget card.")).toBeInTheDocument();
   });
 
+  it("reports a reply with its reason, and says it is reported (F22.4.2)", async () => {
+    renderPage();
+    fireEvent.change(screen.getByLabelText("Write a message"), {
+      target: { value: "Raise the budget" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Report" }));
+    fireEvent.click(screen.getByRole("button", { name: "Wrong or misleading" }));
+
+    await waitFor(() => {
+      expect(api.POST).toHaveBeenCalledWith("/api/v1/assistant/messages/{message_id}/report", {
+        params: { path: { message_id: "m2" } },
+        body: { reason: "wrong" },
+      });
+    });
+    expect(await screen.findByText("Reported, thank you")).toBeInTheDocument();
+  });
+
   it("saves a card only on Approve, with the field as the user changed it", async () => {
     renderPage();
     fireEvent.change(screen.getByLabelText("Write a message"), {

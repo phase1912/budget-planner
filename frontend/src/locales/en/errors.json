@@ -69,5 +69,6 @@
   "needs_card": "Income lands on a card: add one with it.",
   "speech_unavailable": "What you said could not be recognised just now. Try again or type it.",
   "speech_too_long": "A recording can be a minute long at most.",
-  "too_many_receipts": "On the free plan one upload can hold {{max}} receipts. Send the rest separately."
+  "too_many_receipts": "On the free plan one upload can hold {{max}} receipts. Send the rest separately.",
+  "ai_consent_required": "Allow the AI to read your receipts and messages first: it is asked once, and you can withdraw it in Settings."
 }

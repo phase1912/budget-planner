@@ -42,7 +42,8 @@
     "label": "Sekcje administratora",
     "dashboard": "Przegląd",
     "users": "Użytkownicy",
-    "log": "Dziennik"
+    "log": "Dziennik",
+    "reports": "Zgłoszenia"
   },
   "checking": "Sprawdzanie dostępu…",
   "deniedBody": "Nie udało się otworzyć stron administratora. Odśwież stronę lub zaloguj się ponownie.",
@@ -164,6 +165,15 @@
       "admin_appointed": "Nadał(a) admina",
       "admin_removed": "Odebrał(a) admina",
       "onboarding_restarted": "Pokazano konfigurację ponownie"
+    }
+  },
+  "reports": {
+    "loading": "Wczytujemy zgłoszenia…",
+    "empty": "Brak zgłoszonych odpowiedzi.",
+    "reasons": {
+      "offensive": "Obraźliwa lub szkodliwa",
+      "wrong": "Błędna lub myląca",
+      "other": "Coś innego"
     }
   }
 }

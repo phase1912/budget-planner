@@ -34,7 +34,7 @@
       },
       "ai": {
         "title": "Reading receipts with AI",
-        "body": "Receipt photos and names are read and categorised by an AI model, and a payslip or transfer you send as income is read by it too — that document is not kept, only the amount, date and payer you confirm. It only turns what is printed into figures you can check and correct; it makes no decision about you with legal or similarly significant effects. The assistant answers what you write or say with the same model; your conversations are kept until you delete them or your account, and it never changes anything until you approve its card. When you speak to it, the recording is sent to us and recognised by Google Cloud on our behalf; neither we nor Google keep it, and only the words you then send become part of the conversation."
+        "body": "Receipt photos and names are read and categorised by an AI model, and a payslip or transfer you send as income is read by it too — that document is not kept, only the amount, date and payer you confirm. It only turns what is printed into figures you can check and correct; it makes no decision about you with legal or similarly significant effects. The assistant answers what you write or say with the same model; your conversations are kept until you delete them or your account, and it never changes anything until you approve its card. When you speak to it, the recording is sent to us and recognised by Google Cloud on our behalf; neither we nor Google keep it, and only the words you then send become part of the conversation. Nothing goes to the model until you allow it in the app; you can withdraw that in Settings › Data, and the AI features then wait."
       }
     }
   },

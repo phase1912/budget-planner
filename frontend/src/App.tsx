@@ -14,6 +14,7 @@ import { LegalPage } from "@/features/legal/LegalPage";
 import { HelpPage } from "@/features/help/HelpPage";
 import { AdminDashboardPage } from "@/features/admin/AdminDashboardPage";
 import { AdminLayout } from "@/features/admin/AdminLayout";
+import { AdminReportsPage } from "@/features/admin/AdminReportsPage";
 import { AdminLogPage } from "@/features/admin/AdminLogPage";
 import { AdminUserPage } from "@/features/admin/AdminUserPage";
 import { AdminUsersPage } from "@/features/admin/AdminUsersPage";
@@ -121,6 +122,7 @@ export const App = observer(function App() {
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="users/:id" element={<AdminUserPage />} />
             <Route path="log" element={<AdminLogPage />} />
+            <Route path="reports" element={<AdminReportsPage />} />
           </Route>
           <Route path="/join/:code" element={<JoinHouseholdPage />} />
         </Route>

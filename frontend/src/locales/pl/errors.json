@@ -69,5 +69,6 @@
   "needs_card": "Dochód trafia na kartę: utwórz ją razem z nim.",
   "speech_unavailable": "Nie udało się teraz rozpoznać wypowiedzi. Spróbuj ponownie albo napisz.",
   "speech_too_long": "Nagranie może trwać najwyżej minutę.",
-  "too_many_receipts": "W darmowym planie jedno przesłanie może zawierać paragonów: {{max}}. Resztę wyślij osobno."
+  "too_many_receipts": "W darmowym planie jedno przesłanie może zawierać paragonów: {{max}}. Resztę wyślij osobno.",
+  "ai_consent_required": "Najpierw pozwól AI czytać Twoje paragony i wiadomości: pytamy o to raz, a w Ustawieniach zgodę można wycofać."
 }

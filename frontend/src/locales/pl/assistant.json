@@ -203,5 +203,16 @@
     "sent_other": "Dodano {{count}} paragonu",
     "open": "Otwórz paragony"
   },
-  "creditsLeft": "AI w tym miesiącu: około paragonów — {{receipts}}, wiadomości — {{messages}}"
+  "creditsLeft": "AI w tym miesiącu: około paragonów — {{receipts}}, wiadomości — {{messages}}",
+  "report": {
+    "open": "Zgłoś",
+    "title": "Zgłoś tę odpowiedź",
+    "hint": "Odpowiedź i powód trafią do administratorów usługi, nic więcej z rozmowy.",
+    "done": "Zgłoszono, dziękujemy",
+    "reasons": {
+      "offensive": "Obraźliwa lub szkodliwa",
+      "wrong": "Błędna lub myląca",
+      "other": "Coś innego"
+    }
+  }
 }

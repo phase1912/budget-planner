@@ -28,6 +28,7 @@ class UserResponse(BaseModel):
     language: Language | None = None
     email_confirmed: bool = False
     two_factor_enabled: bool = False
+    ai_consent_at: datetime | None = None
     palette: Palette | None = None
     dark_at_night: bool = False
     onboarded_at: datetime | None = None
@@ -88,6 +89,12 @@ class UserUpdateRequest(BaseModel):
     pays_own_taxes: bool | None = None
     tax_rate: Decimal | None = Field(None, ge=0, le=100, max_digits=5, decimal_places=2)
     tax_fixed_monthly: Decimal | None = Field(None, ge=0, max_digits=12, decimal_places=2)
+
+
+class AiConsentRequest(BaseModel):
+    """Allowing the AI to read the account's data (F25.3.2), or withdrawing that."""
+
+    given: bool
 
 
 class EmailChangeRequest(BaseModel):

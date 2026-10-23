@@ -29,6 +29,15 @@ class SpeechRead(BaseModel):
     text: str
 
 
+ReportReason = Literal["offensive", "wrong", "other"]
+
+
+class ReportRequest(BaseModel):
+    """Why the user reports an assistant reply (F22.4.2)."""
+
+    reason: ReportReason
+
+
 class CardFields(BaseModel):
     """A card's fields as the user left them when approving it."""
 

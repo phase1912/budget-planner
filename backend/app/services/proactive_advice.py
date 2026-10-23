@@ -38,7 +38,12 @@ async def prepare_advice_for_everyone(
     failure is logged rather than stopping the others.
     """
     async with session_factory() as session:
-        users = (await session.execute(select(User.id, User.currency, User.language))).all()
+        # Only accounts that allowed the AI to read their data (F25.3.2).
+        users = (
+            await session.execute(
+                select(User.id, User.currency, User.language).where(User.ai_consent_at.is_not(None))
+            )
+        ).all()
 
     prepared = 0
     for user_id, currency, language in users:

@@ -6,6 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && vite build --ssr src/entry-prerender.tsx --outDir dist-ssr && node scripts/prerender.mjs",
+    "app:prod": "VITE_API_BASE_URL=https://backend-tccwtb3i5q-uc.a.run.app npm run build && cap sync",
+    "app:local": "VITE_API_BASE_URL=http://localhost:8000 npm run build && cap sync",
+    "app:ios:prod": "VITE_API_BASE_URL=https://backend-tccwtb3i5q-uc.a.run.app npm run build && cap copy ios",
+    "app:ios:local": "VITE_API_BASE_URL=http://localhost:8000 npm run build && cap copy ios",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "lint": "eslint .",

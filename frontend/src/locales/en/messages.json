@@ -177,6 +177,8 @@
     "saveFailed": "The card could not be saved",
     "saved": "Saved.",
     "microphoneRefused": "The microphone is not allowed. Allow it in the browser to speak.",
-    "speechFailed": "What you said could not be recognised. Try again or type it."
+    "speechFailed": "What you said could not be recognised. Try again or type it.",
+    "reportFailed": "The reply could not be reported",
+    "reported": "Thanks — the reply is reported"
   }
 }

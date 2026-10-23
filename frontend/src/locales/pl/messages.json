@@ -179,6 +179,8 @@
     "saveFailed": "Nie udało się zapisać karty",
     "saved": "Zapisano.",
     "microphoneRefused": "Mikrofon jest zablokowany. Zezwól na niego w przeglądarce, aby mówić.",
-    "speechFailed": "Nie udało się rozpoznać wypowiedzi. Spróbuj ponownie albo napisz."
+    "speechFailed": "Nie udało się rozpoznać wypowiedzi. Spróbuj ponownie albo napisz.",
+    "reportFailed": "Nie udało się zgłosić odpowiedzi",
+    "reported": "Dziękujemy — odpowiedź zgłoszona"
   }
 }

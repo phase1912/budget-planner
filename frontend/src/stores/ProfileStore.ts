@@ -70,6 +70,27 @@ export class ProfileStore {
    * Save one setting without a toast — a switch that moves is its own confirmation. A
    * failure is told, and the account keeps what it had.
    */
+  /**
+   * Allow the AI to read the account's receipts, words and recordings, or withdraw that
+   * (F25.3.2); until it is allowed, every AI feature waits. Asked of the user, never assumed.
+   */
+  async setAiConsent(given: boolean): Promise<boolean> {
+    try {
+      const { data, error } = await this.api.PUT("/users/me/ai-consent", { body: { given } });
+      if (error !== undefined) {
+        this.toastStore.showError(errorMessage(error, i18n.t("messages:profile.updateFailed")));
+        return false;
+      }
+      runInAction(() => {
+        this.adoptUser(data);
+      });
+      return true;
+    } catch {
+      this.toastStore.showError(i18n.t("messages:profile.updateFailed"));
+      return false;
+    }
+  }
+
   async saveQuietly(request: UserUpdateRequest): Promise<boolean> {
     try {
       const { data, error } = await this.api.PATCH("/users/me", { body: request });

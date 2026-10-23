@@ -195,5 +195,16 @@
     "sent_other": "{{count}} receipts attached",
     "open": "Open receipts"
   },
-  "creditsLeft": "AI this month: about {{receipts}} receipts or {{messages}} messages left"
+  "creditsLeft": "AI this month: about {{receipts}} receipts or {{messages}} messages left",
+  "report": {
+    "open": "Report",
+    "title": "Report this reply",
+    "hint": "The reply and your reason go to the service's admins, nothing else of the conversation.",
+    "done": "Reported, thank you",
+    "reasons": {
+      "offensive": "Offensive or harmful",
+      "wrong": "Wrong or misleading",
+      "other": "Something else"
+    }
+  }
 }
