@@ -38,9 +38,10 @@ export const ToastContainer = observer(function ToastContainer() {
   const role = toast.type === "error" ? "alert" : "status";
 
   // One layer above Modal (z-50): an action taken inside a dialog reports
-  // its outcome here, and the dialog's backdrop must not bury it.
+  // its outcome here, and the dialog's backdrop must not bury it. Below a phone's
+  // status bar and camera cut-out, never under them.
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-60 animate-in fade-in slide-in-from-top-5 duration-300">
+    <div className="fixed top-[calc(--spacing(4)+env(safe-area-inset-top))] left-1/2 -translate-x-1/2 z-60 animate-in fade-in slide-in-from-top-5 duration-300">
       <div className="max-w-md w-full rounded-control bg-background shadow-lg">
         <div
           role={role}
