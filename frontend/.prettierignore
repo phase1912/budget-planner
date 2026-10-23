@@ -2,3 +2,7 @@ dist
 dist-ssr
 node_modules
 src/api/schema.ts
+
+# The store apps: the web build copied in, and native projects formatted by their own tools.
+android/
+ios/

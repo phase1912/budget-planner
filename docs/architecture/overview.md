@@ -511,6 +511,17 @@ a reader whose language or session differs from the prerendered page never sees 
 The untouched build output is kept as `dist/app.html`, and every other route falls back to
 it (`firebase.json`), so a signed-in page never shows the landing before the app starts.
 
+## Store apps
+
+The Android and iOS apps (E22, E25, ADR-0033) are the same client served from the device by
+Capacitor 8: `frontend/android/` and `frontend/ios/` are the native projects, filled from the
+Vite build by `npx cap sync`. They call the same API from `https://localhost` and
+`capacitor://localhost`, which `CORS_ORIGINS` allows. Everything that differs on a device goes
+through `frontend/src/platform/` — a `Device` with a web and a native implementation, chosen
+once at start — so screens never ask whether they run in an app: the shell asks it to hide
+the launch screen, walk Android's back button through the router and colour the status
+bar after the palette. Safe-area insets pad the page, the tab bar and sheets everywhere.
+
 ## Repository layout and the frontend/backend boundary
 
 ```

@@ -12,8 +12,27 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  /* The page's ground shows in the padded edges, never white under the status bar. */
+  background-color: var(--color-muted);
+}
+
 body {
   margin: 0;
+  /* Drawn edge to edge (viewport-fit=cover): a phone's notch, status bar and rounded
+     corners are padded away here, once, for the site and the store apps alike. The
+     bottom is left to what sits there — the tab bar pads itself (F22.5.1, F25.2.1). */
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0
+    env(safe-area-inset-left, 0px);
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@utility h-safe-top {
+  height: env(safe-area-inset-top, 0px);
 }
 
 /* Safari on a phone zooms in on any field typed into under 16px and stays zoomed, so the

@@ -389,7 +389,13 @@ class Settings(BaseSettings):
     )
 
     cors_origins: list[str] = Field(
-        default=["http://localhost:5173", "http://127.0.0.1:5173"],
+        default=[
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            # The store apps serve the client from the device (F22.2.1, F25.2.1).
+            "https://localhost",
+            "capacitor://localhost",
+        ],
         description="List of origins allowed to make cross-origin requests.",
     )
 
