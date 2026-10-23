@@ -32,7 +32,7 @@ export function BottomNavigation() {
   return (
     <nav
       aria-label={t("nav.main")}
-      className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-surface md:hidden"
+      className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-surface pb-safe md:hidden"
     >
       <div className="flex items-center gap-1 px-2 pt-2 pb-3.5">
         {TABS.slice(0, 2).map(tab)}

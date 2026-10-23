@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/StoreContext";
 import { AppShell } from "@/features/app-shell/AppShell";
+import { device } from "@/platform";
 import { PublicLandingPage } from "@/features/public-landing/pages/PublicLandingPage";
 import { NotFoundPage } from "@/features/public-landing/pages/NotFoundPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
@@ -50,7 +51,20 @@ export const App = observer(function App() {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route path="/" element={isAuthenticated ? home : <PublicLandingPage />} />
+        {/* A store app was installed by someone who knows what it is: it opens on signing
+            in, not on the website's landing (F22.2.1). */}
+        <Route
+          path="/"
+          element={
+            isAuthenticated ? (
+              home
+            ) : device.isApp ? (
+              <Navigate to="/login" replace />
+            ) : (
+              <PublicLandingPage />
+            )
+          }
+        />
         {/* The landing at each language's own address, for search engines and links (F17.2). */}
         {LANGUAGES.map((language) => (
           <Route

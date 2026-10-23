@@ -78,7 +78,8 @@ export const Modal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-[4px] pt-10 md:items-center md:p-10">
+    // A sheet keeps clear of a phone's status bar above and home indicator below.
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-[4px] pt-[max(--spacing(10),env(safe-area-inset-top))] md:items-center md:p-10">
       <div
         data-testid="backdrop"
         className="absolute inset-0"
@@ -89,7 +90,7 @@ export const Modal = ({
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className={`relative z-10 flex w-full flex-col overflow-hidden on-surface max-h-full rounded-t-hero bg-surface shadow-modal md:rounded-card ${className ?? ""}`}
+        className={`relative z-10 flex w-full flex-col overflow-hidden on-surface max-h-full rounded-t-hero bg-surface pb-safe shadow-modal md:rounded-card ${className ?? ""}`}
         role="dialog"
         aria-modal="true"
         {...props}

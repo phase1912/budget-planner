@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { Container } from "@/shared/components";
 import { useStores } from "@/stores/StoreContext";
@@ -9,6 +9,7 @@ import { Header } from "./Header";
 import { ServerWakingNotice } from "./ServerWakingNotice";
 import { ConfirmEmailBanner } from "./ConfirmEmailBanner";
 import { ToastContainer } from "@/shared/components/Toast/Toast";
+import { device } from "@/platform";
 
 /**
  * The frame every screen renders inside (F9.4, F23.2): the header, then the content with,
@@ -17,8 +18,21 @@ import { ToastContainer } from "@/shared/components/Toast/Toast";
  * goes without the bar.
  */
 export const AppShell = observer(() => {
-  const { authStore, analyticsStore, profileStore } = useStores();
+  const { authStore, analyticsStore, profileStore, themeStore } = useStores();
   const { pathname, search } = useLocation();
+  const navigate = useNavigate();
+  // In a store app (F22.2.1): the launch screen goes once the shell is drawn, and the
+  // system back button walks back through the screens.
+  useEffect(() => {
+    void device.ready();
+    return device.onBack(() => {
+      void navigate(-1);
+    });
+  }, [navigate]);
+  const dark = themeStore.theme === "dark";
+  useEffect(() => {
+    void device.setDarkBars(dark);
+  }, [dark]);
   // Each public page opened is counted, without anything about the reader (F17.3.2).
   useEffect(() => {
     analyticsStore.countView(pathname, document.referrer, search, authStore.isAuthenticated);
@@ -32,6 +46,9 @@ export const AppShell = observer(() => {
   const withBottomBar = signedIn && !welcome && !pathname.startsWith("/upload");
   return (
     <div className="flex flex-col min-h-screen bg-muted text-foreground">
+      {/* A solid strip under the status bar, so the page scrolls beneath it as in a native
+          app; zero high wherever there is no bar to clear (F22.5.1, F25.2.1). */}
+      <div aria-hidden="true" className="fixed inset-x-0 top-0 z-30 h-safe-top bg-muted" />
       {/* Signed in, every screen carries its own title (design v2); the header is the
           public pages'. */}
       {!signedIn && <Header />}

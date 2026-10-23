@@ -56,3 +56,15 @@ component that accreted it is not.
 
 Import path alias: `@/` resolves to `src/` (configured in both `tsconfig.app.json` and
 `vite.config.ts` — see F9.1.1).
+
+## The store apps (Capacitor)
+
+The Android and iOS apps are this build served from the device (ADR-0033). After a change:
+
+```bash
+npm run build && npx cap sync
+```
+
+then open `ios/App/App.xcodeproj` in Xcode, or `android/` in Android Studio, and run on a
+simulator or emulator. A local build calls `http://localhost:8000`, which the iOS
+simulator reaches as the Mac itself; the local API allows the apps' origins already.

@@ -1,3 +1,4 @@
+import { device } from "@/platform";
 import { makeAutoObservable } from "mobx";
 
 /** The event Chrome fires when it is willing to install the app (not in TS's DOM types). */
@@ -30,8 +31,10 @@ export class InstallStore {
   isIosSafari: boolean;
   dismissed = readDismissed();
 
-  constructor(win: Window = window) {
+  constructor(win: Window = window, inStoreApp: boolean = device.isApp) {
+    // A store app is installed already: it never offers to be added to the home screen.
     const standalone =
+      inStoreApp ||
       // jsdom and old browsers have no matchMedia; there the app is simply not installed.
       (typeof win.matchMedia === "function" &&
         win.matchMedia("(display-mode: standalone)").matches) ||

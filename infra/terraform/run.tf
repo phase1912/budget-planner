@@ -6,6 +6,9 @@ locals {
     "https://${var.hosting_site_id}.firebaseapp.com",
     "https://${var.legacy_hosting_site_id}.web.app",
     "https://${var.legacy_hosting_site_id}.firebaseapp.com",
+    # The store apps serve the client from the device: Android, then iOS (F22.2.1, F25.2.1).
+    "https://localhost",
+    "capacitor://localhost",
   ]
 
   # Settings every backend process gets, service and migrations job alike.
