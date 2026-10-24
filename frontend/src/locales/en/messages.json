@@ -114,7 +114,10 @@
     "discountFailed": "Failed to add the discount",
     "storeFailed": "Failed to store the receipts",
     "stored_one": "{{count}} receipt stored",
-    "stored_other": "{{count}} receipts stored"
+    "stored_other": "{{count}} receipts stored",
+    "storedElsewhere_one": "Saved. {{count}} receipt is dated {{month}}: it is in that month, not this one.",
+    "storedElsewhere_other": "Saved. {{count}} receipts are dated in other months (first: {{month}}): they are there, not in this one.",
+    "openMonth": "Open {{month}}"
   },
   "corrections": {
     "undoFailed": "The correction could not be undone. Try again.",
@@ -145,7 +148,7 @@
     "perDiemFailed": "The per diem could not be worked out. Try again."
   },
   "account": {
-    "linkSent": "A new link is on its way.",
+    "linkSent": "A new link went to {{email}}. Not there? Look in Spam — Gmail may also put it in the same conversation as the first one.",
     "failed": "Something went wrong. Try again.",
     "deleted": "Your account and everything in it are deleted."
   },

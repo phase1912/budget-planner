@@ -22,7 +22,8 @@
     "read": "Read these photos",
     "noReceipt": "No receipt?",
     "moneyIn": "Money came in?",
-    "addIncome": "Add income"
+    "addIncome": "Add income",
+    "allowAi": "Allow the AI"
   },
   "line": {
     "receipt": "Receipt",

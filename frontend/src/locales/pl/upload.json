@@ -26,7 +26,8 @@
     "read": "Odczytaj te zdjęcia",
     "noReceipt": "Nie masz paragonu?",
     "moneyIn": "Wpłynęły pieniądze?",
-    "addIncome": "Dodaj wpływ"
+    "addIncome": "Dodaj wpływ",
+    "allowAi": "Zezwól na AI"
   },
   "line": {
     "receipt": "Paragon",

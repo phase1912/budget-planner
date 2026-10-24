@@ -153,12 +153,13 @@
     "correct": "Correct the balance",
     "forTaxes": "of which ~{{amount}} {{currency}} for taxes",
     "accounts": "Your accounts",
-    "overdrawnTitle": "Looks like you forgot to top up a card",
-    "overdrawnOne": "“{{name}}” is in the red: {{amount}} {{currency}}. Add what came in, or check the card.",
+    "overdrawnTitle": "A card shows less than zero",
+    "overdrawnOne": "“{{name}}” shows {{amount}} {{currency}}: purchases come off it. If there is more on it, say what is there now, or add what came in.",
     "overdrawnMany_one": "{{count}} card is in the red. Add what came in, or check the cards.",
     "overdrawnMany_other": "{{count}} cards are in the red. Add what came in, or check the cards.",
-    "topUp": "Add a top-up",
-    "openAccounts": "Open the accounts"
+    "topUp": "Add what came in",
+    "openAccounts": "Open the accounts",
+    "setBalance": "Say what is on it"
   },
   "insight": {
     "dearer": "{{name}} is {{percent}}% dearer",

@@ -20,6 +20,7 @@ import { Note, SegmentedControl } from "@/shared/components";
 import { IncomeDialog } from "@/features/plan/IncomeDialog";
 import { isoDay } from "@/stores/StatisticsStore";
 import { ResendConfirmationButton } from "@/features/auth/components/ResendConfirmationButton";
+import { AiConsentDialog } from "@/features/ai-consent/AiConsentDialog";
 
 export const UploadPage = observer(function UploadPage() {
   const { uploadStore, quotaStore, tripsStore, accountStore, authStore, incomeStore } = useStores();
@@ -28,6 +29,8 @@ export const UploadPage = observer(function UploadPage() {
   const { t: common } = useTranslation();
   const [addingExpense, setAddingExpense] = useState(false);
   const [addingIncome, setAddingIncome] = useState(false);
+  // The AI was not allowed: its question opens from the refusal itself (F24.3).
+  const [askingConsent, setAskingConsent] = useState(false);
   const [params] = useSearchParams();
   const tripId = params.get("trip");
 
@@ -302,6 +305,18 @@ export const UploadPage = observer(function UploadPage() {
                     <span className="text-xs leading-relaxed">{uploadStore.errorDetails}</span>
                   </div>
                 </div>
+                {uploadStore.errorCode === "ai_consent_required" && (
+                  <Button
+                    type="button"
+                    className="mt-3 w-full md:w-auto"
+                    onClick={() => {
+                      setAskingConsent(true);
+                    }}
+                  >
+                    {t("add.allowAi")}
+                  </Button>
+                )}
+                {askingConsent && <AiConsentDialog />}
               </CardBody>
             </Card>
           )}

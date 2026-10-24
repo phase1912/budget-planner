@@ -198,7 +198,8 @@
     "summary_few": "{{amount}} · {{count}} dochody",
     "summary_many": "{{amount}} · {{count}} dochodów",
     "summary_other": "{{amount}} · {{count}} dochodu",
-    "none": "Na razie brak"
+    "none": "Na razie brak",
+    "incomplete": "Podaj nazwę i kwotę albo anuluj."
   },
   "bills": {
     "title": "Stałe wydatki",
@@ -219,7 +220,8 @@
     "summary_few": "{{amount}} · {{count}} wydatki",
     "summary_many": "{{amount}} · {{count}} wydatków",
     "summary_other": "{{amount}} · {{count}} wydatku",
-    "none": "Na razie brak"
+    "none": "Na razie brak",
+    "incomplete": "Podaj nazwę i kwotę albo anuluj."
   },
   "whose": {
     "title": "Czyje to jest?",

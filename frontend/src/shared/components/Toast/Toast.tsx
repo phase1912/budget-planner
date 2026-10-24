@@ -2,6 +2,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { useStores } from "@/stores/StoreContext";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 export const ToastContainer = observer(function ToastContainer() {
   const { toastStore } = useStores();
@@ -12,12 +13,15 @@ export const ToastContainer = observer(function ToastContainer() {
     if (toast) {
       // Capture the current toast reference
       const currentToast = toast;
-      const timer = setTimeout(() => {
-        // Only clear if the store's toast is still the same one we started the timer for
-        if (toastStore.toast === currentToast) {
-          toastStore.clearToast();
-        }
-      }, 5000);
+      const timer = setTimeout(
+        () => {
+          // Only clear if the store's toast is still the same one we started the timer for
+          if (toastStore.toast === currentToast) {
+            toastStore.clearToast();
+          }
+        },
+        currentToast.link ? 9000 : 5000,
+      );
       return () => {
         clearTimeout(timer);
       };
@@ -48,7 +52,20 @@ export const ToastContainer = observer(function ToastContainer() {
           aria-atomic="true"
           className={`px-4 py-3 rounded-control border flex items-center justify-between gap-4 ${toneClass}`}
         >
-          <p className="text-base font-medium">{toast.message}</p>
+          <p className="flex flex-col gap-1 text-base font-medium">
+            <span>{toast.message}</span>
+            {toast.link && (
+              <Link
+                to={toast.link.to}
+                onClick={() => {
+                  toastStore.clearToast();
+                }}
+                className="font-bold underline"
+              >
+                {toast.link.label}
+              </Link>
+            )}
+          </p>
           <button
             onClick={() => {
               toastStore.clearToast();

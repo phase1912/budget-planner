@@ -66,11 +66,12 @@ export function BalanceCard({
           <Button size="sm" className="min-h-11" onClick={onAddIncome}>
             {t("balance.topUp")}
           </Button>
+          {/* A card below zero mostly means its amount was never said: it is set right there. */}
           <Link
-            to="/accounts"
+            to={overdrawn.length === 1 && first ? `/accounts/${first.id}` : "/accounts"}
             className="inline-flex min-h-11 items-center justify-center rounded-control bg-surface px-4 text-md font-bold text-foreground no-underline"
           >
-            {t("balance.openAccounts")}
+            {overdrawn.length === 1 ? t("balance.setBalance") : t("balance.openAccounts")}
           </Link>
         </span>
       </section>

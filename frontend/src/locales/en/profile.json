@@ -188,7 +188,8 @@
     "addFirst": "Add a regular income",
     "summary_one": "{{amount}} · {{count}} income",
     "summary_other": "{{amount}} · {{count}} incomes",
-    "none": "None yet"
+    "none": "None yet",
+    "incomplete": "Fill in what it is and how much, or cancel it."
   },
   "bills": {
     "title": "Regular bills",
@@ -207,7 +208,8 @@
     "addFirst": "Add a regular bill",
     "summary_one": "{{amount}} · {{count}} bill",
     "summary_other": "{{amount}} · {{count}} bills",
-    "none": "None yet"
+    "none": "None yet",
+    "incomplete": "Fill in what it is and how much, or cancel it."
   },
   "whose": {
     "title": "Whose is it?",

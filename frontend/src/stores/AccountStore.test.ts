@@ -8,13 +8,17 @@ import type { ToastStore } from "./ToastStore";
 const USER = { id: "u1", email: "ann@example.com", email_confirmed: false } as User;
 
 describe("AccountStore (F17.8)", () => {
-  let api: { POST: ReturnType<typeof vi.fn> };
-  let auth: { user: User | null; logoutLocally: ReturnType<typeof vi.fn> };
+  let api: { POST: ReturnType<typeof vi.fn>; GET: ReturnType<typeof vi.fn> };
+  let auth: {
+    user: User | null;
+    logoutLocally: ReturnType<typeof vi.fn>;
+    updateUser: ReturnType<typeof vi.fn>;
+  };
   let store: AccountStore;
 
   beforeEach(() => {
-    api = { POST: vi.fn() };
-    auth = { user: { ...USER }, logoutLocally: vi.fn() };
+    api = { POST: vi.fn(), GET: vi.fn() };
+    auth = { user: { ...USER }, logoutLocally: vi.fn(), updateUser: vi.fn() };
     const toast = { showSuccess: vi.fn(), showError: vi.fn() };
     store = new AccountStore(
       api as unknown as ApiClient,
@@ -47,6 +51,25 @@ describe("AccountStore (F17.8)", () => {
 
     expect(store.state.error).toBe("Expired.");
     expect(store.mustConfirm).toBe(true);
+  });
+
+  it("notes when the link went again, so the button can wait a minute (F24.3)", async () => {
+    api.POST.mockResolvedValueOnce({ data: { message: "ok" } });
+
+    await store.resendConfirmation();
+
+    expect(store.resentAt).not.toBeNull();
+  });
+
+  it("takes the confirmation made elsewhere as soon as the tab is looked at (F24.3)", async () => {
+    api.GET.mockResolvedValueOnce({ data: { ...USER, email_confirmed: true } });
+
+    await store.checkConfirmed();
+
+    expect(api.GET).toHaveBeenCalledWith("/users/me");
+    expect(auth.updateUser).toHaveBeenCalledWith(
+      expect.objectContaining({ email_confirmed: true }),
+    );
   });
 
   it("signs out here too once a reset ended every session", async () => {

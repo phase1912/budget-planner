@@ -111,8 +111,9 @@ describe("OnboardingPage", () => {
     // Regular incomes are saved as they are added (F23.17), in the PLN just chosen.
     fireEvent.click(await screen.findByRole("button", { name: "Add a regular income" }));
     expect(screen.getByLabelText("Each time, PLN")).toBeInTheDocument();
+    // An empty form left open is dropped, and Next goes on once that is settled.
     next();
-    expect(screen.getByRole("radio", { name: /Just me for now/ })).toHaveAttribute(
+    expect(await screen.findByRole("radio", { name: /Just me for now/ })).toHaveAttribute(
       "aria-checked",
       "true",
     );

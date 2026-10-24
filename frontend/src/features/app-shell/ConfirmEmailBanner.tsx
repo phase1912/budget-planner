@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -14,6 +15,20 @@ export const ConfirmEmailBanner = observer(function ConfirmEmailBanner() {
   const { accountStore, authStore } = useStores();
   const { pathname } = useLocation();
   const { t } = useTranslation("auth");
+  const waiting = accountStore.mustConfirm;
+  // Confirmed in another tab or the mail app: gone as soon as this tab is looked at again.
+  useEffect(() => {
+    if (!waiting) return;
+    const look = () => {
+      if (document.visibilityState === "visible") void accountStore.checkConfirmed();
+    };
+    window.addEventListener("focus", look);
+    document.addEventListener("visibilitychange", look);
+    return () => {
+      window.removeEventListener("focus", look);
+      document.removeEventListener("visibilitychange", look);
+    };
+  }, [waiting, accountStore]);
   if (!accountStore.mustConfirm || pathname.startsWith("/upload")) return null;
   const email = authStore.user?.email ?? "";
   return (
