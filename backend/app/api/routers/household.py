@@ -49,7 +49,7 @@ router = APIRouter(prefix="/api/v1/household", tags=["household"])
 
 
 def get_household_service(
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> HouseholdService:
     """The household service bound to the request's session."""
     return HouseholdService(HouseholdRepository(session))
@@ -156,7 +156,7 @@ async def join_household(
 
 
 def get_household_budget_service(
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> HouseholdBudgetService:
     """The household's month and statistics, bound to the request's session."""
     return HouseholdBudgetService(

@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.email_ingestion import EmailIngestionAdapter
 from app.adapters.income_document_agent import IncomeDocumentAdapter
-from app.adapters.vision_agent import VisionAgentAdapter
+from app.adapters.reading_factory import receipt_reader
 from app.agent.factory import agent_from_settings
 from app.api.dependencies import get_quota_service, get_storage_service
 from app.api.errors import AuthenticationError, MessageTooLargeError, NotFoundError
@@ -29,8 +29,8 @@ def get_email_ingestion(
     storage: Annotated[StoragePort, Depends(get_storage_service)],
 ) -> EmailIngestionAdapter:
     """Provide the email channel; tests override this to stay off the network."""
-    agent = agent_from_settings()
-    return EmailIngestionAdapter(storage, VisionAgentAdapter(agent), IncomeDocumentAdapter(agent))
+    parser, _ = receipt_reader()
+    return EmailIngestionAdapter(storage, parser, IncomeDocumentAdapter(agent_from_settings()))
 
 
 @router.post(
@@ -41,7 +41,7 @@ def get_email_ingestion(
 async def inbound_email(
     request: Request,
     background_tasks: BackgroundTasks,
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     ingestion: Annotated[EmailIngestionAdapter, Depends(get_email_ingestion)],
     receipts: Annotated[ReceiptService, Depends(get_receipt_service)],
     quota: Annotated[QuotaService, Depends(get_quota_service)],

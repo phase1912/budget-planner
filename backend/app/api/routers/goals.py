@@ -37,7 +37,7 @@ def get_goal_mapper() -> GoalMapperPort:
 
 
 def get_goal_service(
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     mapper: Annotated[GoalMapperPort, Depends(get_goal_mapper)],
 ) -> GoalService:
     """The goal service bound to the request's session."""
@@ -73,7 +73,7 @@ async def create_goal(
 async def check_goal(
     request: GoalCheckRequest,
     current_user: CurrentUser,
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> GoalCheckResponse:
     """Whether a money goal is within reach, before it is saved (F23.13).
 

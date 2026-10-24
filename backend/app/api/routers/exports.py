@@ -82,7 +82,7 @@ async def start_export(
     export_request: ExportRequest,
     background_tasks: BackgroundTasks,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> ExportJob:
     """Start exporting the caller's receipts or statistics as CSV or JSON (BRD N6).
 
@@ -125,7 +125,7 @@ async def _owned(job_id: uuid.UUID, session: AsyncSession) -> ExportJob:
 async def get_export(
     job_id: uuid.UUID,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> ExportJob:
     """How the caller's export is going; another user's reads as not found (N2)."""
     return await _owned(job_id, session)
@@ -135,7 +135,7 @@ async def get_export(
 async def download_export(
     job_id: uuid.UUID,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     storage: Annotated[StoragePort, Depends(get_storage_service)],
 ) -> Response:
     """The finished file, as an attachment under its export's name (BRD N6).

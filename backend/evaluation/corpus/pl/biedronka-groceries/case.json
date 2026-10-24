@@ -1,0 +1,45 @@
+{
+  "title": "Biedronka groceries, one photo, PLN",
+  "country": "pl",
+  "synthetic": true,
+  "documents": [
+    {
+      "kind": "receipt",
+      "merchant": "Biedronka Testowa",
+      "address": "ul. Przykładowa 1, Kraków",
+      "date": "2026-10-03",
+      "currency": "PLN",
+      "total": "23.47",
+      "lines": [
+        {
+          "name": "Mleko 2% 1l",
+          "total": "3.49",
+          "category": "Groceries"
+        },
+        {
+          "name": "Chleb żytni",
+          "total": "5.99",
+          "category": "Groceries"
+        },
+        {
+          "name": "Jabłka",
+          "quantity": "1.5",
+          "unit_price": "3.99",
+          "total": "5.99",
+          "category": "Groceries"
+        },
+        {
+          "name": "Masło 200g",
+          "total": "8.00",
+          "category": "Groceries"
+        }
+      ]
+    }
+  ],
+  "expect": {
+    "stored_receipts": 1
+  },
+  "files": [
+    "1.jpg"
+  ]
+}

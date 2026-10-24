@@ -34,7 +34,7 @@ def get_product_matcher() -> ProductMatcherPort:
 
 
 def get_product_service(
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     matcher: Annotated[ProductMatcherPort, Depends(get_product_matcher)],
 ) -> ProductService:
     """The product service bound to the request's session."""

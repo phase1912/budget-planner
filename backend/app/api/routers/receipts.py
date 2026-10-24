@@ -9,10 +9,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
-from app.adapters.categorisation_agent import ItemCategoriserAdapter
 from app.adapters.photo_ingestion import PhotoIngestionAdapter
-from app.adapters.vision_agent import VisionAgentAdapter
-from app.agent.factory import agent_from_settings
+from app.adapters.reading_factory import item_categoriser, receipt_reader
 from app.api import rate_limit
 from app.api.dependencies import (
     get_confirmed_user,
@@ -124,7 +122,7 @@ async def receipt_list(
 
 def get_item_categoriser() -> ItemCategoriserPort:
     """Provide the categoriser port; tests override this to stay off the network."""
-    return ItemCategoriserAdapter(agent_from_settings())
+    return item_categoriser()
 
 
 def get_receipt_service(
@@ -133,14 +131,13 @@ def get_receipt_service(
 ) -> ReceiptService:
     """Provide a ReceiptService with storage, vision parser and exchange rates wired up."""
     settings = get_settings()
-    agent = agent_from_settings()
-    reader = VisionAgentAdapter(agent)
+    parser, rechecker = receipt_reader()
     return ReceiptService(
         storage_port,
         exchange_rates=exchange_rates,
-        parser_port=reader,
-        rechecker_port=reader,
-        categoriser_port=ItemCategoriserAdapter(agent),
+        parser_port=parser,
+        rechecker_port=rechecker,
+        categoriser_port=item_categoriser(),
         max_concurrency=settings.llm_max_concurrency,
         job_timeout_seconds=settings.upload_job_timeout_seconds,
     )
@@ -154,7 +151,7 @@ async def upload_receipt(
     background_tasks: BackgroundTasks,
     current_user: Annotated[User, Depends(get_confirmed_user)],
     receipt_service: Annotated[ReceiptService, Depends(get_receipt_service)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     quota: Annotated[QuotaService, Depends(get_quota_service)],
 ) -> UploadReceiptResponse:
     """Accept up to 10 photos or scans for a single receipt (F2.2).
@@ -231,7 +228,7 @@ async def upload_receipts_batch(
     background_tasks: BackgroundTasks,
     current_user: Annotated[User, Depends(get_confirmed_user)],
     receipt_service: Annotated[ReceiptService, Depends(get_receipt_service)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     quota: Annotated[QuotaService, Depends(get_quota_service)],
 ) -> UploadReceiptResponse:
     """Accept multiple receipts in one request (F2.3.1).
@@ -311,7 +308,7 @@ async def upload_receipts_batch(
 async def get_upload_job_status(
     job_id: uuid.UUID,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> UploadJobStatusResponse:
     """Query the status of an asynchronous upload job (F2.5.2)."""
     stmt = select(UploadJob).where(UploadJob.id == job_id, UploadJob.user_id == current_user.id)
@@ -335,7 +332,7 @@ async def get_receipt_image(
     file_id: str,
     current_user: Annotated[User, Depends(get_current_user)],
     receipt_service: Annotated[ReceiptService, Depends(get_receipt_service)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> RedirectResponse:
     """Redirects to a time-limited URL for the requested receipt image (F2.4.2).
 
@@ -360,7 +357,7 @@ async def resolve_duplicate(
     job_id: uuid.UUID,
     request_data: ResolveDuplicateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> UploadJobStatusResponse:
     """Resolve a duplicate receipt detection by confirming or skipping (A14)."""
     stmt = select(UploadJob).where(UploadJob.id == job_id, UploadJob.user_id == current_user.id)
@@ -410,7 +407,7 @@ async def resolve_position_match(
     job_id: uuid.UUID,
     request_data: ResolvePositionMatchRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> UploadJobStatusResponse:
     """Resolve a position match conflict by overriding the decision (BRD B7)."""
     receipt_service = ReceiptService(repository=ReceiptRepository(session))
@@ -429,7 +426,7 @@ async def resolve_position_match(
 @router.get("/line-items", response_model=LineItemListResponse)
 async def list_line_items(
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     period: Annotated[DateRange | None, Depends(optional_period)],
     view: ItemView = ItemView.NEEDS_REVIEW,
     q: str | None = None,
@@ -478,7 +475,7 @@ async def list_line_items(
 async def add_manual_expense(
     request: ManualExpenseRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     exchange_rates: Annotated[ExchangeRatePort | None, Depends(get_exchange_rates)],
 ) -> ReceiptDetailResponse:
     """Record an expense there was no receipt for — cash for a tour, a tip (F20.5).
@@ -510,7 +507,7 @@ async def add_manual_expense(
 @router.get("", response_model=PaginatedReceiptsResponse)
 async def list_receipts(
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     period: Annotated[DateRange | None, Depends(optional_period)],
     page: int = 1,
     size: int = 20,
@@ -566,7 +563,7 @@ async def list_receipts(
 async def get_receipt(
     receipt_id: uuid.UUID,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> ReceiptDetailResponse:
     """Get a receipt's detail including its line items (F3.8).
 
@@ -591,7 +588,7 @@ async def update_receipt(
     receipt_id: uuid.UUID,
     request_data: UpdateReceiptRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> ReceiptDetailResponse:
     """Correct a stored receipt's header and line items (F3.9, BRD A9, A11)."""
     receipt_service = ReceiptService(repository=ReceiptRepository(session))
@@ -615,7 +612,7 @@ async def undo_line_correction(
     item_id: uuid.UUID,
     request_data: UndoLineCorrectionRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> ReceiptDetailResponse:
     """Put back what was printed on a stored line, and maybe forget the correction (F15.3).
 
@@ -638,7 +635,7 @@ async def undo_line_correction(
 async def keep_possible_duplicate(
     receipt_id: uuid.UUID,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> ReceiptDetailResponse:
     """Keep a receipt marked as a likely duplicate as a purchase of its own (F11.5, A14)."""
     receipt_service = ReceiptService(repository=ReceiptRepository(session))
@@ -654,7 +651,7 @@ async def set_receipt_privacy(
     receipt_id: uuid.UUID,
     request_data: ReceiptPrivacyRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> ReceiptDetailResponse:
     """Hide a receipt from the owner's household, or share it again (F12.4, ADR-0017).
 
@@ -677,7 +674,7 @@ async def set_receipt_discount(
     receipt_id: uuid.UUID,
     request_data: ReceiptDiscountRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> ReceiptDetailResponse:
     """Take off a receipt what was not paid — a gift card, a voucher (F23.7); null removes it.
 
@@ -697,7 +694,7 @@ async def delete_receipt(
     receipt_id: uuid.UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     storage_port: Annotated[StoragePort, Depends(get_storage_service)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> None:
     """Permanently delete a receipt together with its line items and photos."""
     receipt_service = ReceiptService(
@@ -715,7 +712,7 @@ async def resolve_total(
     job_id: uuid.UUID,
     request_data: ResolveTotalRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> UploadJobStatusResponse:
     """Resolve a missing or low-confidence total (F4.7)."""
     stmt = select(UploadJob).where(UploadJob.id == job_id, UploadJob.user_id == current_user.id)
@@ -770,7 +767,7 @@ async def resolve_date(
     job_id: uuid.UUID,
     request_data: ResolveDateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> UploadJobStatusResponse:
     """Set a receipt's purchase date before it is stored (BRD A11, D3).
 
@@ -816,7 +813,7 @@ async def edit_line_item(
     job_id: uuid.UUID,
     request_data: EditLineItemRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> UploadJobStatusResponse:
     """Correct a line item the parser misread, before the batch is stored (BRD A9)."""
     receipt_service = ReceiptService(repository=ReceiptRepository(session))
@@ -837,7 +834,7 @@ async def undo_extracted_correction(
     job_id: uuid.UUID,
     request_data: UndoExtractedCorrectionRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> UploadJobStatusResponse:
     """Put back what was printed on a corrected line, and maybe forget the correction (F15.3)."""
     receipt_service = ReceiptService(repository=ReceiptRepository(session))
@@ -858,7 +855,7 @@ async def add_discount(
     job_id: uuid.UUID,
     request_data: AddDiscountRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> UploadJobStatusResponse:
     """Add a discount the reader missed, so the receipt adds up to its total (BRD A9)."""
     receipt_service = ReceiptService(repository=ReceiptRepository(session))
@@ -879,7 +876,7 @@ async def commit_job(
     job_id: uuid.UUID,
     request: CommitJobRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     exchange_rates: Annotated[ExchangeRatePort | None, Depends(get_exchange_rates)],
 ) -> UploadJobStatusResponse:
     """Commit all resolved extractions to the database (F4.7), in the account's currency."""
@@ -970,7 +967,7 @@ async def update_line_item_category(
     item_id: uuid.UUID,
     request_data: UpdateLineItemCategoryRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> LineItemResponse:
     """Reassign one line item to a category of the owner's choosing (BRD C4)."""
     service = CategorisationService(ReceiptRepository(session), CategoryRepository(session))
@@ -988,7 +985,7 @@ async def update_line_item_category(
 async def recategorise_receipt(
     receipt_id: uuid.UUID,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     categoriser: Annotated[ItemCategoriserPort, Depends(get_item_categoriser)],
 ) -> ReceiptDetailResponse:
     """Re-run automatic categorisation on a stored receipt, sparing manual choices (C3, C4)."""

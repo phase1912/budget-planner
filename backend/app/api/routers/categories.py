@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api/v1/categories", tags=["categories"])
 
 
 def get_category_repository(
-    session: AsyncSession = Depends(get_db_session),
+    session: AsyncSession = Depends(get_db_session, scope="function"),
 ) -> CategoryRepository:
     """Provide the taxonomy repository bound to the request's session."""
     return CategoryRepository(session)

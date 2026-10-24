@@ -9,7 +9,10 @@ stop scripted abuse without a shared store.
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-limiter = Limiter(key_func=get_remote_address)
+from app.core.config import get_settings
+
+# Off only for the browser suite on the local stack (F0.11.1); Settings refuses it elsewhere.
+limiter = Limiter(key_func=get_remote_address, enabled=get_settings().rate_limits_enabled)
 
 LOGIN = "5/minute"
 """Password guessing (G2)."""

@@ -3,13 +3,13 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-27 epics · 202 features · 410 tasks written so far.
+27 epics · 203 features · 415 tasks written so far.
 
 23 epics are in the diploma project's scope; 4 are planned but out of it.
 
 | Epic | Title | BRD | Features | Groomed | Phase | Scope |
 |---|---|---|---|---|---|---|
-| E0 | Foundation & Delivery Platform | — | 10 | yes | 1 | Diploma |
+| E0 | Foundation & Delivery Platform | — | 11 | yes | 1 | Diploma |
 | E1 | Identity & Account | BR-7, N2 | 5 | yes | 1 | Diploma |
 | E2 | Receipt Ingestion & Storage | BR-1 | 5 | yes | 1 | Diploma |
 | E3 | Receipt Parsing & Extraction | BR-1 | 8 | no | 1 | Diploma |
@@ -151,6 +151,20 @@ The application runs in the cloud from infrastructure-as-code, not by hand, and 
 Every existing BRD scenario opens with "Given the user is logged in", but the BRD itself never says what that means, and section 8's non-functional requirements (N1-N6) have EARS text with no Gherkin at all — both are real gaps F0.6.2's extraction correctly left untouched, since it could only move what the BRD already had. This closes them the same way BR-1..BR-6 were written: business-approved acceptance criteria first, so E1 (Identity & Account) and E10 (Security, Privacy & Observability) have something to build against instead of inventing it mid-epic.
 
 - **F0.10.1** BR-7 Identity & Access, and NFR acceptance scenarios — Adds a new BR-7 section to the BRD (EARS requirements + Gherkin) covering registration, login, logout and session refresh; an admin role limited to service operation (no exception to N2 — an admin never reads another user's receipts or statistics); and sign-in via Google/Facebook OIDC coexisting with password auth, linked to an existing account only on a verified email match, with an explicit scenario rejecting a link attempt on an unverified email (the standard account-takeover vector for social login). Adds a Gherkin block to BRD section 8 for N1-N6, which today are EARS-only. Extends BRD section 9's data model with the User.role field and the identity-provider link entity BR-7 needs. Mirrors F0.6.2's own job for this new material: the scenarios land in tests/features/br7_identity_and_access/ and tests/features/nfr_cross_cutting/, wired via pytest-bdd and skipped pending E1/E10, and scripts/generate_brd_traceability.py regenerates brd-traceability.md to include them. Updates E1's `br:` list in backlog.yaml to add BR-7 alongside N2.
+
+### F0.11 — The product's flows tested end to end in a browser
+
+*Requirements: —*
+
+Testers kept finding what a machine could have: a step that threw a typed income away, an English refusal on a Ukrainian screen, a receipt stored where nobody looks. A suite drives a real browser through the product's main flows against the local stack — signing up, onboarding, adding receipts, expenses and incomes, the AI's consent, the family, the assistant, settings — at phone, tablet and desktop widths, keeping screenshots to look at. Receipt reading, the weakest and most varied part, gets a corpus of cases (receipts, transfers, incomes; by country, Europe first) in one format, so a new case is a new folder, not new code: run deterministically through a stand-in reader everywhere, and through the real model on demand. Run by one command, by the owner or by the coding agent, and in CI on every pull request.
+
+**Demonstrated by:** Run the suite: every flow passes at 375, 768 and 1280 px and leaves its screenshots; add a folder with a Polish receipt and its expected.json, run again, and the new case is checked through upload, review and storing.
+
+- **F0.11.1** The suite's frame — pytest with Playwright (Chromium and WebKit) under backend/tests/e2e, marked so the unit run skips it, against the docker compose stack; test data made by the existing factories straight in the database; the confirmation and reset links taken from the local mail log; every flow parametrised over 375, 768 and 1280 px, saving screenshots, and traces on failure. One command runs it; the working agreement and CLAUDE.md say how.
+- **F0.11.2** A stand-in reader for tests — A reading engine chosen by configuration that answers a known file with its case's expected result, and a scripted model for the assistant, behind the existing ports (LSP: the same contract and errors as the real adapters). It is refused outside local and test environments, with a test that production can never select it.
+- **F0.11.3** The receipts corpus — One case format for the browser suite and scripts/evaluate_reading.py: a folder of photos or PDFs and an expected.json saying what they are — receipts (several per photo or one in parts), money sent, money received — with merchant, date, currency, total and lines. Folders by country. Synthetic cases with invented shops are committed and run everywhere; real people's receipts stay in the ignored private folder, run with the real model on demand, with a score per country. A README on adding a case.
+- **F0.11.4** The main flows, first wave — Sign-up and confirming the address; onboarding, including Next with a typed income; a receipt uploaded, reviewed, stored and found in its month; a manual expense; an income making a card and its balance; the AI's consent refused and allowed; a family with a second member; the assistant proposing a card that is approved; settings, language and deleting the account. Each in Ukrainian at least once, checking no English reaches the screen.
+- **F0.11.5** In CI — A workflow job brings up the stack, runs the suite on every pull request and keeps the screenshots and traces of a failed run as artifacts; the run fits in about ten minutes.
 
 ---
 

@@ -47,7 +47,7 @@ router = APIRouter(prefix="/api/v1/trips", tags=["trips"])
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
 Rates = Annotated[ExchangeRatePort | None, Depends(get_exchange_rates)]
-Session = Annotated[AsyncSession, Depends(get_db_session)]
+Session = Annotated[AsyncSession, Depends(get_db_session, scope="function")]
 
 
 def trip_response(summary: TripSummary) -> TripResponse:

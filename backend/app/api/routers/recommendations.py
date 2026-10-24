@@ -36,7 +36,7 @@ def get_advice_generator() -> AdviceGeneratorPort:
 
 
 def get_advice_service(
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     generator: Annotated[AdviceGeneratorPort, Depends(get_advice_generator)],
 ) -> AdviceService:
     """The advice service bound to the request's session."""
@@ -79,7 +79,7 @@ async def advice_readiness(current_user: CurrentUser, service: Service) -> Advic
 @router.get("/goals/progress", response_model=list[GoalProgressRead])
 async def goal_progress(
     current_user: CurrentUser,
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> list[GoalProgressRead]:
     """Where each of the caller's goals stands (BRD F6, F7 — F8.11.2): a monthly cap's
     pace, a savings goal's money against its date, a lifestyle goal's month.

@@ -439,6 +439,74 @@ epics:
               scripts/generate_brd_traceability.py regenerates brd-traceability.md to include
               them. Updates E1's `br:` list in backlog.yaml to add BR-7 alongside N2.
 
+      - key: F0.11
+        title: The product's flows tested end to end in a browser
+        labels: [testing, infra]
+        intent: >
+          Testers kept finding what a machine could have: a step that threw a typed income
+          away, an English refusal on a Ukrainian screen, a receipt stored where nobody looks.
+          A suite drives a real browser through the product's main flows against the local
+          stack — signing up, onboarding, adding receipts, expenses and incomes, the AI's
+          consent, the family, the assistant, settings — at phone, tablet and desktop widths,
+          keeping screenshots to look at. Receipt reading, the weakest and most varied part,
+          gets a corpus of cases (receipts, transfers, incomes; by country, Europe first) in
+          one format, so a new case is a new folder, not new code: run deterministically
+          through a stand-in reader everywhere, and through the real model on demand. Run
+          by one command, by the owner or by the coding agent, and in CI on every pull
+          request.
+        demo: >
+          Run the suite: every flow passes at 375, 768 and 1280 px and leaves its
+          screenshots; add a folder with a Polish receipt and its expected.json, run again,
+          and the new case is checked through upload, review and storing.
+        tasks:
+          - key: F0.11.1
+            title: The suite's frame
+            labels: [testing, infra]
+            detail: >
+              pytest with Playwright (Chromium and WebKit) under backend/tests/e2e, marked so
+              the unit run skips it, against the docker compose stack; test data made by the
+              existing factories straight in the database; the confirmation and reset links
+              taken from the local mail log; every flow parametrised over 375, 768 and 1280
+              px, saving screenshots, and traces on failure. One command runs it; the
+              working agreement and CLAUDE.md say how.
+          - key: F0.11.2
+            title: A stand-in reader for tests
+            labels: [backend, testing, ai]
+            detail: >
+              A reading engine chosen by configuration that answers a known file with its
+              case's expected result, and a scripted model for the assistant, behind the
+              existing ports (LSP: the same contract and errors as the real adapters). It is
+              refused outside local and test environments, with a test that production can
+              never select it.
+          - key: F0.11.3
+            title: The receipts corpus
+            labels: [testing, ai, docs]
+            detail: >
+              One case format for the browser suite and scripts/evaluate_reading.py: a folder
+              of photos or PDFs and an expected.json saying what they are — receipts (several
+              per photo or one in parts), money sent, money received — with merchant, date,
+              currency, total and lines. Folders by country. Synthetic cases with invented
+              shops are committed and run everywhere; real people's receipts stay in the
+              ignored private folder, run with the real model on demand, with a score per
+              country. A README on adding a case.
+          - key: F0.11.4
+            title: The main flows, first wave
+            labels: [testing]
+            detail: >
+              Sign-up and confirming the address; onboarding, including Next with a typed
+              income; a receipt uploaded, reviewed, stored and found in its month; a manual
+              expense; an income making a card and its balance; the AI's consent refused and
+              allowed; a family with a second member; the assistant proposing a card that is
+              approved; settings, language and deleting the account. Each in Ukrainian at
+              least once, checking no English reaches the screen.
+          - key: F0.11.5
+            title: In CI
+            labels: [testing, infra]
+            detail: >
+              A workflow job brings up the stack, runs the suite on every pull request and
+              keeps the screenshots and traces of a failed run as artifacts; the run fits in
+              about ten minutes.
+
   - key: E1
     title: Identity & Account
     br: [BR-7, N2]

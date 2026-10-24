@@ -34,7 +34,7 @@ router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
 Admin = Annotated[User, Depends(get_admin_user)]
 SuperAdmin = Annotated[User, Depends(get_super_admin)]
-Session = Annotated[AsyncSession, Depends(get_db_session)]
+Session = Annotated[AsyncSession, Depends(get_db_session, scope="function")]
 Mail = Annotated[Mailer, Depends(get_mailer)]
 
 

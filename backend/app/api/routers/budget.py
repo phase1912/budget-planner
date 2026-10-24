@@ -27,7 +27,7 @@ async def get_month_summary(
     year: Annotated[int, Path(ge=1970, le=9999)],
     month: Annotated[int, Path(ge=1, le=12)],
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     today: Annotated[date | None, Query()] = None,
 ) -> MonthSummaryResponse:
     """The caller's spend in one calendar month, and what is held out of it (BRD D1-D5).
@@ -56,7 +56,7 @@ async def get_month_dashboard(
     year: Annotated[int, Path(ge=1970, le=9999)],
     month: Annotated[int, Path(ge=1, le=12)],
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     today: Annotated[date | None, Query()] = None,
 ) -> MonthDashboardResponse:
     """The landing view for one month in one round trip (F6.7, BRD D1, D4, D7).

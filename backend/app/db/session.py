@@ -47,6 +47,11 @@ async def get_db_session(
     calls shares one transaction, committed only if every step in it succeeded, so a
     failure partway through a multi-step mutation can never leave the database in a
     half-written state.
+
+    Always declared with ``Depends(get_db_session, scope="function")``: the commit then
+    happens before the response is sent. With FastAPI's default scope it ran after, so
+    a client was told "done" before the change existed — a deleted account could still
+    sign in for a moment, and a failed commit went unreported (found by F0.11's suite).
     """
     async with session_factory() as session:
         try:

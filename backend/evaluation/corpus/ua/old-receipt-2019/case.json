@@ -1,0 +1,29 @@
+{
+  "title": "Аптека, чек 2019 року — зберігається в лютому 2019, не в поточному місяці",
+  "country": "ua",
+  "synthetic": true,
+  "documents": [
+    {
+      "kind": "receipt",
+      "merchant": "Аптека Тестова",
+      "address": "вул. Київська 68, Вінниця",
+      "date": "2019-02-21",
+      "currency": "UAH",
+      "total": "329.65",
+      "lines": [
+        {
+          "name": "Стеатель р-н 10мл",
+          "total": "329.65",
+          "category": "Health"
+        }
+      ]
+    }
+  ],
+  "expect": {
+    "stored_receipts": 1,
+    "stored_in_month": "2019-02"
+  },
+  "files": [
+    "1.jpg"
+  ]
+}

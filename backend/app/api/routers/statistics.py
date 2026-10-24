@@ -25,7 +25,7 @@ router = APIRouter(prefix="/api/v1/statistics", tags=["statistics"])
 async def get_category_statistics(
     period: Annotated[DateRange, Depends(required_period)],
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     compare: Annotated[
         bool, Query(description="Also measure each category against the previous period")
     ] = False,
@@ -52,7 +52,7 @@ async def get_category_statistics(
 async def get_daily_spend(
     period: Annotated[DateRange, Depends(required_period)],
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     today: Annotated[
         date | None, Query(description="The caller's own date; the average counts days to it")
     ] = None,
@@ -71,7 +71,7 @@ async def get_daily_spend(
 @router.get("/reading-accuracy", response_model=ReadingAccuracyResponse)
 async def get_reading_accuracy(
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     months: Annotated[int, Query(ge=1, le=12, description="How many months back")] = 6,
 ) -> ReadingAccuracyResponse:
     """How often the caller's receipts needed correcting after reading (F15.4).
