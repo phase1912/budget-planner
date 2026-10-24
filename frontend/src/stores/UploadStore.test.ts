@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { UploadStore, totalNeedsDecision } from "./UploadStore";
 import type { ApiClient } from "@/api/client";
 import type { ToastStore } from "./ToastStore";
+import i18n from "@/i18n";
 
 describe("UploadStore", () => {
   let mockApi: unknown;
@@ -157,6 +158,26 @@ describe("UploadStore", () => {
     expect(store.errorDetails).toBe("Only JPEG, PNG, HEIC and PDF are supported.");
   });
 
+  it("says in the user's language that the AI is not allowed yet, and why (F24.3)", async () => {
+    (mockApi as { POST: ReturnType<typeof vi.fn> }).POST.mockResolvedValue({
+      data: undefined,
+      error: {
+        title: "AI Not Allowed Yet",
+        detail: "Allow the AI to read your receipts and messages first; it is in Settings.",
+        code: "ai_consent_required",
+      },
+      response: { status: 403 },
+    });
+    await i18n.changeLanguage("uk");
+
+    await store.uploadFile(new File(["x"], "r.jpg", { type: "image/jpeg" }));
+
+    expect(store.errorCode).toBe("ai_consent_required");
+    expect(store.errorDetails).toMatch(/^Спершу дозвольте ШІ/);
+    expect(store.errorTitle).not.toBe("AI Not Allowed Yet");
+    await i18n.changeLanguage("en");
+  });
+
   it("counts an unreadable total as one decision, however it is flagged", () => {
     store.extractedData = {
       extractions: [
@@ -216,6 +237,21 @@ describe("UploadStore surfaces what the server refused", () => {
     finish({ data: {}, response: { status: 200 } });
     expect(await first).toBe(true);
     expect(POST).toHaveBeenCalledTimes(1);
+  });
+
+  it("says which month an old receipt was stored in, with a link to it (F24.3)", async () => {
+    const POST = vi.fn().mockResolvedValue({ data: {}, response: { status: 200 } });
+    const { store, showSuccess } = storeWith(POST);
+    store.extractedData = {
+      extractions: [{ merchant_name: "Конекс", transaction_date: "2019-02-21" }],
+    };
+
+    expect(await store.commitJob()).toBe(true);
+
+    expect(showSuccess).toHaveBeenCalledWith(
+      expect.stringContaining("February 2019"),
+      expect.objectContaining({ to: "/receipts?start=2019-02-01&end=2019-02-28" }),
+    );
   });
 
   it("after storing, starts afresh on an empty first step for the next receipt", async () => {

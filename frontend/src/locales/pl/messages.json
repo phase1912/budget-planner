@@ -116,7 +116,12 @@
     "stored_one": "Zapisano {{count}} paragon",
     "stored_few": "Zapisano {{count}} paragony",
     "stored_many": "Zapisano {{count}} paragonów",
-    "stored_other": "Zapisano {{count}} paragonu"
+    "stored_other": "Zapisano {{count}} paragonu",
+    "storedElsewhere_one": "Zapisano. {{count}} paragon ma datę {{month}}: jest w tamtym miesiącu, nie w bieżącym.",
+    "storedElsewhere_few": "Zapisano. {{count}} paragony mają daty z innych miesięcy (pierwszy: {{month}}): są tam, nie w bieżącym.",
+    "storedElsewhere_many": "Zapisano. {{count}} paragonów ma daty z innych miesięcy (pierwszy: {{month}}): są tam, nie w bieżącym.",
+    "storedElsewhere_other": "Zapisano. {{count}} paragonu ma daty z innych miesięcy (pierwszy: {{month}}): są tam, nie w bieżącym.",
+    "openMonth": "Otwórz: {{month}}"
   },
   "corrections": {
     "undoFailed": "Nie udało się cofnąć poprawki. Spróbuj ponownie.",
@@ -147,7 +152,7 @@
     "perDiemFailed": "Nie udało się obliczyć diet. Spróbuj ponownie."
   },
   "account": {
-    "linkSent": "Nowy link jest już w drodze.",
+    "linkSent": "Nowy link wysłano na {{email}}. Nie ma go? Zajrzyj do spamu — Gmail może też dołączyć go do tej samej rozmowy co pierwszy.",
     "failed": "Coś poszło nie tak. Spróbuj ponownie.",
     "deleted": "Twoje konto i wszystkie jego dane zostały usunięte."
   },

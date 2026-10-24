@@ -198,7 +198,8 @@
     "summary_few": "{{amount}} · {{count}} доходи",
     "summary_many": "{{amount}} · {{count}} доходів",
     "summary_other": "{{amount}} · {{count}} доходу",
-    "none": "Поки немає"
+    "none": "Поки немає",
+    "incomplete": "Вкажіть назву й суму або скасуйте."
   },
   "bills": {
     "title": "Постійні витрати",
@@ -219,7 +220,8 @@
     "summary_few": "{{amount}} · {{count}} витрати",
     "summary_many": "{{amount}} · {{count}} витрат",
     "summary_other": "{{amount}} · {{count}} витрати",
-    "none": "Поки немає"
+    "none": "Поки немає",
+    "incomplete": "Вкажіть назву й суму або скасуйте."
   },
   "whose": {
     "title": "Чиє це?",

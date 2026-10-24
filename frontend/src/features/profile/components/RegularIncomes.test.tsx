@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { RegularIncomes } from "./RegularIncomes";
@@ -124,6 +124,44 @@ describe("RegularIncomes (F23.17)", () => {
         expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       );
     });
+  });
+
+  it("lets a step's Next save a typed income, drop a blank one and hold a half one (F24.3)", async () => {
+    let finish: (() => Promise<boolean>) | null = null;
+    render(
+      <RegularIncomes
+        onPending={(f) => {
+          finish = f;
+        }}
+      />,
+    );
+    const run = async () => {
+      let done = false;
+      await act(async () => {
+        done = await (finish as unknown as () => Promise<boolean>)();
+      });
+      return done;
+    };
+
+    fireEvent.click(screen.getByRole("button", { name: "Add a regular income" }));
+    expect(await run()).toBe(true);
+    expect(stores.incomeStore.addRegular).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add a regular income" }));
+    fireEvent.change(screen.getByLabelText("What it is"), { target: { value: "Salary" } });
+    expect(await run()).toBe(false);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Fill in what it is and how much, or cancel it.",
+    );
+
+    fireEvent.change(screen.getByLabelText("Each time, PLN"), { target: { value: "1000" } });
+    expect(await run()).toBe(true);
+    expect(stores.incomeStore.addRegular).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Salary", amount: "1000" }),
+      expect.any(String),
+    );
+    // The card that income made is listed at once (the onboarding summary reads it).
+    expect(stores.bankAccountsStore.load).toHaveBeenCalled();
   });
 
   it("adds a bill that comes every week on its weekday, needing no card (F23.21)", async () => {

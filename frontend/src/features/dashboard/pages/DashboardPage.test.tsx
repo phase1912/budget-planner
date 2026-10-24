@@ -558,18 +558,18 @@ describe("DashboardPage — what is left (D7, F23.3)", () => {
     bankAccountsStore.accounts = cards;
   });
 
-  it("says when a card is in the red, as a top-up most likely not entered (F23.21)", () => {
+  it("says a card below zero most likely never had its amount said, and where to say it (F24.3)", () => {
     budgetStore.summary = summary();
     const cards = bankAccountsStore.accounts;
     bankAccountsStore.accounts = [{ ...cards[0], balance: "-120.00" }];
     incomeStore.balance = { balance: "-120.00", since: null, from_accounts: true };
     renderPage();
 
-    expect(screen.getByText("Looks like you forgot to top up a card")).toBeInTheDocument();
-    expect(screen.getByText(/“My card” is in the red: -120 PLN/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open the accounts" })).toHaveAttribute(
+    expect(screen.getByText("A card shows less than zero")).toBeInTheDocument();
+    expect(screen.getByText(/“My card” shows -120 PLN/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Say what is on it" })).toHaveAttribute(
       "href",
-      "/accounts",
+      `/accounts/${String(cards[0]?.id)}`,
     );
     bankAccountsStore.accounts = cards;
     incomeStore.balance = null;

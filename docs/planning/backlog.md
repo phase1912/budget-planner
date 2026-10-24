@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-27 epics · 198 features · 398 tasks written so far.
+27 epics · 202 features · 410 tasks written so far.
 
 23 epics are in the diploma project's scope; 4 are planned but out of it.
 
@@ -30,12 +30,12 @@
 | E18 | Subscriptions and Payments | — | 6 | yes | 2 | Out of scope |
 | E19 | Advertising | — | 4 | yes | 2 | Diploma |
 | E20 | Trips | — | 5 | yes | 2 | Diploma |
-| E21 | Voice and Chat Assistant | — | 15 | yes | 2 | Diploma |
+| E21 | Voice and Chat Assistant | — | 17 | yes | 2 | Diploma |
 | E22 | Android App | — | 5 | yes | 2 | Diploma |
-| E23 | Improvements | — | 22 | no | 2 | Diploma |
+| E23 | Improvements | — | 23 | no | 2 | Diploma |
 | E25 | iOS App | — | 3 | yes | 2 | Diploma |
 | E26 | Native Apps | — | 2 | no | 3 | Out of scope |
-| E24 | Bugfixes | — | 2 | no | 2 | Diploma |
+| E24 | Bugfixes | — | 3 | no | 2 | Diploma |
 
 ---
 
@@ -1906,6 +1906,31 @@ An answer about money shows the thing itself, drawn the way its screen draws it,
 - **F21.15.2** A new category and moving into one, on cards — Cards to add a category (the Categories screen's rules) and to move a whole receipt, or one of its lines, into a category — new or existing — as a correction the categoriser learns from (C4). A move into a category proposed in the same turn waits for that card. Three languages; checked at 375, 768 and 1280 px.
 - **F21.15.3** The conversation that broke, kept as a test — The three-step conversation above, and a few like it, added to the assistant's evaluation dialogs; they pass on the production model before this ships.
 
+### F21.16 — One door for whatever is sent
+
+*Requirements: N2* · *Blocked by: F21.15, F23.21*
+
+The ＋ and the assistant are the same reader: whatever a user drops in — several photos at once, one photo of several receipts laid on a table, a long receipt in parts, a bank app's screenshot of a transfer they made or money they got, a payslip — it works out what each thing is and proposes the right cards: receipts, an expense paid by transfer, an income. When it cannot tell (a transfer out, or a top-up of the user's own card?) it asks, offering the answers to tap, and asks which card when it matters. Found by the first outside tester: three receipts photographed together were read as one, a VND transfer was refused as "not a receipt", and a re-upload of the stuck three-receipt photo was refused as a duplicate of a receipt nowhere on screen.
+
+**Demonstrated by:** Photograph three receipts on a table and drop in a bank screenshot of a transfer: the ＋ proposes three receipts and one expense "transfer, 300 000 VND", each checked and saved; the same files attached to the assistant give the same cards.
+
+- **F21.16.1** What each file is — Every photo or PDF page sent through the ＋ or attached in the chat is first told apart: one or more receipts, money sent (a transfer or a payment), money received, a payslip, or something else. Money sent becomes an expense of one amount with no lines, marked as a transfer, with its date, currency and the payee as merchant; money received goes the income way (F23.21.2: a card is asked for when there is none). Not sure which — asked with options to tap, never guessed; something else is refused saying what it looked like. The same port and rules for the upload and the assistant (OCP: a new kind plugs in). Three languages; checked at 375, 768 and 1280 px.
+- **F21.16.2** Many receipts in one go — One photo holding several receipts becomes several receipts; several photos sent at once are grouped by the reader into receipts, the parts of one long receipt staying one (B2-B4, B9 unchanged). The review shows each receipt found with the photo it came from, to correct or drop before saving. The assistant takes several attachments in one message, up to the upload's limit. The quota counts each receipt read.
+- **F21.16.3** An upload never strands — Uploading always ends on the review or with a reason and what to do. A refusal as a duplicate names and links the receipt already stored; a file whose reading never finished, or was dropped, is not a duplicate and can be sent again. Tests for both.
+- **F21.16.4** Measured, and written down — The reading evaluation gains a photo of three receipts, a long receipt in two photos, a transfer sent and one received from bank apps (VND, PLN, UAH) and a payslip, scored on what each was taken for; the assistant's evaluation gains the same as attachments. An ADR for telling files apart and asking when unsure; the domain model (a transfer expense) and the overview's ingestion flow updated.
+
+### F21.17 — The family by chat
+
+*Requirements: N2* · *Blocked by: F21.13, F12.5*
+
+The family is the product's own idea, but the assistant could not answer "what did my wife buy today?". It answers about any member of the user's family — what they bought, where, how much, in a period — finding who is meant by a name however it is said (a first name, a short form, another language, "my wife" once the user has said who that is), asking with the members' names to tap when more than one fits or none does. Only what the family already shares: a member's private receipts stay a sum (ADR-0017).
+
+**Demonstrated by:** In a family with Олена and Максим ask "що сьогодні купувала Лена?": her shared receipts of today with their lines. Ask "and my son?": a question with Максим to tap.
+
+- **F21.17.1** A member's purchases — A read tool gives one member's shared receipts and lines over a period, and the totals of their private ones without detail; the member is named, not given by id, and resolved by name, short form or transliteration, else asked about with the members' names. Tests that a private receipt's lines never come back and that someone outside the family is never found (N2).
+- **F21.17.2** Who "my wife" is — When the user says how they call a member ("Олена — моя дружина"), it is kept on the user's own side of the family, never shown to that member, and used to resolve "my wife" later; changed or forgotten by saying so. Add-only migration.
+- **F21.17.3** Family dialogs in the evaluation — The assistant's evaluation gains a seeded family and dialogs in three languages: a member by a short name, by a relation already told, an unclear one asked about, and a private receipt not revealed.
+
 ---
 
 ## E22 — Android App
@@ -2161,6 +2186,14 @@ Tapping a day on Spending's day-by-day chart only named its sum, so the obvious 
 - **F23.22.2** Columns, days or a calendar — A switch above the chart: Columns (today's bars), Days (a row a day, the bar across, the sum at its end) and Calendar (the period's weeks, Monday first, each day shaded by its share of the biggest). Every view taps to the same day and its receipts. The choice is kept in this browser only, as a convenience the privacy check knows of. Checked at 375, 768 and 1280 px.
 - **F23.22.3** The family's chart the same way — The family's day-by-day chart (F12.5) gets the same three views and tap: the tapped day lists the family's receipts of that day, each saying whose it is (the viewer's, or the member's first name), from the shared receipts only — a member's private spending stays a sum without a day (ADR-0017). A test that a private receipt never appears there (N2). Checked at 375, 768 and 1280 px.
 
+### F23.23 — Money set up the way a stranger reads it
+
+*Requirements: —* · *Blocked by: F23.21*
+
+The first outside tester could not tell what onboarding's income step asked: they typed the amount into "what is it", read "each time, USD" as nothing, and never noticed a card was being made — then Home called that card below zero. The rule stays F23.21's: no card unless the user makes one; income asks where it lands and offers to make one. What changes is that every step says so plainly: a card is just a name the user will recognise, never a card number, and each name is the user's own once. Receipts that do not count yet are seen, with why.
+
+**Demonstrated by:** Sign up as a new user in Ukrainian: the income step reads "Назва доходу (зарплата, фріланс)" and "Сума за раз"; adding it says "створимо картку — лише назва, без номера"; skipping leaves no card, and the summary lists exactly what was saved.
+
 ---
 
 ## E25 — iOS App
@@ -2202,6 +2235,7 @@ Every guideline the app touches met and written down before the first submission
 - **F25.3.1** App Review checklist and privacy manifest — docs/mobile/app-store-review.md for guidelines 2.1, 2.3, 3.1, 4.2, 5.1.1, 5.1.2 and export compliance, each checked against the current guidelines with its date; PrivacyInfo.xcprivacy with the required-reason APIs of the app and its plugins; ITSAppUsesNonExemptEncryption set to false.
 - **F25.3.2** Asking before receipts go to the AI — Before the first receipt, voice message or chat goes to the model, the app says what is sent, to whom (Google's Gemini on Vertex AI) and why, and asks; the answer is kept on the account with its date and can be withdrawn in Settings, which stops every AI feature until it is given again. Applies on the web too, so the rule is one. ADR and the privacy policy updated; three languages; checked at 375, 768 and 1280 px.
 - **F25.3.3** No paid plan offered inside the app — Inside the store apps, nothing names a price, a purchase or a way to buy the paid plan, and no link leads to one; what is left of the AI credits is still shown. The platform module says when the client is a store app; a test that no such text or link renders there.
+- **F25.3.4** AI features off until allowed — Without the AI allowed, the camera's reading, the assistant and every AI button show as off with one line and a way to allow it, instead of failing on use; the consent dialog says that "not now" leaves them off until allowed in Settings. The client reads the profile's consent, which the server already returns — not a claim in the session token, which would stay "allowed" for its lifetime after a withdrawal; the server keeps refusing as now. Three languages; checked at 375, 768 and 1280 px.
 
 ---
 
@@ -2244,6 +2278,14 @@ Product search and selection, product names carrying a date, a saved selection o
 *Requirements: —*
 
 On a phone the bottom bar drifted with the scroll after typing in a field: Safari zooms into any field under 16px and stays zoomed. Home's chat button sat alone in the middle of the header instead of beside the avatar.
+
+**Demonstrated by:** No screen of its own — each fix is seen where the bug was.
+
+### F24.3 — Fixes from the first outside test, 24 October 2026
+
+*Requirements: —*
+
+A tester new to the product, and the owner's family, found these on the website. Onboarding's income step saved the income but not the card's balance now, so Home showed the new card 122 below zero and warned to top it up, and the summary said "income: not set, accounts: not set". "Send again" for the confirmation letter sent nothing three times, and the address stayed "not confirmed" after it was confirmed until the page was reloaded. A receipt refused because the AI was not allowed showed a server text in English to a Ukrainian user — every refusal on the upload screen is worded from its code in the user's language. A receipt dated years back was stored in its own month, where the tester could not find it: it stays there, and saving it says which month it went to, with a link. The confirmation notice said "household" ("домогосподарство"), where the tabs say "family".
 
 **Demonstrated by:** No screen of its own — each fix is seen where the bug was.
 

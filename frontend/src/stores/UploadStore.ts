@@ -8,6 +8,8 @@ import { device } from "@/platform";
 import type { Trip } from "@/stores/TripsStore";
 import { tripOnDay } from "@/stores/tripOnDay";
 import { shrinkPhoto } from "@/stores/shrinkPhoto";
+import { isoDay } from "@/stores/StatisticsStore";
+import { dateFormat } from "@/i18n/format";
 
 /** Failed polls in a row (about 2 s apart, plus each request's own wait) before giving up. */
 const POLL_FAILURES_TOLERATED = 6;
@@ -37,6 +39,8 @@ export class UploadStore {
   /** Shared receipts waiting for the one under review to be finished (F25.2.2). */
   sharedWaiting: File[] = [];
   errorTitle: string | null = null;
+  /** The refusal's code, when the server gave one — the screen offers its own way out. */
+  errorCode: string | null = null;
   api: ApiClient;
   extractedData: Record<string, unknown> | null = null;
   totalItems = 0;
@@ -266,6 +270,7 @@ export class UploadStore {
     this.uploadState.start();
     this.errorDetails = null;
     this.errorTitle = null;
+    this.errorCode = null;
     this.jobId = null;
     this.isProcessing = false;
     this.extractedData = null;
@@ -311,14 +316,20 @@ export class UploadStore {
 
       const startedJobId = runInAction(() => {
         if (error) {
-          const { title } = error as { title?: string };
+          const { title, code } = error as { title?: string; code?: string };
           this.uploadState.fail(errorMessage(error, i18n.t("messages:upload.failed")));
+          this.errorCode = code ?? null;
 
-          // A refusal the server explains (unsupported file, a limit reached) is shown with
-          // its reason; anything else gets the generic message. The server's title is
-          // English, so another language keeps the product's own heading.
-          if ([400, 415, 429, 503].includes(response.status) && title) {
-            this.errorTitle = i18n.language === "en" ? title : i18n.t("messages:upload.errorTitle");
+          // A refusal the server explains — an unsupported file, a limit, the AI not yet
+          // allowed — is shown with its reason in the user's language (F24.3); anything else
+          // gets the generic message. The server's title is English, so another language
+          // keeps the product's own heading.
+          const coded = code !== undefined && code !== "internal_error";
+          const explained =
+            coded || ([400, 403, 415, 429, 503].includes(response.status) && Boolean(title));
+          if (explained) {
+            this.errorTitle =
+              i18n.language === "en" && title ? title : i18n.t("messages:upload.errorTitle");
             this.errorDetails = errorMessage(error, i18n.t("messages:unknown"));
           } else {
             this.errorTitle = i18n.t("messages:upload.errorTitle");
@@ -710,10 +721,34 @@ export class UploadStore {
    * several in a row. The server re-checks every gate, so a refusal is shown
    * rather than swallowed; the button is disabled meanwhile so one click stores once.
    */
+  /**
+   * The receipts about to be stored that are dated outside this month, as their months:
+   * stored by their own date, they do not show in this month's figures (F24.3).
+   */
+  private storedInOtherMonths(): { first: Date; link: string }[] {
+    const extractions = (this.extractedData?.extractions ?? []) as {
+      transaction_date?: string | null;
+    }[];
+    const thisMonth = isoDay(new Date()).slice(0, 7);
+    const months: { first: Date; link: string }[] = [];
+    for (const index of this.selectedIndices) {
+      const day = extractions[index]?.transaction_date;
+      if (!day || day.slice(0, 7) === thisMonth) continue;
+      const first = new Date(`${day.slice(0, 7)}-01T00:00:00`);
+      const last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
+      months.push({
+        first,
+        link: `/receipts?start=${isoDay(first)}&end=${isoDay(last)}`,
+      });
+    }
+    return months;
+  }
+
   async commitJob(): Promise<boolean> {
     if (!this.jobId || this.isCommitting) return false;
     this.isCommitting = true;
     const stored = this.receiptsToStore;
+    const elsewhere = this.storedInOtherMonths();
     try {
       const res = await this.api.POST("/receipts/upload/{job_id}/commit", {
         params: { path: { job_id: this.jobId } },
@@ -724,7 +759,17 @@ export class UploadStore {
       runInAction(() => {
         this.startOver();
       });
-      this.toastStore?.showSuccess(i18n.t("messages:upload.stored", { count: stored }));
+      const month = elsewhere[0];
+      if (month) {
+        // A receipt dated in another month is stored there: say where (F24.3).
+        const name = dateFormat({ month: "long", year: "numeric" }).format(month.first);
+        this.toastStore?.showSuccess(
+          i18n.t("messages:upload.storedElsewhere", { count: elsewhere.length, month: name }),
+          { to: month.link, label: i18n.t("messages:upload.openMonth", { month: name }) },
+        );
+      } else {
+        this.toastStore?.showSuccess(i18n.t("messages:upload.stored", { count: stored }));
+      }
       this.onReceiptsStored();
       return true;
     } catch (err) {

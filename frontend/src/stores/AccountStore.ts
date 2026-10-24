@@ -16,6 +16,8 @@ import type { ToastStore } from "@/stores/ToastStore";
  */
 export class AccountStore {
   readonly state = new AsyncState();
+  /** When the link was last sent again, so the button waits a minute before another. */
+  resentAt: number | null = null;
   /** The address a followed link confirmed, to name it on the screen that followed it. */
   confirmedEmail: string | null = null;
   private readonly api: ApiClient;
@@ -57,7 +59,24 @@ export class AccountStore {
   /** Send the confirmation link again (F17.8.2). */
   async resendConfirmation(): Promise<void> {
     const sent = await this.run(() => this.api.POST("/users/me/confirmation/resend"));
-    if (sent) this.toastStore.showSuccess(i18n.t("messages:account.linkSent"));
+    if (!sent) return;
+    runInAction(() => {
+      this.resentAt = Date.now();
+    });
+    // Gmail files the same subject into one conversation: where to look is said (F24.3).
+    this.toastStore.showSuccess(
+      i18n.t("messages:account.linkSent", { email: this.authStore.user?.email ?? "" }),
+    );
+  }
+
+  /**
+   * Ask the server again whether the address is confirmed — the link is mostly followed
+   * in another tab or the mail app, so the banner looks again when this tab comes back.
+   */
+  async checkConfirmed(): Promise<void> {
+    if (!this.mustConfirm) return;
+    const { data } = await settle(() => this.api.GET("/users/me"));
+    if (data?.email_confirmed) this.authStore.updateUser(data);
   }
 
   /** Ask for a reset link; the answer is the same whether the address has an account. */

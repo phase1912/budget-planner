@@ -1,5 +1,6 @@
 import { render, screen, act, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import { ToastContainer } from "./Toast";
 import type { ToastStore } from "@/stores/ToastStore";
 
@@ -78,5 +79,23 @@ describe("ToastContainer", () => {
     render(<ToastContainer />);
 
     expect(screen.getByRole("status")).toHaveClass("bg-tone-primary-bg", "text-tone-primary-text");
+  });
+
+  it("offers where to go next when the message has a link (F24.3)", () => {
+    mockToastStore.toast = {
+      message: "Saved. 1 receipt is dated February 2019: it is in that month, not this one.",
+      type: "success",
+      link: { to: "/receipts?start=2019-02-01&end=2019-02-28", label: "Open February 2019" },
+    };
+    render(
+      <MemoryRouter>
+        <ToastContainer />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("link", { name: "Open February 2019" })).toHaveAttribute(
+      "href",
+      "/receipts?start=2019-02-01&end=2019-02-28",
+    );
   });
 });

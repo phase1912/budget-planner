@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { observer } from "mobx-react-lite";
 import { Check, ChevronLeft, Landmark, ReceiptText, ShieldCheck, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -59,6 +59,11 @@ export const OnboardingPage = observer(function OnboardingPage() {
       ? user.currency
       : guessCurrency(Intl.DateTimeFormat().resolvedOptions().timeZone, navigator.language),
   );
+  // The income step's open form, finished by Next (F24.3).
+  const pendingIncome = useRef<(() => Promise<boolean>) | null>(null);
+  const setPendingIncome = useCallback((finish: (() => Promise<boolean>) | null) => {
+    pendingIncome.current = finish;
+  }, []);
   const [cardName, setCardName] = useState("");
   const [cardAmount, setCardAmount] = useState("");
   const [business, setBusiness] = useState(false);
@@ -141,6 +146,13 @@ export const OnboardingPage = observer(function OnboardingPage() {
   };
 
   const next = async () => {
+    // An income typed but not saved is saved by Next, never dropped (F24.3).
+    if (step === INCOME && pendingIncome.current) {
+      setBusy(true);
+      const saved = await pendingIncome.current();
+      setBusy(false);
+      if (!saved) return;
+    }
     if (step === ACCOUNTS) {
       setBusy(true);
       const ok = await openAccounts();
@@ -377,7 +389,7 @@ export const OnboardingPage = observer(function OnboardingPage() {
           {step === INCOME && (
             <>
               <Heading title={t("income.title")} body={t("income.body")} />
-              <RegularIncomes currency={currency} />
+              <RegularIncomes currency={currency} onPending={setPendingIncome} />
             </>
           )}
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Pencil, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -55,6 +55,7 @@ export const RegularIncomes = observer(function RegularIncomes({
   kind = "income",
   onChanged,
   hideAdd = false,
+  onPending,
 }: {
   /** The currency being chosen, before it is saved — in the first-sign-in setup. */
   currency?: string;
@@ -63,6 +64,11 @@ export const RegularIncomes = observer(function RegularIncomes({
   onChanged?: () => void;
   /** Plan adds incomes through its one dialog (F23.15): the list only shows and changes. */
   hideAdd?: boolean;
+  /**
+   * Hands the screen around a way to finish an open form — saved if filled in, dropped if
+   * blank, refused if half done — so a step's own Next never throws a typed income away.
+   */
+  onPending?: (finish: (() => Promise<boolean>) | null) => void;
 }) {
   const { incomeStore, authStore, householdStore, bankAccountsStore } = useStores();
   // With accounts, whose a sum is follows its account (F23.15): no separate choice.
@@ -116,7 +122,9 @@ export const RegularIncomes = observer(function RegularIncomes({
     );
     setCard({ name: cardName(mayShare), opening: "" });
   };
-  const save = async () => {
+  // Asked to finish with the form only half filled in: say what is missing.
+  const [tried, setTried] = useState(false);
+  const save = async (): Promise<boolean> => {
     // A change keeps the account it is on and whether it varies (F23.15).
     const original = items.find((i) => i.id === editing);
     const base = {
@@ -144,10 +152,32 @@ export const RegularIncomes = observer(function RegularIncomes({
             about,
             new_card: newCard,
           });
-    if (!ok) return;
+    if (!ok) return false;
+    // A first income made its card on the server: the screens listing cards see it now.
+    if (newCard) await bankAccountsStore.load(today);
     setEditing(null);
     onChanged?.();
+    return true;
   };
+  const finish = useRef<() => Promise<boolean>>(() => Promise.resolve(true));
+  finish.current = () => {
+    if (editing === null) return Promise.resolve(true);
+    if (draft.name.trim() === "" && amount === "") {
+      setEditing(null);
+      return Promise.resolve(true);
+    }
+    if (!valid) {
+      setTried(true);
+      return Promise.resolve(false);
+    }
+    return save();
+  };
+  useEffect(() => {
+    onPending?.(() => finish.current());
+    return () => {
+      onPending?.(null);
+    };
+  }, [onPending]);
 
   const form = (
     <form
@@ -181,6 +211,11 @@ export const RegularIncomes = observer(function RegularIncomes({
         }}
       />
       {needsCard && <NewCardFields value={card} onChange={setCard} currency={currency} />}
+      {tried && !valid && (
+        <p role="alert" className="m-0 text-md text-tone-error-text">
+          {t(`${words}.incomplete`)}
+        </p>
+      )}
       {mayShare && !withAccounts && (
         <div className="flex flex-col gap-2">
           <span className="text-md font-semibold text-muted-foreground">{t("whose.title")}</span>
