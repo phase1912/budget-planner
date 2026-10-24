@@ -4,6 +4,7 @@ import type { components } from "@/api/schema";
 import { apiClient } from "@/api/client";
 import { errorMessage } from "@/api/errors";
 import i18n from "@/i18n";
+import { device } from "@/platform";
 
 export type CategoryStatistics = components["schemas"]["CategoryStatisticsResponse"];
 export type DailySpend = components["schemas"]["DailySpendResponse"];
@@ -121,6 +122,7 @@ export class StatisticsStore {
 
   /** The receipts of one day tapped on the chart; a later tap's answer wins. */
   async openDay(day: string): Promise<void> {
+    if (this.day !== day) void device.feel("selected");
     this.day = day;
     this.isLoadingDay = true;
     try {

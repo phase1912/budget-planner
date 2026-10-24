@@ -241,5 +241,15 @@
     "later": "Nie teraz",
     "setting": "AI czyta moje paragony i wiadomości",
     "settingHint": "Wysyłane do Gemini od Google, by odczytać, posortować i odpowiedzieć. Wyłączone: funkcje AI czekają."
+  },
+  "signInMethods": {
+    "title": "Sposoby logowania",
+    "hint": "Google lub Apple logują bez hasła.",
+    "linked": "Połączono",
+    "unlink": "Odłącz",
+    "link": "Połącz",
+    "noPassword": "Nie ma jeszcze hasła. Wyślemy link, aby je ustawić; bez hasła nie da się odłączyć ostatniego dostawcy.",
+    "setPassword": "Wyślij link",
+    "deleteWithEmail": "Wpisz swój adres e-mail, aby potwierdzić"
   }
 }

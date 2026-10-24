@@ -8,7 +8,7 @@ usage, as the console shows them.
 """
 
 import json
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from pydantic import BaseModel, EmailStr, Field
@@ -16,12 +16,16 @@ from pydantic import BaseModel, EmailStr, Field
 from app.api.errors import DomainError, NotFoundError, ProblemCode
 from app.assistant.tools.base import Answer, FormField, Reader, ToolContext, Writer, as_id
 from app.core.config import get_settings
+from app.domain.periods import DateRange
 from app.models.user import User
 from app.repository.user import UserRepository
+from app.services.activity import UsageReportService
 from app.services.admin import AdminService
 
 FOUND = 10
 """How many accounts one search answers with."""
+LISTED = 15
+"""How many reports or log entries one answer holds, newest first."""
 
 
 def _service(ctx: ToolContext) -> AdminService:
@@ -309,3 +313,105 @@ class SetAdmin(Writer):
     async def save(self, ctx: ToolContext, fields: RoleCard) -> str:
         await _service(ctx).set_admin(ctx.user, as_id(fields.user_id), admin=fields.admin)
         return f"user:{fields.user_id}"
+
+
+class NoArgs(BaseModel):
+    """Nothing to choose: the newest come first."""
+
+
+class OverviewArgs(BaseModel):
+    """The days the figures cover; the last seven when none are named."""
+
+    start: date | None = Field(default=None, description="First day, YYYY-MM-DD")
+    end: date | None = Field(default=None, description="Last day, YYYY-MM-DD; today if none")
+
+
+class Overview(Reader):
+    """The admin dashboard's figures for a period, as the console shows them (F17.3.3)."""
+
+    name = "admin_overview"
+    description = (
+        "Admin only: how the service is doing over a period — visits and their sources, "
+        "platforms and systems, sign-ups, confirmations, users with a receipt, uploads, "
+        "receipts read, active this week and month, returning users. Counts only. Use for "
+        "'what is happening in the admin console' or 'how is the service doing'."
+    )
+    args = OverviewArgs
+    needs = "admin"
+
+    async def read(self, ctx: ToolContext, args: OverviewArgs) -> Answer:
+        end = args.end or datetime.now(UTC).date()
+        start = args.start or end - timedelta(days=6)
+        if start > end:
+            return Answer(json.dumps({"error": "the first day is after the last"}))
+        report = await UsageReportService(ctx.session, get_settings().admin_emails).report(
+            DateRange(start, end)
+        )
+        figures = {
+            "from": start.isoformat(),
+            "to": end.isoformat(),
+            "visits": report.visits,
+            "page_views": report.page_views,
+            "visits_by_source": dict(report.visits_by_source),
+            "visits_by_platform": dict(report.visits_by_platform),
+            "visits_by_system": dict(report.visits_by_system),
+            "sign_ups": report.sign_ups,
+            "confirmed": report.confirmed,
+            "with_a_receipt": report.with_a_receipt,
+            "uploads": report.uploads,
+            "receipts_read": report.receipts_read,
+            "active_this_week": report.active_week,
+            "active_this_month": report.active_month,
+            "returning": report.returning,
+        }
+        return Answer(json.dumps(figures))
+
+
+class ReplyReports(Reader):
+    """The assistant replies users reported, newest first (F22.4.2)."""
+
+    name = "admin_reply_reports"
+    description = (
+        "Admin only: assistant replies users reported as offensive, wrong or other — when, "
+        "why, the reply's words and who reported it — newest first."
+    )
+    args = NoArgs
+    needs = "admin"
+
+    async def read(self, ctx: ToolContext, args: NoArgs) -> Answer:
+        rows = await _service(ctx).reply_reports(LISTED)
+        reports = [
+            {
+                "on": report.created_at.date().isoformat(),
+                "reason": report.reason,
+                "reply": report.reply_text[:300],
+                "reported_by": email,
+            }
+            for report, email in rows
+        ]
+        return Answer(json.dumps({"reports": reports}))
+
+
+class AdminLog(Reader):
+    """What admins did to accounts lately, as the super admins' log shows it (F18.6.3)."""
+
+    name = "admin_log"
+    description = (
+        "Super admin only: the latest admin actions — who did what to which account, when "
+        "and why — newest first."
+    )
+    args = NoArgs
+    needs = "super_admin"
+
+    async def read(self, ctx: ToolContext, args: NoArgs) -> Answer:
+        entries = [
+            {
+                "on": entry.action.created_at.isoformat(timespec="minutes"),
+                "admin": entry.admin,
+                "action": entry.action.action,
+                "account": entry.target,
+                "details": entry.action.details,
+            }
+            for entry in await _service(ctx).log(LISTED, 0)
+        ]
+        return Answer(json.dumps({"log": entries}, default=str))

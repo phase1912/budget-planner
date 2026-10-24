@@ -9,6 +9,7 @@ import { LoginPage } from "@/features/auth/pages/LoginPage";
 import { RegisterPage } from "@/features/auth/pages/RegisterPage";
 import { ForgotPasswordPage } from "@/features/auth/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/features/auth/pages/ResetPasswordPage";
+import { ProviderCallbackPage } from "@/features/auth/pages/ProviderCallbackPage";
 import { ConfirmLinkPage } from "@/features/auth/pages/ConfirmLinkPage";
 import { LegalPage } from "@/features/legal/LegalPage";
 import { HelpPage } from "@/features/help/HelpPage";
@@ -90,6 +91,8 @@ export const App = observer(function App() {
         />
         {/* Reached from letters (F17.8), signed in or not: a letter may be read elsewhere. */}
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        {/* Google and Apple send the browser back here, signed in or linking (F1.6.2). */}
+        <Route path="/auth/callback/:provider" element={<ProviderCallbackPage />} />
         <Route path="/privacy" element={<LegalPage document="privacy" />} />
         <Route path="/terms" element={<LegalPage document="terms" />} />
         <Route path="/help" element={<HelpPage />} />

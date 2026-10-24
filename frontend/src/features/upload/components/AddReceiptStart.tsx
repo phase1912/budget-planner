@@ -3,6 +3,8 @@ import { Banknote, Camera, Check, ChevronRight, Copy, FileUp, Mail, Sparkles } f
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
+import { device } from "@/platform";
+
 const ACCEPT = "image/jpeg, image/png, image/heic, application/pdf";
 
 /** Whether the device has a touch screen, where a camera is at hand (F23.6). */
@@ -40,6 +42,7 @@ export function AddReceiptStart({
   const income = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [cameraDenied, setCameraDenied] = useState(false);
   const take = (list: FileList | null) => {
     const picked = Array.from(list ?? []);
     if (picked.length > 0) onFiles(picked);
@@ -53,7 +56,17 @@ export function AddReceiptStart({
         <button
           type="button"
           className={`${tile} bg-primary text-primary-foreground`}
-          onClick={() => camera.current?.click()}
+          onClick={() => {
+            const takePhoto = device.takePhoto;
+            if (!takePhoto) {
+              camera.current?.click();
+              return;
+            }
+            void takePhoto().then((photo) => {
+              setCameraDenied(photo === "denied");
+              if (photo instanceof File) onFiles([photo]);
+            });
+          }}
         >
           <Camera size={30} aria-hidden="true" />
           <span className="flex flex-col">
@@ -61,6 +74,11 @@ export function AddReceiptStart({
             <span className="text-md opacity-90">{t("start.cameraHint")}</span>
           </span>
         </button>
+      )}
+      {cameraDenied && (
+        <p role="alert" className="m-0 text-md text-muted-foreground">
+          {t("start.cameraDenied")}
+        </p>
       )}
       <input
         ref={camera}

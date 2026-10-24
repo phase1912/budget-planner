@@ -10,6 +10,10 @@ through the real conversation service, graph and tools against the configured mo
     {"ask": ["Моя картка", "Revolut"]}   a question offering at least these, and no card
     {"says": ["16900"]}                   an answer holding these, and no card
     {"cards": [...], "may": ["category"]}  those cards, and these kinds besides if proposed
+    {"reads": ["admin_overview"]}         these read tools called, and no card
+
+A dialog's "access" is who the session is: "user" (the default), "admin" (an admin signed
+in with the code) or "admin-no-code" (an admin signed in with the password only).
 
 Ids on a card are read back as the names of what they point at, amounts as numbers. Every
 dialog runs in a transaction rolled back at its end, so nothing it writes is kept.
@@ -70,7 +74,9 @@ def _plain(text: str) -> str:
     return re.sub(r"(?<=\d)[\s\u00a0\u202f.,](?=\d{3}\b)", "", text).lower()
 
 
-def score(expect: dict[str, Any], reply: str, cards: list[dict[str, Any]]) -> tuple[bool, str]:
+def score(
+    expect: dict[str, Any], reply: str, cards: list[dict[str, Any]], reads: list[str] | None = None
+) -> tuple[bool, str]:
     """Whether the last turn's reply and cards are what the dialog expects, and why not."""
     writes = [c for c in cards if c.get("kind") not in ("answer", "choice", "attachment")]
     if "cards" in expect:
@@ -92,11 +98,14 @@ def score(expect: dict[str, Any], reply: str, cards: list[dict[str, Any]]) -> tu
             return False, "did not ask"
         missing = [o for o in expect["ask"] if o.lower() not in (offered + " " + reply).lower()]
         return (not missing, f"did not offer {missing}" if missing else "")
+    if "reads" in expect:
+        unread = [name for name in expect["reads"] if name not in (reads or [])]
+        return (not unread, f"did not call {unread}" if unread else "")
     missing = [s for s in expect["says"] if _plain(s) not in _plain(reply)]
     return (not missing, f"did not say {missing}" if missing else "")
 
 
-async def _seed(session: Any, mapper: Any) -> tuple[Any, dict[str, str]]:
+async def _seed(session: Any, mapper: Any, role: str = "user") -> tuple[Any, dict[str, str]]:
     """The evaluation user and their things; returns the user and each thing's name by id."""
     from datetime import UTC, datetime
     from decimal import Decimal
@@ -115,9 +124,11 @@ async def _seed(session: Any, mapper: Any) -> tuple[Any, dict[str, str]]:
         password_hash="-",
         currency="PLN",
         language="uk",
-        role="admin",
+        role=role,
         budget_limit=Decimal("3000.00"),
         email_confirmed_at=datetime.now(UTC),
+        # Allowed, as for anyone who uses the assistant at all (F25.3.2).
+        ai_consent_at=datetime.now(UTC),
     )
     session.add(user)
     await session.flush()
@@ -266,6 +277,7 @@ async def run(dialog: dict[str, Any], agent: Any) -> Result:
     from app.adapters.goal_mapping_agent import GoalMappingAdapter
     from app.assistant.core.graph import AssistantGraph
     from app.assistant.service import AssistantService
+    from app.assistant.tools.toolbox import Toolbox
     from app.core.config import get_settings
     from app.db.session import get_session_factory
     from app.services.quota import QuotaService
@@ -279,17 +291,28 @@ async def run(dialog: dict[str, Any], agent: Any) -> Result:
         return response
 
     litellm.acompletion = counted
+    reads: list[str] = []
+    original_read = Toolbox.read
+
+    async def noted(self: Any, call: Any) -> str:
+        reads.append(call.name)
+        return await original_read(self, call)
+
+    Toolbox.read = noted  # type: ignore[method-assign]
     started = time.monotonic()
     try:
         async with get_session_factory()() as session:
             try:
                 mapper = GoalMappingAdapter(agent)
-                user, names = await _seed(session, mapper)
+                access = dialog.get("access", "user")
+                role = "user" if access == "user" else "admin"
+                user, names = await _seed(session, mapper, role)
                 service = AssistantService(
                     session,
                     AssistantGraph(agent),
                     QuotaService(session, get_settings()),
                     goal_mapper=mapper,
+                    access="admin" if access == "admin" else "user",
                 )
                 conversation_id = None
                 seen = 0
@@ -310,7 +333,8 @@ async def run(dialog: dict[str, Any], agent: Any) -> Result:
                 await session.rollback()
     finally:
         litellm.acompletion = original
-    passed, why = score(dialog["expect"], reply, cards)
+        Toolbox.read = original_read  # type: ignore[method-assign]
+    passed, why = score(dialog["expect"], reply, cards, reads)
     return Result(
         dialog["id"], passed, why, time.monotonic() - started, len(usage), sum(usage), reply, cards
     )

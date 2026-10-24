@@ -70,5 +70,11 @@
   "speech_unavailable": "What you said could not be recognised just now. Try again or type it.",
   "speech_too_long": "A recording can be a minute long at most.",
   "too_many_receipts": "On the free plan one upload can hold {{max}} receipts. Send the rest separately.",
-  "ai_consent_required": "Allow the AI to read your receipts and messages first: it is asked once, and you can withdraw it in Settings."
+  "ai_consent_required": "Allow the AI to read your receipts and messages first: it is asked once, and you can withdraw it in Settings.",
+  "sign_in_provider_off": "Signing in this way is not available yet.",
+  "id_token_invalid": "The sign-in could not be checked. Try again.",
+  "provider_email_unverified": "That account's email address is not confirmed, so it cannot sign in here.",
+  "link_needs_password": "An account with this email already exists. Enter its password once to link it.",
+  "identity_taken": "That account already signs in to another Budget Agent account.",
+  "last_way_in": "This is your only way to sign in. Add a password first, then unlink it."
 }

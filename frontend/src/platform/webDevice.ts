@@ -8,4 +8,6 @@ export const webDevice: Device = {
   onBack: () => () => undefined,
   setDarkBars: () => Promise.resolve(),
   feel: () => Promise.resolve(),
+  takePhoto: null,
+  onShared: () => () => undefined,
 };

@@ -167,6 +167,7 @@ class AccountService:
             )
         now = datetime.now(UTC)
         user.password_hash = get_password_hash(password)
+        user.password_set = True
         user.email_confirmed_at = user.email_confirmed_at or now
         await self.session.execute(
             update(RefreshToken)

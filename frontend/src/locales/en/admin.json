@@ -173,5 +173,21 @@
       "wrong": "Wrong or misleading",
       "other": "Something else"
     }
+  },
+  "byPlatform": "Opened in",
+  "bySystem": "Operating system",
+  "platforms": {
+    "web": "Website",
+    "ios-app": "iPhone app",
+    "android-app": "Android app"
+  },
+  "systems": {
+    "ios": "iOS",
+    "android": "Android",
+    "windows": "Windows",
+    "macos": "macOS",
+    "linux": "Linux",
+    "chromeos": "ChromeOS",
+    "other": "Other"
   }
 }

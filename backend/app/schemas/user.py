@@ -28,6 +28,8 @@ class UserResponse(BaseModel):
     language: Language | None = None
     email_confirmed: bool = False
     two_factor_enabled: bool = False
+    # False for an account opened with Google or Apple, until a reset link sets one (F1.6).
+    has_password: bool = Field(default=True, validation_alias="password_set")
     ai_consent_at: datetime | None = None
     palette: Palette | None = None
     dark_at_night: bool = False
@@ -105,7 +107,11 @@ class EmailChangeRequest(BaseModel):
 
 
 class AccountDeletionRequest(BaseModel):
-    """Payload for deleting the account (F17.9.1); the password proves it is the owner."""
+    """Payload for deleting the account (F17.9.1); the password proves it is the owner.
+
+    An account without a password (opened with Google or Apple, F1.6) sends its email
+    address here instead, typed out.
+    """
 
     password: str
 

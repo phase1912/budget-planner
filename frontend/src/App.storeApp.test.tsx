@@ -12,12 +12,16 @@ vi.mock("@/platform", () => ({
     onBack: () => () => undefined,
     setDarkBars: () => Promise.resolve(),
     feel: () => Promise.resolve(),
+    takePhoto: null,
+    onShared: () => () => undefined,
   },
 }));
 
 vi.mock("@/stores/StoreContext", () => ({
   useStores: () => ({
     serverStore: { isWaking: false, wake: () => undefined },
+    signInStore: { available: [], loadProviders: vi.fn() },
+    uploadStore: { receiveShared: vi.fn() },
     accountStore: { mustConfirm: false, state: { isLoading: false } },
     analyticsStore: { countView: () => undefined },
     authStore: {

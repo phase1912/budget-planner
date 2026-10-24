@@ -1,4 +1,5 @@
 import * as React from "react";
+import { device } from "@/platform";
 
 export interface SegmentedOption<T extends string> {
   value: T;
@@ -60,6 +61,7 @@ export function SegmentedControl<T extends string>({
                 : undefined
             }
             onClick={() => {
+              if (!active) void device.feel("selected");
               onChange(option.value);
             }}
             className={`inline-flex ${fill ? "flex-1 justify-center md:flex-none" : "shrink-0"} items-center gap-2 rounded-chip font-bold whitespace-nowrap cursor-pointer transition-colors ${optionSize} ${

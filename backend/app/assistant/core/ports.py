@@ -55,6 +55,9 @@ class AssistantContext:
     known: str = ""
     """What the user has, in a few lines — cards with their roles, bills, incomes, goals,
     trips, the family — so the model names things by their real names (F21.13.2)."""
+    admin: Literal["no", "needs_code", "yes"] = "no"
+    """Whether the user runs the service: an admin with the admin tools, or one signed in
+    without the second factor, who is told how to get them (F21.12)."""
 
 
 @dataclass(frozen=True)

@@ -49,6 +49,7 @@ import { LanguageCard } from "../components/LanguageCard";
 import { ReadingAccuracyCard } from "../components/ReadingAccuracyCard";
 import { ReceiptUsageCard } from "../components/ReceiptUsageCard";
 import { SecurityCard } from "../components/SecurityCard";
+import { SignInMethodsCard } from "../components/SignInMethodsCard";
 import { SettingsGroup, SettingsRow, SettingsSheet } from "../components/SettingsRows";
 import { isDarkPalette } from "@/stores/ThemeStore";
 
@@ -397,6 +398,7 @@ export const ProfilePage = observer(function ProfilePage() {
           }}
         />
         <SecurityCard />
+        <SignInMethodsCard />
         <SettingsRow
           icon={LogOut}
           color="var(--cat-utilities)"

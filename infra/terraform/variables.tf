@@ -103,3 +103,28 @@ variable "daily_credit_ceiling" {
   type        = number
   default     = 3000
 }
+
+variable "google_client_ids" {
+  description = "Google OAuth client ids whose ID tokens sign in (F1.6): the web client first, then the apps'. Empty keeps Google sign-in off."
+  type        = list(string)
+  default     = []
+}
+
+variable "apple_client_ids" {
+  description = "Apple audiences that sign in (F1.6): the web Services ID first, then the iOS bundle id. Empty keeps Apple sign-in off."
+  type        = list(string)
+  default     = []
+}
+
+variable "apple_team_id" {
+  description = "Apple Developer team id that signs the client secret (F1.6.3)."
+  type        = string
+  default     = ""
+}
+
+variable "apple_key_id" {
+  description = "Id of the Sign in with Apple key (F1.6.3). Set, the apple-sign-in-key secret is created and must get the .p8 by hand."
+  type        = string
+  default     = ""
+}
+

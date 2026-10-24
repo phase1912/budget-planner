@@ -3800,6 +3800,17 @@ epics:
               confirmations per day, weekly and monthly active users, returning users, receipts
               uploaded and read, and the path from visit to first receipt, over a chosen period;
               refused to anyone but an admin, with a test. Checked at 375, 768 and 1280 px.
+          - key: F17.3.4
+            title: Where visits come from, by platform and system
+            labels: [backend, frontend, security]
+            detail: >
+              Each counted view also says what it was opened in — the website, the iOS app or the
+              Android app — and the operating system's family (iOS, Android, Windows, macOS,
+              Linux, other), read from the User-Agent on the server and kept only as that word,
+              never the header itself; the referring site and campaign as today. No cookie, no
+              identifier, nothing more on the device (ePrivacy, ADR-0020). The admin metrics show
+              views by source, platform and system over the chosen period. Tests that nothing
+              but the counts is stored; checked at 375, 768 and 1280 px.
       - key: F17.4
         title: Interactive demo on sample data
         labels: [backend, frontend]
@@ -5091,6 +5102,16 @@ epics:
               recorded in the admin log as from the console; tests that a user who is not an
               admin is never offered them and that no admin tool returns receipts, incomes or
               balances (N2). Checked at 375, 768 and 1280 px.
+          - key: F21.12.2
+            title: The admin console's overview by chat
+            labels: [backend, ai]
+            detail: >
+              "What is going on in the admin console?" is answered: read tools for the
+              dashboard's figures over a period (visits, sources, platforms, sign-ups, receipts
+              read, active and returning users — counts only), the reported assistant replies,
+              and, for super admins, the admin log. An admin signed in without the second
+              factor is told to sign in again with the code instead of a vague answer. The
+              evaluation set gains admin dialogs, run with the session's access.
 
       - key: F21.13
         title: An assistant that finds what the user means
@@ -5880,6 +5901,19 @@ epics:
               The native camera, haptics on save and on a receipt read, and a Share Extension for
               images and PDFs handing them to the upload flow — each behind the platform module,
               the web and Android builds unchanged.
+          - key: F25.2.3
+            title: The iPhone app feeling native
+            labels: [frontend]
+            detail: >
+              What F25.2.2 left: the Share Extension ("Share → Budget Agent" from Photos, Files or
+              Mail; images and PDFs only, through an App Group, opened on the add-a-receipt
+              screen and never mixed into a receipt under review); the camera asking for access
+              before the viewfinder opens, so the system's question comes on the first tap, with
+              a line pointing to Settings when it is refused; haptics where native apps give them —
+              success and failure of every action, a changed tab, segment, switch or chart day, the
+              ＋ button; pages that stretch and spring back at both ends, short ones too, with the
+              page's own colour past the edge. The permission texts in en, uk and pl. Checked in
+              the simulator; haptics on a phone.
       - key: F25.3
         title: Passing App Review
         labels: [frontend, backend, docs]

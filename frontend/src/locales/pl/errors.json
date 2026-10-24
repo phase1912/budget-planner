@@ -70,5 +70,11 @@
   "speech_unavailable": "Nie udało się teraz rozpoznać wypowiedzi. Spróbuj ponownie albo napisz.",
   "speech_too_long": "Nagranie może trwać najwyżej minutę.",
   "too_many_receipts": "W darmowym planie jedno przesłanie może zawierać paragonów: {{max}}. Resztę wyślij osobno.",
-  "ai_consent_required": "Najpierw pozwól AI czytać Twoje paragony i wiadomości: pytamy o to raz, a w Ustawieniach zgodę można wycofać."
+  "ai_consent_required": "Najpierw pozwól AI czytać Twoje paragony i wiadomości: pytamy o to raz, a w Ustawieniach zgodę można wycofać.",
+  "sign_in_provider_off": "Ten sposób logowania nie jest jeszcze dostępny.",
+  "id_token_invalid": "Nie udało się sprawdzić logowania. Spróbuj ponownie.",
+  "provider_email_unverified": "Adres tego konta nie jest potwierdzony, więc nie można się nim zalogować.",
+  "link_needs_password": "Konto z tym adresem już istnieje. Wpisz raz jego hasło, aby je połączyć.",
+  "identity_taken": "To konto loguje już do innego konta Budget Agent.",
+  "last_way_in": "To jedyny sposób logowania. Najpierw dodaj hasło, potem odłącz."
 }

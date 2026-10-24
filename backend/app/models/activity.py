@@ -40,3 +40,23 @@ class PageViewCount(Model):
     source: Mapped[str] = mapped_column(String(64), nullable=False)
     views: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     entries: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+
+class VisitPlatformCount(Model):
+    """How many views and visits a day had from each platform and system (F17.3.4).
+
+    Kept beside `PageViewCount`, not in it, so the page and source counts never change
+    shape: the platform is what the visit was opened in (the website or a store app), the
+    system the operating system's family from the User-Agent. Counts only, as there.
+    """
+
+    __tablename__ = "visit_platform_counts"
+    __table_args__ = (
+        UniqueConstraint("day", "platform", "system", name="uq_visit_platform_counts_key"),
+    )
+
+    day: Mapped[date] = mapped_column(Date, nullable=False)
+    platform: Mapped[str] = mapped_column(String(16), nullable=False)
+    system: Mapped[str] = mapped_column(String(16), nullable=False)
+    views: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    entries: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

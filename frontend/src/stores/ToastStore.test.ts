@@ -1,4 +1,8 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+
+const feel = vi.hoisted(() => vi.fn(() => Promise.resolve()));
+vi.mock("@/platform", () => ({ device: { feel } }));
+
 import { ToastStore } from "./ToastStore";
 
 describe("ToastStore", () => {
@@ -31,5 +35,14 @@ describe("ToastStore", () => {
     store.showError("Network error");
     store.clearToast();
     expect(store.toast).toBeNull();
+  });
+
+  it("buzzes the phone for a success and for a failure, never for a plain note", () => {
+    feel.mockClear();
+    store.showSuccess("Saved");
+    store.showError("Failed");
+    store.showInfo("Note");
+
+    expect(feel.mock.calls).toEqual([["saved"], ["failed"]]);
   });
 });

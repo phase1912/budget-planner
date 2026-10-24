@@ -217,6 +217,7 @@
     "assistantHint": "Bez paragonu? Napisz „taksówka 45, kawa 12” — asystent przygotuje karty do zatwierdzenia",
     "camera": "Zrób zdjęcie",
     "cameraHint": "Otworzy się aparat; długi paragon możesz sfotografować w częściach",
+    "cameraDenied": "Aparat jest wyłączony dla Budget Agent. Włącz go w Ustawieniach telefonu → Budget Agent → Aparat.",
     "files": "Wybierz zdjęcia lub PDF",
     "drop": "Upuść tu zdjęcia lub PDF albo je wybierz",
     "filesHint": "JPEG, PNG, HEIC lub PDF · do 10 na paragon",

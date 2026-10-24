@@ -40,7 +40,9 @@
     "updateFailed": "Failed to update profile",
     "updated": "Profile updated successfully",
     "addressFailed": "Failed to regenerate address",
-    "addressReady": "New forwarding address ready"
+    "addressReady": "New forwarding address ready",
+    "providerUnlinked": "Unlinked.",
+    "passwordLinkSent": "A link to set your password is on its way."
   },
   "household": {
     "monthFailed": "The household's month could not be loaded",

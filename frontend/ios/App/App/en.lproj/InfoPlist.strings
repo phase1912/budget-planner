@@ -1,0 +1,4 @@
+/* The system's permission questions, in the phone's language (F25.2.2). */
+"NSCameraUsageDescription" = "Budget Agent uses the camera to photograph your receipts.";
+"NSMicrophoneUsageDescription" = "Budget Agent records what you say to the assistant, only while you record a message.";
+"NSPhotoLibraryUsageDescription" = "Budget Agent opens the photos of receipts you choose.";

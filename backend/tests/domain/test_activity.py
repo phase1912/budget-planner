@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.domain.activity import DIRECT, is_bot, visit_source
+from app.domain.activity import DIRECT, is_bot, system_family, visit_source
 
 OWN = "budget-agent.web.app"
 
@@ -39,3 +39,22 @@ def test_crawlers_and_tools_are_not_counted(agent: str | None) -> None:
 
 def test_a_phones_browser_is_counted() -> None:
     assert not is_bot("Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) Safari/604.1")
+
+
+@pytest.mark.parametrize(
+    ("agent", "family"),
+    [
+        ("Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15", "ios"),
+        ("Mozilla/5.0 (Linux; Android 16; Pixel 9) AppleWebKit/537.36 Chrome/141.0", "android"),
+        ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/141.0", "windows"),
+        ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15", "macos"),
+        ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/141.0", "linux"),
+        ("Mozilla/5.0 (X11; CrOS x86_64 16181.61.0) AppleWebKit/537.36", "chromeos"),
+        ("", "other"),
+        (None, "other"),
+    ],
+)
+def test_only_the_operating_systems_family_is_read_from_a_user_agent(
+    agent: str | None, family: str
+) -> None:
+    assert system_family(agent) == family

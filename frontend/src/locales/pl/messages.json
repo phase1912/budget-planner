@@ -40,7 +40,9 @@
     "updateFailed": "Nie udało się zaktualizować profilu",
     "updated": "Zaktualizowano profil",
     "addressFailed": "Nie udało się utworzyć nowego adresu",
-    "addressReady": "Nowy adres do przekazywania jest gotowy"
+    "addressReady": "Nowy adres do przekazywania jest gotowy",
+    "providerUnlinked": "Odłączono.",
+    "passwordLinkSent": "Link do ustawienia hasła jest w drodze."
   },
   "household": {
     "monthFailed": "Nie udało się wczytać miesiąca gospodarstwa",

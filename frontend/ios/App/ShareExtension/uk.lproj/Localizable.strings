@@ -1,0 +1,5 @@
+/* The share sheet's words (F25.2.2). */
+"saving" = "Додаємо в Budget Agent…";
+"kept" = "Додано. Відкрийте Budget Agent: чек чекає на екрані додавання чека.";
+"nothing" = "Budget Agent приймає лише фото чеків і PDF.";
+"done" = "Готово";

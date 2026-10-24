@@ -17,6 +17,7 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | `first_name` | String | User's first name |
 | `last_name` | String | User's last name |
 | `password_hash` | String | Argon2id hash |
+| `password_set` | Boolean | False for an account opened with Google or Apple until a reset link sets a password (F1.6): its hash is of a random secret, its last provider cannot be unlinked, and deleting it is confirmed with its address |
 | `currency` | String | Default `USD`. Used as the base currency for all monetary amounts; receipts in other currencies are converted into it (ADR-0016). Fixed once receipts exist (F1.4.2) |
 | `budget_limit` | Decimal | Optional monthly budget cap; more than zero when set (D7) |
 | `role` | String | `user` or `admin`: an admin opens the admin console (F18.6) and sees account facts, never receipts; super admins are `admin_emails`, not a role (ADR-0021) |
@@ -24,7 +25,7 @@ commit. Add the BRD requirement ID so the rule stays traceable to its source.
 | `recovery_code_hashes` | JSON | SHA-256 of the unused recovery codes; a used one is removed |
 | `created_at` | Timestamp | Standard audit field |
 | `updated_at` | Timestamp | Standard audit field |
-| **IdentityLink** | A linked Google or Facebook identity, verified-email-gated (G9-G11). | User |
+| **LinkedIdentity** | A Google or Apple account that signs in to this one (F1.6, ADR-0035): the provider, its stable subject, the address it gave and which of our client ids its token was for; Apple's refresh token, encrypted, only to revoke it when the account is deleted. Linked to one user only; an existing address links only with its password (G9-G11). | User |
 | **Receipt** | One purchase transaction, from one or more photos or a forwarded e-receipt. Records the channel it arrived through (`photo`, `email`) and, for email, the message's Message-ID as its source reference (F11.1, F11.2). Carries its fiscal identity when one was read — the cash register's number and the receipt's number on it (F11.3, ADR-0015) — and, for an emailed receipt alike to a stored one, a mark naming that receipt until the user decides (F11.5). A receipt paid in another currency keeps its original currency, total and the rate it was converted at (F11.7, ADR-0016). | User |
 | **LineItem** | One position on a receipt: product, quantity, unit price, total. Keeps the reader's confidence in it (F15.2) and, when its name is a remembered correction, what was printed (F15.3). | Receipt |
 | **Product** | One thing the user buys, however each shop prints it: a name and, when printed, a package size in grams or millilitres (F16.1). Purchase lines link to it. | User |
@@ -514,8 +515,9 @@ Rules that must hold at all times. Each is a candidate for a test.
 20g. The service's own analytics records a signed-in user's actions — signing up,
     confirming, signing in, a day of use, uploading and storing a receipt, exporting —
     against the account, with the time and nothing more, for 12 months (F17.3.1); visits to
-    the public pages are only counted per day, page and source, never with anything that
-    identifies the visitor (F17.3.2). A visit is the first public page of a page load, and
+    the public pages are only counted per day, page and source — and apart from those,
+    per day, platform and operating system family, of which only that one word is read from
+    the User-Agent — never with anything that identifies the visitor (F17.3.2, F17.3.4). A visit is the first public page of a page load, and
     its source is where that page was reached from; a signed-in reader is not a visitor.
     Only admins read the totals, never one user's data, and admins are in none of them.
 20h. A super admin is an address in `admin_emails`; an admin is `role = admin`, appointed
@@ -531,8 +533,14 @@ Rules that must hold at all times. Each is a candidate for a test.
 20j. The plan in force is the paid plan while a grant runs that is not taken back, else
     free. A grant made while a plan runs starts when it ends, and the plan runs on through
     grants that follow without a gap (`app/domain/plans.py`, F18.4).
-21. An OIDC identity links to an existing account only when the provider reports a
-    verified email matching it; an unverified email never links automatically (G10, G11).
+21. A Google or Apple identity is trusted only from an ID token signed with the
+    provider's published key, issued to one of our client ids, unexpired and carrying this
+    sign-in's nonce. It opens an account only for an address the provider says it
+    confirmed, and links to an existing account only with that account's password, or
+    from inside it while signed in — never silently, even with a verified matching
+    address (G10, G11). One provider account signs in to one user only (N2). An account
+    without a password keeps at least one provider until a reset link gives it one
+    (F1.6, ADR-0035).
 
 **Limits**
 

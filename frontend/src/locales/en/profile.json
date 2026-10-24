@@ -229,5 +229,15 @@
     "later": "Not now",
     "setting": "AI reads my receipts and messages",
     "settingHint": "Sent to Google's Gemini to read, sort and answer. Off: AI features wait."
+  },
+  "signInMethods": {
+    "title": "Ways to sign in",
+    "hint": "Google or Apple signs you in without a password.",
+    "linked": "Linked",
+    "unlink": "Unlink",
+    "link": "Link",
+    "noPassword": "No password yet. We can email you a link to set one; you need one to unlink the last provider.",
+    "setPassword": "Email me a link",
+    "deleteWithEmail": "Type your email address to confirm"
   }
 }

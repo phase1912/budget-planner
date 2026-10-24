@@ -13,6 +13,24 @@ ASK = "ask_user"
 """The tool the model asks the user with, offering options to tap (F21.13.3)."""
 
 
+ADMIN_NOTES = {
+    "no": "",
+    "yes": (
+        "\nThe user runs this service as an admin. Questions about the admin console, the "
+        "service, its users, sign-ups, visits, reported replies or what admins did are "
+        "answered with the admin_ tools (admin_overview for how the service is doing); "
+        "never with the user's own budget tools.\n"
+    ),
+    "needs_code": (
+        "\nThe user is an admin, but signed in this time without the two-factor code, so "
+        "the admin tools are closed. If they ask about the admin console, the service or "
+        "other users, say so in one sentence: sign out and sign in again with the code "
+        "from their authenticator app, then ask again.\n"
+    ),
+}
+"""What the model is told about the admin console, by who the session is (F21.12)."""
+
+
 def system(context: AssistantContext, last: str = "") -> str:
     """The rules of the conversation; `last` is the user's message, whose language the
     answer is in."""
@@ -67,4 +85,5 @@ def system(context: AssistantContext, last: str = "") -> str:
             else ""
         )
         + (f"\nWhat the user has now:\n{context.known}\n" if context.known else "")
+        + ADMIN_NOTES[context.admin]
     )

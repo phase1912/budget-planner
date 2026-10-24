@@ -9,3 +9,10 @@ billing_account = "XXXXXX-XXXXXX-XXXXXX"
 # free_monthly_credits = 150
 # paid_monthly_credits = 2500
 # daily_credit_ceiling = 3000
+
+# Sign in with Google and Apple (F1.6): off while empty.
+# google_client_ids = ["<web client id>.apps.googleusercontent.com"]
+# apple_client_ids  = ["<web services id>", "app.budgetagent"]
+# apple_team_id     = "<team id>"
+# apple_key_id      = "<key id>"  # then: gcloud secrets versions add apple-sign-in-key --data-file=AuthKey_<KEY_ID>.p8
+

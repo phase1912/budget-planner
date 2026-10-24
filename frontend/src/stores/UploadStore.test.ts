@@ -16,6 +16,27 @@ describe("UploadStore", () => {
     store = new UploadStore(mockApi as ApiClient);
   });
 
+  it("puts receipts shared from another app on the first step at once", () => {
+    const shared = new File(["x"], "a.jpg", { type: "image/jpeg" });
+
+    store.receiveShared([shared]);
+
+    expect(store.files).toEqual([shared]);
+  });
+
+  it("keeps shared receipts out of the one under review until it is done", () => {
+    const reviewed = new File(["r"], "r.jpg", { type: "image/jpeg" });
+    const shared = new File(["x"], "a.jpg", { type: "image/jpeg" });
+    store.addFiles([reviewed]);
+    store.currentStep = 2;
+
+    store.receiveShared([shared]);
+    expect(store.files).toEqual([reviewed]);
+
+    store.startOver();
+    expect(store.files).toEqual([shared]);
+  });
+
   it("should initialize with default state", () => {
     expect(store.uploadState.status).toBe("idle");
     expect(store.errorTitle).toBeNull();

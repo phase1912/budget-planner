@@ -19,7 +19,7 @@ import { device } from "@/platform";
  * goes without the bar.
  */
 export const AppShell = observer(() => {
-  const { authStore, analyticsStore, profileStore, themeStore } = useStores();
+  const { authStore, analyticsStore, profileStore, themeStore, uploadStore } = useStores();
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
   // In a store app (F22.2.1): the launch screen goes once the shell is drawn, and the
@@ -30,6 +30,15 @@ export const AppShell = observer(() => {
       void navigate(-1);
     });
   }, [navigate]);
+  // Receipts shared from another app open on the add-a-receipt screen (F25.2.2).
+  useEffect(
+    () =>
+      device.onShared((files) => {
+        uploadStore.receiveShared(files);
+        void navigate("/upload");
+      }),
+    [navigate, uploadStore],
+  );
   const dark = themeStore.theme === "dark";
   useEffect(() => {
     void device.setDarkBars(dark);

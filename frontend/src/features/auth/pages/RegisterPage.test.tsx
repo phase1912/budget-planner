@@ -7,6 +7,7 @@ import { RegisterPage } from "./RegisterPage";
 vi.mock("@/stores/StoreContext", () => ({
   useStores: () => ({
     serverStore: { wake: vi.fn() },
+    signInStore: { available: [], loadProviders: vi.fn() },
     authStore: {
       authState: { isLoading: false, error: null },
       register: vi.fn().mockResolvedValue(true),

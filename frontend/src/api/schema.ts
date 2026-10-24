@@ -241,6 +241,95 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sign In Providers
+         * @description Which of Google and Apple are switched on, with the web's client ids (F1.6.2).
+         */
+        get: operations["sign_in_providers_auth_providers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/oidc/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign In With Provider
+         * @description Sign in, or open an account, with Google's or Apple's ID token (F1.6.1).
+         *
+         *     Signed in already, the provider is linked to that account. 404
+         *     sign_in_provider_off, 401 id_token_invalid or provider_email_unverified, 409
+         *     link_needs_password (send the account's password with the token again) or
+         *     identity_taken, 400 terms_required (a new account: send accept_terms).
+         */
+        post: operations["sign_in_with_provider_auth_oidc__provider__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/apple/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apple Callback
+         * @description Hand Apple's web sign-in back to the client (F1.6.2).
+         *
+         *     Apple posts its answer here (form_post, required when it shares the name); the
+         *     client checks nothing has been swapped by its `state` and posts the token to
+         *     `/auth/oidc/apple`. The fragment never reaches a server's logs.
+         */
+        post: operations["apple_callback_auth_apple_callback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/apple/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apple Notifications
+         * @description Apple's server-to-server notifications (F1.6.3): consent withdrawn unlinks Apple.
+         */
+        post: operations["apple_notifications_auth_apple_notifications_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/me": {
         parameters: {
             query?: never;
@@ -259,8 +348,9 @@ export interface paths {
          * Delete Me
          * @description Delete the account and everything held about its owner (F17.9.1, GDPR art. 17).
          *
-         *     403 invalid_credentials for a wrong password. The photos and exports are removed
-         *     from storage after the response; signing in fails from now on.
+         *     403 invalid_credentials for a wrong password (or, for an account without one, the
+         *     wrong address). Apple's tokens are revoked first (F1.6.3). The photos and exports
+         *     are removed from storage after the response; signing in fails from now on.
          */
         delete: operations["delete_me_users_me_delete"];
         options?: never;
@@ -432,6 +522,46 @@ export interface paths {
          */
         post: operations["disable_two_factor_users_me_two_factor_disable_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/me/identities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Identities
+         * @description The providers that sign in to the account (F1.6.2).
+         */
+        get: operations["list_identities_users_me_identities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/me/identities/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Unlink Identity
+         * @description Stop a provider signing in; 409 last_way_in while it is the only way in (F1.6.2).
+         */
+        delete: operations["unlink_identity_users_me_identities__provider__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2078,8 +2208,9 @@ export interface paths {
          * Count View
          * @description Count one view of a public page (F17.3.2); a crawler or another path is not counted.
          *
-         *     Nothing about the visitor is kept: not the IP, not the full referrer — only the page,
-         *     the referring domain or campaign, and the day. Always 204, so it tells a caller nothing.
+         *     Nothing about the visitor is kept: not the IP, not the full referrer, not the
+         *     User-Agent — only the page, the referring domain or campaign, the platform, the
+         *     system's family and the day. Always 204, so it tells a caller nothing.
          */
         post: operations["count_view_api_v1_analytics_views_post"];
         delete?: never;
@@ -3045,6 +3176,9 @@ export interface components {
         /**
          * AccountDeletionRequest
          * @description Payload for deleting the account (F17.9.1); the password proves it is the owner.
+         *
+         *     An account without a password (opened with Google or Apple, F1.6) sends its email
+         *     address here instead, typed out.
          */
         AccountDeletionRequest: {
             /** Password */
@@ -3345,6 +3479,14 @@ export interface components {
             };
         };
         /**
+         * AppleNotification
+         * @description One of Apple's server-to-server notifications: a JWT Apple signed (F1.6.3).
+         */
+        AppleNotification: {
+            /** Payload */
+            payload: string;
+        };
+        /**
          * AuthResponse
          * @description Response containing the authenticated user and their access token.
          */
@@ -3403,6 +3545,22 @@ export interface components {
             value: string;
             /** Height */
             height: string;
+        };
+        /** Body_apple_callback_auth_apple_callback_post */
+        Body_apple_callback_auth_apple_callback_post: {
+            /**
+             * State
+             * @default
+             */
+            state: string;
+            /** Id Token */
+            id_token?: string | null;
+            /** Code */
+            code?: string | null;
+            /** User */
+            user?: string | null;
+            /** Error */
+            error?: string | null;
         };
         /** Body_read_income_document_api_v1_income_read_post */
         Body_read_income_document_api_v1_income_read_post: {
@@ -4958,6 +5116,24 @@ export interface components {
             token: string;
         };
         /**
+         * LinkedIdentityRead
+         * @description A provider that signs in to the account, as Settings lists it (F1.6.2).
+         */
+        LinkedIdentityRead: {
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "google" | "apple";
+            /** Email */
+            email: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
          * LoginRequest
          * @description Payload for authenticating with password (F1.1.4).
          */
@@ -5346,6 +5522,12 @@ export interface components {
              * @default false
              */
             entry: boolean;
+            /**
+             * Platform
+             * @default web
+             * @enum {string}
+             */
+            platform: "web" | "ios-app" | "android-app";
         };
         /**
          * PaginatedReceiptsResponse
@@ -5708,6 +5890,33 @@ export interface components {
             shops: components["schemas"]["ShopStandingResponse"][];
             /** Paid Above */
             paid_above: string;
+        };
+        /**
+         * ProviderSignInRequest
+         * @description What the client sends after Google's or Apple's sign-in (F1.6.1).
+         *
+         *     `password` links an existing account with the same address; `accept_terms` opens a
+         *     new one. Apple gives the name to the client once, on the first sign-in, so the client
+         *     passes it on; `authorization_code` lets the server revoke Apple's tokens later.
+         */
+        ProviderSignInRequest: {
+            /** Id Token */
+            id_token: string;
+            /** Nonce */
+            nonce: string;
+            /** Password */
+            password?: string | null;
+            /**
+             * Accept Terms
+             * @default false
+             */
+            accept_terms: boolean;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Authorization Code */
+            authorization_code?: string | null;
         };
         /**
          * ReadingAccuracyResponse
@@ -6443,6 +6652,16 @@ export interface components {
             paid_above: string;
         };
         /**
+         * SignInProviders
+         * @description The client id the web opens each provider with; null hides its button (F1.6.2).
+         */
+        SignInProviders: {
+            /** Google */
+            google: string | null;
+            /** Apple */
+            apple: string | null;
+        };
+        /**
          * SpeechRead
          * @description What was said in a recording, for the user to send or correct (F21.2.2).
          */
@@ -7026,6 +7245,10 @@ export interface components {
             views_by_page: components["schemas"]["Count"][];
             /** Visits By Source */
             visits_by_source: components["schemas"]["Count"][];
+            /** Visits By Platform */
+            visits_by_platform: components["schemas"]["Count"][];
+            /** Visits By System */
+            visits_by_system: components["schemas"]["Count"][];
             /** Sign Ups */
             sign_ups: number;
             /** Confirmed */
@@ -7080,6 +7303,11 @@ export interface components {
              * @default false
              */
             two_factor_enabled: boolean;
+            /**
+             * Has Password
+             * @default true
+             */
+            has_password: boolean;
             /** Ai Consent At */
             ai_consent_at?: string | null;
             /** Palette */
@@ -7539,6 +7767,132 @@ export interface operations {
             };
         };
     };
+    sign_in_providers_auth_providers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignInProviders"];
+                };
+            };
+        };
+    };
+    sign_in_with_provider_auth_oidc__provider__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: "google" | "apple";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProviderSignInRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthResponse"] | components["schemas"]["SecondFactorChallenge"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    apple_callback_auth_apple_callback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/x-www-form-urlencoded": components["schemas"]["Body_apple_callback_auth_apple_callback_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            303: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apple_notifications_auth_apple_notifications_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppleNotification"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_me_users_me_get: {
         parameters: {
             query?: {
@@ -7881,6 +8235,68 @@ export interface operations {
                 "application/json": components["schemas"]["TwoFactorOffRequest"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_identities_users_me_identities_get: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedIdentityRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unlink_identity_users_me_identities__provider__delete: {
+        parameters: {
+            query?: {
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                provider: "google" | "apple";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             204: {

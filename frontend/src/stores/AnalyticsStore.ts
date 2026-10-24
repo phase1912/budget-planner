@@ -4,6 +4,7 @@ import type { ApiClient } from "@/api/client";
 import type { components } from "@/api/schema";
 import { errorMessage, settle } from "@/api/errors";
 import i18n from "@/i18n";
+import { device, type DeviceKind } from "@/platform";
 import { AsyncState } from "@/stores/AsyncState";
 import { isoDay, presetDays } from "@/stores/StatisticsStore";
 
@@ -36,6 +37,13 @@ export function reportDays(period: ReportPeriod, today: Date): [string, string] 
  * The service's own analytics (F17.3): counting a view of a public page — page and
  * source only, nothing about the visitor — and, for admins, the dashboard's figures.
  */
+/** What a view was opened in, as the server names it (F17.3.4). */
+const PLATFORMS: Record<DeviceKind, "web" | "ios-app" | "android-app"> = {
+  web: "web",
+  ios: "ios-app",
+  android: "android-app",
+};
+
 export class AnalyticsStore {
   readonly reportState = new AsyncState();
   report: UsageReport | null = null;
@@ -76,7 +84,14 @@ export class AnalyticsStore {
     const utm = entry ? new URLSearchParams(search).get("utm_source") : null;
     void settle(() =>
       this.api.POST("/api/v1/analytics/views", {
-        body: { page: path, referrer: entry && referrer ? referrer : null, utm_source: utm, entry },
+        body: {
+          page: path,
+          referrer: entry && referrer ? referrer : null,
+          utm_source: utm,
+          entry,
+          // The website or a store app; the system's family the server reads itself (F17.3.4).
+          platform: PLATFORMS[device.kind],
+        },
       }),
     );
   }

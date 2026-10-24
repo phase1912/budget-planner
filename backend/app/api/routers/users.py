@@ -14,11 +14,13 @@ from app.api.dependencies import (
     get_email_guard,
     get_mailer,
     get_quota_service,
+    get_sign_in_service,
 )
 from app.api.rate_limit import limiter
 from app.db.session import get_db_session
 from app.models.user import User
-from app.schemas.auth import MessageResponse
+from app.ports.sign_in import Provider
+from app.schemas.auth import LinkedIdentityRead, MessageResponse
 from app.schemas.user import (
     AccountDeletionRequest,
     AiConsentRequest,
@@ -36,6 +38,7 @@ from app.services.account_closure import AccountClosureService
 from app.services.auth import AuthService
 from app.services.mailer import Mailer
 from app.services.quota import QuotaService
+from app.services.sign_in import SignInService
 from app.services.two_factor import TwoFactorService
 from app.services.user import UserService
 
@@ -156,13 +159,17 @@ async def delete_me(
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
     background_tasks: BackgroundTasks,
+    sign_in: Annotated[SignInService, Depends(get_sign_in_service)],
 ) -> None:
     """Delete the account and everything held about its owner (F17.9.1, GDPR art. 17).
 
-    403 invalid_credentials for a wrong password. The photos and exports are removed
-    from storage after the response; signing in fails from now on.
+    403 invalid_credentials for a wrong password (or, for an account without one, the
+    wrong address). Apple's tokens are revoked first (F1.6.3). The photos and exports
+    are removed from storage after the response; signing in fails from now on.
     """
-    prefixes = await AccountClosureService(session).close(current_user, body.password)
+    prefixes = await AccountClosureService(session, sign_in.revoke_all).close(
+        current_user, body.password
+    )
     background_tasks.add_task(_remove_files, prefixes)
 
 
@@ -203,3 +210,22 @@ async def disable_two_factor(
 ) -> None:
     """Turn it off with the password and a code (F18.6.1); 403 if either is wrong."""
     await TwoFactorService(session).turn_off(current_user, body.password, body.code)
+
+
+@router.get("/me/identities", response_model=list[LinkedIdentityRead])
+async def list_identities(
+    current_user: Annotated[User, Depends(get_current_user)],
+    sign_in: Annotated[SignInService, Depends(get_sign_in_service)],
+) -> list[LinkedIdentityRead]:
+    """The providers that sign in to the account (F1.6.2)."""
+    return [LinkedIdentityRead.model_validate(i) for i in await sign_in.identities(current_user)]
+
+
+@router.delete("/me/identities/{provider}", status_code=status.HTTP_204_NO_CONTENT)
+async def unlink_identity(
+    provider: Provider,
+    current_user: Annotated[User, Depends(get_current_user)],
+    sign_in: Annotated[SignInService, Depends(get_sign_in_service)],
+) -> None:
+    """Stop a provider signing in; 409 last_way_in while it is the only way in (F1.6.2)."""
+    await sign_in.unlink(current_user, provider)
