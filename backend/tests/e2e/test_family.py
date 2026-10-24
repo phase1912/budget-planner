@@ -40,7 +40,7 @@ def test_a_member_joins_by_the_invite_and_their_spending_shows_for_the_family(
     home = device.new_page()
     try:
         sign_in(home, owner, "/")
-        home.get_by_text(words("common:household"), exact=True).first.click()
+        home.get_by_role("button", name="Тестова родина").click()
         expect(home.get_by_text(words("dashboard:household.spentTogether")).first).to_be_visible()
         shot(home, "family", "owner-sees-family")
     finally:
