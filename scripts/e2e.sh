@@ -8,6 +8,7 @@
 # Screenshots land in backend/e2e-results/screens/; a failed test keeps its trace in
 # backend/e2e-results/traces/ (open with: uv run playwright show-trace <file>).
 # Put the usual stack back with `docker compose up -d backend` afterwards.
+# To make them visible -  ./scripts/e2e.sh -k test_a_new_user_signs_up --headed --slowmo 300
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
