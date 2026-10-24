@@ -46,7 +46,9 @@ router = APIRouter(prefix="/users", tags=["users"])
 logger = logging.getLogger(__name__)
 
 
-def get_user_service(session: Annotated[AsyncSession, Depends(get_db_session)]) -> UserService:
+def get_user_service(
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
+) -> UserService:
     return UserService(session)
 
 
@@ -107,7 +109,7 @@ async def get_my_quota(
 async def resend_confirmation(
     request: Request,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     mailer: Annotated[Mailer, Depends(get_mailer)],
     background_tasks: BackgroundTasks,
 ) -> MessageResponse:
@@ -124,7 +126,7 @@ async def change_email(
     request: Request,
     body: EmailChangeRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     guard: Annotated[EmailAddressGuard, Depends(get_email_guard)],
     mailer: Annotated[Mailer, Depends(get_mailer)],
     background_tasks: BackgroundTasks,
@@ -157,7 +159,7 @@ async def delete_me(
     request: Request,
     body: AccountDeletionRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     background_tasks: BackgroundTasks,
     sign_in: Annotated[SignInService, Depends(get_sign_in_service)],
 ) -> None:
@@ -176,7 +178,7 @@ async def delete_me(
 @router.post("/me/two-factor/setup", response_model=TwoFactorSetupRead)
 async def begin_two_factor(
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> TwoFactorSetupRead:
     """Start setting up an authenticator: a QR code, not in force until confirmed (F18.6.1)."""
     setup = await TwoFactorService(session).begin(current_user)
@@ -189,7 +191,7 @@ async def confirm_two_factor(
     request: Request,
     body: TwoFactorCodeRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> TwoFactorEnabledRead:
     """Turn it on with a first code; the recovery codes come back once, with a session
     that has the second factor, so an admin need not sign in again (F18.6.1)."""
@@ -206,7 +208,7 @@ async def disable_two_factor(
     request: Request,
     body: TwoFactorOffRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> None:
     """Turn it off with the password and a code (F18.6.1); 403 if either is wrong."""
     await TwoFactorService(session).turn_off(current_user, body.password, body.code)

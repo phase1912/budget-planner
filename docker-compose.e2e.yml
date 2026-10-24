@@ -1,0 +1,11 @@
+# The browser suite's stack (F0.11): the usual compose file, with the backend reading
+# receipts from the corpus instead of the AI model and without per-IP limits, since the
+# suite signs up many users a minute. Both switches are refused outside "local".
+#
+#   docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d
+services:
+  backend:
+    environment:
+      READING_ENGINE: corpus
+      RATE_LIMITS_ENABLED: "false"
+      EMAIL_DOMAIN_DNS_CHECK: "false"

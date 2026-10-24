@@ -1,0 +1,43 @@
+{
+  "title": "REWE groceries, one photo, EUR",
+  "country": "de",
+  "synthetic": true,
+  "documents": [
+    {
+      "kind": "receipt",
+      "merchant": "REWE Testmarkt",
+      "address": "Beispielstr. 3, Berlin",
+      "date": "2026-10-07",
+      "currency": "EUR",
+      "total": "14.27",
+      "lines": [
+        {
+          "name": "Vollmilch 1l",
+          "total": "1.19",
+          "category": "Groceries"
+        },
+        {
+          "name": "Brötchen x4",
+          "total": "1.96",
+          "category": "Groceries"
+        },
+        {
+          "name": "Käse Gouda",
+          "total": "3.49",
+          "category": "Groceries"
+        },
+        {
+          "name": "Kaffee 500g",
+          "total": "7.63",
+          "category": "Groceries"
+        }
+      ]
+    }
+  ],
+  "expect": {
+    "stored_receipts": 1
+  },
+  "files": [
+    "1.jpg"
+  ]
+}

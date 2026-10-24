@@ -79,7 +79,7 @@ def get_speech() -> SpeechPort:
 
 
 def get_assistant_service(
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     assistant: Annotated[AssistantPort, Depends(get_assistant)],
     quota: Annotated[QuotaService, Depends(get_quota_service)],
     rates: Annotated[ExchangeRatePort | None, Depends(get_exchange_rates)],

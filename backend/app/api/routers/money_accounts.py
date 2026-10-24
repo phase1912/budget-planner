@@ -35,7 +35,7 @@ from app.services.money_accounts import AccountService, AccountView
 router = APIRouter(prefix="/api/v1/accounts", tags=["accounts"])
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
-Session = Annotated[AsyncSession, Depends(get_db_session)]
+Session = Annotated[AsyncSession, Depends(get_db_session, scope="function")]
 Today = Annotated[date | None, Query(description="The caller's own date")]
 
 

@@ -45,12 +45,14 @@ from app.services.sign_in import ProviderSignIn, SignInService
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def get_auth_service(session: Annotated[AsyncSession, Depends(get_db_session)]) -> AuthService:
+def get_auth_service(
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
+) -> AuthService:
     return AuthService(session)
 
 
 def get_account_service(
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> AccountService:
     return AccountService(session)
 

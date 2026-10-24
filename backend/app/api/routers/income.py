@@ -42,7 +42,7 @@ from app.services.quota import QuotaService
 router = APIRouter(prefix="/api/v1/income", tags=["income"])
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
-Session = Annotated[AsyncSession, Depends(get_db_session)]
+Session = Annotated[AsyncSession, Depends(get_db_session, scope="function")]
 
 
 def _income(row: Income, sharing: Sharing) -> IncomeRead:

@@ -1,0 +1,45 @@
+{
+  "title": "АТБ, продукти, одне фото, UAH",
+  "country": "ua",
+  "synthetic": true,
+  "documents": [
+    {
+      "kind": "receipt",
+      "merchant": "АТБ Тестовий",
+      "address": "вул. Прикладна 5, Київ",
+      "date": "2026-10-05",
+      "currency": "UAH",
+      "total": "312.40",
+      "lines": [
+        {
+          "name": "Молоко 2,5%",
+          "total": "42.90",
+          "category": "Groceries"
+        },
+        {
+          "name": "Хліб Український",
+          "total": "28.50",
+          "category": "Groceries"
+        },
+        {
+          "name": "Сир твердий",
+          "total": "189.00",
+          "category": "Groceries"
+        },
+        {
+          "name": "Банани",
+          "quantity": "1.2",
+          "unit_price": "43.33",
+          "total": "52.00",
+          "category": "Groceries"
+        }
+      ]
+    }
+  ],
+  "expect": {
+    "stored_receipts": 1
+  },
+  "files": [
+    "1.jpg"
+  ]
+}

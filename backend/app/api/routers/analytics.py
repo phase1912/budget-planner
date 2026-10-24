@@ -27,7 +27,7 @@ router = APIRouter(prefix="/api/v1/analytics", tags=["analytics"])
 async def count_view(
     request: Request,
     body: PageViewRequest,
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> Response:
     """Count one view of a public page (F17.3.2); a crawler or another path is not counted.
 
@@ -56,7 +56,7 @@ async def count_view(
 async def usage_report(
     _admin: Annotated[User, Depends(get_admin_user)],
     period: Annotated[DateRange, Depends(required_period)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> UsageReportRead:
     """The admin dashboard's figures for a period (F17.3.3); 403 for anyone but an admin."""
     report = await UsageReportService(session, get_settings().admin_emails).report(period)

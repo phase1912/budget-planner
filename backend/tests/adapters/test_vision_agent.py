@@ -8,11 +8,13 @@ from app.adapters.vision_agent import (
     LEGIBLE_SIDE,
     RECEIPT_EXTRACTION_PROMPT,
     VisionAgentAdapter,
+    content_part,
     legible,
+    readable_input,
 )
 from app.agent.core import Agent
 from app.domain.receipt_conventions import COUNTRIES
-from app.schemas.extraction import ExtractedReceipt
+from app.schemas.extraction import ExtractedLineItem, ExtractedReceipt
 
 
 @pytest.mark.asyncio
@@ -99,3 +101,44 @@ def test_the_prompt_carries_every_countrys_words_and_the_menu_rule() -> None:
     assert "Знижка".lower() in RECEIPT_EXTRACTION_PROMPT
     assert "two prices are two items" in RECEIPT_EXTRACTION_PROMPT
     assert "mcdonald" in RECEIPT_EXTRACTION_PROMPT
+
+
+@pytest.mark.asyncio
+async def test_recheck_formats_previous_reading_and_gap() -> None:
+    """`recheck` passes the previous reading and discrepancy gap to the model (BRD A9)."""
+    mock_agent = MagicMock(spec=Agent)
+    expected = ExtractedReceipt(merchant_name="Store", receipt_total="10.00", line_items=[])
+    mock_agent.run_structured.return_value = expected
+    adapter = VisionAgentAdapter(mock_agent)
+
+    previous = ExtractedReceipt(
+        merchant_name="Store",
+        receipt_total="10,00",
+        line_items=[
+            ExtractedLineItem(name="Item", quantity="1", unit_price="8.00", total_price="8.00")
+        ],
+    )
+    result = await adapter.recheck([b"img"], mime_types=["image/jpeg"], reading=previous)
+
+    assert result == expected
+    called_messages = mock_agent.run_structured.call_args[0][0]
+    prompt_text = called_messages[0].content[0]["text"]
+    assert (
+        "The lines sum to 8.00; the amount to pay you read is 10.00; the difference is -2.00."
+        in prompt_text
+    )
+
+
+def test_content_part_handles_plain_text_and_pdf() -> None:
+    """Text and PDF attachments are formatted into text and file content blocks (F11.2)."""
+    text_block = content_part(b"Receipt text", "text/plain")
+    pdf_block = content_part(b"%PDF-1.4", "application/pdf")
+
+    assert text_block == {"type": "text", "text": "Receipt text"}
+    assert pdf_block["type"] == "file"
+
+
+def test_readable_input_passes_non_heic_and_handles_invalid_heic() -> None:
+    """Non-HEIC passes unchanged; invalid HEIC bytes fall back gracefully to original bytes."""
+    assert readable_input(b"jpeg", "image/jpeg") == (b"jpeg", "image/jpeg")
+    assert readable_input(b"bad-heic", "image/heic") == (b"bad-heic", "image/heic")

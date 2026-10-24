@@ -181,3 +181,29 @@ def test_no_direct_os_environ_reads_outside_the_config_module() -> None:
     ]
 
     assert offending == []
+
+
+@pytest.mark.parametrize("tier", ["staging", "production"])
+def test_corpus_reading_engine_is_refused_outside_local(
+    monkeypatch: pytest.MonkeyPatch, tier: str
+) -> None:
+    """F0.11.2: staging and production can never select the stand-in corpus reader."""
+    _set_required_env(monkeypatch)
+    monkeypatch.setenv("ENVIRONMENT", tier)
+    monkeypatch.setenv("READING_ENGINE", "corpus")
+
+    with pytest.raises(ValidationError, match="READING_ENGINE=corpus"):
+        Settings(_env_file=None)
+
+
+@pytest.mark.parametrize("tier", ["staging", "production"])
+def test_disabling_rate_limits_is_refused_outside_local(
+    monkeypatch: pytest.MonkeyPatch, tier: str
+) -> None:
+    """F0.11.1: per-IP rate limits cannot be switched off outside local."""
+    _set_required_env(monkeypatch)
+    monkeypatch.setenv("ENVIRONMENT", tier)
+    monkeypatch.setenv("RATE_LIMITS_ENABLED", "false")
+
+    with pytest.raises(ValidationError, match="RATE_LIMITS_ENABLED=false"):
+        Settings(_env_file=None)

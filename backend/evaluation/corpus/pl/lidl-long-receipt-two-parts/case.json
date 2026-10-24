@@ -1,0 +1,86 @@
+{
+  "title": "Lidl, a long receipt photographed in two overlapping parts",
+  "country": "pl",
+  "synthetic": true,
+  "layout": "parts",
+  "parts": 2,
+  "documents": [
+    {
+      "kind": "receipt",
+      "merchant": "Lidl Testowy",
+      "address": "ul. Długa 12, Warszawa",
+      "date": "2026-10-09",
+      "currency": "PLN",
+      "total": "64.80",
+      "lines": [
+        {
+          "name": "Produkt 1",
+          "total": "4.50",
+          "category": "Groceries"
+        },
+        {
+          "name": "Produkt 2",
+          "total": "6.20",
+          "category": "Groceries"
+        },
+        {
+          "name": "Produkt 3",
+          "total": "3.10",
+          "category": "Groceries"
+        },
+        {
+          "name": "Produkt 4",
+          "total": "7.80",
+          "category": "Groceries"
+        },
+        {
+          "name": "Produkt 5",
+          "total": "5.00",
+          "category": "Groceries"
+        },
+        {
+          "name": "Produkt 6",
+          "total": "2.40",
+          "category": "Groceries"
+        },
+        {
+          "name": "Produkt 7",
+          "total": "9.90",
+          "category": "Groceries"
+        },
+        {
+          "name": "Produkt 8",
+          "total": "4.30",
+          "category": "Groceries"
+        },
+        {
+          "name": "Produkt 9",
+          "total": "6.60",
+          "category": "Groceries"
+        },
+        {
+          "name": "Produkt 10",
+          "total": "3.00",
+          "category": "Groceries"
+        },
+        {
+          "name": "Produkt 11",
+          "total": "8.00",
+          "category": "Groceries"
+        },
+        {
+          "name": "Produkt 12",
+          "total": "4.00",
+          "category": "Groceries"
+        }
+      ]
+    }
+  ],
+  "expect": {
+    "stored_receipts": 1
+  },
+  "files": [
+    "1.jpg",
+    "2.jpg"
+  ]
+}

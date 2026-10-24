@@ -44,3 +44,7 @@ AGENTS.md
 
 # Receipts for scoring the reader (F15.5.4): people's data, never committed
 backend/evaluation/receipts/
+
+# The browser suite's screenshots and traces (F0.11), per run.
+backend/e2e-results/
+backend/test-results/

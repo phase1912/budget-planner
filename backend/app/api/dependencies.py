@@ -46,7 +46,7 @@ security = HTTPBearer(auto_error=False)
 
 async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     token: str | None = None,
 ) -> User:
     """Dependency resolving the authenticated user from the Bearer token."""
@@ -176,7 +176,7 @@ async def get_storage_service() -> AsyncGenerator[StoragePort, None]:
 
 
 def get_quota_service(
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> QuotaService:
     """The AI credit wallet (F10.6, F21.9); tests override it where they have no database."""
     return QuotaService(session, get_settings())
@@ -191,7 +191,7 @@ def get_exchange_rates() -> ExchangeRatePort | None:
 
 async def get_optional_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
 ) -> User | None:
     """The signed-in user when a session token is sent, else None (F1.6: linking)."""
     if credentials is None:
@@ -223,7 +223,7 @@ def get_apple_tokens() -> AppleTokensPort:
 
 
 def get_sign_in_service(
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     verifier: Annotated[IdTokenVerifierPort, Depends(get_id_token_verifier)],
     apple_tokens: Annotated[AppleTokensPort, Depends(get_apple_tokens)],
 ) -> SignInService:

@@ -262,6 +262,26 @@ class Settings(BaseSettings):
             "the intake endpoint answers 404: no deployment accepts mail by accident."
         ),
     )
+    reading_engine: Literal["model", "corpus"] = Field(
+        default="model",
+        description=(
+            "What reads receipts: the AI model, or — for the browser suite and local checks "
+            "only — the receipts corpus, answering each known file with its case (F0.11.2). "
+            "Refused outside the local environment."
+        ),
+    )
+    rate_limits_enabled: bool = Field(
+        default=True,
+        description=(
+            "Per-IP limits on sign-up, sign-in, upload and the rest (F10.6.3). Off only for "
+            "the browser suite on the local stack, which signs up dozens of users a minute "
+            "(F0.11.1); refused off outside the local environment."
+        ),
+    )
+    reading_corpus_dir: str = Field(
+        default="evaluation/corpus",
+        description="Where the corpus cases live, relative to the backend (F0.11.3).",
+    )
     google_client_ids: list[str] = Field(
         default_factory=list,
         description=(
@@ -437,6 +457,15 @@ class Settings(BaseSettings):
                 "The default dev-secret-key-do-not-use-in-prod is not permitted "
                 "in staging or production environments."
             )
+        return self
+
+    @model_validator(mode="after")
+    def test_switches_only_locally(self) -> "Settings":
+        """The corpus reader and unlimited requests are for the local test stack only (F0.11)."""
+        if self.reading_engine == "corpus" and self.environment != Environment.LOCAL:
+            raise ValueError("READING_ENGINE=corpus is only allowed in the local environment.")
+        if not self.rate_limits_enabled and self.environment != Environment.LOCAL:
+            raise ValueError("RATE_LIMITS_ENABLED=false is only allowed in the local environment.")
         return self
 
     @property

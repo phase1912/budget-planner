@@ -1,0 +1,57 @@
+{
+  "title": "Три аптечні чеки на одному фото — мають стати трьома чеками",
+  "country": "ua",
+  "synthetic": true,
+  "layout": "together",
+  "documents": [
+    {
+      "kind": "receipt",
+      "merchant": "Аптека Перша",
+      "date": "2019-02-21",
+      "currency": "UAH",
+      "total": "281.00",
+      "lines": [
+        {
+          "name": "Гепаметіон 200мг",
+          "total": "281.00",
+          "category": "Health"
+        }
+      ]
+    },
+    {
+      "kind": "receipt",
+      "merchant": "Аптека Друга",
+      "date": "2019-02-21",
+      "currency": "UAH",
+      "total": "329.65",
+      "lines": [
+        {
+          "name": "Стеатель р-н",
+          "total": "329.65",
+          "category": "Health"
+        }
+      ]
+    },
+    {
+      "kind": "receipt",
+      "merchant": "Аптека Третя",
+      "date": "2019-02-21",
+      "currency": "UAH",
+      "total": "301.70",
+      "lines": [
+        {
+          "name": "Стеатель р-р орал.",
+          "total": "301.70",
+          "category": "Health"
+        }
+      ]
+    }
+  ],
+  "expect": {
+    "stored_receipts": 3,
+    "waits_for": "F21.16"
+  },
+  "files": [
+    "1.jpg"
+  ]
+}

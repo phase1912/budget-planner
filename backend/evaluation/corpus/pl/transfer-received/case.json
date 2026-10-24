@@ -1,0 +1,23 @@
+{
+  "title": "Przelew przychodzący 2500 PLN — money received, an income",
+  "country": "pl",
+  "synthetic": true,
+  "documents": [
+    {
+      "kind": "money_received",
+      "bank": "Testbank",
+      "payer": "Firma Testowa Sp. z o.o.",
+      "date": "2026-10-10",
+      "currency": "PLN",
+      "total": "2500.00",
+      "note": "Wynagrodzenie"
+    }
+  ],
+  "expect": {
+    "stored_incomes": 1,
+    "waits_for": "F21.16"
+  },
+  "files": [
+    "1.jpg"
+  ]
+}

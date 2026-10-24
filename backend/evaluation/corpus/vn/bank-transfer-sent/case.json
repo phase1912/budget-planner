@@ -1,0 +1,23 @@
+{
+  "title": "A bank app's transfer sent, 300 000 VND — an expense paid by transfer",
+  "country": "vn",
+  "synthetic": true,
+  "documents": [
+    {
+      "kind": "money_sent",
+      "bank": "Test Digibank",
+      "merchant": "NGUYEN VAN TEST",
+      "date": "2026-10-20",
+      "currency": "VND",
+      "total": "300000",
+      "note": "Transfer"
+    }
+  ],
+  "expect": {
+    "stored_expenses": 1,
+    "waits_for": "F21.16"
+  },
+  "files": [
+    "1.jpg"
+  ]
+}
