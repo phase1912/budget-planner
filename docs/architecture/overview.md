@@ -441,6 +441,12 @@ returns, so a file and the screen cannot disagree.
 - An admin account opens the admin console only with a second factor (TOTP, encrypted
   at rest), is mailed on every sign-in, sees no receipts, and leaves a log entry for each
   action; only the super admins named in configuration appoint admins (ADR-0021).
+- Google and Apple sign in through OpenID Connect (F1.6, ADR-0035).
+  - **Checks:** `SignInService` trusts an ID token only after `JwksIdTokenVerifier` has checked it against the provider's published keys, our client ids, its expiry and the sign-in's nonce.
+  - **Linking:** an existing address links only with its password.
+  - **Apple:** its tokens are revoked when the account is deleted.
+  - **Without keys:** the providers are off, and `/auth/providers` tells the client which are on.
+  - **Web flow:** the website goes to the provider's page and back, loading nothing from it.
 - The agent advises and never moves money. There is no code path to a payment API, by
   design (BRD constraint 11.2).
 
@@ -521,6 +527,15 @@ through `frontend/src/platform/` — a `Device` with a web and a native implemen
 once at start — so screens never ask whether they run in an app: the shell asks it to hide
 the launch screen, walk Android's back button through the router and colour the status
 bar after the palette. Safe-area insets pad the page, the tab bar and sheets everywhere.
+
+On the iPhone (F25.2.3), the device also does a few native things:
+- **Camera:** it takes a receipt with the native camera after asking for access first.
+- **Haptics:** it vibrates on a success or failure toast, a changed tab, segment, switch or chart day, and the ＋.
+- **Sharing:** it hands over photos and PDFs from "Share → Budget Agent".
+  - The Share Extension (`frontend/ios/App/ShareExtension`) copies them into the App Group `group.app.budgetagent`.
+  - On start and on each return to the front, the app's own `SharedInbox` plugin moves them out to the web layer.
+  - The web layer opens them on the add-a-receipt screen. Nothing is sent from the extension.
+- **Scrolling:** the web view's scroll springs back at both ends, which Capacitor switches off by default.
 
 ## Repository layout and the frontend/backend boundary
 

@@ -1,0 +1,4 @@
+/* The system's permission questions, in the phone's language (F25.2.2). */
+"NSCameraUsageDescription" = "Budget Agent używa aparatu do fotografowania paragonów.";
+"NSMicrophoneUsageDescription" = "Budget Agent nagrywa to, co mówisz do asystenta, tylko podczas nagrywania wiadomości.";
+"NSPhotoLibraryUsageDescription" = "Budget Agent otwiera tylko wybrane zdjęcia paragonów.";

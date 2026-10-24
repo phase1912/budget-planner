@@ -15,6 +15,14 @@ const REPORT: UsageReport = {
     { name: "direct", count: 25 },
     { name: "google.com", count: 15 },
   ],
+  visits_by_platform: [
+    { name: "web", count: 30 },
+    { name: "ios-app", count: 10 },
+  ],
+  visits_by_system: [
+    { name: "android", count: 22 },
+    { name: "ios", count: 18 },
+  ],
   sign_ups: 3,
   confirmed: 2,
   with_a_receipt: 1,
@@ -72,5 +80,14 @@ describe("AdminDashboardPage (F17.3.3)", () => {
     expect(screen.getByRole("heading", { name: "From visit to first receipt" })).toBeVisible();
     expect(screen.getByText("Direct or unknown")).toBeInTheDocument();
     expect(screen.getByText("visits: 10 · sign-ups: 1 · read: 2")).toBeInTheDocument();
+  });
+
+  it("says what visits were opened in and on which system (F17.3.4)", () => {
+    renderPage();
+
+    expect(screen.getByRole("heading", { name: "Opened in" })).toBeVisible();
+    expect(screen.getByText("iPhone app")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Operating system" })).toBeVisible();
+    expect(screen.getByText("Android")).toBeInTheDocument();
   });
 });

@@ -262,6 +262,34 @@ class Settings(BaseSettings):
             "the intake endpoint answers 404: no deployment accepts mail by accident."
         ),
     )
+    google_client_ids: list[str] = Field(
+        default_factory=list,
+        description=(
+            "OAuth client ids whose Google ID tokens sign in (F1.6): the web client first — the "
+            "one the sign-in page opens Google with — then the apps'. Empty, Google is off."
+        ),
+    )
+    apple_client_ids: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Audiences of Apple ID tokens that sign in (F1.6): the Services ID the web opens "
+            "Apple with first, then the iOS bundle id. Empty, Apple is off."
+        ),
+    )
+    apple_team_id: str | None = Field(
+        default=None, description="Apple Developer team that signs the client secret (F1.6.3)."
+    )
+    apple_key_id: str | None = Field(
+        default=None, description="Id of the Sign in with Apple key in that team (F1.6.3)."
+    )
+    apple_private_key: SecretStr | None = Field(
+        default=None,
+        description=(
+            "The Sign in with Apple key (.p8, PEM), from Secret Manager (F1.6.3): signs the "
+            "client secret that exchanges codes and revokes tokens. Unset, tokens are not kept "
+            "and nothing can be revoked at Apple."
+        ),
+    )
     app_url: str | None = Field(
         default=None,
         description=(

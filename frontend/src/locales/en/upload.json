@@ -187,6 +187,7 @@
     "assistantHint": "No receipt? Write “taxi 45, coffee 12” — it prepares cards for you to approve",
     "camera": "Take a photo",
     "cameraHint": "Your camera opens; a long receipt can be shot in parts",
+    "cameraDenied": "The camera is off for Budget Agent. Turn it on in the phone's Settings → Budget Agent → Camera.",
     "files": "Choose photos or a PDF",
     "drop": "Drop photos or a PDF here, or choose them",
     "filesHint": "JPEG, PNG, HEIC or PDF · up to 10 per receipt",

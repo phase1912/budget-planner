@@ -6,6 +6,7 @@ import { DataCard } from "./DataCard";
 
 const stores = vi.hoisted(() => ({
   exportStore: { busy: {}, start: vi.fn() },
+  authStore: { user: { has_password: true } },
   accountStore: {
     state: { status: "idle", error: null as string | null, isLoading: false },
     reset: vi.fn(),

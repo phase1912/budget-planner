@@ -15,6 +15,7 @@ from app.adapters.exchange_rates import (
     FrankfurterExchangeRates,
     NbpExchangeRates,
 )
+from app.adapters.oidc import AppleTokens, JwksIdTokenVerifier
 from app.adapters.outgoing_mail import AppEngineMailSender, LogMailSender
 from app.adapters.storage_factory import configured_storage
 from app.api.errors import (
@@ -29,11 +30,13 @@ from app.models.user import User
 from app.ports.email import EmailSenderPort
 from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.mail_domains import MailDomainResolverPort
+from app.ports.sign_in import AppleTokensPort, IdTokenVerifierPort
 from app.ports.storage import StoragePort
 from app.services.account import EmailAddressGuard
 from app.services.activity import ActivityService
 from app.services.mailer import Mailer
 from app.services.quota import QuotaService, is_admin, is_super_admin
+from app.services.sign_in import SignInService
 
 """API dependencies (F1.2.4)."""
 
@@ -184,3 +187,45 @@ def get_exchange_rates() -> ExchangeRatePort | None:
     if get_settings().exchange_rate_source == "off":
         return None
     return FallbackExchangeRates(NbpExchangeRates(), FrankfurterExchangeRates())
+
+
+async def get_optional_user(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> User | None:
+    """The signed-in user when a session token is sent, else None (F1.6: linking)."""
+    if credentials is None:
+        return None
+    return await get_current_user(credentials, session)
+
+
+_verifiers: dict[tuple[tuple[str, ...], tuple[str, ...]], JwksIdTokenVerifier] = {}
+
+
+def get_id_token_verifier() -> IdTokenVerifierPort:
+    """Google's and Apple's key sets, kept between requests for the configured client ids."""
+    settings = get_settings()
+    key = (tuple(settings.google_client_ids), tuple(settings.apple_client_ids))
+    if key not in _verifiers:
+        _verifiers[key] = JwksIdTokenVerifier(
+            {"google": settings.google_client_ids, "apple": settings.apple_client_ids}
+        )
+    return _verifiers[key]
+
+
+def get_apple_tokens() -> AppleTokensPort:
+    """Apple's token endpoints, signed with the key from Secret Manager (F1.6.3)."""
+    settings = get_settings()
+    key = settings.apple_private_key
+    return AppleTokens(
+        settings.apple_team_id, settings.apple_key_id, key.get_secret_value() if key else None
+    )
+
+
+def get_sign_in_service(
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    verifier: Annotated[IdTokenVerifierPort, Depends(get_id_token_verifier)],
+    apple_tokens: Annotated[AppleTokensPort, Depends(get_apple_tokens)],
+) -> SignInService:
+    """Signing in with Google and Apple (F1.6); tests override the verifier with their keys."""
+    return SignInService(session, verifier, apple_tokens, get_settings())

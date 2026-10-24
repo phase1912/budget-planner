@@ -30,11 +30,18 @@ locals {
     DAILY_CREDIT_CEILING = tostring(var.daily_credit_ceiling)
   }
 
+  service_env = merge(local.backend_env, local.sign_in_env)
+
   backend_secrets = {
     DATABASE_URL         = "database-url"
     JWT_SECRET_KEY       = "jwt-secret-key"
     INBOUND_EMAIL_SECRET = "inbound-email-secret"
   }
+  # Secret Manager ids by name, Apple's key among them once it exists (sign_in.tf).
+  secret_ids = merge(
+    { for name, secret in google_secret_manager_secret.this : name => secret.secret_id },
+    { for secret in google_secret_manager_secret.apple_sign_in_key : secret.secret_id => secret.secret_id },
+  )
 }
 
 resource "google_service_account" "backend" {
@@ -96,7 +103,7 @@ resource "google_cloud_run_v2_service" "backend" {
       }
 
       dynamic "env" {
-        for_each = local.backend_env
+        for_each = local.service_env
         content {
           name  = env.key
           value = env.value
@@ -104,12 +111,12 @@ resource "google_cloud_run_v2_service" "backend" {
       }
 
       dynamic "env" {
-        for_each = local.backend_secrets
+        for_each = merge(local.backend_secrets, local.sign_in_secrets)
         content {
           name = env.key
           value_source {
             secret_key_ref {
-              secret  = google_secret_manager_secret.this[env.value].secret_id
+              secret  = local.secret_ids[env.value]
               version = "latest"
             }
           }

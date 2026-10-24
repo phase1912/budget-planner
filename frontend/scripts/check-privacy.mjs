@@ -22,6 +22,8 @@ export const DEVICE_STORAGE = {
   budget_chart_view: "how the user chose to draw the spending chart",
   budget_install_hint_dismissed: "that the user closed the install hint",
   budget_trip_suggestions_dismissed: "trip suggestions the user dismissed",
+  budget_sign_in_attempt:
+    "the sign-in with Google or Apple the user started, for the trip there and back (session only)",
 };
 
 /** Other origins the client may name, and why each loads nothing into a visitor's page. */
@@ -30,6 +32,10 @@ export const ALLOWED_ORIGINS = [
   "http://127.0.0.1", // local development only
   "http://www.w3.org", // XML namespaces in inline SVG, never fetched
   "https://budget-agent.web.app", // the service's own address
+  // Their sign-in pages, gone to only when the user presses the button; nothing is loaded
+  // from them into the page (F1.6.2).
+  "https://accounts.google.com",
+  "https://appleid.apple.com",
 ];
 
 const SET_ITEM = /(?:localStorage|sessionStorage)\.setItem\(\s*([^,]+),/g;

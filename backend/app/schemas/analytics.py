@@ -1,6 +1,7 @@
 """Own analytics at the API boundary (F17.3)."""
 
 from datetime import date
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -13,6 +14,8 @@ class PageViewRequest(BaseModel):
     utm_source: str | None = Field(default=None, max_length=128)
     entry: bool = False
     """The first public page of this page load: a visit, whose source is the one sent."""
+    platform: Literal["web", "ios-app", "android-app"] = "web"
+    """What the page was opened in: the website, or one of the store apps (F17.3.4)."""
 
 
 class Count(BaseModel):
@@ -46,6 +49,8 @@ class UsageReportRead(BaseModel):
     page_views: int
     views_by_page: list[Count]
     visits_by_source: list[Count]
+    visits_by_platform: list[Count]
+    visits_by_system: list[Count]
     sign_ups: int
     confirmed: int
     with_a_receipt: int

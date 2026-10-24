@@ -6,6 +6,7 @@ import { errorMessage, settle } from "@/api/errors";
 import { AsyncState } from "@/stores/AsyncState";
 import type { ToastStore } from "@/stores/ToastStore";
 import i18n from "@/i18n";
+import { device } from "@/platform";
 
 export type Household = components["schemas"]["HouseholdRead"];
 export type HouseholdMember = components["schemas"]["HouseholdMemberRead"];
@@ -157,6 +158,7 @@ export class HouseholdStore {
 
   /** The family's receipts of one day tapped on its chart; a later tap's answer wins. */
   async openDay(day: string): Promise<void> {
+    if (this.day !== day) void device.feel("selected");
     this.day = day;
     this.isLoadingDay = true;
     const response = await settle(() =>

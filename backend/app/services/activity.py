@@ -38,14 +38,25 @@ class ActivityService:
         self._seen_today[user_id] = today
         self.record(user_id, ActivityKind.ACTIVE)
 
-    async def count_view(self, page: str, source: str, today: date, *, entry: bool) -> bool:
+    async def count_view(
+        self,
+        page: str,
+        source: str,
+        today: date,
+        *,
+        entry: bool,
+        platform: str = "web",
+        system: str = "other",
+    ) -> bool:
         """Count one view of a public page, and a visit when it is the first of one (F17.3.2).
 
-        False for a path that is not a public page: nothing is counted.
+        The platform and the system's family are counted beside it, apart from the page and
+        source (F17.3.4). False for a path that is not a public page: nothing is counted.
         """
         if page not in PUBLIC_PAGES:
             return False
         await self.activity.count_view(today, page, source, entry=entry)
+        await self.activity.count_platform(today, platform, system, entry=entry)
         return True
 
     async def prune(self, now: datetime) -> int:
@@ -74,6 +85,8 @@ class UsageReport:
     page_views: int
     views_by_page: list[tuple[str, int]]
     visits_by_source: list[tuple[str, int]]
+    visits_by_platform: list[tuple[str, int]]
+    visits_by_system: list[tuple[str, int]]
     sign_ups: int
     confirmed: int
     with_a_receipt: int
@@ -129,6 +142,8 @@ class UsageReportService:
             page_views=sum(views for _, views in pages.values()),
             views_by_page=await repo.views_by_page(period.start, period.end),
             visits_by_source=await repo.visits_by_source(period.start, period.end),
+            visits_by_platform=await repo.visits_by_platform(period.start, period.end),
+            visits_by_system=await repo.visits_by_system(period.start, period.end),
             sign_ups=len(joined),
             confirmed=await repo.confirmed_among(joined),
             with_a_receipt=await repo.with_a_receipt_among(joined),

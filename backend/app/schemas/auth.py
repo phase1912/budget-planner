@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.schemas.user import Language, UserResponse
 
@@ -77,3 +78,43 @@ class ResetPasswordRequest(BaseModel):
 
     token: str
     password: str
+
+
+class ProviderSignInRequest(BaseModel):
+    """What the client sends after Google's or Apple's sign-in (F1.6.1).
+
+    `password` links an existing account with the same address; `accept_terms` opens a
+    new one. Apple gives the name to the client once, on the first sign-in, so the client
+    passes it on; `authorization_code` lets the server revoke Apple's tokens later.
+    """
+
+    id_token: str = Field(min_length=1, max_length=8192)
+    nonce: str = Field(min_length=16, max_length=256)
+    password: str | None = None
+    accept_terms: bool = False
+    first_name: str | None = Field(default=None, max_length=50)
+    last_name: str | None = Field(default=None, max_length=50)
+    authorization_code: str | None = Field(default=None, max_length=1024)
+
+
+class SignInProviders(BaseModel):
+    """The client id the web opens each provider with; null hides its button (F1.6.2)."""
+
+    google: str | None
+    apple: str | None
+
+
+class AppleNotification(BaseModel):
+    """One of Apple's server-to-server notifications: a JWT Apple signed (F1.6.3)."""
+
+    payload: str = Field(min_length=1, max_length=8192)
+
+
+class LinkedIdentityRead(BaseModel):
+    """A provider that signs in to the account, as Settings lists it (F1.6.2)."""
+
+    provider: Literal["google", "apple"]
+    email: str | None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

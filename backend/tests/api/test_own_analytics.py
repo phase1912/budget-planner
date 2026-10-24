@@ -1,7 +1,7 @@
 """The service's own analytics: who did what, and how often pages are read (F17.3, N2)."""
 
 from collections.abc import AsyncIterator
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -15,7 +15,7 @@ from app.core.security import create_access_token
 from app.db.session import get_db_session
 from app.domain.activity import ActivityKind
 from app.main import create_app
-from app.models.activity import ActivityEvent, PageViewCount
+from app.models.activity import ActivityEvent, PageViewCount, VisitPlatformCount
 from app.models.user import User
 from app.services.activity import ActivityService
 from tests.factories.category import CategoryFactory
@@ -133,7 +133,7 @@ async def test_the_report_is_for_admins_only_and_counts_without_naming_anyone(
     monkeypatch.setattr(get_settings(), "admin_emails", ["boss@example.com"])
     await _call(db_session, "POST", "/api/v1/analytics/views", json={"page": "/", "entry": True})
     await _call(db_session, "GET", "/users/me", user=user)
-    today = date.today().isoformat()
+    today = datetime.now(UTC).date().isoformat()
     url = f"/api/v1/analytics/report?start={today}&end={today}"
 
     refused = await _call(db_session, "GET", url, user=user)
@@ -262,3 +262,47 @@ async def test_a_visitor_from_instagram_who_signs_up_adds_up_exactly_once_on_the
         ActivityKind.ACTIVE,
         ActivityKind.RECEIPT_STORED,
     ]
+
+
+@pytest.mark.asyncio
+async def test_visits_are_counted_by_platform_and_system_family_and_nothing_more(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """F17.3.4: what a visit was opened in and the system's family — never the header."""
+    admin = await UserFactory.create_async(email="boss@example.com")
+    monkeypatch.setattr(get_settings(), "admin_emails", ["boss@example.com"])
+    windows = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/141.0"
+    views = "/api/v1/analytics/views"
+    await _call(db_session, "POST", views, json={"page": "/", "entry": True, "platform": "ios-app"})
+    await _call(db_session, "POST", views, json={"page": "/help", "platform": "ios-app"})
+    await _call(db_session, "POST", views, json={"page": "/", "entry": True}, agent=windows)
+    today = datetime.now(UTC).date().isoformat()
+
+    report = await _call(
+        db_session, "GET", f"/api/v1/analytics/report?start={today}&end={today}", user=admin
+    )
+
+    figures = report.json()
+    assert figures["visits_by_platform"] == [
+        {"name": "ios-app", "count": 1},
+        {"name": "web", "count": 1},
+    ]
+    assert figures["visits_by_system"] == [
+        {"name": "ios", "count": 1},
+        {"name": "windows", "count": 1},
+    ]
+    rows = (await db_session.execute(select(VisitPlatformCount))).scalars().all()
+    kept = {str(value) for row in rows for value in vars(row).values()}
+    assert not any("Mozilla" in value or "iPhone" in value for value in kept)
+
+
+@pytest.mark.asyncio
+async def test_a_platform_the_service_does_not_know_is_refused(db_session: AsyncSession) -> None:
+    response = await _call(
+        db_session,
+        "POST",
+        "/api/v1/analytics/views",
+        json={"page": "/", "entry": True, "platform": "my-custom-tracker-123"},
+    )
+
+    assert response.status_code == 422

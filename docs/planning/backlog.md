@@ -3,7 +3,7 @@
 > Generated from [`backlog.yaml`](backlog.yaml) by `scripts/backlog_sync.py render`.
 > Edit the YAML, not this file.
 
-27 epics · 198 features · 395 tasks written so far.
+27 epics · 198 features · 398 tasks written so far.
 
 23 epics are in the diploma project's scope; 4 are planned but out of it.
 
@@ -1442,6 +1442,7 @@ The author can see whether the service has an audience, from analytics of its ow
 - **F17.3.1** What signed-in users do — An activity table — user, event, when, and nothing more — written for signing up, confirming the address, signing in, uploading a receipt, a receipt read and an export; owned by the user, so the full export (F17.9.2) carries it and account deletion removes it; events older than 12 months pruned daily; ADR-0020 and the privacy policy saying what is recorded, why and for how long.
 - **F17.3.2** Visits to the public pages without an identifier — The public pages tell the API "a view of this page, from this source" (referrer domain, utm_source) — no IP kept, no cookie, nothing stored on the device — counted per day, page and source; rate-limited, bots by user agent left out; a test that nothing identifying a visitor is stored, and lint:privacy still passing.
 - **F17.3.3** Metrics dashboard for admins — An admin-only endpoint and page: visits by page and source, sign-ups and confirmations per day, weekly and monthly active users, returning users, receipts uploaded and read, and the path from visit to first receipt, over a chosen period; refused to anyone but an admin, with a test. Checked at 375, 768 and 1280 px.
+- **F17.3.4** Where visits come from, by platform and system — Each counted view also says what it was opened in — the website, the iOS app or the Android app — and the operating system's family (iOS, Android, Windows, macOS, Linux, other), read from the User-Agent on the server and kept only as that word, never the header itself; the referring site and campaign as today. No cookie, no identifier, nothing more on the device (ePrivacy, ADR-0020). The admin metrics show views by source, platform and system over the chosen period. Tests that nothing but the counts is stored; checked at 375, 768 and 1280 px.
 
 ### F17.4 — Interactive demo on sample data
 
@@ -1867,6 +1868,7 @@ An admin does in the chat what the admin console does (F18.6) — find a user by
 **Demonstrated by:** As an admin, say "give anna@example.com the paid plan until December": a card; approve; the grant is on her account and in the admin log.
 
 - **F21.12.1** Admin tools behind the admin role — Read and write tools over the admin service, registered only for admins with a second factor (super-admin tools only for super admins); cards for each action, recorded in the admin log as from the console; tests that a user who is not an admin is never offered them and that no admin tool returns receipts, incomes or balances (N2). Checked at 375, 768 and 1280 px.
+- **F21.12.2** The admin console's overview by chat — "What is going on in the admin console?" is answered: read tools for the dashboard's figures over a period (visits, sources, platforms, sign-ups, receipts read, active and returning users — counts only), the reported assistant replies, and, for super admins, the admin log. An admin signed in without the second factor is told to sign in again with the code instead of a vague answer. The evaluation set gains admin dialogs, run with the session's access.
 
 ### F21.13 — An assistant that finds what the user means
 
@@ -2187,6 +2189,7 @@ The iOS project from the same build and platform module as Android: safe areas a
 
 - **F25.2.1** The iOS project in the platform module — The Xcode project from the existing build, the platform module's iOS answers, safe areas, swipe back, status bar, launch screen, keyboard and Universal Links; the architecture overview updated. Checked on an iPhone with a notch, a small iPhone and an iPad.
 - **F25.2.2** Camera, haptics and the Share Extension — The native camera, haptics on save and on a receipt read, and a Share Extension for images and PDFs handing them to the upload flow — each behind the platform module, the web and Android builds unchanged.
+- **F25.2.3** The iPhone app feeling native — What F25.2.2 left: the Share Extension ("Share → Budget Agent" from Photos, Files or Mail; images and PDFs only, through an App Group, opened on the add-a-receipt screen and never mixed into a receipt under review); the camera asking for access before the viewfinder opens, so the system's question comes on the first tap, with a line pointing to Settings when it is refused; haptics where native apps give them — success and failure of every action, a changed tab, segment, switch or chart day, the ＋ button; pages that stretch and spring back at both ends, short ones too, with the page's own colour past the edge. The permission texts in en, uk and pl. Checked in the simulator; haptics on a phone.
 
 ### F25.3 — Passing App Review
 

@@ -34,6 +34,10 @@ ask for.
   with the second factor; super-admin tools are offered only to super admins. Every
   action goes into the admin log, as from the console. No admin tool returns another
   user's receipts, incomes or balances (N2).
+  - Besides one account's facts and actions, admins can read the dashboard's figures
+    for a period, the reported replies and, for super admins, the admin log (F21.12.2).
+  - An admin signed in without the second factor is told to sign in again with the
+    code, rather than getting an answer from their own budget.
 
 ## Consequences
 

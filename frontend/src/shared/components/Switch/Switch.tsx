@@ -1,3 +1,5 @@
+import { device } from "@/platform";
+
 export interface SwitchProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
@@ -19,6 +21,7 @@ export function Switch({ checked, onChange, label, ariaLabel, hint, disabled, id
       aria-label={label ? undefined : ariaLabel}
       disabled={disabled}
       onClick={() => {
+        void device.feel("selected");
         onChange(!checked);
       }}
       className={`flex min-h-11 items-center justify-between gap-4 text-left disabled:opacity-60 ${label ? "min-h-14 w-full" : ""}`}

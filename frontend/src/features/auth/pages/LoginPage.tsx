@@ -5,6 +5,8 @@ import { useStores } from "@/stores/StoreContext";
 import { Button, Input, Card, Note, PublicLinks } from "@/shared/components";
 import { useTranslation } from "react-i18next";
 
+import { ProviderButtons } from "../components/ProviderButtons";
+
 export const LoginPage = observer(() => {
   const { authStore, serverStore } = useStores();
   // The server may be asleep: start it while the form is being filled in.
@@ -94,6 +96,8 @@ export const LoginPage = observer(() => {
         </div>
 
         {authStore.authState.error && <Note tone="error">{authStore.authState.error}</Note>}
+
+        <ProviderButtons />
 
         <form
           onSubmit={(e) => {

@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { device } from "@/platform";
 
 const SECTIONS = [
   { name: "receipts", path: "/receipts" },
@@ -27,6 +28,9 @@ export function SectionTabs() {
             key={section.path}
             to={section.path}
             aria-current={active ? "page" : undefined}
+            onClick={() => {
+              if (!active) void device.feel("selected");
+            }}
             className={`flex min-h-11 flex-1 items-center justify-center rounded-chip text-lg font-bold transition-colors ${
               active
                 ? "bg-primary text-primary-foreground"

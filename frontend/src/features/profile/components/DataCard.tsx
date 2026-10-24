@@ -63,9 +63,11 @@ const DeleteAccountDialog = observer(function DeleteAccountDialog({
 }: {
   onClose: () => void;
 }) {
-  const { accountStore } = useStores();
+  const { accountStore, authStore } = useStores();
   const { t } = useTranslation("profile");
   const [password, setPassword] = useState("");
+  // An account opened with Google or Apple has no password: its address confirms (F1.6).
+  const byEmail = authStore.user?.has_password === false;
   const { state } = accountStore;
 
   return (
@@ -92,9 +94,9 @@ const DeleteAccountDialog = observer(function DeleteAccountDialog({
           {state.error && <Note tone="error">{state.error}</Note>}
           <Input
             id="delete-password"
-            type="password"
-            autoComplete="current-password"
-            label={t("data.password")}
+            type={byEmail ? "email" : "password"}
+            autoComplete={byEmail ? "off" : "current-password"}
+            label={byEmail ? t("signInMethods.deleteWithEmail") : t("data.password")}
             value={password}
             onChange={(event) => {
               setPassword(event.target.value);

@@ -22,7 +22,7 @@ from app.ports.exchange_rates import ExchangeRatePort
 from app.ports.goal_mapping import GoalMapperPort
 from app.ports.storage import StoragePort
 from app.services.mailer import Mailer
-from app.services.quota import QuotaService
+from app.services.quota import QuotaService, is_admin
 
 TITLE_LENGTH = 120
 
@@ -127,6 +127,7 @@ class AssistantService:
                 today=today.isoformat(),
                 categories=tuple(c.name for c in await toolbox.categories()),
                 known=await toolbox.known(),
+                admin=self._admin(user),
                 max_rounds=self.quota.settings.free_assistant_rounds
                 if await self.quota.is_free(user, datetime.now(UTC))
                 else AssistantContext.max_rounds,
@@ -204,6 +205,12 @@ class AssistantService:
             card={"kind": "attachment", "fields": {"job_id": str(job_id), "count": count}},
             card_state=CardState.SHOWN,
         )
+
+    def _admin(self, user: User) -> Literal["no", "needs_code", "yes"]:
+        """Whether the session runs the service, or is an admin's without its code (F21.12)."""
+        if self.access != "user":
+            return "yes"
+        return "needs_code" if is_admin(user, self.quota.settings) else "no"
 
     def _toolbox(self, user: User, today: date) -> Toolbox:
         return Toolbox(

@@ -89,3 +89,28 @@ def visit_source(referrer: str | None, utm_source: str | None, own_host: str) ->
 def is_bot(user_agent: str | None) -> bool:
     """Whether a visit was a crawler or a tool rather than a person's browser."""
     return not user_agent or bool(_BOTS.search(user_agent))
+
+
+PLATFORMS: Final = ("web", "ios-app", "android-app")
+"""What a visit was opened in: the website, or one of the store apps (F17.3.4)."""
+
+_SYSTEMS: Final = (
+    ("ios", re.compile(r"iPhone|iPad|iPod")),
+    ("android", re.compile(r"Android")),
+    ("windows", re.compile(r"Windows")),
+    ("chromeos", re.compile(r"CrOS")),
+    ("macos", re.compile(r"Macintosh|Mac OS X")),
+    ("linux", re.compile(r"Linux")),
+)
+
+
+def system_family(user_agent: str | None) -> str:
+    """The operating system's family named in a User-Agent, and nothing more (F17.3.4).
+
+    Only this one word is kept: the header itself, a version or a device model would start
+    to tell visitors apart. Android's User-Agent names Linux too, so it is asked first.
+    """
+    for family, pattern in _SYSTEMS:
+        if user_agent and pattern.search(user_agent):
+            return family
+    return "other"

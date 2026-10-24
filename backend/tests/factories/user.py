@@ -24,6 +24,8 @@ class UserFactory(ModelFactory[User]):
     ai_consent_at = Use(lambda: datetime.now(UTC))
     # Off, as on a new account; a random secret would ask every sign-in for a code (F18.6.1).
     two_factor_secret = None
+    # A password of its own, as every account but one opened with Google or Apple (F1.6).
+    password_set = True
     two_factor_enabled_at = None
     recovery_code_hashes = None
     # A new account's look and setup (F23): the default palette, not onboarded yet.

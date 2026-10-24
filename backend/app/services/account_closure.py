@@ -1,5 +1,7 @@
 """Deleting an account and everything held about its owner (F17.9.1, GDPR art. 17)."""
 
+from collections.abc import Awaitable, Callable
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import PermissionDeniedError, ProblemCode
@@ -7,6 +9,13 @@ from app.core.security import verify_password
 from app.models.user import User
 from app.repository.household import HouseholdRepository
 from app.services.household import HouseholdService
+
+
+def _proves_owner(user: User, password: str) -> bool:
+    """The password, or for an account without one (F1.6) its own address typed out."""
+    if user.password_set:
+        return verify_password(password, user.password_hash)
+    return password.strip().lower() == user.email.lower()
 
 
 def stored_prefixes(user: User) -> list[str]:
@@ -24,8 +33,14 @@ class AccountClosureService:
     `stored_prefixes`, once the deletion is committed.
     """
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        before_closing: Callable[[User], Awaitable[None]] | None = None,
+    ) -> None:
+        """`before_closing` runs once the owner is proven, e.g. revoking Apple's tokens."""
         self.session = session
+        self.before_closing = before_closing
 
     async def close(self, user: User, password: str) -> list[str]:
         """Delete `user` once the password proves it is them; returns the file prefixes.
@@ -33,10 +48,12 @@ class AccountClosureService:
         Raises PermissionDeniedError (invalid_credentials) for a wrong password, so a
         screen left signed in cannot delete the account.
         """
-        if not verify_password(password, user.password_hash):
+        if not _proves_owner(user, password):
             raise PermissionDeniedError(
                 "The password is not right.", code=ProblemCode.INVALID_CREDENTIALS
             )
+        if self.before_closing is not None:
+            await self.before_closing(user)
         await HouseholdService(HouseholdRepository(self.session)).depart(user)
         prefixes = stored_prefixes(user)
         await self.session.delete(user)

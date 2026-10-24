@@ -5,6 +5,7 @@ import { LoginPage } from "./LoginPage";
 
 const stores = vi.hoisted(() => ({
   serverStore: { wake: vi.fn() },
+  signInStore: { available: [], loadProviders: vi.fn() },
   authStore: {
     authState: { isLoading: false, error: null },
     secondFactorToken: null as string | null,

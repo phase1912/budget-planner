@@ -14,7 +14,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import QueryableAttribute
 
-from app.models.activity import ActivityEvent, PageViewCount
+from app.models.activity import ActivityEvent, PageViewCount, VisitPlatformCount
 from app.models.receipt import Receipt, ReceiptChannel
 from app.models.upload_job import UploadJob
 from app.models.user import User
@@ -62,6 +62,43 @@ class ActivityRepository:
                 },
             )
         )
+
+    async def count_platform(self, day: date, platform: str, system: str, *, entry: bool) -> None:
+        """Add one view from `platform` on `system` on `day`, and one visit if it was the first."""
+        entries = 1 if entry else 0
+        stmt = insert(VisitPlatformCount).values(
+            day=day, platform=platform, system=system, views=1, entries=entries
+        )
+        await self.session.execute(
+            stmt.on_conflict_do_update(
+                constraint="uq_visit_platform_counts_key",
+                set_={
+                    "views": VisitPlatformCount.views + 1,
+                    "entries": VisitPlatformCount.entries + entries,
+                },
+            )
+        )
+
+    async def visits_by_platform(self, start: date, end: date) -> list[tuple[str, int]]:
+        """Visits by what they were opened in — the website or a store app — largest first."""
+        return await self._ranked_platforms(VisitPlatformCount.platform, start, end)
+
+    async def visits_by_system(self, start: date, end: date) -> list[tuple[str, int]]:
+        """Visits by the operating system's family, largest first."""
+        return await self._ranked_platforms(VisitPlatformCount.system, start, end)
+
+    async def _ranked_platforms(
+        self, by: QueryableAttribute[str], start: date, end: date
+    ) -> list[tuple[str, int]]:
+        total = func.sum(VisitPlatformCount.entries)
+        stmt = (
+            select(by, total)
+            .where(VisitPlatformCount.day.between(start, end))
+            .group_by(by)
+            .having(total > 0)
+            .order_by(total.desc(), by)
+        )
+        return [(name, int(n)) for name, n in (await self.session.execute(stmt)).all()]
 
     async def views_by_page(self, start: date, end: date) -> list[tuple[str, int]]:
         """Every opening of each page over the days, largest first."""

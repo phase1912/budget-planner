@@ -1,0 +1,4 @@
+/* The system's permission questions, in the phone's language (F25.2.2). */
+"NSCameraUsageDescription" = "Budget Agent використовує камеру, щоб фотографувати ваші чеки.";
+"NSMicrophoneUsageDescription" = "Budget Agent записує сказане асистенту лише тоді, коли ви записуєте повідомлення.";
+"NSPhotoLibraryUsageDescription" = "Budget Agent відкриває лише ті фото чеків, які ви виберете.";

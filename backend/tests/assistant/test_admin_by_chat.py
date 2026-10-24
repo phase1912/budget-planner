@@ -4,6 +4,7 @@ user's receipts or money (N2)."""
 
 import json
 from datetime import UTC, datetime, timedelta
+from typing import Literal
 
 import pytest
 from sqlalchemy import select
@@ -105,3 +106,50 @@ async def test_an_accounts_facts_name_no_receipts_or_money(db_session: AsyncSess
 
     assert facts["email"] == "anna@example.com"
     assert not {"receipts", "balance", "incomes", "spent", "total"} & set(facts)
+
+
+@pytest.mark.asyncio
+async def test_an_admin_asks_how_the_service_is_doing_and_gets_the_dashboards_counts(
+    db_session: AsyncSession,
+) -> None:
+    """The question that went unanswered: "what is going on in the admin console?"."""
+    admin = await UserFactory.create_async(role="admin")
+    await UserFactory.create_async(email="new@example.com", created_at=datetime.now(UTC))
+
+    figures = json.loads(
+        await _toolbox(db_session, admin, "admin").read(ToolCall("admin_overview", {}))
+    )
+
+    assert figures["to"] == TODAY.isoformat()
+    assert figures["from"] == (TODAY - timedelta(days=6)).isoformat()
+    assert figures["sign_ups"] >= 1
+    assert "new@example.com" not in json.dumps(figures)
+
+
+@pytest.mark.asyncio
+async def test_reported_replies_reach_an_admin_and_the_log_only_a_super_admin(
+    db_session: AsyncSession,
+) -> None:
+    admin = await UserFactory.create_async(role="admin")
+    tools = {access: {s.name for s in tool_specs(access)} for access in ("admin", "super_admin")}
+
+    reports = json.loads(
+        await _toolbox(db_session, admin, "admin").read(ToolCall("admin_reply_reports", {}))
+    )
+    log = json.loads(await _toolbox(db_session, admin, "admin").read(ToolCall("admin_log", {})))
+
+    assert reports == {"reports": []}
+    assert "error" in log
+    assert "admin_log" not in tools["admin"] and "admin_log" in tools["super_admin"]
+
+
+def test_an_admin_without_the_code_is_told_how_to_open_the_admin_tools() -> None:
+    from app.assistant.core.ports import AssistantContext
+    from app.assistant.core.prompts import system
+
+    def context(admin: Literal["no", "needs_code", "yes"]) -> AssistantContext:
+        return AssistantContext(language="en", currency="PLN", today=TODAY.isoformat(), admin=admin)
+
+    assert "admin_overview" in system(context("yes"))
+    assert "authenticator" in system(context("needs_code"))
+    assert "admin_" not in system(context("no"))

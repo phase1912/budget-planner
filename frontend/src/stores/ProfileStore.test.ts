@@ -29,6 +29,7 @@ describe("ProfileStore", () => {
       is_admin: false,
       is_super_admin: false,
       two_factor_enabled: false,
+      has_password: true,
       dark_at_night: false,
       travels_for_work: false,
       pays_own_taxes: false,

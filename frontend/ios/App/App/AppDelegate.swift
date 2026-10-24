@@ -46,8 +46,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 /// The app's one screen: Capacitor's web view, with the iPhone's swipe from the left edge
 /// going back a screen, as in every native app (F25.2.1). The web view's own back-forward
 /// gesture does not follow the client's router, so the swipe asks the router itself.
+/// Pages stretch and spring back at their ends, short ones too, as in Safari and every
+/// native list (F25.2.3) — Capacitor switches that off by default.
 class AppViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
+        webView?.scrollView.bounces = true
+        webView?.scrollView.alwaysBounceVertical = true
+        // What shows past the ends follows the page's own ground, not the system's white.
+        webView?.underPageBackgroundColor = nil
+        bridge?.registerPluginInstance(SharedInboxPlugin())
+
         let swipe = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(swipedBack(_:)))
         swipe.edges = .left
         view.addGestureRecognizer(swipe)

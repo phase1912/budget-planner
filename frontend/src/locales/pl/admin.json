@@ -175,5 +175,21 @@
       "wrong": "Błędna lub myląca",
       "other": "Coś innego"
     }
+  },
+  "byPlatform": "Gdzie otwarto",
+  "bySystem": "System operacyjny",
+  "platforms": {
+    "web": "Strona",
+    "ios-app": "Aplikacja na iPhone'a",
+    "android-app": "Aplikacja na Androida"
+  },
+  "systems": {
+    "ios": "iOS",
+    "android": "Android",
+    "windows": "Windows",
+    "macos": "macOS",
+    "linux": "Linux",
+    "chromeos": "ChromeOS",
+    "other": "Inny"
   }
 }

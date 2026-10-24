@@ -110,6 +110,23 @@ function Figures({ report }: { report: UsageReport }) {
         />
       </div>
 
+      <div className="grid gap-4 md:grid-cols-2">
+        <Ranked
+          title={t("byPlatform")}
+          rows={report.visits_by_platform.map((row) => ({
+            ...row,
+            name: t(`platforms.${row.name}`, { defaultValue: row.name }),
+          }))}
+        />
+        <Ranked
+          title={t("bySystem")}
+          rows={report.visits_by_system.map((row) => ({
+            ...row,
+            name: t(`systems.${row.name}`, { defaultValue: row.name }),
+          }))}
+        />
+      </div>
+
       <Card variant="surface" className="flex flex-col gap-3 p-4 md:p-5">
         <h2 className="m-0 text-lg font-semibold">{t("byDay.title")}</h2>
         <ul className="m-0 flex list-none flex-col gap-2.5 p-0">

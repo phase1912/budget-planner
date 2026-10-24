@@ -6,7 +6,7 @@ epic (E1+) adds a concrete entity — F0.3 delivers only the base and convention
 """
 
 from app.models.account import Account, AccountMove, RegularTransfer
-from app.models.activity import ActivityEvent, PageViewCount
+from app.models.activity import ActivityEvent, PageViewCount, VisitPlatformCount
 from app.models.admin import AdminAction, PlanGrant
 from app.models.ai_usage import AiUsage
 from app.models.base import Base, Model
@@ -20,6 +20,7 @@ from app.models.household import Household, HouseholdMember
 from app.models.income import Income
 from app.models.income_source import IncomeSource
 from app.models.line_item import LineItem
+from app.models.linked_identity import LinkedIdentity
 from app.models.match_override import PositionMatchOverride
 from app.models.monthly_snapshot import MonthlySnapshot
 from app.models.name_correction import NameCorrection
@@ -54,6 +55,7 @@ __all__ = [
     "Income",
     "IncomeSource",
     "LineItem",
+    "LinkedIdentity",
     "Model",
     "MonthlySnapshot",
     "NameCorrection",
@@ -74,6 +76,7 @@ __all__ = [
     "Trip",
     "UploadJob",
     "User",
+    "VisitPlatformCount",
 ]
 
 # Registers the flush hook that drops a month's snapshot when one of its receipts

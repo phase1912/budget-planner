@@ -31,6 +31,7 @@ import { TwoFactorStore } from "@/stores/TwoFactorStore";
 import { IncomeStore } from "@/stores/IncomeStore";
 import { BankAccountsStore } from "@/stores/BankAccountsStore";
 import { AssistantStore } from "@/stores/AssistantStore";
+import { SignInStore } from "@/stores/SignInStore";
 
 /**
  * Single instantiation point for every MobX store in the client (F9.2.1). Feature
@@ -68,6 +69,7 @@ export class RootStore {
   readonly incomeStore: IncomeStore;
   readonly bankAccountsStore: BankAccountsStore;
   readonly assistantStore: AssistantStore;
+  readonly signInStore: SignInStore;
 
   constructor() {
     this.themeStore = new ThemeStore();
@@ -86,6 +88,7 @@ export class RootStore {
     this.analyticsStore = new AnalyticsStore(apiClient);
     this.adminStore = new AdminStore(apiClient, this.toastStore);
     this.twoFactorStore = new TwoFactorStore(apiClient, this.authStore, this.toastStore);
+    this.signInStore = new SignInStore(apiClient, this.authStore, this.toastStore);
     this.incomeStore = new IncomeStore(apiClient, this.toastStore);
     this.bankAccountsStore = new BankAccountsStore(apiClient, this.toastStore);
     // A card the assistant saved changed the month, or a setting: Home and Plan read it

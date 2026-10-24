@@ -679,5 +679,53 @@
         }
       ]
     }
+  },
+  {
+    "id": "uk-admin-whats-going-on",
+    "access": "admin",
+    "turns": [
+      "що зараз відбувається в адмінці?"
+    ],
+    "expect": {
+      "reads": [
+        "admin_overview"
+      ]
+    }
+  },
+  {
+    "id": "en-admin-signups-this-week",
+    "access": "admin",
+    "turns": [
+      "how many people signed up this week?"
+    ],
+    "expect": {
+      "reads": [
+        "admin_overview"
+      ]
+    }
+  },
+  {
+    "id": "uk-admin-reported-replies",
+    "access": "admin",
+    "turns": [
+      "чи скаржились користувачі на твої відповіді?"
+    ],
+    "expect": {
+      "reads": [
+        "admin_reply_reports"
+      ]
+    }
+  },
+  {
+    "id": "uk-admin-without-code",
+    "access": "admin-no-code",
+    "turns": [
+      "що зараз відбувається в адмінці?"
+    ],
+    "expect": {
+      "says": [
+        "код"
+      ]
+    }
   }
 ]

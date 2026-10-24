@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import { TABS, isActive, type Tab } from "./tabs";
+import { device } from "@/platform";
 
 /**
  * The phone's navigation, a bar along the bottom (F23.2): Home and Spending, the ＋ that
@@ -20,6 +21,9 @@ export function BottomNavigation() {
         key={item.name}
         to={item.path}
         aria-current={active ? "page" : undefined}
+        onClick={() => {
+          if (!active) void device.feel("selected");
+        }}
         className={`flex min-h-13 flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold ${
           active ? "text-primary" : "text-muted-foreground"
         }`}
@@ -39,6 +43,9 @@ export function BottomNavigation() {
         <Link
           to="/upload"
           aria-label={t("nav.add")}
+          onClick={() => {
+            void device.feel("read");
+          }}
           className="-mt-7 flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] bg-primary text-primary-foreground shadow-primary"
         >
           <Plus size={26} aria-hidden="true" />

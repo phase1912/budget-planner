@@ -38,6 +38,11 @@ class User(Model):
     recovery_code_hashes: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     # When the owner allowed their receipts, words and recordings to be sent to the AI
     # provider (F25.3.2, App Review 5.1.2); None before they did, or after withdrawing.
+    # False for an account opened with Google or Apple (F1.6): its hash is of a random
+    # secret nobody knows, until a reset link sets a real password.
+    password_set: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default="true", nullable=False
+    )
     ai_consent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # When the owner proved the address is theirs (F17.8.2); None until then.
     email_confirmed_at: Mapped[datetime | None] = mapped_column(

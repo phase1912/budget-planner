@@ -21,9 +21,23 @@ describe("AnalyticsStore (F17.3)", () => {
 
     expect(bodies(api)).toEqual([
       {
-        body: { page: "/", referrer: "https://l.instagram.com/", utm_source: "insta", entry: true },
+        body: {
+          page: "/",
+          referrer: "https://l.instagram.com/",
+          utm_source: "insta",
+          entry: true,
+          platform: "web",
+        },
       },
-      { body: { page: "/register", referrer: null, utm_source: null, entry: false } },
+      {
+        body: {
+          page: "/register",
+          referrer: null,
+          utm_source: null,
+          entry: false,
+          platform: "web",
+        },
+      },
     ]);
   });
 

@@ -175,5 +175,21 @@
       "wrong": "Хибна чи оманлива",
       "other": "Інше"
     }
+  },
+  "byPlatform": "Де відкрито",
+  "bySystem": "Операційна система",
+  "platforms": {
+    "web": "Сайт",
+    "ios-app": "Застосунок для iPhone",
+    "android-app": "Застосунок для Android"
+  },
+  "systems": {
+    "ios": "iOS",
+    "android": "Android",
+    "windows": "Windows",
+    "macos": "macOS",
+    "linux": "Linux",
+    "chromeos": "ChromeOS",
+    "other": "Інша"
   }
 }

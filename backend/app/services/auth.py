@@ -136,7 +136,13 @@ class AuthService:
             raise AuthenticationError(
                 "Invalid email or password.", code=ProblemCode.INVALID_CREDENTIALS
             )
+        return await self.open_session(user)
 
+    async def open_session(self, user: User) -> tuple[UserResponse, str, str] | str:
+        """A session for a user who proved who they are, by password or provider (F1.6).
+
+        An account with two-factor sign-in gets the code's challenge instead (F18.6.1).
+        """
         if user.two_factor_enabled:
             return create_link_token(
                 SECOND_FACTOR,

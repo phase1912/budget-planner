@@ -13,7 +13,7 @@ from app.api.periods import required_period
 from app.api.rate_limit import limiter
 from app.core.config import get_settings
 from app.db.session import get_db_session
-from app.domain.activity import DIRECT, is_bot, visit_source
+from app.domain.activity import DIRECT, is_bot, system_family, visit_source
 from app.domain.periods import DateRange
 from app.models.user import User
 from app.schemas.analytics import Count, DayFiguresRead, PageViewRequest, UsageReportRead
@@ -31,15 +31,23 @@ async def count_view(
 ) -> Response:
     """Count one view of a public page (F17.3.2); a crawler or another path is not counted.
 
-    Nothing about the visitor is kept: not the IP, not the full referrer — only the page,
-    the referring domain or campaign, and the day. Always 204, so it tells a caller nothing.
+    Nothing about the visitor is kept: not the IP, not the full referrer, not the
+    User-Agent — only the page, the referring domain or campaign, the platform, the
+    system's family and the day. Always 204, so it tells a caller nothing.
     """
-    if not is_bot(request.headers.get("user-agent")):
+    user_agent = request.headers.get("user-agent")
+    if not is_bot(user_agent):
         own = urlparse(get_settings().link_base).hostname or ""
         # A later page of the same visit came from our own pages, whatever it sends.
         source = visit_source(body.referrer, body.utm_source, own) if body.entry else DIRECT
         await ActivityService(session).count_view(
-            body.page, source, datetime.now(UTC).date(), entry=body.entry
+            body.page,
+            source,
+            datetime.now(UTC).date(),
+            entry=body.entry,
+            platform=body.platform,
+            # Only the family is kept, never the header (F17.3.4).
+            system=system_family(user_agent),
         )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -59,6 +67,8 @@ async def usage_report(
         page_views=report.page_views,
         views_by_page=[Count(name=n, count=c) for n, c in report.views_by_page],
         visits_by_source=[Count(name=n, count=c) for n, c in report.visits_by_source],
+        visits_by_platform=[Count(name=n, count=c) for n, c in report.visits_by_platform],
+        visits_by_system=[Count(name=n, count=c) for n, c in report.visits_by_system],
         sign_ups=report.sign_ups,
         confirmed=report.confirmed,
         with_a_receipt=report.with_a_receipt,

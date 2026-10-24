@@ -6,6 +6,8 @@ import { Button, Input, Card, Note, PublicLinks } from "@/shared/components";
 import { PasswordChecklist } from "../components/PasswordChecklist";
 import { passwordIsValid } from "../passwordRules";
 import { Trans, useTranslation } from "react-i18next";
+
+import { ProviderButtons } from "../components/ProviderButtons";
 import { screenLanguage } from "@/i18n/languages";
 
 export const RegisterPage = observer(() => {
@@ -60,6 +62,8 @@ export const RegisterPage = observer(() => {
         </div>
 
         {authStore.authState.error && <Note tone="error">{authStore.authState.error}</Note>}
+
+        <ProviderButtons />
 
         <form
           onSubmit={(e) => {

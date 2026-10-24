@@ -34,6 +34,8 @@ export class UploadStore {
   fileIds: string[] = [];
   jobId: string | null = null;
   isProcessing = false;
+  /** Shared receipts waiting for the one under review to be finished (F25.2.2). */
+  sharedWaiting: File[] = [];
   errorTitle: string | null = null;
   api: ApiClient;
   extractedData: Record<string, unknown> | null = null;
@@ -178,6 +180,16 @@ export class UploadStore {
 
   get files() {
     return this.lines[0] ?? [];
+  }
+
+  /**
+   * Receipts shared from another app (F25.2.2) become the photos of the next receipt: at
+   * once on the first step, or once the receipt being reviewed now is done with — never
+   * mixed into it.
+   */
+  receiveShared(files: File[]) {
+    if (this.currentStep === 1 && !this.isProcessing) this.addFilesToLine(0, files);
+    else this.sharedWaiting = [...this.sharedWaiting, ...files];
   }
 
   // legacy method for single mode
@@ -439,7 +451,8 @@ export class UploadStore {
   startOver() {
     this.resetData();
     this.resetError();
-    this.lines = [[]];
+    this.lines = [this.sharedWaiting];
+    this.sharedWaiting = [];
     this.mode = "single";
     this.jobId = null;
     this.isProcessing = false;
@@ -712,7 +725,6 @@ export class UploadStore {
         this.startOver();
       });
       this.toastStore?.showSuccess(i18n.t("messages:upload.stored", { count: stored }));
-      void device.feel("saved");
       this.onReceiptsStored();
       return true;
     } catch (err) {

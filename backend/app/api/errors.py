@@ -101,6 +101,12 @@ class ProblemCode(enum.StrEnum):
     DISCOUNT_TOO_LARGE = "discount_too_large"
     INCOME_UNREADABLE = "income_unreadable"
     NOT_INCOME = "not_income"
+    SIGN_IN_PROVIDER_OFF = "sign_in_provider_off"
+    ID_TOKEN_INVALID = "id_token_invalid"
+    PROVIDER_EMAIL_UNVERIFIED = "provider_email_unverified"
+    LINK_NEEDS_PASSWORD = "link_needs_password"
+    IDENTITY_TAKEN = "identity_taken"
+    LAST_WAY_IN = "last_way_in"
 
 
 class ProblemDetail(BaseModel):
